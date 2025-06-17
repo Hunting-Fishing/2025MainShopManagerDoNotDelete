@@ -4,7 +4,7 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Filter } from 'lucide-react';
 import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
 import { AddPartDialog } from './AddPartDialog';
 import { updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
@@ -28,6 +28,7 @@ export function WorkOrderPartsSection({
   showType
 }: WorkOrderPartsSectionProps) {
   const [showAddPartDialog, setShowAddPartDialog] = useState(false);
+  const [partsFilter, setPartsFilter] = useState<"all" | "unassigned">("all");
 
   const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
     try {
@@ -92,6 +93,10 @@ export function WorkOrderPartsSection({
     );
   }
 
+  // Get counts for filter buttons
+  const totalPartsCount = allParts.length;
+  const unassignedPartsCount = allParts.filter(part => !part.job_line_id).length;
+
   return (
     <>
       <Card>
@@ -100,12 +105,34 @@ export function WorkOrderPartsSection({
             <CardTitle className="text-base">
               {showType === "parts" ? "Parts" : "Parts & Job Lines"}
             </CardTitle>
-            {isEditMode && (
-              <Button size="sm" className="h-8 px-3" onClick={() => setShowAddPartDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Part
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {showType === "parts" && (
+                <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                  <Button
+                    variant={partsFilter === "all" ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 px-3 text-xs"
+                    onClick={() => setPartsFilter("all")}
+                  >
+                    All Parts ({totalPartsCount})
+                  </Button>
+                  <Button
+                    variant={partsFilter === "unassigned" ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 px-3 text-xs"
+                    onClick={() => setPartsFilter("unassigned")}
+                  >
+                    Unassigned ({unassignedPartsCount})
+                  </Button>
+                </div>
+              )}
+              {isEditMode && (
+                <Button size="sm" className="h-8 px-3" onClick={() => setShowAddPartDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Part
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
@@ -116,7 +143,8 @@ export function WorkOrderPartsSection({
             onPartDelete={isEditMode ? handlePartDelete : undefined}
             onPartsChange={onPartsChange}
             isEditMode={isEditMode}
-            showType={showType}
+            showType={showType === "parts" ? partsFilter : showType}
+            partsFilter={showType === "parts" ? partsFilter : undefined}
           />
         </CardContent>
       </Card>

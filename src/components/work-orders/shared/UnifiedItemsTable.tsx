@@ -15,7 +15,8 @@ interface UnifiedItemsTableProps {
   onPartDelete?: (partId: string) => Promise<void>;
   onPartsChange?: () => void;
   isEditMode: boolean;
-  showType: "all" | "joblines" | "parts" | "overview";
+  showType: "all" | "joblines" | "parts" | "overview" | "unassigned";
+  partsFilter?: "all" | "unassigned";
 }
 
 export function UnifiedItemsTable({
@@ -28,7 +29,8 @@ export function UnifiedItemsTable({
   onPartDelete,
   onPartsChange,
   isEditMode,
-  showType
+  showType,
+  partsFilter
 }: UnifiedItemsTableProps) {
   // Group parts by job line
   const partsByJobLine = allParts.reduce((acc, part) => {
@@ -61,23 +63,72 @@ export function UnifiedItemsTable({
     }
   };
 
-  if (showType === "parts") {
-    // Show only unassigned parts
-    return (
-      <UnassignedPartsSection
-        workOrderId={jobLines[0]?.work_order_id || ''}
-        unassignedParts={unassignedParts}
-        jobLines={jobLines}
-        onPartUpdate={handlePartUpdate}
-        onPartDelete={handlePartDelete}
-        onPartAssigned={onPartsChange}
-        isEditMode={isEditMode}
-      />
-    );
+  // Handle parts tab with filter
+  if (showType === "parts" || (showType === "all" && partsFilter) || showType === "unassigned") {
+    const effectiveFilter = partsFilter || (showType === "unassigned" ? "unassigned" : "all");
+    
+    if (effectiveFilter === "unassigned") {
+      // Show only unassigned parts
+      return (
+        <UnassignedPartsSection
+          workOrderId={jobLines[0]?.work_order_id || ''}
+          unassignedParts={unassignedParts}
+          jobLines={jobLines}
+          onPartUpdate={handlePartUpdate}
+          onPartDelete={handlePartDelete}
+          onPartAssigned={onPartsChange}
+          isEditMode={isEditMode}
+        />
+      );
+    } else {
+      // Show all parts - both unassigned and assigned
+      return (
+        <div className="space-y-4">
+          {/* Unassigned Parts Section */}
+          {unassignedParts.length > 0 && (
+            <UnassignedPartsSection
+              workOrderId={jobLines[0]?.work_order_id || ''}
+              unassignedParts={unassignedParts}
+              jobLines={jobLines}
+              onPartUpdate={handlePartUpdate}
+              onPartDelete={handlePartDelete}
+              onPartAssigned={onPartsChange}
+              isEditMode={isEditMode}
+            />
+          )}
+
+          {/* Job Lines with Parts */}
+          {jobLines.map((jobLine) => {
+            const jobLineParts = partsByJobLine[jobLine.id] || [];
+            // Only show job lines that have parts when in "all" filter mode
+            if (jobLineParts.length === 0) return null;
+            
+            return (
+              <JobLineWithParts
+                key={jobLine.id}
+                jobLine={jobLine}
+                jobLineParts={jobLineParts}
+                onPartUpdate={handlePartUpdate}
+                onPartDelete={handlePartDelete}
+                onPartsChange={onPartsChange || (() => {})}
+                isEditMode={isEditMode}
+              />
+            );
+          })}
+
+          {/* Empty state when no parts at all */}
+          {allParts.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No parts added yet</p>
+            </div>
+          )}
+        </div>
+      );
+    }
   }
 
   if (showType === "joblines" || showType === "all" || showType === "overview") {
-    // Show job lines with their parts
+    // Show job lines with their parts (original behavior)
     return (
       <div className="space-y-4">
         {/* Unassigned Parts Section - only show if there are unassigned parts or in "all" view */}
