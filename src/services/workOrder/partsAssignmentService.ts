@@ -16,7 +16,52 @@ export async function getUnassignedParts(workOrderId: string): Promise<WorkOrder
       throw error;
     }
 
-    return data || [];
+    // Map database columns to interface properties
+    return (data || []).map(part => ({
+      id: part.id,
+      work_order_id: part.work_order_id,
+      job_line_id: part.job_line_id,
+      part_number: part.part_number || '',
+      name: part.part_name || part.name || '',
+      description: part.description || '',
+      quantity: part.quantity || 1,
+      unit_price: part.customer_price || part.unit_price || 0,
+      total_price: (part.customer_price || part.unit_price || 0) * (part.quantity || 1),
+      status: part.status || 'pending',
+      notes: part.notes || '',
+      created_at: part.created_at,
+      updated_at: part.updated_at,
+      // Include all the additional properties for compatibility
+      partName: part.part_name,
+      partNumber: part.part_number,
+      supplierName: part.supplier_name,
+      supplierCost: part.supplier_cost,
+      supplierSuggestedRetailPrice: part.supplier_suggested_retail_price,
+      customerPrice: part.customer_price,
+      retailPrice: part.retail_price,
+      category: part.category,
+      warrantyDuration: part.warranty_duration,
+      warrantyExpiryDate: part.warranty_expiry_date,
+      binLocation: part.bin_location,
+      installDate: part.install_date,
+      dateAdded: part.created_at,
+      partType: part.part_type,
+      installedBy: part.installed_by,
+      markupPercentage: part.markup_percentage,
+      inventoryItemId: part.inventory_item_id,
+      coreChargeApplied: part.core_charge_applied,
+      coreChargeAmount: part.core_charge_amount,
+      isTaxable: part.is_taxable,
+      invoiceNumber: part.invoice_number,
+      poLine: part.po_line,
+      isStockItem: part.is_stock_item,
+      notesInternal: part.notes_internal,
+      attachments: part.attachments,
+      warehouseLocation: part.warehouse_location,
+      shelfLocation: part.shelf_location,
+      workOrderId: part.work_order_id,
+      jobLineId: part.job_line_id
+    }));
   } catch (error) {
     console.error('Error in getUnassignedParts:', error);
     throw error;
@@ -37,7 +82,31 @@ export async function assignPartToJobLine(partId: string, jobLineId: string): Pr
       throw error;
     }
 
-    return data;
+    // Map the returned data to match the interface
+    const part = data;
+    return {
+      id: part.id,
+      work_order_id: part.work_order_id,
+      job_line_id: part.job_line_id,
+      part_number: part.part_number || '',
+      name: part.part_name || part.name || '',
+      description: part.description || '',
+      quantity: part.quantity || 1,
+      unit_price: part.customer_price || part.unit_price || 0,
+      total_price: (part.customer_price || part.unit_price || 0) * (part.quantity || 1),
+      status: part.status || 'pending',
+      notes: part.notes || '',
+      created_at: part.created_at,
+      updated_at: part.updated_at,
+      // Include additional properties
+      partName: part.part_name,
+      partNumber: part.part_number,
+      supplierName: part.supplier_name,
+      customerPrice: part.customer_price,
+      category: part.category,
+      workOrderId: part.work_order_id,
+      jobLineId: part.job_line_id
+    };
   } catch (error) {
     console.error('Error in assignPartToJobLine:', error);
     throw error;
@@ -58,7 +127,31 @@ export async function unassignPart(partId: string): Promise<WorkOrderPart> {
       throw error;
     }
 
-    return data;
+    // Map the returned data to match the interface
+    const part = data;
+    return {
+      id: part.id,
+      work_order_id: part.work_order_id,
+      job_line_id: part.job_line_id,
+      part_number: part.part_number || '',
+      name: part.part_name || part.name || '',
+      description: part.description || '',
+      quantity: part.quantity || 1,
+      unit_price: part.customer_price || part.unit_price || 0,
+      total_price: (part.customer_price || part.unit_price || 0) * (part.quantity || 1),
+      status: part.status || 'pending',
+      notes: part.notes || '',
+      created_at: part.created_at,
+      updated_at: part.updated_at,
+      // Include additional properties
+      partName: part.part_name,
+      partNumber: part.part_number,
+      supplierName: part.supplier_name,
+      customerPrice: part.customer_price,
+      category: part.category,
+      workOrderId: part.work_order_id,
+      jobLineId: part.job_line_id
+    };
   } catch (error) {
     console.error('Error in unassignPart:', error);
     throw error;
@@ -78,7 +171,30 @@ export async function bulkAssignParts(partIds: string[], jobLineId: string): Pro
       throw error;
     }
 
-    return data || [];
+    // Map the returned data to match the interface
+    return (data || []).map(part => ({
+      id: part.id,
+      work_order_id: part.work_order_id,
+      job_line_id: part.job_line_id,
+      part_number: part.part_number || '',
+      name: part.part_name || part.name || '',
+      description: part.description || '',
+      quantity: part.quantity || 1,
+      unit_price: part.customer_price || part.unit_price || 0,
+      total_price: (part.customer_price || part.unit_price || 0) * (part.quantity || 1),
+      status: part.status || 'pending',
+      notes: part.notes || '',
+      created_at: part.created_at,
+      updated_at: part.updated_at,
+      // Include additional properties
+      partName: part.part_name,
+      partNumber: part.part_number,
+      supplierName: part.supplier_name,
+      customerPrice: part.customer_price,
+      category: part.category,
+      workOrderId: part.work_order_id,
+      jobLineId: part.job_line_id
+    }));
   } catch (error) {
     console.error('Error in bulkAssignParts:', error);
     throw error;
