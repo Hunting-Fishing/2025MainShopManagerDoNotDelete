@@ -20,11 +20,6 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
   onRemoveService,
   onUpdateServices
 }) => {
-  // Convert sectors to categories for the existing components
-  const categories = useMemo(() => {
-    return sectors.flatMap(sector => sector.categories);
-  }, [sectors]);
-
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     // Check if service is already selected
     const isAlreadySelected = selectedServices.some(s => s.serviceId === service.id || s.id === service.id);
@@ -70,7 +65,7 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
   return (
     <div className="space-y-4 bg-background">
       <SmartServiceSelector
-        categories={categories}
+        sectors={sectors}
         onServiceSelect={handleServiceSelect}
         selectedServices={selectedServices}
         onRemoveService={handleRemoveService}
