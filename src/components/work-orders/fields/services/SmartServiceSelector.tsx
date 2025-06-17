@@ -1,14 +1,23 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
-import { useDebounce } from '@/hooks/useDebounce';
+import { ServiceSearch } from './ServiceSearch';
+import { SearchResultsPopup } from './SearchResultsPopup';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ChevronRight, Check } from 'lucide-react';
+
+interface SearchResult {
+  service: ServiceJob;
+  sectorName: string;
+  categoryName: string;
+  subcategoryName: string;
+  fullPath: string;
+}
 
 interface SmartServiceSelectorProps {
-  sectors?: ServiceSector[];
-  categories?: ServiceMainCategory[];
+  sectors: ServiceSector[];
   onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
   selectedServices?: SelectedService[];
   onRemoveService?: (serviceId: string) => void;
@@ -16,8 +25,7 @@ interface SmartServiceSelectorProps {
 }
 
 export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
-  sectors = [],
-  categories = [],
+  sectors,
   onServiceSelect,
   selectedServices = [],
   onRemoveService,
@@ -26,225 +34,272 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
+  const [showSearchPopup, setShowSearchPopup] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
-  // Use sectors if available, otherwise fallback to categories
-  const displaySectors = useMemo(() => {
-    if (sectors.length > 0) {
-      return sectors;
-    }
-    // Convert categories to a single sector for backward compatibility
-    if (categories.length > 0) {
-      return [{
-        id: 'default-sector',
-        name: 'Services',
-        description: 'All available services',
-        categories: categories,
-        position: 1,
-        is_active: true
-      }];
-    }
-    return [];
-  }, [sectors, categories]);
-
-  // Filter services based on search term
-  const filteredData = useMemo(() => {
-    if (!debouncedSearchTerm) {
-      return displaySectors;
-    }
-
-    const searchLower = debouncedSearchTerm.toLowerCase();
-    return displaySectors.map(sector => ({
-      ...sector,
-      categories: sector.categories.map(category => ({
-        ...category,
-        subcategories: category.subcategories.map(subcategory => ({
-          ...subcategory,
-          jobs: subcategory.jobs.filter(job =>
-            job.name.toLowerCase().includes(searchLower) ||
-            job.description?.toLowerCase().includes(searchLower) ||
-            category.name.toLowerCase().includes(searchLower) ||
-            subcategory.name.toLowerCase().includes(searchLower)
-          )
-        })).filter(subcategory => subcategory.jobs.length > 0)
-      })).filter(category => category.subcategories.length > 0)
-    })).filter(sector => sector.categories.length > 0);
-  }, [displaySectors, debouncedSearchTerm]);
-
-  // Get filtered sectors, categories, subcategories based on selection
-  const visibleSectors = filteredData;
-  
-  const visibleCategories = selectedSectorId 
-    ? filteredData.find(s => s.id === selectedSectorId)?.categories || []
-    : [];
-
-  const visibleSubcategories = selectedCategoryId
-    ? visibleCategories.find(c => c.id === selectedCategoryId)?.subcategories || []
-    : [];
-
-  const visibleServices = selectedSubcategoryId
-    ? visibleSubcategories.find(s => s.id === selectedSubcategoryId)?.jobs || []
-    : [];
-
-  const handleServiceSelect = (service: ServiceJob) => {
-    const selectedCategory = visibleCategories.find(c => c.id === selectedCategoryId);
-    const selectedSubcategory = visibleSubcategories.find(s => s.id === selectedSubcategoryId);
+  // Flatten all services for search
+  const allServices = useMemo(() => {
+    const flattened: SearchResult[] = [];
     
-    if (selectedCategory && selectedSubcategory) {
-      onServiceSelect(service, selectedCategory.name, selectedSubcategory.name);
+    sectors.forEach(sector => {
+      sector.categories.forEach(category => {
+        category.subcategories.forEach(subcategory => {
+          subcategory.jobs.forEach(service => {
+            flattened.push({
+              service,
+              sectorName: sector.name,
+              categoryName: category.name,
+              subcategoryName: subcategory.name,
+              fullPath: `${sector.name} › ${category.name} › ${subcategory.name}`
+            });
+          });
+        });
+      });
+    });
+    
+    return flattened;
+  }, [sectors]);
+
+  // Search results
+  const searchResults = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    
+    const term = searchTerm.toLowerCase();
+    return allServices.filter(result => 
+      result.service.name.toLowerCase().includes(term) ||
+      result.service.description?.toLowerCase().includes(term) ||
+      result.sectorName.toLowerCase().includes(term) ||
+      result.categoryName.toLowerCase().includes(term) ||
+      result.subcategoryName.toLowerCase().includes(term)
+    );
+  }, [searchTerm, allServices]);
+
+  // Show/hide popup based on search term
+  useEffect(() => {
+    setShowSearchPopup(searchTerm.trim().length > 0);
+  }, [searchTerm]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showSearchPopup) {
+        setShowSearchPopup(false);
+        setSearchTerm('');
+      }
+    };
+
+    if (showSearchPopup) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
     }
+  }, [showSearchPopup]);
+
+  // Click outside to close popup
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowSearchPopup(false);
+      }
+    };
+
+    if (showSearchPopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showSearchPopup]);
+
+  const handleSectorSelect = (sectorId: string) => {
+    setSelectedSectorId(sectorId);
+    setSelectedCategoryId(null);
+  };
+
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+  };
+
+  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
+    onServiceSelect(service, categoryName, subcategoryName);
+    setShowSearchPopup(false);
+    setSearchTerm('');
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setShowSearchPopup(false);
   };
 
   const isServiceSelected = (serviceId: string) => {
     return selectedServices.some(s => s.serviceId === serviceId || s.id === serviceId);
   };
 
+  const selectedSector = sectors.find(s => s.id === selectedSectorId);
+  const selectedCategory = selectedSector?.categories.find(c => c.id === selectedCategoryId);
+
   return (
-    <div className="space-y-4">
-      {/* Search Input */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          placeholder="Search services (e.g., caliper, brake, oil change...)"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+    <div ref={containerRef} className="relative space-y-4">
+      {/* Search Bar */}
+      <ServiceSearch
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search services across all sectors..."
+      />
 
-      {/* 4-Column Layout */}
-      <div className="grid grid-cols-4 gap-4 min-h-[400px]">
-        {/* Column 1: Sectors */}
-        <div className="border rounded-lg p-2 space-y-1">
-          <h4 className="font-medium text-sm text-muted-foreground mb-2">Sectors</h4>
-          <div className="space-y-1 max-h-[350px] overflow-y-auto">
-            {visibleSectors.map((sector) => (
-              <button
-                key={sector.id}
-                onClick={() => {
-                  setSelectedSectorId(sector.id);
-                  setSelectedCategoryId(null);
-                  setSelectedSubcategoryId(null);
-                }}
-                className={`w-full text-left p-2 rounded text-sm transition-colors ${
-                  selectedSectorId === sector.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-muted'
-                }`}
-              >
-                <div className="font-medium">{sector.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {sector.categories.length} categories
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Search Results Popup */}
+      <SearchResultsPopup
+        searchTerm={searchTerm}
+        results={searchResults}
+        isVisible={showSearchPopup}
+        onSelectService={handleServiceSelect}
+        onClose={() => setShowSearchPopup(false)}
+        onClearSearch={handleClearSearch}
+      />
 
-        {/* Column 2: Categories */}
-        <div className="border rounded-lg p-2 space-y-1">
-          <h4 className="font-medium text-sm text-muted-foreground mb-2">Categories</h4>
-          <div className="space-y-1 max-h-[350px] overflow-y-auto">
-            {visibleCategories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => {
-                  setSelectedCategoryId(category.id);
-                  setSelectedSubcategoryId(null);
-                }}
-                className={`w-full text-left p-2 rounded text-sm transition-colors ${
-                  selectedCategoryId === category.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-muted'
-                }`}
-              >
-                <div className="font-medium">{category.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {category.subcategories.length} subcategories
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Column 3: Subcategories */}
-        <div className="border rounded-lg p-2 space-y-1">
-          <h4 className="font-medium text-sm text-muted-foreground mb-2">Subcategories</h4>
-          <div className="space-y-1 max-h-[350px] overflow-y-auto">
-            {visibleSubcategories.map((subcategory) => (
-              <button
-                key={subcategory.id}
-                onClick={() => setSelectedSubcategoryId(subcategory.id)}
-                className={`w-full text-left p-2 rounded text-sm transition-colors ${
-                  selectedSubcategoryId === subcategory.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-muted'
-                }`}
-              >
-                <div className="font-medium">{subcategory.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {subcategory.jobs.length} services
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Column 4: Services */}
-        <div className="border rounded-lg p-2 space-y-1">
-          <h4 className="font-medium text-sm text-muted-foreground mb-2">Services</h4>
-          <div className="space-y-1 max-h-[350px] overflow-y-auto">
-            {visibleServices.map((service) => (
-              <button
-                key={service.id}
-                onClick={() => handleServiceSelect(service)}
-                disabled={isServiceSelected(service.id)}
-                className={`w-full text-left p-2 rounded text-sm transition-colors ${
-                  isServiceSelected(service.id)
-                    ? 'bg-green-100 text-green-800 cursor-not-allowed'
-                    : 'hover:bg-muted border-2 border-transparent hover:border-primary'
-                }`}
-              >
-                <div className="font-medium">{service.name}</div>
-                {service.description && (
-                  <div className="text-xs text-muted-foreground line-clamp-2">
-                    {service.description}
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Sectors */}
+        <Card className="h-96">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Service Sectors</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="space-y-1 max-h-80 overflow-y-auto px-3 pb-3">
+              {sectors.map(sector => (
+                <button
+                  key={sector.id}
+                  onClick={() => handleSectorSelect(sector.id)}
+                  className={`w-full text-left p-2 rounded-md text-sm transition-colors ${
+                    selectedSectorId === sector.id
+                      ? 'bg-blue-100 border-2 border-blue-300 text-blue-900'
+                      : 'hover:bg-gray-100 border-2 border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{sector.name}</div>
+                      {sector.description && (
+                        <div className="text-xs text-gray-500 mt-1">{sector.description}</div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {selectedSectorId === sector.id && (
+                        <Check className="h-4 w-4 text-blue-600" />
+                      )}
+                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                    </div>
                   </div>
-                )}
-                <div className="flex items-center justify-between mt-1">
-                  {service.estimatedTime && (
-                    <span className="text-xs text-muted-foreground">
-                      {service.estimatedTime} min
-                    </span>
-                  )}
-                  {service.price && (
-                    <span className="text-xs font-medium text-green-600">
-                      ${service.price}
-                    </span>
-                  )}
-                </div>
-                {isServiceSelected(service.id) && (
-                  <div className="text-xs text-green-600 font-medium mt-1">
-                    ✓ Selected
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Search Results Info */}
-      {debouncedSearchTerm && (
-        <div className="text-sm text-muted-foreground">
-          Found {filteredData.reduce((acc, sector) => 
-            acc + sector.categories.reduce((catAcc, category) => 
-              catAcc + category.subcategories.reduce((subAcc, subcategory) => 
-                subAcc + subcategory.jobs.length, 0), 0), 0)} services matching "{debouncedSearchTerm}"
-        </div>
-      )}
+        {/* Categories */}
+        <Card className="h-96">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">
+              {selectedSector ? `${selectedSector.name} Categories` : 'Categories'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="space-y-1 max-h-80 overflow-y-auto px-3 pb-3">
+              {selectedSector ? (
+                selectedSector.categories.map(category => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleCategorySelect(category.id)}
+                    className={`w-full text-left p-2 rounded-md text-sm transition-colors ${
+                      selectedCategoryId === category.id
+                        ? 'bg-blue-100 border-2 border-blue-300 text-blue-900'
+                        : 'hover:bg-gray-100 border-2 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">{category.name}</div>
+                        {category.description && (
+                          <div className="text-xs text-gray-500 mt-1">{category.description}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {selectedCategoryId === category.id && (
+                          <Check className="h-4 w-4 text-blue-600" />
+                        )}
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                      </div>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  <p className="text-sm">Select a sector to view categories</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Services */}
+        <Card className="h-96">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">
+              {selectedCategory ? `${selectedCategory.name} Services` : 'Services'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="space-y-2 max-h-80 overflow-y-auto px-3 pb-3">
+              {selectedCategory ? (
+                selectedCategory.subcategories.map(subcategory => (
+                  <div key={subcategory.id} className="space-y-1">
+                    <div className="text-xs font-medium text-gray-600 px-2 py-1 bg-gray-50 rounded">
+                      {subcategory.name}
+                    </div>
+                    {subcategory.jobs.map(service => (
+                      <button
+                        key={service.id}
+                        onClick={() => handleServiceSelect(service, selectedCategory.name, subcategory.name)}
+                        disabled={isServiceSelected(service.id)}
+                        className={`w-full text-left p-2 rounded-md text-sm transition-colors ${
+                          isServiceSelected(service.id)
+                            ? 'bg-green-50 border border-green-200 text-green-700 cursor-not-allowed'
+                            : 'hover:bg-gray-100 border border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium">{service.name}</div>
+                            {service.description && (
+                              <div className="text-xs text-gray-500 mt-1">{service.description}</div>
+                            )}
+                          </div>
+                          <div className="ml-2 text-right">
+                            {isServiceSelected(service.id) && (
+                              <Badge variant="outline" className="text-xs">Selected</Badge>
+                            )}
+                            {service.price && (
+                              <div className="text-xs font-medium text-green-600">
+                                ${service.price}
+                              </div>
+                            )}
+                            {service.estimatedTime && (
+                              <div className="text-xs text-gray-500">
+                                {service.estimatedTime} min
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  <p className="text-sm">Select a category to view services</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
