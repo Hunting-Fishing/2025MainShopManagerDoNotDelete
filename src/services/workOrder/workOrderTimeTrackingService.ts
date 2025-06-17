@@ -1,107 +1,66 @@
-import { supabase } from "@/integrations/supabase/client";
-import { TimeEntry } from "@/types/workOrder";
 
-/**
- * Get time entries for a work order and/or specific job line
- */
-export const getWorkOrderTimeEntries = async (
-  workOrderId: string,
-  jobLineId?: string
-): Promise<any[]> => { // Stay as any[] to avoid TS recursion problems
+import { supabase } from '@/integrations/supabase/client';
+import { TimeEntry } from '@/types/workOrder';
+
+export async function getWorkOrderTimeEntries(workOrderId: string): Promise<TimeEntry[]> {
   try {
-    // Build query dynamically to avoid type inference issues
-    let queryString = `*`;
-    const filters: any = { work_order_id: workOrderId };
-    
-    if (jobLineId) {
-      filters.job_line_id = jobLineId;
-    }
-
-    // Use direct from().select() approach without chaining to avoid type inference
     const { data, error } = await supabase
       .from('work_order_time_entries')
-      .select(queryString)
-      .match(filters)
-      .order('created_at', { ascending: false });
-    
+      .select('*')
+      .eq('work_order_id', workOrderId)
+      .order('start_time', { ascending: false });
+
     if (error) throw error;
     return data || [];
   } catch (error) {
     console.error('Error fetching work order time entries:', error);
-    return [];
+    throw error;
   }
-};
+}
 
-/**
- * Add time entry to work order
- */
-export const addTimeEntryToWorkOrder = async (
-  workOrderId: string,
-  timeEntry: Omit<TimeEntry, 'id' | 'work_order_id' | 'created_at'> & { job_line_id?: string }
-): Promise<TimeEntry | null> => {
+export async function addTimeEntryToWorkOrder(entryData: Partial<TimeEntry>): Promise<TimeEntry> {
   try {
     const { data, error } = await supabase
       .from('work_order_time_entries')
-      .insert({
-        work_order_id: workOrderId,
-        job_line_id: timeEntry.job_line_id,
-        employee_id: timeEntry.employee_id,
-        employee_name: timeEntry.employee_name,
-        start_time: timeEntry.start_time,
-        end_time: timeEntry.end_time,
-        duration: timeEntry.duration,
-        billable: timeEntry.billable,
-        notes: timeEntry.notes
-      })
-      .select();
-      
-    if (error) throw error;
-    
-    return data?.[0] || null;
-  } catch (error) {
-    console.error('Error adding time entry to work order:', error);
-    return null;
-  }
-};
+      .insert(entryData)
+      .select()
+      .single();
 
-/**
- * Update time entry
- */
-export const updateTimeEntry = async (
-  entryId: string,
-  updates: Partial<TimeEntry>
-): Promise<TimeEntry | null> => {
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating time entry:', error);
+    throw error;
+  }
+}
+
+export async function updateTimeEntry(id: string, updates: Partial<TimeEntry>): Promise<TimeEntry> {
   try {
     const { data, error } = await supabase
       .from('work_order_time_entries')
       .update(updates)
-      .eq('id', entryId)
-      .select();
-      
+      .eq('id', id)
+      .select()
+      .single();
+
     if (error) throw error;
-    
-    return data?.[0] || null;
+    return data;
   } catch (error) {
     console.error('Error updating time entry:', error);
-    return null;
+    throw error;
   }
-};
+}
 
-/**
- * Delete time entry
- */
-export const deleteTimeEntry = async (entryId: string): Promise<boolean> => {
+export async function deleteTimeEntry(id: string): Promise<void> {
   try {
     const { error } = await supabase
       .from('work_order_time_entries')
       .delete()
-      .eq('id', entryId);
-      
+      .eq('id', id);
+
     if (error) throw error;
-    
-    return true;
   } catch (error) {
     console.error('Error deleting time entry:', error);
-    return false;
+    throw error;
   }
-};
+}

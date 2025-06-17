@@ -1,4 +1,3 @@
-
 // Main customer interface with all required fields
 export interface Customer {
   id: string;
@@ -18,6 +17,16 @@ export interface Customer {
   
   // Additional customer fields
   preferred_technician_id?: string;
+  communication_preference?: string;
+  referral_source?: string;
+  referral_person_id?: string;
+  other_referral_details?: string;
+  household_id?: string;
+  is_fleet?: boolean;
+  fleet_company?: string;
+  fleet_manager?: string;
+  fleet_contact?: string;
+  preferred_service_type?: string;
   communication_preference?: string;
   referral_source?: string;
   referral_person_id?: string;
@@ -48,6 +57,9 @@ export interface Customer {
   credit_terms?: string;
   terms_agreed?: boolean;
   
+  // Loyalty field
+  loyalty?: CustomerLoyalty;
+  
   // Computed fields
   full_name?: string;
   
@@ -58,11 +70,11 @@ export interface Customer {
   lastServiceDate?: string;
 }
 
-// Vehicle interface
+// Vehicle interface with optional year
 export interface CustomerVehicle {
   id?: string;
   customer_id?: string;
-  year: string | number;
+  year?: string | number; // Made optional to fix compatibility issues
   make: string;
   model: string;
   vin?: string;
@@ -110,8 +122,9 @@ export interface CustomerNote {
   updated_at: string;
 }
 
-// Create type
+// Create type with required shop_id for database operations
 export type CustomerCreate = Omit<Customer, 'id' | 'created_at' | 'updated_at'> & {
+  shop_id: string; // Make shop_id required for database operations
   vehicles?: Partial<CustomerVehicle>[];
 };
 

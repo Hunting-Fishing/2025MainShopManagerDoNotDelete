@@ -1,4 +1,3 @@
-
 export interface WorkOrder {
   id: string;
   customer_id?: string;
@@ -75,6 +74,7 @@ export interface WorkOrderInventoryItem {
   unit_price: number;
   total: number;
   itemStatus?: string;
+  estimatedArrivalDate?: string;
 }
 
 export interface WorkOrderVehicle {
