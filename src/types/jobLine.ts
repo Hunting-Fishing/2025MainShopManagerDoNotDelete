@@ -20,6 +20,18 @@ export interface WorkOrderJobLine {
   parts?: WorkOrderPart[];
 }
 
+export interface JobLineFormValues {
+  name: string;
+  category?: string;
+  subcategory?: string;
+  description?: string;
+  estimated_hours?: number;
+  labor_rate?: number;
+  labor_rate_type?: string;
+  status?: string;
+  notes?: string;
+}
+
 export interface WorkOrderPart {
   id: string;
   work_order_id: string;

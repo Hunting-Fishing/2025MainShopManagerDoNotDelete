@@ -13,21 +13,21 @@ export const formatCurrency = formatCurrencyUtil;
 
 // Job line calculation utilities
 export function calculateTotalJobLineAmount(jobLine: WorkOrderJobLine): number {
-  if (!jobLine.estimatedHours || !jobLine.laborRate) {
-    return jobLine.totalAmount || 0;
+  if (!jobLine.estimated_hours || !jobLine.labor_rate) {
+    return jobLine.total_amount || 0;
   }
-  return jobLine.estimatedHours * jobLine.laborRate;
+  return jobLine.estimated_hours * jobLine.labor_rate;
 }
 
 export function calculateTotalEstimatedHours(jobLines: WorkOrderJobLine[]): number {
-  return jobLines.reduce((total, jobLine) => total + (jobLine.estimatedHours || 0), 0);
+  return jobLines.reduce((total, jobLine) => total + (jobLine.estimated_hours || 0), 0);
 }
 
 export function calculateTotalPartsCost(jobLines: WorkOrderJobLine[]): number {
   return jobLines.reduce((total, jobLine) => {
     if (!jobLine.parts) return total;
     return total + jobLine.parts.reduce((partTotal, part) => 
-      partTotal + (part.supplierCost * part.quantity), 0
+      partTotal + (part.unit_price * part.quantity), 0
     );
   }, 0);
 }
