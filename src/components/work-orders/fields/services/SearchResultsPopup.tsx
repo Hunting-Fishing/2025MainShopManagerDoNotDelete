@@ -51,7 +51,7 @@ export const SearchResultsPopup: React.FC<SearchResultsPopupProps> = ({
   };
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-hidden">
+    <div className="absolute top-12 left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b bg-gray-50">
         <div className="flex items-center gap-2">
