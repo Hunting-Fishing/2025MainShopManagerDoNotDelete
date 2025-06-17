@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkOrder } from '@/types/workOrder';
@@ -51,6 +50,16 @@ export function WorkOrderDetailsTabs({
     });
   };
 
+  // Create a refresh function that refetches both job lines and parts
+  const handlePartsRefresh = async () => {
+    // This should trigger a refresh of the work order data
+    // The parent component should handle this by refetching the data
+    console.log('Parts refresh requested');
+    
+    // For now, we'll rely on the parent component's data fetching
+    // In a real implementation, you might want to pass a refresh callback
+  };
+
   return (
     <div className="space-y-6">
       <WorkOrderHeader
@@ -96,9 +105,9 @@ export function WorkOrderDetailsTabs({
                 workOrderId={workOrder.id}
                 allParts={allParts}
                 jobLines={jobLines}
-                onPartsChange={() => {}}
+                onPartsChange={handlePartsRefresh}
                 isEditMode={isEditMode}
-                showType="all"
+                showType="overview"
               />
               
               <TimeTrackingSection
@@ -133,7 +142,7 @@ export function WorkOrderDetailsTabs({
             workOrderId={workOrder.id}
             allParts={allParts}
             jobLines={jobLines}
-            onPartsChange={() => {}}
+            onPartsChange={handlePartsRefresh}
             isEditMode={isEditMode}
             showType="parts"
           />

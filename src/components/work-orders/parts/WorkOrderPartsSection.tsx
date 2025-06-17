@@ -74,6 +74,20 @@ export function WorkOrderPartsSection({
     }
   };
 
+  // Only show the card wrapper for non-overview views
+  if (showType === "overview") {
+    return (
+      <UnifiedItemsTable
+        jobLines={jobLines}
+        allParts={allParts}
+        onPartUpdate={isEditMode ? handlePartUpdate : undefined}
+        onPartDelete={isEditMode ? handlePartDelete : undefined}
+        isEditMode={isEditMode}
+        showType={showType}
+      />
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="pb-3">
