@@ -1,10 +1,40 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { WorkOrderJobLine, JobLineFormValues, isValidJobLineStatus, isValidLaborRateType } from '@/types/jobLine';
+import { WorkOrderJobLine } from '@/types/jobLine';
+
+export interface JobLineInsertData {
+  work_order_id: string;
+  name: string;
+  category?: string;
+  subcategory?: string;
+  description?: string;
+  estimated_hours?: number;
+  labor_rate?: number;
+  labor_rate_type?: 'standard' | 'overtime' | 'premium' | 'flat_rate';
+  total_amount?: number;
+  status?: 'pending' | 'in-progress' | 'completed' | 'on-hold';
+  display_order?: number;
+  notes?: string;
+}
+
+export interface JobLineUpdateData {
+  name?: string;
+  category?: string;
+  subcategory?: string;
+  description?: string;
+  estimated_hours?: number;
+  labor_rate?: number;
+  labor_rate_type?: 'standard' | 'overtime' | 'premium' | 'flat_rate';
+  total_amount?: number;
+  status?: 'pending' | 'in-progress' | 'completed' | 'on-hold';
+  display_order?: number;
+  notes?: string;
+}
 
 export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrderJobLine[]> {
+  console.log('Fetching job lines for work order:', workOrderId);
+  
   try {
-    console.log('Fetching job lines for work order:', workOrderId);
-    
     const { data, error } = await supabase
       .from('work_order_job_lines')
       .select('*')
@@ -13,140 +43,95 @@ export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrd
 
     if (error) {
       console.error('Error fetching job lines:', error);
-      throw error;
+      throw new Error(`Failed to fetch job lines: ${error.message}`);
     }
 
-    console.log('Retrieved job lines:', data);
-    
-    // Map and validate the data
-    return (data || []).map(item => ({
-      ...item,
-      status: isValidJobLineStatus(item.status) ? item.status : 'pending',
-      labor_rate_type: isValidLaborRateType(item.labor_rate_type) ? item.labor_rate_type : 'standard'
-    })) as WorkOrderJobLine[];
+    console.log('Job lines fetched successfully:', data?.length || 0);
+    return data || [];
   } catch (error) {
-    console.error('Error in getWorkOrderJobLines:', error);
+    console.error('Service error fetching job lines:', error);
     throw error;
   }
 }
 
-export async function createWorkOrderJobLine(
-  workOrderId: string,
-  jobLineData: JobLineFormValues
-): Promise<WorkOrderJobLine> {
+export async function createWorkOrderJobLine(jobLineData: JobLineInsertData): Promise<WorkOrderJobLine> {
+  console.log('Creating job line:', jobLineData);
+  
   try {
-    console.log('Creating job line for work order:', workOrderId, 'with data:', jobLineData);
-    
-    const insertData = {
-      work_order_id: workOrderId,
-      name: jobLineData.name,
-      category: jobLineData.category || '',
-      subcategory: jobLineData.subcategory || '',
-      description: jobLineData.description || '',
-      estimated_hours: jobLineData.estimated_hours || 0,
-      labor_rate: jobLineData.labor_rate || 0,
-      labor_rate_type: isValidLaborRateType(jobLineData.labor_rate_type || 'standard') ? jobLineData.labor_rate_type : 'standard',
-      total_amount: jobLineData.total_amount || (jobLineData.estimated_hours || 0) * (jobLineData.labor_rate || 0),
-      status: isValidJobLineStatus(jobLineData.status || 'pending') ? jobLineData.status : 'pending',
-      notes: jobLineData.notes || '',
-      display_order: jobLineData.display_order || 0
-    };
+    // Calculate total_amount if not provided
+    const totalAmount = jobLineData.total_amount ?? 
+      ((jobLineData.estimated_hours || 0) * (jobLineData.labor_rate || 0));
 
-    console.log('Inserting job line data:', insertData);
+    const dataToInsert = {
+      ...jobLineData,
+      total_amount: totalAmount,
+      status: jobLineData.status || 'pending',
+      labor_rate_type: jobLineData.labor_rate_type || 'standard',
+      display_order: jobLineData.display_order ?? 0
+    };
 
     const { data, error } = await supabase
       .from('work_order_job_lines')
-      .insert(insertData)
+      .insert([dataToInsert])
       .select()
       .single();
 
     if (error) {
       console.error('Error creating job line:', error);
-      throw error;
+      throw new Error(`Failed to create job line: ${error.message}`);
     }
 
-    console.log('Successfully created job line:', data);
-    
-    // Return with proper type casting
-    return {
-      ...data,
-      status: isValidJobLineStatus(data.status) ? data.status : 'pending',
-      labor_rate_type: isValidLaborRateType(data.labor_rate_type) ? data.labor_rate_type : 'standard'
-    } as WorkOrderJobLine;
+    console.log('Job line created successfully:', data);
+    return data;
   } catch (error) {
-    console.error('Error in createWorkOrderJobLine:', error);
+    console.error('Service error creating job line:', error);
     throw error;
   }
 }
 
-export async function updateWorkOrderJobLine(
-  jobLineId: string,
-  jobLineData: Partial<WorkOrderJobLine>
-): Promise<WorkOrderJobLine> {
+export async function updateWorkOrderJobLine(jobLineId: string, updateData: JobLineUpdateData): Promise<WorkOrderJobLine> {
+  console.log('Updating job line:', jobLineId, updateData);
+  
   try {
-    console.log('Updating job line:', jobLineId, 'with data:', jobLineData);
-    
-    const updateData = {
-      name: jobLineData.name,
-      category: jobLineData.category,
-      subcategory: jobLineData.subcategory,
-      description: jobLineData.description,
-      estimated_hours: jobLineData.estimated_hours,
-      labor_rate: jobLineData.labor_rate,
-      labor_rate_type: jobLineData.labor_rate_type && isValidLaborRateType(jobLineData.labor_rate_type) ? jobLineData.labor_rate_type : 'standard',
-      total_amount: jobLineData.total_amount,
-      status: jobLineData.status && isValidJobLineStatus(jobLineData.status) ? jobLineData.status : 'pending',
-      notes: jobLineData.notes,
-      display_order: jobLineData.display_order,
-      updated_at: new Date().toISOString()
-    };
+    // Calculate total_amount if hours or rate are being updated
+    let dataToUpdate = { ...updateData };
+    if (updateData.estimated_hours !== undefined || updateData.labor_rate !== undefined) {
+      // Get current job line to calculate total
+      const { data: currentJobLine } = await supabase
+        .from('work_order_job_lines')
+        .select('estimated_hours, labor_rate')
+        .eq('id', jobLineId)
+        .single();
+
+      const hours = updateData.estimated_hours ?? currentJobLine?.estimated_hours ?? 0;
+      const rate = updateData.labor_rate ?? currentJobLine?.labor_rate ?? 0;
+      dataToUpdate.total_amount = hours * rate;
+    }
 
     const { data, error } = await supabase
       .from('work_order_job_lines')
-      .update(updateData)
+      .update(dataToUpdate)
       .eq('id', jobLineId)
       .select()
       .single();
 
     if (error) {
       console.error('Error updating job line:', error);
-      throw error;
+      throw new Error(`Failed to update job line: ${error.message}`);
     }
 
-    console.log('Successfully updated job line:', data);
-    
-    // Return with proper type casting
-    return {
-      ...data,
-      status: isValidJobLineStatus(data.status) ? data.status : 'pending',
-      labor_rate_type: isValidLaborRateType(data.labor_rate_type) ? data.labor_rate_type : 'standard'
-    } as WorkOrderJobLine;
+    console.log('Job line updated successfully:', data);
+    return data;
   } catch (error) {
-    console.error('Error in updateWorkOrderJobLine:', error);
-    throw error;
-  }
-}
-
-export async function upsertWorkOrderJobLine(
-  workOrderId: string,
-  jobLineData: Partial<WorkOrderJobLine>
-): Promise<WorkOrderJobLine> {
-  try {
-    if (jobLineData.id && !jobLineData.id.startsWith('temp-')) {
-      return await updateWorkOrderJobLine(jobLineData.id, jobLineData);
-    } else {
-      return await createWorkOrderJobLine(workOrderId, jobLineData as JobLineFormValues);
-    }
-  } catch (error) {
-    console.error('Error in upsertWorkOrderJobLine:', error);
+    console.error('Service error updating job line:', error);
     throw error;
   }
 }
 
 export async function deleteWorkOrderJobLine(jobLineId: string): Promise<void> {
+  console.log('Deleting job line:', jobLineId);
+  
   try {
-    console.log('Deleting job line:', jobLineId);
-    
     const { error } = await supabase
       .from('work_order_job_lines')
       .delete()
@@ -154,12 +139,49 @@ export async function deleteWorkOrderJobLine(jobLineId: string): Promise<void> {
 
     if (error) {
       console.error('Error deleting job line:', error);
-      throw error;
+      throw new Error(`Failed to delete job line: ${error.message}`);
     }
 
-    console.log('Successfully deleted job line:', jobLineId);
+    console.log('Job line deleted successfully');
   } catch (error) {
-    console.error('Error in deleteWorkOrderJobLine:', error);
+    console.error('Service error deleting job line:', error);
+    throw error;
+  }
+}
+
+export async function upsertWorkOrderJobLine(jobLineData: JobLineInsertData & { id?: string }): Promise<WorkOrderJobLine> {
+  if (jobLineData.id) {
+    const { id, ...updateData } = jobLineData;
+    return updateWorkOrderJobLine(id, updateData);
+  } else {
+    return createWorkOrderJobLine(jobLineData);
+  }
+}
+
+export async function reorderJobLines(workOrderId: string, jobLineIds: string[]): Promise<void> {
+  console.log('Reordering job lines for work order:', workOrderId);
+  
+  try {
+    const updates = jobLineIds.map((id, index) => 
+      supabase
+        .from('work_order_job_lines')
+        .update({ display_order: index })
+        .eq('id', id)
+        .eq('work_order_id', workOrderId)
+    );
+
+    const results = await Promise.all(updates);
+    
+    for (const result of results) {
+      if (result.error) {
+        console.error('Error reordering job line:', result.error);
+        throw new Error(`Failed to reorder job lines: ${result.error.message}`);
+      }
+    }
+
+    console.log('Job lines reordered successfully');
+  } catch (error) {
+    console.error('Service error reordering job lines:', error);
     throw error;
   }
 }

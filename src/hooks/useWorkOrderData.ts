@@ -65,8 +65,38 @@ export function useWorkOrderData(workOrderId: string) {
     await fetchData();
   };
 
+  const refreshJobLines = async () => {
+    if (!workOrderId || workOrderId === 'new') return;
+    
+    try {
+      const lines = await getWorkOrderJobLines(workOrderId);
+      setJobLines(lines);
+      console.log('Job lines refreshed:', lines.length);
+    } catch (err) {
+      console.error('Error refreshing job lines:', err);
+    }
+  };
+
   const updateJobLines = (updatedJobLines: WorkOrderJobLine[]) => {
     setJobLines(updatedJobLines);
+  };
+
+  const addJobLines = (newJobLines: WorkOrderJobLine[]) => {
+    setJobLines(prevJobLines => [...prevJobLines, ...newJobLines]);
+  };
+
+  const updateJobLine = (updatedJobLine: WorkOrderJobLine) => {
+    setJobLines(prevJobLines => 
+      prevJobLines.map(line => 
+        line.id === updatedJobLine.id ? updatedJobLine : line
+      )
+    );
+  };
+
+  const removeJobLine = (jobLineId: string) => {
+    setJobLines(prevJobLines => 
+      prevJobLines.filter(line => line.id !== jobLineId)
+    );
   };
 
   const updateParts = (updatedParts: WorkOrderPart[]) => {
@@ -86,8 +116,12 @@ export function useWorkOrderData(workOrderId: string) {
     isLoading,
     error,
     updateJobLines,
+    addJobLines,
+    updateJobLine,
+    removeJobLine,
     updateParts,
     updateTimeEntries,
-    refreshData
+    refreshData,
+    refreshJobLines
   };
 }

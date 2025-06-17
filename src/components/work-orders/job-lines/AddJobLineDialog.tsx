@@ -1,14 +1,13 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { ServiceBasedJobLineForm } from './ServiceBasedJobLineForm';
-import { ManualJobLineForm } from './ManualJobLineForm';
+import { UnifiedJobLineFormDialog } from './UnifiedJobLineFormDialog';
 
 export interface AddJobLineDialogProps {
   workOrderId: string;
-  onJobLineAdd: (jobLines: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]) => void;
+  onJobLineAdd: (jobLines: WorkOrderJobLine[]) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -19,49 +18,81 @@ export function AddJobLineDialog({
   open,
   onOpenChange
 }: AddJobLineDialogProps) {
-  const [activeTab, setActiveTab] = useState<'service' | 'manual'>('service');
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
 
-  const handleSubmit = (jobLines: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]) => {
+  const handleJobLineSave = (jobLines: WorkOrderJobLine[]) => {
     onJobLineAdd(jobLines);
-    onOpenChange(false);
-  };
-
-  const handleCancel = () => {
+    setShowServiceForm(false);
+    setShowManualForm(false);
     onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle>Add Job Line</DialogTitle>
-        </DialogHeader>
-        
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'service' | 'manual')} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
-            <TabsTrigger value="service">Service Catalog</TabsTrigger>
-            <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-          </TabsList>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Job Line</DialogTitle>
+          </DialogHeader>
           
-          <div className="flex-1 overflow-hidden">
-            <TabsContent value="service" className="h-full mt-4">
-              <ServiceBasedJobLineForm
-                workOrderId={workOrderId}
-                onSubmit={handleSubmit}
-                onCancel={handleCancel}
-              />
-            </TabsContent>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Choose how you'd like to add job lines to this work order:
+            </p>
             
-            <TabsContent value="manual" className="h-full mt-4">
-              <ManualJobLineForm
-                workOrderId={workOrderId}
-                onSubmit={handleSubmit}
-                onCancel={handleCancel}
-              />
-            </TabsContent>
+            <div className="grid gap-3">
+              <Button
+                onClick={() => setShowServiceForm(true)}
+                className="justify-start h-auto p-4"
+                variant="outline"
+              >
+                <div className="text-left">
+                  <div className="font-medium">From Service Catalog</div>
+                  <div className="text-sm text-muted-foreground">
+                    Select pre-configured services with pricing
+                  </div>
+                </div>
+              </Button>
+              
+              <Button
+                onClick={() => setShowManualForm(true)}
+                className="justify-start h-auto p-4"
+                variant="outline"
+              >
+                <div className="text-left">
+                  <div className="font-medium">Manual Entry</div>
+                  <div className="text-sm text-muted-foreground">
+                    Create a custom job line manually
+                  </div>
+                </div>
+              </Button>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+            </div>
           </div>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <UnifiedJobLineFormDialog
+        workOrderId={workOrderId}
+        mode="add-service"
+        open={showServiceForm}
+        onOpenChange={setShowServiceForm}
+        onSave={handleJobLineSave}
+      />
+
+      <UnifiedJobLineFormDialog
+        workOrderId={workOrderId}
+        mode="add-manual"
+        open={showManualForm}
+        onOpenChange={setShowManualForm}
+        onSave={handleJobLineSave}
+      />
+    </>
   );
 }
