@@ -21,6 +21,6 @@ export interface SelectedService {
 export interface ServiceSelectionSummary {
   totalServices: number;
   totalEstimatedTime: number;
-  totalPrice: number;
+  totalEstimatedCost: number;
   services: SelectedService[];
 }

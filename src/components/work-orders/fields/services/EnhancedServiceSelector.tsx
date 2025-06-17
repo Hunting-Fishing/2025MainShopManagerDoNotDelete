@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { ServiceSector, ServiceJob } from '@/types/service';
 import { SelectedService, ServiceSelectionSummary } from '@/types/selectedService';
@@ -33,7 +32,8 @@ export function EnhancedServiceSelector({
     totalEstimatedTime: selectedServices.reduce((total, service) => 
       total + (service.estimatedTime || 0), 0),
     totalEstimatedCost: selectedServices.reduce((total, service) => 
-      total + (service.price || 0), 0)
+      total + (service.price || 0), 0),
+    services: selectedServices
   };
 
   // Handle service selection - only call parent callback, don't manage state here
