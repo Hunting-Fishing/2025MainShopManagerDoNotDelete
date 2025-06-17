@@ -5,11 +5,11 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { WorkOrderSummaryCard } from './WorkOrderSummaryCard';
 import { WorkOrderCustomerCard } from './WorkOrderCustomerCard';
 import { WorkOrderTimeCard } from './WorkOrderTimeCard';
+import { WorkOrderTotals } from '../shared/WorkOrderTotals';
 
 interface WorkOrderOverviewTabProps {
   workOrder: WorkOrder;
@@ -62,16 +62,16 @@ export function WorkOrderOverviewTab({
         />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Customer & Time Info */}
-        <div className="space-y-6">
+      {/* Main Content - 3 Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column - Customer Info */}
+        <div className="lg:col-span-3 space-y-6">
           <WorkOrderCustomerCard customer={customer} workOrder={workOrder} />
           <WorkOrderTimeCard timeEntries={timeEntries} workOrder={workOrder} />
         </div>
 
-        {/* Right Column - Parts & Job Lines */}
-        <div className="lg:col-span-2">
+        {/* Middle Column - Parts & Job Lines */}
+        <div className="lg:col-span-6">
           <WorkOrderPartsSection
             workOrderId={workOrder.id}
             allParts={allParts}
@@ -79,6 +79,14 @@ export function WorkOrderOverviewTab({
             onPartsChange={onPartsChange}
             isEditMode={isEditMode}
             showType="overview"
+          />
+        </div>
+
+        {/* Right Column - Financial Totals */}
+        <div className="lg:col-span-3">
+          <WorkOrderTotals
+            jobLines={jobLines}
+            allParts={allParts}
           />
         </div>
       </div>
