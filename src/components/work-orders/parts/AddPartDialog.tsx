@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +10,22 @@ interface AddPartDialogProps {
   workOrderId: string;
   jobLineId?: string;
   onPartAdd: (part: WorkOrderPart) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  jobLines?: any[];
+  onPartAdded?: () => void;
 }
 
-export function AddPartDialog({ workOrderId, jobLineId, onPartAdd }: AddPartDialogProps) {
+export function AddPartDialog({ 
+  workOrderId, 
+  jobLineId, 
+  onPartAdd, 
+  isOpen: externalIsOpen,
+  onClose: externalOnClose,
+  onPartAdded
+}: AddPartDialogProps) {
   const { toast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     part_number: '',
     name: '',
@@ -25,6 +36,12 @@ export function AddPartDialog({ workOrderId, jobLineId, onPartAdd }: AddPartDial
     notes: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = externalOnClose ? (open: boolean) => {
+    if (!open) externalOnClose();
+  } : setInternalIsOpen;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +66,11 @@ export function AddPartDialog({ workOrderId, jobLineId, onPartAdd }: AddPartDial
       };
       
       onPartAdd(newPart);
+      
+      // Call onPartAdded if provided
+      if (onPartAdded) {
+        onPartAdded();
+      }
       
       toast({
         title: "Success",
@@ -79,9 +101,11 @@ export function AddPartDialog({ workOrderId, jobLineId, onPartAdd }: AddPartDial
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Add Part</Button>
-      </DialogTrigger>
+      {externalIsOpen === undefined && (
+        <DialogTrigger asChild>
+          <Button variant="outline">Add Part</Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add Part</DialogTitle>
