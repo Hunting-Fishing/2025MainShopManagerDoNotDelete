@@ -134,7 +134,7 @@ export function PartAssignmentControls({
 
       {/* Assignment Dialog */}
       <PartsAssignmentDialog
-        isOpen={showAssignmentDialog}
+        open={showAssignmentDialog}
         onClose={() => setShowAssignmentDialog(false)}
         parts={[part]}
         jobLines={jobLines}
@@ -148,7 +148,7 @@ export function PartAssignmentControls({
 
       {/* Edit Dialog */}
       <EditPartDialog
-        isOpen={showEditDialog}
+        open={showEditDialog}
         onClose={() => setShowEditDialog(false)}
         part={part}
         jobLines={jobLines}

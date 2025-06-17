@@ -133,3 +133,17 @@ export async function getWorkOrderParts(workOrderId: string): Promise<WorkOrderP
 
   return (data || []).map(mapDatabasePartToWorkOrderPart);
 }
+
+export async function getJobLineParts(jobLineId: string): Promise<WorkOrderPart[]> {
+  const { data, error } = await supabase
+    .from('work_order_parts')
+    .select('*')
+    .eq('job_line_id', jobLineId);
+
+  if (error) {
+    console.error('Error fetching job line parts:', error);
+    throw error;
+  }
+
+  return (data || []).map(mapDatabasePartToWorkOrderPart);
+}
