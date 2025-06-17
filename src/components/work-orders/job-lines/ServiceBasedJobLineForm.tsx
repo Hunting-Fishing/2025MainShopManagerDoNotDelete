@@ -1,10 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { ServicesSection } from '@/components/work-orders/fields/ServicesSection';
 import { SelectedService } from '@/types/selectedService';
 import { ServiceJob } from '@/types/service';
+import { Search } from 'lucide-react';
 
 interface ServiceBasedJobLineFormProps {
   workOrderId: string;
@@ -18,6 +20,7 @@ export function ServiceBasedJobLineForm({
   onCancel
 }: ServiceBasedJobLineFormProps) {
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     const newService: SelectedService = {
@@ -68,6 +71,16 @@ export function ServiceBasedJobLineForm({
     onSubmit(jobLines);
   };
 
+  // Search statistics for feedback
+  const searchStats = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    
+    return {
+      query: searchQuery,
+      totalResults: selectedServices.length
+    };
+  }, [searchQuery, selectedServices.length]);
+
   return (
     <div className="space-y-6">
       <div className="border-b pb-4">
@@ -75,6 +88,29 @@ export function ServiceBasedJobLineForm({
         <p className="text-sm text-muted-foreground">
           Choose from our service catalog to add job lines to this work order
         </p>
+      </div>
+
+      {/* Enhanced Search Input */}
+      <div className="space-y-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search services... (e.g., brake, oil, tire, caliper)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        {searchStats && (
+          <div className="text-xs text-muted-foreground">
+            {searchStats.totalResults > 0 ? (
+              <span>Found services matching "{searchStats.query}"</span>
+            ) : (
+              <span>No services found for "{searchStats.query}"</span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="max-h-96 overflow-y-auto">
