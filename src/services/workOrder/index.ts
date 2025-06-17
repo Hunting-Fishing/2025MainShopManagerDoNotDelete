@@ -1,3 +1,4 @@
+
 // Export everything from the unified service
 export * from './workOrderUnifiedService';
 
@@ -22,5 +23,6 @@ export {
   getWorkOrderTimeEntries,
   addTimeEntryToWorkOrder,
   updateTimeEntry,
-  deleteTimeEntry
+  deleteTimeEntry,
+  getUniqueTechnicians
 } from './workOrderUnifiedService';

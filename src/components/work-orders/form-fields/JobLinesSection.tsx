@@ -11,6 +11,8 @@ interface JobLinesSectionProps {
   description?: string;
   jobLines: WorkOrderJobLine[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
+  onJobLineUpdate?: (updatedJobLine: WorkOrderJobLine) => Promise<void>;
+  onJobLineDelete?: (jobLineId: string) => Promise<void>;
   isEditMode: boolean;
   shopId?: string;
 }
@@ -20,19 +22,29 @@ export function JobLinesSection({
   description,
   jobLines,
   onJobLinesChange,
+  onJobLineUpdate,
+  onJobLineDelete,
   isEditMode,
   shopId
 }: JobLinesSectionProps) {
-  const handleJobLineDelete = (jobLineId: string) => {
-    const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
-    onJobLinesChange(updatedJobLines);
+  const handleJobLineDelete = async (jobLineId: string) => {
+    if (onJobLineDelete) {
+      await onJobLineDelete(jobLineId);
+    } else {
+      const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
+      onJobLinesChange(updatedJobLines);
+    }
   };
 
-  const handleJobLineUpdate = (updatedJobLine: WorkOrderJobLine) => {
-    const updatedJobLines = jobLines.map(line => 
-      line.id === updatedJobLine.id ? updatedJobLine : line
-    );
-    onJobLinesChange(updatedJobLines);
+  const handleJobLineUpdate = async (updatedJobLine: WorkOrderJobLine) => {
+    if (onJobLineUpdate) {
+      await onJobLineUpdate(updatedJobLine);
+    } else {
+      const updatedJobLines = jobLines.map(line => 
+        line.id === updatedJobLine.id ? updatedJobLine : line
+      );
+      onJobLinesChange(updatedJobLines);
+    }
   };
 
   const handleJobLinesReorder = (reorderedJobLines: WorkOrderJobLine[]) => {
