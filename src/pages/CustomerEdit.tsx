@@ -8,6 +8,38 @@ import { ChevronLeft, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomerEdit } from "@/hooks/useCustomerEdit";
 import { DeleteCustomerButton } from "@/components/customers/form/DeleteCustomerButton";
+import { Customer } from "@/types/customer";
+import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
+import { formatVehicleYear } from "@/types/customer/vehicle";
+
+// Transform Customer to CustomerFormValues
+const transformCustomerToFormValues = (customer: Customer): CustomerFormValues => {
+  const transformedVehicles = customer.vehicles?.map(vehicle => ({
+    ...vehicle,
+    year: formatVehicleYear(vehicle.year), // Ensure year is always a string
+    // Handle any other field transformations needed for the form
+    vin: vehicle.vin || '',
+    license_plate: vehicle.license_plate || '',
+    trim: vehicle.trim || '',
+    transmission: vehicle.transmission || '',
+    drive_type: vehicle.drive_type || '',
+    fuel_type: vehicle.fuel_type || '',
+    engine: vehicle.engine || '',
+    body_style: vehicle.body_style || '',
+    country: vehicle.country || '',
+    transmission_type: vehicle.transmission_type || '',
+    gvwr: vehicle.gvwr || '',
+    color: vehicle.color || ''
+  })) || [];
+
+  return {
+    ...customer,
+    vehicles: transformedVehicles,
+    // Ensure other form-specific transformations
+    segments: Array.isArray(customer.segments) ? customer.segments : [],
+    tags: Array.isArray(customer.tags) ? customer.tags : []
+  } as CustomerFormValues;
+};
 
 export default function CustomerEdit() {
   const { id } = useParams<{ id: string }>();
@@ -99,6 +131,9 @@ export default function CustomerEdit() {
   }
 
   const customerName = `${formValues.first_name} ${formValues.last_name}`;
+  
+  // Transform the customer data to match form expectations
+  const transformedFormValues = transformCustomerToFormValues(formValues);
 
   return (
     <div className="space-y-6">
@@ -130,7 +165,7 @@ export default function CustomerEdit() {
       </div>
       <h1 className="text-2xl font-bold tracking-tight">Edit Customer</h1>
       <CustomerForm 
-        defaultValues={formValues}
+        defaultValues={transformedFormValues}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         availableShops={availableShops}
