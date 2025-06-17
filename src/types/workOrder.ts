@@ -74,6 +74,7 @@ export interface WorkOrderInventoryItem {
   quantity: number;
   unit_price: number;
   total: number;
+  itemStatus?: string;
 }
 
 export interface WorkOrderVehicle {
@@ -96,6 +97,14 @@ export interface WorkOrderTemplate {
   parts?: WorkOrderPart[];
   created_at: string;
   updated_at: string;
+  status?: string;
+  priority?: string;
+  technician?: string;
+  notes?: string;
+  location?: string;
+  inventory_items?: WorkOrderInventoryItem[];
+  last_used?: string;
+  usage_count?: number;
 }
 
 export interface WorkOrderFormValues {
@@ -112,6 +121,7 @@ export interface WorkOrderFormValues {
   vehicleYear?: string;
   licensePlate?: string;
   vin?: string;
+  inventoryItems?: WorkOrderInventoryItem[];
 }
 
 export type WorkOrderStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'on_hold';

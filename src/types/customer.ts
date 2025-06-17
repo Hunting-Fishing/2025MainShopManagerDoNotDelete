@@ -111,7 +111,9 @@ export interface CustomerNote {
 }
 
 // Create type
-export type CustomerCreate = Omit<Customer, 'id' | 'created_at' | 'updated_at'>;
+export type CustomerCreate = Omit<Customer, 'id' | 'created_at' | 'updated_at'> & {
+  vehicles?: Partial<CustomerVehicle>[];
+};
 
 // Utility function
 export const getCustomerFullName = (customer: Customer): string => {
