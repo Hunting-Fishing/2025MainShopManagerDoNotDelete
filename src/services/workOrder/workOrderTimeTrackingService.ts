@@ -18,11 +18,17 @@ export async function getWorkOrderTimeEntries(workOrderId: string): Promise<Time
   }
 }
 
-export async function addTimeEntryToWorkOrder(entryData: Partial<TimeEntry>): Promise<TimeEntry> {
+export async function addTimeEntryToWorkOrder(workOrderId: string, entryData: Partial<TimeEntry>): Promise<TimeEntry> {
   try {
+    // Add the work_order_id to the entry data
+    const fullEntryData = {
+      ...entryData,
+      work_order_id: workOrderId
+    };
+
     const { data, error } = await supabase
       .from('work_order_time_entries')
-      .insert(entryData)
+      .insert(fullEntryData)
       .select()
       .single();
 

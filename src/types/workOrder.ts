@@ -1,3 +1,4 @@
+
 export interface WorkOrder {
   id: string;
   customer_id?: string;
@@ -75,6 +76,7 @@ export interface WorkOrderInventoryItem {
   total: number;
   itemStatus?: string;
   estimatedArrivalDate?: string;
+  supplierName?: string;
 }
 
 export interface WorkOrderVehicle {
@@ -150,3 +152,20 @@ export const priorityMap: Record<string, { label: string; classes: string }> = {
   'high': { label: 'High', classes: 'bg-orange-100 text-orange-800' },
   'urgent': { label: 'Urgent', classes: 'bg-red-100 text-red-800' }
 };
+
+// Work Order Part interface for templates
+export interface WorkOrderPart {
+  id: string;
+  name: string;
+  part_number?: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  category?: string;
+  supplier?: string;
+  description?: string;
+  work_order_id?: string;
+  job_line_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}

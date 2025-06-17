@@ -8,6 +8,10 @@ export interface CustomerLoyalty {
   tier_start_date: string;
   created_at: string;
   updated_at: string;
+  
+  // Additional properties for compatibility
+  current_points?: number;
+  lifetime_value?: number;
 }
 
 export interface LoyaltyTransaction {
@@ -32,4 +36,39 @@ export interface LoyaltyReward {
   shop_id?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface LoyaltyRedemption {
+  id: string;
+  customer_id: string;
+  reward_id: string;
+  points_used: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  used_at?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  reward?: LoyaltyReward;
+}
+
+export interface LoyaltySettings {
+  id: string;
+  shop_id: string;
+  is_enabled: boolean;
+  points_per_dollar: number;
+  points_expiration_days: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LoyaltyTier {
+  id?: string;
+  name: string;
+  threshold: number;
+  benefits: string;
+  multiplier: number;
+  color: string;
+  shop_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
