@@ -11,6 +11,7 @@ interface IntegratedServiceSelectorProps {
   selectedServices?: SelectedService[];
   onRemoveService?: (serviceId: string) => void;
   onUpdateServices?: (services: SelectedService[]) => void;
+  searchQuery?: string;
 }
 
 export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps> = ({
@@ -18,12 +19,32 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
   onServiceSelect,
   selectedServices = [],
   onRemoveService,
-  onUpdateServices
+  onUpdateServices,
+  searchQuery = ""
 }) => {
-  // Convert sectors to categories for the existing components
+  // Convert sectors to categories for the existing components and filter by search
   const categories = useMemo(() => {
-    return sectors.flatMap(sector => sector.categories);
-  }, [sectors]);
+    const allCategories = sectors.flatMap(sector => sector.categories);
+    
+    if (!searchQuery.trim()) {
+      return allCategories;
+    }
+
+    const query = searchQuery.toLowerCase();
+    
+    return allCategories.map(category => ({
+      ...category,
+      subcategories: category.subcategories.map(subcategory => ({
+        ...subcategory,
+        jobs: subcategory.jobs.filter(job => 
+          job.name.toLowerCase().includes(query) ||
+          (job.description && job.description.toLowerCase().includes(query)) ||
+          category.name.toLowerCase().includes(query) ||
+          subcategory.name.toLowerCase().includes(query)
+        )
+      })).filter(subcategory => subcategory.jobs.length > 0)
+    })).filter(category => category.subcategories.length > 0);
+  }, [sectors, searchQuery]);
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     // Check if service is already selected
