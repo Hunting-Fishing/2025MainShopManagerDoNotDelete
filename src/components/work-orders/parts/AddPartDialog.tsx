@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { useToast } from '@/hooks/use-toast';
+import { ComprehensivePartEntryForm } from './ComprehensivePartEntryForm';
 
 interface AddPartDialogProps {
   workOrderId: string;
@@ -26,15 +26,6 @@ export function AddPartDialog({
 }: AddPartDialogProps) {
   const { toast } = useToast();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    part_number: '',
-    name: '',
-    description: '',
-    quantity: 1,
-    unit_price: 0,
-    status: 'pending',
-    notes: ''
-  });
   const [isLoading, setIsLoading] = useState(false);
 
   // Use external state if provided, otherwise use internal state
@@ -43,24 +34,39 @@ export function AddPartDialog({
     if (!open) externalOnClose();
   } : setInternalIsOpen;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePartAdd = async (partData: WorkOrderPartFormValues) => {
     setIsLoading(true);
 
     try {
-      // Create a mock part for now - this would be replaced with actual service call
+      // Create a comprehensive part with all fields
       const newPart: WorkOrderPart = {
         id: `temp-${Date.now()}-${Math.random()}`,
         work_order_id: workOrderId,
         job_line_id: jobLineId,
-        part_number: formData.part_number,
-        name: formData.name,
-        description: formData.description,
-        quantity: formData.quantity,
-        unit_price: formData.unit_price,
-        total_price: formData.quantity * formData.unit_price,
-        status: formData.status,
-        notes: formData.notes,
+        part_number: partData.part_number,
+        name: partData.name,
+        description: partData.description,
+        quantity: partData.quantity,
+        unit_price: partData.unit_price,
+        total_price: partData.quantity * partData.unit_price,
+        status: partData.status || 'pending',
+        notes: partData.notes,
+        category: partData.category,
+        supplierName: partData.supplierName,
+        supplierCost: partData.supplierCost,
+        customerPrice: partData.customerPrice,
+        retailPrice: partData.retailPrice,
+        markupPercentage: partData.markupPercentage,
+        isTaxable: partData.isTaxable,
+        coreChargeAmount: partData.coreChargeAmount,
+        coreChargeApplied: partData.coreChargeApplied,
+        warrantyDuration: partData.warrantyDuration,
+        invoiceNumber: partData.invoiceNumber,
+        poLine: partData.poLine,
+        isStockItem: partData.isStockItem,
+        notesInternal: partData.notesInternal,
+        inventoryItemId: partData.inventoryItemId,
+        partType: partData.partType,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -81,15 +87,6 @@ export function AddPartDialog({
       });
 
       setIsOpen(false);
-      setFormData({
-        part_number: '',
-        name: '',
-        description: '',
-        quantity: 1,
-        unit_price: 0,
-        status: 'pending',
-        notes: ''
-      });
     } catch (error) {
       console.error('Error adding part:', error);
       toast({
@@ -102,6 +99,10 @@ export function AddPartDialog({
     }
   };
 
+  const handleCancel = () => {
+    setIsOpen(false);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {externalIsOpen === undefined && (
@@ -109,55 +110,15 @@ export function AddPartDialog({
           <Button variant="outline">Add Part</Button>
         </DialogTrigger>
       )}
-      <DialogContent>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Part</DialogTitle>
+          <DialogTitle>Add Part - Comprehensive Entry</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Part Number</label>
-            <Input
-              value={formData.part_number}
-              onChange={(e) => setFormData({ ...formData, part_number: e.target.value })}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
-            <Input
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Unit Price</label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.unit_price}
-              onChange={(e) => setFormData({ ...formData, unit_price: parseFloat(e.target.value) || 0 })}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Quantity</label>
-            <Input
-              type="number"
-              value={formData.quantity}
-              onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-              required
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Adding...' : 'Add Part'}
-            </Button>
-          </div>
-        </form>
+        <ComprehensivePartEntryForm
+          onPartAdd={handlePartAdd}
+          onCancel={handleCancel}
+          isLoading={isLoading}
+        />
       </DialogContent>
     </Dialog>
   );
