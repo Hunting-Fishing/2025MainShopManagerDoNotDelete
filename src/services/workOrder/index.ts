@@ -4,18 +4,20 @@ export * from './core/workOrderCoreService';
 export * from './core/workOrderJobLinesService';
 export * from './core/workOrderPartsService';
 export * from './core/workOrderTimeService';
+export * from './workOrderQueryService';
 
 // Import the services for use in legacy functions
 import { workOrderCoreService } from './core/workOrderCoreService';
 import { workOrderJobLinesService } from './core/workOrderJobLinesService';
 import { workOrderPartsService } from './core/workOrderPartsService';
 import { workOrderTimeService } from './core/workOrderTimeService';
+import { getWorkOrdersByCustomerId as queryGetWorkOrdersByCustomerId } from './workOrderQueryService';
 
 // Backward compatibility exports
-export { workOrderCoreService as workOrderService } from './core/workOrderCoreService';
-export { workOrderJobLinesService as jobLinesService } from './core/workOrderJobLinesService';
-export { workOrderPartsService as partsService } from './core/workOrderPartsService';
-export { workOrderTimeService as timeService } from './core/workOrderTimeService';
+export { workOrderCoreService } from './core/workOrderCoreService';
+export { workOrderJobLinesService } from './core/workOrderJobLinesService';
+export { workOrderPartsService } from './core/workOrderPartsService';
+export { workOrderTimeService } from './core/workOrderTimeService';
 
 // Legacy function exports for backward compatibility
 export const getAllWorkOrders = () => workOrderCoreService.getAll();
@@ -28,10 +30,7 @@ export const deleteWorkOrder = (id: string) => workOrderCoreService.delete(id);
 export const updateWorkOrderStatus = (id: string, status: string) => workOrderCoreService.update(id, { status });
 
 // Add missing query functions
-export const getWorkOrdersByCustomerId = async (customerId: string) => {
-  const allWorkOrders = await workOrderCoreService.getAll();
-  return allWorkOrders.filter(wo => wo.customer_id === customerId);
-};
+export const getWorkOrdersByCustomerId = queryGetWorkOrdersByCustomerId;
 
 export const getUniqueTechnicians = async () => {
   const allWorkOrders = await workOrderCoreService.getAll();
