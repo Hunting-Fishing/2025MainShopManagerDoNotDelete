@@ -2,190 +2,156 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
+import { WorkOrder, WorkOrderInventoryItem } from '@/types/workOrder';
+import { WorkOrderFormSchemaValues, workOrderFormSchema } from '@/schemas/workOrderSchema';
+import { updateWorkOrder } from '@/services/workOrder';
+import { getUniqueTechnicians } from '@/services/workOrder';
+import { handleApiError } from '@/utils/errorHandling';
 import { v4 as uuidv4 } from 'uuid';
 
-import { getWorkOrderById, updateWorkOrder } from '@/services/workOrder';
-import { getAllCustomers } from '@/services/customer';
-import { getProfiles } from '@/services/profiles';
-import { WorkOrderFormSchemaValues, workOrderFormSchema } from '@/schemas/workOrderSchema';
-import { WorkOrder, WorkOrderInventoryItem } from '@/types/workOrder';
-import { Customer } from '@/types/customer';
-import { WorkOrderStatus } from '@/utils/workOrders/constants';
-
-interface Technician {
-  id: string;
-  name: string;
-  jobTitle?: string;
+interface UseWorkOrderEditFormProps {
+  workOrder: WorkOrder;
+  onSuccess?: () => void;
 }
 
-export interface UseWorkOrderEditFormReturn {
-  form: ReturnType<typeof useForm<WorkOrderFormSchemaValues>>;
-  workOrder: WorkOrder | null;
-  customers: Customer[];
-  technicians: Technician[];
-  isLoading: boolean;
-  isSubmitting: boolean;
-  error: string | null;
-  onSubmit: (data: WorkOrderFormSchemaValues) => Promise<void>;
-}
-
-export function useWorkOrderEditForm(workOrderId: string): UseWorkOrderEditFormReturn {
-  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function useWorkOrderEditForm({ workOrder, onSuccess }: UseWorkOrderEditFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [technicians, setTechnicians] = useState<Array<{ id: string; name: string; jobTitle?: string }>>([]);
+  const [isLoadingTechnicians, setIsLoadingTechnicians] = useState(true);
+  const [technicianError, setTechnicianError] = useState<string | null>(null);
 
+  // Form setup with validation
   const form = useForm<WorkOrderFormSchemaValues>({
     resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
-      customer: '',
-      description: '',
-      status: 'pending',
+      customerId: workOrder.customer_id || '',
+      customer: workOrder.customer_name || workOrder.customer || '',
+      customerEmail: workOrder.customer_email || '',
+      customerPhone: workOrder.customer_phone || '',
+      customerAddress: workOrder.customer_address || '',
+      vehicleId: workOrder.vehicle_id || '',
+      vehicleMake: workOrder.vehicle_make || '',
+      vehicleModel: workOrder.vehicle_model || '',
+      vehicleYear: workOrder.vehicle_year || '',
+      licensePlate: workOrder.vehicle_license_plate || '',
+      vin: workOrder.vehicle_vin || '',
+      odometer: workOrder.vehicle_odometer || '',
+      description: workOrder.description || '',
+      status: workOrder.status,
       priority: 'medium',
-      technician: '',
-      location: '',
-      dueDate: '',
-      notes: '',
-      vehicleMake: '',
-      vehicleModel: '',
-      vehicleYear: '',
-      licensePlate: '',
-      vin: '',
-      odometer: '',
-      inventoryItems: []
+      technicianId: workOrder.technician_id || '',
+      location: workOrder.location || '',
+      dueDate: workOrder.due_date || workOrder.dueDate || '',
+      notes: workOrder.notes || '',
+      inventoryItems: (workOrder.inventoryItems || workOrder.inventory_items || []).map(item => ({
+        id: item.id || uuidv4(),
+        name: item.name || '',
+        sku: item.sku || '',
+        category: item.category || '',
+        quantity: item.quantity || 0,
+        unit_price: item.unit_price || 0,
+        total: item.total || 0,
+        notes: item.notes,
+        itemStatus: item.itemStatus,
+        estimatedArrivalDate: item.estimatedArrivalDate,
+        supplierName: item.supplierName,
+        supplierOrderRef: item.supplierOrderRef
+      }))
     }
   });
 
-  // Load initial data
+  // Load technicians
   useEffect(() => {
-    const loadData = async () => {
+    const loadTechnicians = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-
-        // Load work order data
-        const workOrderData = await getWorkOrderById(workOrderId);
-        if (!workOrderData) {
-          throw new Error('Work order not found');
-        }
-        setWorkOrder(workOrderData);
-
-        // Load customers
-        const customersData = await getAllCustomers();
-        setCustomers(customersData || []);
-
-        // Load technicians from profiles
-        const profilesData = await getProfiles();
-        const techniciansList = profilesData?.map(profile => ({
-          id: profile.id,
-          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
-          jobTitle: profile.job_title || undefined
-        })) || [];
-        setTechnicians(techniciansList);
-
-        // Populate form with work order data
-        const formData: WorkOrderFormSchemaValues = {
-          customer: workOrderData.customer_name || workOrderData.customer || '',
-          description: workOrderData.description || '',
-          status: (workOrderData.status as WorkOrderStatus) || 'pending',
-          priority: (workOrderData.priority as 'low' | 'medium' | 'high' | 'urgent') || 'medium',
-          technician: workOrderData.technician_id || workOrderData.technician || '',
-          location: workOrderData.location || '',
-          dueDate: workOrderData.due_date || workOrderData.dueDate || '',
-          notes: workOrderData.notes || '',
-          vehicleMake: workOrderData.vehicle_make || '',
-          vehicleModel: workOrderData.vehicle_model || '',
-          vehicleYear: workOrderData.vehicle_year || '',
-          licensePlate: workOrderData.vehicle_license_plate || '',
-          vin: workOrderData.vehicle_vin || '',
-          odometer: workOrderData.vehicle_odometer || '',
-          inventoryItems: (workOrderData.inventoryItems || workOrderData.inventory_items || []).map((item: any): WorkOrderInventoryItem => ({
-            id: item.id || uuidv4(),
-            name: item.name || '',
-            sku: item.sku || '',
-            category: item.category || '',
-            quantity: item.quantity || 0,
-            unit_price: item.unit_price || item.customerPrice || 0,
-            total: item.total || (item.quantity || 0) * (item.unit_price || item.customerPrice || 0),
-            notes: item.notes || '',
-            itemStatus: item.itemStatus || item.status,
-            estimatedArrivalDate: item.estimatedArrivalDate,
-            supplierName: item.supplierName,
-            supplierCost: item.supplierCost,
-            customerPrice: item.customerPrice || item.unit_price,
-            retailPrice: item.retailPrice,
-            partType: item.partType,
-            markupPercentage: item.markupPercentage,
-            isTaxable: item.isTaxable,
-            coreChargeAmount: item.coreChargeAmount,
-            coreChargeApplied: item.coreChargeApplied,
-            warrantyDuration: item.warrantyDuration,
-            invoiceNumber: item.invoiceNumber,
-            poLine: item.poLine,
-            isStockItem: item.isStockItem,
-            notesInternal: item.notesInternal,
-            inventoryItemId: item.inventoryItemId,
-            supplierOrderRef: item.supplierOrderRef
-          }))
-        };
-
-        form.reset(formData);
-      } catch (err) {
-        console.error('Error loading work order data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load work order data');
+        setIsLoadingTechnicians(true);
+        setTechnicianError(null);
+        const techData = await getUniqueTechnicians();
+        setTechnicians(techData || []);
+      } catch (error) {
+        console.error('Error loading technicians:', error);
+        setTechnicianError('Failed to load technicians');
+        setTechnicians([]);
       } finally {
-        setIsLoading(false);
+        setIsLoadingTechnicians(false);
       }
     };
 
-    if (workOrderId && workOrderId !== 'new') {
-      loadData();
-    } else {
-      setIsLoading(false);
-    }
-  }, [workOrderId, form]);
+    loadTechnicians();
+  }, []);
 
-  const onSubmit = async (data: WorkOrderFormSchemaValues) => {
+  // Submit handler
+  const handleSubmit = async (data: WorkOrderFormSchemaValues) => {
+    setIsSubmitting(true);
+    
     try {
-      setIsSubmitting(true);
-      setError(null);
-
-      if (!workOrder) {
-        throw new Error('No work order data available');
-      }
-
-      // Prepare update data
-      const updateData: Partial<WorkOrder> = {
-        ...workOrder,
+      // Transform form data to work order format
+      const updatedWorkOrder: Partial<WorkOrder> = {
+        id: workOrder.id,
+        customer_id: data.customerId,
         customer_name: data.customer,
-        description: data.description,
-        status: data.status as WorkOrderStatus,
-        priority: data.priority,
-        technician_id: data.technician,
-        location: data.location,
-        due_date: data.dueDate,
-        notes: data.notes,
+        customer_email: data.customerEmail,
+        customer_phone: data.customerPhone,
+        customer_address: data.customerAddress,
+        vehicle_id: data.vehicleId,
         vehicle_make: data.vehicleMake,
         vehicle_model: data.vehicleModel,
         vehicle_year: data.vehicleYear,
         vehicle_license_plate: data.licensePlate,
         vehicle_vin: data.vin,
         vehicle_odometer: data.odometer,
-        inventoryItems: data.inventoryItems,
-        updated_at: new Date().toISOString()
+        description: data.description,
+        status: data.status as WorkOrder['status'],
+        priority: data.priority as 'low' | 'medium' | 'high' | 'urgent',
+        technician_id: data.technicianId,
+        location: data.location,
+        due_date: data.dueDate,
+        notes: data.notes,
+        // Map inventory items with all required fields
+        inventoryItems: data.inventoryItems?.map(item => ({
+          id: item.id || uuidv4(), // Ensure id is always present
+          name: item.name || '',
+          sku: item.sku || '',
+          category: item.category || '',
+          quantity: item.quantity || 0,
+          unit_price: item.unit_price || 0,
+          total: item.total || (item.quantity || 0) * (item.unit_price || 0),
+          notes: item.notes,
+          itemStatus: item.itemStatus,
+          estimatedArrivalDate: item.estimatedArrivalDate,
+          supplierName: item.supplierName,
+          supplierCost: 0,
+          customerPrice: item.unit_price || 0,
+          retailPrice: item.unit_price || 0,
+          partType: 'part',
+          markupPercentage: 0,
+          isTaxable: false,
+          coreChargeAmount: 0,
+          coreChargeApplied: false,
+          warrantyDuration: '',
+          invoiceNumber: '',
+          poLine: '',
+          isStockItem: false,
+          notesInternal: '',
+          inventoryItemId: '',
+          supplierOrderRef: item.supplierOrderRef
+        } as WorkOrderInventoryItem)) || []
       };
 
-      await updateWorkOrder(workOrderId, updateData);
-      
-      toast.success('Work order updated successfully');
-    } catch (err) {
-      console.error('Error updating work order:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update work order';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      await updateWorkOrder(workOrder.id, updatedWorkOrder);
+
+      toast({
+        title: "Success",
+        description: "Work order updated successfully",
+      });
+
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Error updating work order:', error);
+      handleApiError(error, 'Failed to update work order');
     } finally {
       setIsSubmitting(false);
     }
@@ -193,12 +159,10 @@ export function useWorkOrderEditForm(workOrderId: string): UseWorkOrderEditFormR
 
   return {
     form,
-    workOrder,
-    customers,
-    technicians,
-    isLoading,
     isSubmitting,
-    error,
-    onSubmit: form.handleSubmit(onSubmit)
+    technicians,
+    isLoadingTechnicians,
+    technicianError,
+    onSubmit: handleSubmit
   };
 }
