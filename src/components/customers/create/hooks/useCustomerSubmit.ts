@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { CustomerFormValues } from '@/components/customers/form/CustomerFormSchema';
+import { CustomerFormValues } from '@/components/customers/form/schemas/customerSchema';
 import { createCustomer } from '@/services/customer/customerCreateService';
 import { convertFormVehicleToCustomerVehicle } from '@/types/customer/vehicle';
 import { Customer } from '@/types/customer';

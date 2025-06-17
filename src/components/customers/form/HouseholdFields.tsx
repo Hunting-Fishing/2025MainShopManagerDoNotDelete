@@ -1,15 +1,23 @@
-
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CustomerFormValues, relationshipTypes } from './CustomerFormSchema';
+import { CustomerFormValues } from './schemas/customerSchema';
 
 interface HouseholdFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
 }
+
+const relationshipTypes = [
+  { id: "primary", label: "Primary" },
+  { id: "spouse", label: "Spouse" },
+  { id: "child", label: "Child" },
+  { id: "parent", label: "Parent" },
+  { id: "sibling", label: "Sibling" },
+  { id: "other", label: "Other" }
+];
 
 export const HouseholdFields: React.FC<HouseholdFieldsProps> = ({ form }) => {
   const createNewHousehold = form.watch("create_new_household");

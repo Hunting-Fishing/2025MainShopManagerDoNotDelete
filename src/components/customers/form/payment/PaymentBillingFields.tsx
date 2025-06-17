@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -7,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreditCard } from "lucide-react";
-import { CustomerFormValues } from "../CustomerFormSchema";
+import { CustomerFormValues } from "../schemas/customerSchema";
 
 interface PaymentBillingFieldsProps {
   form: UseFormReturn<CustomerFormValues>;

@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { User, Building2, Phone, Mail, MapPin, Tag, Car } from "lucide-react";
-import { CustomerFormValues } from "../CustomerFormSchema";
+import { CustomerFormValues } from "../schemas/customerSchema";
 import { formatPhoneNumber } from "@/utils/formatters";
 
 interface CustomerPreviewProps {

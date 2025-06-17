@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { CustomerFormValues } from "./CustomerFormSchema";
+import { CustomerFormValues } from "./schemas/customerSchema";
 import { checkDuplicateCustomers } from "@/services/customers";
 import { CustomerCreate } from "@/types/customer";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";

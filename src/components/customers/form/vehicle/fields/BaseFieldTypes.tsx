@@ -1,6 +1,6 @@
 
 import { UseFormReturn } from "react-hook-form";
-import { CustomerFormValues } from "../../CustomerFormSchema";
+import { CustomerFormValues } from "../../schemas/customerSchema";
 
 export interface BaseFieldProps {
   form: UseFormReturn<CustomerFormValues>;

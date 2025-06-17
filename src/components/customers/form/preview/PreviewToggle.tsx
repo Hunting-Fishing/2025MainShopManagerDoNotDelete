@@ -1,6 +1,5 @@
-
 import React from "react";
-import { CustomerFormValues } from "../CustomerFormSchema";
+import { CustomerFormValues } from "../schemas/customerSchema";
 import { CustomerPreview } from "./CustomerPreview";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";

@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { CustomerForm } from '@/components/customers/form/CustomerForm';
 import { useCustomerEdit } from '@/hooks/useCustomerEdit';
-import { CustomerFormValues } from '@/components/customers/form/CustomerFormSchema';
+import { CustomerFormValues } from '@/components/customers/form/schemas/customerSchema';
 import { Customer } from '@/types/customer';
 
 // Transform Customer data to CustomerFormValues format
