@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
+import { updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { toast } from '@/hooks/use-toast';
 
 interface WorkOrderPartsSectionProps {
   workOrderId: string;
@@ -24,6 +26,54 @@ export function WorkOrderPartsSection({
   isEditMode,
   showType
 }: WorkOrderPartsSectionProps) {
+  const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
+    try {
+      console.log('Updating part:', updatedPart);
+      
+      // Update in database
+      await updateWorkOrderPart(updatedPart.id, updatedPart);
+      
+      // Trigger refresh
+      onPartsChange();
+      
+      toast({
+        title: "Success",
+        description: "Part updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update part",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handlePartDelete = async (partId: string) => {
+    try {
+      console.log('Deleting part:', partId);
+      
+      // Delete from database
+      await deleteWorkOrderPart(partId);
+      
+      // Trigger refresh
+      onPartsChange();
+      
+      toast({
+        title: "Success",
+        description: "Part deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete part",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -41,6 +91,8 @@ export function WorkOrderPartsSection({
         <UnifiedItemsTable
           jobLines={jobLines}
           allParts={allParts}
+          onPartUpdate={isEditMode ? handlePartUpdate : undefined}
+          onPartDelete={isEditMode ? handlePartDelete : undefined}
           isEditMode={isEditMode}
           showType={showType}
         />
