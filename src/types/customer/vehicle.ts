@@ -41,12 +41,12 @@ export const getVehicleDisplayName = (vehicle: CustomerVehicle): string => {
   return `${year} ${make} ${model}${trim}`.trim();
 };
 
-// Convert form vehicle data to CustomerVehicle
+// Convert form vehicle data to CustomerVehicle with proper year conversion
 export const convertFormVehicleToCustomerVehicle = (formVehicle: any): CustomerVehicle => {
   return {
     id: formVehicle.id,
     customer_id: formVehicle.customer_id,
-    year: formVehicle.year || '', // Ensure year is always present
+    year: formVehicle.year || '', // Keep as string for form compatibility
     make: formVehicle.make || '',
     model: formVehicle.model || '',
     vin: formVehicle.vin || undefined,

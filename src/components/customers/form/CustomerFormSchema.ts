@@ -1,7 +1,7 @@
 
 import { z } from "zod";
 
-// Re-export the Customer type from the existing type definition
+// Import the Customer type from the existing type definition
 export type { Customer, CustomerCreate } from '@/types/customer';
 export type { VehicleFormData } from './schemas/vehicleSchema';
 
