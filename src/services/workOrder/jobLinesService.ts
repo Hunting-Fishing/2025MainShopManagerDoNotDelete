@@ -30,7 +30,7 @@ export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrd
       labor_rate: line.labor_rate || 0,
       labor_rate_type: (line.labor_rate_type || 'standard') as 'standard' | 'overtime' | 'premium' | 'flat_rate',
       total_amount: line.total_amount || 0,
-      status: line.status || 'pending',
+      status: (line.status || 'pending') as 'pending' | 'in-progress' | 'completed' | 'on-hold',
       display_order: line.display_order || 0,
       notes: line.notes || '',
       created_at: line.created_at,
@@ -79,7 +79,7 @@ export async function createJobLine(jobLine: Omit<WorkOrderJobLine, 'id' | 'crea
       labor_rate: data.labor_rate || 0,
       labor_rate_type: (data.labor_rate_type || 'standard') as 'standard' | 'overtime' | 'premium' | 'flat_rate',
       total_amount: data.total_amount || 0,
-      status: data.status || 'pending',
+      status: (data.status || 'pending') as 'pending' | 'in-progress' | 'completed' | 'on-hold',
       display_order: data.display_order || 0,
       notes: data.notes || '',
       created_at: data.created_at,
@@ -128,7 +128,7 @@ export async function updateJobLine(id: string, updates: Partial<WorkOrderJobLin
       labor_rate: data.labor_rate || 0,
       labor_rate_type: (data.labor_rate_type || 'standard') as 'standard' | 'overtime' | 'premium' | 'flat_rate',
       total_amount: data.total_amount || 0,
-      status: data.status || 'pending',
+      status: (data.status || 'pending') as 'pending' | 'in-progress' | 'completed' | 'on-hold',
       display_order: data.display_order || 0,
       notes: data.notes || '',
       created_at: data.created_at,
@@ -154,5 +154,19 @@ export async function deleteJobLine(id: string): Promise<void> {
   } catch (error) {
     console.error('Error in deleteJobLine:', error);
     throw error;
+  }
+}
+
+// Alias exports for backward compatibility with existing imports
+export const createWorkOrderJobLine = createJobLine;
+export const updateWorkOrderJobLine = updateJobLine;
+export const deleteWorkOrderJobLine = deleteJobLine;
+
+// Additional alias for upsert functionality
+export async function upsertWorkOrderJobLine(jobLine: Partial<WorkOrderJobLine> & { work_order_id: string }): Promise<WorkOrderJobLine> {
+  if (jobLine.id) {
+    return updateJobLine(jobLine.id, jobLine);
+  } else {
+    return createJobLine(jobLine as Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>);
   }
 }

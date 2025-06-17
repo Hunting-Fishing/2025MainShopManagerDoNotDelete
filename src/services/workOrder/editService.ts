@@ -1,7 +1,7 @@
 
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { updateWorkOrderJobLine } from './jobLinesService';
+import { updateJobLine } from './jobLinesService';
 import { updateWorkOrderPart } from './workOrderPartsService';
 
 export class EditService {
@@ -17,7 +17,7 @@ export class EditService {
         updates.total_amount = estimatedHours * laborRate;
       }
 
-      return await updateWorkOrderJobLine(jobLineId, updates);
+      return await updateJobLine(jobLineId, updates);
     } catch (error) {
       console.error('Error updating job line:', error);
       throw new Error('Failed to update job line');
