@@ -2,14 +2,16 @@
 import React, { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { WorkOrderPart } from '@/types/workOrderPart';
+import { WorkOrderJobLine } from '@/types/jobLine';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, GripVertical } from 'lucide-react';
-import { EditPartDialog } from './EditPartDialog';
+import { UnifiedPartEditDialog } from './UnifiedPartEditDialog';
 
 interface DraggablePartCardProps {
   part: WorkOrderPart;
+  jobLines?: WorkOrderJobLine[];
   onRemovePart?: (partId: string) => void;
   onEditPart?: (part: WorkOrderPart) => void;
   isEditMode?: boolean;
@@ -17,6 +19,7 @@ interface DraggablePartCardProps {
 
 export function DraggablePartCard({
   part,
+  jobLines = [],
   onRemovePart,
   onEditPart,
   isEditMode = false
@@ -44,14 +47,10 @@ export function DraggablePartCard({
     zIndex: isDragging ? 1000 : 'auto',
   } : undefined;
 
-  const handleEditPart = (updatedPart: WorkOrderPart) => {
+  const handleEditPart = async (updatedPart: WorkOrderPart) => {
     if (onEditPart) {
       onEditPart(updatedPart);
     }
-    setIsEditDialogOpen(false);
-  };
-
-  const handleCloseDialog = () => {
     setIsEditDialogOpen(false);
   };
 
@@ -122,12 +121,12 @@ export function DraggablePartCard({
         </CardContent>
       </Card>
 
-      <EditPartDialog
+      <UnifiedPartEditDialog
         part={part}
+        jobLines={jobLines}
         open={isEditDialogOpen}
-        onClose={handleCloseDialog}
         onOpenChange={setIsEditDialogOpen}
-        onUpdate={handleEditPart}
+        onSave={handleEditPart}
       />
     </>
   );

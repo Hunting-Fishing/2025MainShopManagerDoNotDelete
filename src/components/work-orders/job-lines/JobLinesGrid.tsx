@@ -61,6 +61,11 @@ export function JobLinesGrid({
     handleDragEnd(event);
   };
 
+  const handlePartEdit = (updatedPart: WorkOrderPart) => {
+    const updatedParts = parts.map(p => p.id === updatedPart.id ? updatedPart : p);
+    handlePartsChange(updatedParts);
+  };
+
   return (
     <DndContext
       collisionDetection={closestCenter}
@@ -124,6 +129,8 @@ export function JobLinesGrid({
           <div className="opacity-90 rotate-3 scale-105 shadow-2xl">
             <DraggablePartCard
               part={activePart}
+              jobLines={jobLines}
+              onEditPart={handlePartEdit}
               isEditMode={false}
             />
           </div>
