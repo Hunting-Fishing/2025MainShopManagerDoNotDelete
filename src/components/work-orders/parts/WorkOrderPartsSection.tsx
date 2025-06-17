@@ -13,7 +13,7 @@ interface WorkOrderPartsSectionProps {
   jobLines: WorkOrderJobLine[];
   onPartsChange: () => void;
   isEditMode: boolean;
-  showType: "all" | "joblines" | "parts";
+  showType: "all" | "joblines" | "parts" | "overview";
 }
 
 export function WorkOrderPartsSection({

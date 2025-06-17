@@ -15,7 +15,7 @@ interface JobLinesSectionProps {
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   isEditMode: boolean;
   shopId?: string;
-  showType?: "all" | "joblines" | "parts";
+  showType?: "all" | "joblines" | "parts" | "overview";
 }
 
 export function JobLinesSection({
