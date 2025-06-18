@@ -4336,6 +4336,8 @@ export type Database = {
           notes: string | null
           payment_terms: string | null
           phone: string | null
+          region: string | null
+          type: string | null
           updated_at: string
           website: string | null
         }
@@ -4351,6 +4353,8 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          region?: string | null
+          type?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -4366,6 +4370,8 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          region?: string | null
+          type?: string | null
           updated_at?: string
           website?: string | null
         }

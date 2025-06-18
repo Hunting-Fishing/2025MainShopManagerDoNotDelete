@@ -5,13 +5,19 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface Supplier {
+  name: string;
+  type?: string;
+  region?: string;
+}
+
 interface SupplierSelectorProps {
   value?: string;
   onValueChange: (value: string) => void;
 }
 
 export function SupplierSelector({ value, onValueChange }: SupplierSelectorProps) {
-  const [suppliers, setSuppliers] = useState<string[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +30,7 @@ export function SupplierSelector({ value, onValueChange }: SupplierSelectorProps
 
         const { data, error } = await supabase
           .from('inventory_suppliers')
-          .select('name')
+          .select('name, type, region')
           .eq('is_active', true)
           .order('name');
 
@@ -33,27 +39,31 @@ export function SupplierSelector({ value, onValueChange }: SupplierSelectorProps
           setError('Failed to load suppliers');
           // Fallback to basic suppliers
           setSuppliers([
-            'NAPA Auto Parts',
-            'AutoZone',
-            'Advance Auto Parts',
-            'O\'Reilly Auto Parts',
-            'Parts Plus'
+            { name: 'NAPA Auto Parts', type: 'Retail & Wholesale', region: 'North America' },
+            { name: 'AutoZone', type: 'Retail', region: 'North America' },
+            { name: 'Advance Auto Parts', type: 'Retail & Wholesale', region: 'North America' },
+            { name: "O'Reilly Auto Parts", type: 'Retail & Wholesale', region: 'North America' },
+            { name: 'Parts Plus', type: 'Wholesale', region: 'North America' }
           ]);
         } else {
-          const supplierNames = data?.map(supplier => supplier.name) || [];
-          console.log('Suppliers loaded:', supplierNames.length, 'suppliers');
-          setSuppliers(supplierNames);
+          const supplierData = data?.map(supplier => ({
+            name: supplier.name,
+            type: supplier.type || undefined,
+            region: supplier.region || undefined
+          })) || [];
+          console.log('Suppliers loaded:', supplierData.length, 'suppliers');
+          setSuppliers(supplierData);
         }
       } catch (err) {
         console.error('Error setting up suppliers:', err);
         setError('Failed to load suppliers');
         // Fallback suppliers
         setSuppliers([
-          'NAPA Auto Parts',
-          'AutoZone',
-          'Advance Auto Parts',
-          'O\'Reilly Auto Parts',
-          'Parts Plus'
+          { name: 'NAPA Auto Parts', type: 'Retail & Wholesale', region: 'North America' },
+          { name: 'AutoZone', type: 'Retail', region: 'North America' },
+          { name: 'Advance Auto Parts', type: 'Retail & Wholesale', region: 'North America' },
+          { name: "O'Reilly Auto Parts", type: 'Retail & Wholesale', region: 'North America' },
+          { name: 'Parts Plus', type: 'Wholesale', region: 'North America' }
         ]);
       } finally {
         setIsLoading(false);
@@ -100,8 +110,24 @@ export function SupplierSelector({ value, onValueChange }: SupplierSelectorProps
             </SelectItem>
           ) : (
             suppliers.map((supplier) => (
-              <SelectItem key={supplier} value={supplier} className="hover:bg-slate-50 focus:bg-slate-100">
-                {supplier}
+              <SelectItem key={supplier.name} value={supplier.name} className="hover:bg-slate-50 focus:bg-slate-100">
+                <div className="flex flex-col items-start w-full">
+                  <span className="font-medium text-slate-900">{supplier.name}</span>
+                  {(supplier.type || supplier.region) && (
+                    <div className="flex gap-2 text-xs text-slate-600 mt-0.5">
+                      {supplier.type && (
+                        <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                          {supplier.type}
+                        </span>
+                      )}
+                      {supplier.region && (
+                        <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
+                          {supplier.region}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </SelectItem>
             ))
           )}
