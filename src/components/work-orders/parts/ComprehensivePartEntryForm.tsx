@@ -1,28 +1,53 @@
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, Package, Calculator, Truck, FileText, Shield } from 'lucide-react';
-import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { WorkOrderPartFormValues, WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
 import { CategorySelector } from './CategorySelector';
 import { SupplierSelector } from './SupplierSelector';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  Package, 
+  Calculator, 
+  Truck, 
+  Shield, 
+  FileText, 
+  Search,
+  Star,
+  DollarSign,
+  Calendar,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
 
 interface ComprehensivePartEntryFormProps {
-  onPartAdd: (partData: WorkOrderPartFormValues) => void;
+  onPartAdd: (part: WorkOrderPartFormValues) => void;
   onCancel: () => void;
   isLoading?: boolean;
   workOrderId?: string;
   jobLineId?: string;
+}
+
+interface InventoryItem {
+  id: string;
+  name: string;
+  part_number: string;
+  description?: string;
+  category?: string;
+  unit_price: number;
+  supplier_name?: string;
+  quantity_on_hand: number;
+  retail_price?: number;
+  wholesale_price?: number;
 }
 
 export function ComprehensivePartEntryForm({
@@ -33,674 +58,594 @@ export function ComprehensivePartEntryForm({
   jobLineId
 }: ComprehensivePartEntryFormProps) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('inventory');
-  const [selectedInventoryItems, setSelectedInventoryItems] = useState<any[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    reset,
-    formState: { errors }
-  } = useForm<WorkOrderPartFormValues>({
-    defaultValues: {
-      name: '',
-      part_number: '',
-      description: '',
-      quantity: 1,
-      unit_price: 0,
-      status: 'pending',
-      notes: '',
-      category: '',
-      supplierName: '',
-      supplierCost: 0,
-      customerPrice: 0,
-      retailPrice: 0,
-      markupPercentage: 0,
-      isTaxable: true,
-      coreChargeAmount: 0,
-      coreChargeApplied: false,
-      warrantyDuration: '',
-      invoiceNumber: '',
-      poLine: '',
-      isStockItem: false,
-      notesInternal: '',
-      partType: 'part'
-    }
+  const [activeTab, setActiveTab] = useState<'inventory' | 'manual'>('inventory');
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null);
+  const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+
+  // Form state
+  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
+    name: '',
+    part_number: '',
+    description: '',
+    quantity: 1,
+    unit_price: 0,
+    status: 'pending',
+    notes: '',
+    category: '',
+    customerPrice: 0,
+    supplierCost: 0,
+    retailPrice: 0,
+    markupPercentage: 0,
+    isTaxable: true,
+    coreChargeAmount: 0,
+    coreChargeApplied: false,
+    warrantyDuration: '',
+    supplierName: '',
+    isStockItem: false,
+    notesInternal: '',
+    partType: 'parts'
   });
 
-  // Watch fields for auto-calculations
-  const supplierCost = watch('supplierCost') || 0;
-  const markupPercentage = watch('markupPercentage') || 0;
-  const quantity = watch('quantity') || 1;
-  const unitPrice = watch('unit_price') || 0;
+  // Load inventory items
+  useEffect(() => {
+    loadInventoryItems();
+  }, []);
 
-  // Auto-calculate retail price based on supplier cost and markup
-  React.useEffect(() => {
-    if (supplierCost > 0 && markupPercentage > 0) {
-      const retailPrice = supplierCost * (1 + markupPercentage / 100);
-      setValue('retailPrice', Number(retailPrice.toFixed(2)));
-      setValue('customerPrice', Number(retailPrice.toFixed(2)));
-      setValue('unit_price', Number(retailPrice.toFixed(2)));
+  // Filter inventory items based on search
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = inventoryItems.filter(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.part_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.category?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredItems(filtered);
+    } else {
+      setFilteredItems(inventoryItems);
     }
-  }, [supplierCost, markupPercentage, setValue]);
+  }, [searchTerm, inventoryItems]);
 
-  const handleInventoryItemAdd = (item: any) => {
-    setSelectedInventoryItems(prev => [...prev, { ...item, quantity: 1 }]);
-  };
+  // Calculate prices when values change
+  useEffect(() => {
+    calculatePrices();
+  }, [formData.supplierCost, formData.markupPercentage, formData.quantity]);
 
-  const handleInventoryItemRemove = (itemId: string) => {
-    setSelectedInventoryItems(prev => prev.filter(item => item.id !== itemId));
-  };
-
-  const handleInventoryItemQuantityChange = (itemId: string, quantity: number) => {
-    setSelectedInventoryItems(prev =>
-      prev.map(item =>
-        item.id === itemId ? { ...item, quantity: Math.max(1, quantity) } : item
-      )
-    );
-  };
-
-  const addInventoryItemsAsWorkOrderParts = async () => {
-    if (selectedInventoryItems.length === 0) {
+  const loadInventoryItems = async () => {
+    setIsLoadingInventory(true);
+    try {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      setInventoryItems(data || []);
+    } catch (error) {
+      console.error('Error loading inventory:', error);
       toast({
-        title: "No items selected",
-        description: "Please select at least one inventory item to add.",
+        title: "Warning",
+        description: "Could not load inventory items",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingInventory(false);
+    }
+  };
+
+  const calculatePrices = () => {
+    const supplierCost = formData.supplierCost || 0;
+    const markupPercent = formData.markupPercentage || 0;
+    
+    if (supplierCost > 0 && markupPercent > 0) {
+      const retailPrice = supplierCost * (1 + markupPercent / 100);
+      const totalPrice = retailPrice * formData.quantity;
+      
+      setFormData(prev => ({
+        ...prev,
+        retailPrice: Number(retailPrice.toFixed(2)),
+        unit_price: Number(retailPrice.toFixed(2)),
+        customerPrice: Number(totalPrice.toFixed(2))
+      }));
+    }
+  };
+
+  const handleInventoryItemSelect = (item: InventoryItem) => {
+    setSelectedInventoryItem(item);
+    setFormData(prev => ({
+      ...prev,
+      name: item.name,
+      part_number: item.part_number,
+      description: item.description || '',
+      unit_price: item.unit_price || item.retail_price || 0,
+      category: item.category || '',
+      supplierName: item.supplier_name || '',
+      retailPrice: item.retail_price || 0,
+      supplierCost: item.wholesale_price || 0,
+      isStockItem: true,
+      inventoryItemId: item.id
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.part_number || formData.quantity <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
         variant: "destructive"
       });
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      // Add each selected inventory item as a work order part
-      for (const item of selectedInventoryItems) {
-        const partData: WorkOrderPartFormValues = {
-          name: item.name,
-          part_number: item.sku || item.part_number || '',
-          description: item.description || '',
-          quantity: item.quantity,
-          unit_price: item.unit_price || item.cost_price || 0,
-          status: 'pending',
-          category: item.category || '',
-          supplierName: item.supplier || '',
-          supplierCost: item.cost_price || 0,
-          customerPrice: item.unit_price || item.cost_price || 0,
-          retailPrice: item.unit_price || item.cost_price || 0,
-          markupPercentage: 0,
-          isTaxable: true,
-          coreChargeAmount: 0,
-          coreChargeApplied: false,
-          isStockItem: true,
-          partType: 'part',
-          inventoryItemId: item.id
-        };
+      // Add to database
+      const { error } = await supabase
+        .from('work_order_parts')
+        .insert({
+          work_order_id: workOrderId,
+          job_line_id: jobLineId,
+          name: formData.name,
+          part_number: formData.part_number,
+          description: formData.description,
+          quantity: formData.quantity,
+          unit_price: formData.unit_price,
+          total_price: formData.unit_price * formData.quantity,
+          status: formData.status,
+          notes: formData.notes,
+          category: formData.category,
+          supplier_name: formData.supplierName,
+          supplier_cost: formData.supplierCost,
+          customer_price: formData.customerPrice,
+          retail_price: formData.retailPrice,
+          markup_percentage: formData.markupPercentage,
+          is_taxable: formData.isTaxable,
+          core_charge_amount: formData.coreChargeAmount,
+          core_charge_applied: formData.coreChargeApplied,
+          warranty_duration: formData.warrantyDuration,
+          is_stock_item: formData.isStockItem,
+          notes_internal: formData.notesInternal,
+          inventory_item_id: formData.inventoryItemId,
+          part_type: formData.partType
+        });
 
-        // Insert into work_order_parts table
-        if (workOrderId) {
-          const { error } = await supabase
-            .from('work_order_parts')
-            .insert({
-              work_order_id: workOrderId,
-              job_line_id: jobLineId || null,
-              inventory_item_id: item.id,
-              part_name: partData.name,
-              part_number: partData.part_number,
-              description: partData.description,
-              quantity: partData.quantity,
-              unit_price: partData.unit_price,
-              customer_price: partData.customerPrice,
-              supplier_name: partData.supplierName,
-              supplier_cost: partData.supplierCost,
-              retail_price: partData.retailPrice,
-              markup_percentage: partData.markupPercentage,
-              category: partData.category,
-              is_taxable: partData.isTaxable,
-              core_charge_amount: partData.coreChargeAmount,
-              core_charge_applied: partData.coreChargeApplied,
-              part_type: partData.partType,
-              status: partData.status,
-              notes: partData.notes,
-              is_stock_item: partData.isStockItem
-            });
+      if (error) throw error;
 
-          if (error) {
-            console.error('Error inserting work order part:', error);
-            throw error;
-          }
-        }
-
-        // Call the callback
-        onPartAdd(partData);
-      }
-
+      onPartAdd(formData);
       toast({
-        title: "Parts added successfully",
-        description: `Added ${selectedInventoryItems.length} parts to the work order.`
+        title: "Success",
+        description: "Part added successfully"
       });
-
-      // Reset form
-      setSelectedInventoryItems([]);
-      onCancel();
-      
-    } catch (error) {
-      console.error('Error adding inventory parts:', error);
-      toast({
-        title: "Error adding parts",
-        description: "Failed to add parts to the work order. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const onSubmit = async (data: WorkOrderPartFormValues) => {
-    setIsSubmitting(true);
-    try {
-      console.log('Submitting part data:', data);
-
-      // Ensure required fields are populated
-      const partData: WorkOrderPartFormValues = {
-        ...data,
-        name: data.name || 'Unnamed Part',
-        part_number: data.part_number || '',
-        quantity: data.quantity || 1,
-        unit_price: data.unit_price || data.customerPrice || 0,
-        customerPrice: data.customerPrice || data.unit_price || 0,
-        supplierCost: data.supplierCost || 0,
-        retailPrice: data.retailPrice || data.unit_price || data.customerPrice || 0,
-        markupPercentage: data.markupPercentage || 0,
-        status: data.status || 'pending',
-        partType: data.partType || 'part'
-      };
-
-      // Insert into work_order_parts table if workOrderId is provided
-      if (workOrderId) {
-        const { data: insertedPart, error } = await supabase
-          .from('work_order_parts')
-          .insert({
-            work_order_id: workOrderId,
-            job_line_id: jobLineId || null,
-            inventory_item_id: partData.inventoryItemId || null,
-            part_name: partData.name,
-            part_number: partData.part_number,
-            description: partData.description,
-            quantity: partData.quantity,
-            unit_price: partData.unit_price,
-            customer_price: partData.customerPrice,
-            supplier_name: partData.supplierName,
-            supplier_cost: partData.supplierCost,
-            retail_price: partData.retailPrice,
-            markup_percentage: partData.markupPercentage,
-            category: partData.category,
-            is_taxable: partData.isTaxable,
-            core_charge_amount: partData.coreChargeAmount,
-            core_charge_applied: partData.coreChargeApplied,
-            warranty_duration: partData.warrantyDuration,
-            invoice_number: partData.invoiceNumber,
-            po_line: partData.poLine,
-            part_type: partData.partType,
-            status: partData.status,
-            notes: partData.notes,
-            notes_internal: partData.notesInternal,
-            is_stock_item: partData.isStockItem
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error inserting work order part:', error);
-          throw error;
-        }
-
-        console.log('Part inserted successfully:', insertedPart);
-      }
-
-      // Call the callback with the part data
-      onPartAdd(partData);
-
-      toast({
-        title: "Part added successfully",
-        description: "The part has been added to the work order."
-      });
-
-      // Reset form
-      reset();
-      onCancel();
-      
     } catch (error) {
       console.error('Error adding part:', error);
       toast({
-        title: "Error adding part",
-        description: "Failed to add the part. Please try again.",
+        title: "Error",
+        description: "Failed to add part",
         variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="inventory" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            From Inventory
-          </TabsTrigger>
-          <TabsTrigger value="manual" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Manual Entry
-          </TabsTrigger>
-        </TabsList>
+  const updateFormData = (field: keyof WorkOrderPartFormValues, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-        <TabsContent value="inventory" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Select from Inventory
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Search and select parts from your inventory to add to this work order.
-              </p>
+  return (
+    <div className="max-w-6xl mx-auto p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-xl">
+          <div className="flex items-center gap-3">
+            <Package className="h-8 w-8" />
+            <div>
+              <h2 className="text-2xl font-bold">Add Part to Work Order</h2>
+              <p className="text-blue-100 mt-1">Choose from inventory or add manually</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'inventory' | 'manual')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-gray-100 h-12">
+              <TabsTrigger 
+                value="inventory" 
+                className="flex items-center gap-2 data-[state=active]:bg-blue-500 data-[state=active]:text-white text-base font-medium"
+              >
+                <Search className="h-4 w-4" />
+                From Inventory
+              </TabsTrigger>
+              <TabsTrigger 
+                value="manual" 
+                className="flex items-center gap-2 data-[state=active]:bg-green-500 data-[state=active]:text-white text-base font-medium"
+              >
+                <FileText className="h-4 w-4" />
+                Manual Entry
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Inventory Tab */}
+            <TabsContent value="inventory" className="space-y-6 mt-6">
+              <Card className="border-blue-200 shadow-md">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+                  <CardTitle className="flex items-center gap-2 text-blue-800">
+                    <Search className="h-5 w-5" />
+                    Search Inventory
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search by name, part number, or category..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  {isLoadingInventory ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <span className="ml-2 text-gray-600">Loading inventory...</span>
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 max-h-96 overflow-y-auto">
+                      {filteredItems.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <Package className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                          <p>No inventory items found</p>
+                        </div>
+                      ) : (
+                        filteredItems.map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => handleInventoryItemSelect(item)}
+                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
+                              selectedInventoryItem?.id === item.id
+                                ? 'border-blue-500 bg-blue-50 shadow-md'
+                                : 'border-gray-200 bg-white hover:border-blue-300'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {item.part_number}
+                                  </Badge>
+                                </div>
+                                {item.description && (
+                                  <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                                )}
+                                {item.category && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {item.category}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className="flex items-center gap-1 text-green-600 font-semibold">
+                                  <DollarSign className="h-4 w-4" />
+                                  {item.unit_price || item.retail_price || 0}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Stock: {item.quantity_on_hand}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Manual Entry Tab */}
+            <TabsContent value="manual" className="mt-6">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-full">
+                  <FileText className="h-4 w-4" />
+                  <span className="font-medium">Manual Part Entry</span>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          {/* Form Section - Shows when inventory item selected or in manual mode */}
+          {(selectedInventoryItem || activeTab === 'manual') && (
+            <form onSubmit={handleSubmit} className="space-y-6 mt-8">
+              <Separator />
               
-              {selectedInventoryItems.length > 0 && (
-                <div className="space-y-4 mb-4">
-                  <h4 className="font-medium">Selected Items ({selectedInventoryItems.length})</h4>
-                  {selectedInventoryItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 border rounded">
-                      <div className="flex-1">
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">{item.sku}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
+              {/* Basic Information */}
+              <Card className="border-green-200 shadow-md">
+                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-100 border-b border-green-200">
+                  <CardTitle className="flex items-center gap-2 text-green-800">
+                    <Package className="h-5 w-5" />
+                    Basic Information
+                    <Badge variant="secondary" className="ml-auto">Required</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="flex items-center gap-1 text-gray-700 font-medium">
+                        Part Name <Star className="h-3 w-3 text-red-500" />
+                      </Label>
+                      <Input
+                        value={formData.name}
+                        onChange={(e) => updateFormData('name', e.target.value)}
+                        placeholder="Enter part name"
+                        required
+                        className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                      />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-1 text-gray-700 font-medium">
+                        Part Number <Star className="h-3 w-3 text-red-500" />
+                      </Label>
+                      <Input
+                        value={formData.part_number}
+                        onChange={(e) => updateFormData('part_number', e.target.value)}
+                        placeholder="Enter part number"
+                        required
+                        className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-gray-700 font-medium">Description</Label>
+                    <Textarea
+                      value={formData.description || ''}
+                      onChange={(e) => updateFormData('description', e.target.value)}
+                      placeholder="Part description..."
+                      className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CategorySelector
+                      value={formData.category}
+                      onValueChange={(value) => updateFormData('category', value)}
+                    />
+                    <div>
+                      <Label className="text-gray-700 font-medium">Status</Label>
+                      <Select value={formData.status} onValueChange={(value) => updateFormData('status', value)}>
+                        <SelectTrigger className="mt-1 border-gray-300 focus:border-green-500">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {WORK_ORDER_PART_STATUSES.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              <div className="flex items-center gap-2">
+                                {status === 'pending' && <AlertCircle className="h-4 w-4 text-yellow-500" />}
+                                {status === 'ordered' && <Calendar className="h-4 w-4 text-blue-500" />}
+                                {status === 'received' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                                {status === 'installed' && <CheckCircle className="h-4 w-4 text-emerald-500" />}
+                                <span className="capitalize">{status.replace('-', ' ')}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pricing Information */}
+              <Card className="border-purple-200 shadow-md">
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-violet-100 border-b border-purple-200">
+                  <CardTitle className="flex items-center gap-2 text-purple-800">
+                    <Calculator className="h-5 w-5" />
+                    Pricing & Calculations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label className="flex items-center gap-1 text-gray-700 font-medium">
+                        Quantity <Star className="h-3 w-3 text-red-500" />
+                      </Label>
+                      <Input
+                        type="number"
+                        value={formData.quantity}
+                        onChange={(e) => updateFormData('quantity', Number(e.target.value))}
+                        min="1"
+                        step="1"
+                        required
+                        className="mt-1 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-gray-700 font-medium">Supplier Cost</Label>
+                      <div className="relative mt-1">
+                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                         <Input
                           type="number"
-                          value={item.quantity}
-                          onChange={(e) => handleInventoryItemQuantityChange(item.id, parseInt(e.target.value) || 1)}
-                          className="w-20"
-                          min="1"
+                          value={formData.supplierCost || ''}
+                          onChange={(e) => updateFormData('supplierCost', Number(e.target.value))}
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="pl-10 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                         />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleInventoryItemRemove(item.id)}
-                        >
-                          Remove
-                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div>
+                      <Label className="text-gray-700 font-medium">Markup %</Label>
+                      <Input
+                        type="number"
+                        value={formData.markupPercentage || ''}
+                        onChange={(e) => updateFormData('markupPercentage', Number(e.target.value))}
+                        min="0"
+                        step="0.1"
+                        placeholder="0"
+                        className="mt-1 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      />
+                    </div>
+                  </div>
 
-              <div className="flex gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-gray-700 font-medium">Unit Price</Label>
+                      <div className="relative mt-1">
+                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                        <Input
+                          type="number"
+                          value={formData.unit_price}
+                          onChange={(e) => updateFormData('unit_price', Number(e.target.value))}
+                          min="0"
+                          step="0.01"
+                          required
+                          className="pl-10 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-gray-700 font-medium">Total Price</Label>
+                      <div className="mt-1 p-3 bg-purple-50 border border-purple-200 rounded-md">
+                        <div className="flex items-center gap-2 text-purple-700 font-semibold">
+                          <DollarSign className="h-4 w-4" />
+                          {(formData.unit_price * formData.quantity).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <Switch
+                      checked={formData.isTaxable}
+                      onCheckedChange={(checked) => updateFormData('isTaxable', checked)}
+                    />
+                    <Label className="text-gray-700 font-medium">Taxable Item</Label>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Supplier Information */}
+              <Card className="border-orange-200 shadow-md">
+                <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-100 border-b border-orange-200">
+                  <CardTitle className="flex items-center gap-2 text-orange-800">
+                    <Truck className="h-5 w-5" />
+                    Supplier Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <SupplierSelector
+                    value={formData.supplierName}
+                    onValueChange={(value) => updateFormData('supplierName', value)}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-gray-700 font-medium">Core Charge</Label>
+                      <div className="relative mt-1">
+                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                        <Input
+                          type="number"
+                          value={formData.coreChargeAmount || ''}
+                          onChange={(e) => updateFormData('coreChargeAmount', Number(e.target.value))}
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="pl-10 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <Switch
+                        checked={formData.coreChargeApplied}
+                        onCheckedChange={(checked) => updateFormData('coreChargeApplied', checked)}
+                      />
+                      <Label className="text-gray-700 font-medium">Apply Core Charge</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Warranty & Notes */}
+              <Card className="border-indigo-200 shadow-md">
+                <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-100 border-b border-indigo-200">
+                  <CardTitle className="flex items-center gap-2 text-indigo-800">
+                    <Shield className="h-5 w-5" />
+                    Warranty & Notes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <div>
+                    <Label className="text-gray-700 font-medium">Warranty Duration</Label>
+                    <Input
+                      value={formData.warrantyDuration || ''}
+                      onChange={(e) => updateFormData('warrantyDuration', e.target.value)}
+                      placeholder="e.g., 12 months, 36,000 miles"
+                      className="mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-gray-700 font-medium">Customer Notes</Label>
+                    <Textarea
+                      value={formData.notes || ''}
+                      onChange={(e) => updateFormData('notes', e.target.value)}
+                      placeholder="Notes visible to customer..."
+                      className="mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-gray-700 font-medium">Internal Notes</Label>
+                    <Textarea
+                      value={formData.notesInternal || ''}
+                      onChange={(e) => updateFormData('notesInternal', e.target.value)}
+                      placeholder="Internal notes (not visible to customer)..."
+                      className="mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      rows={3}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                 <Button
-                  onClick={addInventoryItemsAsWorkOrderParts}
-                  disabled={selectedInventoryItems.length === 0 || isSubmitting}
-                  className="flex-1"
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  className="px-6 py-2 border-gray-300 hover:bg-gray-50"
                 >
-                  {isSubmitting ? 'Adding...' : `Add ${selectedInventoryItems.length} Item(s)`}
-                </Button>
-                <Button variant="outline" onClick={onCancel}>
                   Cancel
                 </Button>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-8 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium shadow-lg"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
+                      Adding Part...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Add Part
+                    </div>
+                  )}
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="manual" className="space-y-4">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Basic Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Part Name *</Label>
-                    <Input
-                      id="name"
-                      {...register('name', { required: 'Part name is required' })}
-                      placeholder="Enter part name"
-                    />
-                    {errors.name && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.name.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="part_number">Part Number</Label>
-                    <Input
-                      id="part_number"
-                      {...register('part_number')}
-                      placeholder="Enter part number"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <CategorySelector
-                      value={watch('category')}
-                      onValueChange={(value) => setValue('category', value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="partType">Part Type</Label>
-                    <Select
-                      value={watch('partType')}
-                      onValueChange={(value) => setValue('partType', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select part type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="part">Part</SelectItem>
-                        <SelectItem value="fluid">Fluid</SelectItem>
-                        <SelectItem value="consumable">Consumable</SelectItem>
-                        <SelectItem value="core">Core</SelectItem>
-                        <SelectItem value="kit">Kit</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    {...register('description')}
-                    placeholder="Enter part description"
-                    rows={2}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quantity and Pricing */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
-                  Quantity & Pricing
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="quantity">Quantity *</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      min="1"
-                      {...register('quantity', { 
-                        required: 'Quantity is required',
-                        min: { value: 1, message: 'Quantity must be at least 1' }
-                      })}
-                    />
-                    {errors.quantity && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.quantity.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="supplierCost">Supplier Cost</Label>
-                    <Input
-                      id="supplierCost"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      {...register('supplierCost', { valueAsNumber: true })}
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="markupPercentage">Markup %</Label>
-                    <Input
-                      id="markupPercentage"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      {...register('markupPercentage', { valueAsNumber: true })}
-                      placeholder="0"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="retailPrice">Retail Price</Label>
-                    <Input
-                      id="retailPrice"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      {...register('retailPrice', { valueAsNumber: true })}
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="customerPrice">Customer Price *</Label>
-                    <Input
-                      id="customerPrice"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      {...register('customerPrice', { 
-                        required: 'Customer price is required',
-                        valueAsNumber: true 
-                      })}
-                      placeholder="0.00"
-                    />
-                    {errors.customerPrice && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.customerPrice.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="unit_price">Unit Price</Label>
-                    <Input
-                      id="unit_price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      {...register('unit_price', { valueAsNumber: true })}
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isTaxable"
-                    checked={watch('isTaxable')}
-                    onCheckedChange={(checked) => setValue('isTaxable', checked)}
-                  />
-                  <Label htmlFor="isTaxable">Taxable item</Label>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Supplier Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Truck className="h-5 w-5" />
-                  Supplier Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <SupplierSelector
-                    value={watch('supplierName')}
-                    onValueChange={(value) => setValue('supplierName', value)}
-                  />
-
-                  <div className="space-y-2">
-                    <Label htmlFor="invoiceNumber">Invoice Number</Label>
-                    <Input
-                      id="invoiceNumber"
-                      {...register('invoiceNumber')}
-                      placeholder="Enter invoice number"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="poLine">PO Line</Label>
-                    <Input
-                      id="poLine"
-                      {...register('poLine')}
-                      placeholder="Enter PO line"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Core Charges */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
-                  Core Charges
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="coreChargeApplied"
-                    checked={watch('coreChargeApplied')}
-                    onCheckedChange={(checked) => setValue('coreChargeApplied', checked)}
-                  />
-                  <Label htmlFor="coreChargeApplied">Apply core charge</Label>
-                </div>
-
-                {watch('coreChargeApplied') && (
-                  <div className="space-y-2">
-                    <Label htmlFor="coreChargeAmount">Core Charge Amount</Label>
-                    <Input
-                      id="coreChargeAmount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      {...register('coreChargeAmount', { valueAsNumber: true })}
-                      placeholder="0.00"
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Warranty Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Warranty Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="warrantyDuration">Warranty Duration</Label>
-                  <Select
-                    value={watch('warrantyDuration')}
-                    onValueChange={(value) => setValue('warrantyDuration', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select warranty duration" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30_days">30 Days</SelectItem>
-                      <SelectItem value="90_days">90 Days</SelectItem>
-                      <SelectItem value="6_months">6 Months</SelectItem>
-                      <SelectItem value="1_year">1 Year</SelectItem>
-                      <SelectItem value="2_years">2 Years</SelectItem>
-                      <SelectItem value="3_years">3 Years</SelectItem>
-                      <SelectItem value="lifetime">Lifetime</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Notes */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Notes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Customer Notes</Label>
-                  <Textarea
-                    id="notes"
-                    {...register('notes')}
-                    placeholder="Notes visible to customer"
-                    rows={2}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notesInternal">Internal Notes</Label>
-                  <Textarea
-                    id="notesInternal"
-                    {...register('notesInternal')}
-                    placeholder="Internal notes (not visible to customer)"
-                    rows={2}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isStockItem"
-                    checked={watch('isStockItem')}
-                    onCheckedChange={(checked) => setValue('isStockItem', checked)}
-                  />
-                  <Label htmlFor="isStockItem">Stock item</Label>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Separator />
-
-            {/* Form Actions */}
-            <div className="flex gap-2">
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || isLoading}
-                className="flex-1"
-              >
-                {isSubmitting ? 'Adding Part...' : 'Add Part'}
-              </Button>
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </TabsContent>
-      </Tabs>
+            </form>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
