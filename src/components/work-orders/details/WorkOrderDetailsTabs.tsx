@@ -2,7 +2,6 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkOrderOverviewTab } from './WorkOrderOverviewTab';
-import { WorkOrderJobLinesTab } from './WorkOrderJobLinesTab';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { WorkOrderTimeTrackingSection } from '../time-tracking/WorkOrderTimeTrackingSection';
 import { WorkOrderDocuments } from './WorkOrderDocuments';
@@ -106,27 +105,48 @@ export function WorkOrderDetailsTabs({
               onWorkOrderUpdate={onWorkOrderUpdate}
               onPartsChange={onRefreshData}
               isEditMode={isEditMode}
-              onStartEdit={onStartEdit}
-              onCancelEdit={onCancelEdit}
-              onSaveEdit={onSaveEdit}
             />
           </TabsContent>
           
           <TabsContent value="joblines" className="mt-0">
-            <WorkOrderJobLinesTab
-              workOrder={workOrder}
-              jobLines={jobLines}
-              onJobLinesChange={onJobLinesChange}
-              isEditMode={isEditMode}
-            />
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Job Lines</h3>
+              {jobLines.length > 0 ? (
+                <div className="space-y-3">
+                  {jobLines.map((jobLine) => (
+                    <div key={jobLine.id} className="border rounded-lg p-4">
+                      <h4 className="font-medium">{jobLine.name}</h4>
+                      {jobLine.description && (
+                        <p className="text-sm text-muted-foreground mt-1">{jobLine.description}</p>
+                      )}
+                      <div className="flex gap-4 mt-2 text-sm">
+                        {jobLine.estimated_hours && (
+                          <span>Hours: {jobLine.estimated_hours}</span>
+                        )}
+                        {jobLine.labor_rate && (
+                          <span>Rate: ${jobLine.labor_rate}</span>
+                        )}
+                        {jobLine.total_amount && (
+                          <span>Total: ${jobLine.total_amount}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No job lines added yet.</p>
+              )}
+            </div>
           </TabsContent>
           
           <TabsContent value="parts" className="mt-0">
             <WorkOrderPartsSection
               workOrderId={workOrder.id}
               allParts={allParts}
-              viewMode="overview"
-              onRefresh={onRefreshData}
+              jobLines={jobLines}
+              onPartsChange={onRefreshData}
+              isEditMode={isEditMode}
+              showType="overview"
             />
           </TabsContent>
           
