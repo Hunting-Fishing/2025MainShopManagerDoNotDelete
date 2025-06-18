@@ -4,9 +4,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { ComprehensivePartEntryForm } from './ComprehensivePartEntryForm';
 import { useParams } from 'react-router-dom';
+import { WorkOrderJobLine } from '@/types/jobLine';
 
 interface AddPartDialogProps {
   workOrderId: string;
+  jobLines?: WorkOrderJobLine[];
   jobLineId?: string;
   onPartAdd?: (part: any) => void;
   isOpen?: boolean;
@@ -16,6 +18,7 @@ interface AddPartDialogProps {
 
 export function AddPartDialog({
   workOrderId,
+  jobLines,
   jobLineId,
   onPartAdd,
   isOpen: externalIsOpen,
@@ -68,6 +71,7 @@ export function AddPartDialog({
         <ComprehensivePartEntryForm 
           workOrderId={currentWorkOrderId}
           jobLineId={jobLineId}
+          jobLines={jobLines}
           onPartAdd={handlePartAdd} 
           onCancel={handleCancel}
         />
