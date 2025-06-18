@@ -8,10 +8,16 @@ interface UnifiedItemsTableProps {
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
   workOrderId: string;
-  onPartUpdate: (updatedPart: WorkOrderPart) => Promise<void>;
-  onPartDelete: (partId: string) => Promise<void>;
+  onPartUpdate?: (updatedPart: WorkOrderPart) => Promise<void>;
+  onPartDelete?: (partId: string) => Promise<void>;
   onPartsChange: () => void;
   isEditMode?: boolean;
+  // Additional props that other components are passing
+  onJobLineUpdate?: (updatedJobLine: WorkOrderJobLine) => Promise<void>;
+  onJobLineDelete?: (jobLineId: string) => Promise<void>;
+  onReorderJobLines?: (reorderedJobLines: WorkOrderJobLine[]) => Promise<void>;
+  showType?: "all" | "joblines" | "parts" | "overview";
+  partsFilter?: "all" | "unassigned";
 }
 
 export function UnifiedItemsTable({
@@ -21,7 +27,12 @@ export function UnifiedItemsTable({
   onPartUpdate,
   onPartDelete,
   onPartsChange,
-  isEditMode = false
+  isEditMode = false,
+  onJobLineUpdate,
+  onJobLineDelete,
+  onReorderJobLines,
+  showType = "all",
+  partsFilter = "all"
 }: UnifiedItemsTableProps) {
   // Group parts by job line ID
   const getJobLineParts = (jobLineId: string) => {
