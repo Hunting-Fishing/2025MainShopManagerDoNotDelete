@@ -7,16 +7,16 @@ import { JobLineWithParts } from './JobLineWithParts';
 interface UnifiedItemsTableProps {
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
-  workOrderId: string;
+  workOrderId?: string;
   onPartUpdate?: (updatedPart: WorkOrderPart) => Promise<void>;
   onPartDelete?: (partId: string) => Promise<void>;
-  onPartsChange: () => void;
+  onPartsChange?: () => void;
   isEditMode?: boolean;
   // Additional props that other components are passing
   onJobLineUpdate?: (updatedJobLine: WorkOrderJobLine) => Promise<void>;
   onJobLineDelete?: (jobLineId: string) => Promise<void>;
   onReorderJobLines?: (reorderedJobLines: WorkOrderJobLine[]) => Promise<void>;
-  showType?: "all" | "joblines" | "parts" | "overview";
+  showType?: "all" | "joblines" | "parts" | "overview" | "unassigned";
   partsFilter?: "all" | "unassigned";
 }
 
@@ -41,7 +41,9 @@ export function UnifiedItemsTable({
 
   const handlePartAdded = () => {
     console.log('Part added, refreshing parts...');
-    onPartsChange();
+    if (onPartsChange) {
+      onPartsChange();
+    }
   };
 
   return (
@@ -59,7 +61,7 @@ export function UnifiedItemsTable({
               key={jobLine.id}
               jobLine={jobLine}
               parts={jobLineParts}
-              workOrderId={workOrderId}
+              workOrderId={workOrderId || ''}
               onPartAdded={handlePartAdded}
               isEditMode={isEditMode}
             />

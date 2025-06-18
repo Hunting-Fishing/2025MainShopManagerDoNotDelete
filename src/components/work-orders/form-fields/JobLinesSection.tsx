@@ -105,6 +105,11 @@ export function JobLinesSection({
     }
   };
 
+  const handlePartsChange = () => {
+    // Refresh job lines to get updated parts
+    console.log('Parts changed, refreshing job lines...');
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -122,9 +127,11 @@ export function JobLinesSection({
         <UnifiedItemsTable
           jobLines={jobLines}
           allParts={[]}
+          workOrderId={workOrderId}
           onJobLineUpdate={isEditMode ? handleJobLineUpdate : undefined}
           onJobLineDelete={isEditMode ? handleJobLineDelete : undefined}
           onReorderJobLines={isEditMode ? handleJobLinesReorder : undefined}
+          onPartsChange={handlePartsChange}
           isEditMode={isEditMode}
           showType={showType}
         />
