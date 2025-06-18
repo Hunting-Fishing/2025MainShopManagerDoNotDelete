@@ -22,12 +22,12 @@ export function StatusSelector({ currentStatus, type, onStatusChange, disabled =
   
   return (
     <Select value={currentStatus} onValueChange={onStatusChange} disabled={disabled}>
-      <SelectTrigger className="w-32">
+      <SelectTrigger className="w-32 bg-white border-slate-300 text-slate-900">
         <SelectValue placeholder="Select status" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="bg-white border-slate-200 shadow-lg">
         {statuses.map((status) => (
-          <SelectItem key={status} value={status}>
+          <SelectItem key={status} value={status} className="hover:bg-slate-50 focus:bg-slate-100 text-slate-900">
             {formatStatusLabel(status)}
           </SelectItem>
         ))}

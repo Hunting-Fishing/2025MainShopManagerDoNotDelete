@@ -82,7 +82,7 @@ export function CategorySelector({
     return (
       <div className="space-y-2">
         <Label>Category</Label>
-        <div className="flex items-center gap-2 p-2 border rounded">
+        <div className="flex items-center gap-2 p-2 border rounded bg-white">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm text-muted-foreground">Loading categories...</span>
         </div>
@@ -102,24 +102,24 @@ export function CategorySelector({
   }
 
   return (
-    <div className="space-y-2 bg-slate-100">
-      <Label>Category</Label>
+    <div className="space-y-2 bg-slate-100 p-4 rounded-lg">
+      <Label className="text-sm font-medium text-slate-700">Category</Label>
       <Select value={value || ''} onValueChange={onValueChange}>
-        <SelectTrigger>
+        <SelectTrigger className="bg-white border-slate-300 text-slate-900">
           <SelectValue placeholder="Select a category" />
         </SelectTrigger>
-        <SelectContent className="max-h-[300px] overflow-y-auto">
+        <SelectContent className="max-h-[300px] overflow-y-auto bg-white border-slate-200 shadow-lg">
           {categories.length === 0 ? (
             <SelectItem value="no-categories" disabled>
               No categories available
             </SelectItem>
           ) : (
             categories.map(category => (
-              <SelectItem key={category.name} value={category.name}>
+              <SelectItem key={category.name} value={category.name} className="hover:bg-slate-50 focus:bg-slate-100">
                 <div className="flex flex-col items-start">
-                  <span className="font-medium">{category.name}</span>
+                  <span className="font-medium text-slate-900">{category.name}</span>
                   {category.description && (
-                    <span className="text-xs text-muted-foreground mt-0.5">
+                    <span className="text-xs text-slate-600 mt-0.5">
                       {category.description}
                     </span>
                   )}
