@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { useToast } from '@/hooks/use-toast';
 import { ComprehensivePartEntryForm } from './ComprehensivePartEntryForm';
-import { TabbedPartEntryForm } from './TabbedPartEntryForm';
-import { PartEntryModeToggle } from './PartEntryModeToggle';
 
 interface AddPartDialogProps {
   workOrderId: string;
@@ -29,7 +27,6 @@ export function AddPartDialog({
   const { toast } = useToast();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [entryMode, setEntryMode] = useState<'comprehensive' | 'tabbed'>('comprehensive');
 
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
@@ -116,21 +113,11 @@ export function AddPartDialog({
           <DialogTitle>Add Part</DialogTitle>
         </DialogHeader>
         
-        <PartEntryModeToggle mode={entryMode} onModeChange={setEntryMode} />
-        
-        {entryMode === 'comprehensive' ? (
-          <ComprehensivePartEntryForm 
-            onPartAdd={handlePartAdd} 
-            onCancel={handleCancel} 
-            isLoading={isLoading} 
-          />
-        ) : (
-          <TabbedPartEntryForm 
-            onPartAdd={handlePartAdd} 
-            onCancel={handleCancel} 
-            isLoading={isLoading} 
-          />
-        )}
+        <ComprehensivePartEntryForm 
+          onPartAdd={handlePartAdd} 
+          onCancel={handleCancel} 
+          isLoading={isLoading} 
+        />
       </DialogContent>
     </Dialog>
   );
