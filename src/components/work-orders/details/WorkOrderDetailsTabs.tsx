@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkOrderOverviewTab } from './WorkOrderOverviewTab';
@@ -6,18 +5,31 @@ import { WorkOrderJobLinesSection } from '../job-lines/WorkOrderJobLinesSection'
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { WorkOrderTimeTrackingSection } from '../time-tracking/WorkOrderTimeTrackingSection';
 import { WorkOrderDocuments } from './WorkOrderDocuments';
-import { WorkOrder } from '@/types/workOrder';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { TimeEntry } from '@/types/workOrder';
-import { Customer } from '@/types/customer';
+import { WorkOrder, TimeEntry } from '@/types/workOrder';
+
+// Define types for job lines and parts
+interface WorkOrderJobLine {
+  id: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  total: number;
+}
+
+interface WorkOrderPart {
+  id: string;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
   timeEntries: TimeEntry[];
-  customer: Customer | null;
+  customer: any;
   onJobLinesChange: () => Promise<void>;
   onTimeEntriesChange: () => Promise<void>;
   onWorkOrderUpdate: (workOrder: WorkOrder) => void;
@@ -92,6 +104,9 @@ export function WorkOrderDetailsTabs({
               onWorkOrderUpdate={onWorkOrderUpdate}
               onPartsChange={onRefreshData}
               isEditMode={isEditMode}
+              onStartEdit={onStartEdit}
+              onCancelEdit={onCancelEdit}
+              onSaveEdit={onSaveEdit}
             />
           </TabsContent>
           
@@ -108,10 +123,8 @@ export function WorkOrderDetailsTabs({
             <WorkOrderPartsSection
               workOrderId={workOrder.id}
               allParts={allParts}
-              jobLines={jobLines}
-              onPartsChange={onRefreshData}
-              isEditMode={isEditMode}
-              showType="overview"
+              viewMode="overview"
+              onRefresh={onRefreshData}
             />
           </TabsContent>
           
@@ -119,7 +132,7 @@ export function WorkOrderDetailsTabs({
             <WorkOrderTimeTrackingSection
               workOrderId={workOrder.id}
               timeEntries={timeEntries}
-              onUpdateTimeEntries={onTimeEntriesChange}
+              onTimeEntriesChange={onTimeEntriesChange}
               isEditMode={isEditMode}
             />
           </TabsContent>
@@ -127,7 +140,6 @@ export function WorkOrderDetailsTabs({
           <TabsContent value="documents" className="mt-0">
             <WorkOrderDocuments
               workOrderId={workOrder.id}
-              isEditMode={isEditMode}
             />
           </TabsContent>
         </div>
