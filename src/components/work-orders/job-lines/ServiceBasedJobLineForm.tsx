@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { IntegratedServiceSelector } from '@/components/work-orders/fields/services/IntegratedServiceSelector';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
+import { useToast } from '@/hooks/use-toast';
 
 interface ServiceBasedJobLineFormProps {
   workOrderId: string;
@@ -20,7 +22,9 @@ export function ServiceBasedJobLineForm({
   onCancel
 }: ServiceBasedJobLineFormProps) {
   const { sectors, loading, error } = useServiceSectors();
+  const { toast } = useToast();
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     // Service selection is handled by the IntegratedServiceSelector
@@ -36,28 +40,54 @@ export function ServiceBasedJobLineForm({
     setSelectedServices(services);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (selectedServices.length === 0) {
       return;
     }
 
-    const jobLines: WorkOrderJobLine[] = selectedServices.map((service, index) => ({
-      id: `temp-${Date.now()}-${index}`,
-      work_order_id: workOrderId,
-      name: service.name,
-      category: service.category,
-      subcategory: service.subcategory,
-      description: service.description,
-      estimated_hours: service.estimated_hours,
-      labor_rate: service.labor_rate,
-      total_amount: service.total_amount,
-      status: service.status,
-      display_order: index,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }));
+    setIsSaving(true);
+    try {
+      // Create job lines in the database first
+      const savedJobLines: WorkOrderJobLine[] = [];
+      
+      for (let index = 0; index < selectedServices.length; index++) {
+        const service = selectedServices[index];
+        
+        const jobLineData = {
+          work_order_id: workOrderId,
+          name: service.name,
+          category: service.category,
+          subcategory: service.subcategory,
+          description: service.description || 'automotive service',
+          estimated_hours: service.estimated_hours || 1,
+          labor_rate: service.labor_rate || 100,
+          total_amount: service.total_amount || (service.labor_rate || 100),
+          status: service.status || 'pending',
+          display_order: index
+        };
 
-    onSave(jobLines);
+        // Save to database
+        const savedJobLine = await createWorkOrderJobLine(jobLineData);
+        savedJobLines.push(savedJobLine);
+      }
+
+      toast({
+        title: "Success",
+        description: `Added ${savedJobLines.length} job line${savedJobLines.length !== 1 ? 's' : ''} successfully`,
+      });
+
+      // Call onSave with the actual saved job lines
+      onSave(savedJobLines);
+    } catch (error) {
+      console.error('Error saving job lines:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save job lines",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (loading) {
@@ -106,14 +136,14 @@ export function ServiceBasedJobLineForm({
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="outline" onClick={onCancel} disabled={isSaving}>
           Cancel
         </Button>
         <Button 
           onClick={handleSave}
-          disabled={selectedServices.length === 0}
+          disabled={selectedServices.length === 0 || isSaving}
         >
-          Add {selectedServices.length} Job Line{selectedServices.length !== 1 ? 's' : ''}
+          {isSaving ? 'Saving...' : `Add ${selectedServices.length} Job Line${selectedServices.length !== 1 ? 's' : ''}`}
         </Button>
       </div>
     </div>
