@@ -5,17 +5,19 @@ import { WorkOrderOverviewTab } from './WorkOrderOverviewTab';
 import { WorkOrderJobLinesSection } from '../job-lines/WorkOrderJobLinesSection';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { WorkOrderTimeTrackingSection } from '../time-tracking/WorkOrderTimeTrackingSection';
-import { WorkOrderDocuments } from '../documents/WorkOrderDocuments';
-import { WorkOrder, TimeEntry } from '@/types/workOrder';
+import { WorkOrderDocuments } from './WorkOrderDocuments';
+import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
+import { TimeEntry } from '@/types/workOrder';
+import { Customer } from '@/types/customer';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
   timeEntries: TimeEntry[];
-  customer: any;
+  customer: Customer | null;
   onJobLinesChange: () => Promise<void>;
   onTimeEntriesChange: () => Promise<void>;
   onWorkOrderUpdate: (workOrder: WorkOrder) => void;
@@ -47,31 +49,31 @@ export function WorkOrderDetailsTabs({
         <div className="bg-gradient-to-r from-white via-blue-50/30 to-indigo-50/30 border-b border-slate-200/60">
           <TabsList className="w-full justify-start bg-transparent h-auto p-0 space-x-0">
             <TabsTrigger 
-              value="overview" 
+              value="overview"
               className="px-8 py-4 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 transition-all duration-200"
             >
               Overview
             </TabsTrigger>
             <TabsTrigger 
-              value="job-lines" 
+              value="job-lines"
               className="px-8 py-4 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 transition-all duration-200"
             >
               Job Lines
             </TabsTrigger>
             <TabsTrigger 
-              value="parts" 
+              value="parts"
               className="px-8 py-4 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 transition-all duration-200"
             >
               Parts
             </TabsTrigger>
             <TabsTrigger 
-              value="time-tracking" 
+              value="time-tracking"
               className="px-8 py-4 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 transition-all duration-200"
             >
               Time Tracking
             </TabsTrigger>
             <TabsTrigger 
-              value="documents" 
+              value="documents"
               className="px-8 py-4 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 transition-all duration-200"
             >
               Documents
@@ -88,11 +90,8 @@ export function WorkOrderDetailsTabs({
               allParts={allParts}
               timeEntries={timeEntries}
               onWorkOrderUpdate={onWorkOrderUpdate}
-              onRefreshData={onRefreshData}
+              onPartsChange={onRefreshData}
               isEditMode={isEditMode}
-              onStartEdit={onStartEdit}
-              onCancelEdit={onCancelEdit}
-              onSaveEdit={onSaveEdit}
             />
           </TabsContent>
           
@@ -108,9 +107,11 @@ export function WorkOrderDetailsTabs({
           <TabsContent value="parts" className="mt-0">
             <WorkOrderPartsSection
               workOrderId={workOrder.id}
-              parts={allParts}
-              viewMode="overview"
-              onRefresh={onRefreshData}
+              allParts={allParts}
+              jobLines={jobLines}
+              onPartsChange={onRefreshData}
+              isEditMode={isEditMode}
+              showType="overview"
             />
           </TabsContent>
           
@@ -118,13 +119,15 @@ export function WorkOrderDetailsTabs({
             <WorkOrderTimeTrackingSection
               workOrderId={workOrder.id}
               timeEntries={timeEntries}
-              onRefresh={onTimeEntriesChange}
+              onUpdateTimeEntries={onTimeEntriesChange}
+              isEditMode={isEditMode}
             />
           </TabsContent>
           
           <TabsContent value="documents" className="mt-0">
             <WorkOrderDocuments
               workOrderId={workOrder.id}
+              isEditMode={isEditMode}
             />
           </TabsContent>
         </div>
