@@ -98,7 +98,7 @@ export function CategorySelector({ value, onValueChange }: CategorySelectorProps
   return (
     <div className="space-y-2">
       <Label>Category</Label>
-      <Select value={value} onValueChange={onValueChange}>
+      <Select value={value || ''} onValueChange={onValueChange}>
         <SelectTrigger>
           <SelectValue placeholder="Select a category" />
         </SelectTrigger>

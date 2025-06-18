@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { useToast } from '@/hooks/use-toast';
 import { ComprehensivePartEntryForm } from './ComprehensivePartEntryForm';
+import { useParams } from 'react-router-dom';
 
 interface AddPartDialogProps {
   workOrderId: string;
@@ -25,8 +26,12 @@ export function AddPartDialog({
   onPartAdded
 }: AddPartDialogProps) {
   const { toast } = useToast();
+  const params = useParams();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Use workOrderId from props or URL params
+  const currentWorkOrderId = workOrderId || params.id;
 
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
@@ -40,7 +45,7 @@ export function AddPartDialog({
       // Create a comprehensive part with all fields
       const newPart: WorkOrderPart = {
         id: `temp-${Date.now()}-${Math.random()}`,
-        work_order_id: workOrderId,
+        work_order_id: currentWorkOrderId || '',
         job_line_id: jobLineId,
         part_number: partData.part_number,
         name: partData.name,
@@ -116,7 +121,9 @@ export function AddPartDialog({
         <ComprehensivePartEntryForm 
           onPartAdd={handlePartAdd} 
           onCancel={handleCancel} 
-          isLoading={isLoading} 
+          isLoading={isLoading}
+          workOrderId={currentWorkOrderId}
+          jobLineId={jobLineId}
         />
       </DialogContent>
     </Dialog>
