@@ -1,186 +1,84 @@
+
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Search } from 'lucide-react';
-import { getInventoryCategories, addInventoryCategory } from '@/services/inventory/categoryService';
-import { toast } from 'sonner';
+import { Label } from '@/components/ui/label';
+import { getInventoryCategories } from '@/services/inventory/categoryService';
+import { Loader2 } from 'lucide-react';
 
 interface CategorySelectorProps {
   value?: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
+  onValueChange: (value: string) => void;
 }
 
-export function CategorySelector({ value, onChange, placeholder = "Select category..." }: CategorySelectorProps) {
+export function CategorySelector({ value, onValueChange }: CategorySelectorProps) {
   const [categories, setCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newCategory, setNewCategory] = useState('');
-  const [adding, setAdding] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const fetchCategories = async () => {
-    try {
-      console.log('CategorySelector: Fetching categories...');
-      setLoading(true);
-      const categoryList = await getInventoryCategories();
-      console.log('CategorySelector: Received categories:', categoryList);
-      setCategories(categoryList);
-    } catch (error) {
-      console.error('CategorySelector: Error fetching categories:', error);
-      toast.error('Failed to load categories');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const categoryList = await getInventoryCategories();
+        setCategories(categoryList || []);
+      } catch (err) {
+        console.error('Error fetching inventory categories:', err);
+        setError('Failed to load categories');
+        // Fallback to basic categories if database fetch fails
+        setCategories(['Engine Components', 'Electrical', 'Brakes', 'Suspension', 'Exhaust', 'Filters', 'Fluids']);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchCategories();
   }, []);
 
-  const handleAddCategory = async () => {
-    if (!newCategory.trim()) {
-      toast.error('Please enter a category name');
-      return;
-    }
-
-    // Check if category already exists
-    if (categories.some(cat => cat.toLowerCase() === newCategory.trim().toLowerCase())) {
-      toast.error('Category already exists');
-      return;
-    }
-
-    try {
-      setAdding(true);
-      await addInventoryCategory(newCategory.trim());
-      
-      // Refresh categories list
-      await fetchCategories();
-      
-      // Select the newly added category
-      onChange(newCategory.trim());
-      
-      // Reset form
-      setNewCategory('');
-      setShowAddDialog(false);
-      
-      toast.success('Category added successfully');
-    } catch (error) {
-      console.error('Error adding category:', error);
-      toast.error('Failed to add category');
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const filteredCategories = categories.filter(category =>
-    category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <Select disabled>
-        <SelectTrigger>
-          <SelectValue placeholder="Loading categories..." />
-        </SelectTrigger>
-      </Select>
+      <div className="space-y-2">
+        <Label>Category</Label>
+        <div className="flex items-center gap-2 p-2 border rounded">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm text-muted-foreground">Loading categories...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-2">
+        <Label>Category</Label>
+        <div className="p-2 border rounded bg-red-50 text-red-700 text-sm">
+          {error}
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <div className="flex gap-2">
-        <Select value={value} onValueChange={onChange}>
-          <SelectTrigger className="flex-1">
-            <SelectValue placeholder={categories.length > 0 ? placeholder : "No categories available"} />
-          </SelectTrigger>
-          <SelectContent>
-            {/* Search input */}
-            <div className="flex items-center px-3 py-2 border-b">
-              <Search className="h-4 w-4 mr-2 text-gray-400" />
-              <Input
-                placeholder="Search categories..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="border-none p-0 h-auto focus-visible:ring-0"
-              />
-            </div>
-            
-            {/* Add Other option */}
-            <SelectItem value="__add_other__" onSelect={() => setShowAddDialog(true)}>
-              <div className="flex items-center">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Other...
-              </div>
+    <div className="space-y-2">
+      <Label>Category</Label>
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select a category" />
+        </SelectTrigger>
+        <SelectContent className="max-h-[300px] overflow-y-auto">
+          {categories.length === 0 ? (
+            <SelectItem value="no-categories" disabled>
+              No categories available
             </SelectItem>
-            
-            {/* Existing categories */}
-            {filteredCategories.length > 0 ? (
-              filteredCategories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))
-            ) : (
-              <div className="p-2 text-center text-slate-500 text-sm">
-                {searchTerm ? 'No categories match your search' : 'No categories found'}
-              </div>
-            )}
-          </SelectContent>
-        </Select>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowAddDialog(true)}
-          className="shrink-0"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Add Category Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Category</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Category Name</label>
-              <Input
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                placeholder="Enter category name"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAddCategory();
-                  }
-                }}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowAddDialog(false);
-                  setNewCategory('');
-                }}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleAddCategory} 
-                disabled={adding || !newCategory.trim()}
-              >
-                {adding ? 'Adding...' : 'Add Category'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          ) : (
+            categories.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
