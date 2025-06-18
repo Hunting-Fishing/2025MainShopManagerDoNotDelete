@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { mapPartFormToDatabase } from '@/utils/databaseMappers';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { mapPartFormToDatabase } from '@/utils/databaseMappers';
+import { useToast } from '@/hooks/use-toast';
+import { WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
 
 interface ComprehensivePartEntryFormProps {
-  workOrderId: string;
+  workOrderId?: string;
   jobLineId?: string;
   jobLines?: WorkOrderJobLine[];
   onPartAdd?: (part: any) => void;
@@ -29,106 +31,115 @@ export function ComprehensivePartEntryForm({
 }: ComprehensivePartEntryFormProps) {
   const { toast } = useToast();
   
-  const [formData, setFormData] = useState({
-    part_name: '',
-    part_number: '',
-    quantity: 1,
-    customer_price: 0,
-    supplier_cost: 0,
-    retail_price: 0,
-    supplier_name: '',
-    category: '',
-    part_type: 'OEM',
-    markup_percentage: 0,
-    is_taxable: true,
-    core_charge_amount: 0,
-    core_charge_applied: false,
-    warranty_duration: '',
-    invoice_number: '',
-    po_line: '',
-    is_stock_item: false,
-    notes: '',
-    status: 'pending',
-    job_line_id: jobLineId || null
-  });
-
+  // Basic part information
+  const [partName, setPartName] = useState('');
+  const [partNumber, setPartNumber] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [selectedJobLineId, setSelectedJobLineId] = useState(jobLineId || '');
+  
+  // Pricing information
+  const [customerPrice, setCustomerPrice] = useState(0);
+  const [supplierCost, setSupplierCost] = useState(0);
+  const [retailPrice, setRetailPrice] = useState(0);
+  const [markupPercentage, setMarkupPercentage] = useState(0);
+  
+  // Additional information
+  const [supplierName, setSupplierName] = useState('');
+  const [partType, setPartType] = useState('OEM');
+  const [isTaxable, setIsTaxable] = useState(true);
+  const [coreChargeAmount, setCoreChargeAmount] = useState(0);
+  const [coreChargeApplied, setCoreChargeApplied] = useState(false);
+  const [warrantyDuration, setWarrantyDuration] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [poLine, setPoLine] = useState('');
+  const [isStockItem, setIsStockItem] = useState(false);
+  const [status, setStatus] = useState('pending');
+  const [notes, setNotes] = useState('');
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Update job line selection when jobLineId prop changes
-  useEffect(() => {
-    if (jobLineId) {
-      setFormData(prev => ({ ...prev, job_line_id: jobLineId }));
+  // Calculate markup when supplier cost or customer price changes
+  React.useEffect(() => {
+    if (supplierCost > 0 && customerPrice > 0) {
+      const markup = ((customerPrice - supplierCost) / supplierCost) * 100;
+      setMarkupPercentage(Math.round(markup * 100) / 100);
     }
-  }, [jobLineId]);
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-      
-      // Auto-calculate markup percentage when costs change
-      if (field === 'supplier_cost' || field === 'customer_price') {
-        const supplierCost = field === 'supplier_cost' ? value : updated.supplier_cost;
-        const customerPrice = field === 'customer_price' ? value : updated.customer_price;
-        
-        if (supplierCost > 0) {
-          updated.markup_percentage = ((customerPrice - supplierCost) / supplierCost) * 100;
-        }
-      }
-      
-      return updated;
-    });
-  };
+  }, [supplierCost, customerPrice]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.part_name.trim()) {
+    if (!workOrderId) {
       toast({
-        title: "Validation Error",
-        description: "Part name is required",
-        variant: "destructive"
+        title: "Error",
+        description: "Work order ID is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!partName.trim() || !partNumber.trim()) {
+      toast({
+        title: "Error",
+        description: "Part name and part number are required",
+        variant: "destructive",
       });
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
+      const formData = {
+        part_name: partName,
+        part_number: partNumber,
+        description,
+        category,
+        quantity,
+        customer_price: customerPrice,
+        supplier_cost: supplierCost,
+        retail_price: retailPrice,
+        supplier_name: supplierName,
+        part_type: partType,
+        markup_percentage: markupPercentage,
+        is_taxable: isTaxable,
+        core_charge_amount: coreChargeAmount,
+        core_charge_applied: coreChargeApplied,
+        warranty_duration: warrantyDuration,
+        invoice_number: invoiceNumber,
+        po_line: poLine,
+        is_stock_item: isStockItem,
+        status,
+        notes
+      };
+
       // Map form data to database schema
-      const partData = mapPartFormToDatabase(formData, workOrderId, formData.job_line_id);
+      const dbData = mapPartFormToDatabase(formData, workOrderId, selectedJobLineId);
       
-      console.log('Submitting part data:', partData);
+      console.log('Creating part with data:', dbData);
       
       // Save directly to database
-      const { data, error } = await supabase
-        .from('work_order_parts')
-        .insert(partData)
-        .select()
-        .single();
+      const newPart = await createWorkOrderPart(dbData);
+      
+      if (newPart) {
+        toast({
+          title: "Success",
+          description: "Part added successfully",
+          variant: "default",
+        });
         
-      if (error) {
-        console.error('Database error:', error);
-        throw error;
+        onPartAdd?.(newPart);
+      } else {
+        throw new Error('Failed to create part');
       }
-      
-      console.log('Part saved successfully:', data);
-      
-      toast({
-        title: "Success",
-        description: "Part added successfully",
-      });
-      
-      // Call the callback with the saved part
-      if (onPartAdd) {
-        onPartAdd(data);
-      }
-      
     } catch (error) {
-      console.error('Error saving part:', error);
+      console.error('Error creating part:', error);
       toast({
         title: "Error",
-        description: "Failed to save part. Please try again.",
-        variant: "destructive"
+        description: "Failed to add part. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -136,7 +147,7 @@ export function ComprehensivePartEntryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
       {/* Basic Information */}
       <Card>
         <CardHeader>
@@ -144,91 +155,83 @@ export function ComprehensivePartEntryForm({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="part_name">Part Name *</Label>
+            <div className="space-y-2">
+              <Label htmlFor="partName">Part Name *</Label>
               <Input
-                id="part_name"
-                value={formData.part_name}
-                onChange={(e) => handleInputChange('part_name', e.target.value)}
+                id="partName"
+                value={partName}
+                onChange={(e) => setPartName(e.target.value)}
                 placeholder="Enter part name"
                 required
               />
             </div>
             
-            <div>
-              <Label htmlFor="part_number">Part Number</Label>
+            <div className="space-y-2">
+              <Label htmlFor="partNumber">Part Number *</Label>
               <Input
-                id="part_number"
-                value={formData.part_number}
-                onChange={(e) => handleInputChange('part_number', e.target.value)}
+                id="partNumber"
+                value={partNumber}
+                onChange={(e) => setPartNumber(e.target.value)}
                 placeholder="Enter part number"
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Enter category"
               />
             </div>
             
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="quantity">Quantity</Label>
               <Input
                 id="quantity"
                 type="number"
                 min="1"
-                value={formData.quantity}
-                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                value={formData.category}
-                onChange={(e) => handleInputChange('category', e.target.value)}
-                placeholder="Enter category"
+                value={quantity}
+                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
               />
             </div>
           </div>
-          
-          <div>
-            <Label htmlFor="notes">Description/Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Enter description or notes"
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Job Line Assignment */}
-      {jobLines && jobLines.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Job Line Assignment</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <Label htmlFor="job_line_id">Assign to Job Line (Optional)</Label>
-              <Select
-                value={formData.job_line_id || ''}
-                onValueChange={(value) => handleInputChange('job_line_id', value || null)}
-              >
+          {jobLines.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="jobLine">Assign to Job Line (Optional)</Label>
+              <Select value={selectedJobLineId} onValueChange={setSelectedJobLineId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a job line or leave unassigned" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border-slate-200 shadow-lg z-50">
                   <SelectItem value="">Unassigned</SelectItem>
                   {jobLines.map((jobLine) => (
                     <SelectItem key={jobLine.id} value={jobLine.id}>
-                      {jobLine.name} - {jobLine.category}
+                      {jobLine.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter part description"
+              rows={3}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Pricing Information */}
       <Card>
@@ -237,86 +240,78 @@ export function ComprehensivePartEntryForm({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="supplier_cost">Supplier Cost</Label>
+            <div className="space-y-2">
+              <Label htmlFor="customerPrice">Customer Price</Label>
               <Input
-                id="supplier_cost"
+                id="customerPrice"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.supplier_cost}
-                onChange={(e) => handleInputChange('supplier_cost', parseFloat(e.target.value) || 0)}
+                value={customerPrice}
+                onChange={(e) => setCustomerPrice(parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
               />
             </div>
             
-            <div>
-              <Label htmlFor="customer_price">Customer Price</Label>
+            <div className="space-y-2">
+              <Label htmlFor="supplierCost">Supplier Cost</Label>
               <Input
-                id="customer_price"
+                id="supplierCost"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.customer_price}
-                onChange={(e) => handleInputChange('customer_price', parseFloat(e.target.value) || 0)}
+                value={supplierCost}
+                onChange={(e) => setSupplierCost(parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
               />
             </div>
             
-            <div>
-              <Label htmlFor="retail_price">Retail Price</Label>
+            <div className="space-y-2">
+              <Label htmlFor="retailPrice">Retail Price</Label>
               <Input
-                id="retail_price"
+                id="retailPrice"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.retail_price}
-                onChange={(e) => handleInputChange('retail_price', parseFloat(e.target.value) || 0)}
+                value={retailPrice}
+                onChange={(e) => setRetailPrice(parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
               />
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="markup_percentage">Markup %</Label>
-              <Input
-                id="markup_percentage"
-                type="number"
-                step="0.01"
-                value={formData.markup_percentage.toFixed(2)}
-                onChange={(e) => handleInputChange('markup_percentage', parseFloat(e.target.value) || 0)}
-                readOnly
-              />
+          
+          {markupPercentage > 0 && (
+            <div className="text-sm text-muted-foreground">
+              Markup: {markupPercentage}%
             </div>
-            
-            <div>
-              <Label htmlFor="supplier_name">Supplier</Label>
-              <Input
-                id="supplier_name"
-                value={formData.supplier_name}
-                onChange={(e) => handleInputChange('supplier_name', e.target.value)}
-                placeholder="Enter supplier name"
-              />
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Additional Settings */}
+      {/* Additional Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Additional Settings</CardTitle>
+          <CardTitle>Additional Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="part_type">Part Type</Label>
-              <Select
-                value={formData.part_type}
-                onValueChange={(value) => handleInputChange('part_type', value)}
-              >
+            <div className="space-y-2">
+              <Label htmlFor="supplierName">Supplier Name</Label>
+              <Input
+                id="supplierName"
+                value={supplierName}
+                onChange={(e) => setSupplierName(e.target.value)}
+                placeholder="Enter supplier name"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="partType">Part Type</Label>
+              <Select value={partType} onValueChange={setPartType}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border-slate-200 shadow-lg z-50">
                   <SelectItem value="OEM">OEM</SelectItem>
                   <SelectItem value="Aftermarket">Aftermarket</SelectItem>
                   <SelectItem value="Remanufactured">Remanufactured</SelectItem>
@@ -324,45 +319,129 @@ export function ComprehensivePartEntryForm({
                 </SelectContent>
               </Select>
             </div>
-            
-            <div>
-              <Label htmlFor="warranty_duration">Warranty Duration</Label>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="warrantyDuration">Warranty Duration</Label>
               <Input
-                id="warranty_duration"
-                value={formData.warranty_duration}
-                onChange={(e) => handleInputChange('warranty_duration', e.target.value)}
-                placeholder="e.g., 12 months, 2 years"
+                id="warrantyDuration"
+                value={warrantyDuration}
+                onChange={(e) => setWarrantyDuration(e.target.value)}
+                placeholder="e.g., 12 months, 1 year"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-slate-200 shadow-lg z-50">
+                  {WORK_ORDER_PART_STATUSES.map((statusOption) => (
+                    <SelectItem key={statusOption} value={statusOption}>
+                      {statusOption.charAt(0).toUpperCase() + statusOption.slice(1).replace('-', ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="invoiceNumber">Invoice Number</Label>
+              <Input
+                id="invoiceNumber"
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+                placeholder="Enter invoice number"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="poLine">PO Line</Label>
+              <Input
+                id="poLine"
+                value={poLine}
+                onChange={(e) => setPoLine(e.target.value)}
+                placeholder="Enter PO line"
               />
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="is_taxable"
-              checked={formData.is_taxable}
-              onCheckedChange={(checked) => handleInputChange('is_taxable', checked)}
-            />
-            <Label htmlFor="is_taxable">Taxable Item</Label>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isTaxable"
+                checked={isTaxable}
+                onCheckedChange={setIsTaxable}
+              />
+              <Label htmlFor="isTaxable">Taxable</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isStockItem"
+                checked={isStockItem}
+                onCheckedChange={setIsStockItem}
+              />
+              <Label htmlFor="isStockItem">Stock Item</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="coreChargeApplied"
+                checked={coreChargeApplied}
+                onCheckedChange={setCoreChargeApplied}
+              />
+              <Label htmlFor="coreChargeApplied">Core Charge Applied</Label>
+            </div>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="is_stock_item"
-              checked={formData.is_stock_item}
-              onCheckedChange={(checked) => handleInputChange('is_stock_item', checked)}
+          
+          {coreChargeApplied && (
+            <div className="space-y-2">
+              <Label htmlFor="coreChargeAmount">Core Charge Amount</Label>
+              <Input
+                id="coreChargeAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={coreChargeAmount}
+                onChange={(e) => setCoreChargeAmount(parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+              />
+            </div>
+          )}
+          
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Additional notes about this part"
+              rows={3}
             />
-            <Label htmlFor="is_stock_item">Stock Item</Label>
           </div>
         </CardContent>
       </Card>
 
       <Separator />
 
-      {/* Action Buttons */}
+      {/* Form Actions */}
       <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+        )}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Adding Part...' : 'Add Part'}
         </Button>

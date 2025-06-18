@@ -25,9 +25,13 @@ export function StatusSelector({ currentStatus, type, onStatusChange, disabled =
       <SelectTrigger className="w-32 bg-white border-slate-300 text-slate-900">
         <SelectValue placeholder="Select status" />
       </SelectTrigger>
-      <SelectContent className="bg-white border-slate-200 shadow-lg">
+      <SelectContent className="bg-white border-slate-200 shadow-lg z-50">
         {statuses.map((status) => (
-          <SelectItem key={status} value={status} className="hover:bg-slate-50 focus:bg-slate-100 text-slate-900">
+          <SelectItem 
+            key={status} 
+            value={status || 'pending'} 
+            className="hover:bg-slate-50 focus:bg-slate-100 text-slate-900"
+          >
             {formatStatusLabel(status)}
           </SelectItem>
         ))}
