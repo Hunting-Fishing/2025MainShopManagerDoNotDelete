@@ -115,7 +115,7 @@ export function AddPartDialog({
       )}
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-50">
         <DialogHeader>
-          <DialogTitle>Add Part</DialogTitle>
+          <DialogTitle>Add Part to Work Order</DialogTitle>
         </DialogHeader>
         
         <ComprehensivePartEntryForm 
