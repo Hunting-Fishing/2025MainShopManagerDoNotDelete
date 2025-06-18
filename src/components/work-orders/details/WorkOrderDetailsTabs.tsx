@@ -1,35 +1,22 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkOrderOverviewTab } from './WorkOrderOverviewTab';
-import { WorkOrderJobLinesSection } from '../job-lines/WorkOrderJobLinesSection';
+import { WorkOrderJobLinesTab } from './WorkOrderJobLinesTab';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { WorkOrderTimeTrackingSection } from '../time-tracking/WorkOrderTimeTrackingSection';
 import { WorkOrderDocuments } from './WorkOrderDocuments';
 import { WorkOrder, TimeEntry } from '@/types/workOrder';
-
-// Define types for job lines and parts
-interface WorkOrderJobLine {
-  id: string;
-  description: string;
-  quantity: number;
-  rate: number;
-  total: number;
-}
-
-interface WorkOrderPart {
-  id: string;
-  name: string;
-  quantity: number;
-  unit_price: number;
-  total: number;
-}
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
+import { Customer } from '@/types/customer';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
   timeEntries: TimeEntry[];
-  customer: any;
+  customer: Customer | null;
   onJobLinesChange: () => Promise<void>;
   onTimeEntriesChange: () => Promise<void>;
   onWorkOrderUpdate: (workOrder: WorkOrder) => void;
@@ -56,51 +43,66 @@ export function WorkOrderDetailsTabs({
   onSaveEdit
 }: WorkOrderDetailsTabsProps) {
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-slate-200/60 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200/60">
+      {/* Header */}
+      <div className="p-6 border-b border-slate-200/60">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              Work Order #{workOrder.id}
+            </h1>
+            <p className="text-slate-600 mt-1">
+              {workOrder.description || 'No description provided'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {!isEditMode ? (
+              <button
+                onClick={onStartEdit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Edit Work Order
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={onCancelEdit}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={onSaveEdit}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <div className="bg-gradient-to-r from-white via-blue-50/30 to-indigo-50/30 border-b border-slate-200/60">
-          <TabsList className="w-full justify-start bg-transparent h-auto p-0 space-x-0">
-            <TabsTrigger 
-              value="overview"
-              className="px-8 py-4 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 transition-all duration-200"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger 
-              value="job-lines"
-              className="px-8 py-4 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 transition-all duration-200"
-            >
-              Job Lines
-            </TabsTrigger>
-            <TabsTrigger 
-              value="parts"
-              className="px-8 py-4 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 transition-all duration-200"
-            >
-              Parts
-            </TabsTrigger>
-            <TabsTrigger 
-              value="time-tracking"
-              className="px-8 py-4 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 transition-all duration-200"
-            >
-              Time Tracking
-            </TabsTrigger>
-            <TabsTrigger 
-              value="documents"
-              className="px-8 py-4 text-base font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 transition-all duration-200"
-            >
-              Documents
-            </TabsTrigger>
+        <div className="px-6 pt-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="joblines">Job Lines</TabsTrigger>
+            <TabsTrigger value="parts">Parts</TabsTrigger>
+            <TabsTrigger value="time">Time Tracking</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
           </TabsList>
         </div>
-        
-        <div className="p-8">
+
+        <div className="p-6">
           <TabsContent value="overview" className="mt-0">
             <WorkOrderOverviewTab
               workOrder={workOrder}
-              customer={customer}
               jobLines={jobLines}
               allParts={allParts}
               timeEntries={timeEntries}
+              customer={customer}
               onWorkOrderUpdate={onWorkOrderUpdate}
               onPartsChange={onRefreshData}
               isEditMode={isEditMode}
@@ -110,9 +112,9 @@ export function WorkOrderDetailsTabs({
             />
           </TabsContent>
           
-          <TabsContent value="job-lines" className="mt-0">
-            <WorkOrderJobLinesSection
-              workOrderId={workOrder.id}
+          <TabsContent value="joblines" className="mt-0">
+            <WorkOrderJobLinesTab
+              workOrder={workOrder}
               jobLines={jobLines}
               onJobLinesChange={onJobLinesChange}
               isEditMode={isEditMode}
@@ -128,7 +130,7 @@ export function WorkOrderDetailsTabs({
             />
           </TabsContent>
           
-          <TabsContent value="time-tracking" className="mt-0">
+          <TabsContent value="time" className="mt-0">
             <WorkOrderTimeTrackingSection
               workOrderId={workOrder.id}
               timeEntries={timeEntries}
