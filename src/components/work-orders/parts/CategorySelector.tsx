@@ -102,7 +102,7 @@ export function CategorySelector({
   }
 
   return (
-    <div className="space-y-2 bg-slate-50">
+    <div className="space-y-2 bg-slate-100">
       <Label>Category</Label>
       <Select value={value || ''} onValueChange={onValueChange}>
         <SelectTrigger>
