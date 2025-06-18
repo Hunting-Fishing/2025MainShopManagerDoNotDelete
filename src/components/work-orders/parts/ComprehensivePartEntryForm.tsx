@@ -2,388 +2,403 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Loader2 } from 'lucide-react';
-import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { CategorySelector } from './CategorySelector';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { SupplierSelector } from './SupplierSelector';
+import { WorkOrderPartFormValues, WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
+import { toast } from '@/hooks/use-toast';
 
 interface ComprehensivePartEntryFormProps {
   onPartAdd: (part: WorkOrderPartFormValues) => void;
-  onCancel: () => void;
-  isLoading?: boolean;
-  workOrderId?: string;
-  jobLineId?: string;
+  onCancel?: () => void;
+  initialData?: Partial<WorkOrderPartFormValues>;
 }
 
-export function ComprehensivePartEntryForm({
-  onPartAdd,
-  onCancel,
-  isLoading = false,
-  workOrderId,
-  jobLineId
+export function ComprehensivePartEntryForm({ 
+  onPartAdd, 
+  onCancel, 
+  initialData 
 }: ComprehensivePartEntryFormProps) {
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Form state
   const [formData, setFormData] = useState<WorkOrderPartFormValues>({
-    name: '',
-    part_number: '',
-    quantity: 1,
-    unit_price: 0,
-    status: 'pending',
-    notes: '',
-    category: '',
-    supplier_name: '',
-    supplier_cost: 0,
-    customer_price: 0,
-    retail_price: 0,
-    markup_percentage: 0,
-    is_taxable: true,
-    core_charge_amount: 0,
-    core_charge_applied: false,
-    warranty_duration: '',
-    is_stock_item: false,
-    notes_internal: '',
-    part_type: 'parts'
+    part_number: initialData?.part_number || '',
+    name: initialData?.name || '',
+    quantity: initialData?.quantity || 1,
+    unit_price: initialData?.unit_price || 0,
+    status: initialData?.status || 'pending',
+    notes: initialData?.notes || '',
+    category: initialData?.category || '',
+    supplierName: initialData?.supplierName || '',
+    supplierCost: initialData?.supplierCost || 0,
+    customerPrice: initialData?.customerPrice || 0,
+    retailPrice: initialData?.retailPrice || 0,
+    markupPercentage: initialData?.markupPercentage || 0,
+    isTaxable: initialData?.isTaxable || false,
+    coreChargeAmount: initialData?.coreChargeAmount || 0,
+    coreChargeApplied: initialData?.coreChargeApplied || false,
+    warrantyDuration: initialData?.warrantyDuration || '',
+    isStockItem: initialData?.isStockItem || false,
+    notesInternal: initialData?.notesInternal || '',
+    partType: initialData?.partType || ''
   });
 
+  // Auto-calculate customer price when supplier cost or markup changes
+  useEffect(() => {
+    if (formData.supplierCost > 0 && formData.markupPercentage > 0) {
+      const calculatedPrice = formData.supplierCost * (1 + formData.markupPercentage / 100);
+      setFormData(prev => ({
+        ...prev,
+        customerPrice: calculatedPrice,
+        retailPrice: calculatedPrice,
+        unit_price: calculatedPrice
+      }));
+    }
+  }, [formData.supplierCost, formData.markupPercentage]);
+
   const handleInputChange = (field: keyof WorkOrderPartFormValues, value: any) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-      
-      // Auto-calculate customer price when supplier cost or markup changes
-      if (field === 'supplier_cost' || field === 'markup_percentage') {
-        const supplierCost = field === 'supplier_cost' ? value : updated.supplier_cost || 0;
-        const markup = field === 'markup_percentage' ? value : updated.markup_percentage || 0;
-        if (supplierCost > 0 && markup > 0) {
-          updated.customer_price = supplierCost * (1 + markup / 100);
-          updated.retail_price = updated.customer_price;
-          updated.unit_price = updated.customer_price;
-        }
-      }
-      
-      return updated;
-    });
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.part_number.trim()) {
+
+    // Validate required fields
+    if (!formData.part_number || !formData.name || formData.unit_price <= 0 || formData.quantity <= 0) {
       toast({
         title: "Validation Error",
-        description: "Name and Part Number are required",
-        variant: "destructive"
+        description: "Please fill in all required fields with valid values",
+        variant: "destructive",
       });
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
-      console.log('Submitting part data:', formData);
-      
-      // Create the part data object without the description field
+      // Calculate total price
+      const totalPrice = formData.unit_price * formData.quantity;
+
+      // Map camelCase form values to snake_case database fields
       const partData = {
-        work_order_id: workOrderId,
-        job_line_id: jobLineId,
-        name: formData.name,
         part_number: formData.part_number,
+        name: formData.name,
         quantity: formData.quantity,
-        unit_price: formData.unit_price || formData.customer_price || 0,
-        total_price: (formData.quantity || 1) * (formData.unit_price || formData.customer_price || 0),
-        status: formData.status || 'pending',
-        notes: formData.notes || '',
+        unit_price: formData.unit_price,
+        total_price: totalPrice,
+        status: formData.status,
+        notes: formData.notes,
         category: formData.category,
-        supplier_name: formData.supplier_name,
-        supplier_cost: formData.supplier_cost,
-        customer_price: formData.customer_price,
-        retail_price: formData.retail_price,
-        markup_percentage: formData.markup_percentage,
-        is_taxable: formData.is_taxable,
-        core_charge_amount: formData.core_charge_amount,
-        core_charge_applied: formData.core_charge_applied,
-        warranty_duration: formData.warranty_duration,
-        is_stock_item: formData.is_stock_item,
-        notes_internal: formData.notes_internal,
-        part_type: formData.part_type
+        supplier_name: formData.supplierName,
+        supplier_cost: formData.supplierCost,
+        customer_price: formData.customerPrice,
+        retail_price: formData.retailPrice,
+        markup_percentage: formData.markupPercentage,
+        is_taxable: formData.isTaxable,
+        core_charge_amount: formData.coreChargeAmount,
+        core_charge_applied: formData.coreChargeApplied,
+        warranty_duration: formData.warrantyDuration,
+        is_stock_item: formData.isStockItem,
+        notes_internal: formData.notesInternal,
+        part_type: formData.partType
       };
 
-      console.log('Sending part data to database:', partData);
-
-      const { data, error } = await supabase
-        .from('work_order_parts')
-        .insert([partData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error adding part:', error);
-        toast({
-          title: "Error",
-          description: `Failed to add part: ${error.message}`,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('Part added successfully:', data);
+      onPartAdd(partData as WorkOrderPartFormValues);
       
       toast({
         title: "Success",
-        description: "Part added successfully"
+        description: "Part added successfully",
       });
 
-      // Call the onPartAdd callback with the form data
-      onPartAdd(formData);
-      
+      // Reset form
+      setFormData({
+        part_number: '',
+        name: '',
+        quantity: 1,
+        unit_price: 0,
+        status: 'pending',
+        notes: '',
+        category: '',
+        supplierName: '',
+        supplierCost: 0,
+        customerPrice: 0,
+        retailPrice: 0,
+        markupPercentage: 0,
+        isTaxable: false,
+        coreChargeAmount: 0,
+        coreChargeApplied: false,
+        warrantyDuration: '',
+        isStockItem: false,
+        notesInternal: '',
+        partType: ''
+      });
+
     } catch (error) {
       console.error('Error adding part:', error);
       toast({
         title: "Error",
         description: "Failed to add part",
-        variant: "destructive"
+        variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Basic Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Part Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter part name"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="part_number">Part Number *</Label>
-                <Input
-                  id="part_number"
-                  value={formData.part_number}
-                  onChange={(e) => handleInputChange('part_number', e.target.value)}
-                  placeholder="Enter part number"
-                  required
-                />
-              </div>
-            </div>
+    <Card className="w-full max-w-4xl">
+      <CardHeader>
+        <CardTitle>Add Part to Work Order</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="pricing">Pricing</TabsTrigger>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+            </TabsList>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity *</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={formData.quantity}
-                  onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="unit_price">Unit Price</Label>
-                <Input
-                  id="unit_price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.unit_price}
-                  onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Total Price</Label>
-                <div className="p-2 bg-gray-50 rounded border">
-                  ${((formData.quantity || 1) * (formData.unit_price || 0)).toFixed(2)}
+            <TabsContent value="basic" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="part_number">Part Number *</Label>
+                  <Input
+                    id="part_number"
+                    value={formData.part_number}
+                    onChange={(e) => handleInputChange('part_number', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="name">Part Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    required
+                  />
                 </div>
               </div>
-            </div>
 
-            <CategorySelector
-              value={formData.category}
-              onValueChange={(value) => handleInputChange('category', value)}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Supplier Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Supplier Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="supplier_name">Supplier</Label>
-              <Input
-                id="supplier_name"
-                value={formData.supplier_name}
-                onChange={(e) => handleInputChange('supplier_name', e.target.value)}
-                placeholder="Enter supplier name"
+              <CategorySelector
+                value={formData.category}
+                onValueChange={(value) => handleInputChange('category', value)}
               />
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="supplier_cost">Supplier Cost</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    value={formData.quantity}
+                    onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="unit_price">Unit Price *</Label>
+                  <Input
+                    id="unit_price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.unit_price}
+                    onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORK_ORDER_PART_STATUSES.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="pricing" className="space-y-4">
+              <SupplierSelector
+                value={formData.supplierName}
+                onValueChange={(value) => handleInputChange('supplierName', value)}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="supplier_cost">Supplier Cost</Label>
+                  <Input
+                    id="supplier_cost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.supplierCost}
+                    onChange={(e) => handleInputChange('supplierCost', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="markup_percentage">Markup %</Label>
+                  <Input
+                    id="markup_percentage"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={formData.markupPercentage}
+                    onChange={(e) => handleInputChange('markupPercentage', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="customer_price">Customer Price</Label>
+                  <Input
+                    id="customer_price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.customerPrice}
+                    onChange={(e) => handleInputChange('customerPrice', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="retail_price">Retail Price</Label>
+                  <Input
+                    id="retail_price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.retailPrice}
+                    onChange={(e) => handleInputChange('retailPrice', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="core_charge_amount">Core Charge Amount</Label>
+                  <Input
+                    id="core_charge_amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.coreChargeAmount}
+                    onChange={(e) => handleInputChange('coreChargeAmount', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2 pt-6">
+                  <Switch
+                    id="core_charge_applied"
+                    checked={formData.coreChargeApplied}
+                    onCheckedChange={(checked) => handleInputChange('coreChargeApplied', checked)}
+                  />
+                  <Label htmlFor="core_charge_applied">Core Charge Applied</Label>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="details" className="space-y-4">
+              <div>
+                <Label htmlFor="warranty_duration">Warranty Duration</Label>
                 <Input
-                  id="supplier_cost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.supplier_cost}
-                  onChange={(e) => handleInputChange('supplier_cost', parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
+                  id="warranty_duration"
+                  value={formData.warrantyDuration}
+                  onChange={(e) => handleInputChange('warrantyDuration', e.target.value)}
+                  placeholder="e.g., 12 months, 2 years"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="markup_percentage">Markup %</Label>
-                <Input
-                  id="markup_percentage"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={formData.markup_percentage}
-                  onChange={(e) => handleInputChange('markup_percentage', parseFloat(e.target.value) || 0)}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="customer_price">Customer Price</Label>
-                <Input
-                  id="customer_price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.customer_price}
-                  onChange={(e) => handleInputChange('customer_price', parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
+              <div>
+                <Label htmlFor="notes">Customer Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes || ''}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  rows={3}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="retail_price">Retail Price</Label>
-                <Input
-                  id="retail_price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.retail_price}
-                  onChange={(e) => handleInputChange('retail_price', parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
+              <div>
+                <Label htmlFor="notes_internal">Internal Notes</Label>
+                <Textarea
+                  id="notes_internal"
+                  value={formData.notesInternal}
+                  onChange={(e) => handleInputChange('notesInternal', e.target.value)}
+                  rows={3}
                 />
               </div>
-            </div>
+            </TabsContent>
 
-            <div className="space-y-2">
-              <Label htmlFor="core_charge_amount">Core Charge</Label>
-              <Input
-                id="core_charge_amount"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.core_charge_amount}
-                onChange={(e) => handleInputChange('core_charge_amount', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-              />
-            </div>
-          </CardContent>
-        </Card>
+            <TabsContent value="advanced" className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_taxable"
+                  checked={formData.isTaxable}
+                  onCheckedChange={(checked) => handleInputChange('isTaxable', checked)}
+                />
+                <Label htmlFor="is_taxable">Taxable Item</Label>
+              </div>
 
-        {/* Warranty & Notes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Warranty & Notes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="warranty_duration">Warranty Duration</Label>
-              <Input
-                id="warranty_duration"
-                value={formData.warranty_duration}
-                onChange={(e) => handleInputChange('warranty_duration', e.target.value)}
-                placeholder="e.g., 12 months, 36,000 miles"
-              />
-            </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_stock_item"
+                  checked={formData.isStockItem}
+                  onCheckedChange={(checked) => handleInputChange('isStockItem', checked)}
+                />
+                <Label htmlFor="is_stock_item">Stock Item</Label>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Customer Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="Notes visible to customer..."
-                rows={3}
-              />
-            </div>
+              <div>
+                <Label htmlFor="part_type">Part Type</Label>
+                <Select value={formData.partType} onValueChange={(value) => handleInputChange('partType', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select part type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="oem">OEM</SelectItem>
+                    <SelectItem value="aftermarket">Aftermarket</SelectItem>
+                    <SelectItem value="rebuilt">Rebuilt</SelectItem>
+                    <SelectItem value="used">Used</SelectItem>
+                    <SelectItem value="remanufactured">Remanufactured</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes_internal">Internal Notes</Label>
-              <Textarea
-                id="notes_internal"
-                value={formData.notes_internal}
-                onChange={(e) => handleInputChange('notes_internal', e.target.value)}
-                placeholder="Internal notes (not visible to customer)..."
-                rows={3}
-              />
-            </div>
+              <div className="pt-4">
+                <p className="text-sm text-muted-foreground">
+                  Total: ${(formData.unit_price * formData.quantity).toFixed(2)}
+                  {formData.coreChargeApplied && formData.coreChargeAmount > 0 && (
+                    <span> (+ ${formData.coreChargeAmount.toFixed(2)} core charge)</span>
+                  )}
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_taxable"
-                checked={formData.is_taxable}
-                onCheckedChange={(checked) => handleInputChange('is_taxable', checked)}
-              />
-              <Label htmlFor="is_taxable">Taxable Item</Label>
-            </div>
-          </CardContent>
-        </Card>
+          <Separator />
 
-        {/* Form Actions */}
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting || isLoading}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Adding Part...
-              </>
-            ) : (
-              'Add Part'
+          <div className="flex justify-end gap-2">
+            {onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
             )}
-          </Button>
-        </div>
-      </form>
-    </div>
+            <Button type="submit">Add Part</Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
