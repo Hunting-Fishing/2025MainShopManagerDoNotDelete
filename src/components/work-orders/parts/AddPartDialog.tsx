@@ -1,11 +1,9 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { useToast } from '@/hooks/use-toast';
 import { ComprehensivePartEntryForm } from './ComprehensivePartEntryForm';
-
 interface AddPartDialogProps {
   workOrderId: string;
   jobLineId?: string;
@@ -15,16 +13,17 @@ interface AddPartDialogProps {
   jobLines?: any[];
   onPartAdded?: () => void;
 }
-
-export function AddPartDialog({ 
-  workOrderId, 
-  jobLineId, 
-  onPartAdd, 
+export function AddPartDialog({
+  workOrderId,
+  jobLineId,
+  onPartAdd,
   isOpen: externalIsOpen,
   onClose: externalOnClose,
   onPartAdded
 }: AddPartDialogProps) {
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,10 +32,8 @@ export function AddPartDialog({
   const setIsOpen = externalOnClose ? (open: boolean) => {
     if (!open) externalOnClose();
   } : setInternalIsOpen;
-
   const handlePartAdd = async (partData: WorkOrderPartFormValues) => {
     setIsLoading(true);
-
     try {
       // Create a comprehensive part with all fields
       const newPart: WorkOrderPart = {
@@ -70,22 +67,20 @@ export function AddPartDialog({
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      
+
       // Call onPartAdd if provided
       if (onPartAdd) {
         onPartAdd(newPart);
       }
-      
+
       // Call onPartAdded if provided
       if (onPartAdded) {
         onPartAdded();
       }
-      
       toast({
         title: "Success",
-        description: "Part added successfully",
+        description: "Part added successfully"
       });
-
       setIsOpen(false);
     } catch (error) {
       console.error('Error adding part:', error);
@@ -98,28 +93,18 @@ export function AddPartDialog({
       setIsLoading(false);
     }
   };
-
   const handleCancel = () => {
     setIsOpen(false);
   };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      {externalIsOpen === undefined && (
-        <DialogTrigger asChild>
+  return <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {externalIsOpen === undefined && <DialogTrigger asChild>
           <Button variant="outline">Add Part</Button>
-        </DialogTrigger>
-      )}
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        </DialogTrigger>}
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-50">
         <DialogHeader>
           <DialogTitle>Add Part - Comprehensive Entry</DialogTitle>
         </DialogHeader>
-        <ComprehensivePartEntryForm
-          onPartAdd={handlePartAdd}
-          onCancel={handleCancel}
-          isLoading={isLoading}
-        />
+        <ComprehensivePartEntryForm onPartAdd={handlePartAdd} onCancel={handleCancel} isLoading={isLoading} />
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
