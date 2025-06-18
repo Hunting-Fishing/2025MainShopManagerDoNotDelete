@@ -20,16 +20,19 @@ export function StatusSelector({ currentStatus, type, onStatusChange, disabled =
       .join(' ');
   };
   
+  // Filter out any empty or null statuses
+  const validStatuses = statuses.filter(status => status && status.trim() !== '');
+  
   return (
-    <Select value={currentStatus} onValueChange={onStatusChange} disabled={disabled}>
+    <Select value={currentStatus || 'pending'} onValueChange={onStatusChange} disabled={disabled}>
       <SelectTrigger className="w-32 bg-white border-slate-300 text-slate-900">
         <SelectValue placeholder="Select status" />
       </SelectTrigger>
       <SelectContent className="bg-white border-slate-200 shadow-lg z-50">
-        {statuses.map((status) => (
+        {validStatuses.map((status) => (
           <SelectItem 
             key={status} 
-            value={status || 'pending'} 
+            value={status} 
             className="hover:bg-slate-50 focus:bg-slate-100 text-slate-900"
           >
             {formatStatusLabel(status)}
