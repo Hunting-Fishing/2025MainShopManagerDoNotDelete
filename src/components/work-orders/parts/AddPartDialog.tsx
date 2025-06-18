@@ -13,7 +13,6 @@ interface AddPartDialogProps {
   onPartAdd?: (part: WorkOrderPart) => void;
   isOpen?: boolean;
   onClose?: () => void;
-  jobLines?: any[];
   onPartAdded?: () => void;
 }
 
