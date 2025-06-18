@@ -63,6 +63,15 @@ export function WorkOrderDetailsView() {
     // Additional save logic could go here
   };
 
+  // Create wrapper functions that match the expected signatures
+  const handleJobLinesRefresh = async () => {
+    await refreshData();
+  };
+
+  const handleTimeEntriesRefresh = async () => {
+    await refreshData();
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -113,8 +122,8 @@ export function WorkOrderDetailsView() {
           allParts={allParts}
           timeEntries={timeEntries}
           customer={customer}
-          onJobLinesChange={updateJobLines}
-          onTimeEntriesChange={updateTimeEntries}
+          onJobLinesChange={handleJobLinesRefresh}
+          onTimeEntriesChange={handleTimeEntriesRefresh}
           onWorkOrderUpdate={handleWorkOrderUpdate}
           onRefreshData={refreshData}
           isEditMode={isEditMode}
