@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 
 interface CategorySelectorProps {
@@ -21,38 +20,44 @@ export function CategorySelector({ value, onValueChange }: CategorySelectorProps
         setIsLoading(true);
         setError(null);
         
-        console.log('Fetching inventory categories...');
+        console.log('Setting up default automotive part categories...');
         
-        const { data, error } = await supabase
-          .from('inventory_categories')
-          .select('name')
-          .order('name');
-          
-        console.log('Supabase response:', { data, error });
+        // Use predefined automotive part categories instead of fetching from database
+        const defaultCategories = [
+          'Engine Components',
+          'Electrical', 
+          'Brakes',
+          'Suspension',
+          'Exhaust',
+          'Filters',
+          'Fluids',
+          'Transmission',
+          'Cooling System',
+          'Fuel System',
+          'Body Parts',
+          'Interior',
+          'Belts & Hoses',
+          'Gaskets & Seals',
+          'Spark Plugs',
+          'Air Intake',
+          'Ignition',
+          'Fuel Injection',
+          'Steering',
+          'Tires & Wheels',
+          'Batteries',
+          'Alternators & Starters',
+          'Lights & Bulbs',
+          'Wipers',
+          'Sensors',
+          'Tools',
+          'Chemicals',
+          'Accessories'
+        ];
         
-        if (error) {
-          console.error('Error fetching inventory categories:', error);
-          setError('Failed to load categories');
-          // Fallback to basic categories if database fetch fails
-          setCategories([
-            'Engine Components', 
-            'Electrical', 
-            'Brakes', 
-            'Suspension', 
-            'Exhaust', 
-            'Filters', 
-            'Fluids',
-            'Transmission',
-            'Cooling System',
-            'Fuel System'
-          ]);
-        } else {
-          const categoryNames = data?.map(item => item.name) || [];
-          console.log('Categories loaded:', categoryNames.length, 'categories');
-          setCategories(categoryNames);
-        }
+        console.log('Categories loaded:', defaultCategories.length, 'categories');
+        setCategories(defaultCategories);
       } catch (err) {
-        console.error('Error in fetchCategories:', err);
+        console.error('Error setting up categories:', err);
         setError('Failed to load categories');
         // Fallback categories
         setCategories([
