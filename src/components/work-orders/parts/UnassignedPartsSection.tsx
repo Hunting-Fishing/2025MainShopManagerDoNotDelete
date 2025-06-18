@@ -60,6 +60,7 @@ export function UnassignedPartsSection({
           isOpen={showAddPartDialog}
           onClose={() => setShowAddPartDialog(false)}
           workOrderId={workOrderId}
+          jobLines={jobLines}
           onPartAdded={onPartAssigned || (() => {})}
         />
       </>
@@ -128,6 +129,7 @@ export function UnassignedPartsSection({
         isOpen={showAddPartDialog}
         onClose={() => setShowAddPartDialog(false)}
         workOrderId={workOrderId}
+        jobLines={jobLines}
         onPartAdded={onPartAssigned || (() => {})}
       />
     </>

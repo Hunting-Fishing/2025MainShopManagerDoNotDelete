@@ -13,6 +13,7 @@ interface AddPartDialogProps {
   onPartAdd?: (part: WorkOrderPart) => void;
   isOpen?: boolean;
   onClose?: () => void;
+  jobLines?: any[];
   onPartAdded?: () => void;
 }
 
@@ -45,13 +46,13 @@ export function AddPartDialog({
       const newPart: WorkOrderPart = {
         id: `temp-${Date.now()}-${Math.random()}`,
         work_order_id: currentWorkOrderId || '',
-        job_line_id: jobLineId || partData.job_line_id,
+        job_line_id: jobLineId,
         part_number: partData.part_number,
         name: partData.name,
         description: partData.description,
         quantity: partData.quantity,
-        unit_price: partData.customerPrice || partData.unit_price,
-        total_price: partData.quantity * (partData.customerPrice || partData.unit_price),
+        unit_price: partData.unit_price,
+        total_price: partData.quantity * partData.unit_price,
         status: partData.status || 'pending',
         notes: partData.notes,
         category: partData.category,
@@ -86,7 +87,7 @@ export function AddPartDialog({
 
       toast({
         title: "Success",
-        description: `Part "${partData.name}" added successfully`
+        description: "Part added successfully"
       });
       setIsOpen(false);
     } catch (error) {
@@ -114,7 +115,7 @@ export function AddPartDialog({
       )}
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-50">
         <DialogHeader>
-          <DialogTitle>Add New Part</DialogTitle>
+          <DialogTitle>Add Part</DialogTitle>
         </DialogHeader>
         
         <ComprehensivePartEntryForm 
