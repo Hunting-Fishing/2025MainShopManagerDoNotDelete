@@ -1,9 +1,13 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { useToast } from '@/hooks/use-toast';
 import { ComprehensivePartEntryForm } from './ComprehensivePartEntryForm';
+import { TabbedPartEntryForm } from './TabbedPartEntryForm';
+import { PartEntryModeToggle } from './PartEntryModeToggle';
+
 interface AddPartDialogProps {
   workOrderId: string;
   jobLineId?: string;
@@ -13,6 +17,7 @@ interface AddPartDialogProps {
   jobLines?: any[];
   onPartAdded?: () => void;
 }
+
 export function AddPartDialog({
   workOrderId,
   jobLineId,
@@ -21,17 +26,17 @@ export function AddPartDialog({
   onClose: externalOnClose,
   onPartAdded
 }: AddPartDialogProps) {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [entryMode, setEntryMode] = useState<'comprehensive' | 'tabbed'>('comprehensive');
 
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const setIsOpen = externalOnClose ? (open: boolean) => {
     if (!open) externalOnClose();
   } : setInternalIsOpen;
+
   const handlePartAdd = async (partData: WorkOrderPartFormValues) => {
     setIsLoading(true);
     try {
@@ -77,6 +82,7 @@ export function AddPartDialog({
       if (onPartAdded) {
         onPartAdded();
       }
+
       toast({
         title: "Success",
         description: "Part added successfully"
@@ -93,18 +99,39 @@ export function AddPartDialog({
       setIsLoading(false);
     }
   };
+
   const handleCancel = () => {
     setIsOpen(false);
   };
-  return <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      {externalIsOpen === undefined && <DialogTrigger asChild>
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {externalIsOpen === undefined && (
+        <DialogTrigger asChild>
           <Button variant="outline">Add Part</Button>
-        </DialogTrigger>}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-50">
         <DialogHeader>
-          <DialogTitle>Add Part - Comprehensive Entry</DialogTitle>
+          <DialogTitle>Add Part</DialogTitle>
         </DialogHeader>
-        <ComprehensivePartEntryForm onPartAdd={handlePartAdd} onCancel={handleCancel} isLoading={isLoading} />
+        
+        <PartEntryModeToggle mode={entryMode} onModeChange={setEntryMode} />
+        
+        {entryMode === 'comprehensive' ? (
+          <ComprehensivePartEntryForm 
+            onPartAdd={handlePartAdd} 
+            onCancel={handleCancel} 
+            isLoading={isLoading} 
+          />
+        ) : (
+          <TabbedPartEntryForm 
+            onPartAdd={handlePartAdd} 
+            onCancel={handleCancel} 
+            isLoading={isLoading} 
+          />
+        )}
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 }
