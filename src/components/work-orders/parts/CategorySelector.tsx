@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { getInventoryCategories } from '@/services/inventory/categoryService';
+import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 
 interface CategorySelectorProps {
@@ -20,13 +20,50 @@ export function CategorySelector({ value, onValueChange }: CategorySelectorProps
       try {
         setIsLoading(true);
         setError(null);
-        const categoryList = await getInventoryCategories();
-        setCategories(categoryList || []);
+        
+        console.log('Fetching inventory categories...');
+        
+        const { data, error } = await supabase
+          .from('inventory_categories')
+          .select('name')
+          .order('name');
+          
+        console.log('Supabase response:', { data, error });
+        
+        if (error) {
+          console.error('Error fetching inventory categories:', error);
+          setError('Failed to load categories');
+          // Fallback to basic categories if database fetch fails
+          setCategories([
+            'Engine Components', 
+            'Electrical', 
+            'Brakes', 
+            'Suspension', 
+            'Exhaust', 
+            'Filters', 
+            'Fluids',
+            'Transmission',
+            'Cooling System',
+            'Fuel System'
+          ]);
+        } else {
+          const categoryNames = data?.map(item => item.name) || [];
+          console.log('Categories loaded:', categoryNames.length, 'categories');
+          setCategories(categoryNames);
+        }
       } catch (err) {
-        console.error('Error fetching inventory categories:', err);
+        console.error('Error in fetchCategories:', err);
         setError('Failed to load categories');
-        // Fallback to basic categories if database fetch fails
-        setCategories(['Engine Components', 'Electrical', 'Brakes', 'Suspension', 'Exhaust', 'Filters', 'Fluids']);
+        // Fallback categories
+        setCategories([
+          'Engine Components', 
+          'Electrical', 
+          'Brakes', 
+          'Suspension', 
+          'Exhaust', 
+          'Filters', 
+          'Fluids'
+        ]);
       } finally {
         setIsLoading(false);
       }
@@ -47,7 +84,7 @@ export function CategorySelector({ value, onValueChange }: CategorySelectorProps
     );
   }
 
-  if (error) {
+  if (error && categories.length === 0) {
     return (
       <div className="space-y-2">
         <Label>Category</Label>
