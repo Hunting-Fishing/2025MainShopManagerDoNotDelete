@@ -2,257 +2,169 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, Trash2, Wrench, Car, Zap, Settings } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { 
-  getInventoryCategoriesWithDetails, 
-  addInventoryCategory, 
-  deleteInventoryCategory,
-  getCategoriesBySystem
-} from "@/services/inventory/categoryService";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Trash2, Plus, Search, Package } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import {
+  getInventoryCategories,
+  addInventoryCategory,
+  deleteInventoryCategory
+} from "@/services/inventory/categoryService";
 
-interface InventoryCategory {
-  id: string;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  display_order: number;
-}
-
-export function CategoriesManager() {
-  const [categories, setCategories] = useState<InventoryCategory[]>([]);
-  const [groupedCategories, setGroupedCategories] = useState<Record<string, InventoryCategory[]>>({});
+export const CategoriesManager = () => {
+  const [categories, setCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
+  const fetchCategories = async () => {
     try {
-      const [loadedCategories, grouped] = await Promise.all([
-        getInventoryCategoriesWithDetails(),
-        getCategoriesBySystem()
-      ]);
-      setCategories(loadedCategories);
-      setGroupedCategories(grouped);
+      setIsLoading(true);
+      const data = await getInventoryCategories();
+      setCategories(data);
     } catch (error) {
-      console.error("Error loading automotive inventory categories:", error);
+      console.error("Error fetching categories:", error);
       toast({
+        title: "Error",
+        description: "Failed to fetch categories",
         variant: "destructive",
-        title: "Error",
-        description: "Failed to load inventory categories"
-      });
-    }
-  };
-
-  const handleAddCategory = async () => {
-    if (!newCategory.trim()) return;
-    
-    // Check for duplicates
-    if (categories.some(cat => cat.name.toLowerCase() === newCategory.trim().toLowerCase())) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "This category already exists"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await addInventoryCategory(newCategory.trim(), newDescription.trim() || undefined);
-      await loadCategories();
-      setNewCategory("");
-      setNewDescription("");
-      toast({
-        variant: "success",
-        title: "Success",
-        description: "Category added successfully"
-      });
-    } catch (error) {
-      console.error("Error adding category:", error);
-      toast({
-        variant: "destructive", 
-        title: "Error",
-        description: "Failed to add category"
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteCategory = async (categoryName: string) => {
-    if (confirm(`Are you sure you want to delete "${categoryName}"? This action cannot be undone.`)) {
-      setIsLoading(true);
-      try {
-        await deleteInventoryCategory(categoryName);
-        await loadCategories();
-        toast({
-          variant: "success",
-          title: "Success",
-          description: "Category deleted successfully"
-        });
-      } catch (error) {
-        console.error("Error deleting category:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to delete category"
-        });
-      } finally {
-        setIsLoading(false);
-      }
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleAddCategory = async () => {
+    if (!newCategory.trim()) return;
+
+    try {
+      setIsAdding(true);
+      await addInventoryCategory(newCategory.trim());
+      setNewCategory("");
+      await fetchCategories();
+      toast({
+        title: "Success",
+        description: "Category added successfully",
+      });
+    } catch (error) {
+      console.error("Error adding category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add category",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAdding(false);
     }
   };
 
-  const getSystemIcon = (systemName: string) => {
-    switch (systemName) {
-      case 'Engine & Powertrain':
-        return <Settings className="h-4 w-4" />;
-      case 'Chassis & Safety':
-        return <Car className="h-4 w-4" />;
-      case 'Electrical & Comfort':
-        return <Zap className="h-4 w-4" />;
-      case 'Body & Interior':
-        return <Car className="h-4 w-4" />;
-      case 'Maintenance & Tools':
-        return <Wrench className="h-4 w-4" />;
-      case 'Aftermarket & Accessories':
-        return <PlusCircle className="h-4 w-4" />;
-      default:
-        return <Settings className="h-4 w-4" />;
+  const handleDeleteCategory = async (categoryName: string) => {
+    try {
+      await deleteInventoryCategory(categoryName);
+      await fetchCategories();
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete category",
+        variant: "destructive",
+      });
     }
   };
+
+  const filteredCategories = categories.filter(category =>
+    category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading Categories...</CardTitle>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Car className="h-5 w-5" />
-          Automotive Inventory Categories
+          <Package className="h-5 w-5" />
+          Inventory Categories
         </CardTitle>
         <CardDescription>
-          Manage the comprehensive automotive categories used to organize your inventory items
+          Manage your inventory categories. Add new categories or remove existing ones.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="organized" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="organized">By System</TabsTrigger>
-            <TabsTrigger value="all">All Categories</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="organized" className="space-y-6">
-            <div className="grid gap-4">
-              {Object.entries(groupedCategories).map(([systemName, systemCategories]) => (
-                <Card key={systemName} className="border-l-4 border-l-blue-500">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      {getSystemIcon(systemName)}
-                      {systemName}
-                      <Badge variant="outline" className="ml-auto">
-                        {systemCategories.length} categories
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-2">
-                      {systemCategories.map((category) => (
-                        <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                          <div className="flex-1">
-                            <div className="font-medium">{category.name}</div>
-                            {category.description && (
-                              <div className="text-sm text-muted-foreground mt-1">
-                                {category.description}
-                              </div>
-                            )}
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteCategory(category.name)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+      <CardContent className="space-y-4">
+        {/* Add new category */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Add new category..."
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+          />
+          <Button 
+            onClick={handleAddCategory} 
+            disabled={!newCategory.trim() || isAdding}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isAdding ? "Adding..." : "Add"}
+          </Button>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search categories..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Categories list */}
+        {filteredCategories.length === 0 ? (
+          <Alert>
+            <AlertDescription>
+              {searchTerm ? "No categories found matching your search." : "No categories available. Add some categories to get started."}
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="space-y-2">
+            <div className="text-sm text-muted-foreground">
+              {filteredCategories.length} categories
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {filteredCategories.map((category) => (
+                <Badge key={category} variant="secondary" className="flex items-center gap-2">
+                  {category}
+                  <button
+                    onClick={() => handleDeleteCategory(category)}
+                    className="hover:text-red-500 ml-1"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </Badge>
               ))}
             </div>
-          </TabsContent>
-
-          <TabsContent value="all" className="space-y-6">
-            <div className="border rounded-md">
-              {categories.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  No categories yet. Add your first category below.
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {categories.map((category) => (
-                    <div key={category.id} className="flex items-center justify-between p-3 hover:bg-gray-50">
-                      <div className="flex-1">
-                        <div className="font-medium">{category.name}</div>
-                        {category.description && (
-                          <div className="text-sm text-muted-foreground">
-                            {category.description}
-                          </div>
-                        )}
-                        <div className="text-xs text-muted-foreground">
-                          Order: {category.display_order}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteCategory(category.name)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        <div className="mt-6 p-4 border rounded-lg bg-gray-50">
-          <h3 className="font-medium mb-4">Add New Category</h3>
-          <div className="space-y-3">
-            <Input
-              placeholder="Category name (e.g., 'Custom Performance Parts')"
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-            />
-            <Textarea
-              placeholder="Category description (optional)"
-              value={newDescription}
-              onChange={(e) => setNewDescription(e.target.value)}
-              rows={2}
-            />
-            <Button 
-              onClick={handleAddCategory} 
-              disabled={!newCategory.trim() || isLoading}
-              className="w-full"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Category
-            </Button>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
-}
+};
