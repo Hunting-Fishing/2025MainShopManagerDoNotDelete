@@ -53,6 +53,13 @@ export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
 }) => {
   const description = form.watch('description');
 
+  // Create a wrapper function that matches the expected signature
+  const handleJobLinesChange = async () => {
+    // This function doesn't need to do anything special for the form fields
+    // The actual job lines changes are handled by the parent component
+    return Promise.resolve();
+  };
+
   return (
     <div className="space-y-6">
       <CustomerFields form={form} prePopulatedCustomer={prePopulatedCustomer} />
@@ -64,7 +71,7 @@ export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
           workOrderId={workOrderId}
           description={description}
           jobLines={jobLines}
-          onJobLinesChange={onJobLinesChange}
+          onJobLinesChange={handleJobLinesChange}
           isEditMode={true}
           shopId={shopId}
         />

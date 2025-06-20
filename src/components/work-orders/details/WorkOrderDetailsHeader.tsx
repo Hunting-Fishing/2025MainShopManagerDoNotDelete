@@ -32,20 +32,21 @@ export function WorkOrderDetailsHeader({
   onCancelEdit,
   onSaveEdit
 }: WorkOrderDetailsHeaderProps) {
-  const getStatusVariant = (status: string) => {
-    const statusInfo = statusMap[status];
-    if (!statusInfo) return 'outline';
-    
-    // Since statusMap returns a string, we'll use a simple color mapping
-    const colorMap: { [key: string]: string } = {
-      'pending': 'default',
-      'in-progress': 'default', 
-      'completed': 'default',
-      'cancelled': 'destructive',
-      'on-hold': 'destructive'
-    };
-    
-    return colorMap[status] || 'outline';
+  const getStatusVariant = (status: string): "default" | "destructive" | "success" | "warning" | "outline" | "secondary" | "info" => {
+    // Map work order statuses to badge variants
+    switch (status) {
+      case 'completed':
+        return 'success';
+      case 'cancelled':
+      case 'on-hold':
+        return 'destructive';
+      case 'in-progress':
+        return 'info';
+      case 'pending':
+        return 'warning';
+      default:
+        return 'default';
+    }
   };
 
   return (
@@ -67,7 +68,7 @@ export function WorkOrderDetailsHeader({
                     <SelectValue>
                       <Badge variant={getStatusVariant(currentStatus)}>
                         {isUpdatingStatus && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-                        {statusMap[currentStatus] || currentStatus}
+                        {statusMap[currentStatus as keyof typeof statusMap] || currentStatus}
                       </Badge>
                     </SelectValue>
                   </SelectTrigger>

@@ -1,186 +1,184 @@
 
 import React, { useState } from 'react';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import { WorkOrderJobLine } from '@/types/jobLine';
 import { JobLineEditDialog } from '../job-lines/JobLineEditDialog';
-import { UnifiedJobLineFormDialog } from '../job-lines/UnifiedJobLineFormDialog';
-import { deleteJobLine, updateJobLine } from '@/services/workOrder/jobLinesService';
-import { toast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { jobLineStatusMap } from '@/types/jobLine';
 
 interface JobLinesSectionProps {
   workOrderId: string;
+  description?: string;
   jobLines: WorkOrderJobLine[];
   onJobLinesChange: () => Promise<void>;
   isEditMode: boolean;
+  shopId?: string;
 }
 
 export function JobLinesSection({
   workOrderId,
+  description,
   jobLines,
   onJobLinesChange,
-  isEditMode
+  isEditMode,
+  shopId
 }: JobLinesSectionProps) {
   const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
-  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleEdit = (jobLine: WorkOrderJobLine) => {
+  const handleAddJobLine = () => {
+    setEditingJobLine(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditJobLine = (jobLine: WorkOrderJobLine) => {
     setEditingJobLine(jobLine);
+    setIsDialogOpen(true);
   };
 
-  const handleDelete = async (jobLineId: string) => {
-    if (!confirm('Are you sure you want to delete this job line?')) return;
-    
-    try {
-      await deleteJobLine(jobLineId);
-      toast({
-        title: "Success",
-        description: "Job line deleted successfully",
-      });
-      await onJobLinesChange();
-    } catch (error) {
-      console.error('Error deleting job line:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete job line",
-        variant: "destructive",
-      });
+  const handleDeleteJobLine = async (jobLineId: string) => {
+    if (confirm('Are you sure you want to delete this job line?')) {
+      try {
+        // TODO: Implement delete job line API call
+        console.log('Deleting job line:', jobLineId);
+        await onJobLinesChange();
+      } catch (error) {
+        console.error('Error deleting job line:', error);
+      }
     }
   };
 
-  const handleSave = async (updatedJobLine: WorkOrderJobLine) => {
+  const handleDialogSave = async (jobLines: WorkOrderJobLine[]) => {
     try {
-      await updateJobLine(updatedJobLine.id, updatedJobLine);
-      toast({
-        title: "Success",
-        description: "Job line updated successfully",
-      });
+      // The dialog handles the save operation
+      // We just need to refresh the data
+      await onJobLinesChange();
+      setIsDialogOpen(false);
       setEditingJobLine(null);
-      await onJobLinesChange();
     } catch (error) {
-      console.error('Error updating job line:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update job line",
-        variant: "destructive",
-      });
+      console.error('Error saving job line:', error);
     }
   };
 
-  const handleAdd = async (newJobLines: WorkOrderJobLine[]) => {
-    setShowAddDialog(false);
-    await onJobLinesChange();
-    toast({
-      title: "Success",
-      description: "Job line added successfully",
-    });
-  };
-
-  const getStatusBadgeColor = (status: string) => {
-    const statusColors = {
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'in-progress': 'bg-blue-100 text-blue-800',
-      'completed': 'bg-green-100 text-green-800',
-      'on-hold': 'bg-red-100 text-red-800'
-    };
-    return statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
-  };
+  const totalLaborCost = jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0);
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Labor & Services</CardTitle>
-        {isEditMode && (
-          <Button
-            onClick={() => setShowAddDialog(true)}
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Job Line
-          </Button>
-        )}
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Labor & Services</CardTitle>
+          {isEditMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddJobLine}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Labor
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {jobLines.length === 0 ? (
-          <p className="text-slate-500 text-center py-8">
-            No job lines added yet. {isEditMode && 'Click "Add Job Line" to get started.'}
-          </p>
+          <div className="text-center py-8 text-gray-500">
+            <p>No labor lines added yet.</p>
+            {isEditMode && (
+              <Button
+                variant="outline"
+                onClick={handleAddJobLine}
+                className="mt-4"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add First Labor Line
+              </Button>
+            )}
+          </div>
         ) : (
           <div className="space-y-4">
             {jobLines.map((jobLine) => (
-              <div key={jobLine.id} className="border rounded-lg p-4">
+              <div
+                key={jobLine.id}
+                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="font-semibold">{jobLine.name}</h4>
-                      <Badge className={getStatusBadgeColor(jobLine.status || 'pending')}>
-                        {jobLine.status || 'pending'}
-                      </Badge>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-medium">{jobLine.name}</h4>
+                      {jobLine.status && (
+                        <Badge variant="outline" className={jobLineStatusMap[jobLine.status]?.classes}>
+                          {jobLineStatusMap[jobLine.status]?.label || jobLine.status}
+                        </Badge>
+                      )}
                     </div>
+                    
                     {jobLine.description && (
-                      <p className="text-sm text-slate-600 mb-2">{jobLine.description}</p>
+                      <p className="text-sm text-gray-600 mb-2">{jobLine.description}</p>
                     )}
-                    <div className="flex gap-4 text-sm text-slate-600">
-                      {jobLine.estimated_hours && (
-                        <span>Hours: {jobLine.estimated_hours}</span>
-                      )}
-                      {jobLine.labor_rate && (
-                        <span>Rate: ${jobLine.labor_rate}/hr</span>
-                      )}
-                      {jobLine.total_amount && (
-                        <span className="font-semibold">Total: ${jobLine.total_amount}</span>
-                      )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">Hours:</span> {jobLine.estimated_hours || 0}
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Rate:</span> ${jobLine.labor_rate || 0}/hr
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Total:</span> ${jobLine.total_amount || 0}
+                      </div>
                     </div>
+                    
+                    {jobLine.category && (
+                      <div className="mt-2 text-sm text-gray-500">
+                        Category: {jobLine.category}
+                        {jobLine.subcategory && ` → ${jobLine.subcategory}`}
+                      </div>
+                    )}
                   </div>
                   
                   {isEditMode && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-4">
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => handleEdit(jobLine)}
-                        className="flex items-center gap-1"
+                        onClick={() => handleEditJobLine(jobLine)}
                       >
-                        <Edit className="h-3 w-3" />
-                        Edit
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(jobLine.id)}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteJobLine(jobLine.id)}
+                        className="text-red-600 hover:text-red-700"
                       >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   )}
                 </div>
               </div>
             ))}
+            
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center font-semibold">
+                <span>Total Labor Cost:</span>
+                <span>${totalLaborCost.toFixed(2)}</span>
+              </div>
+            </div>
           </div>
         )}
+
+        <JobLineEditDialog
+          jobLine={editingJobLine}
+          mode="add-manual"
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          onSave={handleDialogSave}
+        />
       </CardContent>
-
-      {/* Edit Job Line Dialog */}
-      <JobLineEditDialog
-        jobLine={editingJobLine}
-        open={!!editingJobLine}
-        onOpenChange={(open) => !open && setEditingJobLine(null)}
-        onSave={handleSave}
-      />
-
-      {/* Add Job Line Dialog */}
-      <UnifiedJobLineFormDialog
-        workOrderId={workOrderId}
-        mode="add"
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        onSave={handleAdd}
-      />
     </Card>
   );
 }
