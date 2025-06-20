@@ -129,8 +129,8 @@ export function WorkOrderPartsSection({
       />
 
       <SpecialOrderDialog
-        isOpen={showSpecialOrderDialog}
-        onClose={() => setShowSpecialOrderDialog(false)}
+        open={showSpecialOrderDialog}
+        onOpenChange={setShowSpecialOrderDialog}
         workOrderId={workOrderId}
         onPartAdded={handlePartAdded}
       />
