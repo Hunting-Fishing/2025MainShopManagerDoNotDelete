@@ -1,4 +1,3 @@
-
 // Main work order service exports - single source of truth
 
 // Query operations
@@ -28,7 +27,7 @@ export {
   deleteWorkOrderJobLine
 } from './jobLinesService';
 
-// Parts operations
+// Parts operations - updated exports
 export { 
   getWorkOrderParts,
   createWorkOrderPart,
