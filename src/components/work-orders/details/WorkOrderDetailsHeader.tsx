@@ -36,13 +36,16 @@ export function WorkOrderDetailsHeader({
     const statusInfo = statusMap[status];
     if (!statusInfo) return 'outline';
     
-    switch (statusInfo.color) {
-      case 'yellow': return 'default';
-      case 'blue': return 'default';
-      case 'green': return 'default';
-      case 'red': return 'destructive';
-      default: return 'outline';
-    }
+    // Since statusMap returns a string, we'll use a simple color mapping
+    const colorMap: { [key: string]: string } = {
+      'pending': 'default',
+      'in-progress': 'default', 
+      'completed': 'default',
+      'cancelled': 'destructive',
+      'on-hold': 'destructive'
+    };
+    
+    return colorMap[status] || 'outline';
   };
 
   return (
@@ -64,15 +67,15 @@ export function WorkOrderDetailsHeader({
                     <SelectValue>
                       <Badge variant={getStatusVariant(currentStatus)}>
                         {isUpdatingStatus && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-                        {statusMap[currentStatus]?.label || currentStatus}
+                        {statusMap[currentStatus] || currentStatus}
                       </Badge>
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(statusMap).map(([key, status]) => (
+                    {Object.entries(statusMap).map(([key, label]) => (
                       <SelectItem key={key} value={key}>
                         <Badge variant={getStatusVariant(key)} className="mr-2">
-                          {status.label}
+                          {label}
                         </Badge>
                       </SelectItem>
                     ))}
