@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Package, Plus, Wrench } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { AddPartDialog } from '../parts/AddPartDialog';
+import { InventorySectionHeader } from '../inventory/InventorySectionHeader';
+import { InventorySelectionDialog } from '../inventory/InventorySelectionDialog';
+import { SpecialOrderDialog } from '../parts/SpecialOrderDialog';
+import { InventoryItemExtended } from '@/types/inventory';
 
 interface JobLineWithPartsProps {
   jobLine: WorkOrderJobLine;
@@ -22,24 +25,33 @@ export function JobLineWithParts({
   onPartAdded,
   isEditMode = false
 }: JobLineWithPartsProps) {
-  const [showAddPartDialog, setShowAddPartDialog] = useState(false);
+  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
+  const [showSpecialOrderDialog, setShowSpecialOrderDialog] = useState(false);
 
-  const handleAddPartClick = () => {
-    console.log('Add Part button clicked for job line:', jobLine.id);
-    setShowAddPartDialog(true);
+  const handleShowInventoryDialog = () => {
+    console.log('Showing inventory dialog for job line:', jobLine.id);
+    setShowInventoryDialog(true);
   };
 
-  const handlePartAdded = () => {
-    console.log('Part added successfully, refreshing...');
-    setShowAddPartDialog(false);
+  const handleShowSpecialOrderDialog = () => {
+    console.log('Showing special order dialog for job line:', jobLine.id);
+    setShowSpecialOrderDialog(true);
+  };
+
+  const handleInventoryItemAdded = (item: InventoryItemExtended) => {
+    console.log('Inventory item added to job line:', item);
+    setShowInventoryDialog(false);
     if (onPartAdded) {
       onPartAdded();
     }
   };
 
-  const handleDialogClose = () => {
-    console.log('Add Part dialog closed');
-    setShowAddPartDialog(false);
+  const handleSpecialOrderAdded = () => {
+    console.log('Special order part added to job line');
+    setShowSpecialOrderDialog(false);
+    if (onPartAdded) {
+      onPartAdded();
+    }
   };
 
   return (
@@ -76,15 +88,11 @@ export function JobLineWithParts({
                 Parts ({parts.length})
               </h4>
               {isEditMode && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleAddPartClick}
-                  className="h-8 px-3"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Part
-                </Button>
+                <InventorySectionHeader
+                  onShowDialog={handleShowInventoryDialog}
+                  onShowSpecialOrderDialog={handleShowSpecialOrderDialog}
+                  totalItems={parts.length}
+                />
               )}
             </div>
 
@@ -113,15 +121,13 @@ export function JobLineWithParts({
                 <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No parts assigned to this job line</p>
                 {isEditMode && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleAddPartClick}
-                    className="mt-2"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Part
-                  </Button>
+                  <div className="mt-3">
+                    <InventorySectionHeader
+                      onShowDialog={handleShowInventoryDialog}
+                      onShowSpecialOrderDialog={handleShowSpecialOrderDialog}
+                      totalItems={parts.length}
+                    />
+                  </div>
                 )}
               </div>
             )}
@@ -129,13 +135,20 @@ export function JobLineWithParts({
         </CardContent>
       </Card>
 
-      {/* Add Part Dialog */}
-      <AddPartDialog
-        isOpen={showAddPartDialog}
-        onClose={handleDialogClose}
+      {/* Inventory Selection Dialog */}
+      <InventorySelectionDialog
+        open={showInventoryDialog}
+        onOpenChange={setShowInventoryDialog}
+        onAddItem={handleInventoryItemAdded}
+      />
+
+      {/* Special Order Dialog */}
+      <SpecialOrderDialog
+        isOpen={showSpecialOrderDialog}
+        onClose={() => setShowSpecialOrderDialog(false)}
         workOrderId={workOrderId}
         jobLineId={jobLine.id}
-        onPartAdded={handlePartAdded}
+        onPartAdded={handleSpecialOrderAdded}
       />
     </>
   );

@@ -6,7 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Package } from 'lucide-react';
 import { PartAssignmentControls } from './PartAssignmentControls';
-import { AddPartDialog } from './AddPartDialog';
+import { InventorySectionHeader } from '../inventory/InventorySectionHeader';
+import { InventorySelectionDialog } from '../inventory/InventorySelectionDialog';
+import { SpecialOrderDialog } from './SpecialOrderDialog';
+import { InventoryItemExtended } from '@/types/inventory';
 
 interface UnassignedPartsSectionProps {
   workOrderId: string;
@@ -27,7 +30,34 @@ export function UnassignedPartsSection({
   onPartAssigned,
   isEditMode
 }: UnassignedPartsSectionProps) {
-  const [showAddPartDialog, setShowAddPartDialog] = useState(false);
+  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
+  const [showSpecialOrderDialog, setShowSpecialOrderDialog] = useState(false);
+
+  const handleShowInventoryDialog = () => {
+    console.log('Showing inventory dialog for unassigned parts');
+    setShowInventoryDialog(true);
+  };
+
+  const handleShowSpecialOrderDialog = () => {
+    console.log('Showing special order dialog for unassigned parts');
+    setShowSpecialOrderDialog(true);
+  };
+
+  const handleInventoryItemAdded = (item: InventoryItemExtended) => {
+    console.log('Inventory item added as unassigned part:', item);
+    setShowInventoryDialog(false);
+    if (onPartAssigned) {
+      onPartAssigned();
+    }
+  };
+
+  const handleSpecialOrderAdded = () => {
+    console.log('Special order part added as unassigned');
+    setShowSpecialOrderDialog(false);
+    if (onPartAssigned) {
+      onPartAssigned();
+    }
+  };
 
   if (unassignedParts.length === 0) {
     return (
@@ -40,10 +70,11 @@ export function UnassignedPartsSection({
                 Unassigned Parts
               </CardTitle>
               {isEditMode && (
-                <Button size="sm" className="h-8 px-3" onClick={() => setShowAddPartDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Part
-                </Button>
+                <InventorySectionHeader
+                  onShowDialog={handleShowInventoryDialog}
+                  onShowSpecialOrderDialog={handleShowSpecialOrderDialog}
+                  totalItems={0}
+                />
               )}
             </div>
           </CardHeader>
@@ -56,12 +87,17 @@ export function UnassignedPartsSection({
           </CardContent>
         </Card>
 
-        <AddPartDialog
-          isOpen={showAddPartDialog}
-          onClose={() => setShowAddPartDialog(false)}
+        <InventorySelectionDialog
+          open={showInventoryDialog}
+          onOpenChange={setShowInventoryDialog}
+          onAddItem={handleInventoryItemAdded}
+        />
+
+        <SpecialOrderDialog
+          isOpen={showSpecialOrderDialog}
+          onClose={() => setShowSpecialOrderDialog(false)}
           workOrderId={workOrderId}
-          jobLines={jobLines}
-          onPartAdded={onPartAssigned || (() => {})}
+          onPartAdded={handleSpecialOrderAdded}
         />
       </>
     );
@@ -77,10 +113,11 @@ export function UnassignedPartsSection({
               Unassigned Parts ({unassignedParts.length})
             </CardTitle>
             {isEditMode && (
-              <Button size="sm" className="h-8 px-3" onClick={() => setShowAddPartDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Part
-              </Button>
+              <InventorySectionHeader
+                onShowDialog={handleShowInventoryDialog}
+                onShowSpecialOrderDialog={handleShowSpecialOrderDialog}
+                totalItems={unassignedParts.length}
+              />
             )}
           </div>
         </CardHeader>
@@ -125,12 +162,17 @@ export function UnassignedPartsSection({
         </CardContent>
       </Card>
 
-      <AddPartDialog
-        isOpen={showAddPartDialog}
-        onClose={() => setShowAddPartDialog(false)}
+      <InventorySelectionDialog
+        open={showInventoryDialog}
+        onOpenChange={setShowInventoryDialog}
+        onAddItem={handleInventoryItemAdded}
+      />
+
+      <SpecialOrderDialog
+        isOpen={showSpecialOrderDialog}
+        onClose={() => setShowSpecialOrderDialog(false)}
         workOrderId={workOrderId}
-        jobLines={jobLines}
-        onPartAdded={onPartAssigned || (() => {})}
+        onPartAdded={handleSpecialOrderAdded}
       />
     </>
   );
