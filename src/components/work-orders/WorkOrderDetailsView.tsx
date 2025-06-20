@@ -1,13 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { useWorkOrderData } from '@/hooks/useWorkOrderData';
+import { useWorkOrderStatus } from '@/hooks/useWorkOrderStatus';
+import { toast } from '@/hooks/use-toast';
 
 interface WorkOrderDetailsViewProps {
   workOrderId: string;
 }
 
 export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
+  const [isEditMode, setIsEditMode] = useState(false);
+  
   const {
     workOrder,
     jobLines,
@@ -16,11 +21,15 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
     customer,
     isLoading,
     error,
-    updateJobLines,
-    updateParts,
-    updateTimeEntries,
     refreshData
   } = useWorkOrderData(workOrderId);
+
+  const {
+    status,
+    isUpdating: isUpdatingStatus,
+    updateStatus,
+    error: statusError
+  } = useWorkOrderStatus(workOrderId, workOrder?.status || '');
 
   const handleWorkOrderUpdate = async () => {
     await refreshData();
@@ -28,6 +37,52 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
 
   const handlePartsChange = async () => {
     await refreshData();
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    try {
+      const result = await updateStatus(newStatus);
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Work order status updated successfully",
+        });
+        await refreshData();
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update work order status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStartEdit = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      await refreshData();
+      setIsEditMode(false);
+      toast({
+        title: "Success",
+        description: "Work order updated successfully",
+      });
+    } catch (error) {
+      console.error('Error saving work order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save work order changes",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -80,6 +135,18 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto p-6 max-w-7xl">
+        <WorkOrderDetailsHeader
+          workOrder={workOrder}
+          customer={customer}
+          currentStatus={status}
+          isUpdatingStatus={isUpdatingStatus}
+          onStatusChange={handleStatusChange}
+          isEditMode={isEditMode}
+          onStartEdit={handleStartEdit}
+          onCancelEdit={handleCancelEdit}
+          onSaveEdit={handleSaveEdit}
+        />
+        
         <WorkOrderDetailsTabs
           workOrder={workOrder}
           jobLines={jobLines}
@@ -88,7 +155,7 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
           customer={customer}
           onWorkOrderUpdate={handleWorkOrderUpdate}
           onPartsChange={handlePartsChange}
-          isEditMode={false}
+          isEditMode={isEditMode}
         />
       </div>
     </div>
