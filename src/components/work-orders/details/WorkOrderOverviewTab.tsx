@@ -74,11 +74,9 @@ export function WorkOrderOverviewTab({
         <div className="lg:col-span-6">
           <WorkOrderPartsSection
             workOrderId={workOrder.id}
-            allParts={allParts}
-            jobLines={jobLines}
+            parts={allParts}
             onPartsChange={onPartsChange}
             isEditMode={isEditMode}
-            showType="overview"
           />
         </div>
 
