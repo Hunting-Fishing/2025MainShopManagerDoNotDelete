@@ -1,171 +1,156 @@
 
-import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { ChevronLeft, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ServiceHistoryTable } from "@/components/service-history/ServiceHistoryTable";
-import { toast } from "@/hooks/use-toast";
-import { SendSmsButton } from "@/components/calls/SendSmsButton";
-import { VoiceCallButton } from "@/components/calls/VoiceCallButton";
-import { CallHistory } from "@/components/calls/CallHistory";
-import { supabase } from "@/lib/supabase";
-import { WorkOrder } from "@/types/workOrder";
-import { mapDatabaseToAppModel } from "@/utils/workOrders/mappers";
+import React from 'react';
+import { useParams } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, FileText, Download } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ServiceHistoryTable } from '@/components/service-history/ServiceHistoryTable';
+import { useWorkOrdersByCustomer } from '@/hooks/useWorkOrdersByCustomer';
+import { useCustomerByName } from '@/hooks/useCustomerByName';
+import { WorkOrder } from '@/types/workOrder';
+import { Customer } from '@/types/customer';
+import { mapDatabaseWorkOrder } from '@/utils/workOrders/typeMappers';
+import { toast } from '@/hooks/use-toast';
 
-export default function CustomerServiceHistory() {
-  const { customer } = useParams<{ customer: string }>();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState<boolean>(true);
-  const [customerWorkOrders, setCustomerWorkOrders] = useState<WorkOrder[]>([]);
+const CustomerServiceHistory = () => {
+  const { customerName } = useParams<{ customerName: string }>();
+  const decodedCustomerName = customerName ? decodeURIComponent(customerName) : '';
+  
+  const { customer, loading: customerLoading, error: customerError } = useCustomerByName(decodedCustomerName);
+  const { workOrders, loading: workOrdersLoading, error: workOrdersError } = useWorkOrdersByCustomer(customer?.id || '');
 
-  useEffect(() => {
-    const fetchCustomerWorkOrders = async () => {
-      setLoading(true);
-      try {
-        if (!customer) {
-          navigate("/customers");
-          return;
-        }
+  const loading = customerLoading || workOrdersLoading;
+  const error = customerError || workOrdersError;
 
-        // Fetch work orders from Supabase
-        const { data: workOrderData, error } = await supabase
-          .from('work_orders')
-          .select(`
-            *,
-            work_order_time_entries(*)
-          `)
-          .ilike('customer', `%${customer}%`);
+  // Map work orders to ensure proper formatting
+  const mappedWorkOrders = React.useMemo(() => {
+    return workOrders.map(wo => mapDatabaseWorkOrder(wo));
+  }, [workOrders]);
 
-        if (error) {
-          throw error;
-        }
-        
-        // Map database models to application models
-        const orders = workOrderData.map(order => mapDatabaseToAppModel(order));
-        
-        if (orders.length === 0) {
-          toast({
-            title: "No service history",
-            description: "No service history found for this customer.",
-          });
-        }
-        
-        setCustomerWorkOrders(orders);
-      } catch (error) {
-        console.error("Error fetching customer service history:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load service history.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCustomerWorkOrders();
-  }, [customer, navigate]);
+  const handleExportHistory = () => {
+    toast({
+      title: "Export Started",
+      description: "Your service history export is being prepared.",
+    });
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-40">
-        <div className="text-lg text-slate-500">Loading service history...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="container mx-auto p-6">
+          <div className="flex items-center justify-center py-12">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-8 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
+              <p className="text-slate-600 text-lg">Loading service history...</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // Use the first work order to get the customer name (if available)
-  const customerName = customerWorkOrders.length > 0 
-    ? customerWorkOrders[0].customer 
-    : customer;
-
-  // This would come from customer data in a real app
-  const phoneNumber = "";
-  const customerId = "";
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate(-1)} 
-          className="mb-4"
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Customer Service History</h1>
-            <p className="text-muted-foreground">
-              Service history for {customerName}
-            </p>
-          </div>
-          
-          <div className="flex space-x-2 mt-4 md:mt-0">
-            <SendSmsButton 
-              phoneNumber={phoneNumber} 
-              message={`Hello ${customerName}, regarding your service history`} 
-              customerId={customerId}
-              variant="outline"
-              size="sm"
-            />
-            <VoiceCallButton
-              phoneNumber={phoneNumber}
-              callType="service_update" 
-              customerId={customerId}
-              variant="outline"
-              size="sm"
-            />
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="container mx-auto p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-red-200/60 p-8 text-center">
+            <h1 className="text-2xl font-bold text-red-600 mb-2">Error</h1>
+            <p className="text-slate-600">{error}</p>
+            <Button asChild className="mt-4">
+              <Link to="/customers">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Customers
+              </Link>
+            </Button>
           </div>
         </div>
       </div>
+    );
+  }
 
-      <Card>
-        <CardHeader className="bg-slate-50 border-b">
-          <div className="flex items-center">
-            <User className="h-5 w-5 mr-2 text-slate-500" />
-            <CardTitle className="text-lg">Customer Information</CardTitle>
+  if (!customer) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="container mx-auto p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-yellow-200/60 p-8 text-center">
+            <h1 className="text-2xl font-bold text-yellow-600 mb-2">Customer Not Found</h1>
+            <p className="text-slate-600">No customer found with the name "{decodedCustomerName}"</p>
+            <Button asChild className="mt-4">
+              <Link to="/customers">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Customers
+              </Link>
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row justify-between">
-            <div>
-              <h3 className="font-medium">{customerName}</h3>
-              {/* In a real app, you would display more customer information here */}
-              <p className="text-sm text-slate-500 mt-1">
-                Total Service Records: {customerWorkOrders.length}
-              </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="container mx-auto p-6 max-w-7xl">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/customers">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Customers
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">
+                  Service History
+                </h1>
+                <p className="text-lg text-slate-600 mt-1">
+                  Complete service record for {customer.first_name} {customer.last_name}
+                </p>
+              </div>
             </div>
-            <div className="mt-4 md:mt-0">
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/customers/${customer}`}>View Customer Details</Link>
+            <div className="flex gap-2">
+              <Button onClick={handleExportHistory} variant="outline">
+                <Download className="mr-2 h-4 w-4" />
+                Export History
+              </Button>
+              <Button asChild>
+                <Link to={`/customers/${customer.id}`}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  View Customer Details
+                </Link>
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card>
-        <CardHeader className="bg-slate-50 border-b">
-          <CardTitle className="text-lg">Service History</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <ServiceHistoryTable workOrders={customerWorkOrders} showEquipment={true} />
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="bg-slate-50 border-b">
-          <CardTitle className="text-lg">Communication History</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <CallHistory customerId={customerId || ""} />
-        </CardContent>
-      </Card>
+        {/* Service History Card */}
+        <Card className="bg-white/80 backdrop-blur-sm border-slate-200/60 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Complete Service History ({mappedWorkOrders.length} records)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ServiceHistoryTable 
+              workOrders={mappedWorkOrders} 
+              showEquipment={true}
+            />
+            
+            {mappedWorkOrders.length === 0 && (
+              <div className="text-center py-12 text-slate-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                <h3 className="text-lg font-medium mb-2">No Service History</h3>
+                <p>No service records found for this customer.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
-}
+};
+
+export default CustomerServiceHistory;
