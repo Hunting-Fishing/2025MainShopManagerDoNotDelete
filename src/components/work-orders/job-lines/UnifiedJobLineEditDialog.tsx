@@ -4,92 +4,102 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { useServiceCategories } from '@/hooks/useServiceCategories';
+import { Textarea } from '@/components/ui/textarea';
+import { WorkOrderJobLine, LaborRateType, JobLineStatus } from '@/types/jobLine';
+import { useServiceSectors } from '@/hooks/useServiceCategories';
 import { toast } from '@/hooks/use-toast';
 
-export interface UnifiedJobLineEditDialogProps {
-  jobLine: WorkOrderJobLine | null;
+export interface UnifiedJobLineFormDialogProps {
+  workOrderId: string;
+  mode: 'add-service' | 'add-manual' | 'edit';
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (jobLine: WorkOrderJobLine) => Promise<void>;
+  onSave: (jobLines: WorkOrderJobLine[]) => void;
+  jobLine?: WorkOrderJobLine;
 }
 
-export function UnifiedJobLineEditDialog({
-  jobLine,
+export function UnifiedJobLineFormDialog({
+  workOrderId,
+  mode,
   open,
   onOpenChange,
-  onSave
-}: UnifiedJobLineEditDialogProps) {
-  const { sectors, loading: sectorsLoading } = useServiceCategories();
-  const [isSaving, setIsSaving] = useState(false);
+  onSave,
+  jobLine
+}: UnifiedJobLineFormDialogProps) {
+  const { sectors, loading: sectorsLoading } = useServiceSectors();
+  
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
     category: '',
     subcategory: '',
+    description: '',
     estimated_hours: 0,
     labor_rate: 0,
-    labor_rate_type: 'standard' as const,
-    status: 'pending' as const,
-    notes: '',
-    total_amount: 0
+    labor_rate_type: 'standard' as LaborRateType,
+    status: 'pending' as JobLineStatus,
+    notes: ''
   });
 
-  // Initialize form data when job line changes
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [availableSubcategories, setAvailableSubcategories] = useState<any[]>([]);
+
+  // Initialize form data when editing
   useEffect(() => {
-    if (jobLine && open) {
+    if (mode === 'edit' && jobLine) {
       setFormData({
         name: jobLine.name || '',
-        description: jobLine.description || '',
         category: jobLine.category || '',
         subcategory: jobLine.subcategory || '',
+        description: jobLine.description || '',
         estimated_hours: jobLine.estimated_hours || 0,
         labor_rate: jobLine.labor_rate || 0,
-        labor_rate_type: jobLine.labor_rate_type || 'standard',
-        status: jobLine.status || 'pending',
-        notes: jobLine.notes || '',
-        total_amount: jobLine.total_amount || 0
+        labor_rate_type: (jobLine.labor_rate_type as LaborRateType) || 'standard',
+        status: (jobLine.status as JobLineStatus) || 'pending',
+        notes: jobLine.notes || ''
       });
+      setSelectedCategory(jobLine.category || '');
     }
-  }, [jobLine, open]);
+  }, [mode, jobLine]);
 
-  // Calculate total amount when hours or rate change
+  // Update subcategories when category changes
   useEffect(() => {
-    const total = (formData.estimated_hours || 0) * (formData.labor_rate || 0);
-    setFormData(prev => ({ ...prev, total_amount: total }));
-  }, [formData.estimated_hours, formData.labor_rate]);
-
-  // Get available categories from sectors
-  const availableCategories = sectors.flatMap(sector => 
-    sector.categories.map(category => ({
-      id: category.id,
-      name: category.name
-    }))
-  );
-
-  // Get subcategories for selected category
-  const availableSubcategories = React.useMemo(() => {
-    if (!formData.category) return [];
-    
-    for (const sector of sectors) {
-      const category = sector.categories.find(cat => cat.name === formData.category || cat.id === formData.category);
-      if (category) {
-        return category.subcategories.map(sub => ({
-          id: sub.id,
-          name: sub.name
-        }));
-      }
+    if (selectedCategory && sectors.length > 0) {
+      const allSubcategories: any[] = [];
+      sectors.forEach(sector => {
+        sector.categories.forEach(category => {
+          if (category.name === selectedCategory) {
+            allSubcategories.push(...category.subcategories);
+          }
+        });
+      });
+      setAvailableSubcategories(allSubcategories);
+    } else {
+      setAvailableSubcategories([]);
     }
-    return [];
-  }, [formData.category, sectors]);
+  }, [selectedCategory, sectors]);
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleCategoryChange = (categoryName: string) => {
+    setSelectedCategory(categoryName);
+    setFormData(prev => ({
+      ...prev,
+      category: categoryName,
+      subcategory: '' // Reset subcategory when category changes
+    }));
+  };
+
+  const calculateTotalAmount = () => {
+    return (formData.estimated_hours || 0) * (formData.labor_rate || 0);
+  };
 
   const handleSave = async () => {
-    if (!jobLine) return;
-
-    // Validate required fields
     if (!formData.name.trim()) {
       toast({
         title: "Validation Error",
@@ -99,93 +109,78 @@ export function UnifiedJobLineEditDialog({
       return;
     }
 
-    setIsSaving(true);
-    try {
-      const updatedJobLine: WorkOrderJobLine = {
-        ...jobLine,
-        name: formData.name,
-        description: formData.description,
-        category: formData.category,
-        subcategory: formData.subcategory,
-        estimated_hours: formData.estimated_hours,
-        labor_rate: formData.labor_rate,
-        labor_rate_type: formData.labor_rate_type,
-        status: formData.status,
-        notes: formData.notes,
-        total_amount: formData.total_amount
-      };
+    const jobLineData: WorkOrderJobLine = {
+      id: jobLine?.id || crypto.randomUUID(),
+      work_order_id: workOrderId,
+      name: formData.name,
+      category: formData.category,
+      subcategory: formData.subcategory,
+      description: formData.description,
+      estimated_hours: formData.estimated_hours,
+      labor_rate: formData.labor_rate,
+      labor_rate_type: formData.labor_rate_type,
+      total_amount: calculateTotalAmount(),
+      status: formData.status,
+      notes: formData.notes,
+      display_order: jobLine?.display_order || 0,
+      created_at: jobLine?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-      await onSave(updatedJobLine);
-      onOpenChange(false);
-      
-      toast({
-        title: "Success",
-        description: "Job line updated successfully"
-      });
-    } catch (error) {
-      console.error('Error saving job line:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update job line",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
+    onSave([jobLineData]);
     onOpenChange(false);
   };
 
-  const updateFormData = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Reset subcategory when category changes
-    if (field === 'category') {
-      setFormData(prev => ({ ...prev, subcategory: '' }));
+  const getDialogTitle = () => {
+    switch (mode) {
+      case 'add-service':
+        return 'Add Job Line from Service';
+      case 'add-manual':
+        return 'Add Manual Job Line';
+      case 'edit':
+        return 'Edit Job Line';
+      default:
+        return 'Job Line';
     }
   };
 
-  if (!jobLine) return null;
+  // Get all categories from all sectors
+  const allCategories = sectors.flatMap(sector => sector.categories);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Job Line</DialogTitle>
+          <DialogTitle>{getDialogTitle()}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
           {/* 4-Column Grid Layout */}
           <div className="grid grid-cols-4 gap-4">
-            {/* Column 1: Name & Category */}
+            {/* Column 1: Name, Category */}
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">
-                  Name <span className="text-red-500">*</span>
-                </Label>
+              <div>
+                <Label htmlFor="name">Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => updateFormData('name', e.target.value)}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Enter job line name"
-                  className="w-full"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category" className="text-sm font-medium">Category</Label>
+              
+              <div>
+                <Label htmlFor="category">Category</Label>
                 <Select 
                   value={formData.category} 
-                  onValueChange={(value) => updateFormData('category', value)}
+                  onValueChange={handleCategoryChange}
                   disabled={sectorsLoading}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableCategories.map((category) => (
+                    {allCategories.map((category) => (
                       <SelectItem key={category.id} value={category.name}>
                         {category.name}
                       </SelectItem>
@@ -195,27 +190,26 @@ export function UnifiedJobLineEditDialog({
               </div>
             </div>
 
-            {/* Column 2: Description & Subcategory */}
+            {/* Column 2: Description, Subcategory */}
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-                <Textarea
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Input
                   id="description"
                   value={formData.description}
-                  onChange={(e) => updateFormData('description', e.target.value)}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Enter description"
-                  className="w-full h-[76px] resize-none"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="subcategory" className="text-sm font-medium">Subcategory</Label>
+              
+              <div>
+                <Label htmlFor="subcategory">Subcategory</Label>
                 <Select 
                   value={formData.subcategory} 
-                  onValueChange={(value) => updateFormData('subcategory', value)}
-                  disabled={!formData.category || availableSubcategories.length === 0}
+                  onValueChange={(value) => handleInputChange('subcategory', value)}
+                  disabled={!selectedCategory || availableSubcategories.length === 0}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select subcategory" />
                   </SelectTrigger>
                   <SelectContent>
@@ -229,29 +223,27 @@ export function UnifiedJobLineEditDialog({
               </div>
             </div>
 
-            {/* Column 3: Hours & Labor Rate Type */}
+            {/* Column 3: Hours, Labor Rate Type */}
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="estimated_hours" className="text-sm font-medium">Estimated Hours</Label>
+              <div>
+                <Label htmlFor="estimated_hours">Estimated Hours</Label>
                 <Input
                   id="estimated_hours"
                   type="number"
                   min="0"
                   step="0.25"
                   value={formData.estimated_hours}
-                  onChange={(e) => updateFormData('estimated_hours', parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                  className="w-full"
+                  onChange={(e) => handleInputChange('estimated_hours', parseFloat(e.target.value) || 0)}
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="labor_rate_type" className="text-sm font-medium">Rate Type</Label>
+              
+              <div>
+                <Label htmlFor="labor_rate_type">Rate Type</Label>
                 <Select 
                   value={formData.labor_rate_type} 
-                  onValueChange={(value) => updateFormData('labor_rate_type', value)}
+                  onValueChange={(value: LaborRateType) => handleInputChange('labor_rate_type', value)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -264,29 +256,27 @@ export function UnifiedJobLineEditDialog({
               </div>
             </div>
 
-            {/* Column 4: Rate & Status */}
+            {/* Column 4: Rate, Status */}
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="labor_rate" className="text-sm font-medium">Labor Rate ($)</Label>
+              <div>
+                <Label htmlFor="labor_rate">Labor Rate ($)</Label>
                 <Input
                   id="labor_rate"
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.labor_rate}
-                  onChange={(e) => updateFormData('labor_rate', parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                  className="w-full"
+                  onChange={(e) => handleInputChange('labor_rate', parseFloat(e.target.value) || 0)}
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status" className="text-sm font-medium">Status</Label>
+              
+              <div>
+                <Label htmlFor="status">Status</Label>
                 <Select 
                   value={formData.status} 
-                  onValueChange={(value) => updateFormData('status', value)}
+                  onValueChange={(value: JobLineStatus) => handleInputChange('status', value)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -300,45 +290,38 @@ export function UnifiedJobLineEditDialog({
             </div>
           </div>
 
+          {/* Full Width Notes Section */}
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Enter any additional notes..."
+              className="min-h-[80px]"
+            />
+          </div>
+
           {/* Total Amount Display */}
           <div className="bg-slate-50 p-4 rounded-lg">
             <div className="flex justify-between items-center">
-              <span className="font-medium text-slate-700">Total Amount:</span>
-              <span className="text-xl font-bold text-slate-900">
-                ${formData.total_amount.toFixed(2)}
+              <span className="font-medium">Total Amount:</span>
+              <span className="text-lg font-bold text-green-600">
+                ${calculateTotalAmount().toFixed(2)}
               </span>
             </div>
           </div>
 
-          {/* Notes Section - Full Width */}
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="text-sm font-medium">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => updateFormData('notes', e.target.value)}
-              placeholder="Additional notes..."
-              className="w-full h-20 resize-none"
-            />
-          </div>
-
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isSaving}
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving}
-              className="min-w-20"
-            >
-              {isSaving ? 'Saving...' : 'Save Changes'}
+            <Button onClick={handleSave}>
+              {mode === 'edit' ? 'Update' : 'Add'} Job Line
             </Button>
           </div>
         </div>
