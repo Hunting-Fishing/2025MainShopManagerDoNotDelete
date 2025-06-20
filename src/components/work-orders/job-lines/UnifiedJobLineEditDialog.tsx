@@ -4,49 +4,33 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { WorkOrderJobLine, LaborRateType, JobLineStatus } from '@/types/jobLine';
-import { useServiceSectors } from '@/hooks/useServiceCategories';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { WorkOrderJobLine, JobLineStatus, LaborRateType } from '@/types/jobLine';
+import { useServiceSectors } from '@/hooks/useServiceHierarchy';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-export interface UnifiedJobLineFormDialogProps {
-  workOrderId: string;
-  mode: 'add-service' | 'add-manual' | 'edit';
+interface UnifiedJobLineEditDialogProps {
+  jobLine: WorkOrderJobLine | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (jobLines: WorkOrderJobLine[]) => void;
-  jobLine?: WorkOrderJobLine;
+  onSave: (jobLine: WorkOrderJobLine) => Promise<void>;
 }
 
-export function UnifiedJobLineFormDialog({
-  workOrderId,
-  mode,
+export function UnifiedJobLineEditDialog({
+  jobLine,
   open,
   onOpenChange,
-  onSave,
-  jobLine
-}: UnifiedJobLineFormDialogProps) {
+  onSave
+}: UnifiedJobLineEditDialogProps) {
   const { sectors, loading: sectorsLoading } = useServiceSectors();
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    subcategory: '',
-    description: '',
-    estimated_hours: 0,
-    labor_rate: 0,
-    labor_rate_type: 'standard' as LaborRateType,
-    status: 'pending' as JobLineStatus,
-    notes: ''
-  });
+  const [formData, setFormData] = useState<Partial<WorkOrderJobLine>>({});
+  const [saving, setSaving] = useState(false);
 
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [availableSubcategories, setAvailableSubcategories] = useState<any[]>([]);
-
-  // Initialize form data when editing
+  // Initialize form data when jobLine changes
   useEffect(() => {
-    if (mode === 'edit' && jobLine) {
+    if (jobLine) {
       setFormData({
         name: jobLine.name || '',
         category: jobLine.category || '',
@@ -54,53 +38,27 @@ export function UnifiedJobLineFormDialog({
         description: jobLine.description || '',
         estimated_hours: jobLine.estimated_hours || 0,
         labor_rate: jobLine.labor_rate || 0,
-        labor_rate_type: (jobLine.labor_rate_type as LaborRateType) || 'standard',
-        status: (jobLine.status as JobLineStatus) || 'pending',
-        notes: jobLine.notes || ''
+        labor_rate_type: jobLine.labor_rate_type as LaborRateType || 'standard',
+        status: jobLine.status as JobLineStatus || 'pending',
+        notes: jobLine.notes || '',
+        total_amount: jobLine.total_amount || 0
       });
-      setSelectedCategory(jobLine.category || '');
     }
-  }, [mode, jobLine]);
+  }, [jobLine]);
 
-  // Update subcategories when category changes
+  // Calculate total amount when hours or rate changes
   useEffect(() => {
-    if (selectedCategory && sectors.length > 0) {
-      const allSubcategories: any[] = [];
-      sectors.forEach(sector => {
-        sector.categories.forEach(category => {
-          if (category.name === selectedCategory) {
-            allSubcategories.push(...category.subcategories);
-          }
-        });
-      });
-      setAvailableSubcategories(allSubcategories);
-    } else {
-      setAvailableSubcategories([]);
+    const hours = formData.estimated_hours || 0;
+    const rate = formData.labor_rate || 0;
+    const total = hours * rate;
+    
+    if (total !== formData.total_amount) {
+      setFormData(prev => ({ ...prev, total_amount: total }));
     }
-  }, [selectedCategory, sectors]);
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleCategoryChange = (categoryName: string) => {
-    setSelectedCategory(categoryName);
-    setFormData(prev => ({
-      ...prev,
-      category: categoryName,
-      subcategory: '' // Reset subcategory when category changes
-    }));
-  };
-
-  const calculateTotalAmount = () => {
-    return (formData.estimated_hours || 0) * (formData.labor_rate || 0);
-  };
+  }, [formData.estimated_hours, formData.labor_rate]);
 
   const handleSave = async () => {
-    if (!formData.name.trim()) {
+    if (!jobLine || !formData.name) {
       toast({
         title: "Validation Error",
         description: "Job line name is required",
@@ -109,221 +67,261 @@ export function UnifiedJobLineFormDialog({
       return;
     }
 
-    const jobLineData: WorkOrderJobLine = {
-      id: jobLine?.id || crypto.randomUUID(),
-      work_order_id: workOrderId,
-      name: formData.name,
-      category: formData.category,
-      subcategory: formData.subcategory,
-      description: formData.description,
-      estimated_hours: formData.estimated_hours,
-      labor_rate: formData.labor_rate,
-      labor_rate_type: formData.labor_rate_type,
-      total_amount: calculateTotalAmount(),
-      status: formData.status,
-      notes: formData.notes,
-      display_order: jobLine?.display_order || 0,
-      created_at: jobLine?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    setSaving(true);
+    try {
+      const updatedJobLine: WorkOrderJobLine = {
+        ...jobLine,
+        ...formData,
+        id: jobLine.id,
+        work_order_id: jobLine.work_order_id
+      };
 
-    onSave([jobLineData]);
-    onOpenChange(false);
-  };
+      // Update in database
+      const { error } = await supabase
+        .from('work_order_job_lines')
+        .update({
+          name: updatedJobLine.name,
+          category: updatedJobLine.category,
+          subcategory: updatedJobLine.subcategory,
+          description: updatedJobLine.description,
+          estimated_hours: updatedJobLine.estimated_hours,
+          labor_rate: updatedJobLine.labor_rate,
+          labor_rate_type: updatedJobLine.labor_rate_type,
+          status: updatedJobLine.status,
+          notes: updatedJobLine.notes,
+          total_amount: updatedJobLine.total_amount
+        })
+        .eq('id', jobLine.id);
 
-  const getDialogTitle = () => {
-    switch (mode) {
-      case 'add-service':
-        return 'Add Job Line from Service';
-      case 'add-manual':
-        return 'Add Manual Job Line';
-      case 'edit':
-        return 'Edit Job Line';
-      default:
-        return 'Job Line';
+      if (error) throw error;
+
+      await onSave(updatedJobLine);
+      toast({
+        title: "Success",
+        description: "Job line updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating job line:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update job line",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Get all categories from all sectors
-  const allCategories = sectors.flatMap(sector => sector.categories);
+  const handleInputChange = (field: keyof WorkOrderJobLine, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const getSubcategories = () => {
+    if (!formData.category || !sectors.length) return [];
+    
+    for (const sector of sectors) {
+      for (const cat of sector.categories) {
+        if (cat.name === formData.category) {
+          return cat.subcategories;
+        }
+      }
+    }
+    return [];
+  };
+
+  const getAllCategories = () => {
+    const categories: string[] = [];
+    sectors.forEach(sector => {
+      sector.categories.forEach(cat => {
+        if (!categories.includes(cat.name)) {
+          categories.push(cat.name);
+        }
+      });
+    });
+    return categories;
+  };
+
+  if (!jobLine) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{getDialogTitle()}</DialogTitle>
+          <DialogTitle>Edit Job Line</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
-          {/* 4-Column Grid Layout */}
-          <div className="grid grid-cols-4 gap-4">
-            {/* Column 1: Name, Category */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter job line name"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Select 
-                  value={formData.category} 
-                  onValueChange={handleCategoryChange}
-                  disabled={sectorsLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.name}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="grid grid-cols-4 gap-4 py-4">
+          {/* Column 1: Basic Info */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                value={formData.name || ''}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Enter job line name"
+              />
             </div>
 
-            {/* Column 2: Description, Subcategory */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Enter description"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="subcategory">Subcategory</Label>
-                <Select 
-                  value={formData.subcategory} 
-                  onValueChange={(value) => handleInputChange('subcategory', value)}
-                  disabled={!selectedCategory || availableSubcategories.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select subcategory" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSubcategories.map((subcategory) => (
-                      <SelectItem key={subcategory.id} value={subcategory.name}>
-                        {subcategory.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Column 3: Hours, Labor Rate Type */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="estimated_hours">Estimated Hours</Label>
-                <Input
-                  id="estimated_hours"
-                  type="number"
-                  min="0"
-                  step="0.25"
-                  value={formData.estimated_hours}
-                  onChange={(e) => handleInputChange('estimated_hours', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="labor_rate_type">Rate Type</Label>
-                <Select 
-                  value={formData.labor_rate_type} 
-                  onValueChange={(value: LaborRateType) => handleInputChange('labor_rate_type', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="overtime">Overtime</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                    <SelectItem value="flat_rate">Flat Rate</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Column 4: Rate, Status */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="labor_rate">Labor Rate ($)</Label>
-                <Input
-                  id="labor_rate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.labor_rate}
-                  onChange={(e) => handleInputChange('labor_rate', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value: JobLineStatus) => handleInputChange('status', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="on-hold">On Hold</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Select 
+                value={formData.category || ''} 
+                onValueChange={(value) => {
+                  handleInputChange('category', value);
+                  handleInputChange('subcategory', ''); // Reset subcategory
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAllCategories().map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Full Width Notes Section */}
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Enter any additional notes..."
-              className="min-h-[80px]"
-            />
-          </div>
+          {/* Column 2: Service Details */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="subcategory">Subcategory</Label>
+              <Select 
+                value={formData.subcategory || ''} 
+                onValueChange={(value) => handleInputChange('subcategory', value)}
+                disabled={!formData.category}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select subcategory" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getSubcategories().map((subcat) => (
+                    <SelectItem key={subcat.id} value={subcat.name}>
+                      {subcat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Total Amount Display */}
-          <div className="bg-slate-50 p-4 rounded-lg">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">Total Amount:</span>
-              <span className="text-lg font-bold text-green-600">
-                ${calculateTotalAmount().toFixed(2)}
-              </span>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description || ''}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Enter description"
+                rows={3}
+              />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>
-              {mode === 'edit' ? 'Update' : 'Add'} Job Line
-            </Button>
+          {/* Column 3: Time & Rates */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="estimated_hours">Estimated Hours</Label>
+              <Input
+                id="estimated_hours"
+                type="number"
+                step="0.25"
+                min="0"
+                value={formData.estimated_hours || ''}
+                onChange={(e) => handleInputChange('estimated_hours', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="labor_rate">Labor Rate ($)</Label>
+              <Input
+                id="labor_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.labor_rate || ''}
+                onChange={(e) => handleInputChange('labor_rate', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="labor_rate_type">Rate Type</Label>
+              <Select 
+                value={formData.labor_rate_type || 'standard'} 
+                onValueChange={(value: LaborRateType) => handleInputChange('labor_rate_type', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="overtime">Overtime</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="flat_rate">Flat Rate</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Column 4: Status & Total */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select 
+                value={formData.status || 'pending'} 
+                onValueChange={(value: JobLineStatus) => handleInputChange('status', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="on-hold">On Hold</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="total_amount">Total Amount ($)</Label>
+              <Input
+                id="total_amount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.total_amount || ''}
+                onChange={(e) => handleInputChange('total_amount', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                className="bg-muted"
+                readOnly
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes || ''}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                placeholder="Additional notes"
+                rows={3}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-2 pt-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving || !formData.name}>
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
