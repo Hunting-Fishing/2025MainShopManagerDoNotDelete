@@ -109,6 +109,7 @@ export function EnhancedJobLineItem({
 
       <UnifiedJobLineEditDialog
         jobLine={editingJobLine}
+        workOrderId={jobLine.work_order_id}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         onSave={handleSaveJobLine}

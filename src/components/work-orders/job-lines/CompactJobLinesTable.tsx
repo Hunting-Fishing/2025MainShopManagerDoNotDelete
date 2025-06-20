@@ -111,9 +111,10 @@ export function CompactJobLinesTable({
         </TableBody>
       </Table>
 
-      {!onEdit && (
+      {!onEdit && editingJobLine && (
         <UnifiedJobLineEditDialog
           jobLine={editingJobLine}
+          workOrderId={editingJobLine.work_order_id}
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
           onSave={handleSaveJobLine}
