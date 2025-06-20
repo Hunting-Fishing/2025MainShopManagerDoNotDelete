@@ -4,7 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { useToast } from '@/hooks/use-toast';
 import { createWorkOrder } from '@/services/workOrder';
-import { WorkOrderDetailsView } from '@/components/work-orders/WorkOrderDetailsView';
+import { WorkOrderForm } from '@/components/work-orders/WorkOrderForm';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -94,8 +94,10 @@ const CreateWorkOrder = () => {
       </div>
 
       <ResponsiveContainer maxWidth="full" className="py-6">
-        {/* FIX: Remove the invalid isEditMode prop */}
-        <WorkOrderDetailsView />
+        <WorkOrderForm
+          onSubmit={handleCreateWorkOrder}
+          prePopulatedCustomer={cleanedData}
+        />
       </ResponsiveContainer>
     </div>
   );

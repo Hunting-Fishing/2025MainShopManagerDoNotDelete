@@ -1,5 +1,10 @@
+
 import React from "react";
-import { WorkOrderDetailsView } from "./WorkOrderDetailsView";
+import { CreateWorkOrderTab } from "./details/CreateWorkOrderTab";
+import { useWorkOrderFormSchema } from "@/schemas/workOrderSchema";
+import { useTechnicians } from "@/hooks/useTechnicians";
+import { useState } from "react";
+import { WorkOrderJobLine } from "@/types/jobLine";
 
 interface WorkOrderFormProps {
   onSubmit?: (values: any) => Promise<void>;
@@ -23,17 +28,32 @@ interface WorkOrderFormProps {
   };
 }
 
-// This component is now deprecated in favor of the comprehensive WorkOrderDetailsView
-// Keeping it for backward compatibility but redirecting to the new interface
 export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   onSubmit,
   initialValues = {},
   prePopulatedCustomer
 }) => {
-  console.warn('WorkOrderForm is deprecated. Use WorkOrderDetailsView instead.');
+  const form = useWorkOrderFormSchema(initialValues);
+  const { technicians, isLoading: technicianLoading, error: technicianError } = useTechnicians();
+  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   
-  // FIX: Remove the invalid isEditMode prop
+  const handleCreateWorkOrder = async (data: any) => {
+    if (onSubmit) {
+      await onSubmit(data);
+    }
+  };
+
   return (
-    <WorkOrderDetailsView />
+    <CreateWorkOrderTab
+      form={form}
+      technicians={technicians}
+      technicianLoading={technicianLoading}
+      technicianError={technicianError}
+      jobLines={jobLines}
+      onJobLinesChange={setJobLines}
+      prePopulatedCustomer={prePopulatedCustomer}
+      onCreateWorkOrder={handleCreateWorkOrder}
+      isEditMode={false}
+    />
   );
 };
