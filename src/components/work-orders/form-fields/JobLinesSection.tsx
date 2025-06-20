@@ -8,13 +8,17 @@ interface JobLinesSectionProps {
   jobLines: WorkOrderJobLine[];  
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   isEditMode?: boolean;
+  description?: string; // Add description prop
+  shopId?: string; // Add shopId prop
 }
 
 export function JobLinesSection({
   workOrderId,
   jobLines,
   onJobLinesChange,
-  isEditMode = false
+  isEditMode = false,
+  description, // Accept description prop
+  shopId // Accept shopId prop
 }: JobLinesSectionProps) {
   return (
     <Card>

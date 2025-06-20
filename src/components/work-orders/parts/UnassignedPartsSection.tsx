@@ -1,179 +1,113 @@
 
 import React, { useState } from 'react';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { WorkOrderJobLine } from '@/types/jobLine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Package } from 'lucide-react';
-import { PartAssignmentControls } from './PartAssignmentControls';
-import { InventorySectionHeader } from '../inventory/InventorySectionHeader';
-import { InventorySelectionDialog } from '../inventory/InventorySelectionDialog';
-import { SpecialOrderDialog } from './SpecialOrderDialog';
-import { InventoryItemExtended } from '@/types/inventory';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Package, AlertCircle } from 'lucide-react';
+import { WorkOrderPart } from '@/types/workOrderPart';
+import { SpecialOrderDialog } from '../shared/SpecialOrderDialog';
 
 interface UnassignedPartsSectionProps {
   workOrderId: string;
-  unassignedParts: WorkOrderPart[];
-  jobLines: WorkOrderJobLine[];
-  onPartUpdate?: (updatedPart: WorkOrderPart) => Promise<void>;
-  onPartDelete?: (partId: string) => Promise<void>;
-  onPartAssigned?: () => void;
-  isEditMode: boolean;
+  parts: WorkOrderPart[];
+  onPartsChange: () => void;
+  isEditMode?: boolean;
 }
 
 export function UnassignedPartsSection({
   workOrderId,
-  unassignedParts,
-  jobLines,
-  onPartUpdate,
-  onPartDelete,
-  onPartAssigned,
-  isEditMode
+  parts,
+  onPartsChange,
+  isEditMode = false
 }: UnassignedPartsSectionProps) {
-  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [showSpecialOrderDialog, setShowSpecialOrderDialog] = useState(false);
 
-  const handleShowInventoryDialog = () => {
-    console.log('Showing inventory dialog for unassigned parts');
-    setShowInventoryDialog(true);
+  const unassignedParts = parts.filter(part => !part.job_line_id);
+
+  const handlePartAdded = () => {
+    onPartsChange();
   };
-
-  const handleShowSpecialOrderDialog = () => {
-    console.log('Showing special order dialog for unassigned parts');
-    setShowSpecialOrderDialog(true);
-  };
-
-  const handleInventoryItemAdded = (item: InventoryItemExtended) => {
-    console.log('Inventory item added as unassigned part:', item);
-    setShowInventoryDialog(false);
-    if (onPartAssigned) {
-      onPartAssigned();
-    }
-  };
-
-  const handleSpecialOrderAdded = () => {
-    console.log('Special order part added as unassigned');
-    setShowSpecialOrderDialog(false);
-    if (onPartAssigned) {
-      onPartAssigned();
-    }
-  };
-
-  if (unassignedParts.length === 0) {
-    return (
-      <>
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Unassigned Parts
-              </CardTitle>
-              {isEditMode && (
-                <InventorySectionHeader
-                  onShowDialog={handleShowInventoryDialog}
-                  onShowSpecialOrderDialog={handleShowSpecialOrderDialog}
-                  totalItems={0}
-                />
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="text-center py-8 text-muted-foreground">
-              <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No unassigned parts</p>
-              <p className="text-sm">All parts are assigned to job lines</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <InventorySelectionDialog
-          open={showInventoryDialog}
-          onOpenChange={setShowInventoryDialog}
-          onAddItem={handleInventoryItemAdded}
-        />
-
-        <SpecialOrderDialog
-          isOpen={showSpecialOrderDialog}
-          onClose={() => setShowSpecialOrderDialog(false)}
-          workOrderId={workOrderId}
-          onPartAdded={handleSpecialOrderAdded}
-        />
-      </>
-    );
-  }
 
   return (
-    <>
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Unassigned Parts ({unassignedParts.length})
-            </CardTitle>
-            {isEditMode && (
-              <InventorySectionHeader
-                onShowDialog={handleShowInventoryDialog}
-                onShowSpecialOrderDialog={handleShowSpecialOrderDialog}
-                totalItems={unassignedParts.length}
-              />
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            <CardTitle className="text-base">Unassigned Parts</CardTitle>
+            {unassignedParts.length > 0 && (
+              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                {unassignedParts.length} unassigned
+              </Badge>
             )}
           </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-3">
+          {isEditMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSpecialOrderDialog(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Part
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {unassignedParts.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p>No unassigned parts</p>
+            <p className="text-sm">All parts are assigned to specific job lines</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
             {unassignedParts.map((part) => (
-              <div key={part.id} className="border rounded-lg p-4 bg-orange-50 border-orange-200">
-                <div className="flex justify-between items-start">
+              <div key={part.id} className="p-3 border rounded-lg bg-yellow-50/50 border-yellow-200">
+                <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium">{part.name}</h4>
-                      <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                        Unassigned
-                      </span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <h4 className="font-medium text-gray-900">{part.name}</h4>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                      <div>Part #: {part.part_number}</div>
-                      <div>Qty: {part.quantity}</div>
-                      <div>Unit Price: ${part.unit_price}</div>
-                      <div>Total: ${part.total_price}</div>
-                    </div>
+                    <p className="text-sm text-gray-600">
+                      {part.part_number} | Qty: {part.quantity}
+                    </p>
                     {part.description && (
-                      <p className="text-sm text-muted-foreground mt-2">{part.description}</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {part.description}
+                      </p>
                     )}
-                  </div>
-                  
-                  {isEditMode && (
-                    <div className="ml-4">
-                      <PartAssignmentControls
-                        part={part}
-                        jobLines={jobLines}
-                        onPartUpdate={onPartUpdate}
-                        onPartDelete={onPartDelete}
-                        onPartAssigned={onPartAssigned}
-                      />
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="outline" className="text-xs">
+                        Status: {part.status}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Type: {part.part_type}
+                      </Badge>
                     </div>
-                  )}
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-gray-900">
+                      ${((part.unit_price || 0) * part.quantity).toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      ${(part.unit_price || 0).toFixed(2)} each
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
-
-      <InventorySelectionDialog
-        open={showInventoryDialog}
-        onOpenChange={setShowInventoryDialog}
-        onAddItem={handleInventoryItemAdded}
-      />
+        )}
+      </CardContent>
 
       <SpecialOrderDialog
         isOpen={showSpecialOrderDialog}
         onClose={() => setShowSpecialOrderDialog(false)}
         workOrderId={workOrderId}
-        onPartAdded={handleSpecialOrderAdded}
+        onPartAdded={handlePartAdded}
       />
-    </>
+    </Card>
   );
 }
