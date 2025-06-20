@@ -116,3 +116,40 @@ export const getTechnicianName = (workOrder: WorkOrder): string => {
   if (workOrder.technician_id) return 'Loading technician...';
   return 'Unassigned';
 };
+
+// Legacy utility functions merged from workOrderUtils.ts
+export const getWorkOrderCustomer = (workOrder: WorkOrder): string => {
+  return getCustomerName(workOrder);
+};
+
+export const getWorkOrderTechnician = (workOrder: WorkOrder): string => {
+  return getTechnicianName(workOrder);
+};
+
+export const getWorkOrderDate = (workOrder: WorkOrder): string => {
+  return workOrder.date || workOrder.created_at || '';
+};
+
+export const getWorkOrderDueDate = (workOrder: WorkOrder): string => {
+  return workOrder.dueDate || workOrder.due_date || workOrder.end_time || '';
+};
+
+export const getWorkOrderPriority = (workOrder: WorkOrder): string => {
+  return workOrder.priority || 'medium';
+};
+
+export const getWorkOrderLocation = (workOrder: WorkOrder): string => {
+  return workOrder.location || '';
+};
+
+export const getWorkOrderTotalBillableTime = (workOrder: WorkOrder): number => {
+  return workOrder.total_billable_time || 0;
+};
+
+export const getWorkOrderStatus = (workOrder: WorkOrder): string => {
+  return workOrder.status;
+};
+
+export const getWorkOrderDescription = (workOrder: WorkOrder): string => {
+  return workOrder.description || '';
+};

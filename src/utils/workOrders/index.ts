@@ -11,8 +11,8 @@ export {
 
 // Export specific functions from dataHelpers to avoid conflicts
 export { 
-  getWorkOrderDate,
-  getWorkOrderDueDate,
+  getWorkOrderDate as getWorkOrderDateFromHelper,
+  getWorkOrderDueDate as getWorkOrderDueDateFromHelper,
   getStatusBadgeVariant,
   getPriorityBadgeVariant,
   normalizeVehicleForInvoice,
