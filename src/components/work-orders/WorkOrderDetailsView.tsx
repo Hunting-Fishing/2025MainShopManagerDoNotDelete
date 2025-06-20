@@ -38,7 +38,6 @@ export function WorkOrderDetailsView() {
 
   const [currentWorkOrder, setCurrentWorkOrder] = useState<WorkOrder | null>(workOrder);
 
-  // Update local state when workOrder data changes
   React.useEffect(() => {
     if (workOrder) {
       setCurrentWorkOrder(workOrder);
@@ -50,20 +49,6 @@ export function WorkOrderDetailsView() {
     setCurrentWorkOrder(updatedWorkOrder);
   };
 
-  const handleStartEdit = () => {
-    setIsEditMode(true);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditMode(false);
-  };
-
-  const handleSaveEdit = () => {
-    setIsEditMode(false);
-    // Additional save logic could go here
-  };
-
-  // Create wrapper functions that match the expected signatures
   const handlePartsRefresh = async () => {
     await refreshData();
   };
