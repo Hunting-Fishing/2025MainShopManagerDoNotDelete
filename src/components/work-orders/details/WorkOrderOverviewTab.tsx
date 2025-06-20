@@ -17,7 +17,7 @@ interface WorkOrderOverviewTabProps {
   allParts: WorkOrderPart[];
   timeEntries: TimeEntry[];
   customer: Customer | null;
-  onWorkOrderUpdate: (workOrder: WorkOrder) => void;
+  onWorkOrderUpdate: () => Promise<void>;
   onPartsChange: () => Promise<void>;
   isEditMode: boolean;
 }

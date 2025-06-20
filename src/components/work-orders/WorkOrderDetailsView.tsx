@@ -1,27 +1,13 @@
 
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React from 'react';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 import { useWorkOrderData } from '@/hooks/useWorkOrderData';
-import { WorkOrder } from '@/types/workOrder';
 
-export function WorkOrderDetailsView() {
-  const { id } = useParams<{ id: string }>();
-  const [isEditMode, setIsEditMode] = useState(false);
-  
-  if (!id) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="container mx-auto p-6">
-          <div className="bg-white rounded-xl shadow-sm border border-red-200/60 p-8 text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-2">Invalid Work Order</h1>
-            <p className="text-slate-600">No work order ID provided</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+interface WorkOrderDetailsViewProps {
+  workOrderId: string;
+}
 
+export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
   const {
     workOrder,
     jobLines,
@@ -34,22 +20,13 @@ export function WorkOrderDetailsView() {
     updateParts,
     updateTimeEntries,
     refreshData
-  } = useWorkOrderData(id);
+  } = useWorkOrderData(workOrderId);
 
-  const [currentWorkOrder, setCurrentWorkOrder] = useState<WorkOrder | null>(workOrder);
-
-  React.useEffect(() => {
-    if (workOrder) {
-      setCurrentWorkOrder(workOrder);
-    }
-  }, [workOrder]);
-
-  const handleWorkOrderUpdate = (updatedWorkOrder: WorkOrder) => {
-    console.log('WorkOrderDetailsView: Work order updated', updatedWorkOrder);
-    setCurrentWorkOrder(updatedWorkOrder);
+  const handleWorkOrderUpdate = async () => {
+    await refreshData();
   };
 
-  const handlePartsRefresh = async () => {
+  const handlePartsChange = async () => {
     await refreshData();
   };
 
@@ -73,15 +50,21 @@ export function WorkOrderDetailsView() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="container mx-auto p-6">
           <div className="bg-white rounded-xl shadow-sm border border-red-200/60 p-8 text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-2">Error</h1>
-            <p className="text-slate-600">{error}</p>
+            <h1 className="text-2xl font-bold text-red-600 mb-2">Error Loading Work Order</h1>
+            <p className="text-slate-600 mb-4">{error}</p>
+            <button 
+              onClick={refreshData}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!currentWorkOrder) {
+  if (!workOrder) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="container mx-auto p-6">
@@ -98,14 +81,14 @@ export function WorkOrderDetailsView() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto p-6 max-w-7xl">
         <WorkOrderDetailsTabs
-          workOrder={currentWorkOrder}
+          workOrder={workOrder}
           jobLines={jobLines}
           allParts={allParts}
           timeEntries={timeEntries}
           customer={customer}
           onWorkOrderUpdate={handleWorkOrderUpdate}
-          onPartsChange={handlePartsRefresh}
-          isEditMode={isEditMode}
+          onPartsChange={handlePartsChange}
+          isEditMode={false}
         />
       </div>
     </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkOrder } from '@/types/workOrder';
@@ -16,7 +17,7 @@ interface WorkOrderDetailsTabsProps {
   allParts: WorkOrderPart[];
   timeEntries: TimeEntry[];
   customer: Customer | null;
-  onWorkOrderUpdate: (workOrder: WorkOrder) => void;
+  onWorkOrderUpdate: () => Promise<void>;
   onPartsChange: () => Promise<void>;
   isEditMode: boolean;
 }
@@ -32,6 +33,10 @@ export function WorkOrderDetailsTabs({
   isEditMode
 }: WorkOrderDetailsTabsProps) {
   const [activeTab, setActiveTab] = useState("overview");
+
+  const handleJobLinesChange = async () => {
+    await onWorkOrderUpdate();
+  };
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -68,10 +73,7 @@ export function WorkOrderDetailsTabs({
         <JobLinesSection
           workOrderId={workOrder.id}
           jobLines={jobLines}
-          onJobLinesChange={(updatedJobLines) => {
-            // Handle job lines update
-            console.log('Job lines updated:', updatedJobLines);
-          }}
+          onJobLinesChange={handleJobLinesChange}
           isEditMode={isEditMode}
         />
       </TabsContent>

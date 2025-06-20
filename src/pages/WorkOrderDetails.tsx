@@ -8,16 +8,18 @@ const WorkOrderDetails = () => {
 
   if (!id) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-destructive">Invalid Work Order</h1>
-          <p className="text-muted-foreground">No work order ID provided</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="container mx-auto p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-red-200/60 p-8 text-center">
+            <h1 className="text-2xl font-bold text-red-600 mb-2">Invalid Work Order</h1>
+            <p className="text-slate-600">No work order ID provided</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  return <WorkOrderDetailsView />;
+  return <WorkOrderDetailsView workOrderId={id} />;
 };
 
 export default WorkOrderDetails;
