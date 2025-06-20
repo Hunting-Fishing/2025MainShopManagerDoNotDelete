@@ -2,7 +2,12 @@
 // Centralized work order utilities - single source of truth
 export * from './workOrderUtils';
 export * from './constants';
-export * from './typeMappers';
+
+// Export specific functions from typeMappers to avoid conflicts with workOrderUtils
+export { 
+  mapDatabaseWorkOrder,
+  convertStatusToTyped as convertStatusToTypedFromMapper
+} from './typeMappers';
 
 // Export specific functions from dataHelpers to avoid conflicts
 export { 

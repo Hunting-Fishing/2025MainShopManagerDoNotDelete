@@ -91,23 +91,6 @@ export const calculateBillableTime = (timeEntries: any[]) => {
   }, 0);
 };
 
-// Status and priority helpers
-export const convertStatusToTyped = (status: string): WorkOrderStatus => {
-  const validStatuses = [
-    'pending', 'in-progress', 'completed', 'cancelled', 'on-hold',
-    'body-shop', 'mobile-service', 'needs-road-test', 'parts-requested',
-    'parts-ordered', 'parts-arrived', 'customer-to-return', 'rebooked',
-    'foreman-signoff-waiting', 'foreman-signoff-complete', 'sublet',
-    'waiting-customer-auth', 'po-requested', 'tech-support', 'warranty', 'internal-ro'
-  ];
-  
-  if (validStatuses.includes(status)) {
-    return status as WorkOrderStatus;
-  }
-  
-  return 'pending' as WorkOrderStatus;
-};
-
 // Data display helpers
 export const getCustomerName = (workOrder: WorkOrder): string => {
   if (workOrder.customer_name) return workOrder.customer_name;
