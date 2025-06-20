@@ -64,6 +64,7 @@ export function WorkOrderDetailsTabs({
         <WorkOrderPartsSection
           workOrderId={workOrder.id}
           parts={allParts}
+          jobLines={jobLines}
           onPartsChange={onPartsChange}
           isEditMode={isEditMode}
         />

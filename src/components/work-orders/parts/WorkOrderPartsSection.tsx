@@ -1,16 +1,16 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Package } from 'lucide-react';
-import { WorkOrderPart, partStatusMap } from '@/types/workOrderPart';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { WorkOrderPart } from '@/types/workOrderPart';
+import { WorkOrderJobLine } from '@/types/jobLine';
 import { EditPartDialog } from './EditPartDialog';
-import { toast } from '@/hooks/use-toast';
 
 interface WorkOrderPartsSectionProps {
   workOrderId: string;
   parts: WorkOrderPart[];
-  jobLines: any[];
+  jobLines?: WorkOrderJobLine[];
   onPartsChange: () => Promise<void>;
   isEditMode?: boolean;
 }
@@ -18,7 +18,7 @@ interface WorkOrderPartsSectionProps {
 export function WorkOrderPartsSection({
   workOrderId,
   parts,
-  jobLines,
+  jobLines = [],
   onPartsChange,
   isEditMode = false
 }: WorkOrderPartsSectionProps) {
@@ -31,30 +31,18 @@ export function WorkOrderPartsSection({
   };
 
   const handleDeletePart = async (partId: string) => {
-    if (confirm('Are you sure you want to delete this part?')) {
-      try {
-        // TODO: Implement delete part API call
-        console.log('Deleting part:', partId);
-        await onPartsChange();
-        toast({
-          title: "Success",
-          description: "Part deleted successfully",
-        });
-      } catch (error) {
-        console.error('Error deleting part:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete part",
-          variant: "destructive",
-        });
-      }
+    try {
+      // TODO: Implement delete part API call
+      console.log('Deleting part:', partId);
+      await onPartsChange();
+    } catch (error) {
+      console.error('Error deleting part:', error);
     }
   };
 
   const handleAddPart = () => {
-    // Create a temporary part for adding new parts
     const newPart: WorkOrderPart = {
-      id: '',
+      id: `temp-${Date.now()}`,
       work_order_id: workOrderId,
       part_number: '',
       name: '',
@@ -72,158 +60,96 @@ export function WorkOrderPartsSection({
     setEditDialogOpen(true);
   };
 
-  const handlePartUpdate = async (updatedPart: Partial<WorkOrderPart>) => {
-    try {
-      // TODO: Implement update part API call
-      console.log('Updating part:', updatedPart);
-      await onPartsChange();
-      toast({
-        title: "Success",
-        description: "Part updated successfully",
-      });
-    } catch (error) {
-      console.error('Error updating part:', error);
-      throw error; // Re-throw to let the dialog handle the error
-    }
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setEditingPart(null);
   };
 
-  const totalPartsValue = parts.reduce((sum, part) => sum + part.total_price, 0);
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'installed':
-        return 'success';
-      case 'ordered':
-        return 'info';
-      case 'received':
-        return 'secondary';
-      case 'returned':
-        return 'destructive';
-      default:
-        return 'outline';
+  const handleSavePart = async (savedPart: WorkOrderPart) => {
+    try {
+      // TODO: Implement save part API call
+      console.log('Saving part:', savedPart);
+      await onPartsChange();
+      handleCloseEditDialog();
+    } catch (error) {
+      console.error('Error saving part:', error);
     }
   };
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Parts & Materials
-            {parts.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {parts.length}
-              </Badge>
-            )}
-          </CardTitle>
-          {isEditMode && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddPart}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Part
-            </Button>
-          )}
-        </div>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="text-lg font-semibold">Parts & Materials</CardTitle>
+        {isEditMode && (
+          <Button
+            onClick={handleAddPart}
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Part
+          </Button>
+        )}
       </CardHeader>
+      
       <CardContent>
-        {parts.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No parts added yet.</p>
-            {isEditMode && (
-              <Button
-                variant="outline"
-                onClick={handleAddPart}
-                className="mt-4"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add First Part
-              </Button>
-            )}
-          </div>
-        ) : (
+        {parts.length > 0 ? (
           <div className="space-y-4">
             {parts.map((part) => (
               <div
                 key={part.id}
-                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 border rounded-lg bg-slate-50"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-4">
+                    <div>
                       <h4 className="font-medium">{part.name}</h4>
-                      <Badge 
-                        variant={getStatusBadgeVariant(part.status || 'pending')}
-                        className="text-xs"
-                      >
-                        {partStatusMap[part.status || 'pending']?.label || part.status}
-                      </Badge>
+                      <p className="text-sm text-muted-foreground">
+                        Part #: {part.part_number}
+                      </p>
+                      {part.description && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {part.description}
+                        </p>
+                      )}
                     </div>
-                    
-                    <div className="text-sm text-gray-600 mb-2">
-                      <span className="font-medium">Part #:</span> {part.part_number}
+                    <div className="text-right">
+                      <p className="font-medium">
+                        Qty: {part.quantity} × ${part.unit_price.toFixed(2)}
+                      </p>
+                      <p className="text-sm font-semibold">
+                        Total: ${part.total_price.toFixed(2)}
+                      </p>
                     </div>
-                    
-                    {part.description && (
-                      <p className="text-sm text-gray-600 mb-2">{part.description}</p>
-                    )}
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500">Quantity:</span> {part.quantity}
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Unit Price:</span> ${part.unit_price.toFixed(2)}
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Total:</span> ${part.total_price.toFixed(2)}
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Status:</span> {partStatusMap[part.status || 'pending']?.label || part.status}
-                      </div>
-                    </div>
-                    
-                    {part.notes && (
-                      <div className="mt-2 text-sm text-gray-500">
-                        <span className="font-medium">Notes:</span> {part.notes}
-                      </div>
-                    )}
                   </div>
-                  
-                  {isEditMode && (
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditPart(part)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeletePart(part.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
                 </div>
+                {isEditMode && (
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditPart(part)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeletePart(part.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
-            
-            <div className="border-t pt-4">
-              <div className="flex justify-between items-center font-semibold">
-                <span>Total Parts Value:</span>
-                <span>${totalPartsValue.toFixed(2)}</span>
-              </div>
-            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            {isEditMode ? 
+              "No parts added yet. Click 'Add Part' to get started." :
+              "No parts configured for this work order."
+            }
           </div>
         )}
 
@@ -232,7 +158,8 @@ export function WorkOrderPartsSection({
             part={editingPart}
             open={editDialogOpen}
             onClose={handleCloseEditDialog}
-            onUpdate={handlePartUpdate}
+            onSave={handleSavePart}
+            jobLines={jobLines}
           />
         )}
       </CardContent>
