@@ -147,7 +147,7 @@ export function WorkOrderPartsSection({
 
       <AddInventoryDialog
         open={showInventoryDialog}
-        onClose={() => setShowInventoryDialog(false)}
+        onOpenChange={setShowInventoryDialog}
         inventoryItems={inventoryItems}
         onAddItem={handleAddInventoryItem}
       />

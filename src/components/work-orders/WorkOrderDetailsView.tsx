@@ -64,11 +64,7 @@ export function WorkOrderDetailsView() {
   };
 
   // Create wrapper functions that match the expected signatures
-  const handleJobLinesRefresh = async () => {
-    await refreshData();
-  };
-
-  const handleTimeEntriesRefresh = async () => {
+  const handlePartsRefresh = async () => {
     await refreshData();
   };
 
@@ -122,14 +118,9 @@ export function WorkOrderDetailsView() {
           allParts={allParts}
           timeEntries={timeEntries}
           customer={customer}
-          onJobLinesChange={handleJobLinesRefresh}
-          onTimeEntriesChange={handleTimeEntriesRefresh}
           onWorkOrderUpdate={handleWorkOrderUpdate}
-          onRefreshData={refreshData}
+          onPartsChange={handlePartsRefresh}
           isEditMode={isEditMode}
-          onStartEdit={handleStartEdit}
-          onCancelEdit={handleCancelEdit}
-          onSaveEdit={handleSaveEdit}
         />
       </div>
     </div>
