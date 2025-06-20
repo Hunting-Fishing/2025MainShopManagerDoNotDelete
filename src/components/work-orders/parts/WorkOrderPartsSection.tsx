@@ -1,161 +1,163 @@
 
-import React, { useState } from 'react';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { WorkOrderJobLine } from '@/types/jobLine';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, Filter } from 'lucide-react';
-import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
-import { AddPartDialog } from './AddPartDialog';
-import { updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { WorkOrderPart } from '@/types/workOrderPart';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { InventorySectionHeader } from '../inventory/InventorySectionHeader';
+import { AddInventoryDialog } from '../inventory/AddInventoryDialog';
+import { SpecialOrderDialog } from './SpecialOrderDialog';
+import { InventoryItem } from '@/types/inventory';
 
 interface WorkOrderPartsSectionProps {
   workOrderId: string;
-  allParts: WorkOrderPart[];
-  jobLines: WorkOrderJobLine[];
+  parts: WorkOrderPart[];
   onPartsChange: () => void;
-  isEditMode: boolean;
-  showType: "all" | "joblines" | "parts" | "overview";
+  isEditMode?: boolean;
 }
 
 export function WorkOrderPartsSection({
   workOrderId,
-  allParts,
-  jobLines,
+  parts,
   onPartsChange,
-  isEditMode,
-  showType
+  isEditMode = false
 }: WorkOrderPartsSectionProps) {
-  const [showAddPartDialog, setShowAddPartDialog] = useState(false);
-  const [partsFilter, setPartsFilter] = useState<"all" | "unassigned">("all");
+  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
+  const [showSpecialOrderDialog, setShowSpecialOrderDialog] = useState(false);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
-  const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
+  useEffect(() => {
+    const fetchInventoryItems = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('inventory_items')
+          .select('*')
+          .order('name');
+
+        if (error) {
+          console.error('Error fetching inventory items:', error);
+          return;
+        }
+
+        setInventoryItems(data || []);
+      } catch (error) {
+        console.error('Error fetching inventory items:', error);
+      }
+    };
+
+    fetchInventoryItems();
+  }, []);
+
+  const handleAddInventoryItem = async (item: InventoryItem) => {
     try {
-      console.log('Updating part:', updatedPart);
-      
-      // Update in database
-      await updateWorkOrderPart(updatedPart.id, updatedPart);
-      
-      // Trigger refresh
-      onPartsChange();
-      
+      const partData = {
+        work_order_id: workOrderId,
+        job_line_id: null,
+        part_name: item.name,
+        part_number: item.sku,
+        category: item.category || null,
+        quantity: 1,
+        customer_price: item.unit_price || item.price || 0,
+        supplier_cost: 0,
+        part_type: 'inventory',
+        status: 'pending'
+      };
+
+      const { error } = await supabase
+        .from('work_order_parts')
+        .insert([partData]);
+
+      if (error) {
+        console.error('Error adding inventory item:', error);
+        toast({
+          title: "Error",
+          description: "Failed to add inventory item",
+          variant: "destructive"
+        });
+        return;
+      }
+
       toast({
         title: "Success",
-        description: "Part updated successfully",
+        description: "Inventory item added successfully"
       });
+
+      onPartsChange();
+      setShowInventoryDialog(false);
     } catch (error) {
-      console.error('Error updating part:', error);
+      console.error('Error adding inventory item:', error);
       toast({
         title: "Error",
-        description: "Failed to update part",
+        description: "An unexpected error occurred",
         variant: "destructive"
       });
     }
   };
 
-  const handlePartDelete = async (partId: string) => {
-    try {
-      console.log('Deleting part:', partId);
-      
-      // Delete from database
-      await deleteWorkOrderPart(partId);
-      
-      // Trigger refresh
-      onPartsChange();
-      
-      toast({
-        title: "Success",
-        description: "Part deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting part:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete part",
-        variant: "destructive"
-      });
-    }
+  const handlePartAdded = () => {
+    onPartsChange();
   };
-
-  // Only show the card wrapper for non-overview views
-  if (showType === "overview") {
-    return (
-      <UnifiedItemsTable
-        jobLines={jobLines}
-        allParts={allParts}
-        onPartUpdate={isEditMode ? handlePartUpdate : undefined}
-        onPartDelete={isEditMode ? handlePartDelete : undefined}
-        onPartsChange={onPartsChange}
-        isEditMode={isEditMode}
-        showType={showType}
-      />
-    );
-  }
-
-  // Get counts for filter buttons
-  const totalPartsCount = allParts.length;
-  const unassignedPartsCount = allParts.filter(part => !part.job_line_id).length;
 
   return (
-    <>
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">
-              {showType === "parts" ? "Parts" : "Parts & Job Lines"}
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              {showType === "parts" && (
-                <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                  <Button
-                    variant={partsFilter === "all" ? "default" : "ghost"}
-                    size="sm"
-                    className="h-7 px-3 text-xs"
-                    onClick={() => setPartsFilter("all")}
-                  >
-                    All Parts ({totalPartsCount})
-                  </Button>
-                  <Button
-                    variant={partsFilter === "unassigned" ? "default" : "ghost"}
-                    size="sm"
-                    className="h-7 px-3 text-xs"
-                    onClick={() => setPartsFilter("unassigned")}
-                  >
-                    Unassigned ({unassignedPartsCount})
-                  </Button>
-                </div>
-              )}
-              {isEditMode && (
-                <Button size="sm" className="h-8 px-3" onClick={() => setShowAddPartDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Part
-                </Button>
-              )}
-            </div>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">Parts</CardTitle>
+          {isEditMode && (
+            <InventorySectionHeader
+              onShowDialog={() => setShowInventoryDialog(true)}
+              onShowSpecialOrderDialog={() => setShowSpecialOrderDialog(true)}
+              totalItems={parts.length}
+            />
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {parts.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No parts added to this work order.
           </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <UnifiedItemsTable
-            jobLines={jobLines}
-            allParts={allParts}
-            onPartUpdate={isEditMode ? handlePartUpdate : undefined}
-            onPartDelete={isEditMode ? handlePartDelete : undefined}
-            onPartsChange={onPartsChange}
-            isEditMode={isEditMode}
-            showType={showType === "parts" ? partsFilter : showType}
-            partsFilter={showType === "parts" ? partsFilter : undefined}
-          />
-        </CardContent>
-      </Card>
+        ) : (
+          <div className="space-y-2">
+            {parts.map((part) => (
+              <div key={part.id} className="p-3 border rounded-lg">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium">{part.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {part.part_number} | Qty: {part.quantity}
+                    </p>
+                    {part.description && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {part.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">
+                      ${((part.unit_price || 0) * part.quantity).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
 
-      <AddPartDialog
-        isOpen={showAddPartDialog}
-        onClose={() => setShowAddPartDialog(false)}
-        workOrderId={workOrderId}
-        jobLines={jobLines}
-        onPartAdded={onPartsChange}
+      <AddInventoryDialog
+        isOpen={showInventoryDialog}
+        onClose={() => setShowInventoryDialog(false)}
+        inventoryItems={inventoryItems}
+        onAddItem={handleAddInventoryItem}
       />
-    </>
+
+      <SpecialOrderDialog
+        isOpen={showSpecialOrderDialog}
+        onClose={() => setShowSpecialOrderDialog(false)}
+        workOrderId={workOrderId}
+        onPartAdded={handlePartAdded}
+      />
+    </Card>
   );
 }
