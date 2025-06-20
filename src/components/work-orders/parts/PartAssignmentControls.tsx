@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -152,7 +151,10 @@ export function PartAssignmentControls({
         onClose={() => setShowEditDialog(false)}
         part={part}
         jobLines={jobLines}
-        onPartUpdated={() => {
+        onSave={async (updatedPart) => {
+          if (onPartUpdate) {
+            await onPartUpdate(updatedPart);
+          }
           if (onPartAssigned) {
             onPartAssigned();
           }
