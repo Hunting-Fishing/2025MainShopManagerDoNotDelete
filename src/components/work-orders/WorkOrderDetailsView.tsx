@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { useWorkOrderData } from '@/hooks/useWorkOrderData';
@@ -11,8 +11,6 @@ interface WorkOrderDetailsViewProps {
 }
 
 export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
-  const [isEditMode, setIsEditMode] = useState(false);
-  
   const {
     workOrder,
     jobLines,
@@ -30,6 +28,9 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
     updateStatus,
     error: statusError
   } = useWorkOrderStatus(workOrderId, workOrder?.status || '');
+
+  // Derive edit mode from work order status - editable if not completed
+  const isEditMode = workOrder?.status !== 'completed';
 
   const handleWorkOrderUpdate = async () => {
     await refreshData();
@@ -54,32 +55,6 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
       toast({
         title: "Error",
         description: "Failed to update work order status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleStartEdit = () => {
-    setIsEditMode(true);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditMode(false);
-  };
-
-  const handleSaveEdit = async () => {
-    try {
-      await refreshData();
-      setIsEditMode(false);
-      toast({
-        title: "Success",
-        description: "Work order updated successfully",
-      });
-    } catch (error) {
-      console.error('Error saving work order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save work order changes",
         variant: "destructive",
       });
     }
@@ -142,9 +117,6 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
           isUpdatingStatus={isUpdatingStatus}
           onStatusChange={handleStatusChange}
           isEditMode={isEditMode}
-          onStartEdit={handleStartEdit}
-          onCancelEdit={handleCancelEdit}
-          onSaveEdit={handleSaveEdit}
         />
         
         <WorkOrderDetailsTabs

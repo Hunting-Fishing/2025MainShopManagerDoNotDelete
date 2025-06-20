@@ -2,11 +2,10 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorkOrder } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
-import { Edit, Save, X, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { statusMap } from '@/utils/workOrders/constants';
 
 interface WorkOrderDetailsHeaderProps {
@@ -16,9 +15,6 @@ interface WorkOrderDetailsHeaderProps {
   isUpdatingStatus: boolean;
   onStatusChange: (status: string) => void;
   isEditMode: boolean;
-  onStartEdit: () => void;
-  onCancelEdit: () => void;
-  onSaveEdit: () => void;
 }
 
 export function WorkOrderDetailsHeader({
@@ -27,10 +23,7 @@ export function WorkOrderDetailsHeader({
   currentStatus,
   isUpdatingStatus,
   onStatusChange,
-  isEditMode,
-  onStartEdit,
-  onCancelEdit,
-  onSaveEdit
+  isEditMode
 }: WorkOrderDetailsHeaderProps) {
   const getStatusVariant = (status: string): "default" | "destructive" | "success" | "warning" | "outline" | "secondary" | "info" => {
     // Map work order statuses to badge variants
@@ -93,42 +86,14 @@ export function WorkOrderDetailsHeader({
                 <p><strong>Description:</strong> {workOrder.description}</p>
               )}
               <p><strong>Created:</strong> {new Date(workOrder.created_at || '').toLocaleDateString()}</p>
+              {!isEditMode && (
+                <div className="mt-2">
+                  <Badge variant="secondary" className="text-xs">
+                    Read Only - Work Order Completed
+                  </Badge>
+                </div>
+              )}
             </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {!isEditMode ? (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={onStartEdit}
-                className="flex items-center gap-2"
-              >
-                <Edit className="h-4 w-4" />
-                Edit
-              </Button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={onSaveEdit}
-                  className="flex items-center gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  Save
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={onCancelEdit}
-                  className="flex items-center gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Cancel
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </CardContent>
