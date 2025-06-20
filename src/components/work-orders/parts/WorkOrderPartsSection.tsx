@@ -24,29 +24,6 @@ export function WorkOrderPartsSection({
 }: WorkOrderPartsSectionProps) {
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [showSpecialOrderDialog, setShowSpecialOrderDialog] = useState(false);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-
-  useEffect(() => {
-    const fetchInventoryItems = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('inventory_items')
-          .select('*')
-          .order('name');
-
-        if (error) {
-          console.error('Error fetching inventory items:', error);
-          return;
-        }
-
-        setInventoryItems(data || []);
-      } catch (error) {
-        console.error('Error fetching inventory items:', error);
-      }
-    };
-
-    fetchInventoryItems();
-  }, []);
 
   const handleAddInventoryItem = async (item: InventoryItem) => {
     try {
@@ -148,7 +125,6 @@ export function WorkOrderPartsSection({
       <AddInventoryDialog
         open={showInventoryDialog}
         onOpenChange={setShowInventoryDialog}
-        inventoryItems={inventoryItems}
         onAddItem={handleAddInventoryItem}
       />
 
