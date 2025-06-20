@@ -11,29 +11,37 @@ import { UnifiedJobLineEditDialog } from './UnifiedJobLineEditDialog';
 
 interface CompactJobLinesTableProps {
   jobLines: WorkOrderJobLine[];
-  allParts: WorkOrderPart[];
-  onUpdate: (jobLine: WorkOrderJobLine) => void;
-  onDelete: (jobLineId: string) => void;
+  allParts?: WorkOrderPart[];
+  onUpdate?: (jobLine: WorkOrderJobLine) => void;
+  onDelete?: (jobLineId: string) => void;
+  onEdit?: (jobLine: WorkOrderJobLine) => void;
   isEditMode: boolean;
 }
 
 export function CompactJobLinesTable({
   jobLines,
-  allParts,
+  allParts = [],
   onUpdate,
   onDelete,
+  onEdit,
   isEditMode
 }: CompactJobLinesTableProps) {
   const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleEditClick = (jobLine: WorkOrderJobLine) => {
-    setEditingJobLine(jobLine);
-    setIsEditDialogOpen(true);
+    if (onEdit) {
+      onEdit(jobLine);
+    } else {
+      setEditingJobLine(jobLine);
+      setIsEditDialogOpen(true);
+    }
   };
 
   const handleSaveJobLine = async (updatedJobLine: WorkOrderJobLine) => {
-    await onUpdate(updatedJobLine);
+    if (onUpdate) {
+      await onUpdate(updatedJobLine);
+    }
     setIsEditDialogOpen(false);
     setEditingJobLine(null);
   };
@@ -85,13 +93,15 @@ export function CompactJobLinesTable({
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDelete(jobLine.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {onDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(jobLine.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 )}
@@ -101,12 +111,14 @@ export function CompactJobLinesTable({
         </TableBody>
       </Table>
 
-      <UnifiedJobLineEditDialog
-        jobLine={editingJobLine}
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        onSave={handleSaveJobLine}
-      />
+      {!onEdit && (
+        <UnifiedJobLineEditDialog
+          jobLine={editingJobLine}
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onSave={handleSaveJobLine}
+        />
+      )}
     </>
   );
 }

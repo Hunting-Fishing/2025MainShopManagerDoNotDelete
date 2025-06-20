@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,22 +10,24 @@ import { toast } from '@/hooks/use-toast';
 interface WorkOrderPartsSectionProps {
   workOrderId: string;
   parts: WorkOrderPart[];
+  jobLines: any[];
   onPartsChange: () => Promise<void>;
-  isEditMode: boolean;
+  isEditMode?: boolean;
 }
 
 export function WorkOrderPartsSection({
   workOrderId,
   parts,
+  jobLines,
   onPartsChange,
-  isEditMode
+  isEditMode = false
 }: WorkOrderPartsSectionProps) {
   const [editingPart, setEditingPart] = useState<WorkOrderPart | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const handleEditPart = (part: WorkOrderPart) => {
     setEditingPart(part);
-    setIsEditDialogOpen(true);
+    setEditDialogOpen(true);
   };
 
   const handleDeletePart = async (partId: string) => {
@@ -68,10 +69,10 @@ export function WorkOrderPartsSection({
     };
     
     setEditingPart(newPart);
-    setIsEditDialogOpen(true);
+    setEditDialogOpen(true);
   };
 
-  const handleUpdatePart = async (updatedPart: Partial<WorkOrderPart>) => {
+  const handlePartUpdate = async (updatedPart: Partial<WorkOrderPart>) => {
     try {
       // TODO: Implement update part API call
       console.log('Updating part:', updatedPart);
@@ -229,9 +230,9 @@ export function WorkOrderPartsSection({
         {editingPart && (
           <EditPartDialog
             part={editingPart}
-            open={isEditDialogOpen}
-            onClose={setIsEditDialogOpen}
-            onUpdate={handleUpdatePart}
+            open={editDialogOpen}
+            onClose={handleCloseEditDialog}
+            onUpdate={handlePartUpdate}
           />
         )}
       </CardContent>
