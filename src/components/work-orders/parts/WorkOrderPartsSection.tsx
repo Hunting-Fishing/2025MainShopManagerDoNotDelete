@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { InventorySectionHeader } from '../inventory/InventorySectionHeader';
 import { AddInventoryDialog } from '../inventory/AddInventoryDialog';
-import { SpecialOrderDialog } from './SpecialOrderDialog';
+import { SpecialOrderDialog } from '../shared/SpecialOrderDialog';
 import { InventoryItem } from '@/types/inventory';
 
 interface WorkOrderPartsSectionProps {
