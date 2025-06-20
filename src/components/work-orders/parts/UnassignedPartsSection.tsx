@@ -83,7 +83,7 @@ export function UnassignedPartsSection({
                         Status: {part.status}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
-                        Type: {part.part_type}
+                        Type: {part.partType || 'N/A'}
                       </Badge>
                     </div>
                   </div>
@@ -103,8 +103,8 @@ export function UnassignedPartsSection({
       </CardContent>
 
       <SpecialOrderDialog
-        isOpen={showSpecialOrderDialog}
-        onClose={() => setShowSpecialOrderDialog(false)}
+        open={showSpecialOrderDialog}
+        onOpenChange={setShowSpecialOrderDialog}
         workOrderId={workOrderId}
         onPartAdded={handlePartAdded}
       />

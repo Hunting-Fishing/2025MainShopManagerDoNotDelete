@@ -23,7 +23,7 @@ interface UnifiedItemsTableProps {
 export function UnifiedItemsTable({
   jobLines,
   allParts,
-  workOrderId,
+  workOrderId = '',
   onPartUpdate,
   onPartDelete,
   onPartsChange,
@@ -61,7 +61,7 @@ export function UnifiedItemsTable({
               key={jobLine.id}
               jobLine={jobLine}
               parts={jobLineParts}
-              workOrderId={workOrderId || ''}
+              workOrderId={workOrderId}
               onPartAdded={handlePartAdded}
               isEditMode={isEditMode}
             />
