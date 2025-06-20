@@ -6,20 +6,62 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface AddPartDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workOrderId: string;
   jobLines: WorkOrderJobLine[];
-  onPartAdded: (newPart: WorkOrderPart) => void;
+  onPartAdded: (part: WorkOrderPart) => Promise<void>;
 }
+
+const PART_CATEGORIES = [
+  'filters',
+  'oils',
+  'belts',
+  'hoses',
+  'batteries',
+  'brakes',
+  'tires',
+  'engine',
+  'transmission',
+  'electrical',
+  'cooling',
+  'fuel',
+  'exhaust',
+  'suspension',
+  'steering',
+  'body',
+  'interior',
+  'tools',
+  'fluids',
+  'other'
+];
+
+const PART_STATUSES = [
+  'pending',
+  'ordered',
+  'received',
+  'installed',
+  'returned',
+  'backordered',
+  'defective',
+  'quote-requested',
+  'quote-received',
+  'approved',
+  'declined',
+  'warranty-claim',
+  'core-exchange',
+  'special-order',
+  'discontinued'
+];
 
 export function AddPartDialog({
   open,
@@ -28,8 +70,6 @@ export function AddPartDialog({
   jobLines,
   onPartAdded
 }: AddPartDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState<WorkOrderPartFormValues>({
     name: '',
     part_number: '',
@@ -58,138 +98,92 @@ export function AddPartDialog({
     supplierOrderRef: '',
     notesInternal: '',
     inventoryItemId: '',
-    partType: 'OEM',
+    partType: 'part',
     estimatedArrivalDate: '',
-    itemStatus: 'available'
+    itemStatus: 'active'
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Calculate total price when quantity or unit price changes
   useEffect(() => {
-    if (open) {
-      fetchCategories();
+    const total = formData.quantity * formData.unit_price;
+    setFormData(prev => ({ ...prev, customerPrice: total }));
+  }, [formData.quantity, formData.unit_price]);
+
+  // Calculate markup percentage when prices change
+  useEffect(() => {
+    if (formData.supplierCost > 0 && formData.retailPrice > 0) {
+      const markup = ((formData.retailPrice - formData.supplierCost) / formData.supplierCost) * 100;
+      setFormData(prev => ({ ...prev, markupPercentage: markup }));
     }
-  }, [open]);
-
-  const fetchCategories = async () => {
-    try {
-      console.log('Fetching part categories from database...');
-      const { data, error } = await supabase
-        .from('parts_inventory')
-        .select('category')
-        .not('category', 'is', null);
-
-      if (error) {
-        console.error('Error fetching categories:', error);
-        return;
-      }
-
-      const uniqueCategories = [...new Set(data?.map(item => item.category).filter(Boolean))] as string[];
-      setCategories(uniqueCategories);
-      console.log('Categories loaded:', uniqueCategories.length, 'categories');
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
+  }, [formData.supplierCost, formData.retailPrice]);
 
   const handleInputChange = (field: keyof WorkOrderPartFormValues, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-
-    // Auto-calculate total price
-    if (field === 'quantity' || field === 'unit_price') {
-      const quantity = field === 'quantity' ? value : formData.quantity;
-      const unitPrice = field === 'unit_price' ? value : formData.unit_price;
-      const totalPrice = quantity * unitPrice;
-      
-      setFormData(prev => ({
-        ...prev,
-        customerPrice: totalPrice
-      }));
-    }
-
-    // Auto-calculate markup percentage
-    if (field === 'supplierCost' || field === 'retailPrice') {
-      const supplierCost = field === 'supplierCost' ? value : formData.supplierCost || 0;
-      const retailPrice = field === 'retailPrice' ? value : formData.retailPrice || 0;
-      
-      if (supplierCost > 0) {
-        const markup = ((retailPrice - supplierCost) / supplierCost) * 100;
-        setFormData(prev => ({
-          ...prev,
-          markupPercentage: Math.round(markup * 100) / 100
-        }));
-      }
-    }
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim()) {
+    if (!formData.name.trim() || !formData.part_number.trim()) {
       toast({
-        title: "Error",
-        description: "Part name is required",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!formData.part_number.trim()) {
-      toast({
-        title: "Error",
-        description: "Part number is required",
+        title: "Validation Error",
+        description: "Part name and part number are required",
         variant: "destructive"
       });
       return;
     }
 
     setIsSubmitting(true);
+
     try {
-      const partData: Partial<WorkOrderPart> = {
+      // Create the part data with all required fields
+      const partData: Omit<WorkOrderPart, 'id' | 'created_at' | 'updated_at'> = {
         work_order_id: workOrderId,
         job_line_id: formData.job_line_id || undefined,
-        name: formData.name,
         part_number: formData.part_number,
+        name: formData.name,
         description: formData.description || '',
         quantity: formData.quantity,
         unit_price: formData.unit_price,
         total_price: formData.quantity * formData.unit_price,
         status: formData.status || 'pending',
         notes: formData.notes || '',
-        category: formData.category || '',
-        customerPrice: formData.customerPrice || formData.quantity * formData.unit_price,
-        supplierCost: formData.supplierCost || 0,
-        retailPrice: formData.retailPrice || 0,
-        markupPercentage: formData.markupPercentage || 0,
+        category: formData.category,
+        partName: formData.name,
+        partNumber: formData.part_number,
+        customerPrice: formData.customerPrice,
+        supplierCost: formData.supplierCost,
+        retailPrice: formData.retailPrice,
+        markupPercentage: formData.markupPercentage,
         isTaxable: formData.isTaxable,
-        coreChargeAmount: formData.coreChargeAmount || 0,
-        coreChargeApplied: formData.coreChargeApplied || false,
-        warrantyDuration: formData.warrantyDuration || '',
-        warrantyExpiryDate: formData.warrantyExpiryDate || '',
-        installDate: formData.installDate || '',
-        installedBy: formData.installedBy || '',
-        invoiceNumber: formData.invoiceNumber || '',
-        poLine: formData.poLine || '',
-        isStockItem: formData.isStockItem || false,
-        supplierName: formData.supplierName || '',
-        supplierOrderRef: formData.supplierOrderRef || '',
-        notesInternal: formData.notesInternal || '',
-        inventoryItemId: formData.inventoryItemId || '',
-        partType: formData.partType || 'OEM',
-        estimatedArrivalDate: formData.estimatedArrivalDate || '',
-        itemStatus: formData.itemStatus || 'available'
+        coreChargeAmount: formData.coreChargeAmount,
+        coreChargeApplied: formData.coreChargeApplied,
+        warrantyDuration: formData.warrantyDuration,
+        warrantyExpiryDate: formData.warrantyExpiryDate,
+        installDate: formData.installDate,
+        installedBy: formData.installedBy,
+        invoiceNumber: formData.invoiceNumber,
+        poLine: formData.poLine,
+        isStockItem: formData.isStockItem,
+        supplierName: formData.supplierName,
+        supplierOrderRef: formData.supplierOrderRef,
+        notesInternal: formData.notesInternal,
+        inventoryItemId: formData.inventoryItemId,
+        partType: formData.partType,
+        estimatedArrivalDate: formData.estimatedArrivalDate,
+        itemStatus: formData.itemStatus
       };
 
       const newPart = await createWorkOrderPart(partData);
       
+      await onPartAdded(newPart);
+      
       toast({
         title: "Success",
-        description: "Part added successfully"
+        description: "Part added successfully",
       });
-
-      onPartAdded(newPart);
-      onOpenChange(false);
       
       // Reset form
       setFormData({
@@ -220,10 +214,12 @@ export function AddPartDialog({
         supplierOrderRef: '',
         notesInternal: '',
         inventoryItemId: '',
-        partType: 'OEM',
+        partType: 'part',
         estimatedArrivalDate: '',
-        itemStatus: 'available'
+        itemStatus: 'active'
       });
+      
+      onOpenChange(false);
     } catch (error) {
       console.error('Error adding part:', error);
       toast({
@@ -236,341 +232,403 @@ export function AddPartDialog({
     }
   };
 
-  const statusOptions = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'ordered', label: 'Ordered' },
-    { value: 'received', label: 'Received' },
-    { value: 'installed', label: 'Installed' },
-    { value: 'returned', label: 'Returned' },
-    { value: 'backordered', label: 'Backordered' },
-    { value: 'defective', label: 'Defective' }
-  ];
-
-  const partTypeOptions = [
-    { value: 'OEM', label: 'OEM' },
-    { value: 'Aftermarket', label: 'Aftermarket' },
-    { value: 'Remanufactured', label: 'Remanufactured' },
-    { value: 'Used', label: 'Used' },
-    { value: 'Generic', label: 'Generic' }
-  ];
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Part</DialogTitle>
+          <DialogTitle>Add Part</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Part Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Enter part name"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="part_number">Part Number *</Label>
-              <Input
-                id="part_number"
-                value={formData.part_number}
-                onChange={(e) => handleInputChange('part_number', e.target.value)}
-                placeholder="Enter part number"
-                required
-              />
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Part Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Enter part name"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="part_number">Part Number *</Label>
+                <Input
+                  id="part_number"
+                  value={formData.part_number}
+                  onChange={(e) => handleInputChange('part_number', e.target.value)}
+                  placeholder="Enter part number"
+                  required
+                />
+              </div>
+              
+              <div className="md:col-span-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description || ''}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="Enter part description"
+                  rows={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Enter part description"
-              rows={3}
-            />
-          </div>
+          {/* Pricing Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Pricing Information</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  value={formData.quantity}
+                  onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="unit_price">Unit Price</Label>
+                <Input
+                  id="unit_price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.unit_price}
+                  onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="customerPrice">Total Price</Label>
+                <Input
+                  id="customerPrice"
+                  type="number"
+                  step="0.01"
+                  value={formData.customerPrice}
+                  onChange={(e) => handleInputChange('customerPrice', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="supplierCost">Supplier Cost</Label>
+                <Input
+                  id="supplierCost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.supplierCost}
+                  onChange={(e) => handleInputChange('supplierCost', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="retailPrice">Retail Price</Label>
+                <Input
+                  id="retailPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.retailPrice}
+                  onChange={(e) => handleInputChange('retailPrice', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="markupPercentage">Markup %</Label>
+                <Input
+                  id="markupPercentage"
+                  type="number"
+                  step="0.01"
+                  value={formData.markupPercentage?.toFixed(2)}
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Quantity and Pricing */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={formData.quantity}
-                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="unit_price">Unit Price</Label>
-              <Input
-                id="unit_price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.unit_price}
-                onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
-              />
-            </div>
+          {/* Assignment & Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Assignment & Status</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="job_line_id">Job Line</Label>
+                <Select value={formData.job_line_id || ''} onValueChange={(value) => handleInputChange('job_line_id', value || undefined)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select job line" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {jobLines.map((jobLine) => (
+                      <SelectItem key={jobLine.id} value={jobLine.id}>
+                        {jobLine.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status || 'pending'} onValueChange={(value) => handleInputChange('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PART_STATUSES.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="customerPrice">Total Price</Label>
-              <Input
-                id="customerPrice"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.customerPrice}
-                onChange={(e) => handleInputChange('customerPrice', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-          </div>
-
-          {/* Advanced Pricing */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="supplierCost">Supplier Cost</Label>
-              <Input
-                id="supplierCost"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.supplierCost}
-                onChange={(e) => handleInputChange('supplierCost', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="retailPrice">Retail Price</Label>
-              <Input
-                id="retailPrice"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.retailPrice}
-                onChange={(e) => handleInputChange('retailPrice', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="markupPercentage">Markup %</Label>
-              <Input
-                id="markupPercentage"
-                type="number"
-                step="0.01"
-                value={formData.markupPercentage}
-                onChange={(e) => handleInputChange('markupPercentage', parseFloat(e.target.value) || 0)}
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
-          </div>
-
-          {/* Assignment and Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="job_line_id">Job Line</Label>
-              <Select value={formData.job_line_id} onValueChange={(value) => handleInputChange('job_line_id', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select job line (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No job line</SelectItem>
-                  {jobLines.map((jobLine) => (
-                    <SelectItem key={jobLine.id} value={jobLine.id}>
-                      {jobLine.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Category and Type */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No category</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="partType">Part Type</Label>
-              <Select value={formData.partType} onValueChange={(value) => handleInputChange('partType', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select part type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {partTypeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          {/* Categorization */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Categorization</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select value={formData.category || ''} onValueChange={(value) => handleInputChange('category', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PART_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="partType">Part Type</Label>
+                <Select value={formData.partType || 'part'} onValueChange={(value) => handleInputChange('partType', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select part type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="part">Part</SelectItem>
+                    <SelectItem value="fluid">Fluid</SelectItem>
+                    <SelectItem value="consumable">Consumable</SelectItem>
+                    <SelectItem value="tool">Tool</SelectItem>
+                    <SelectItem value="kit">Kit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Supplier Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="supplierName">Supplier Name</Label>
-              <Input
-                id="supplierName"
-                value={formData.supplierName}
-                onChange={(e) => handleInputChange('supplierName', e.target.value)}
-                placeholder="Enter supplier name"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="supplierOrderRef">Supplier Order Ref</Label>
-              <Input
-                id="supplierOrderRef"
-                value={formData.supplierOrderRef}
-                onChange={(e) => handleInputChange('supplierOrderRef', e.target.value)}
-                placeholder="Enter supplier order reference"
-              />
-            </div>
-          </div>
-
-          {/* Warranty and Installation */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="warrantyDuration">Warranty Duration</Label>
-              <Input
-                id="warrantyDuration"
-                value={formData.warrantyDuration}
-                onChange={(e) => handleInputChange('warrantyDuration', e.target.value)}
-                placeholder="e.g., 12 months, 2 years"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="installedBy">Installed By</Label>
-              <Input
-                id="installedBy"
-                value={formData.installedBy}
-                onChange={(e) => handleInputChange('installedBy', e.target.value)}
-                placeholder="Enter technician name"
-              />
-            </div>
-          </div>
-
-          {/* Core Charge */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="coreChargeAmount">Core Charge Amount</Label>
-              <Input
-                id="coreChargeAmount"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.coreChargeAmount}
-                onChange={(e) => handleInputChange('coreChargeAmount', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            
-            <div className="flex items-center space-x-4 pt-8">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="coreChargeApplied"
-                  checked={formData.coreChargeApplied}
-                  onCheckedChange={(checked) => handleInputChange('coreChargeApplied', checked)}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Supplier Information</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="supplierName">Supplier Name</Label>
+                <Input
+                  id="supplierName"
+                  value={formData.supplierName || ''}
+                  onChange={(e) => handleInputChange('supplierName', e.target.value)}
+                  placeholder="Enter supplier name"
                 />
-                <Label htmlFor="coreChargeApplied">Core Charge Applied</Label>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isTaxable"
-                  checked={formData.isTaxable}
-                  onCheckedChange={(checked) => handleInputChange('isTaxable', checked)}
+              <div>
+                <Label htmlFor="supplierOrderRef">Supplier Order Ref</Label>
+                <Input
+                  id="supplierOrderRef"
+                  value={formData.supplierOrderRef || ''}
+                  onChange={(e) => handleInputChange('supplierOrderRef', e.target.value)}
+                  placeholder="Enter supplier order reference"
                 />
-                <Label htmlFor="isTaxable">Taxable</Label>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isStockItem"
-                  checked={formData.isStockItem}
-                  onCheckedChange={(checked) => handleInputChange('isStockItem', checked)}
+              <div>
+                <Label htmlFor="poLine">PO Line</Label>
+                <Input
+                  id="poLine"
+                  value={formData.poLine || ''}
+                  onChange={(e) => handleInputChange('poLine', e.target.value)}
+                  placeholder="Enter PO line number"
                 />
-                <Label htmlFor="isStockItem">Stock Item</Label>
               </div>
-            </div>
-          </div>
+              
+              <div>
+                <Label htmlFor="estimatedArrivalDate">Estimated Arrival Date</Label>
+                <Input
+                  id="estimatedArrivalDate"
+                  type="date"
+                  value={formData.estimatedArrivalDate || ''}
+                  onChange={(e) => handleInputChange('estimatedArrivalDate', e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Warranty & Installation */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Warranty & Installation</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="warrantyDuration">Warranty Duration</Label>
+                <Input
+                  id="warrantyDuration"
+                  value={formData.warrantyDuration || ''}
+                  onChange={(e) => handleInputChange('warrantyDuration', e.target.value)}
+                  placeholder="e.g., 12 months, 2 years"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="warrantyExpiryDate">Warranty Expiry Date</Label>
+                <Input
+                  id="warrantyExpiryDate"
+                  type="date"
+                  value={formData.warrantyExpiryDate || ''}
+                  onChange={(e) => handleInputChange('warrantyExpiryDate', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="installDate">Install Date</Label>
+                <Input
+                  id="installDate"
+                  type="date"
+                  value={formData.installDate || ''}
+                  onChange={(e) => handleInputChange('installDate', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="installedBy">Installed By</Label>
+                <Input
+                  id="installedBy"
+                  value={formData.installedBy || ''}
+                  onChange={(e) => handleInputChange('installedBy', e.target.value)}
+                  placeholder="Enter technician name"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Additional Options */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Additional Options</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="coreChargeAmount">Core Charge Amount</Label>
+                  <Input
+                    id="coreChargeAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.coreChargeAmount}
+                    onChange={(e) => handleInputChange('coreChargeAmount', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="invoiceNumber">Invoice Number</Label>
+                  <Input
+                    id="invoiceNumber"
+                    value={formData.invoiceNumber || ''}
+                    onChange={(e) => handleInputChange('invoiceNumber', e.target.value)}
+                    placeholder="Enter invoice number"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-6">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="isTaxable"
+                    checked={formData.isTaxable}
+                    onCheckedChange={(checked) => handleInputChange('isTaxable', checked)}
+                  />
+                  <Label htmlFor="isTaxable">Taxable</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="coreChargeApplied"
+                    checked={formData.coreChargeApplied}
+                    onCheckedChange={(checked) => handleInputChange('coreChargeApplied', checked)}
+                  />
+                  <Label htmlFor="coreChargeApplied">Core Charge Applied</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="isStockItem"
+                    checked={formData.isStockItem}
+                    onCheckedChange={(checked) => handleInputChange('isStockItem', checked)}
+                  />
+                  <Label htmlFor="isStockItem">Stock Item</Label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Notes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="notes">Customer Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="Enter customer-visible notes"
-                rows={3}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notesInternal">Internal Notes</Label>
-              <Textarea
-                id="notesInternal"
-                value={formData.notesInternal}
-                onChange={(e) => handleInputChange('notesInternal', e.target.value)}
-                placeholder="Enter internal notes"
-                rows={3}
-              />
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Notes</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="notes">Customer Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes || ''}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  placeholder="Notes visible to customer"
+                  rows={2}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="notesInternal">Internal Notes</Label>
+                <Textarea
+                  id="notesInternal"
+                  value={formData.notesInternal || ''}
+                  onChange={(e) => handleInputChange('notesInternal', e.target.value)}
+                  placeholder="Internal notes (not visible to customer)"
+                  rows={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
