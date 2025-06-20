@@ -6,171 +6,92 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { CategorySelector } from '../parts/CategorySelector';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface SpecialOrderDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  workOrderId?: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  workOrderId: string;
   jobLineId?: string;
-  onPartAdded?: () => void;
-  onOrderCreated?: (orderId: string) => void;
+  onPartAdded: () => void;
 }
-
-interface SpecialOrderFormData {
-  partName: string;
-  partNumber: string;
-  description: string;
-  quantity: number;
-  supplierName: string;
-  supplierCost: number;
-  customerPrice: number;
-  category: string;
-  estimatedArrivalDate: string;
-  notes: string;
-}
-
-const initialFormData: SpecialOrderFormData = {
-  partName: '',
-  partNumber: '',
-  description: '',
-  quantity: 1,
-  supplierName: '',
-  supplierCost: 0,
-  customerPrice: 0,
-  category: '',
-  estimatedArrivalDate: '',
-  notes: ''
-};
 
 export function SpecialOrderDialog({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
   workOrderId,
   jobLineId,
-  onPartAdded,
-  onOrderCreated
+  onPartAdded
 }: SpecialOrderDialogProps) {
-  const [formData, setFormData] = useState<SpecialOrderFormData>(initialFormData);
+  const [partName, setPartName] = useState('');
+  const [partNumber, setPartNumber] = useState('');
+  const [description, setDescription] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [unitPrice, setUnitPrice] = useState(0);
+  const [category, setCategory] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (field: keyof SpecialOrderFormData, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const validateForm = (): boolean => {
-    if (!formData.partName.trim()) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!partName.trim() || !partNumber.trim()) {
       toast({
-        title: "Validation Error",
-        description: "Part name is required",
+        title: "Error",
+        description: "Part name and part number are required",
         variant: "destructive"
       });
-      return false;
+      return;
     }
-
-    if (!formData.partNumber.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Part number is required",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (formData.quantity <= 0) {
-      toast({
-        title: "Validation Error",
-        description: "Quantity must be greater than 0",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (formData.customerPrice < 0) {
-      toast({
-        title: "Validation Error",
-        description: "Customer price cannot be negative",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
 
     setIsSubmitting(true);
-    
+
     try {
-      // If we have a work order context, add directly to work_order_parts
-      if (workOrderId) {
-        const partData = {
-          work_order_id: workOrderId,
-          job_line_id: jobLineId || null,
-          part_name: formData.partName,
-          part_number: formData.partNumber,
-          description: formData.description,
-          quantity: formData.quantity,
-          unit_price: formData.customerPrice,
-          total_price: formData.customerPrice * formData.quantity,
-          supplier_name: formData.supplierName || null,
-          supplier_cost: formData.supplierCost || 0,
-          customer_price: formData.customerPrice,
-          retail_price: formData.customerPrice,
-          category: formData.category || null,
-          part_type: 'special-order',
-          status: 'pending',
-          estimated_arrival_date: formData.estimatedArrivalDate || null,
-          notes: formData.notes || null
-        };
+      const partData = {
+        work_order_id: workOrderId,
+        job_line_id: jobLineId || null,
+        part_name: partName,
+        part_number: partNumber,
+        description: description || null,
+        category: category || null,
+        quantity: quantity,
+        customer_price: unitPrice,
+        supplier_cost: 0,
+        part_type: 'special_order',
+        status: 'pending'
+      };
 
-        const { data, error } = await supabase
-          .from('work_order_parts')
-          .insert([partData])
-          .select()
-          .single();
+      const { error } = await supabase
+        .from('work_order_parts')
+        .insert([partData]);
 
-        if (error) {
-          console.error('Error adding special order part:', error);
-          toast({
-            title: "Error",
-            description: "Failed to add special order part",
-            variant: "destructive"
-          });
-          return;
-        }
-
+      if (error) {
+        console.error('Error adding special order part:', error);
         toast({
-          title: "Success",
-          description: "Special order part added successfully"
-        });
-
-        if (onPartAdded) {
-          onPartAdded();
-        }
-      } else {
-        // General inventory special order - could be extended for other use cases
-        toast({
-          title: "Info",
-          description: "General inventory special orders not yet implemented",
+          title: "Error",
+          description: "Failed to add special order part",
           variant: "destructive"
         });
         return;
       }
 
-      // Reset form and close dialog
-      setFormData(initialFormData);
-      onClose();
+      toast({
+        title: "Success",
+        description: "Special order part added successfully"
+      });
 
+      // Reset form
+      setPartName('');
+      setPartNumber('');
+      setDescription('');
+      setQuantity(1);
+      setUnitPrice(0);
+      setCategory('');
+      
+      onPartAdded();
+      onOpenChange(false);
     } catch (error) {
-      console.error('Error creating special order:', error);
+      console.error('Error adding special order part:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
@@ -181,143 +102,106 @@ export function SpecialOrderDialog({
     }
   };
 
-  const handleClose = () => {
-    setFormData(initialFormData);
-    onClose();
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create Special Order</DialogTitle>
+          <DialogTitle>Add Special Order Part</DialogTitle>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          {/* Basic Part Information */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="partName">Part Name *</Label>
               <Input
                 id="partName"
-                value={formData.partName}
-                onChange={(e) => handleInputChange('partName', e.target.value)}
+                value={partName}
+                onChange={(e) => setPartName(e.target.value)}
                 placeholder="Enter part name"
+                required
               />
             </div>
-            
             <div className="space-y-2">
               <Label htmlFor="partNumber">Part Number *</Label>
               <Input
                 id="partNumber"
-                value={formData.partNumber}
-                onChange={(e) => handleInputChange('partNumber', e.target.value)}
+                value={partNumber}
+                onChange={(e) => setPartNumber(e.target.value)}
                 placeholder="Enter part number"
+                required
               />
             </div>
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter part description"
               rows={3}
             />
           </div>
 
-          {/* Category Selection */}
-          <CategorySelector
-            value={formData.category}
-            onValueChange={(value) => handleInputChange('category', value)}
-          />
-
-          {/* Quantity and Pricing */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity *</Label>
+              <Label htmlFor="quantity">Quantity</Label>
               <Input
                 id="quantity"
                 type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
                 min="1"
-                value={formData.quantity}
-                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
               />
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="supplierCost">Supplier Cost</Label>
+              <Label htmlFor="unitPrice">Unit Price</Label>
               <Input
-                id="supplierCost"
+                id="unitPrice"
                 type="number"
-                min="0"
                 step="0.01"
-                value={formData.supplierCost}
-                onChange={(e) => handleInputChange('supplierCost', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="customerPrice">Customer Price *</Label>
-              <Input
-                id="customerPrice"
-                type="number"
+                value={unitPrice}
+                onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
                 min="0"
-                step="0.01"
-                value={formData.customerPrice}
-                onChange={(e) => handleInputChange('customerPrice', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
               />
             </div>
           </div>
 
-          {/* Supplier Information */}
           <div className="space-y-2">
-            <Label htmlFor="supplierName">Supplier Name</Label>
-            <Input
-              id="supplierName"
-              value={formData.supplierName}
-              onChange={(e) => handleInputChange('supplierName', e.target.value)}
-              placeholder="Enter supplier name"
-            />
+            <Label htmlFor="category">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="engine">Engine</SelectItem>
+                <SelectItem value="transmission">Transmission</SelectItem>
+                <SelectItem value="brakes">Brakes</SelectItem>
+                <SelectItem value="suspension">Suspension</SelectItem>
+                <SelectItem value="electrical">Electrical</SelectItem>
+                <SelectItem value="body">Body</SelectItem>
+                <SelectItem value="fluids">Fluids</SelectItem>
+                <SelectItem value="filters">Filters</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Estimated Arrival Date */}
-          <div className="space-y-2">
-            <Label htmlFor="estimatedArrivalDate">Estimated Arrival Date</Label>
-            <Input
-              id="estimatedArrivalDate"
-              type="date"
-              value={formData.estimatedArrivalDate}
-              onChange={(e) => handleInputChange('estimatedArrivalDate', e.target.value)}
-            />
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Adding...' : 'Add Part'}
+            </Button>
           </div>
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Additional notes or special instructions"
-              rows={3}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'Create Special Order'}
-          </Button>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
