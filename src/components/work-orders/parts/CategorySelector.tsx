@@ -104,11 +104,18 @@ export function CategorySelector({
   return (
     <div className="space-y-2 bg-slate-100 p-4 rounded-lg">
       <Label className="text-sm font-medium text-slate-700">Category</Label>
-      <Select value={value || ''} onValueChange={onValueChange}>
+      <Select value={value || 'no-selection'} onValueChange={(newValue) => {
+        if (newValue !== 'no-selection') {
+          onValueChange(newValue);
+        }
+      }}>
         <SelectTrigger className="bg-white border-slate-300 text-slate-900">
           <SelectValue placeholder="Select a category" />
         </SelectTrigger>
         <SelectContent className="max-h-[300px] overflow-y-auto bg-white border-slate-200 shadow-lg">
+          <SelectItem value="no-selection" className="hover:bg-slate-50 focus:bg-slate-100">
+            <span className="text-slate-500">Select a category</span>
+          </SelectItem>
           {categories.length === 0 ? (
             <SelectItem value="no-categories" disabled>
               No categories available
