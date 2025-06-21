@@ -1,27 +1,29 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { BasicPartFields } from './BasicPartFields';
+import { JobLineSelector } from './JobLineSelector';
 import { SupplierSelector } from './SupplierSelector';
+import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 
 const partFormSchema = z.object({
-  name: z.string().min(1, "Part name is required"),
-  part_number: z.string().min(1, "Part number is required"),
+  name: z.string().min(1, 'Part name is required'),
+  part_number: z.string().min(1, 'Part number is required'),
   description: z.string().optional(),
-  quantity: z.number().min(1, "Quantity must be at least 1"),
-  unit_price: z.number().min(0, "Unit price must be 0 or greater"),
+  quantity: z.number().min(1, 'Quantity must be at least 1'),
+  unit_price: z.number().min(0, 'Price must be non-negative'),
   job_line_id: z.string().optional(),
   supplierName: z.string().optional(),
+  status: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export interface AddPartDialogProps {
@@ -29,7 +31,7 @@ export interface AddPartDialogProps {
   onOpenChange: (open: boolean) => void;
   workOrderId: string;
   jobLines: WorkOrderJobLine[];
-  onPartAdded: () => void;
+  onPartAdded: () => Promise<void>;
 }
 
 export function AddPartDialog({
@@ -51,7 +53,9 @@ export function AddPartDialog({
       unit_price: 0,
       job_line_id: '',
       supplierName: '',
-    },
+      status: 'pending',
+      notes: ''
+    }
   });
 
   const handleSubmit = async (data: WorkOrderPartFormValues) => {
@@ -60,16 +64,19 @@ export function AddPartDialog({
       
       const partData = {
         ...data,
-        total_price: data.quantity * data.unit_price,
+        work_order_id: workOrderId,
+        total_price: data.quantity * data.unit_price
       };
 
-      await createWorkOrderPart(workOrderId, partData);
+      await createWorkOrderPart(partData);
       
-      form.reset();
-      onPartAdded();
+      toast.success('Part added successfully');
+      await onPartAdded();
       onOpenChange(false);
+      form.reset();
     } catch (error) {
       console.error('Error adding part:', error);
+      toast.error('Failed to add part');
     } finally {
       setIsSubmitting(false);
     }
@@ -77,124 +84,20 @@ export function AddPartDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Add Part</DialogTitle>
+          <DialogTitle>Add New Part</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Part Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="part_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Part Number</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="unit_price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unit Price</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="job_line_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job Line (Optional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select job line..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {jobLines.map((jobLine) => (
-                        <SelectItem key={jobLine.id} value={jobLine.id}>
-                          {jobLine.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <BasicPartFields form={form} />
+            
+            <JobLineSelector form={form} jobLines={jobLines} />
+            
             <SupplierSelector form={form} />
 
-            <DialogFooter>
+            <div className="flex justify-end gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -206,7 +109,7 @@ export function AddPartDialog({
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Adding...' : 'Add Part'}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
       </DialogContent>
