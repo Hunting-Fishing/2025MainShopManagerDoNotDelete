@@ -68,7 +68,7 @@ export function AddPartDialog({
         total_price: data.quantity * data.unit_price
       };
 
-      await createWorkOrderPart(workOrderId, partData);
+      await createWorkOrderPart(partData);
       
       toast.success('Part added successfully');
       await onPartAdded();
