@@ -26,8 +26,8 @@ export function WorkOrderPartsSection({
 }: WorkOrderPartsSectionProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const handlePartAdded = async (newPart: WorkOrderPart) => {
-    console.log('Part added:', newPart);
+  const handlePartAdded = async () => {
+    console.log('Part added successfully');
     await onPartsChange();
   };
 
