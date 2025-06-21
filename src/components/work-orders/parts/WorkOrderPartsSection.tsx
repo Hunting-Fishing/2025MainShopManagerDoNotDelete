@@ -77,7 +77,7 @@ export function WorkOrderPartsSection({
       </Card>
 
       <AddPartDialog
-        open={isAddDialogOpen}
+        isOpen={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         workOrderId={workOrderId}
         jobLines={jobLines}
