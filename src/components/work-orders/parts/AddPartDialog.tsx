@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -64,11 +63,10 @@ export function AddPartDialog({
       
       const partData = {
         ...data,
-        work_order_id: workOrderId,
         total_price: data.quantity * data.unit_price
       };
 
-      await createWorkOrderPart(partData);
+      await createWorkOrderPart(workOrderId, partData);
       
       toast.success('Part added successfully');
       await onPartAdded();
