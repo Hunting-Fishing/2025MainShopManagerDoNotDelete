@@ -1,110 +1,75 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { WorkOrderPart } from '@/types/workOrderPart';
+import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 
-// First, let's check what the actual table structure looks like
-export const checkTableStructure = async () => {
-  const { data, error } = await supabase
-    .from('work_order_parts')
-    .select('*')
-    .limit(1);
-  
-  console.log('Table structure check:', { data, error });
-  return { data, error };
-};
-
-// Map database row to WorkOrderPart interface
-const mapDbRowToWorkOrderPart = (dbRow: any): WorkOrderPart => {
+/**
+ * Map WorkOrderPart form values to database format
+ */
+export const mapWorkOrderPartToDb = (part: WorkOrderPartFormValues, workOrderId: string, jobLineId?: string) => {
   return {
-    id: dbRow.id,
-    work_order_id: dbRow.work_order_id,
-    job_line_id: dbRow.job_line_id,
-    part_number: dbRow.part_number || dbRow.part_name || '',
-    name: dbRow.name || dbRow.part_name || '',
-    description: dbRow.description || '',
-    quantity: dbRow.quantity || 0,
-    unit_price: dbRow.unit_price || dbRow.customer_price || 0,
-    total_price: dbRow.total_price || (dbRow.quantity * (dbRow.unit_price || dbRow.customer_price || 0)),
-    status: dbRow.status || 'pending',
-    notes: dbRow.notes || '',
-    created_at: dbRow.created_at,
-    updated_at: dbRow.updated_at,
-    // Map additional fields if they exist
-    category: dbRow.category,
-    partName: dbRow.part_name,
-    partNumber: dbRow.part_number,
-    customerPrice: dbRow.customer_price,
-    supplierCost: dbRow.supplier_cost,
-    retailPrice: dbRow.retail_price,
-    markupPercentage: dbRow.markup_percentage,
-    isTaxable: dbRow.is_taxable,
-    coreChargeAmount: dbRow.core_charge_amount,
-    coreChargeApplied: dbRow.core_charge_applied,
-    warrantyDuration: dbRow.warranty_duration,
-    warrantyExpiryDate: dbRow.warranty_expiry_date,
-    installDate: dbRow.install_date,
-    installedBy: dbRow.installed_by,
-    invoiceNumber: dbRow.invoice_number,
-    poLine: dbRow.po_line,
-    isStockItem: dbRow.is_stock_item,
-    supplierName: dbRow.supplier_name,
-    supplierOrderRef: dbRow.supplier_order_ref,
-    notesInternal: dbRow.notes_internal,
-    inventoryItemId: dbRow.inventory_item_id,
-    partType: dbRow.part_type,
-    estimatedArrivalDate: dbRow.estimated_arrival_date,
-    itemStatus: dbRow.item_status,
-    supplierSuggestedRetailPrice: dbRow.supplier_suggested_retail_price,
-    dateAdded: dbRow.date_added,
-    binLocation: dbRow.bin_location,
-    warehouseLocation: dbRow.warehouse_location,
-    shelfLocation: dbRow.shelf_location,
-    attachments: dbRow.attachments
-  };
-};
-
-// Map WorkOrderPart to database format
-const mapWorkOrderPartToDb = (part: Partial<WorkOrderPart>) => {
-  return {
-    work_order_id: part.work_order_id,
-    job_line_id: part.job_line_id,
+    work_order_id: workOrderId,
+    job_line_id: jobLineId || null,
+    part_name: part.name,
     part_number: part.part_number,
-    part_name: part.name, // Map name to part_name
-    description: part.description,
     quantity: part.quantity,
-    customer_price: part.unit_price, // Map unit_price to customer_price
-    part_type: part.partType || 'standard',
-    status: part.status,
-    notes: part.notes,
-    category: part.category,
-    supplier_cost: part.supplierCost,
-    retail_price: part.retailPrice,
-    markup_percentage: part.markupPercentage,
-    is_taxable: part.isTaxable,
-    core_charge_amount: part.coreChargeAmount,
-    core_charge_applied: part.coreChargeApplied,
-    warranty_duration: part.warrantyDuration,
-    warranty_expiry_date: part.warrantyExpiryDate,
-    install_date: part.installDate,
-    installed_by: part.installedBy,
-    invoice_number: part.invoiceNumber,
-    po_line: part.poLine,
-    is_stock_item: part.isStockItem,
-    supplier_name: part.supplierName,
-    supplier_order_ref: part.supplierOrderRef,
-    notes_internal: part.notesInternal,
-    inventory_item_id: part.inventoryItemId,
-    estimated_arrival_date: part.estimatedArrivalDate,
-    item_status: part.itemStatus,
-    supplier_suggested_retail_price: part.supplierSuggestedRetailPrice,
-    date_added: part.dateAdded,
-    bin_location: part.binLocation,
-    warehouse_location: part.warehouseLocation,
-    shelf_location: part.shelfLocation,
-    attachments: part.attachments
+    customer_price: part.unit_price || 0,
+    supplier_cost: part.supplierCost || 0,
+    retail_price: part.retailPrice || 0,
+    supplier_name: part.supplierName || '',
+    category: part.category || '',
+    part_type: part.partType || 'OEM',
+    markup_percentage: part.markupPercentage || 0,
+    is_taxable: part.isTaxable !== undefined ? part.isTaxable : true,
+    core_charge_amount: part.coreChargeAmount || 0,
+    core_charge_applied: part.coreChargeApplied || false,
+    warranty_duration: part.warrantyDuration || '',
+    invoice_number: part.invoiceNumber || '',
+    po_line: part.poLine || '',
+    is_stock_item: part.isStockItem || false,
+    notes: part.notes || '',
+    status: part.status || 'pending'
   };
 };
 
+/**
+ * Map database row to WorkOrderPart format
+ */
+export const mapDbRowToWorkOrderPart = (row: any): WorkOrderPart => {
+  return {
+    id: row.id,
+    work_order_id: row.work_order_id,
+    job_line_id: row.job_line_id,
+    part_number: row.part_number,
+    name: row.part_name,
+    partName: row.part_name,
+    description: row.notes,
+    quantity: row.quantity,
+    unit_price: row.customer_price,
+    total_price: row.customer_price * row.quantity,
+    status: row.status,
+    notes: row.notes,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    category: row.category,
+    customerPrice: row.customer_price,
+    supplierCost: row.supplier_cost,
+    retailPrice: row.retail_price,
+    supplierName: row.supplier_name,
+    partType: row.part_type,
+    markupPercentage: row.markup_percentage,
+    isTaxable: row.is_taxable,
+    coreChargeAmount: row.core_charge_amount,
+    coreChargeApplied: row.core_charge_applied,
+    warrantyDuration: row.warranty_duration,
+    invoiceNumber: row.invoice_number,
+    poLine: row.po_line,
+    isStockItem: row.is_stock_item
+  };
+};
+
+/**
+ * Get work order parts by work order ID
+ */
 export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderPart[]> => {
   const { data, error } = await supabase
     .from('work_order_parts')
@@ -120,6 +85,9 @@ export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderP
   return (data || []).map(mapDbRowToWorkOrderPart);
 };
 
+/**
+ * Get parts by job line ID
+ */
 export const getJobLineParts = async (jobLineId: string): Promise<WorkOrderPart[]> => {
   const { data, error } = await supabase
     .from('work_order_parts')
@@ -135,13 +103,20 @@ export const getJobLineParts = async (jobLineId: string): Promise<WorkOrderPart[
   return (data || []).map(mapDbRowToWorkOrderPart);
 };
 
-export const createWorkOrderPart = async (partData: Omit<WorkOrderPart, 'id' | 'created_at' | 'updated_at'>): Promise<WorkOrderPart> => {
-  const dbData = mapWorkOrderPartToDb(partData);
+/**
+ * Create a new work order part
+ */
+export const createWorkOrderPart = async (
+  partData: WorkOrderPartFormValues,
+  workOrderId: string,
+  jobLineId?: string
+): Promise<WorkOrderPart> => {
+  const dbData = mapWorkOrderPartToDb(partData, workOrderId, jobLineId);
   
   const { data, error } = await supabase
     .from('work_order_parts')
-    .insert([dbData])
-    .select()
+    .insert(dbData)
+    .select('*')
     .single();
 
   if (error) {
@@ -152,14 +127,41 @@ export const createWorkOrderPart = async (partData: Omit<WorkOrderPart, 'id' | '
   return mapDbRowToWorkOrderPart(data);
 };
 
-export const updateWorkOrderPart = async (partId: string, updates: Partial<WorkOrderPart>): Promise<WorkOrderPart> => {
-  const dbUpdates = mapWorkOrderPartToDb(updates);
+/**
+ * Update an existing work order part
+ */
+export const updateWorkOrderPart = async (
+  partId: string,
+  partData: Partial<WorkOrderPartFormValues>
+): Promise<WorkOrderPart> => {
+  // Only include fields that exist in the database
+  const dbData: any = {};
   
+  if (partData.name !== undefined) dbData.part_name = partData.name;
+  if (partData.part_number !== undefined) dbData.part_number = partData.part_number;
+  if (partData.quantity !== undefined) dbData.quantity = partData.quantity;
+  if (partData.unit_price !== undefined) dbData.customer_price = partData.unit_price;
+  if (partData.supplierCost !== undefined) dbData.supplier_cost = partData.supplierCost;
+  if (partData.retailPrice !== undefined) dbData.retail_price = partData.retailPrice;
+  if (partData.supplierName !== undefined) dbData.supplier_name = partData.supplierName;
+  if (partData.category !== undefined) dbData.category = partData.category;
+  if (partData.partType !== undefined) dbData.part_type = partData.partType;
+  if (partData.markupPercentage !== undefined) dbData.markup_percentage = partData.markupPercentage;
+  if (partData.isTaxable !== undefined) dbData.is_taxable = partData.isTaxable;
+  if (partData.coreChargeAmount !== undefined) dbData.core_charge_amount = partData.coreChargeAmount;
+  if (partData.coreChargeApplied !== undefined) dbData.core_charge_applied = partData.coreChargeApplied;
+  if (partData.warrantyDuration !== undefined) dbData.warranty_duration = partData.warrantyDuration;
+  if (partData.invoiceNumber !== undefined) dbData.invoice_number = partData.invoiceNumber;
+  if (partData.poLine !== undefined) dbData.po_line = partData.poLine;
+  if (partData.isStockItem !== undefined) dbData.is_stock_item = partData.isStockItem;
+  if (partData.notes !== undefined) dbData.notes = partData.notes;
+  if (partData.status !== undefined) dbData.status = partData.status;
+
   const { data, error } = await supabase
     .from('work_order_parts')
-    .update(dbUpdates)
+    .update(dbData)
     .eq('id', partId)
-    .select()
+    .select('*')
     .single();
 
   if (error) {
@@ -170,6 +172,9 @@ export const updateWorkOrderPart = async (partId: string, updates: Partial<WorkO
   return mapDbRowToWorkOrderPart(data);
 };
 
+/**
+ * Delete a work order part
+ */
 export const deleteWorkOrderPart = async (partId: string): Promise<void> => {
   const { error } = await supabase
     .from('work_order_parts')
