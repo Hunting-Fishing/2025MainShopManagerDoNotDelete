@@ -32,7 +32,7 @@ export const useWorkOrderTemplates = () => {
         usage_count: template.usage_count || 0,
         last_used: template.last_used || "",
         created_at: template.created_at || new Date().toISOString(),
-        updated_at: template.updated_at || new Date().toISOString()
+        updated_at: template.created_at || new Date().toISOString() // Use created_at as fallback
       }));
 
       setTemplates(formattedTemplates);
@@ -90,8 +90,7 @@ export const useWorkOrderTemplates = () => {
           technician: newTemplate.technician,
           notes: newTemplate.notes,
           usage_count: 0,
-          created_at: now,
-          updated_at: now
+          created_at: now
         })
         .select()
         .single();
@@ -109,7 +108,7 @@ export const useWorkOrderTemplates = () => {
         usage_count: 0,
         last_used: "",
         created_at: data.created_at || now,
-        updated_at: data.updated_at || now
+        updated_at: data.created_at || now // Use created_at as fallback
       };
       
       setTemplates(prev => [...prev, savedTemplate]);
