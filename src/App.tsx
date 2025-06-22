@@ -29,6 +29,7 @@ import CustomerComms from '@/pages/CustomerComms';
 import CallLogger from '@/pages/CallLogger';
 import ServiceBoard from '@/pages/ServiceBoard';
 import CompanyProfile from '@/pages/CompanyProfile';
+import StaffMembers from '@/pages/StaffMembers';
 
 function App() {
   return (
@@ -63,6 +64,7 @@ function App() {
             <Route path="/purchase-orders" element={<PurchaseOrders />} />
             <Route path="/service-board" element={<ServiceBoard />} />
             <Route path="/company-profile" element={<CompanyProfile />} />
+            <Route path="/staff-members" element={<StaffMembers />} />
             <Route path="/documents" element={<Documents />} />
             
             {/* Catch all route */}
