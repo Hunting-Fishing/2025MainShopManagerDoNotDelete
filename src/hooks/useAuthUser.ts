@@ -19,7 +19,7 @@ export function useAuthUser() {
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('useAuthUser: Auth state change:', event, session?.user?.id);
         
         try {
@@ -33,10 +33,11 @@ export function useAuthUser() {
           // For now, set basic roles - you can expand this later
           setIsAdmin(false);
           setIsOwner(false);
+          
+          setIsLoading(false);
         } catch (err) {
           console.error('Error in auth state change handler:', err);
           setError('Authentication error occurred');
-        } finally {
           setIsLoading(false);
         }
       }
@@ -45,20 +46,25 @@ export function useAuthUser() {
     // Check for existing session
     const initializeAuth = async () => {
       try {
+        console.log('useAuthUser: Checking for existing session...');
         const { data: { session }, error } = await supabase.auth.getSession();
+        
         if (error) {
           console.error('useAuthUser: Error getting session:', error);
           setError('Failed to get session');
         } else {
           console.log('useAuthUser: Initial session check:', session?.user?.id);
+          // The onAuthStateChange will handle setting the state
         }
       } catch (error) {
         console.error('useAuthUser: Error in initial auth check:', error);
         setError('Authentication initialization failed');
       } finally {
-        if (!session) {
+        // Only set loading to false if we don't have a session
+        // If we have a session, onAuthStateChange will handle it
+        setTimeout(() => {
           setIsLoading(false);
-        }
+        }, 1000); // Give some time for the auth state change event
       }
     };
 
