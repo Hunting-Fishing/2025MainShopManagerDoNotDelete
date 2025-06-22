@@ -6,9 +6,12 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 // Import pages
 import Dashboard from '@/pages/Dashboard';
-import Authentication from '@/pages/Authentication';
+import WorkOrders from '@/pages/WorkOrders';
+import Settings from '@/pages/Settings';
 import Login from '@/pages/Login';
-import ErrorPage from '@/pages/error-page';
+import Authentication from '@/pages/Authentication';
+import Signup from '@/pages/Signup';
+import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
 
 // Import placeholder pages
 import {
@@ -38,15 +41,16 @@ import {
   WorkOrderEdit
 } from '@/pages/placeholders';
 
-export default function App() {
+function App() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/auth" element={<Authentication />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/staff-login" element={<Login />} />
+      <Route path="/auth" element={<Authentication />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/customer-portal" element={<CustomerPortalLogin />} />
       
-      {/* Protected routes with layout */}
+      {/* Protected routes wrapped in Layout */}
       <Route path="/" element={
         <ProtectedRoute>
           <Layout>
@@ -66,7 +70,7 @@ export default function App() {
       <Route path="/work-orders" element={
         <ProtectedRoute>
           <Layout>
-            <WorkOrderDetails />
+            <WorkOrders />
           </Layout>
         </ProtectedRoute>
       } />
@@ -98,7 +102,7 @@ export default function App() {
       <Route path="/customers" element={
         <ProtectedRoute>
           <Layout>
-            <CustomerDetails />
+            <Team />
           </Layout>
         </ProtectedRoute>
       } />
@@ -170,47 +174,7 @@ export default function App() {
       <Route path="/settings" element={
         <ProtectedRoute>
           <Layout>
-            <Notifications />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/team" element={
-        <ProtectedRoute>
-          <Layout>
-            <Team />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/team/create" element={
-        <ProtectedRoute>
-          <Layout>
-            <TeamCreate />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/team/:id" element={
-        <ProtectedRoute>
-          <Layout>
-            <TeamMemberProfile />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/chat" element={
-        <ProtectedRoute>
-          <Layout>
-            <Chat />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/forms" element={
-        <ProtectedRoute>
-          <Layout>
-            <Forms />
+            <Settings />
           </Layout>
         </ProtectedRoute>
       } />
@@ -255,18 +219,26 @@ export default function App() {
         </ProtectedRoute>
       } />
       
-      <Route path="/feedback" element={
+      <Route path="/team" element={
         <ProtectedRoute>
           <Layout>
-            <Feedback />
+            <Team />
           </Layout>
         </ProtectedRoute>
       } />
       
-      <Route path="/analytics" element={
+      <Route path="/team/create" element={
         <ProtectedRoute>
           <Layout>
-            <Analytics />
+            <TeamCreate />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/team/:id" element={
+        <ProtectedRoute>
+          <Layout>
+            <TeamMemberProfile />
           </Layout>
         </ProtectedRoute>
       } />
@@ -287,8 +259,31 @@ export default function App() {
         </ProtectedRoute>
       } />
       
-      {/* Catch all route */}
-      <Route path="*" element={<ErrorPage />} />
+      <Route path="/chat" element={
+        <ProtectedRoute>
+          <Layout>
+            <Chat />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/feedback" element={
+        <ProtectedRoute>
+          <Layout>
+            <Feedback />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/analytics" element={
+        <ProtectedRoute>
+          <Layout>
+            <Analytics />
+          </Layout>
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
+
+export default App;

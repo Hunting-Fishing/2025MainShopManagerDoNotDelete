@@ -14,70 +14,25 @@ export function useAuthUser() {
   const [userName, setUserName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const checkUserRole = async (userId: string) => {
-    try {
-      console.log('Checking user role for:', userId);
-      
-      const { data: userRoles, error: roleError } = await supabase
-        .from('user_roles')
-        .select(`
-          role_id,
-          roles:role_id(
-            id,
-            name
-          )
-        `)
-        .eq('user_id', userId);
-
-      if (roleError) {
-        console.error('Error fetching user roles:', roleError);
-        return;
-      }
-
-      console.log('User roles data:', userRoles);
-
-      if (userRoles && userRoles.length > 0) {
-        const roles = userRoles.map(ur => ur.roles?.name).filter(Boolean);
-        console.log('User roles:', roles);
-        
-        setIsOwner(roles.includes('owner'));
-        setIsAdmin(roles.includes('admin') || roles.includes('owner'));
-      } else {
-        console.log('No roles found for user');
-        setIsOwner(false);
-        setIsAdmin(false);
-      }
-    } catch (err) {
-      console.error('Exception checking user role:', err);
-      setError('Failed to check user permissions');
-    }
-  };
-
   useEffect(() => {
     console.log('useAuthUser: Setting up auth state listener...');
     
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('useAuthUser: Auth state change:', event, session?.user?.id);
         
         try {
           setError(null);
-          
-          // Update session and user state immediately
           setSession(session);
           setUser(session?.user ?? null);
           setIsAuthenticated(!!session);
           setUserId(session?.user?.id ?? null);
           setUserName(session?.user?.email ?? null);
           
-          // Check roles if user is authenticated
-          if (session?.user?.id) {
-            await checkUserRole(session.user.id);
-          } else {
-            setIsAdmin(false);
-            setIsOwner(false);
-          }
+          // For now, set basic roles - you can expand this later
+          setIsAdmin(false);
+          setIsOwner(false);
         } catch (err) {
           console.error('Error in auth state change handler:', err);
           setError('Authentication error occurred');
@@ -87,7 +42,7 @@ export function useAuthUser() {
       }
     );
 
-    // THEN check for existing session
+    // Check for existing session
     const initializeAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -96,22 +51,14 @@ export function useAuthUser() {
           setError('Failed to get session');
         } else {
           console.log('useAuthUser: Initial session check:', session?.user?.id);
-          
-          setSession(session);
-          setUser(session?.user ?? null);
-          setIsAuthenticated(!!session);
-          setUserId(session?.user?.id ?? null);
-          setUserName(session?.user?.email ?? null);
-          
-          if (session?.user?.id) {
-            await checkUserRole(session.user.id);
-          }
         }
       } catch (error) {
         console.error('useAuthUser: Error in initial auth check:', error);
         setError('Authentication initialization failed');
       } finally {
-        setIsLoading(false);
+        if (!session) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -133,6 +80,6 @@ export function useAuthUser() {
     userId,
     userName,
     error,
-    refetchRoles: () => userId ? checkUserRole(userId) : Promise.resolve(),
+    refetchRoles: () => Promise.resolve(),
   };
 }
