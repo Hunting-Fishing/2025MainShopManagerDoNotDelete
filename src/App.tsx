@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -26,6 +27,7 @@ import Calendar from '@/pages/Calendar';
 import ServiceReminders from '@/pages/ServiceReminders';
 import CustomerComms from '@/pages/CustomerComms';
 import CallLogger from '@/pages/CallLogger';
+import ServiceBoard from '@/pages/ServiceBoard';
 
 function App() {
   return (
@@ -58,6 +60,7 @@ function App() {
             <Route path="/inventory/suppliers" element={<InventorySuppliers />} />
             <Route path="/stock-control" element={<StockControl />} />
             <Route path="/purchase-orders" element={<PurchaseOrders />} />
+            <Route path="/service-board" element={<ServiceBoard />} />
             <Route path="/documents" element={<Documents />} />
             
             {/* Catch all route */}
