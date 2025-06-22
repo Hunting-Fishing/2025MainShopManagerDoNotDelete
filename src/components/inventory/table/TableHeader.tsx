@@ -1,8 +1,14 @@
 
 import React from 'react';
 import { TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Column } from './SortableColumnHeader';
 
-export function InventoryTableHeader() {
+interface InventoryTableHeaderProps {
+  columns?: Column[];
+  setColumns?: React.Dispatch<React.SetStateAction<Column[]>>;
+}
+
+export function InventoryTableHeader({ columns, setColumns }: InventoryTableHeaderProps) {
   return (
     <TableHeader>
       <TableRow>

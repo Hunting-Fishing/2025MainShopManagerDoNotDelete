@@ -6,14 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
 import { InventoryItemExtended } from '@/types/inventory';
 import { formatCurrency } from '@/lib/utils';
+import { Column } from './SortableColumnHeader';
 
 interface InventoryTableRowProps {
   item: InventoryItemExtended;
-  onEdit: (item: InventoryItemExtended) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (item: InventoryItemExtended) => void;
+  onDelete?: (id: string) => void;
+  visibleColumns?: Column[];
+  onRowClick?: (itemId: string) => void;
 }
 
-export function InventoryTableRow({ item, onEdit, onDelete }: InventoryTableRowProps) {
+export function InventoryTableRow({ item, onEdit, onDelete, visibleColumns, onRowClick }: InventoryTableRowProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const getStatusColor = (status: string) => {
@@ -30,11 +33,18 @@ export function InventoryTableRow({ item, onEdit, onDelete }: InventoryTableRowP
   };
 
   const handleDelete = async () => {
+    if (!onDelete) return;
     setIsDeleting(true);
     try {
       await onDelete(item.id);
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleRowClick = () => {
+    if (onRowClick) {
+      onRowClick(item.id);
     }
   };
 
@@ -44,7 +54,10 @@ export function InventoryTableRow({ item, onEdit, onDelete }: InventoryTableRowP
   const pricePerUnit = quantity > 0 ? totalCost / quantity : 0;
 
   return (
-    <TableRow>
+    <TableRow 
+      className="hover:bg-gray-50 cursor-pointer transition-colors"
+      onClick={handleRowClick}
+    >
       <TableCell className="font-medium">{item.name}</TableCell>
       <TableCell>{item.sku}</TableCell>
       <TableCell>{item.category}</TableCell>
@@ -57,23 +70,27 @@ export function InventoryTableRow({ item, onEdit, onDelete }: InventoryTableRowP
         </Badge>
       </TableCell>
       <TableCell>{item.location}</TableCell>
-      <TableCell>
+      <TableCell onClick={(e) => e.stopPropagation()}>
         <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(item)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(item)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </TableCell>
     </TableRow>
