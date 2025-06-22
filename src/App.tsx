@@ -17,6 +17,7 @@ import Invoices from '@/pages/Invoices';
 import Documents from '@/pages/Documents';
 import Inventory from '@/pages/Inventory';
 import InventoryAdd from '@/pages/InventoryAdd';
+import InventorySuppliers from '@/pages/InventorySuppliers';
 import CreateWorkOrder from '@/pages/CreateWorkOrder';
 import CreateCustomer from '@/pages/CreateCustomer';
 import CustomerEdit from '@/pages/CustomerEdit';
@@ -45,6 +46,7 @@ function App() {
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/inventory/add" element={<InventoryAdd />} />
+            <Route path="/inventory/suppliers" element={<InventorySuppliers />} />
             <Route path="/documents" element={<Documents />} />
             
             {/* Catch all route */}

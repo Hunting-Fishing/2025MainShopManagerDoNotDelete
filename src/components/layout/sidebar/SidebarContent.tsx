@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -47,7 +46,7 @@ const navigation = [
     title: 'Inventory',
     items: [
       { name: 'Products', href: '/inventory', icon: Package },
-      { name: 'Suppliers', href: '/suppliers', icon: Truck },
+      { name: 'Suppliers', href: '/inventory/suppliers', icon: Truck },
       { name: 'Stock Control', href: '/stock-control', icon: BarChart3 },
       { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCart },
     ],
