@@ -1,221 +1,81 @@
 
-import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { Notification, NotificationPreferences } from '@/types/notification';
-import { notificationService } from '@/services/notificationService';
-import { NotificationsContextProps } from './types';
-import { defaultPreferences } from './defaultData';
-import {
-  createAddNotificationHandler,
-  createMarkAsReadHandler,
-  createMarkAllAsReadHandler,
-  createClearNotificationHandler,
-  createClearAllNotificationsHandler,
-  createHandleNewNotificationHandler,
-} from './notificationHandlers';
-import {
-  createUpdatePreferencesHandler,
-  createUpdateSubscriptionHandler,
-} from './preferenceHandlers';
-import { supabase } from '@/lib/supabase';
-import { preloadNotificationSounds } from '@/utils/notificationSounds';
-import { safeDOMOperation } from '@/utils/domSafetyUtils';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Notification } from '@/types/notification';
+import { NotificationsContext } from './NotificationsContext';
+import { defaultNotifications } from './defaultData';
+import { toast } from '@/hooks/use-toast';
 
-export const NotificationsContext = createContext<NotificationsContextProps | undefined>(undefined);
+interface NotificationsProviderProps {
+  children: React.ReactNode;
+}
 
-export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<boolean>(false);
-  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
-  const [userId, setUserId] = useState<string | null>(null);
-  
-  const unreadCount = notifications.filter(notification => !notification.read).length;
+export const NotificationsProvider: React.FC<NotificationsProviderProps> = ({ children }) => {
+  const [notifications, setNotifications] = useState<Notification[]>(defaultNotifications);
+  const [unreadCount, setUnreadCount] = useState(() => 
+    defaultNotifications.filter(n => !n.read).length
+  );
 
-  // Get current user ID on mount with error handling
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      try {
-        const { data } = await supabase.auth.getUser();
-        const currentUserId = data?.user?.id;
-        setUserId(currentUserId);
-      } catch (error) {
-        console.error('Error getting current user:', error);
-      }
+  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      read: false
     };
-    
-    getCurrentUser();
-    
-    // Listen for authentication changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      try {
-        setUserId(session?.user?.id || null);
-      } catch (error) {
-        console.error('Error handling auth state change:', error);
+
+    setNotifications(prev => [newNotification, ...prev]);
+    setUnreadCount(prev => prev + 1);
+
+    // Show toast notification
+    if (notification.type !== 'info') {
+      toast({
+        title: notification.title,
+        description: notification.message,
+        variant: notification.type === 'error' ? 'destructive' : 'default',
+        duration: notification.duration || 5000,
+      });
+    }
+  }, []);
+
+  const markAsRead = useCallback((id: string) => {
+    setNotifications(prev => prev.map(n => 
+      n.id === id ? { ...n, read: true } : n
+    ));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+  }, []);
+
+  const removeNotification = useCallback((id: string) => {
+    setNotifications(prev => {
+      const notification = prev.find(n => n.id === id);
+      if (notification && !notification.read) {
+        setUnreadCount(current => Math.max(0, current - 1));
       }
+      return prev.filter(n => n.id !== id);
     });
-    
-    // Preload notification sounds with error handling
-    safeDOMOperation(
-      () => preloadNotificationSounds(),
-      undefined,
-      'notification sound preloading'
-    );
-    
-    return () => {
-      try {
-        authListener?.subscription.unsubscribe();
-      } catch (error) {
-        console.error('Error unsubscribing from auth listener:', error);
-      }
-    };
   }, []);
 
-  // Create handlers with error boundaries
-  const handleNewNotification = useCallback(
-    createHandleNewNotificationHandler(preferences, setNotifications),
-    [preferences]
-  );
-  
-  const addNotification = useCallback(
-    async (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-      try {
-        const handler = createAddNotificationHandler(setNotifications, preferences);
-        handler(notification);
-        await notificationService.addNotification(notification);
-      } catch (error) {
-        console.error('Error adding notification:', error);
-      }
-    },
-    [preferences]
-  );
-  
-  const markAsRead = useCallback(
-    async (id: string) => {
-      try {
-        await notificationService.markAsRead(id);
-        createMarkAsReadHandler(setNotifications)(id);
-      } catch (error) {
-        console.error('Error marking notification as read:', error);
-      }
-    },
-    []
-  );
-  
-  const markAllAsRead = useCallback(
-    async () => {
-      try {
-        await notificationService.markAllAsRead();
-        createMarkAllAsReadHandler(setNotifications)();
-      } catch (error) {
-        console.error('Error marking all notifications as read:', error);
-      }
-    },
-    []
-  );
-  
-  const clearNotification = useCallback(
-    async (id: string) => {
-      try {
-        await notificationService.clearNotification(id);
-        createClearNotificationHandler(setNotifications)(id);
-      } catch (error) {
-        console.error('Error clearing notification:', error);
-      }
-    },
-    []
-  );
-  
-  const clearAllNotifications = useCallback(
-    async () => {
-      try {
-        await notificationService.clearAllNotifications();
-        createClearAllNotificationsHandler(setNotifications)();
-      } catch (error) {
-        console.error('Error clearing all notifications:', error);
-      }
-    },
-    []
-  );
-  
-  const updatePreferences = useCallback(
-    createUpdatePreferencesHandler(setPreferences),
-    []
-  );
-  
-  const updateSubscription = useCallback(
-    createUpdateSubscriptionHandler(setPreferences),
-    []
-  );
-
-  // Initialize notification service and set up listeners when user ID changes
-  useEffect(() => {
-    if (!userId) {
-      setNotifications([]);
-      setConnectionStatus(false);
-      return;
-    }
-
-    try {
-      // Connect to the notification service
-      notificationService.connect(userId);
-      
-      // Set up listener for connection status
-      const unsubscribeStatus = notificationService.onConnectionStatus((status) => {
-        try {
-          setConnectionStatus(status);
-        } catch (error) {
-          console.error('Error updating connection status:', error);
-        }
-      });
-      
-      // Set up listener for new notifications
-      const unsubscribeNotifications = notificationService.onNotification((notification) => {
-        try {
-          handleNewNotification(notification);
-        } catch (error) {
-          console.error('Error handling new notification:', error);
-        }
-      });
-      
-      // Clean up on unmount or userId change
-      return () => {
-        try {
-          unsubscribeStatus();
-          unsubscribeNotifications();
-          notificationService.disconnect();
-        } catch (error) {
-          console.error('Error cleaning up notification service:', error);
-        }
-      };
-    } catch (error) {
-      console.error('Error initializing notification service:', error);
-    }
-  }, [userId, handleNewNotification]);
-
-  const triggerTestNotification = useCallback(() => {
-    try {
-      notificationService.triggerDemoNotification();
-    } catch (error) {
-      console.error('Error triggering test notification:', error);
-    }
+  const clearAll = useCallback(() => {
+    setNotifications([]);
+    setUnreadCount(0);
   }, []);
+
+  const value = useMemo(() => ({
+    notifications,
+    unreadCount,
+    addNotification,
+    markAsRead,
+    markAllAsRead,
+    removeNotification,
+    clearAll
+  }), [notifications, unreadCount, addNotification, markAsRead, markAllAsRead, removeNotification, clearAll]);
 
   return (
-    <NotificationsContext.Provider 
-      value={{ 
-        notifications, 
-        unreadCount,
-        connectionStatus,
-        preferences,
-        addNotification, 
-        markAsRead, 
-        markAllAsRead,
-        clearNotification,
-        clearAllNotifications,
-        updatePreferences,
-        updateSubscription,
-        triggerTestNotification
-      }}
-    >
+    <NotificationsContext.Provider value={value}>
       {children}
     </NotificationsContext.Provider>
   );
