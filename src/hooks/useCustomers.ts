@@ -3,12 +3,17 @@ import { useState, useEffect } from 'react';
 import { Customer } from '@/types/customer';
 import { getAllCustomers } from '@/services/customer/customerQueryService';
 import { handleApiError } from '@/utils/errorHandling';
+import { DateRange } from 'react-day-picker';
 
 export interface CustomerFilters {
   search?: string;
   searchQuery?: string;
   status?: string;
   sortBy?: string;
+  tags?: string[];
+  vehicleType?: string;
+  hasVehicles?: string;
+  dateRange?: DateRange;
 }
 
 export function useCustomers() {
@@ -20,7 +25,11 @@ export function useCustomers() {
     search: '',
     searchQuery: '',
     status: 'all',
-    sortBy: 'name'
+    sortBy: 'name',
+    tags: [],
+    vehicleType: '',
+    hasVehicles: '',
+    dateRange: undefined
   });
 
   useEffect(() => {
@@ -87,6 +96,58 @@ export function useCustomers() {
         );
       });
       console.log('🔍 useCustomers: After search filter:', filtered.length, 'customers');
+    }
+
+    // Apply tags filter
+    if (filters.tags && filters.tags.length > 0) {
+      filtered = filtered.filter(customer => {
+        const customerTags = Array.isArray(customer.tags) ? customer.tags : [];
+        return filters.tags!.some(tag => customerTags.includes(tag));
+      });
+      console.log('🔍 useCustomers: After tags filter:', filtered.length, 'customers');
+    }
+
+    // Apply vehicle type filter
+    if (filters.vehicleType && filters.vehicleType !== '_any') {
+      filtered = filtered.filter(customer => {
+        const vehicles = customer.vehicles || [];
+        return vehicles.some(vehicle => 
+          vehicle.body_style?.toLowerCase() === filters.vehicleType?.toLowerCase()
+        );
+      });
+      console.log('🔍 useCustomers: After vehicle type filter:', filtered.length, 'customers');
+    }
+
+    // Apply has vehicles filter
+    if (filters.hasVehicles && filters.hasVehicles !== '_any') {
+      filtered = filtered.filter(customer => {
+        const hasVehicles = (customer.vehicles?.length || 0) > 0;
+        if (filters.hasVehicles === 'yes') return hasVehicles;
+        if (filters.hasVehicles === 'no') return !hasVehicles;
+        return true;
+      });
+      console.log('🔍 useCustomers: After has vehicles filter:', filtered.length, 'customers');
+    }
+
+    // Apply date range filter
+    if (filters.dateRange?.from || filters.dateRange?.to) {
+      filtered = filtered.filter(customer => {
+        const customerDate = new Date(customer.created_at);
+        let inRange = true;
+        
+        if (filters.dateRange?.from) {
+          inRange = inRange && customerDate >= filters.dateRange.from;
+        }
+        
+        if (filters.dateRange?.to) {
+          const endDate = new Date(filters.dateRange.to);
+          endDate.setHours(23, 59, 59, 999);
+          inRange = inRange && customerDate <= endDate;
+        }
+        
+        return inRange;
+      });
+      console.log('🔍 useCustomers: After date range filter:', filtered.length, 'customers');
     }
 
     // Apply sorting

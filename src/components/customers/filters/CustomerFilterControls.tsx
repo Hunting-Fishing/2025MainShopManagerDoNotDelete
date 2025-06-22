@@ -4,12 +4,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter, X, Sliders } from 'lucide-react';
+import { DateRange } from 'react-day-picker';
 
 export interface CustomerFilters {
   search?: string;
   searchQuery?: string;
   status?: string;
   sortBy?: string;
+  tags?: string[];
+  vehicleType?: string;
+  hasVehicles?: string;
+  dateRange?: DateRange;
 }
 
 interface CustomerFilterControlsProps {
@@ -30,7 +35,11 @@ export const CustomerFilterControls = ({
       search: '',
       searchQuery: '',
       status: 'all',
-      sortBy: 'name'
+      sortBy: 'name',
+      tags: [],
+      vehicleType: '',
+      hasVehicles: '',
+      dateRange: undefined
     });
   };
 
