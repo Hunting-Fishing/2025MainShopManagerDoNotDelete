@@ -1,9 +1,10 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Notification } from '@/types/notification';
+import { Notification, NotificationPreferences } from '@/types/notification';
 import { NotificationsContext } from './NotificationsContext';
-import { defaultNotifications } from './defaultData';
+import { defaultNotifications, defaultPreferences } from './defaultData';
 import { toast } from '@/hooks/use-toast';
+import { createUpdatePreferencesHandler, createUpdateSubscriptionHandler } from './preferenceHandlers';
 
 interface NotificationsProviderProps {
   children: React.ReactNode;
@@ -14,6 +15,8 @@ export const NotificationsProvider: React.FC<NotificationsProviderProps> = ({ ch
   const [unreadCount, setUnreadCount] = useState(() => 
     defaultNotifications.filter(n => !n.read).length
   );
+  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
+  const [connectionStatus, setConnectionStatus] = useState(true);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: Notification = {
@@ -49,7 +52,7 @@ export const NotificationsProvider: React.FC<NotificationsProviderProps> = ({ ch
     setUnreadCount(0);
   }, []);
 
-  const removeNotification = useCallback((id: string) => {
+  const clearNotification = useCallback((id: string) => {
     setNotifications(prev => {
       const notification = prev.find(n => n.id === id);
       if (notification && !notification.read) {
@@ -59,20 +62,50 @@ export const NotificationsProvider: React.FC<NotificationsProviderProps> = ({ ch
     });
   }, []);
 
-  const clearAll = useCallback(() => {
+  const clearAllNotifications = useCallback(() => {
     setNotifications([]);
     setUnreadCount(0);
   }, []);
 
+  const updatePreferences = createUpdatePreferencesHandler(setPreferences);
+  const updateSubscription = createUpdateSubscriptionHandler(setPreferences);
+
+  const triggerTestNotification = useCallback(() => {
+    addNotification({
+      title: 'Test Notification',
+      message: 'This is a test notification to verify the system is working correctly.',
+      type: 'info',
+      category: 'system'
+    });
+  }, [addNotification]);
+
   const value = useMemo(() => ({
     notifications,
     unreadCount,
+    connectionStatus,
+    preferences,
     addNotification,
     markAsRead,
     markAllAsRead,
-    removeNotification,
-    clearAll
-  }), [notifications, unreadCount, addNotification, markAsRead, markAllAsRead, removeNotification, clearAll]);
+    clearNotification,
+    clearAllNotifications,
+    updatePreferences,
+    updateSubscription,
+    triggerTestNotification
+  }), [
+    notifications, 
+    unreadCount, 
+    connectionStatus,
+    preferences,
+    addNotification, 
+    markAsRead, 
+    markAllAsRead, 
+    clearNotification, 
+    clearAllNotifications,
+    updatePreferences,
+    updateSubscription,
+    triggerTestNotification
+  ]);
 
   return (
     <NotificationsContext.Provider value={value}>

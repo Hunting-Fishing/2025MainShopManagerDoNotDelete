@@ -1,5 +1,5 @@
 
-import { NotificationPreferences } from '@/types/notification';
+import { NotificationPreferences, Notification } from '@/types/notification';
 
 export const defaultPreferences: NotificationPreferences = {
   email: true,
@@ -25,3 +25,15 @@ export const defaultPreferences: NotificationPreferences = {
     { category: 'chat', enabled: true }
   ]
 };
+
+export const defaultNotifications: Notification[] = [
+  {
+    id: '1',
+    title: 'Welcome to the system',
+    message: 'Your notification system is now active',
+    read: false,
+    timestamp: new Date().toISOString(),
+    type: 'info',
+    category: 'system'
+  }
+];
