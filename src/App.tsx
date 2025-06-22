@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -21,6 +20,7 @@ import InventorySuppliers from '@/pages/InventorySuppliers';
 import CreateWorkOrder from '@/pages/CreateWorkOrder';
 import CreateCustomer from '@/pages/CreateCustomer';
 import CustomerEdit from '@/pages/CustomerEdit';
+import StockControl from '@/pages/StockControl';
 
 function App() {
   return (
@@ -47,6 +47,7 @@ function App() {
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/inventory/add" element={<InventoryAdd />} />
             <Route path="/inventory/suppliers" element={<InventorySuppliers />} />
+            <Route path="/stock-control" element={<StockControl />} />
             <Route path="/documents" element={<Documents />} />
             
             {/* Catch all route */}
