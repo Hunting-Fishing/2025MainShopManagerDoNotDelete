@@ -21,6 +21,7 @@ import CreateWorkOrder from '@/pages/CreateWorkOrder';
 import CreateCustomer from '@/pages/CreateCustomer';
 import CustomerEdit from '@/pages/CustomerEdit';
 import StockControl from '@/pages/StockControl';
+import PurchaseOrders from '@/pages/PurchaseOrders';
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
             <Route path="/inventory/add" element={<InventoryAdd />} />
             <Route path="/inventory/suppliers" element={<InventorySuppliers />} />
             <Route path="/stock-control" element={<StockControl />} />
+            <Route path="/purchase-orders" element={<PurchaseOrders />} />
             <Route path="/documents" element={<Documents />} />
             
             {/* Catch all route */}
