@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuHeader,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -40,7 +39,9 @@ export function NotificationsDropdown({ children }: NotificationsDropdownProps) 
     clearAllNotifications();
   };
 
-  const handleTestNotification = () => {
+  const handleTestNotification = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     triggerTestNotification();
     setIsOpen(false);
   };
@@ -54,15 +55,20 @@ export function NotificationsDropdown({ children }: NotificationsDropdownProps) 
         <NotificationsDropdownHeader
           unreadCount={unreadCount}
           connectionStatus={connectionStatus}
+          notifications={notifications}
           onMarkAllAsRead={handleMarkAllAsRead}
-          onClearAll={handleClearAll}
+          onClearAllNotifications={handleClearAll}
         />
         
         <DropdownMenuSeparator />
         
         <div className="max-h-64 overflow-y-auto">
           {notifications.length === 0 ? (
-            <NotificationsEmptyState />
+            <NotificationsEmptyState 
+              connectionStatus={connectionStatus}
+              hasNotifications={notifications.length > 0}
+              onTriggerTest={handleTestNotification}
+            />
           ) : (
             notifications.map((notification) => (
               <NotificationItem
