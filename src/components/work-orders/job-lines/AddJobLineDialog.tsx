@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { UnifiedJobLineFormDialog } from './UnifiedJobLineFormDialog';
+import { ServiceBasedJobLineForm } from './ServiceBasedJobLineForm';
 
 export interface AddJobLineDialogProps {
   workOrderId: string;
@@ -18,81 +18,100 @@ export function AddJobLineDialog({
   open,
   onOpenChange
 }: AddJobLineDialogProps) {
-  const [showServiceForm, setShowServiceForm] = useState(false);
-  const [showManualForm, setShowManualForm] = useState(false);
+  const [mode, setMode] = useState<'selection' | 'service' | 'manual'>('selection');
 
   const handleJobLineSave = (jobLines: WorkOrderJobLine[]) => {
     onJobLineAdd(jobLines);
-    setShowServiceForm(false);
-    setShowManualForm(false);
     onOpenChange(false);
+    setMode('selection'); // Reset to selection mode
   };
 
-  return (
-    <>
+  const handleCancel = () => {
+    onOpenChange(false);
+    setMode('selection'); // Reset to selection mode
+  };
+
+  const handleBackToSelection = () => {
+    setMode('selection');
+  };
+
+  if (mode === 'service' || mode === 'manual') {
+    return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Job Line</DialogTitle>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToSelection}
+                className="p-2"
+              >
+                ← Back
+              </Button>
+              <DialogTitle>
+                {mode === 'service' ? 'Add Job Line from Service' : 'Add Manual Job Line'}
+              </DialogTitle>
+            </div>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Choose how you'd like to add job lines to this work order:
-            </p>
-            
-            <div className="grid gap-3">
-              <Button
-                onClick={() => setShowServiceForm(true)}
-                className="justify-start h-auto p-4"
-                variant="outline"
-              >
-                <div className="text-left">
-                  <div className="font-medium">From Service Catalog</div>
-                  <div className="text-sm text-muted-foreground">
-                    Select pre-configured services with pricing
-                  </div>
-                </div>
-              </Button>
-              
-              <Button
-                onClick={() => setShowManualForm(true)}
-                className="justify-start h-auto p-4"
-                variant="outline"
-              >
-                <div className="text-left">
-                  <div className="font-medium">Manual Entry</div>
-                  <div className="text-sm text-muted-foreground">
-                    Create a custom job line manually
-                  </div>
-                </div>
-              </Button>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
+          <ServiceBasedJobLineForm
+            workOrderId={workOrderId}
+            onSave={handleJobLineSave}
+            onCancel={handleCancel}
+          />
         </DialogContent>
       </Dialog>
+    );
+  }
 
-      <UnifiedJobLineFormDialog
-        workOrderId={workOrderId}
-        mode="add-service"
-        open={showServiceForm}
-        onOpenChange={setShowServiceForm}
-        onSave={handleJobLineSave}
-      />
-
-      <UnifiedJobLineFormDialog
-        workOrderId={workOrderId}
-        mode="add-manual"
-        open={showManualForm}
-        onOpenChange={setShowManualForm}
-        onSave={handleJobLineSave}
-      />
-    </>
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Job Line</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Choose how you'd like to add job lines to this work order:
+          </p>
+          
+          <div className="grid gap-3">
+            <Button
+              onClick={() => setMode('service')}
+              className="justify-start h-auto p-4"
+              variant="outline"
+            >
+              <div className="text-left">
+                <div className="font-medium">From Service Catalog</div>
+                <div className="text-sm text-muted-foreground">
+                  Select pre-configured services with pricing
+                </div>
+              </div>
+            </Button>
+            
+            <Button
+              onClick={() => setMode('manual')}
+              className="justify-start h-auto p-4"
+              variant="outline"
+            >
+              <div className="text-left">
+                <div className="font-medium">Manual Entry</div>
+                <div className="text-sm text-muted-foreground">
+                  Create a custom job line manually
+                </div>
+              </div>
+            </Button>
+          </div>
+          
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
