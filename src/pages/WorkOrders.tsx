@@ -2,8 +2,8 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useWorkOrders } from '@/hooks/useWorkOrders';
-import { WorkOrdersTable } from '@/components/work-orders/WorkOrdersTable';
-import { WorkOrdersHeader } from '@/components/work-orders/WorkOrdersHeader';
+import WorkOrdersTable from '@/components/work-orders/WorkOrdersTable';
+import WorkOrdersHeader from '@/components/work-orders/WorkOrdersHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 
