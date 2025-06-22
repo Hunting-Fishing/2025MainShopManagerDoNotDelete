@@ -13,56 +13,71 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    // Try to get the theme from localStorage
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    return savedTheme || 'light';
+    try {
+      // Try to get the theme from localStorage
+      const savedTheme = localStorage.getItem('theme') as Theme;
+      return savedTheme || 'light';
+    } catch (error) {
+      console.warn('Failed to read theme from localStorage:', error);
+      return 'light';
+    }
   });
   
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   // Update the theme in localStorage and apply it to the document
   useEffect(() => {
-    localStorage.setItem('theme', theme);
-    
-    // Handle different theme settings
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-      setResolvedTheme('dark');
-    } else if (theme === 'light') {
-      document.documentElement.classList.remove('dark');
-      setResolvedTheme('light');
-    } else if (theme === 'auto') {
-      // For auto, use system preference
-      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (isSystemDark) {
+    try {
+      localStorage.setItem('theme', theme);
+      
+      // Handle different theme settings
+      if (theme === 'dark') {
         document.documentElement.classList.add('dark');
         setResolvedTheme('dark');
-      } else {
+      } else if (theme === 'light') {
         document.documentElement.classList.remove('dark');
         setResolvedTheme('light');
-      }
-      
-      // Listen for system theme changes
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = (e: MediaQueryListEvent) => {
-        if (e.matches) {
+      } else if (theme === 'auto') {
+        // For auto, use system preference
+        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (isSystemDark) {
           document.documentElement.classList.add('dark');
           setResolvedTheme('dark');
         } else {
           document.documentElement.classList.remove('dark');
           setResolvedTheme('light');
         }
-      };
-      
-      mediaQuery.addEventListener('change', handleChange);
-      return () => {
-        mediaQuery.removeEventListener('change', handleChange);
-      };
+        
+        // Listen for system theme changes
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = (e: MediaQueryListEvent) => {
+          if (e.matches) {
+            document.documentElement.classList.add('dark');
+            setResolvedTheme('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            setResolvedTheme('light');
+          }
+        };
+        
+        mediaQuery.addEventListener('change', handleChange);
+        return () => {
+          mediaQuery.removeEventListener('change', handleChange);
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to update theme:', error);
     }
   }, [theme]);
 
+  const value = React.useMemo(() => ({
+    theme,
+    setTheme,
+    resolvedTheme
+  }), [theme, resolvedTheme]);
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );
