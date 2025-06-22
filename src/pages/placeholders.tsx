@@ -107,3 +107,94 @@ export const TeamCreate = () => (
     description="Add a new team member to your organization"
   />
 );
+
+export const CustomerCreate = () => (
+  <PlaceholderPage 
+    title="Create Customer" 
+    description="Add a new customer to your system"
+  />
+);
+
+export const CustomerDetails = () => (
+  <PlaceholderPage 
+    title="Customer Details" 
+    description="View detailed customer information"
+  />
+);
+
+export const CustomerEdit = () => (
+  <PlaceholderPage 
+    title="Edit Customer" 
+    description="Update customer information"
+  />
+);
+
+export const EquipmentDetails = () => (
+  <PlaceholderPage 
+    title="Equipment Details" 
+    description="View detailed equipment information"
+  />
+);
+
+export const InventoryCreate = () => (
+  <PlaceholderPage 
+    title="Add Inventory" 
+    description="Add new inventory items"
+  />
+);
+
+export const InvoiceCreate = () => (
+  <PlaceholderPage 
+    title="Create Invoice" 
+    description="Create a new invoice"
+  />
+);
+
+export const InvoiceDetails = () => (
+  <PlaceholderPage 
+    title="Invoice Details" 
+    description="View detailed invoice information"
+  />
+);
+
+export const Maintenance = () => (
+  <PlaceholderPage 
+    title="Maintenance" 
+    description="Manage equipment maintenance schedules"
+  />
+);
+
+export const Notifications = () => (
+  <PlaceholderPage 
+    title="Notifications" 
+    description="Manage your notification settings"
+  />
+);
+
+export const TeamMemberProfile = () => (
+  <PlaceholderPage 
+    title="Team Member Profile" 
+    description="View team member details and profile"
+  />
+);
+
+export const WorkOrderCreate = () => (
+  <PlaceholderPage 
+    title="Create Work Order" 
+    description="Create a new work order"
+  />
+);
+
+export const WorkOrderDetails = () => (
+  <PlaceholderPage 
+    title="Work Order Details" 
+    description="View detailed work order information"
+  />
+);
+
+export const WorkOrderEdit = () => (
+  <PlaceholderPage 
+    title="Edit Work Order" 
+    description="Update work order information"
+  />
+);
