@@ -16,6 +16,7 @@ import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import Invoices from '@/pages/Invoices';
 import Documents from '@/pages/Documents';
 import Inventory from '@/pages/Inventory';
+import InventoryAdd from '@/pages/InventoryAdd';
 import CreateWorkOrder from '@/pages/CreateWorkOrder';
 import CreateCustomer from '@/pages/CreateCustomer';
 import CustomerEdit from '@/pages/CustomerEdit';
@@ -36,14 +37,15 @@ function App() {
             <Route path="/customers" element={<Customers />} />
             <Route path="/customers/:customerId" element={<CustomerDetails />} />
             <Route path="/customers/:customerId/edit" element={<CustomerEdit />} />
+            <Route path="/customers/create" element={<CreateCustomer />} />
             <Route path="/quotes" element={<Quotes />} />
             <Route path="/work-orders" element={<WorkOrders />} />
             <Route path="/work-orders/:workOrderId" element={<WorkOrderDetails />} />
             <Route path="/work-orders/create" element={<CreateWorkOrder />} />
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/inventory" element={<Inventory />} />
+            <Route path="/inventory/add" element={<InventoryAdd />} />
             <Route path="/documents" element={<Documents />} />
-            <Route path="/customers/create" element={<CreateCustomer />} />
             
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
