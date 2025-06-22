@@ -79,3 +79,6 @@ export function InventoryTableRow({ item, onEdit, onDelete }: InventoryTableRowP
     </TableRow>
   );
 }
+
+// Export the component with the expected name
+export { InventoryTableRow as TableRow };

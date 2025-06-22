@@ -19,3 +19,6 @@ export function InventoryTableHeader() {
     </TableHeader>
   );
 }
+
+// Export the component with the expected name
+export { InventoryTableHeader as TableHeader };

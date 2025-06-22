@@ -5,6 +5,8 @@ import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
 import { InventoryItemExtended } from "@/types/inventory";
 import { toast } from "@/hooks/use-toast";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function InventoryAdd() {
   const navigate = useNavigate();
@@ -14,9 +16,10 @@ export default function InventoryAdd() {
     try {
       await addItem(formData);
       toast({
-        variant: "success",
+        variant: "default",
         title: "Success",
-        description: `${formData.name} has been added to inventory`
+        description: `${formData.name} has been added to inventory`,
+        className: "border-green-200 bg-green-50 text-green-800"
       });
       navigate("/inventory");
     } catch (error) {
@@ -34,15 +37,31 @@ export default function InventoryAdd() {
   };
 
   return (
-    <div className="space-y-6">
-      <InventoryHeader />
-      <div className="container mx-auto">
-        <InventoryForm 
-          onSubmit={handleSubmit}
-          isLoading={isLoading}
-          onCancel={handleCancel}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      {/* Header with breadcrumb */}
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancel}
+              className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Inventory
+            </Button>
+            <div className="text-slate-400">/</div>
+            <span className="text-slate-600 font-medium">Add New Item</span>
+          </div>
+        </div>
       </div>
+
+      <InventoryForm 
+        onSubmit={handleSubmit}
+        isLoading={isLoading}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }
