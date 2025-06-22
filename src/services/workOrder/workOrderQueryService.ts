@@ -20,6 +20,27 @@ export async function getAllWorkOrders() {
 
     console.log('Authenticated user:', user.id);
 
+    // Check if user is owner or admin to see all work orders
+    const { data: userRoles, error: roleError } = await supabase
+      .from('user_roles')
+      .select(`
+        role_id,
+        roles:role_id(name)
+      `)
+      .eq('user_id', user.id);
+
+    if (roleError) {
+      console.error('Error checking user roles:', roleError);
+      // Continue with basic query if role check fails
+    }
+
+    const isOwnerOrAdmin = userRoles?.some(ur => 
+      ur.roles?.name === 'owner' || ur.roles?.name === 'admin'
+    ) || false;
+
+    console.log('User is owner/admin:', isOwnerOrAdmin);
+
+    // Owners and admins see all work orders, others see limited data
     const { data: workOrders, error } = await supabase
       .from('work_orders')
       .select('*')
