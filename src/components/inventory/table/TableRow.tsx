@@ -1,82 +1,81 @@
 
-import React from "react";
-import { TableCell, TableRow as UITableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { InventoryItemExtended } from "@/types/inventory";
-import { format } from "date-fns";
+import React, { useState } from 'react';
+import { TableCell, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Edit, Trash2 } from 'lucide-react';
+import { InventoryItemExtended } from '@/types/inventory';
+import { formatCurrency } from '@/lib/utils';
 
-export interface TableRowProps {
+interface InventoryTableRowProps {
   item: InventoryItemExtended;
-  visibleColumns: Column[];
-  onRowClick?: (itemId: string) => void;
+  onEdit: (item: InventoryItemExtended) => void;
+  onDelete: (id: string) => void;
 }
 
-export interface Column {
-  id: string;
-  name: string;
-}
+export function InventoryTableRow({ item, onEdit, onDelete }: InventoryTableRowProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
 
-export function TableRow({ item, visibleColumns, onRowClick }: TableRowProps) {
-  const handleRowClick = () => {
-    if (onRowClick) {
-      onRowClick(item.id);
-    }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(value);
-  };
-
-  const renderCellContent = (columnId: string) => {
-    switch (columnId) {
-      case "name":
-        return item.name;
-      case "sku":
-        return item.sku;
-      case "quantity":
-        return item.quantity;
-      case "reorder_point":
-        return item.reorder_point;
-      case "status":
-        return (
-          <Badge
-            variant="outline"
-            className={
-              item.quantity === 0
-                ? "bg-red-100 text-red-800 hover:bg-red-100"
-                : item.quantity <= item.reorder_point
-                ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                : "bg-green-100 text-green-800 hover:bg-green-100"
-            }
-          >
-            {item.status}
-          </Badge>
-        );
-      case "unit_price":
-        return formatCurrency(item.unit_price);
-      case "category":
-        return item.category;
-      case "supplier":
-        return item.supplier;
-      case "created_at":
-      case "updated_at":
-        const date = new Date(item[columnId]);
-        return format(date, 'MMM d, yyyy');
-      case "location":
-        return item.location || "—";
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'in stock':
+        return 'bg-green-100 text-green-800';
+      case 'low stock':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'out of stock':
+        return 'bg-red-100 text-red-800';
       default:
-        return item[columnId as keyof InventoryItemExtended] || "—";
+        return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(item.id);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Calculate per-unit price from total cost and quantity
+  const totalCost = Number(item.unit_price) || 0;
+  const quantity = Number(item.quantity) || 1;
+  const pricePerUnit = quantity > 0 ? totalCost / quantity : 0;
 
   return (
-    <UITableRow className="cursor-pointer" onClick={handleRowClick}>
-      {visibleColumns.map((column) => (
-        <TableCell key={column.id}>{renderCellContent(column.id)}</TableCell>
-      ))}
-    </UITableRow>
+    <TableRow>
+      <TableCell className="font-medium">{item.name}</TableCell>
+      <TableCell>{item.sku}</TableCell>
+      <TableCell>{item.category}</TableCell>
+      <TableCell className="text-right">{item.quantity}</TableCell>
+      <TableCell className="text-right">{formatCurrency(pricePerUnit)}</TableCell>
+      <TableCell className="text-right">{formatCurrency(totalCost)}</TableCell>
+      <TableCell>
+        <Badge className={getStatusColor(item.status)}>
+          {item.status}
+        </Badge>
+      </TableCell>
+      <TableCell>{item.location}</TableCell>
+      <TableCell>
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(item)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }

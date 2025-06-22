@@ -110,13 +110,12 @@ export const calculateTotalValue = (items: InventoryItemExtended[]): number => {
   console.log('calculateTotalValue: Calculating for', items.length, 'items');
   
   const total = items.reduce((total, item) => {
-    const quantity = Number(item.quantity) || 0;
-    const unitPrice = Number(item.unit_price) || Number(item.price) || 0;
-    const itemValue = quantity * unitPrice;
+    // unit_price is now treated as the total price for the entire quantity
+    const totalItemValue = Number(item.unit_price) || 0;
     
-    console.log(`Item ${item.name}: qty=${quantity}, price=${unitPrice}, value=${itemValue}`);
+    console.log(`Item ${item.name}: total_value=${totalItemValue} (for ${item.quantity} units)`);
     
-    return total + itemValue;
+    return total + totalItemValue;
   }, 0);
   
   console.log('calculateTotalValue: Total calculated value:', total);
