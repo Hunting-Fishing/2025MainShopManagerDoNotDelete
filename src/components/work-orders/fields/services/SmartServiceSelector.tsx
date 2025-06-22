@@ -1,402 +1,345 @@
 
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronRight, Star, Clock, DollarSign } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
-import { SelectedService } from '@/types/selectedService';
+import { Search, Zap, Star, Award, Crown } from 'lucide-react';
 
 interface SmartServiceSelectorProps {
   sectors: ServiceSector[];
-  onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
-  selectedServices: SelectedService[];
-  onRemoveService: (serviceId: string) => void;
-  onUpdateServices: (services: SelectedService[]) => void;
+  onSelectService: (service: ServiceJob) => void;
+  selectedServices: ServiceJob[];
 }
 
-export function SmartServiceSelector({
-  sectors,
-  onServiceSelect,
-  selectedServices,
-  onRemoveService,
-  onUpdateServices
+export function SmartServiceSelector({ 
+  sectors, 
+  onSelectService, 
+  selectedServices 
 }: SmartServiceSelectorProps) {
-  const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSector, setSelectedSector] = useState<ServiceSector | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Get filtered data based on search
-  const filteredSectors = useMemo(() => {
-    if (!searchQuery.trim()) return sectors;
+  // Search functionality
+  const filteredServices = useMemo(() => {
+    if (!searchTerm) return [];
     
-    return sectors.map(sector => ({
-      ...sector,
-      categories: sector.categories.map(category => ({
-        ...category,
-        subcategories: category.subcategories.map(subcategory => ({
-          ...subcategory,
-          jobs: subcategory.jobs.filter(job =>
-            job.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            job.description?.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-        })).filter(subcategory => subcategory.jobs.length > 0)
-      })).filter(category => category.subcategories.length > 0)
-    })).filter(sector => sector.categories.length > 0);
-  }, [sectors, searchQuery]);
-
-  const selectedSector = selectedSectorId ? sectors.find(s => s.id === selectedSectorId) : null;
-  const selectedCategory = selectedCategoryId && selectedSector 
-    ? selectedSector.categories.find(c => c.id === selectedCategoryId) 
-    : null;
-  const selectedSubcategory = selectedSubcategoryId && selectedCategory 
-    ? selectedCategory.subcategories.find(s => s.id === selectedSubcategoryId) 
-    : null;
-
-  // Get tier colors for visual hierarchy
-  const getTierColor = (tier: number) => {
-    const colors = [
-      'from-blue-500/20 to-indigo-600/20 border-blue-200',
-      'from-emerald-500/20 to-teal-600/20 border-emerald-200', 
-      'from-amber-500/20 to-orange-600/20 border-amber-200',
-      'from-purple-500/20 to-violet-600/20 border-purple-200'
-    ];
-    return colors[tier] || colors[0];
-  };
-
-  const handleServiceSelect = (service: ServiceJob) => {
-    if (!selectedCategory || !selectedSubcategory) return;
+    const results: { service: ServiceJob; category: ServiceMainCategory; subcategory: ServiceSubcategory; sector: ServiceSector }[] = [];
     
-    const newSelectedService: SelectedService = {
-      id: service.id,
-      name: service.name,
-      description: service.description || '',
-      estimated_hours: service.estimatedTime ? service.estimatedTime / 60 : 1,
-      labor_rate: 75,
-      total_amount: service.price || 75,
-      status: 'pending',
-      category: selectedCategory.name,
-      subcategory: selectedSubcategory.name,
-      categoryName: selectedCategory.name,
-      subcategoryName: selectedSubcategory.name
-    };
+    sectors.forEach(sector => {
+      sector.categories.forEach(category => {
+        category.subcategories.forEach(subcategory => {
+          subcategory.jobs.forEach(service => {
+            if (
+              service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              service.description?.toLowerCase().includes(searchTerm.toLowerCase())
+            ) {
+              results.push({ service, category, subcategory, sector });
+            }
+          });
+        });
+      });
+    });
+    
+    return results;
+  }, [sectors, searchTerm]);
 
-    const updated = [...selectedServices, newSelectedService];
-    onUpdateServices(updated);
-    onServiceSelect(service, selectedCategory.name, selectedSubcategory.name);
+  // Get tier configuration for background styling
+  const getTierConfig = (index: number, total: number) => {
+    const percentage = ((index + 1) / total) * 100;
+    
+    if (percentage <= 25) return { tier: 'basic', icon: Zap, gradient: 'from-blue-500/20 to-indigo-500/20' };
+    if (percentage <= 50) return { tier: 'premium', icon: Star, gradient: 'from-purple-500/20 to-pink-500/20' };
+    if (percentage <= 75) return { tier: 'professional', icon: Award, gradient: 'from-emerald-500/20 to-teal-500/20' };
+    return { tier: 'enterprise', icon: Crown, gradient: 'from-amber-500/20 to-orange-500/20' };
   };
 
-  const handleRemoveSelected = (serviceId: string) => {
-    onRemoveService(serviceId);
+  const resetToSector = () => {
+    setSelectedCategory(null);
+    setSelectedSubcategory(null);
   };
 
-  const resetSelection = () => {
-    setSelectedSectorId(null);
-    setSelectedCategoryId(null);
-    setSelectedSubcategoryId(null);
+  const resetToCategory = () => {
+    setSelectedSubcategory(null);
+  };
+
+  const isServiceSelected = (service: ServiceJob) => {
+    return selectedServices.some(s => s.id === service.id);
   };
 
   return (
     <div className="w-full space-y-6">
-      {/* Enhanced Header with Gradient Background */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50 border border-slate-200 p-6">
-        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,transparent,black)]" />
-        <div className="relative">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                Smart Service Selector
-              </h3>
-              <p className="text-sm text-slate-600 mt-1">
-                Navigate through our comprehensive 4-tier service catalog
-              </p>
-            </div>
-            {(selectedSectorId || selectedCategoryId || selectedSubcategoryId) && (
-              <button
-                onClick={resetSelection}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white/60 rounded-lg transition-all duration-200"
-              >
-                Reset Selection
-              </button>
-            )}
-          </div>
-
-          {/* Enhanced Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search services across all categories..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all duration-200"
-            />
-          </div>
-        </div>
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search services..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/70 transition-all duration-300"
+        />
       </div>
 
-      {/* Breadcrumb Navigation */}
-      {(selectedSector || selectedCategory || selectedSubcategory) && (
-        <div className="flex items-center space-x-2 text-sm text-slate-600 bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-slate-200">
-          <span>Path:</span>
-          {selectedSector && (
-            <>
-              <span className="font-medium text-blue-600">{selectedSector.name}</span>
-              {selectedCategory && <ChevronRight className="h-4 w-4" />}
-            </>
-          )}
-          {selectedCategory && (
-            <>
-              <span className="font-medium text-emerald-600">{selectedCategory.name}</span>
-              {selectedSubcategory && <ChevronRight className="h-4 w-4" />}
-            </>
-          )}
-          {selectedSubcategory && (
-            <span className="font-medium text-amber-600">{selectedSubcategory.name}</span>
-          )}
-        </div>
-      )}
-
-      {/* 4-Tier Navigation Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Tier 1: Sectors */}
-        <div className={`rounded-xl bg-gradient-to-br ${getTierColor(0)} backdrop-blur-sm border p-4`}>
-          <h4 className="font-semibold text-slate-900 mb-3 flex items-center">
-            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
-            Sectors
-          </h4>
-          <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
-            {filteredSectors.map((sector) => (
-              <button
-                key={sector.id}
-                onClick={() => {
-                  setSelectedSectorId(sector.id);
-                  setSelectedCategoryId(null);
-                  setSelectedSubcategoryId(null);
-                }}
-                className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
-                  selectedSectorId === sector.id
-                    ? 'bg-blue-100 text-blue-900 shadow-sm border border-blue-200'
-                    : 'bg-white/50 hover:bg-white/80 text-slate-700 hover:text-slate-900'
-                }`}
-              >
-                <div className="font-medium">{sector.name}</div>
-                <div className="text-xs text-slate-500 mt-1">
-                  {sector.categories.length} categories
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tier 2: Main Categories */}
-        <div className={`rounded-xl bg-gradient-to-br ${getTierColor(1)} backdrop-blur-sm border p-4`}>
-          <h4 className="font-semibold text-slate-900 mb-3 flex items-center">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
-            Categories
-          </h4>
-          <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
-            {selectedSector ? (
-              selectedSector.categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => {
-                    setSelectedCategoryId(category.id);
-                    setSelectedSubcategoryId(null);
-                  }}
-                  className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
-                    selectedCategoryId === category.id
-                      ? 'bg-emerald-100 text-emerald-900 shadow-sm border border-emerald-200'
-                      : 'bg-white/50 hover:bg-white/80 text-slate-700 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="font-medium">{category.name}</div>
-                  <div className="text-xs text-slate-500 mt-1">
-                    {category.subcategories.length} subcategories
-                  </div>
-                </button>
-              ))
-            ) : (
-              <div className="text-center text-slate-500 py-8">
-                <div className="text-2xl mb-2">🎯</div>
-                <p className="text-sm">Select a sector first</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Tier 3: Subcategories */}
-        <div className={`rounded-xl bg-gradient-to-br ${getTierColor(2)} backdrop-blur-sm border p-4`}>
-          <h4 className="font-semibold text-slate-900 mb-3 flex items-center">
-            <div className="w-2 h-2 rounded-full bg-amber-500 mr-2" />
-            Subcategories
-          </h4>
-          <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
-            {selectedCategory ? (
-              selectedCategory.subcategories.map((subcategory) => (
-                <button
-                  key={subcategory.id}
-                  onClick={() => setSelectedSubcategoryId(subcategory.id)}
-                  className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
-                    selectedSubcategoryId === subcategory.id
-                      ? 'bg-amber-100 text-amber-900 shadow-sm border border-amber-200'
-                      : 'bg-white/50 hover:bg-white/80 text-slate-700 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="font-medium">{subcategory.name}</div>
-                  <div className="text-xs text-slate-500 mt-1">
-                    {subcategory.jobs.length} services
-                  </div>
-                </button>
-              ))
-            ) : (
-              <div className="text-center text-slate-500 py-8">
-                <div className="text-2xl mb-2">📂</div>
-                <p className="text-sm">Select a category first</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Tier 4: Services/Jobs */}
-        <div className={`rounded-xl bg-gradient-to-br ${getTierColor(3)} backdrop-blur-sm border p-4`}>
-          <h4 className="font-semibold text-slate-900 mb-3 flex items-center">
-            <div className="w-2 h-2 rounded-full bg-purple-500 mr-2" />
-            Services
-          </h4>
-          <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
-            {selectedSubcategory ? (
-              selectedSubcategory.jobs.map((service) => {
-                const isSelected = selectedServices.some(s => s.id === service.id);
-                return (
-                  <div
-                    key={service.id}
-                    className={`p-3 rounded-lg border transition-all duration-200 ${
-                      isSelected 
-                        ? 'bg-purple-50 border-purple-200 shadow-sm' 
-                        : 'bg-white/70 border-slate-200 hover:bg-white hover:shadow-sm'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <h5 className="font-medium text-slate-900 text-sm leading-tight">
-                        {service.name}
-                      </h5>
-                      {!isSelected && (
-                        <button
-                          onClick={() => handleServiceSelect(service)}
-                          className="ml-2 px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors flex-shrink-0"
-                        >
-                          Add
-                        </button>
-                      )}
-                    </div>
-                    
-                    {service.description && (
-                      <p className="text-xs text-slate-600 mb-2 line-clamp-2">
-                        {service.description}
-                      </p>
-                    )}
-                    
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center space-x-3">
-                        {service.estimatedTime && (
-                          <div className="flex items-center text-slate-500">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {Math.round(service.estimatedTime / 60)}h
+      {/* Search Results */}
+      {searchTerm && (
+        <Card className="bg-gradient-to-br from-white/80 to-gray-50/80 backdrop-blur-sm border-white/30 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Search Results ({filteredServices.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-transparent">
+              {filteredServices.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No services found</p>
+              ) : (
+                filteredServices.map(({ service, category, subcategory, sector }, index) => {
+                  const { gradient, icon: TierIcon } = getTierConfig(index, filteredServices.length);
+                  return (
+                    <div
+                      key={service.id}
+                      onClick={() => onSelectService(service)}
+                      className={`p-4 rounded-lg cursor-pointer transition-all duration-300 bg-gradient-to-r ${gradient} backdrop-blur-sm border border-white/30 hover:scale-[1.02] hover:shadow-lg ${
+                        isServiceSelected(service) 
+                          ? 'ring-2 ring-blue-500 bg-blue-50/80' 
+                          : 'hover:bg-white/50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <TierIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-900 truncate">{service.name}</h4>
+                          <p className="text-sm text-gray-600 line-clamp-2 mt-1">{service.description}</p>
+                          <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Path:</span>
+                              <span>{sector.name} → {category.name} → {subcategory.name}</span>
+                            </div>
+                            {service.estimatedTime && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Duration:</span>
+                                <span>{service.estimatedTime} min</span>
+                              </div>
+                            )}
+                            {service.price && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Price:</span>
+                                <span>${service.price}</span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                        {service.price && (
-                          <div className="flex items-center text-slate-500">
-                            <DollarSign className="h-3 w-3 mr-1" />
-                            ${service.price}
-                          </div>
-                        )}
+                        </div>
                       </div>
-                      {isSelected && (
-                        <Badge variant="success" className="text-xs">
-                          Selected
-                        </Badge>
-                      )}
                     </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center text-slate-500 py-8">
-                <div className="text-2xl mb-2">⚙️</div>
-                <p className="text-sm">Select a subcategory first</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Selected Services Summary */}
-      {selectedServices.length > 0 && (
-        <div className="rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold text-green-900 flex items-center">
-              <Star className="h-4 w-4 mr-2" />
-              Selected Services ({selectedServices.length})
-            </h4>
-            <div className="text-sm text-green-700">
-              Total: ${selectedServices.reduce((sum, service) => sum + service.total_amount, 0).toLocaleString()}
+                  );
+                })
+              )}
             </div>
-          </div>
-          
-          <div className="grid gap-3">
-            {selectedServices.map((service) => (
-              <div key={service.id} className="flex items-center justify-between p-3 bg-white/70 rounded-lg border border-green-100">
-                <div className="flex-1">
-                  <div className="font-medium text-slate-900">{service.name}</div>
-                  <div className="text-xs text-slate-600">
-                    {service.categoryName} → {service.subcategoryName}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="text-sm font-medium text-slate-900">
-                    ${service.total_amount}
-                  </div>
-                  <button
-                    onClick={() => handleRemoveSelected(service.id)}
-                    className="text-xs text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      <style jsx>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: rgb(203 213 225) transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: rgb(203 213 225);
-          border-radius: 2px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: rgb(148 163 184);
-        }
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-        .bg-grid-slate-100 {
-          background-image: url("data:image/svg+xml,%3csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3cpattern id='smallGrid' width='8' height='8' patternUnits='userSpaceOnUse'%3e%3cpath d='M 8 0 L 0 0 0 8' fill='none' stroke='%23f1f5f9' stroke-width='0.5'/%3e%3c/pattern%3e%3cpattern id='grid' width='40' height='40' patternUnits='userSpaceOnUse'%3e%3crect width='40' height='40' fill='url(%23smallGrid)'/%3e%3cpath d='M 40 0 L 0 0 0 40' fill='none' stroke='%23f1f5f9' stroke-width='1'/%3e%3c/pattern%3e%3c/defs%3e%3crect width='100%25' height='100%25' fill='url(%23grid)'/%3e%3c/svg%3e");
-        }
-      `}</style>
+      {/* Service Hierarchy - Only show when not searching */}
+      {!searchTerm && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Sectors */}
+          <Card className="bg-gradient-to-br from-white/80 to-blue-50/80 backdrop-blur-sm border-white/30 shadow-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Service Sectors
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-transparent">
+                {sectors.map((sector, index) => {
+                  const { gradient, icon: TierIcon } = getTierConfig(index, sectors.length);
+                  return (
+                    <div
+                      key={sector.id}
+                      onClick={() => {
+                        setSelectedSector(sector);
+                        resetToSector();
+                      }}
+                      className={`p-3 rounded-lg cursor-pointer transition-all duration-300 bg-gradient-to-r ${gradient} backdrop-blur-sm border border-white/30 hover:scale-[1.02] hover:shadow-md ${
+                        selectedSector?.id === sector.id 
+                          ? 'ring-2 ring-blue-500 bg-blue-50/80' 
+                          : 'hover:bg-white/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <TierIcon className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-900 text-sm truncate">{sector.name}</h4>
+                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">{sector.description}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {sector.categories.length} categories
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Categories */}
+          <Card className="bg-gradient-to-br from-white/80 to-purple-50/80 backdrop-blur-sm border-white/30 shadow-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Categories
+                {selectedSector && (
+                  <span className="block text-xs font-normal text-muted-foreground mt-1">
+                    in {selectedSector.name}
+                  </span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-transparent">
+                {selectedSector ? (
+                  selectedSector.categories.map((category, index) => {
+                    const { gradient, icon: TierIcon } = getTierConfig(index, selectedSector.categories.length);
+                    return (
+                      <div
+                        key={category.id}
+                        onClick={() => {
+                          setSelectedCategory(category);
+                          resetToCategory();
+                        }}
+                        className={`p-3 rounded-lg cursor-pointer transition-all duration-300 bg-gradient-to-r ${gradient} backdrop-blur-sm border border-white/30 hover:scale-[1.02] hover:shadow-md ${
+                          selectedCategory?.id === category.id 
+                            ? 'ring-2 ring-purple-500 bg-purple-50/80' 
+                            : 'hover:bg-white/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <TierIcon className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 text-sm truncate">{category.name}</h4>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{category.description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {category.subcategories.length} subcategories
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-muted-foreground text-sm text-center py-8">
+                    Select a sector to view categories
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Subcategories */}
+          <Card className="bg-gradient-to-br from-white/80 to-emerald-50/80 backdrop-blur-sm border-white/30 shadow-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                Subcategories
+                {selectedCategory && (
+                  <span className="block text-xs font-normal text-muted-foreground mt-1">
+                    in {selectedCategory.name}
+                  </span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-emerald-300 scrollbar-track-transparent">
+                {selectedCategory ? (
+                  selectedCategory.subcategories.map((subcategory, index) => {
+                    const { gradient, icon: TierIcon } = getTierConfig(index, selectedCategory.subcategories.length);
+                    return (
+                      <div
+                        key={subcategory.id}
+                        onClick={() => setSelectedSubcategory(subcategory)}
+                        className={`p-3 rounded-lg cursor-pointer transition-all duration-300 bg-gradient-to-r ${gradient} backdrop-blur-sm border border-white/30 hover:scale-[1.02] hover:shadow-md ${
+                          selectedSubcategory?.id === subcategory.id 
+                            ? 'ring-2 ring-emerald-500 bg-emerald-50/80' 
+                            : 'hover:bg-white/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <TierIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 text-sm truncate">{subcategory.name}</h4>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{subcategory.description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {subcategory.jobs.length} services
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-muted-foreground text-sm text-center py-8">
+                    Select a category to view subcategories
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Services */}
+          <Card className="bg-gradient-to-br from-white/80 to-amber-50/80 backdrop-blur-sm border-white/30 shadow-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                Services
+                {selectedSubcategory && (
+                  <span className="block text-xs font-normal text-muted-foreground mt-1">
+                    in {selectedSubcategory.name}
+                  </span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-amber-300 scrollbar-track-transparent">
+                {selectedSubcategory ? (
+                  selectedSubcategory.jobs.map((service, index) => {
+                    const { gradient, icon: TierIcon } = getTierConfig(index, selectedSubcategory.jobs.length);
+                    return (
+                      <div
+                        key={service.id}
+                        onClick={() => onSelectService(service)}
+                        className={`p-3 rounded-lg cursor-pointer transition-all duration-300 bg-gradient-to-r ${gradient} backdrop-blur-sm border border-white/30 hover:scale-[1.02] hover:shadow-md ${
+                          isServiceSelected(service) 
+                            ? 'ring-2 ring-amber-500 bg-amber-50/80' 
+                            : 'hover:bg-white/50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <TierIcon className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 text-sm truncate">{service.name}</h4>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{service.description}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                              {service.estimatedTime && (
+                                <span>{service.estimatedTime} min</span>
+                              )}
+                              {service.price && (
+                                <span className="font-medium text-amber-700">${service.price}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-muted-foreground text-sm text-center py-8">
+                    Select a subcategory to view services
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
