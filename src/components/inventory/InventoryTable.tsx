@@ -1,245 +1,222 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Edit2, Package, Search, Filter } from 'lucide-react';
-import { InventoryItemExtended } from '@/types/inventory';
-import { getInventoryStatus } from '@/utils/inventory';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { InventoryItemExtended } from "@/types/inventory";
+import { formatCurrency } from "@/utils/formatters";
+import { Badge } from "@/components/ui/badge";
+import { Edit, Info } from "lucide-react";
+import { EditInventoryDialog } from "./EditInventoryDialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface InventoryTableProps {
+export interface InventoryTableProps {
   items: InventoryItemExtended[];
   onUpdateItem?: (id: string, updates: Partial<InventoryItemExtended>) => Promise<InventoryItemExtended>;
 }
 
 export function InventoryTable({ items, onUpdateItem }: InventoryTableProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [editingItem, setEditingItem] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState<Partial<InventoryItemExtended>>({});
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<InventoryItemExtended | null>(null);
 
-  const filteredItems = items.filter(item => 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (item.category && item.category.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'in_stock':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'low_stock':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'out_of_stock':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+  const handleEditClick = (item: InventoryItemExtended) => {
+    setSelectedItem(item);
+    setEditDialogOpen(true);
   };
 
-  const handleEdit = (item: InventoryItemExtended) => {
-    setEditingItem(item.id);
-    setEditValues({
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      reorder_point: item.reorder_point
-    });
+  const handleItemUpdated = () => {
+    // Refresh the inventory data
+    window.location.reload();
   };
 
-  const handleSave = async (itemId: string) => {
-    if (onUpdateItem && editValues) {
-      try {
-        await onUpdateItem(itemId, editValues);
-        setEditingItem(null);
-        setEditValues({});
-      } catch (error) {
-        console.error('Error updating item:', error);
-      }
-    }
-  };
-
-  const handleCancel = () => {
-    setEditingItem(null);
-    setEditValues({});
-  };
-
-  if (filteredItems.length === 0) {
+  if (items.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-gray-800 mb-2">
-            {searchQuery ? 'No matching items found' : 'No inventory items found'}
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {searchQuery 
-              ? `No items match your search for "${searchQuery}"`
-              : 'Your inventory database is empty. Add real inventory items to start managing your business inventory.'
-            }
-          </p>
-          {searchQuery && (
-            <Button 
-              variant="outline" 
-              onClick={() => setSearchQuery('')}
-              className="mr-4"
-            >
-              Clear Search
-            </Button>
-          )}
-          <Button onClick={() => window.location.href = "/inventory/add"}>
-            Add Inventory Item
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="text-center p-8 border rounded-md bg-gray-50">
+        <p className="text-gray-500">No inventory items found matching your criteria.</p>
+      </div>
     );
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Inventory Items ({filteredItems.length})
-          </CardTitle>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-none">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full sm:w-64"
-              />
+  // Function to render status badge with appropriate color
+  const renderStatusBadge = (status: string) => {
+    let className = "";
+    
+    switch (status.toLowerCase()) {
+      case "in stock":
+      case "active":
+        className = "bg-green-100 text-green-800 border-green-300";
+        break;
+      case "low stock":
+        className = "bg-yellow-100 text-yellow-800 border-yellow-300";
+        break;
+      case "out of stock":
+        className = "bg-red-100 text-red-800 border-red-300";
+        break;
+      case "discontinued":
+        className = "bg-gray-100 text-gray-800 border-gray-300";
+        break;
+      case "on order":
+        className = "bg-blue-100 text-blue-800 border-blue-300";
+        break;
+      default:
+        className = "bg-purple-100 text-purple-800 border-purple-300";
+    }
+    
+    return (
+      <Badge variant="outline" className={className}>
+        {status}
+      </Badge>
+    );
+  };
+
+  // Function to render the list of applicable fees
+  const renderApplicableFees = (item: InventoryItemExtended) => {
+    const fees = [];
+    
+    if (item.coreChargeApplicable && item.coreCharge) {
+      fees.push(`Core: ${formatCurrency(item.coreCharge)}`);
+    }
+    
+    if (item.hazardousFeeApplicable && item.hazardousFee) {
+      fees.push(`Hazardous: ${formatCurrency(item.hazardousFee)}`);
+    }
+    
+    if (item.shippingFee) {
+      fees.push(`Shipping: ${formatCurrency(item.shippingFee)}`);
+    }
+    
+    if (item.otherFees) {
+      fees.push(`Other: ${formatCurrency(item.otherFees)}`);
+    }
+    
+    return fees.length > 0 ? (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center text-xs text-blue-600 cursor-help">
+              <Info className="h-3.5 w-3.5 mr-1" /> Fees
             </div>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Unit Price</TableHead>
-                <TableHead className="text-right">Reorder Point</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredItems.map((item) => {
-                const isEditing = editingItem === item.id;
-                const status = getInventoryStatus(item);
-                
-                return (
-                  <TableRow key={item.id} className="group hover:bg-gray-50">
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{item.name}</div>
-                        {item.description && (
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
-                            {item.description}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{item.sku}</TableCell>
-                    <TableCell>
-                      {item.category && (
-                        <Badge variant="outline" className="text-xs">
-                          {item.category}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {isEditing ? (
-                        <Input
-                          type="number"
-                          value={editValues.quantity || ''}
-                          onChange={(e) => setEditValues(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
-                          className="w-20 text-right"
-                        />
-                      ) : (
-                        <span className="font-medium">{item.quantity}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {isEditing ? (
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={editValues.unit_price || ''}
-                          onChange={(e) => setEditValues(prev => ({ ...prev, unit_price: parseFloat(e.target.value) || 0 }))}
-                          className="w-24 text-right"
-                        />
-                      ) : (
-                        <span className="font-medium">
-                          ${item.unit_price.toFixed(2)}
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-xs space-y-1">
+              {fees.map((fee, index) => (
+                <div key={index}>{fee}</div>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ) : null;
+  };
+
+  // Function to render the applicable taxes
+  const renderApplicableTaxes = (item: InventoryItemExtended) => {
+    const taxes = [];
+    
+    if (item.gstApplicable && item.gstRate) {
+      taxes.push(`GST: ${item.gstRate}%`);
+    }
+    
+    if (item.pstApplicable && item.pstRate) {
+      taxes.push(`PST: ${item.pstRate}%`);
+    }
+    
+    if (item.hstApplicable && item.hstRate) {
+      taxes.push(`HST: ${item.hstRate}%`);
+    }
+    
+    return taxes.length > 0 ? (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center text-xs text-purple-600 cursor-help">
+              <Info className="h-3.5 w-3.5 mr-1" /> Tax
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-xs space-y-1">
+              {taxes.map((tax, index) => (
+                <div key={index}>{tax}</div>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ) : null;
+  };
+
+  return (
+    <>
+      <div className="border rounded-md overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[240px]">Item</TableHead>
+              <TableHead className="w-[100px]">SKU</TableHead>
+              <TableHead className="w-[100px]">Category</TableHead>
+              <TableHead className="w-[120px]">Supplier</TableHead>
+              <TableHead className="w-[100px] text-right">Qty</TableHead>
+              <TableHead className="w-[100px] text-right">Price</TableHead>
+              <TableHead className="w-[120px] text-center">Status</TableHead>
+              <TableHead className="w-[100px] text-center">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow key={item.id} className="hover:bg-gray-50">
+                <TableCell className="font-medium">
+                  <div>
+                    {item.name}
+                    {item.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                        {item.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-1">
+                      {renderApplicableFees(item)}
+                      {renderApplicableTaxes(item)}
+                      {item.unitOfMeasurement && item.unitOfMeasurement !== 'each' && (
+                        <span className="text-xs text-gray-500">
+                          Unit: {item.unitOfMeasurement}
                         </span>
                       )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {isEditing ? (
-                        <Input
-                          type="number"
-                          value={editValues.reorder_point || ''}
-                          onChange={(e) => setEditValues(prev => ({ ...prev, reorder_point: parseInt(e.target.value) || 0 }))}
-                          className="w-20 text-right"
-                        />
-                      ) : (
-                        <span>{item.reorder_point}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getStatusColor(status)}>
-                        {status.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {isEditing ? (
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            onClick={() => handleSave(item.id)}
-                            className="h-8 px-3"
-                          >
-                            Save
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleCancel}
-                            className="h-8 px-3"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEdit(item)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>{item.sku}</TableCell>
+                <TableCell>{item.category}</TableCell>
+                <TableCell>{item.supplier || "—"}</TableCell>
+                <TableCell className="text-right">
+                  {item.quantity}
+                  {item.reorder_point && item.quantity <= item.reorder_point && (
+                    <p className="text-xs text-red-600">Low Stock</p>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                <TableCell className="text-center">
+                  {renderStatusBadge(item.status)}
+                </TableCell>
+                <TableCell className="text-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditClick(item)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <EditInventoryDialog
+        item={selectedItem}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onItemUpdated={handleItemUpdated}
+      />
+    </>
   );
 }
