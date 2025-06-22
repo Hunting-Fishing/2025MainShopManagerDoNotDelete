@@ -25,7 +25,7 @@ async function fetchRecentWorkOrders(): Promise<WorkOrder[]> {
       status,
       created_at,
       description,
-      customers!inner(
+      customers (
         first_name,
         last_name
       )
