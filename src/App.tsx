@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -26,6 +25,7 @@ import PurchaseOrders from '@/pages/PurchaseOrders';
 import Calendar from '@/pages/Calendar';
 import ServiceReminders from '@/pages/ServiceReminders';
 import CustomerComms from '@/pages/CustomerComms';
+import CallLogger from '@/pages/CallLogger';
 
 function App() {
   return (
@@ -43,6 +43,7 @@ function App() {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/service-reminders" element={<ServiceReminders />} />
             <Route path="/customer-comms" element={<CustomerComms />} />
+            <Route path="/call-logger" element={<CallLogger />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/customers/:customerId" element={<CustomerDetails />} />
             <Route path="/customers/:customerId/edit" element={<CustomerEdit />} />
