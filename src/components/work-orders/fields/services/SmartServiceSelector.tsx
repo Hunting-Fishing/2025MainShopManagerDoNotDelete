@@ -1,20 +1,11 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
+import React, { useState, useMemo } from 'react';
+import { ServiceSector, ServiceJob } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
-import { ServiceSearch } from './ServiceSearch';
-import { SearchResultsPopup } from './SearchResultsPopup';
+import { SearchInput } from './SearchInput';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ChevronRight, Check } from 'lucide-react';
-
-interface SearchResult {
-  service: ServiceJob;
-  sectorName: string;
-  categoryName: string;
-  subcategoryName: string;
-  fullPath: string;
-}
+import { Button } from '@/components/ui/button';
 
 interface SmartServiceSelectorProps {
   sectors: ServiceSector[];
@@ -31,161 +22,95 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
   onRemoveService,
   onUpdateServices
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [showSearchPopup, setShowSearchPopup] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Flatten all services for search
-  const allServices = useMemo(() => {
-    const flattened: SearchResult[] = [];
-    
-    sectors.forEach(sector => {
-      sector.categories.forEach(category => {
-        category.subcategories.forEach(subcategory => {
-          subcategory.jobs.forEach(service => {
-            flattened.push({
-              service,
-              sectorName: sector.name,
-              categoryName: category.name,
-              subcategoryName: subcategory.name,
-              fullPath: `${sector.name} › ${category.name} › ${subcategory.name}`
-            });
-          });
-        });
-      });
-    });
-    
-    return flattened;
-  }, [sectors]);
+  // Get selected items for display
+  const selectedSector = selectedSectorId ? sectors.find(s => s.id === selectedSectorId) : null;
+  const selectedCategory = selectedCategoryId && selectedSector 
+    ? selectedSector.categories.find(c => c.id === selectedCategoryId) 
+    : null;
+  const selectedSubcategory = selectedSubcategoryId && selectedCategory
+    ? selectedCategory.subcategories.find(sc => sc.id === selectedSubcategoryId)
+    : null;
 
-  // Search results
-  const searchResults = useMemo(() => {
-    if (!searchTerm.trim()) return [];
-    
-    const term = searchTerm.toLowerCase();
-    return allServices.filter(result => 
-      result.service.name.toLowerCase().includes(term) ||
-      result.service.description?.toLowerCase().includes(term) ||
-      result.sectorName.toLowerCase().includes(term) ||
-      result.categoryName.toLowerCase().includes(term) ||
-      result.subcategoryName.toLowerCase().includes(term)
+  // Filter sectors by search
+  const filteredSectors = useMemo(() => {
+    if (!searchTerm) return sectors;
+    return sectors.filter(sector =>
+      sector.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sector.categories.some(category =>
+        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.subcategories.some(subcategory =>
+          subcategory.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          subcategory.jobs.some(job =>
+            job.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        )
+      )
     );
-  }, [searchTerm, allServices]);
+  }, [sectors, searchTerm]);
 
-  // Show/hide popup based on search term
-  useEffect(() => {
-    setShowSearchPopup(searchTerm.trim().length > 0);
-  }, [searchTerm]);
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showSearchPopup) {
-        setShowSearchPopup(false);
-        setSearchTerm('');
-      }
-    };
-
-    if (showSearchPopup) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [showSearchPopup]);
-
-  // Click outside to close popup
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowSearchPopup(false);
-      }
-    };
-
-    if (showSearchPopup) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showSearchPopup]);
-
+  // Reset selections when parent changes
   const handleSectorSelect = (sectorId: string) => {
     setSelectedSectorId(sectorId);
     setSelectedCategoryId(null);
+    setSelectedSubcategoryId(null);
   };
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategoryId(categoryId);
+    setSelectedSubcategoryId(null);
   };
 
-  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
-    onServiceSelect(service, categoryName, subcategoryName);
-    setShowSearchPopup(false);
-    setSearchTerm('');
+  const handleSubcategorySelect = (subcategoryId: string) => {
+    setSelectedSubcategoryId(subcategoryId);
   };
 
-  const handleClearSearch = () => {
-    setSearchTerm('');
-    setShowSearchPopup(false);
-  };
+  const handleServiceClick = (service: ServiceJob) => {
+    if (!selectedCategory || !selectedSubcategory) return;
+    
+    // Check if already selected
+    const isSelected = selectedServices.some(s => s.serviceId === service.id || s.id === service.id);
+    if (isSelected) return;
 
-  const isServiceSelected = (serviceId: string) => {
-    return selectedServices.some(s => s.serviceId === serviceId || s.id === serviceId);
+    onServiceSelect(service, selectedCategory.name, selectedSubcategory.name);
   };
-
-  const selectedSector = sectors.find(s => s.id === selectedSectorId);
-  const selectedCategory = selectedSector?.categories.find(c => c.id === selectedCategoryId);
 
   return (
-    <div ref={containerRef} className="relative space-y-4">
-      {/* Search Bar */}
-      <ServiceSearch
+    <div className="space-y-4">
+      {/* Search */}
+      <SearchInput
         value={searchTerm}
         onChange={setSearchTerm}
-        placeholder="Search services across all sectors..."
+        placeholder="Search sectors, categories, subcategories, or services..."
       />
 
-      {/* Search Results Popup */}
-      <SearchResultsPopup
-        searchTerm={searchTerm}
-        results={searchResults}
-        isVisible={showSearchPopup}
-        onSelectService={handleServiceSelect}
-        onClose={() => setShowSearchPopup(false)}
-        onClearSearch={handleClearSearch}
-      />
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Sectors */}
-        <Card className="h-96">
+      {/* 4-Tier Grid */}
+      <div className="grid grid-cols-4 gap-4 h-96">
+        {/* Column 1: Sectors */}
+        <Card className="overflow-hidden">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Service Sectors</CardTitle>
+            <CardTitle className="text-sm">Sectors</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="space-y-1 max-h-80 overflow-y-auto px-3 pb-3">
-              {sectors.map(sector => (
+            <div className="overflow-y-auto h-80">
+              {filteredSectors.map(sector => (
                 <button
                   key={sector.id}
                   onClick={() => handleSectorSelect(sector.id)}
-                  className={`w-full text-left p-2 rounded-md text-sm transition-colors ${
-                    selectedSectorId === sector.id
-                      ? 'bg-blue-100 border-2 border-blue-300 text-blue-900'
-                      : 'hover:bg-gray-100 border-2 border-transparent'
+                  className={`w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                    selectedSectorId === sector.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{sector.name}</div>
-                      {sector.description && (
-                        <div className="text-xs text-gray-500 mt-1">{sector.description}</div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {selectedSectorId === sector.id && (
-                        <Check className="h-4 w-4 text-blue-600" />
-                      )}
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
-                    </div>
+                  <div className="font-medium text-sm">{sector.name}</div>
+                  {sector.description && (
+                    <div className="text-xs text-gray-500 mt-1">{sector.description}</div>
+                  )}
+                  <div className="text-xs text-gray-400 mt-1">
+                    {sector.categories.length} categories
                   </div>
                 </button>
               ))}
@@ -193,113 +118,163 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
           </CardContent>
         </Card>
 
-        {/* Categories */}
-        <Card className="h-96">
+        {/* Column 2: Categories */}
+        <Card className="overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">
               {selectedSector ? `${selectedSector.name} Categories` : 'Categories'}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="space-y-1 max-h-80 overflow-y-auto px-3 pb-3">
+            <div className="overflow-y-auto h-80">
               {selectedSector ? (
                 selectedSector.categories.map(category => (
                   <button
                     key={category.id}
                     onClick={() => handleCategorySelect(category.id)}
-                    className={`w-full text-left p-2 rounded-md text-sm transition-colors ${
-                      selectedCategoryId === category.id
-                        ? 'bg-blue-100 border-2 border-blue-300 text-blue-900'
-                        : 'hover:bg-gray-100 border-2 border-transparent'
+                    className={`w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                      selectedCategoryId === category.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">{category.name}</div>
-                        {category.description && (
-                          <div className="text-xs text-gray-500 mt-1">{category.description}</div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {selectedCategoryId === category.id && (
-                          <Check className="h-4 w-4 text-blue-600" />
-                        )}
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                      </div>
+                    <div className="font-medium text-sm">{category.name}</div>
+                    {category.description && (
+                      <div className="text-xs text-gray-500 mt-1">{category.description}</div>
+                    )}
+                    <div className="text-xs text-gray-400 mt-1">
+                      {category.subcategories.length} subcategories
                     </div>
                   </button>
                 ))
               ) : (
-                <div className="text-center text-gray-500 py-8">
-                  <p className="text-sm">Select a sector to view categories</p>
+                <div className="p-4 text-center text-gray-500 text-sm">
+                  Select a sector to view categories
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Services */}
-        <Card className="h-96">
+        {/* Column 3: Subcategories */}
+        <Card className="overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">
-              {selectedCategory ? `${selectedCategory.name} Services` : 'Services'}
+              {selectedCategory ? `${selectedCategory.name} Subcategories` : 'Subcategories'}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="space-y-2 max-h-80 overflow-y-auto px-3 pb-3">
+            <div className="overflow-y-auto h-80">
               {selectedCategory ? (
                 selectedCategory.subcategories.map(subcategory => (
-                  <div key={subcategory.id} className="space-y-1">
-                    <div className="text-xs font-medium text-gray-600 px-2 py-1 bg-gray-50 rounded">
-                      {subcategory.name}
+                  <button
+                    key={subcategory.id}
+                    onClick={() => handleSubcategorySelect(subcategory.id)}
+                    className={`w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                      selectedSubcategoryId === subcategory.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                    }`}
+                  >
+                    <div className="font-medium text-sm">{subcategory.name}</div>
+                    {subcategory.description && (
+                      <div className="text-xs text-gray-500 mt-1">{subcategory.description}</div>
+                    )}
+                    <div className="text-xs text-gray-400 mt-1">
+                      {subcategory.jobs.length} services
                     </div>
-                    {subcategory.jobs.map(service => (
-                      <button
-                        key={service.id}
-                        onClick={() => handleServiceSelect(service, selectedCategory.name, subcategory.name)}
-                        disabled={isServiceSelected(service.id)}
-                        className={`w-full text-left p-2 rounded-md text-sm transition-colors ${
-                          isServiceSelected(service.id)
-                            ? 'bg-green-50 border border-green-200 text-green-700 cursor-not-allowed'
-                            : 'hover:bg-gray-100 border border-transparent'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="font-medium">{service.name}</div>
-                            {service.description && (
-                              <div className="text-xs text-gray-500 mt-1">{service.description}</div>
-                            )}
-                          </div>
-                          <div className="ml-2 text-right">
-                            {isServiceSelected(service.id) && (
-                              <Badge variant="outline" className="text-xs">Selected</Badge>
-                            )}
-                            {service.price && (
-                              <div className="text-xs font-medium text-green-600">
-                                ${service.price}
-                              </div>
-                            )}
-                            {service.estimatedTime && (
-                              <div className="text-xs text-gray-500">
-                                {service.estimatedTime} min
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                  </button>
                 ))
               ) : (
-                <div className="text-center text-gray-500 py-8">
-                  <p className="text-sm">Select a category to view services</p>
+                <div className="p-4 text-center text-gray-500 text-sm">
+                  Select a category to view subcategories
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Column 4: Services */}
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">
+              {selectedSubcategory ? `${selectedSubcategory.name} Services` : 'Services'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-y-auto h-80">
+              {selectedSubcategory ? (
+                selectedSubcategory.jobs.map(service => {
+                  const isSelected = selectedServices.some(s => s.serviceId === service.id || s.id === service.id);
+                  
+                  return (
+                    <button
+                      key={service.id}
+                      onClick={() => handleServiceClick(service)}
+                      disabled={isSelected}
+                      className={`w-full text-left p-3 border-b border-gray-100 transition-colors ${
+                        isSelected 
+                          ? 'bg-green-50 text-green-700 cursor-not-allowed' 
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-sm">{service.name}</div>
+                        {isSelected && (
+                          <Badge variant="secondary" className="text-xs">
+                            Added
+                          </Badge>
+                        )}
+                      </div>
+                      {service.description && (
+                        <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          {service.description}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mt-2">
+                        {service.estimatedTime && (
+                          <span className="text-xs text-blue-600">
+                            {service.estimatedTime} min
+                          </span>
+                        )}
+                        {service.price && (
+                          <span className="text-xs text-green-600 font-medium">
+                            ${service.price}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="p-4 text-center text-gray-500 text-sm">
+                  Select a subcategory to view services
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Breadcrumb Navigation */}
+      {(selectedSector || selectedCategory || selectedSubcategory) && (
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <span>Path:</span>
+          {selectedSector && (
+            <>
+              <Badge variant="outline">{selectedSector.name}</Badge>
+              {selectedCategory && (
+                <>
+                  <span>→</span>
+                  <Badge variant="outline">{selectedCategory.name}</Badge>
+                  {selectedSubcategory && (
+                    <>
+                      <span>→</span>
+                      <Badge variant="outline">{selectedSubcategory.name}</Badge>
+                    </>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };
