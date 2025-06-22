@@ -1,219 +1,258 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { InventoryItemExtended } from '@/types/inventory';
-import { normalizeInventoryItem } from './utils';
+import { supabase } from "@/integrations/supabase/client";
+import { InventoryItemExtended } from "@/types/inventory";
 
-export async function getInventoryItems(): Promise<InventoryItemExtended[]> {
-  console.log('getInventoryItems: Starting database query...');
-  
+/**
+ * Get all inventory items from the database
+ */
+export const getInventoryItems = async (): Promise<InventoryItemExtended[]> => {
   try {
+    console.log('Fetching inventory items from Supabase...');
+    
     const { data, error } = await supabase
-      .from('inventory_items')
+      .from('inventory')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('getInventoryItems: Database error:', error);
+      console.error('Supabase error:', error);
       throw error;
     }
 
-    console.log('getInventoryItems: Raw database response:', data);
-    console.log('getInventoryItems: Number of items fetched:', data?.length || 0);
-
-    if (!data || data.length === 0) {
-      console.log('getInventoryItems: No items found in database');
+    console.log('Raw data from Supabase:', data);
+    
+    if (!data) {
+      console.log('No data returned from Supabase');
       return [];
     }
 
-    // Transform and normalize each item
-    const normalizedItems = data.map((item, index) => {
-      console.log(`getInventoryItems: Processing item ${index + 1}:`, item);
-      const normalized = normalizeInventoryItem(item);
-      console.log(`getInventoryItems: Normalized item ${index + 1}:`, normalized);
-      return normalized;
-    });
+    // Map database fields to application format
+    const mappedItems: InventoryItemExtended[] = data.map(item => ({
+      id: item.id,
+      name: item.name || '',
+      sku: item.sku || '',
+      description: item.description || '',
+      price: item.unit_price || 0,
+      unit_price: item.unit_price || 0,
+      category: item.category || '',
+      supplier: item.supplier || '',
+      status: item.status || 'active',
+      quantity: item.quantity || 0,
+      reorder_point: item.reorder_point || 0,
+      location: item.location || '',
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+      
+      // Extended properties from database
+      partNumber: item.part_number || '',
+      barcode: item.barcode || '',
+      subcategory: item.subcategory || '',
+      manufacturer: item.manufacturer || '',
+      vehicleCompatibility: item.vehicle_compatibility || '',
+      measurementUnit: item.measurement_unit || '',
+      onHold: item.on_hold || 0,
+      onOrder: item.on_order || 0,
+      minStockLevel: item.min_stock_level || 0,
+      maxStockLevel: item.max_stock_level || 0,
+      sellPricePerUnit: item.sell_price_per_unit || 0,
+      costPerUnit: item.cost_per_unit || 0,
+      marginMarkup: item.margin_markup || 0,
+      taxRate: item.tax_rate || 0,
+      taxExempt: item.tax_exempt || false,
+      environmentalFee: item.environmental_fee || 0,
+      coreCharge: item.core_charge || 0,
+      hazmatFee: item.hazmat_fee || 0,
+      weight: item.weight || 0,
+      dimensions: item.dimensions || '',
+      color: item.color || '',
+      material: item.material || '',
+      modelYear: item.model_year || '',
+      oemPartNumber: item.oem_part_number || '',
+      universalPart: item.universal_part || false,
+      warrantyPeriod: item.warranty_period || '',
+      dateBought: item.date_bought || '',
+      dateLast: item.date_last || '',
+      notes: item.notes || ''
+    }));
 
-    console.log('getInventoryItems: Final normalized items:', normalizedItems);
-    console.log('getInventoryItems: Returning', normalizedItems.length, 'items');
-
-    return normalizedItems;
+    console.log('Mapped inventory items:', mappedItems.length);
+    return mappedItems;
   } catch (error) {
-    console.error('getInventoryItems: Error in getInventoryItems:', error);
-    throw error;
+    console.error('Error fetching inventory items:', error);
+    throw new Error(`Failed to fetch inventory items: ${error}`);
   }
-}
+};
 
-export async function getInventoryItemById(id: string): Promise<InventoryItemExtended | null> {
-  console.log('getInventoryItemById: Fetching item with ID:', id);
-  
+/**
+ * Get a single inventory item by ID
+ */
+export const getInventoryItemById = async (id: string): Promise<InventoryItemExtended | null> => {
   try {
     const { data, error } = await supabase
-      .from('inventory_items')
+      .from('inventory')
       .select('*')
       .eq('id', id)
-      .maybeSingle();
-
-    if (error) {
-      console.error('getInventoryItemById: Database error:', error);
-      throw error;
-    }
-
-    if (!data) {
-      console.log('getInventoryItemById: No item found with ID:', id);
-      return null;
-    }
-
-    console.log('getInventoryItemById: Raw item data:', data);
-    const normalized = normalizeInventoryItem(data);
-    console.log('getInventoryItemById: Normalized item:', normalized);
-    
-    return normalized;
-  } catch (error) {
-    console.error('getInventoryItemById: Error:', error);
-    throw error;
-  }
-}
-
-export async function createInventoryItem(item: Omit<InventoryItemExtended, 'id'>): Promise<InventoryItemExtended> {
-  console.log('createInventoryItem: Creating item:', item);
-  
-  try {
-    const { data, error } = await supabase
-      .from('inventory_items')
-      .insert([{
-        name: item.name,
-        sku: item.sku,
-        category: item.category,
-        supplier: item.supplier,
-        location: item.location,
-        status: item.status,
-        description: item.description,
-        quantity: Number(item.quantity) || 0,
-        reorder_point: Number(item.reorder_point) || 0,
-        unit_price: Number(item.unit_price) || 0
-      }])
-      .select()
       .single();
 
     if (error) {
-      console.error('createInventoryItem: Database error:', error);
+      if (error.code === 'PGRST116') {
+        return null; // Item not found
+      }
       throw error;
     }
 
-    console.log('createInventoryItem: Created item:', data);
-    const normalized = normalizeInventoryItem(data);
-    console.log('createInventoryItem: Normalized created item:', normalized);
-    
-    return normalized;
+    if (!data) return null;
+
+    // Map to application format (same mapping as above)
+    return {
+      id: data.id,
+      name: data.name || '',
+      sku: data.sku || '',
+      description: data.description || '',
+      price: data.unit_price || 0,
+      unit_price: data.unit_price || 0,
+      category: data.category || '',
+      supplier: data.supplier || '',
+      status: data.status || 'active',
+      quantity: data.quantity || 0,
+      reorder_point: data.reorder_point || 0,
+      location: data.location || '',
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
   } catch (error) {
-    console.error('createInventoryItem: Error:', error);
+    console.error('Error fetching inventory item by ID:', error);
     throw error;
   }
-}
+};
 
-export async function updateInventoryItem(id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> {
-  console.log('updateInventoryItem: Updating item', id, 'with:', updates);
-  
+/**
+ * Create a new inventory item
+ */
+export const createInventoryItem = async (item: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> => {
   try {
     const { data, error } = await supabase
-      .from('inventory_items')
+      .from('inventory')
+      .insert({
+        name: item.name,
+        sku: item.sku,
+        description: item.description,
+        unit_price: item.unit_price || 0,
+        category: item.category,
+        supplier: item.supplier,
+        status: item.status || 'active',
+        quantity: item.quantity || 0,
+        reorder_point: item.reorder_point || 0,
+        location: item.location
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('No data returned from insert');
+
+    // Return mapped item
+    return {
+      id: data.id,
+      name: data.name || '',
+      sku: data.sku || '',
+      description: data.description || '',
+      price: data.unit_price || 0,
+      unit_price: data.unit_price || 0,
+      category: data.category || '',
+      supplier: data.supplier || '',
+      status: data.status || 'active',
+      quantity: data.quantity || 0,
+      reorder_point: data.reorder_point || 0,
+      location: data.location || '',
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  } catch (error) {
+    console.error('Error creating inventory item:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update an existing inventory item
+ */
+export const updateInventoryItem = async (id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> => {
+  try {
+    const { data, error } = await supabase
+      .from('inventory')
       .update({
-        name: updates.name,
-        sku: updates.sku,
-        category: updates.category,
-        supplier: updates.supplier,
-        location: updates.location,
-        status: updates.status,
-        description: updates.description,
-        quantity: updates.quantity !== undefined ? Number(updates.quantity) : undefined,
-        reorder_point: updates.reorder_point !== undefined ? Number(updates.reorder_point) : undefined,
-        unit_price: updates.unit_price !== undefined ? Number(updates.unit_price) : undefined
+        ...(updates.name && { name: updates.name }),
+        ...(updates.sku && { sku: updates.sku }),
+        ...(updates.description !== undefined && { description: updates.description }),
+        ...(updates.unit_price !== undefined && { unit_price: updates.unit_price }),
+        ...(updates.category !== undefined && { category: updates.category }),
+        ...(updates.supplier !== undefined && { supplier: updates.supplier }),
+        ...(updates.status !== undefined && { status: updates.status }),
+        ...(updates.quantity !== undefined && { quantity: updates.quantity }),
+        ...(updates.reorder_point !== undefined && { reorder_point: updates.reorder_point }),
+        ...(updates.location !== undefined && { location: updates.location })
       })
       .eq('id', id)
       .select()
       .single();
 
-    if (error) {
-      console.error('updateInventoryItem: Database error:', error);
-      throw error;
-    }
+    if (error) throw error;
+    if (!data) throw new Error('No data returned from update');
 
-    console.log('updateInventoryItem: Updated item:', data);
-    const normalized = normalizeInventoryItem(data);
-    console.log('updateInventoryItem: Normalized updated item:', normalized);
-    
-    return normalized;
+    // Return mapped item
+    return {
+      id: data.id,
+      name: data.name || '',
+      sku: data.sku || '',
+      description: data.description || '',
+      price: data.unit_price || 0,
+      unit_price: data.unit_price || 0,
+      category: data.category || '',
+      supplier: data.supplier || '',
+      status: data.status || 'active',
+      quantity: data.quantity || 0,
+      reorder_point: data.reorder_point || 0,
+      location: data.location || '',
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
   } catch (error) {
-    console.error('updateInventoryItem: Error:', error);
+    console.error('Error updating inventory item:', error);
     throw error;
   }
-}
+};
 
-export async function updateInventoryQuantity(id: string, quantity: number): Promise<InventoryItemExtended> {
-  console.log('updateInventoryQuantity: Updating quantity for item', id, 'to:', quantity);
-  
-  try {
-    const { data, error } = await supabase
-      .from('inventory_items')
-      .update({ quantity: Number(quantity) })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('updateInventoryQuantity: Database error:', error);
-      throw error;
-    }
-
-    console.log('updateInventoryQuantity: Updated item:', data);
-    const normalized = normalizeInventoryItem(data);
-    console.log('updateInventoryQuantity: Normalized updated item:', normalized);
-    
-    return normalized;
-  } catch (error) {
-    console.error('updateInventoryQuantity: Error:', error);
-    throw error;
-  }
-}
-
-export async function deleteInventoryItem(id: string): Promise<void> {
-  console.log('deleteInventoryItem: Deleting item with ID:', id);
-  
+/**
+ * Update only the quantity of an inventory item
+ */
+export const updateInventoryQuantity = async (id: string, quantity: number): Promise<void> => {
   try {
     const { error } = await supabase
-      .from('inventory_items')
+      .from('inventory')
+      .update({ quantity })
+      .eq('id', id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error updating inventory quantity:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete an inventory item
+ */
+export const deleteInventoryItem = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('inventory')
       .delete()
       .eq('id', id);
 
-    if (error) {
-      console.error('deleteInventoryItem: Database error:', error);
-      throw error;
-    }
-
-    console.log('deleteInventoryItem: Successfully deleted item:', id);
+    if (error) throw error;
   } catch (error) {
-    console.error('deleteInventoryItem: Error:', error);
+    console.error('Error deleting inventory item:', error);
     throw error;
   }
-}
-
-export async function clearAllInventoryItems(): Promise<void> {
-  console.log('clearAllInventoryItems: Clearing all inventory items...');
-  
-  try {
-    const { error } = await supabase
-      .from('inventory_items')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
-
-    if (error) {
-      console.error('clearAllInventoryItems: Database error:', error);
-      throw error;
-    }
-
-    console.log('clearAllInventoryItems: Successfully cleared all inventory items');
-  } catch (error) {
-    console.error('clearAllInventoryItems: Error:', error);
-    throw error;
-  }
-}
+};
