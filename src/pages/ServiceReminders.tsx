@@ -1,44 +1,35 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus, Filter, Calendar, Tag, FileText } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DateRange } from "react-day-picker";
-import { RemindersList } from "@/components/reminders/list/RemindersList";
-import { AddReminderForm } from "@/components/reminders/AddReminderForm";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ReminderCategoriesList } from "@/components/reminders/categories/ReminderCategoriesList";
-import { ReminderTagsManager } from "@/components/reminders/tags/ReminderTagsManager";
-import { ReminderTemplatesList } from "@/components/reminders/templates/ReminderTemplatesList";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Bell, Plus, Calendar, Users, Clock, AlertTriangle } from 'lucide-react';
+import { RemindersList } from '@/components/reminders/list/RemindersList';
+import { AddReminderForm } from '@/components/reminders/AddReminderForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export default function ServiceReminders() {
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState("reminders");
   
   const handleReminderCreated = () => {
     setReminderDialogOpen(false);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Service Reminders</h1>
-          <p className="text-muted-foreground">
-            Track and manage upcoming service reminders for customers.
+          <h1 className="text-3xl font-bold flex items-center">
+            <Bell className="mr-3 h-8 w-8" />
+            Service Reminders
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Manage and track service reminders for your customers
           </p>
         </div>
         <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 bg-esm-blue-600 hover:bg-esm-blue-700">
-              <Plus className="h-4 w-4" />
+            <Button className="flex items-center">
+              <Plus className="mr-2 h-4 w-4" />
               Add Reminder
             </Button>
           </DialogTrigger>
@@ -50,88 +41,72 @@ export default function ServiceReminders() {
           </DialogContent>
         </Dialog>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="reminders">Reminders</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="tags">Tags</TabsTrigger>
-        </TabsList>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Reminders</CardTitle>
+            <Bell className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">
+              Currently active
+            </p>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="reminders" className="space-y-6">
-          <Card>
-            <CardHeader className="bg-slate-50 border-b">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <CardTitle className="text-lg">All Reminders</CardTitle>
-                <div className="flex flex-row gap-2">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Filter by priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Priorities</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Date Range
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                      <CalendarComponent
-                        initialFocus
-                        mode="range"
-                        selected={dateRange}
-                        onSelect={setDateRange}
-                        numberOfMonths={2}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <RemindersList 
-                statusFilter={statusFilter === "all" ? undefined : statusFilter}
-                priorityFilter={priorityFilter === "all" ? undefined : priorityFilter}
-                dateRange={dateRange}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Due This Week</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">
+              Reminders due
+            </p>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="templates">
-          <ReminderTemplatesList />
-        </TabsContent>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">
+              Past due date
+            </p>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="categories">
-          <ReminderCategoriesList />
-        </TabsContent>
-        
-        <TabsContent value="tags">
-          <ReminderTagsManager />
-        </TabsContent>
-      </Tabs>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">
+              With reminders
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Clock className="mr-2 h-5 w-5" />
+            Recent Reminders
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <RemindersList limit={10} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
