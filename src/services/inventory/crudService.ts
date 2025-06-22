@@ -1,48 +1,46 @@
-import { supabase } from '@/lib/supabase';
+
+import { supabase } from '@/integrations/supabase/client';
 import { InventoryItemExtended } from '@/types/inventory';
 
 export const getInventoryItems = async (): Promise<InventoryItemExtended[]> => {
   try {
     const { data, error } = await supabase
       .from('inventory_items')
-      .select('*');
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error("Error fetching inventory items:", error);
-      throw error;
-    }
-
-    return data.map(item => ({
+    if (error) throw error;
+    
+    return data?.map(item => ({
       id: item.id,
-      name: item.name || '',
-      sku: item.sku || '',
-      category: item.category || '',
-      description: item.description || '',
-      quantity: item.quantity || 0,
-      reorder_point: item.reorder_point || 0,
-      unit_price: item.unit_price || 0,
-      supplier: item.supplier || '',
-      location: item.location || '',
-      status: item.status || 'active',
+      name: item.name,
+      sku: item.sku,
+      category: item.category,
+      description: item.description,
+      quantity: item.quantity,
+      reorder_point: item.reorder_point,
+      unit_price: item.unit_price,
+      price: item.unit_price || 0, // Legacy field - same as unit_price
+      supplier: item.supplier,
+      location: item.location,
+      status: item.status,
       created_at: item.created_at,
       updated_at: item.updated_at,
-      partNumber: item.part_number || '',
-      barcode: item.barcode || '',
-      subcategory: item.subcategory || '',
-      manufacturer: item.manufacturer || '',
-      vehicleCompatibility: item.vehicle_compatibility || '',
-      onHold: item.on_hold || 0,
-      onOrder: item.on_order || 0,
-      marginMarkup: item.margin_markup || 0,
-      weight: item.weight || 0,
-      dimensions: item.dimensions || '',
-      warrantyPeriod: item.warranty_period || '',
-      dateBought: item.date_bought || '',
-      dateLast: item.date_last || '',
-      notes: item.notes || ''
-    }));
+      partNumber: item.part_number,
+      barcode: item.barcode,
+      subcategory: item.subcategory,
+      manufacturer: item.manufacturer,
+      vehicleCompatibility: item.vehicle_compatibility,
+      onHold: item.on_hold,
+      onOrder: item.on_order,
+      marginMarkup: item.margin_markup,
+      warrantyPeriod: item.warranty_period,
+      dateBought: item.date_bought,
+      dateLast: item.date_last,
+      notes: item.notes
+    })) || [];
   } catch (error) {
-    console.error("Error fetching inventory items:", error);
+    console.error('Error fetching inventory items:', error);
     throw error;
   }
 };
@@ -53,134 +51,113 @@ export const getInventoryItemById = async (id: string): Promise<InventoryItemExt
       .from('inventory_items')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      console.error("Error fetching inventory item by ID:", error);
-      return null;
-    }
-
-    if (!data) {
-      console.log(`Inventory item with ID ${id} not found.`);
-      return null;
-    }
+    if (error) throw error;
+    if (!data) return null;
 
     return {
       id: data.id,
-      name: data.name || '',
-      sku: data.sku || '',
-      category: data.category || '',
-      description: data.description || '',
-      quantity: data.quantity || 0,
-      reorder_point: data.reorder_point || 0,
-      unit_price: data.unit_price || 0,
-      supplier: data.supplier || '',
-      location: data.location || '',
-      status: data.status || 'active',
+      name: data.name,
+      sku: data.sku,
+      category: data.category,
+      description: data.description,
+      quantity: data.quantity,
+      reorder_point: data.reorder_point,
+      unit_price: data.unit_price,
+      price: data.unit_price || 0, // Legacy field - same as unit_price
+      supplier: data.supplier,
+      location: data.location,
+      status: data.status,
       created_at: data.created_at,
       updated_at: data.updated_at,
-      partNumber: data.part_number || '',
-      barcode: data.barcode || '',
-      subcategory: data.subcategory || '',
-      manufacturer: data.manufacturer || '',
-      vehicleCompatibility: data.vehicle_compatibility || '',
-      onHold: data.on_hold || 0,
-      onOrder: data.on_order || 0,
-      marginMarkup: data.margin_markup || 0,
-      weight: data.weight || 0,
-      dimensions: data.dimensions || '',
-      warrantyPeriod: data.warranty_period || '',
-      dateBought: data.date_bought || '',
-      dateLast: data.date_last || '',
-      notes: data.notes || ''
+      partNumber: data.part_number,
+      barcode: data.barcode,
+      subcategory: data.subcategory,
+      manufacturer: data.manufacturer,
+      vehicleCompatibility: data.vehicle_compatibility,
+      onHold: data.on_hold,
+      onOrder: data.on_order,
+      marginMarkup: data.margin_markup,
+      warrantyPeriod: data.warranty_period,
+      dateBought: data.date_bought,
+      dateLast: data.date_last,
+      notes: data.notes
     };
   } catch (error) {
-    console.error("Error fetching inventory item by ID:", error);
-    return null;
+    console.error('Error fetching inventory item:', error);
+    throw error;
   }
 };
 
-export const createInventoryItem = async (item: Omit<InventoryItemExtended, 'id'>): Promise<InventoryItemExtended | null> => {
+export const createInventoryItem = async (item: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> => {
   try {
     const { data, error } = await supabase
       .from('inventory_items')
-      .insert([
-        {
-          name: item.name,
-          sku: item.sku,
-          category: item.category,
-          description: item.description,
-          quantity: item.quantity,
-          reorder_point: item.reorder_point,
-          unit_price: item.unit_price,
-          supplier: item.supplier,
-          location: item.location,
-          status: item.status,
-          part_number: item.partNumber,
-          barcode: item.barcode,
-          subcategory: item.subcategory,
-          manufacturer: item.manufacturer,
-          vehicle_compatibility: item.vehicleCompatibility,
-          on_hold: item.onHold,
-          on_order: item.onOrder,
-          margin_markup: item.marginMarkup,
-          weight: item.weight,
-          dimensions: item.dimensions,
-          warranty_period: item.warrantyPeriod,
-          date_bought: item.dateBought,
-          date_last: item.dateLast,
-          notes: item.notes
-        }
-      ])
+      .insert([{
+        name: item.name,
+        sku: item.sku,
+        category: item.category,
+        description: item.description,
+        quantity: item.quantity || 0,
+        reorder_point: item.reorder_point || 0,
+        unit_price: item.unit_price || 0,
+        supplier: item.supplier,
+        location: item.location,
+        status: item.status || 'active',
+        part_number: item.partNumber,
+        barcode: item.barcode,
+        subcategory: item.subcategory,
+        manufacturer: item.manufacturer,
+        vehicle_compatibility: item.vehicleCompatibility,
+        on_hold: item.onHold,
+        on_order: item.onOrder,
+        margin_markup: item.marginMarkup,
+        warranty_period: item.warrantyPeriod,
+        date_bought: item.dateBought,
+        date_last: item.dateLast,
+        notes: item.notes
+      }])
       .select()
       .single();
 
-    if (error) {
-      console.error("Error creating inventory item:", error);
-      throw error;
-    }
-
-    if (!data) {
-      console.log("Failed to create inventory item.");
-      return null;
-    }
+    if (error) throw error;
 
     return {
       id: data.id,
-      name: data.name || '',
-      sku: data.sku || '',
-      category: data.category || '',
-      description: data.description || '',
-      quantity: data.quantity || 0,
-      reorder_point: data.reorder_point || 0,
-      unit_price: data.unit_price || 0,
-      supplier: data.supplier || '',
-      location: data.location || '',
-      status: data.status || 'active',
+      name: data.name,
+      sku: data.sku,
+      category: data.category,
+      description: data.description,
+      quantity: data.quantity,
+      reorder_point: data.reorder_point,
+      unit_price: data.unit_price,
+      price: data.unit_price || 0, // Legacy field - same as unit_price
+      supplier: data.supplier,
+      location: data.location,
+      status: data.status,
       created_at: data.created_at,
       updated_at: data.updated_at,
-      partNumber: data.part_number || '',
-      barcode: data.barcode || '',
-      subcategory: data.subcategory || '',
-      manufacturer: data.manufacturer || '',
-      vehicleCompatibility: data.vehicle_compatibility || '',
-      onHold: data.on_hold || 0,
-      onOrder: data.on_order || 0,
-      marginMarkup: data.margin_markup || 0,
-      weight: data.weight || 0,
-      dimensions: data.dimensions || '',
-      warrantyPeriod: data.warranty_period || '',
-      dateBought: data.date_bought || '',
-      dateLast: data.date_last || '',
-      notes: data.notes || ''
+      partNumber: data.part_number,
+      barcode: data.barcode,
+      subcategory: data.subcategory,
+      manufacturer: data.manufacturer,
+      vehicleCompatibility: data.vehicle_compatibility,
+      onHold: data.on_hold,
+      onOrder: data.on_order,
+      marginMarkup: data.margin_markup,
+      warrantyPeriod: data.warranty_period,
+      dateBought: data.date_bought,
+      dateLast: data.date_last,
+      notes: data.notes
     };
   } catch (error) {
-    console.error("Error creating inventory item:", error);
-    return null;
+    console.error('Error creating inventory item:', error);
+    throw error;
   }
 };
 
-export const updateInventoryItem = async (id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended | null> => {
+export const updateInventoryItem = async (id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> => {
   try {
     const { data, error } = await supabase
       .from('inventory_items')
@@ -195,7 +172,6 @@ export const updateInventoryItem = async (id: string, updates: Partial<Inventory
         supplier: updates.supplier,
         location: updates.location,
         status: updates.status,
-        updated_at: new Date().toISOString(),
         part_number: updates.partNumber,
         barcode: updates.barcode,
         subcategory: updates.subcategory,
@@ -204,180 +180,124 @@ export const updateInventoryItem = async (id: string, updates: Partial<Inventory
         on_hold: updates.onHold,
         on_order: updates.onOrder,
         margin_markup: updates.marginMarkup,
-        weight: updates.weight,
-        dimensions: updates.dimensions,
         warranty_period: updates.warrantyPeriod,
         date_bought: updates.dateBought,
         date_last: updates.dateLast,
-        notes: updates.notes
+        notes: updates.notes,
+        updated_at: new Date().toISOString()
       })
       .eq('id', id)
       .select()
       .single();
 
-    if (error) {
-      console.error("Error updating inventory item:", error);
-      throw error;
-    }
-
-    if (!data) {
-      console.log(`Inventory item with ID ${id} not found for update.`);
-      return null;
-    }
+    if (error) throw error;
 
     return {
       id: data.id,
-      name: data.name || '',
-      sku: data.sku || '',
-      category: data.category || '',
-      description: data.description || '',
-      quantity: data.quantity || 0,
-      reorder_point: data.reorder_point || 0,
-      unit_price: data.unit_price || 0,
-      supplier: data.supplier || '',
-      location: data.location || '',
-      status: data.status || 'active',
+      name: data.name,
+      sku: data.sku,
+      category: data.category,
+      description: data.description,
+      quantity: data.quantity,
+      reorder_point: data.reorder_point,
+      unit_price: data.unit_price,
+      price: data.unit_price || 0, // Legacy field - same as unit_price
+      supplier: data.supplier,
+      location: data.location,
+      status: data.status,
       created_at: data.created_at,
       updated_at: data.updated_at,
-      partNumber: data.part_number || '',
-      barcode: data.barcode || '',
-      subcategory: data.subcategory || '',
-      manufacturer: data.manufacturer || '',
-      vehicleCompatibility: data.vehicle_compatibility || '',
-      onHold: data.on_hold || 0,
-      onOrder: data.on_order || 0,
-      marginMarkup: data.margin_markup || 0,
-      weight: data.weight || 0,
-      dimensions: data.dimensions || '',
-      warrantyPeriod: data.warranty_period || '',
-      dateBought: data.dateBought || '',
-      dateLast: data.dateLast || '',
-      notes: data.notes || ''
+      partNumber: data.part_number,
+      barcode: data.barcode,
+      subcategory: data.subcategory,
+      manufacturer: data.manufacturer,
+      vehicleCompatibility: data.vehicle_compatibility,
+      onHold: data.on_hold,
+      onOrder: data.on_order,
+      marginMarkup: data.margin_markup,
+      warrantyPeriod: data.warranty_period,
+      dateBought: data.date_bought,
+      dateLast: data.date_last,
+      notes: data.notes
     };
   } catch (error) {
-    console.error("Error updating inventory item:", error);
-    return null;
+    console.error('Error updating inventory item:', error);
+    throw error;
   }
 };
 
-export const updateInventoryQuantity = async (id: string, quantityChange: number): Promise<InventoryItemExtended | null> => {
+export const updateInventoryQuantity = async (id: string, quantity: number): Promise<InventoryItemExtended> => {
   try {
-    // Get the current quantity
-    const { data: currentItem, error: selectError } = await supabase
-      .from('inventory_items')
-      .select('quantity')
-      .eq('id', id)
-      .single();
-
-    if (selectError) {
-      console.error("Error fetching current quantity:", selectError);
-      throw selectError;
-    }
-
-    if (!currentItem) {
-      console.log(`Inventory item with ID ${id} not found.`);
-      return null;
-    }
-
-    const newQuantity = (currentItem.quantity || 0) + quantityChange;
-
-    // Update the quantity
     const { data, error } = await supabase
       .from('inventory_items')
-      .update({ quantity: newQuantity })
+      .update({ 
+        quantity,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select()
       .single();
 
-    if (error) {
-      console.error("Error updating inventory quantity:", error);
-      throw error;
-    }
-
-    if (!data) {
-      console.log(`Inventory item with ID ${id} not found for quantity update.`);
-      return null;
-    }
+    if (error) throw error;
 
     return {
       id: data.id,
-      name: data.name || '',
-      sku: data.sku || '',
-      category: data.category || '',
-      description: data.description || '',
-      quantity: data.quantity || 0,
-      reorder_point: data.reorder_point || 0,
-      unit_price: data.unit_price || 0,
-      supplier: data.supplier || '',
-      location: data.location || '',
-      status: data.status || 'active',
+      name: data.name,
+      sku: data.sku,
+      category: data.category,
+      description: data.description,
+      quantity: data.quantity,
+      reorder_point: data.reorder_point,
+      unit_price: data.unit_price,
+      price: data.unit_price || 0, // Legacy field - same as unit_price
+      supplier: data.supplier,
+      location: data.location,
+      status: data.status,
       created_at: data.created_at,
       updated_at: data.updated_at,
-      partNumber: data.part_number || '',
-      barcode: data.barcode || '',
-      subcategory: data.subcategory || '',
-      manufacturer: data.manufacturer || '',
-      vehicleCompatibility: data.vehicle_compatibility || '',
-      onHold: data.on_hold || 0,
-      onOrder: data.on_order || 0,
-      marginMarkup: data.margin_markup || 0,
-      weight: data.weight || 0,
-      dimensions: data.dimensions || '',
-      warrantyPeriod: data.warranty_period || '',
-      dateBought: data.dateBought || '',
-      dateLast: data.dateLast || '',
-      notes: data.notes || ''
+      partNumber: data.part_number,
+      barcode: data.barcode,
+      subcategory: data.subcategory,
+      manufacturer: data.manufacturer,
+      vehicleCompatibility: data.vehicle_compatibility,
+      onHold: data.on_hold,
+      onOrder: data.on_order,
+      marginMarkup: data.margin_markup,
+      warrantyPeriod: data.warranty_period,
+      dateBought: data.date_bought,
+      dateLast: data.date_last,
+      notes: data.notes
     };
   } catch (error) {
-    console.error("Error updating inventory quantity:", error);
-    return null;
+    console.error('Error updating inventory quantity:', error);
+    throw error;
   }
 };
 
-export const deleteInventoryItem = async (id: string): Promise<boolean> => {
+export const deleteInventoryItem = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('inventory_items')
       .delete()
       .eq('id', id);
 
-    if (error) {
-      console.error("Error deleting inventory item:", error);
-      throw error;
-    }
-
-    return true;
+    if (error) throw error;
   } catch (error) {
-    console.error("Error deleting inventory item:", error);
-    return false;
+    console.error('Error deleting inventory item:', error);
+    throw error;
   }
 };
 
-export const clearAllInventoryItems = async () => {
+export const clearAllInventoryItems = async (): Promise<void> => {
   try {
-    // First get all inventory items to check if there are any
-    const { data: items, error: fetchError } = await supabase
-      .from('inventory_items')
-      .select('id');
-      
-    if (fetchError) throw fetchError;
-    
-    if (!items || items.length === 0) {
-      // No items to delete
-      return true;
-    }
-      
-    // Delete all inventory items
-    const { error: deleteError } = await supabase
+    const { error } = await supabase
       .from('inventory_items')
       .delete()
-      .gte('id', '0'); // Use a condition that matches all items
-    
-    if (deleteError) throw deleteError;
-    
-    return true;
+      .gte('created_at', '1970-01-01T00:00:00.000Z'); // Delete all items
+
+    if (error) throw error;
   } catch (error) {
-    console.error("Error clearing inventory:", error);
+    console.error('Error clearing all inventory items:', error);
     throw error;
   }
 };
