@@ -16,7 +16,7 @@ import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Work Orders', href: '/work-orders', icon: Wrench },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Inventory', href: '/inventory', icon: Package },
@@ -41,14 +41,16 @@ export function SidebarContent() {
     <div className="flex h-full flex-col bg-indigo-700">
       {/* Logo */}
       <div className="flex h-16 items-center justify-center px-6">
-        <h1 className="text-xl font-bold text-white">ServicePro</h1>
+        <Link to="/dashboard" className="text-xl font-bold text-white" onClick={handleLinkClick}>
+          ServicePro
+        </Link>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-2 py-4">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href || 
-            (item.href !== '/' && location.pathname.startsWith(item.href));
+            (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
           
           return (
             <Link
