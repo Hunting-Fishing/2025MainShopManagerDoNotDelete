@@ -1,102 +1,119 @@
-import { supabase } from "@/integrations/supabase/client";
-import { InventoryItemExtended } from "@/types/inventory";
-import { formatInventoryItem } from "./utils";
 
-/**
- * Get all inventory items from the database
- */
-export const getInventoryItems = async (): Promise<InventoryItemExtended[]> => {
+import { supabase } from '@/integrations/supabase/client';
+import { InventoryItemExtended } from '@/types/inventory';
+import { normalizeInventoryItem } from './utils';
+
+export async function getInventoryItems(): Promise<InventoryItemExtended[]> {
+  console.log('getInventoryItems: Starting database query...');
+  
   try {
-    console.log('Fetching inventory items from database...');
-    
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error("Error fetching inventory items:", error);
+      console.error('getInventoryItems: Database error:', error);
       throw error;
     }
 
-    console.log('Raw inventory data from database:', data);
-    console.log('Number of items fetched:', data?.length || 0);
+    console.log('getInventoryItems: Raw database response:', data);
+    console.log('getInventoryItems: Number of items fetched:', data?.length || 0);
 
     if (!data || data.length === 0) {
-      console.log('No inventory items found in database');
+      console.log('getInventoryItems: No items found in database');
       return [];
     }
 
-    const formattedItems = data.map((item, index) => {
-      console.log(`Formatting item ${index + 1}:`, item);
-      const formatted = formatInventoryItem(item);
-      console.log(`Formatted item ${index + 1}:`, formatted);
-      return formatted;
+    // Transform and normalize each item
+    const normalizedItems = data.map((item, index) => {
+      console.log(`getInventoryItems: Processing item ${index + 1}:`, item);
+      const normalized = normalizeInventoryItem(item);
+      console.log(`getInventoryItems: Normalized item ${index + 1}:`, normalized);
+      return normalized;
     });
 
-    console.log('Final formatted inventory items:', formattedItems);
-    return formattedItems;
-  } catch (error) {
-    console.error("Failed to fetch inventory items:", error);
-    return [];
-  }
-};
+    console.log('getInventoryItems: Final normalized items:', normalizedItems);
+    console.log('getInventoryItems: Returning', normalizedItems.length, 'items');
 
-/**
- * Get inventory item by ID
- */
-export const getInventoryItemById = async (id: string): Promise<InventoryItemExtended | null> => {
+    return normalizedItems;
+  } catch (error) {
+    console.error('getInventoryItems: Error in getInventoryItems:', error);
+    throw error;
+  }
+}
+
+export async function getInventoryItemById(id: string): Promise<InventoryItemExtended | null> {
+  console.log('getInventoryItemById: Fetching item with ID:', id);
+  
   try {
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
-    if (error) throw error;
-    if (!data) return null;
+    if (error) {
+      console.error('getInventoryItemById: Database error:', error);
+      throw error;
+    }
 
-    return formatInventoryItem(data);
+    if (!data) {
+      console.log('getInventoryItemById: No item found with ID:', id);
+      return null;
+    }
+
+    console.log('getInventoryItemById: Raw item data:', data);
+    const normalized = normalizeInventoryItem(data);
+    console.log('getInventoryItemById: Normalized item:', normalized);
+    
+    return normalized;
   } catch (error) {
-    console.error("Error fetching inventory item by ID:", error);
+    console.error('getInventoryItemById: Error:', error);
     throw error;
   }
-};
+}
 
-/**
- * Create a new inventory item
- */
-export const createInventoryItem = async (item: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> => {
+export async function createInventoryItem(item: Omit<InventoryItemExtended, 'id'>): Promise<InventoryItemExtended> {
+  console.log('createInventoryItem: Creating item:', item);
+  
   try {
     const { data, error } = await supabase
       .from('inventory_items')
-      .insert({
+      .insert([{
         name: item.name,
         sku: item.sku,
         category: item.category,
-        description: item.description,
-        quantity: item.quantity || 0,
-        reorder_point: item.reorder_point || 0,
-        unit_price: item.unit_price || 0,
         supplier: item.supplier,
         location: item.location,
-        status: item.status || 'active'
-      })
+        status: item.status,
+        description: item.description,
+        quantity: Number(item.quantity) || 0,
+        reorder_point: Number(item.reorder_point) || 0,
+        unit_price: Number(item.unit_price) || 0
+      }])
       .select()
       .single();
 
-    if (error) throw error;
-    return formatInventoryItem(data);
+    if (error) {
+      console.error('createInventoryItem: Database error:', error);
+      throw error;
+    }
+
+    console.log('createInventoryItem: Created item:', data);
+    const normalized = normalizeInventoryItem(data);
+    console.log('createInventoryItem: Normalized created item:', normalized);
+    
+    return normalized;
   } catch (error) {
-    console.error("Error creating inventory item:", error);
+    console.error('createInventoryItem: Error:', error);
     throw error;
   }
-};
+}
 
-/**
- * Update an inventory item
- */
-export const updateInventoryItem = async (id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> => {
+export async function updateInventoryItem(id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> {
+  console.log('updateInventoryItem: Updating item', id, 'with:', updates);
+  
   try {
     const { data, error } = await supabase
       .from('inventory_items')
@@ -104,87 +121,99 @@ export const updateInventoryItem = async (id: string, updates: Partial<Inventory
         name: updates.name,
         sku: updates.sku,
         category: updates.category,
-        description: updates.description,
-        quantity: updates.quantity,
-        reorder_point: updates.reorder_point,
-        unit_price: updates.unit_price,
         supplier: updates.supplier,
         location: updates.location,
         status: updates.status,
-        updated_at: new Date().toISOString()
+        description: updates.description,
+        quantity: updates.quantity !== undefined ? Number(updates.quantity) : undefined,
+        reorder_point: updates.reorder_point !== undefined ? Number(updates.reorder_point) : undefined,
+        unit_price: updates.unit_price !== undefined ? Number(updates.unit_price) : undefined
       })
       .eq('id', id)
       .select()
       .single();
 
-    if (error) throw error;
-    return formatInventoryItem(data);
+    if (error) {
+      console.error('updateInventoryItem: Database error:', error);
+      throw error;
+    }
+
+    console.log('updateInventoryItem: Updated item:', data);
+    const normalized = normalizeInventoryItem(data);
+    console.log('updateInventoryItem: Normalized updated item:', normalized);
+    
+    return normalized;
   } catch (error) {
-    console.error("Error updating inventory item:", error);
+    console.error('updateInventoryItem: Error:', error);
     throw error;
   }
-};
+}
 
-/**
- * Update inventory quantity
- */
-export const updateInventoryQuantity = async (id: string, quantity: number): Promise<InventoryItemExtended> => {
+export async function updateInventoryQuantity(id: string, quantity: number): Promise<InventoryItemExtended> {
+  console.log('updateInventoryQuantity: Updating quantity for item', id, 'to:', quantity);
+  
   try {
     const { data, error } = await supabase
       .from('inventory_items')
-      .update({ 
-        quantity,
-        updated_at: new Date().toISOString()
-      })
+      .update({ quantity: Number(quantity) })
       .eq('id', id)
       .select()
       .single();
 
-    if (error) throw error;
-    return formatInventoryItem(data);
+    if (error) {
+      console.error('updateInventoryQuantity: Database error:', error);
+      throw error;
+    }
+
+    console.log('updateInventoryQuantity: Updated item:', data);
+    const normalized = normalizeInventoryItem(data);
+    console.log('updateInventoryQuantity: Normalized updated item:', normalized);
+    
+    return normalized;
   } catch (error) {
-    console.error("Error updating inventory quantity:", error);
+    console.error('updateInventoryQuantity: Error:', error);
     throw error;
   }
-};
+}
 
-/**
- * Delete an inventory item
- */
-export const deleteInventoryItem = async (id: string): Promise<void> => {
+export async function deleteInventoryItem(id: string): Promise<void> {
+  console.log('deleteInventoryItem: Deleting item with ID:', id);
+  
   try {
     const { error } = await supabase
       .from('inventory_items')
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
-  } catch (error) {
-    console.error("Error deleting inventory item:", error);
-    throw error;
-  }
-};
-
-/**
- * Clear all inventory items from the database
- */
-export const clearAllInventoryItems = async (): Promise<void> => {
-  try {
-    console.log('Clearing all inventory items from database...');
-    
-    const { error } = await supabase
-      .from('inventory_items')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all items (using a condition that matches all real IDs)
-
     if (error) {
-      console.error("Error clearing inventory items:", error);
+      console.error('deleteInventoryItem: Database error:', error);
       throw error;
     }
 
-    console.log('Successfully cleared all inventory items');
+    console.log('deleteInventoryItem: Successfully deleted item:', id);
   } catch (error) {
-    console.error("Failed to clear inventory items:", error);
+    console.error('deleteInventoryItem: Error:', error);
     throw error;
   }
-};
+}
+
+export async function clearAllInventoryItems(): Promise<void> {
+  console.log('clearAllInventoryItems: Clearing all inventory items...');
+  
+  try {
+    const { error } = await supabase
+      .from('inventory_items')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+
+    if (error) {
+      console.error('clearAllInventoryItems: Database error:', error);
+      throw error;
+    }
+
+    console.log('clearAllInventoryItems: Successfully cleared all inventory items');
+  } catch (error) {
+    console.error('clearAllInventoryItems: Error:', error);
+    throw error;
+  }
+}
