@@ -16,6 +16,10 @@ export default function Inventory() {
   const { items, isLoading, fetchItems } = useInventoryItems();
   const { updateItem } = useInventoryCrud();
   
+  console.log('Inventory page: Received items:', items);
+  console.log('Inventory page: Items count:', items.length);
+  console.log('Inventory page: Loading state:', isLoading);
+  
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
@@ -24,22 +28,42 @@ export default function Inventory() {
   const [locationFilter, setLocationFilter] = useState('');
 
   // Get unique values for filters
-  const categories = useMemo(() => 
-    [...new Set(items.map(item => item.category).filter(Boolean))], [items]
-  );
-  const statuses = useMemo(() => 
-    [...new Set(items.map(item => item.status).filter(Boolean))], [items]
-  );
-  const suppliers = useMemo(() => 
-    [...new Set(items.map(item => item.supplier).filter(Boolean))], [items]
-  );
-  const locations = useMemo(() => 
-    [...new Set(items.map(item => item.location).filter(Boolean))], [items]
-  );
+  const categories = useMemo(() => {
+    const cats = [...new Set(items.map(item => item.category).filter(Boolean))];
+    console.log('Available categories:', cats);
+    return cats;
+  }, [items]);
+  
+  const statuses = useMemo(() => {
+    const stats = [...new Set(items.map(item => item.status).filter(Boolean))];
+    console.log('Available statuses:', stats);
+    return stats;
+  }, [items]);
+  
+  const suppliers = useMemo(() => {
+    const sups = [...new Set(items.map(item => item.supplier).filter(Boolean))];
+    console.log('Available suppliers:', sups);
+    return sups;
+  }, [items]);
+  
+  const locations = useMemo(() => {
+    const locs = [...new Set(items.map(item => item.location).filter(Boolean))];
+    console.log('Available locations:', locs);
+    return locs;
+  }, [items]);
 
   // Filter items based on search and filters
   const filteredItems = useMemo(() => {
-    return items.filter(item => {
+    console.log('Filtering items. Total items before filtering:', items.length);
+    console.log('Filter criteria:', {
+      searchQuery,
+      categoryFilter,
+      statusFilter,
+      supplierFilter,
+      locationFilter
+    });
+    
+    const filtered = items.filter(item => {
       const matchesSearch = !searchQuery || 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -55,8 +79,24 @@ export default function Inventory() {
       
       const matchesLocation = !locationFilter || item.location === locationFilter;
 
-      return matchesSearch && matchesCategory && matchesStatus && matchesSupplier && matchesLocation;
+      const passes = matchesSearch && matchesCategory && matchesStatus && matchesSupplier && matchesLocation;
+      
+      if (!passes) {
+        console.log('Item filtered out:', item.name, {
+          matchesSearch,
+          matchesCategory,
+          matchesStatus,
+          matchesSupplier,
+          matchesLocation
+        });
+      }
+      
+      return passes;
     });
+    
+    console.log('Filtered items count:', filtered.length);
+    console.log('Filtered items:', filtered);
+    return filtered;
   }, [items, searchQuery, categoryFilter, statusFilter, supplierFilter, locationFilter]);
 
   // Calculate stats
@@ -68,6 +108,13 @@ export default function Inventory() {
   const totalValue = items.reduce((sum, item) => 
     sum + (item.quantity * (item.unit_price || item.price || 0)), 0
   );
+
+  console.log('Inventory stats:', {
+    totalItems,
+    lowStockCount,
+    outOfStockCount,
+    totalValue
+  });
 
   const handleUpdateItem = async (id: string, updates: Partial<InventoryItemExtended>) => {
     const updatedItem = await updateItem(id, updates);
