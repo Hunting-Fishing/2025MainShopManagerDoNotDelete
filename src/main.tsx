@@ -31,9 +31,9 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+    <BrowserRouter>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
           <GlobalErrorBoundary>
             <ThemeProvider>
               <LanguageProvider>
@@ -47,8 +47,8 @@ ReactDOM.createRoot(rootElement).render(
               </LanguageProvider>
             </ThemeProvider>
           </GlobalErrorBoundary>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </HelmetProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
