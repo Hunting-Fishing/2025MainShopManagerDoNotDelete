@@ -38,15 +38,20 @@ async function fetchRecentWorkOrders(): Promise<WorkOrder[]> {
     return [];
   }
 
-  return (data || []).map(wo => ({
-    id: wo.id,
-    work_order_number: wo.work_order_number || `WO-${wo.id.slice(0, 8)}`,
-    status: wo.status,
-    created_at: wo.created_at,
-    customer_first_name: wo.customers?.first_name,
-    customer_last_name: wo.customers?.last_name,
-    description: wo.description,
-  }));
+  return (data || []).map(wo => {
+    // Handle customers data - it could be null, an array, or an object
+    const customerData = Array.isArray(wo.customers) ? wo.customers[0] : wo.customers;
+    
+    return {
+      id: wo.id,
+      work_order_number: wo.work_order_number || `WO-${wo.id.slice(0, 8)}`,
+      status: wo.status,
+      created_at: wo.created_at,
+      customer_first_name: customerData?.first_name,
+      customer_last_name: customerData?.last_name,
+      description: wo.description,
+    };
+  });
 }
 
 function getStatusColor(status: string) {
