@@ -1,12 +1,14 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { LiveDashboardStats } from '@/components/dashboard/LiveDashboardStats';
+import { LiveRecentWorkOrders } from '@/components/dashboard/LiveRecentWorkOrders';
 
 export default function Dashboard() {
   return (
     <>
       <Helmet>
-        <title>Dashboard | AutoShop Pro</title>
+        <title>Dashboard | ServicePro</title>
       </Helmet>
       
       <div className="space-y-6">
@@ -17,29 +19,11 @@ export default function Dashboard() {
           </p>
         </div>
         
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="font-semibold">Work Orders</h3>
-            <p className="text-2xl font-bold">12</p>
-            <p className="text-sm text-muted-foreground">Active this week</p>
-          </div>
-          
-          <div className="rounded-lg border p-4">
-            <h3 className="font-semibold">Customers</h3>
-            <p className="text-2xl font-bold">48</p>
-            <p className="text-sm text-muted-foreground">Total customers</p>
-          </div>
-          
-          <div className="rounded-lg border p-4">
-            <h3 className="font-semibold">Revenue</h3>
-            <p className="text-2xl font-bold">$12,450</p>
-            <p className="text-sm text-muted-foreground">This month</p>
-          </div>
-          
-          <div className="rounded-lg border p-4">
-            <h3 className="font-semibold">Inventory</h3>
-            <p className="text-2xl font-bold">156</p>
-            <p className="text-sm text-muted-foreground">Items in stock</p>
+        <LiveDashboardStats />
+        
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <LiveRecentWorkOrders />
           </div>
         </div>
       </div>
