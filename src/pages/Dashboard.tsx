@@ -1,101 +1,48 @@
 
-import React, { useState, useEffect } from 'react';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { StatsCards } from '@/components/dashboard/StatsCards';
-import { RevenueChart } from '@/components/dashboard/RevenueChart';
-import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
-import { RecentWorkOrders } from '@/components/dashboard/RecentWorkOrders';
-import { WorkOrderPhaseProgress } from '@/components/dashboard/WorkOrderPhaseProgress';
-import { getDashboardStats, getPhaseProgress } from '@/services/dashboard';
-import { DashboardStats, PhaseProgressItem } from '@/types/dashboard';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Database } from 'lucide-react';
+import React from 'react';
+import { Helmet } from 'react-helmet-async';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [phaseProgressData, setPhaseProgressData] = useState<PhaseProgressItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [phaseProgressLoading, setPhaseProgressLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        setLoading(true);
-        const dashboardStats = await getDashboardStats();
-        setStats(dashboardStats);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching dashboard stats:", err);
-        setError("Failed to load dashboard data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchPhaseProgress = async () => {
-      try {
-        setPhaseProgressLoading(true);
-        const phaseData = await getPhaseProgress();
-        setPhaseProgressData(phaseData);
-      } catch (err) {
-        console.error("Error fetching phase progress:", err);
-      } finally {
-        setPhaseProgressLoading(false);
-      }
-    };
-
-    fetchDashboardStats();
-    fetchPhaseProgress();
-  }, []);
-
   return (
-    <div className="space-y-6">
-      <DashboardHeader />
+    <>
+      <Helmet>
+        <title>Dashboard | AutoShop Pro</title>
+      </Helmet>
       
-      <Alert>
-        <Database className="h-4 w-4" />
-        <AlertDescription>
-          All dashboard data is live from your Supabase database. No mock or sample data is displayed.
-        </AlertDescription>
-      </Alert>
-      
-      <StatsCards 
-        stats={stats ? {
-          activeWorkOrders: stats.activeOrders,
-          workOrderChange: stats.workOrderChange,
-          teamMembers: parseInt(stats.teamMembers),
-          teamChange: stats.teamChange,
-          inventoryItems: parseInt(stats.inventoryItems),
-          inventoryChange: stats.inventoryChange,
-          avgCompletionTime: stats.avgCompletionTime,
-          completionTimeChange: stats.completionTimeChange,
-          customerSatisfaction: parseFloat(stats.customerSatisfaction.replace('%', '')),
-          schedulingEfficiency: stats.schedulingEfficiency,
-        } : undefined}
-        isLoading={loading}
-      />
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <RevenueChart />
-        <TechnicianPerformanceChart />
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome to your shop management dashboard
+          </p>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg border p-4">
+            <h3 className="font-semibold">Work Orders</h3>
+            <p className="text-2xl font-bold">12</p>
+            <p className="text-sm text-muted-foreground">Active this week</p>
+          </div>
+          
+          <div className="rounded-lg border p-4">
+            <h3 className="font-semibold">Customers</h3>
+            <p className="text-2xl font-bold">48</p>
+            <p className="text-sm text-muted-foreground">Total customers</p>
+          </div>
+          
+          <div className="rounded-lg border p-4">
+            <h3 className="font-semibold">Revenue</h3>
+            <p className="text-2xl font-bold">$12,450</p>
+            <p className="text-sm text-muted-foreground">This month</p>
+          </div>
+          
+          <div className="rounded-lg border p-4">
+            <h3 className="font-semibold">Inventory</h3>
+            <p className="text-2xl font-bold">156</p>
+            <p className="text-sm text-muted-foreground">Items in stock</p>
+          </div>
+        </div>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <RecentWorkOrders />
-        <WorkOrderPhaseProgress 
-          data={phaseProgressData}
-          isLoading={phaseProgressLoading}
-        />
-      </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {error}
-          </AlertDescription>
-        </Alert>
-      )}
-    </div>
+    </>
   );
 }
