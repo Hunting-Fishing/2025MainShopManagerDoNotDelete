@@ -107,9 +107,18 @@ export const countOutOfStockItems = (items: InventoryItemExtended[]): number => 
 };
 
 export const calculateTotalValue = (items: InventoryItemExtended[]): number => {
-  return items.reduce((total, item) => {
+  console.log('calculateTotalValue: Calculating for', items.length, 'items');
+  
+  const total = items.reduce((total, item) => {
     const quantity = Number(item.quantity) || 0;
-    const unitPrice = Number(item.unit_price) || 0;
-    return total + (quantity * unitPrice);
+    const unitPrice = Number(item.unit_price) || Number(item.price) || 0;
+    const itemValue = quantity * unitPrice;
+    
+    console.log(`Item ${item.name}: qty=${quantity}, price=${unitPrice}, value=${itemValue}`);
+    
+    return total + itemValue;
   }, 0);
+  
+  console.log('calculateTotalValue: Total calculated value:', total);
+  return total;
 };

@@ -28,21 +28,31 @@ export {
 
 export const getInventoryStatistics = async () => {
   try {
+    console.log('getInventoryStatistics: Starting to calculate stats...');
     const items = await getInventoryItems();
+    console.log('getInventoryStatistics: Retrieved items:', items.length);
     
     const totalItems = items.length;
     const totalValue = calculateTotalValue(items);
-    const lowStockCount = items.filter(item => 
-      item.quantity > 0 && item.quantity <= item.reorder_point
-    ).length;
-    const outOfStockCount = items.filter(item => item.quantity <= 0).length;
+    const lowStockCount = items.filter(item => {
+      const quantity = Number(item.quantity) || 0;
+      const reorderPoint = Number(item.reorder_point) || 0;
+      return quantity > 0 && quantity <= reorderPoint;
+    }).length;
+    const outOfStockCount = items.filter(item => {
+      const quantity = Number(item.quantity) || 0;
+      return quantity <= 0;
+    }).length;
     
-    return {
+    const stats = {
       totalItems,
       totalValue,
       lowStockCount,
       outOfStockCount
     };
+    
+    console.log('getInventoryStatistics: Calculated stats:', stats);
+    return stats;
   } catch (error) {
     console.error("Error getting inventory statistics:", error);
     return {
