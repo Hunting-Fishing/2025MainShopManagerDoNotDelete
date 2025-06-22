@@ -5,6 +5,21 @@ export async function getAllWorkOrders() {
   console.log('Fetching all work orders...');
   
   try {
+    // First check if user is authenticated
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error('Authentication error:', authError);
+      throw new Error(`Authentication failed: ${authError.message}`);
+    }
+
+    if (!user) {
+      console.warn('No authenticated user found');
+      return [];
+    }
+
+    console.log('Authenticated user:', user.id);
+
     const { data: workOrders, error } = await supabase
       .from('work_orders')
       .select('*')
@@ -15,7 +30,7 @@ export async function getAllWorkOrders() {
       throw new Error(`Failed to fetch work orders: ${error.message}`);
     }
 
-    console.log('Work orders fetched successfully:', workOrders?.length);
+    console.log('Work orders fetched successfully:', workOrders?.length || 0);
     return workOrders || [];
 
   } catch (error) {
