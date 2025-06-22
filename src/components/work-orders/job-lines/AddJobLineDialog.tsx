@@ -59,6 +59,7 @@ export function AddJobLineDialog({
             workOrderId={workOrderId}
             onSave={handleJobLineSave}
             onCancel={handleCancel}
+            mode={mode}
           />
         </DialogContent>
       </Dialog>

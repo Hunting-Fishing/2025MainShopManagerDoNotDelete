@@ -8,13 +8,15 @@ export interface ServiceBasedJobLineFormProps {
   onSave: (jobLines: WorkOrderJobLine[]) => void;
   onCancel: () => void;
   jobLine?: WorkOrderJobLine;
+  mode?: 'service' | 'manual';
 }
 
 export function ServiceBasedJobLineForm({
   workOrderId,
   onSave,
   onCancel,
-  jobLine
+  jobLine,
+  mode = 'service'
 }: ServiceBasedJobLineFormProps) {
   return (
     <JobLineForm
@@ -23,6 +25,7 @@ export function ServiceBasedJobLineForm({
       onSave={onSave}
       onCancel={onCancel}
       isEditing={!!jobLine}
+      mode={mode}
     />
   );
 }
