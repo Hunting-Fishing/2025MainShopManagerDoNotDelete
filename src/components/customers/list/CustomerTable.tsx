@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { TableRow, TableCell } from '@/components/ui/table';
+import { Link } from 'react-router-dom';
+import { TableCell, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Phone, Mail } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Customer } from '@/types/customer';
+import { Edit, Eye, User } from 'lucide-react';
+import { Customer, getCustomerFullName } from '@/types/customer';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -13,46 +13,21 @@ interface CustomerTableProps {
   error: string | null;
 }
 
-export function CustomerTable({ customers, loading, error }: CustomerTableProps) {
+export const CustomerTable = ({ customers, loading, error }: CustomerTableProps) => {
   console.log('CustomerTable - customers:', customers);
   console.log('CustomerTable - loading:', loading);
   console.log('CustomerTable - error:', error);
 
   if (loading) {
     return (
-      <>
-        {[1, 2, 3].map((i) => (
-          <TableRow key={i}>
-            <TableCell>
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-24"></div>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-28 mb-1"></div>
-                <div className="h-3 bg-gray-200 rounded w-32"></div>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-40"></div>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="animate-pulse">
-                <div className="h-6 bg-gray-200 rounded w-16"></div>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="animate-pulse">
-                <div className="h-8 bg-gray-200 rounded w-20"></div>
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
-      </>
+      <TableRow>
+        <TableCell colSpan={5} className="text-center py-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Loading customers...</span>
+          </div>
+        </TableCell>
+      </TableRow>
     );
   }
 
@@ -60,7 +35,9 @@ export function CustomerTable({ customers, loading, error }: CustomerTableProps)
     return (
       <TableRow>
         <TableCell colSpan={5} className="text-center py-8">
-          <p className="text-red-600">Error loading customers: {error}</p>
+          <div className="text-red-600">
+            Error loading customers: {error}
+          </div>
         </TableCell>
       </TableRow>
     );
@@ -70,7 +47,9 @@ export function CustomerTable({ customers, loading, error }: CustomerTableProps)
     return (
       <TableRow>
         <TableCell colSpan={5} className="text-center py-8">
-          <p className="text-muted-foreground">No customers found</p>
+          <div className="text-muted-foreground">
+            No customers found
+          </div>
         </TableCell>
       </TableRow>
     );
@@ -78,103 +57,98 @@ export function CustomerTable({ customers, loading, error }: CustomerTableProps)
 
   return (
     <>
-      {customers.map((customer) => (
-        <TableRow key={customer.id}>
-          <TableCell>
-            <div>
-              <div className="font-medium">
-                {customer.first_name} {customer.last_name}
+      {customers.map((customer) => {
+        const customerName = getCustomerFullName(customer);
+        const displayAddress = customer.address ? 
+          `${customer.address}${customer.city ? `, ${customer.city}` : ''}${customer.state ? `, ${customer.state}` : ''}` : 
+          'No address provided';
+
+        return (
+          <TableRow key={customer.id} className="hover:bg-muted/50">
+            <TableCell>
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <User className="w-4 h-4 text-blue-600" />
+                  </div>
+                </div>
+                <div>
+                  <div className="font-medium">{customerName}</div>
+                  {customer.company && (
+                    <div className="text-sm text-muted-foreground">
+                      {customer.company}
+                    </div>
+                  )}
+                </div>
               </div>
-              {customer.company && (
-                <div className="text-sm text-muted-foreground">
-                  {customer.company}
-                </div>
-              )}
-            </div>
-          </TableCell>
-          <TableCell>
-            <div className="space-y-1">
-              {customer.email && (
-                <div className="flex items-center text-sm">
-                  <Mail className="h-3 w-3 mr-1" />
-                  <a 
-                    href={`mailto:${customer.email}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    {customer.email}
-                  </a>
-                </div>
-              )}
-              {customer.phone && (
-                <div className="flex items-center text-sm">
-                  <Phone className="h-3 w-3 mr-1" />
-                  <a 
-                    href={`tel:${customer.phone}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    {customer.phone}
-                  </a>
-                </div>
-              )}
-            </div>
-          </TableCell>
-          <TableCell>
-            <div className="text-sm">
-              {customer.address && (
-                <div>{customer.address}</div>
-              )}
-              {(customer.city || customer.state || customer.postal_code) && (
-                <div className="text-muted-foreground">
-                  {[customer.city, customer.state, customer.postal_code]
-                    .filter(Boolean)
-                    .join(', ')
-                  }
-                </div>
-              )}
-            </div>
-          </TableCell>
-          <TableCell>
-            <div className="flex flex-wrap gap-1">
-              {customer.tags && Array.isArray(customer.tags) && customer.tags.length > 0 ? (
-                customer.tags.slice(0, 3).map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs">
-                    {tag}
+            </TableCell>
+            
+            <TableCell>
+              <div className="space-y-1">
+                {customer.email && (
+                  <div className="text-sm">{customer.email}</div>
+                )}
+                {customer.phone && (
+                  <div className="text-sm text-muted-foreground">{customer.phone}</div>
+                )}
+              </div>
+            </TableCell>
+            
+            <TableCell>
+              <div className="text-sm text-muted-foreground max-w-xs truncate">
+                {displayAddress}
+              </div>
+            </TableCell>
+            
+            <TableCell>
+              <div className="flex flex-wrap gap-1">
+                {customer.tags && Array.isArray(customer.tags) && customer.tags.length > 0 ? (
+                  customer.tags.slice(0, 2).map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">No tags</span>
+                )}
+                {customer.tags && Array.isArray(customer.tags) && customer.tags.length > 2 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{customer.tags.length - 2}
                   </Badge>
-                ))
-              ) : (
-                <span className="text-xs text-muted-foreground">No tags</span>
-              )}
-              {customer.tags && Array.isArray(customer.tags) && customer.tags.length > 3 && (
-                <Badge variant="outline" className="text-xs">
-                  +{customer.tags.length - 3}
-                </Badge>
-              )}
-            </div>
-          </TableCell>
-          <TableCell className="text-right">
-            <div className="flex items-center gap-2 justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                asChild
-              >
-                <Link to={`/customers/${customer.id}`}>
-                  <Eye className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                asChild
-              >
-                <Link to={`/customers/${customer.id}/edit`}>
-                  <Edit className="h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </TableCell>
-        </TableRow>
-      ))}
+                )}
+              </div>
+            </TableCell>
+            
+            <TableCell className="text-right">
+              <div className="flex items-center justify-end space-x-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  asChild
+                  className="h-8 w-8 p-0"
+                >
+                  <Link to={`/customers/${customer.id}`}>
+                    <Eye className="h-4 w-4" />
+                    <span className="sr-only">View customer</span>
+                  </Link>
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  asChild
+                  className="h-8 w-8 p-0"
+                >
+                  <Link to={`/customers/${customer.id}/edit`}>
+                    <Edit className="h-4 w-4" />
+                    <span className="sr-only">Edit customer</span>
+                  </Link>
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        );
+      })}
     </>
   );
-}
+};

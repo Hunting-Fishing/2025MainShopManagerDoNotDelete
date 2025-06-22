@@ -18,6 +18,7 @@ import Documents from '@/pages/Documents';
 import Inventory from '@/pages/Inventory';
 import CreateWorkOrder from '@/pages/CreateWorkOrder';
 import CreateCustomer from '@/pages/CreateCustomer';
+import CustomerEdit from '@/pages/CustomerEdit';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/customers/:customerId" element={<CustomerDetails />} />
+            <Route path="/customers/:customerId/edit" element={<CustomerEdit />} />
             <Route path="/quotes" element={<Quotes />} />
             <Route path="/work-orders" element={<WorkOrders />} />
             <Route path="/work-orders/:workOrderId" element={<WorkOrderDetails />} />
