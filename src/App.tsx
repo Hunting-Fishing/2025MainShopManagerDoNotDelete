@@ -1,288 +1,72 @@
-
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { AuthGate } from '@/components/AuthGate';
+import { OnboardingGate } from '@/components/onboarding/OnboardingGate';
 
-// Import pages
-import Dashboard from '@/pages/Dashboard';
-import WorkOrders from '@/pages/WorkOrders';
-import Settings from '@/pages/Settings';
-import Login from '@/pages/Login';
-import Authentication from '@/pages/Authentication';
-import Signup from '@/pages/Signup';
-import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
+// Lazy load pages for better performance
+const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
+const Customers = React.lazy(() => import('@/pages/Customers'));
+const CustomerDetails = React.lazy(() => import('@/pages/CustomerDetails'));
+const CustomerEdit = React.lazy(() => import('@/pages/CustomerEdit'));
+const CustomerCreate = React.lazy(() => import('@/pages/CustomerCreate'));
 
-// Import placeholder pages
-import {
-  Team,
-  Chat,
-  Forms,
-  Calendar,
-  Reports,
-  Invoices,
-  Equipment,
-  Feedback,
-  Analytics,
-  Inventory,
-  TeamCreate,
-  CustomerCreate,
-  CustomerDetails,
-  CustomerEdit,
-  EquipmentDetails,
-  InventoryCreate,
-  InvoiceCreate,
-  InvoiceDetails,
-  Maintenance,
-  Notifications,
-  TeamMemberProfile,
-  WorkOrderCreate,
-  WorkOrderDetails,
-  WorkOrderEdit
-} from '@/pages/placeholders';
+// Placeholder pages for other routes
+const WorkOrders = () => <div className="p-6"><h1 className="text-2xl font-bold">Work Orders</h1><p>Coming soon...</p></div>;
+const Inventory = () => <div className="p-6"><h1 className="text-2xl font-bold">Inventory</h1><p>Coming soon...</p></div>;
+const Invoices = () => <div className="p-6"><h1 className="text-2xl font-bold">Invoices</h1><p>Coming soon...</p></div>;
+const Calendar = () => <div className="p-6"><h1 className="text-2xl font-bold">Calendar</h1><p>Coming soon...</p></div>;
+const Settings = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings</h1><p>Coming soon...</p></div>;
 
 function App() {
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/auth" element={<Authentication />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/customer-portal" element={<CustomerPortalLogin />} />
-      
-      {/* Protected routes wrapped in Layout */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Layout>
-            <Dashboard />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Layout>
-            <Dashboard />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/work-orders" element={
-        <ProtectedRoute>
-          <Layout>
-            <WorkOrders />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/work-orders/create" element={
-        <ProtectedRoute>
-          <Layout>
-            <WorkOrderCreate />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/work-orders/:id" element={
-        <ProtectedRoute>
-          <Layout>
-            <WorkOrderDetails />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/work-orders/:id/edit" element={
-        <ProtectedRoute>
-          <Layout>
-            <WorkOrderEdit />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/customers" element={
-        <ProtectedRoute>
-          <Layout>
-            <Team />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/customers/create" element={
-        <ProtectedRoute>
-          <Layout>
-            <CustomerCreate />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/customers/:id" element={
-        <ProtectedRoute>
-          <Layout>
-            <CustomerDetails />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/customers/:id/edit" element={
-        <ProtectedRoute>
-          <Layout>
-            <CustomerEdit />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/inventory" element={
-        <ProtectedRoute>
-          <Layout>
-            <Inventory />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/inventory/create" element={
-        <ProtectedRoute>
-          <Layout>
-            <InventoryCreate />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/calendar" element={
-        <ProtectedRoute>
-          <Layout>
-            <Calendar />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/reports" element={
-        <ProtectedRoute>
-          <Layout>
-            <Reports />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/documents" element={
-        <ProtectedRoute>
-          <Layout>
-            <Forms />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/settings" element={
-        <ProtectedRoute>
-          <Layout>
-            <Settings />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/invoices" element={
-        <ProtectedRoute>
-          <Layout>
-            <Invoices />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/invoices/create" element={
-        <ProtectedRoute>
-          <Layout>
-            <InvoiceCreate />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/invoices/:id" element={
-        <ProtectedRoute>
-          <Layout>
-            <InvoiceDetails />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/equipment" element={
-        <ProtectedRoute>
-          <Layout>
-            <Equipment />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/equipment/:id" element={
-        <ProtectedRoute>
-          <Layout>
-            <EquipmentDetails />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/team" element={
-        <ProtectedRoute>
-          <Layout>
-            <Team />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/team/create" element={
-        <ProtectedRoute>
-          <Layout>
-            <TeamCreate />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/team/:id" element={
-        <ProtectedRoute>
-          <Layout>
-            <TeamMemberProfile />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/maintenance" element={
-        <ProtectedRoute>
-          <Layout>
-            <Maintenance />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/notifications" element={
-        <ProtectedRoute>
-          <Layout>
-            <Notifications />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/chat" element={
-        <ProtectedRoute>
-          <Layout>
-            <Chat />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/feedback" element={
-        <ProtectedRoute>
-          <Layout>
-            <Feedback />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/analytics" element={
-        <ProtectedRoute>
-          <Layout>
-            <Analytics />
-          </Layout>
-        </ProtectedRoute>
-      } />
-    </Routes>
+    <AuthGate>
+      <OnboardingGate>
+        <Layout>
+          <React.Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-lg">Loading...</div></div>}>
+            <Routes>
+              {/* Default redirect to dashboard */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              
+              {/* Main pages */}
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/customers/create" element={<CustomerCreate />} />
+              <Route path="/customers/:id" element={<CustomerDetails />} />
+              <Route path="/customers/:id/edit" element={<CustomerEdit />} />
+              
+              {/* Other main routes */}
+              <Route path="/work-orders" element={<WorkOrders />} />
+              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/invoices" element={<Invoices />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/settings" element={<Settings />} />
+              
+              {/* Sidebar navigation routes - placeholder implementations */}
+              <Route path="/suppliers" element={<div className="p-6"><h1 className="text-2xl font-bold">Suppliers</h1><p>Coming soon...</p></div>} />
+              <Route path="/stock-control" element={<div className="p-6"><h1 className="text-2xl font-bold">Stock Control</h1><p>Coming soon...</p></div>} />
+              <Route path="/purchase-orders" element={<div className="p-6"><h1 className="text-2xl font-bold">Purchase Orders</h1><p>Coming soon...</p></div>} />
+              <Route path="/service-reminders" element={<div className="p-6"><h1 className="text-2xl font-bold">Service Reminders</h1><p>Coming soon...</p></div>} />
+              <Route path="/customer-comms" element={<div className="p-6"><h1 className="text-2xl font-bold">Customer Communications</h1><p>Coming soon...</p></div>} />
+              <Route path="/call-logger" element={<div className="p-6"><h1 className="text-2xl font-bold">Call Logger</h1><p>Coming soon...</p></div>} />
+              <Route path="/quotes" element={<div className="p-6"><h1 className="text-2xl font-bold">Quotes</h1><p>Coming soon...</p></div>} />
+              <Route path="/service-board" element={<div className="p-6"><h1 className="text-2xl font-bold">Service Board</h1><p>Coming soon...</p></div>} />
+              <Route path="/company-profile" element={<div className="p-6"><h1 className="text-2xl font-bold">Company Profile</h1><p>Coming soon...</p></div>} />
+              <Route path="/staff-members" element={<div className="p-6"><h1 className="text-2xl font-bold">Staff Members</h1><p>Coming soon...</p></div>} />
+              <Route path="/vehicles" element={<div className="p-6"><h1 className="text-2xl font-bold">Vehicles</h1><p>Coming soon...</p></div>} />
+              <Route path="/documents" element={<div className="p-6"><h1 className="text-2xl font-bold">Documents</h1><p>Coming soon...</p></div>} />
+              <Route path="/service-editor" element={<div className="p-6"><h1 className="text-2xl font-bold">Service Editor</h1><p>Coming soon...</p></div>} />
+              <Route path="/service-library" element={<div className="p-6"><h1 className="text-2xl font-bold">Service Library</h1><p>Coming soon...</p></div>} />
+              <Route path="/help" element={<div className="p-6"><h1 className="text-2xl font-bold">Help</h1><p>Coming soon...</p></div>} />
+              <Route path="/security" element={<div className="p-6"><h1 className="text-2xl font-bold">Security</h1><p>Coming soon...</p></div>} />
+              
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </React.Suspense>
+        </Layout>
+      </OnboardingGate>
+    </AuthGate>
   );
 }
 
