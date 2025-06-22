@@ -4,7 +4,8 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { JobLineEditDialog } from '../job-lines/JobLineEditDialog';
+import { AddJobLineDialog } from '../job-lines/AddJobLineDialog';
+import { UnifiedJobLineFormDialog } from '../job-lines/UnifiedJobLineFormDialog';
 import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
 
 interface JobLinesSectionProps {
@@ -35,9 +36,13 @@ export function JobLinesSection({
     setEditingJobLine(jobLine);
   };
 
-  const handleSaveJobLine = async (jobLine: WorkOrderJobLine) => {
+  const handleJobLineAdd = async (jobLines: WorkOrderJobLine[]) => {
     await onJobLinesChange();
     setShowAddDialog(false);
+  };
+
+  const handleJobLineSave = async (jobLines: WorkOrderJobLine[]) => {
+    await onJobLinesChange();
     setEditingJobLine(null);
   };
 
@@ -80,20 +85,22 @@ export function JobLinesSection({
         )}
       </CardContent>
 
-      {/* Add Job Line Dialog */}
-      <JobLineEditDialog
-        jobLine={null}
+      {/* Add Job Line Dialog - Uses comprehensive form with service/manual options */}
+      <AddJobLineDialog
+        workOrderId={workOrderId}
+        onJobLineAdd={handleJobLineAdd}
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        onSave={handleSaveJobLine}
       />
 
-      {/* Edit Job Line Dialog */}
-      <JobLineEditDialog
+      {/* Edit Job Line Dialog - Uses comprehensive form for editing */}
+      <UnifiedJobLineFormDialog
+        workOrderId={workOrderId}
+        mode="edit"
         jobLine={editingJobLine}
         open={!!editingJobLine}
         onOpenChange={(open) => !open && setEditingJobLine(null)}
-        onSave={handleSaveJobLine}
+        onSave={handleJobLineSave}
       />
     </Card>
   );
