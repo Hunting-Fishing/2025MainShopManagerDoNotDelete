@@ -31,8 +31,8 @@ export const useWorkOrderTemplates = () => {
         notes: template.notes || "",
         usage_count: template.usage_count || 0,
         last_used: template.last_used || "",
-        created_at: template.created_at || new Date().toISOString(), // Added missing property
-        updated_at: template.updated_at || new Date().toISOString() // Added missing property
+        created_at: template.created_at || new Date().toISOString(),
+        updated_at: template.updated_at || new Date().toISOString()
       }));
 
       setTemplates(formattedTemplates);
@@ -108,8 +108,8 @@ export const useWorkOrderTemplates = () => {
         notes: data.notes || "",
         usage_count: 0,
         last_used: "",
-        created_at: data.created_at || now, // Added missing property
-        updated_at: data.updated_at || now // Added missing property
+        created_at: data.created_at || now,
+        updated_at: data.updated_at || now
       };
       
       setTemplates(prev => [...prev, savedTemplate]);
