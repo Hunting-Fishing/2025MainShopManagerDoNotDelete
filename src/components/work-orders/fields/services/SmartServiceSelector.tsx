@@ -1,345 +1,232 @@
-
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Search, X } from 'lucide-react';
 import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
-import { Search, Zap, Star, Award, Crown } from 'lucide-react';
+import { SelectedService } from '@/types/selectedService';
+import { Badge } from '@/components/ui/badge';
 
 interface SmartServiceSelectorProps {
   sectors: ServiceSector[];
-  onSelectService: (service: ServiceJob) => void;
-  selectedServices: ServiceJob[];
+  onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
+  selectedServices?: SelectedService[];
+  onRemoveService?: (serviceId: string) => void;
+  onUpdateServices?: (services: SelectedService[]) => void;
 }
 
-export function SmartServiceSelector({ 
-  sectors, 
-  onSelectService, 
-  selectedServices 
-}: SmartServiceSelectorProps) {
+export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
+  sectors,
+  onServiceSelect,
+  selectedServices = [],
+  onRemoveService,
+  onUpdateServices
+}) => {
   const [selectedSector, setSelectedSector] = useState<ServiceSector | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Search functionality
-  const filteredServices = useMemo(() => {
-    if (!searchTerm) return [];
-    
-    const results: { service: ServiceJob; category: ServiceMainCategory; subcategory: ServiceSubcategory; sector: ServiceSector }[] = [];
-    
-    sectors.forEach(sector => {
-      sector.categories.forEach(category => {
-        category.subcategories.forEach(subcategory => {
-          subcategory.jobs.forEach(service => {
-            if (
-              service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              service.description?.toLowerCase().includes(searchTerm.toLowerCase())
-            ) {
-              results.push({ service, category, subcategory, sector });
-            }
-          });
-        });
-      });
-    });
-    
-    return results;
+  const filteredSectors = useMemo(() => {
+    if (!searchTerm) return sectors;
+
+    return sectors.map(sector => ({
+      ...sector,
+      categories: sector.categories.map(category => ({
+        ...category,
+        subcategories: category.subcategories.map(subcategory => ({
+          ...subcategory,
+          jobs: subcategory.jobs.filter(job =>
+            job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            job.description?.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        })).filter(subcategory => subcategory.jobs.length > 0)
+      })).filter(category => category.subcategories.length > 0)
+    })).filter(sector => sector.categories.length > 0);
   }, [sectors, searchTerm]);
 
-  // Get tier configuration for background styling
-  const getTierConfig = (index: number, total: number) => {
-    const percentage = ((index + 1) / total) * 100;
-    
-    if (percentage <= 25) return { tier: 'basic', icon: Zap, gradient: 'from-blue-500/20 to-indigo-500/20' };
-    if (percentage <= 50) return { tier: 'premium', icon: Star, gradient: 'from-purple-500/20 to-pink-500/20' };
-    if (percentage <= 75) return { tier: 'professional', icon: Award, gradient: 'from-emerald-500/20 to-teal-500/20' };
-    return { tier: 'enterprise', icon: Crown, gradient: 'from-amber-500/20 to-orange-500/20' };
-  };
-
-  const resetToSector = () => {
+  const handleSectorClick = (sector: ServiceSector) => {
+    setSelectedSector(sector);
     setSelectedCategory(null);
     setSelectedSubcategory(null);
   };
 
-  const resetToCategory = () => {
+  const handleCategoryClick = (category: ServiceMainCategory) => {
+    setSelectedCategory(category);
     setSelectedSubcategory(null);
   };
 
-  const isServiceSelected = (service: ServiceJob) => {
-    return selectedServices.some(s => s.id === service.id);
+  const handleSubcategoryClick = (subcategory: ServiceSubcategory) => {
+    setSelectedSubcategory(subcategory);
+  };
+
+  const handleServiceClick = (service: ServiceJob) => {
+    if (selectedCategory && selectedSubcategory) {
+      onServiceSelect(service, selectedCategory.name, selectedSubcategory.name);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+  };
+
+  const isServiceSelected = (serviceId: string) => {
+    return selectedServices.some(s => s.serviceId === serviceId || s.id === serviceId);
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="bg-white border rounded-lg shadow-sm">
       {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          placeholder="Search services..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/70 transition-all duration-300"
-        />
+      <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <input
+            type="text"
+            placeholder="Search services..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          {searchTerm && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Search Results */}
-      {searchTerm && (
-        <Card className="bg-gradient-to-br from-white/80 to-gray-50/80 backdrop-blur-sm border-white/30 shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Search Results ({filteredServices.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-transparent">
-              {filteredServices.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No services found</p>
-              ) : (
-                filteredServices.map(({ service, category, subcategory, sector }, index) => {
-                  const { gradient, icon: TierIcon } = getTierConfig(index, filteredServices.length);
-                  return (
-                    <div
-                      key={service.id}
-                      onClick={() => onSelectService(service)}
-                      className={`p-4 rounded-lg cursor-pointer transition-all duration-300 bg-gradient-to-r ${gradient} backdrop-blur-sm border border-white/30 hover:scale-[1.02] hover:shadow-lg ${
-                        isServiceSelected(service) 
-                          ? 'ring-2 ring-blue-500 bg-blue-50/80' 
-                          : 'hover:bg-white/50'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <TierIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 truncate">{service.name}</h4>
-                          <p className="text-sm text-gray-600 line-clamp-2 mt-1">{service.description}</p>
-                          <div className="text-xs text-muted-foreground mt-2 space-y-1">
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium">Path:</span>
-                              <span>{sector.name} → {category.name} → {subcategory.name}</span>
-                            </div>
-                            {service.estimatedTime && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">Duration:</span>
-                                <span>{service.estimatedTime} min</span>
-                              </div>
-                            )}
-                            {service.price && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">Price:</span>
-                                <span>${service.price}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Service Selection Interface */}
+      <div className="flex h-96">
+        {/* Sectors Column */}
+        <div className="w-1/4 border-r bg-gradient-to-b from-slate-50 to-slate-100">
+          <div className="p-3 border-b bg-gradient-to-r from-slate-100 to-slate-200">
+            <h3 className="font-medium text-slate-700">Sectors</h3>
+          </div>
+          <div className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400">
+            {filteredSectors.map((sector) => (
+              <button
+                key={sector.id}
+                onClick={() => handleSectorClick(sector)}
+                className={`w-full text-left p-3 hover:bg-slate-200 transition-colors border-b border-slate-200 ${
+                  selectedSector?.id === sector.id 
+                    ? 'bg-gradient-to-r from-blue-100 to-indigo-100 border-l-4 border-l-blue-500' 
+                    : ''
+                }`}
+              >
+                <div className="font-medium text-slate-800">{sector.name}</div>
+                <div className="text-xs text-slate-600 mt-1">
+                  {sector.categories.length} categories
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {/* Service Hierarchy - Only show when not searching */}
-      {!searchTerm && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Sectors */}
-          <Card className="bg-gradient-to-br from-white/80 to-blue-50/80 backdrop-blur-sm border-white/30 shadow-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Service Sectors
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-transparent">
-                {sectors.map((sector, index) => {
-                  const { gradient, icon: TierIcon } = getTierConfig(index, sectors.length);
-                  return (
-                    <div
-                      key={sector.id}
-                      onClick={() => {
-                        setSelectedSector(sector);
-                        resetToSector();
-                      }}
-                      className={`p-3 rounded-lg cursor-pointer transition-all duration-300 bg-gradient-to-r ${gradient} backdrop-blur-sm border border-white/30 hover:scale-[1.02] hover:shadow-md ${
-                        selectedSector?.id === sector.id 
-                          ? 'ring-2 ring-blue-500 bg-blue-50/80' 
-                          : 'hover:bg-white/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <TierIcon className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 text-sm truncate">{sector.name}</h4>
-                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">{sector.description}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {sector.categories.length} categories
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Categories Column */}
+        <div className="w-1/4 border-r bg-gradient-to-b from-emerald-50 to-teal-100">
+          <div className="p-3 border-b bg-gradient-to-r from-emerald-100 to-teal-200">
+            <h3 className="font-medium text-emerald-700">Categories</h3>
+          </div>
+          <div className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-emerald-100 scrollbar-thumb-emerald-300 hover:scrollbar-thumb-emerald-400">
+            {selectedSector?.categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => handleCategoryClick(category)}
+                className={`w-full text-left p-3 hover:bg-emerald-200 transition-colors border-b border-emerald-200 ${
+                  selectedCategory?.id === category.id 
+                    ? 'bg-gradient-to-r from-emerald-100 to-teal-100 border-l-4 border-l-emerald-500' 
+                    : ''
+                }`}
+              >
+                <div className="font-medium text-emerald-800">{category.name}</div>
+                <div className="text-xs text-emerald-600 mt-1">
+                  {category.subcategories.length} subcategories
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
 
-          {/* Categories */}
-          <Card className="bg-gradient-to-br from-white/80 to-purple-50/80 backdrop-blur-sm border-white/30 shadow-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Categories
-                {selectedSector && (
-                  <span className="block text-xs font-normal text-muted-foreground mt-1">
-                    in {selectedSector.name}
-                  </span>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-transparent">
-                {selectedSector ? (
-                  selectedSector.categories.map((category, index) => {
-                    const { gradient, icon: TierIcon } = getTierConfig(index, selectedSector.categories.length);
-                    return (
-                      <div
-                        key={category.id}
-                        onClick={() => {
-                          setSelectedCategory(category);
-                          resetToCategory();
-                        }}
-                        className={`p-3 rounded-lg cursor-pointer transition-all duration-300 bg-gradient-to-r ${gradient} backdrop-blur-sm border border-white/30 hover:scale-[1.02] hover:shadow-md ${
-                          selectedCategory?.id === category.id 
-                            ? 'ring-2 ring-purple-500 bg-purple-50/80' 
-                            : 'hover:bg-white/50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <TierIcon className="h-4 w-4 text-purple-600 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-900 text-sm truncate">{category.name}</h4>
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{category.description}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {category.subcategories.length} subcategories
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-muted-foreground text-sm text-center py-8">
-                    Select a sector to view categories
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Subcategories Column */}
+        <div className="w-1/4 border-r bg-gradient-to-b from-amber-50 to-orange-100">
+          <div className="p-3 border-b bg-gradient-to-r from-amber-100 to-orange-200">
+            <h3 className="font-medium text-amber-700">Subcategories</h3>
+          </div>
+          <div className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-amber-100 scrollbar-thumb-amber-300 hover:scrollbar-thumb-amber-400">
+            {selectedCategory?.subcategories.map((subcategory) => (
+              <button
+                key={subcategory.id}
+                onClick={() => handleSubcategoryClick(subcategory)}
+                className={`w-full text-left p-3 hover:bg-amber-200 transition-colors border-b border-amber-200 ${
+                  selectedSubcategory?.id === subcategory.id 
+                    ? 'bg-gradient-to-r from-amber-100 to-orange-100 border-l-4 border-l-amber-500' 
+                    : ''
+                }`}
+              >
+                <div className="font-medium text-amber-800">{subcategory.name}</div>
+                <div className="text-xs text-amber-600 mt-1">
+                  {subcategory.jobs.length} services
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
 
-          {/* Subcategories */}
-          <Card className="bg-gradient-to-br from-white/80 to-emerald-50/80 backdrop-blur-sm border-white/30 shadow-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                Subcategories
-                {selectedCategory && (
-                  <span className="block text-xs font-normal text-muted-foreground mt-1">
-                    in {selectedCategory.name}
-                  </span>
+        {/* Services Column */}
+        <div className="w-1/4 bg-gradient-to-b from-purple-50 to-violet-100">
+          <div className="p-3 border-b bg-gradient-to-r from-purple-100 to-violet-200">
+            <h3 className="font-medium text-purple-700">Services</h3>
+          </div>
+          <div className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-purple-100 scrollbar-thumb-purple-300 hover:scrollbar-thumb-purple-400">
+            {selectedSubcategory?.jobs.map((service) => (
+              <button
+                key={service.id}
+                onClick={() => handleServiceClick(service)}
+                disabled={isServiceSelected(service.id)}
+                className={`w-full text-left p-3 transition-colors border-b border-purple-200 ${
+                  isServiceSelected(service.id)
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'hover:bg-purple-200 text-purple-800'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="font-medium">{service.name}</div>
+                  {isServiceSelected(service.id) && (
+                    <Badge variant="secondary" className="text-xs">
+                      Selected
+                    </Badge>
+                  )}
+                </div>
+                {service.description && (
+                  <div className="text-xs text-purple-600 mt-1 line-clamp-2">
+                    {service.description}
+                  </div>
                 )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-emerald-300 scrollbar-track-transparent">
-                {selectedCategory ? (
-                  selectedCategory.subcategories.map((subcategory, index) => {
-                    const { gradient, icon: TierIcon } = getTierConfig(index, selectedCategory.subcategories.length);
-                    return (
-                      <div
-                        key={subcategory.id}
-                        onClick={() => setSelectedSubcategory(subcategory)}
-                        className={`p-3 rounded-lg cursor-pointer transition-all duration-300 bg-gradient-to-r ${gradient} backdrop-blur-sm border border-white/30 hover:scale-[1.02] hover:shadow-md ${
-                          selectedSubcategory?.id === subcategory.id 
-                            ? 'ring-2 ring-emerald-500 bg-emerald-50/80' 
-                            : 'hover:bg-white/50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <TierIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-900 text-sm truncate">{subcategory.name}</h4>
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{subcategory.description}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {subcategory.jobs.length} services
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-muted-foreground text-sm text-center py-8">
-                    Select a category to view subcategories
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex items-center gap-2 mt-2">
+                  {service.estimatedTime && (
+                    <Badge variant="outline" className="text-xs text-purple-600 border-purple-300">
+                      {service.estimatedTime} min
+                    </Badge>
+                  )}
+                  {service.price && (
+                    <Badge variant="success" className="text-xs">
+                      ${service.price}
+                    </Badge>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-          {/* Services */}
-          <Card className="bg-gradient-to-br from-white/80 to-amber-50/80 backdrop-blur-sm border-white/30 shadow-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                Services
-                {selectedSubcategory && (
-                  <span className="block text-xs font-normal text-muted-foreground mt-1">
-                    in {selectedSubcategory.name}
-                  </span>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-amber-300 scrollbar-track-transparent">
-                {selectedSubcategory ? (
-                  selectedSubcategory.jobs.map((service, index) => {
-                    const { gradient, icon: TierIcon } = getTierConfig(index, selectedSubcategory.jobs.length);
-                    return (
-                      <div
-                        key={service.id}
-                        onClick={() => onSelectService(service)}
-                        className={`p-3 rounded-lg cursor-pointer transition-all duration-300 bg-gradient-to-r ${gradient} backdrop-blur-sm border border-white/30 hover:scale-[1.02] hover:shadow-md ${
-                          isServiceSelected(service) 
-                            ? 'ring-2 ring-amber-500 bg-amber-50/80' 
-                            : 'hover:bg-white/50'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <TierIcon className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-900 text-sm truncate">{service.name}</h4>
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{service.description}</p>
-                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                              {service.estimatedTime && (
-                                <span>{service.estimatedTime} min</span>
-                              )}
-                              {service.price && (
-                                <span className="font-medium text-amber-700">${service.price}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-muted-foreground text-sm text-center py-8">
-                    Select a subcategory to view services
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+      {/* No Results Message */}
+      {searchTerm && filteredSectors.length === 0 && (
+        <div className="p-8 text-center text-gray-500">
+          <div className="text-lg font-medium mb-2">No services found</div>
+          <div className="text-sm">Try adjusting your search terms</div>
         </div>
       )}
     </div>
   );
-}
+};
