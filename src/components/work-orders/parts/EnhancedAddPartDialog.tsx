@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -86,37 +85,34 @@ export function EnhancedAddPartDialog({
     },
   });
 
-  const handleSubmit = async (data: WorkOrderPartFormValues) => {
+  const handleSubmit = async (values: WorkOrderPartFormValues) => {
     try {
       setIsSubmitting(true);
-      setSubmitError(null);
-      
-      console.log('Adding part with data:', data);
-      
-      // Calculate total price
-      const total_price = (data.quantity || 0) * (data.unit_price || 0);
-      
-      const partData: WorkOrderPartFormValues = {
-        ...data,
-        total_price,
+      console.log('Submitting enhanced part form:', values);
+
+      // Create the part with work order ID
+      const partData = {
+        ...values,
+        work_order_id: workOrderId
       };
 
-      await createWorkOrderPart(workOrderId, partData);
+      // Fix: Call createWorkOrderPart with single argument
+      await createWorkOrderPart(partData);
       
-      // Reset form
-      form.reset();
+      console.log('Part created successfully via enhanced dialog');
+      toast.success('Part added successfully');
       
       // Close dialog and refresh data
       onOpenChange(false);
-      await onPartAdded();
+      form.reset();
       
-      toast.success('Part added successfully');
-      console.log('Part added successfully');
+      // Notify parent to refresh data
+      if (onPartAdded) {
+        await onPartAdded();
+      }
     } catch (error) {
-      console.error('Error adding part:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to add part';
-      setSubmitError(errorMessage);
-      toast.error(errorMessage);
+      console.error('Error creating part via enhanced dialog:', error);
+      toast.error('Failed to add part');
     } finally {
       setIsSubmitting(false);
     }

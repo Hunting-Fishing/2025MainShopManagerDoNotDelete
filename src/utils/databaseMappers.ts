@@ -7,10 +7,10 @@ export function mapDatabasePartToWorkOrderPart(dbPart: any): WorkOrderPart {
   }
 
   // Handle both old and new field names for backward compatibility
-  const partName = dbPart.name || dbPart.part_name || '';
+  const partName = dbPart.part_name || dbPart.name || '';
   const partNumber = dbPart.part_number || '';
   const description = dbPart.description || dbPart.part_description || '';
-  const unitPrice = parseFloat(dbPart.unit_price || dbPart.customer_price || 0);
+  const unitPrice = parseFloat(dbPart.customer_price || dbPart.unit_price || 0);
   const quantity = parseInt(dbPart.quantity) || 0;
   const totalPrice = parseFloat(dbPart.total_price) || (unitPrice * quantity);
 

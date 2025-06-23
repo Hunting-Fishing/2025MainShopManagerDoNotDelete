@@ -32,9 +32,9 @@ export class PartsAssignmentService {
     }
   }
 
-  static async unassignPartFromJobLine(partId: string, jobLineId: string): Promise<boolean> {
+  static async unassignPartFromJobLine(partId: string): Promise<boolean> {
     try {
-      console.log('Unassigning part from job line:', { partId, jobLineId });
+      console.log('Unassigning part from job line:', { partId });
       
       // Update the part to remove job line assignment
       await updateWorkOrderPart(partId, {
