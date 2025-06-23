@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,33 +21,41 @@ interface WorkOrdersTableProps {
 
 // Helper function to get customer name with better error handling
 const getCustomerDisplayName = (workOrder: WorkOrder): string => {
-  // Try multiple possible customer name fields
-  if (workOrder.customer_name) {
+  // Try direct customer_name field first
+  if (workOrder.customer_name && workOrder.customer_name.trim()) {
     return workOrder.customer_name;
   }
   
-  // If customer is an object, extract name
+  // If customer is an object, extract name parts
   if (typeof workOrder.customer === 'object' && workOrder.customer) {
     const customer = workOrder.customer as any;
-    if (customer.first_name && customer.last_name) {
-      return `${customer.first_name} ${customer.last_name}`;
+    
+    // Try first_name + last_name combination
+    if (customer.first_name || customer.last_name) {
+      const firstName = customer.first_name?.trim() || '';
+      const lastName = customer.last_name?.trim() || '';
+      if (firstName && lastName) {
+        return `${firstName} ${lastName}`;
+      } else if (firstName) {
+        return firstName;
+      } else if (lastName) {
+        return lastName;
+      }
     }
-    if (customer.name) {
+    
+    // Try name field
+    if (customer.name && customer.name.trim()) {
       return customer.name;
     }
   }
   
   // If customer is a string
-  if (typeof workOrder.customer === 'string' && workOrder.customer) {
+  if (typeof workOrder.customer === 'string' && workOrder.customer.trim()) {
     return workOrder.customer;
   }
   
-  // Fallback to customer_id if available
-  if (workOrder.customer_id) {
-    return `Customer ID: ${workOrder.customer_id.slice(0, 8)}`;
-  }
-  
-  return 'Unknown Customer';
+  // User-friendly fallback instead of customer ID
+  return 'Customer Name Missing';
 };
 
 const WorkOrderRow: React.FC<{ workOrder: WorkOrder }> = ({ workOrder }) => {
