@@ -77,7 +77,7 @@ export interface WorkOrderPartFormValues {
   supplierOrderRef?: string;
   notesInternal?: string;
   inventoryItemId?: string;
-  partType?: string;
+  part_type: string; // Make this required
   estimatedArrivalDate?: string;
   itemStatus?: string;
 }
@@ -102,6 +102,14 @@ export const WORK_ORDER_PART_STATUSES = [
 ] as const;
 
 export type WorkOrderPartStatus = typeof WORK_ORDER_PART_STATUSES[number];
+
+// Part Types
+export const PART_TYPES = [
+  'inventory',
+  'non-inventory'
+] as const;
+
+export type PartType = typeof PART_TYPES[number];
 
 // Status mapping for UI display
 export const partStatusMap: Record<string, { label: string; classes: string }> = {
