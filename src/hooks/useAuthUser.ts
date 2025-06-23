@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
@@ -14,40 +14,45 @@ export function useAuthUser() {
   const [userName, setUserName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Memoized auth state handler to prevent unnecessary re-renders
+  const handleAuthStateChange = useCallback((event: string, session: Session | null) => {
+    console.log('useAuthUser: Auth state change:', event, session?.user?.id);
+    
+    try {
+      setError(null);
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session);
+      setUserId(session?.user?.id ?? null);
+      setUserName(session?.user?.email ?? null);
+      
+      // For now, set basic roles - you can expand this later
+      setIsAdmin(false);
+      setIsOwner(false);
+      
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Error in auth state change handler:', err);
+      setError('Authentication error occurred');
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     console.log('useAuthUser: Setting up auth state listener...');
     
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('useAuthUser: Auth state change:', event, session?.user?.id);
-        
-        try {
-          setError(null);
-          setSession(session);
-          setUser(session?.user ?? null);
-          setIsAuthenticated(!!session);
-          setUserId(session?.user?.id ?? null);
-          setUserName(session?.user?.email ?? null);
-          
-          // For now, set basic roles - you can expand this later
-          setIsAdmin(false);
-          setIsOwner(false);
-          
-          setIsLoading(false);
-        } catch (err) {
-          console.error('Error in auth state change handler:', err);
-          setError('Authentication error occurred');
-          setIsLoading(false);
-        }
-      }
-    );
+    let isMounted = true;
+    
+    // Set up auth state listener with cleanup
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Check for existing session
+    // Check for existing session with abort controller
     const initializeAuth = async () => {
       try {
         console.log('useAuthUser: Checking for existing session...');
         const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!isMounted) return; // Prevent state updates if component unmounted
         
         if (error) {
           console.error('useAuthUser: Error getting session:', error);
@@ -57,14 +62,18 @@ export function useAuthUser() {
           // The onAuthStateChange will handle setting the state
         }
       } catch (error) {
-        console.error('useAuthUser: Error in initial auth check:', error);
-        setError('Authentication initialization failed');
+        if (isMounted) {
+          console.error('useAuthUser: Error in initial auth check:', error);
+          setError('Authentication initialization failed');
+        }
       } finally {
         // Only set loading to false if we don't have a session
         // If we have a session, onAuthStateChange will handle it
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 1000); // Give some time for the auth state change event
+        if (isMounted) {
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 1000); // Give some time for the auth state change event
+        }
       }
     };
 
@@ -72,9 +81,12 @@ export function useAuthUser() {
 
     return () => {
       console.log('useAuthUser: Cleaning up auth listener');
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [handleAuthStateChange]);
+
+  const refetchRoles = useCallback(() => Promise.resolve(), []);
 
   return {
     user,
@@ -86,6 +98,6 @@ export function useAuthUser() {
     userId,
     userName,
     error,
-    refetchRoles: () => Promise.resolve(),
+    refetchRoles,
   };
 }
