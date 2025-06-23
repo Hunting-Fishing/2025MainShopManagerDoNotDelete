@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,6 @@ import { JobLineSelector } from './JobLineSelector';
 import { PartTypeAndStatusFields } from './PartTypeAndStatusFields';
 import { AdvancedPartFields } from './AdvancedPartFields';
 import { toast } from 'sonner';
-
 const addPartSchema = z.object({
   name: z.string().min(2, 'Part name must be at least 2 characters'),
   part_number: z.string().min(3, 'Part number must be at least 3 characters'),
@@ -39,9 +37,7 @@ const addPartSchema = z.object({
   warrantyDuration: z.string().optional(),
   isStockItem: z.boolean().default(false)
 });
-
 type AddPartFormValues = z.infer<typeof addPartSchema>;
-
 interface EnhancedAddPartDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -49,7 +45,6 @@ interface EnhancedAddPartDialogProps {
   jobLines: WorkOrderJobLine[];
   onPartAdded: () => Promise<void>;
 }
-
 export function EnhancedAddPartDialog({
   open,
   onOpenChange,
@@ -61,13 +56,11 @@ export function EnhancedAddPartDialog({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<PartsFormError[]>([]);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-
-  console.log('EnhancedAddPartDialog render:', { 
-    open, 
-    workOrderId, 
-    jobLinesCount: jobLines.length 
+  console.log('EnhancedAddPartDialog render:', {
+    open,
+    workOrderId,
+    jobLinesCount: jobLines.length
   });
-
   const form = useForm<AddPartFormValues>({
     resolver: zodResolver(addPartSchema),
     defaultValues: {
@@ -92,26 +85,22 @@ export function EnhancedAddPartDialog({
       isStockItem: false
     }
   });
-
   const resetForm = useCallback(() => {
     form.reset();
     setSubmitError(null);
     setValidationErrors([]);
     setSubmitSuccess(false);
   }, [form]);
-
   const handleClose = useCallback(() => {
     if (!isSubmitting) {
       resetForm();
       onOpenChange(false);
     }
   }, [isSubmitting, resetForm, onOpenChange]);
-
   const validateFormData = useCallback((data: AddPartFormValues): PartsFormError[] => {
     console.log('Validating form data:', data);
-    
     const errors = PartsFormValidator.validatePartForm(data);
-    
+
     // Additional business logic validations
     if (data.supplierCost && data.unit_price && data.supplierCost > data.unit_price) {
       errors.push({
@@ -119,17 +108,14 @@ export function EnhancedAddPartDialog({
         message: 'Customer price should not be less than supplier cost'
       });
     }
-
     if (data.coreChargeApplied && !data.coreChargeAmount) {
       errors.push({
         field: 'coreChargeAmount',
         message: 'Core charge amount is required when core charge is applied'
       });
     }
-
     return errors;
   }, []);
-
   const onSubmit = useCallback(async (data: AddPartFormValues) => {
     try {
       console.log('Submitting part form:', data);
@@ -172,7 +158,6 @@ export function EnhancedAddPartDialog({
         warrantyDuration: data.warrantyDuration,
         isStockItem: data.isStockItem
       };
-
       console.log('Creating work order part with data:', partData);
 
       // Create the part
@@ -193,10 +178,8 @@ export function EnhancedAddPartDialog({
           toast.error('Part was created but failed to refresh the list');
         }
       }, 1000);
-
     } catch (error) {
       console.error('Error creating part:', error);
-      
       const errorMessage = PartsFormValidator.handleApiError(error);
       setSubmitError(errorMessage);
       PartsFormValidator.showErrorToast(errorMessage);
@@ -211,10 +194,8 @@ export function EnhancedAddPartDialog({
       resetForm();
     }
   }, [open, resetForm]);
-
-  return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+  return <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-stone-50">
         <DialogHeader>
           <DialogTitle>Add New Part to Work Order</DialogTitle>
         </DialogHeader>
@@ -222,39 +203,31 @@ export function EnhancedAddPartDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Error Display */}
-            {submitError && (
-              <Alert variant="destructive">
+            {submitError && <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>{submitError}</AlertDescription>
-              </Alert>
-            )}
+              </Alert>}
 
             {/* Validation Errors */}
-            {validationErrors.length > 0 && (
-              <Alert variant="destructive">
+            {validationErrors.length > 0 && <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="space-y-1">
                     <div className="font-medium">Please fix the following errors:</div>
                     <ul className="list-disc list-inside space-y-1">
-                      {validationErrors.map((error, index) => (
-                        <li key={index} className="text-sm">{error.message}</li>
-                      ))}
+                      {validationErrors.map((error, index) => <li key={index} className="text-sm">{error.message}</li>)}
                     </ul>
                   </div>
                 </AlertDescription>
-              </Alert>
-            )}
+              </Alert>}
 
             {/* Success Display */}
-            {submitSuccess && (
-              <Alert className="border-green-200 bg-green-50">
+            {submitSuccess && <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
                   Part added successfully! Refreshing data...
                 </AlertDescription>
-              </Alert>
-            )}
+              </Alert>}
 
             {/* Form Fields */}
             <BasicPartFields form={form} />
@@ -267,37 +240,21 @@ export function EnhancedAddPartDialog({
 
             {/* Form Actions */}
             <div className="flex justify-end space-x-3 pt-6 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isSubmitting}
-              >
+              <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || submitSuccess}
-                className="min-w-[120px]"
-              >
-                {isSubmitting ? (
-                  <>
+              <Button type="submit" disabled={isSubmitting || submitSuccess} className="min-w-[120px]">
+                {isSubmitting ? <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Adding...
-                  </>
-                ) : submitSuccess ? (
-                  <>
+                  </> : submitSuccess ? <>
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Added!
-                  </>
-                ) : (
-                  'Add Part'
-                )}
+                  </> : 'Add Part'}
               </Button>
             </div>
           </form>
         </Form>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
