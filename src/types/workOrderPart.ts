@@ -9,15 +9,54 @@ export interface WorkOrderPart {
   quantity: number;
   unit_price: number;
   total_price: number;
-  status?: string;
+  status: string;
   notes?: string;
   created_at: string;
   updated_at: string;
   
-  // Additional properties for enhanced functionality
+  // Core part properties
   category?: string;
-  partName?: string;
-  partNumber?: string; // Alias for part_number
+  part_type: string;
+  
+  // Pricing fields
+  customerPrice?: number;
+  supplierCost?: number;
+  retailPrice?: number;
+  markupPercentage?: number;
+  
+  // Additional properties
+  isTaxable?: boolean;
+  coreChargeAmount?: number;
+  coreChargeApplied?: boolean;
+  warrantyDuration?: string;
+  warrantyExpiryDate?: string;
+  installDate?: string;
+  installedBy?: string;
+  invoiceNumber?: string;
+  poLine?: string;
+  isStockItem?: boolean;
+  supplierName?: string;
+  supplierOrderRef?: string;
+  notesInternal?: string;
+  inventoryItemId?: string;
+  estimatedArrivalDate?: string;
+  itemStatus?: string;
+}
+
+export interface WorkOrderPartFormValues {
+  name: string;
+  part_number: string;
+  description?: string;
+  quantity: number;
+  unit_price: number;
+  total_price?: number;
+  status: string;
+  notes?: string;
+  job_line_id?: string;
+  category?: string;
+  part_type: string;
+  
+  // Optional extended fields
   customerPrice?: number;
   supplierCost?: number;
   retailPrice?: number;
@@ -36,54 +75,11 @@ export interface WorkOrderPart {
   supplierOrderRef?: string;
   notesInternal?: string;
   inventoryItemId?: string;
-  part_type?: string; // Make this available on the interface
-  estimatedArrivalDate?: string;
-  itemStatus?: string;
-  
-  // Missing properties that were causing errors
-  supplierSuggestedRetailPrice?: number;
-  dateAdded?: string;
-  binLocation?: string;
-  warehouseLocation?: string;
-  shelfLocation?: string;
-  attachments?: any;
-}
-
-export interface WorkOrderPartFormValues {
-  name: string;
-  part_number: string;
-  description?: string;
-  quantity: number;
-  unit_price: number; // This maps to customer_price in database
-  total_price?: number; // Calculated field
-  status?: string;
-  notes?: string;
-  job_line_id?: string;
-  category?: string;
-  customerPrice?: number; // Optional alias, unit_price is primary
-  supplierCost?: number;
-  retailPrice?: number;
-  markupPercentage?: number;
-  isTaxable?: boolean;
-  coreChargeAmount?: number;
-  coreChargeApplied?: boolean;
-  warrantyDuration?: string;
-  warrantyExpiryDate?: string;
-  installDate?: string;
-  installedBy?: string;
-  invoiceNumber?: string;
-  poLine?: string;
-  isStockItem?: boolean;
-  supplierName?: string;
-  supplierOrderRef?: string;
-  notesInternal?: string;
-  inventoryItemId?: string;
-  part_type: string; // Required field
   estimatedArrivalDate?: string;
   itemStatus?: string;
 }
 
-// Work Order Part Statuses  
+// Work Order Part Statuses - ensure no empty values
 export const WORK_ORDER_PART_STATUSES = [
   'pending',
   'ordered',
@@ -104,7 +100,7 @@ export const WORK_ORDER_PART_STATUSES = [
 
 export type WorkOrderPartStatus = typeof WORK_ORDER_PART_STATUSES[number];
 
-// Part Types
+// Part Types - ensure no empty values
 export const PART_TYPES = [
   'inventory',
   'non-inventory'

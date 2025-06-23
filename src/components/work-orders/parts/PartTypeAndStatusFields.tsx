@@ -11,6 +11,20 @@ interface PartTypeAndStatusFieldsProps {
 }
 
 export function PartTypeAndStatusFields({ form }: PartTypeAndStatusFieldsProps) {
+  // Filter out any invalid statuses
+  const validStatuses = WORK_ORDER_PART_STATUSES.filter(status => 
+    status && 
+    typeof status === 'string' && 
+    status.trim() !== '' &&
+    status !== 'undefined'
+  );
+
+  const validPartTypes = PART_TYPES.filter(type => 
+    type && 
+    typeof type === 'string' && 
+    type.trim() !== ''
+  );
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FormField
@@ -20,12 +34,19 @@ export function PartTypeAndStatusFields({ form }: PartTypeAndStatusFieldsProps) 
           <FormItem>
             <FormLabel>Part Type *</FormLabel>
             <FormControl>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select 
+                onValueChange={(value) => {
+                  if (value && value.trim() !== '') {
+                    field.onChange(value);
+                  }
+                }} 
+                value={field.value || ''}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select part type..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {PART_TYPES.map((type) => (
+                  {validPartTypes.map((type) => (
                     <SelectItem key={type} value={type}>
                       <div className="flex items-center space-x-2">
                         <span className="capitalize">{type.replace('-', ' ')}</span>
@@ -52,12 +73,19 @@ export function PartTypeAndStatusFields({ form }: PartTypeAndStatusFieldsProps) 
           <FormItem>
             <FormLabel>Status</FormLabel>
             <FormControl>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select 
+                onValueChange={(value) => {
+                  if (value && value.trim() !== '') {
+                    field.onChange(value);
+                  }
+                }} 
+                value={field.value || 'pending'}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {WORK_ORDER_PART_STATUSES.map((status) => (
+                  {validStatuses.map((status) => (
                     <SelectItem key={status} value={status}>
                       <div className="flex items-center space-x-2">
                         <Badge 

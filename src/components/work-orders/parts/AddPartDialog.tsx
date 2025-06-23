@@ -2,22 +2,59 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Form } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPartFormValues, WORK_ORDER_PART_STATUSES, PART_TYPES } from '@/types/workOrderPart';
-import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { BasicPartFields } from './BasicPartFields';
+import { PartTypeAndStatusFields } from './PartTypeAndStatusFields';
+import { JobLineSelector } from './JobLineSelector';
+import { createWorkOrderPart } from '@/services/workOrder';
 import { PartsFormValidator } from '@/utils/partsErrorHandler';
-import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
-export interface AddPartDialogProps {
+const addPartSchema = z.object({
+  name: z.string().min(1, 'Part name is required'),
+  part_number: z.string().min(1, 'Part number is required'),
+  description: z.string().optional(),
+  quantity: z.number().min(1, 'Quantity must be at least 1'),
+  unit_price: z.number().min(0, 'Unit price cannot be negative'),
+  status: z.string().default('pending'),
+  notes: z.string().optional(),
+  job_line_id: z.string().optional(),
+  category: z.string().optional(),
+  part_type: z.string().min(1, 'Part type is required'),
+  
+  // Optional extended fields
+  customerPrice: z.number().optional(),
+  supplierCost: z.number().optional(),
+  retailPrice: z.number().optional(),
+  markupPercentage: z.number().optional(),
+  isTaxable: z.boolean().optional(),
+  coreChargeAmount: z.number().optional(),
+  coreChargeApplied: z.boolean().optional(),
+  warrantyDuration: z.string().optional(),
+  warrantyExpiryDate: z.string().optional(),
+  installDate: z.string().optional(),
+  installedBy: z.string().optional(),
+  invoiceNumber: z.string().optional(),
+  poLine: z.string().optional(),
+  isStockItem: z.boolean().optional(),
+  supplierName: z.string().optional(),
+  supplierOrderRef: z.string().optional(),
+  notesInternal: z.string().optional(),
+  inventoryItemId: z.string().optional(),
+  estimatedArrivalDate: z.string().optional(),
+  itemStatus: z.string().optional()
+});
+
+interface AddPartDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workOrderId: string;
   jobLines: WorkOrderJobLine[];
-  jobLineId?: string;
   onPartAdded: () => Promise<void>;
 }
 
@@ -26,52 +63,61 @@ export function AddPartDialog({
   onOpenChange,
   workOrderId,
   jobLines,
-  jobLineId,
   onPartAdded
 }: AddPartDialogProps) {
-  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
-    name: '',
-    part_number: '',
-    description: '',
-    quantity: 1,
-    unit_price: 0,
-    status: 'pending',
-    notes: '',
-    job_line_id: jobLineId || '',
-    part_type: 'inventory'
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate form
-    const errors = PartsFormValidator.validatePartForm(formData);
-    if (errors.length > 0) {
-      PartsFormValidator.showValidationErrors(errors);
-      return;
+  const form = useForm<WorkOrderPartFormValues>({
+    resolver: zodResolver(addPartSchema),
+    defaultValues: {
+      name: '',
+      part_number: '',
+      description: '',
+      quantity: 1,
+      unit_price: 0,
+      status: 'pending',
+      notes: '',
+      part_type: 'inventory',
+      job_line_id: '',
+      category: '',
+      isTaxable: false,
+      coreChargeApplied: false,
+      isStockItem: false
     }
+  });
 
-    setIsSubmitting(true);
+  const handleSubmit = async (data: WorkOrderPartFormValues) => {
+    console.log('AddPartDialog: Starting submission with data:', data);
+    
     try {
-      await createWorkOrderPart(workOrderId, formData);
+      setIsSubmitting(true);
+
+      // Validate the form data
+      const validationErrors = PartsFormValidator.validatePartForm(data);
+      if (validationErrors.length > 0) {
+        PartsFormValidator.showValidationErrors(validationErrors);
+        return;
+      }
+
+      // Prepare data for API
+      const apiData = PartsFormValidator.preparePartDataForApi(data);
+      console.log('AddPartDialog: Prepared API data:', apiData);
+
+      // Create the part
+      const newPart = await createWorkOrderPart(workOrderId, apiData);
+      console.log('AddPartDialog: Part created successfully:', newPart);
+
       PartsFormValidator.showSuccessToast('Part added successfully');
-      await onPartAdded();
+      
+      // Reset form and close dialog
+      form.reset();
       onOpenChange(false);
       
-      // Reset form
-      setFormData({
-        name: '',
-        part_number: '',
-        description: '',
-        quantity: 1,
-        unit_price: 0,
-        status: 'pending',
-        notes: '',
-        job_line_id: jobLineId || '',
-        part_type: 'inventory'
-      });
+      // Refresh parts data
+      await onPartAdded();
+
     } catch (error) {
+      console.error('AddPartDialog: Error creating part:', error);
       const errorMessage = PartsFormValidator.handleApiError(error);
       PartsFormValidator.showErrorToast(errorMessage);
     } finally {
@@ -79,150 +125,56 @@ export function AddPartDialog({
     }
   };
 
+  const handleCancel = () => {
+    form.reset();
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Part</DialogTitle>
+          <DialogTitle>Add Part to Work Order</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Part Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                required
-              />
-            </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <BasicPartFields form={form} />
             
-            <div>
-              <Label htmlFor="part_number">Part Number *</Label>
-              <Input
-                id="part_number"
-                value={formData.part_number}
-                onChange={(e) => setFormData({...formData, part_number: e.target.value})}
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="quantity">Quantity *</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
-                required
-              />
-            </div>
+            <PartTypeAndStatusFields form={form} />
             
-            <div>
-              <Label htmlFor="unit_price">Unit Price *</Label>
-              <Input
-                id="unit_price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.unit_price}
-                onChange={(e) => setFormData({...formData, unit_price: parseFloat(e.target.value) || 0})}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="part_type">Part Type *</Label>
-              <Select
-                value={formData.part_type}
-                onValueChange={(value) => setFormData({...formData, part_type: value as any})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PART_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({...formData, status: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {WORK_ORDER_PART_STATUSES.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="job_line_id">Assign to Job Line</Label>
-              <Select
-                value={formData.job_line_id}
-                onValueChange={(value) => setFormData({...formData, job_line_id: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select job line..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
-                  {jobLines.map((jobLine) => (
-                    <SelectItem key={jobLine.id} value={jobLine.id}>
-                      {jobLine.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+            <JobLineSelector 
+              form={form} 
+              jobLines={jobLines}
+              workOrderId={workOrderId}
             />
-          </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Part'}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="min-w-[100px]"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Adding...
+                  </>
+                ) : (
+                  'Add Part'
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

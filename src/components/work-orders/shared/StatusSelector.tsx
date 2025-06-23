@@ -37,33 +37,52 @@ export function StatusSelector({ currentStatus, type, onStatusChange, disabled =
       .join(' ');
   };
   
-  // Filter out any empty or null statuses and ensure we have valid strings
-  const validStatuses = statuses.filter(status => status && status.trim() !== '' && typeof status === 'string');
+  // Filter out any empty, null, or invalid statuses
+  const validStatuses = statuses.filter(status => 
+    status && 
+    typeof status === 'string' && 
+    status.trim() !== '' &&
+    status !== 'undefined' &&
+    status !== 'null'
+  );
   
-  // Ensure currentStatus is not empty, default to 'pending' if empty
-  const safeCurrentStatus = currentStatus && currentStatus.trim() !== '' ? currentStatus : 'pending';
+  // Ensure currentStatus is valid, default to first valid status if not
+  const safeCurrentStatus = (currentStatus && currentStatus.trim() !== '' && currentStatus !== 'undefined') 
+    ? currentStatus 
+    : validStatuses[0] || 'pending';
   
+  // Only render if we have valid statuses
+  if (validStatuses.length === 0) {
+    console.warn(`No valid statuses found for type: ${type}`);
+    return (
+      <Select value="pending" onValueChange={onStatusChange} disabled={true}>
+        <SelectTrigger className="w-40 bg-gray-100 border-slate-300 text-slate-500">
+          <SelectValue placeholder="No statuses available" />
+        </SelectTrigger>
+        <SelectContent className="bg-white border-slate-200 shadow-lg z-50">
+          <SelectItem value="pending" className="hover:bg-slate-50 focus:bg-slate-100 text-slate-900">
+            Pending
+          </SelectItem>
+        </SelectContent>
+      </Select>
+    );
+  }
+
   return (
     <Select value={safeCurrentStatus} onValueChange={onStatusChange} disabled={disabled}>
       <SelectTrigger className="w-40 bg-white border-slate-300 text-slate-900">
         <SelectValue placeholder="Select status" />
       </SelectTrigger>
       <SelectContent className="bg-white border-slate-200 shadow-lg z-50">
-        {validStatuses.length === 0 ? (
-          <SelectItem value="pending" className="hover:bg-slate-50 focus:bg-slate-100 text-slate-900">
-            Pending
+        {validStatuses.map((status) => (
+          <SelectItem 
+            key={status} 
+            value={status} 
+            className="hover:bg-slate-50 focus:bg-slate-100 text-slate-900"
+          >
+            {formatStatusLabel(status)}
           </SelectItem>
-        ) : (
-          validStatuses.map((status) => (
-            <SelectItem 
-              key={status} 
-              value={status} 
-              className="hover:bg-slate-50 focus:bg-slate-100 text-slate-900"
-            >
-              {formatStatusLabel(status)}
-            </SelectItem>
-          ))
-        )}
+        ))}
       </SelectContent>
     </Select>
   );
