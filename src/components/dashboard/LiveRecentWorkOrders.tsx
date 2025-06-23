@@ -1,164 +1,341 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, Wrench, RefreshCw, AlertCircle } from "lucide-react";
-import { getRecentWorkOrders } from "@/services/dashboard/workOrderService";
-import { RecentWorkOrder } from "@/types/dashboard";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertCircle, Clock, User, Calendar, Wrench, RefreshCw, ExternalLink } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
 
-interface StatusBadgeProps {
+interface WorkOrderData {
+  id: string;
+  description: string;
   status: string;
+  service_type: string;
+  created_at: string;
+  work_order_number: string;
+  customer_id: string;
+  customer_name?: string;
 }
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  let badgeText = status.replace(/_/g, " ");
-  badgeText = badgeText.replace(/-/g, " ");
-  badgeText = badgeText.charAt(0).toUpperCase() + badgeText.slice(1);
-
-  let badgeColor = "bg-blue-100 text-blue-700 border-blue-200";
-  if (status === "completed") {
-    badgeColor = "bg-green-100 text-green-700 border-green-200";
-  } else if (status === "pending") {
-    badgeColor = "bg-orange-100 text-orange-700 border-orange-200";
-  } else if (status === "in_progress" || status === "in-progress") {
-    badgeColor = "bg-purple-100 text-purple-700 border-purple-200";
-  } else if (status === "cancelled" || status === "canceled") {
-    badgeColor = "bg-red-100 text-red-700 border-red-200";
-  }
-
-  return (
-    <Badge variant="outline" className={`${badgeColor} text-xs font-medium`}>
-      {badgeText}
-    </Badge>
-  );
-};
-
-interface PriorityIconProps {
-    priority: string;
+interface CustomerData {
+  id: string;
+  first_name: string;
+  last_name: string;
 }
-
-const PriorityIcon: React.FC<PriorityIconProps> = ({ priority }) => {
-    let iconColor = "text-slate-500";
-    if (priority === "high") {
-        iconColor = "text-red-500";
-    } else if (priority === "medium") {
-        iconColor = "text-orange-500";
-    } else if (priority === "low") {
-        iconColor = "text-green-500";
-    }
-
-    return (
-        <AlertCircle className={`h-4 w-4 ${iconColor}`} />
-    );
-};
 
 export function LiveRecentWorkOrders() {
-  const [workOrders, setWorkOrders] = useState<RecentWorkOrder[]>([]);
+  const [workOrders, setWorkOrders] = useState<WorkOrderData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const { toast } = useToast();
+
+  const fetchRecentWorkOrders = async () => {
+    try {
+      console.log('Fetching recent work orders...');
+      setError(null);
+
+      // Fetch work orders
+      const { data: workOrdersData, error: workOrdersError } = await supabase
+        .from('work_orders')
+        .select(`
+          id,
+          description,
+          status,
+          service_type,
+          created_at,
+          work_order_number,
+          customer_id
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (workOrdersError) {
+        console.error('Error fetching work orders:', workOrdersError);
+        throw workOrdersError;
+      }
+
+      console.log('Fetched work orders:', workOrdersData);
+
+      if (!workOrdersData || workOrdersData.length === 0) {
+        console.log('No work orders found');
+        setWorkOrders([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Get unique customer IDs
+      const customerIds = [...new Set(workOrdersData
+        .map(wo => wo.customer_id)
+        .filter(Boolean)
+      )];
+
+      let customersData: CustomerData[] = [];
+      if (customerIds.length > 0) {
+        const { data: customers, error: customersError } = await supabase
+          .from('customers')
+          .select('id, first_name, last_name')
+          .in('id', customerIds);
+
+        if (customersError) {
+          console.error('Error fetching customers:', customersError);
+        } else {
+          customersData = customers || [];
+        }
+      }
+
+      // Combine work orders with customer data
+      const combinedData = workOrdersData.map(workOrder => {
+        const customer = customersData.find(c => c.id === workOrder.customer_id);
+        return {
+          ...workOrder,
+          customer_name: customer 
+            ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() 
+            : 'Unknown Customer'
+        };
+      });
+
+      console.log('Combined work orders data:', combinedData);
+      setWorkOrders(combinedData);
+      setLastRefresh(new Date());
+
+    } catch (error: any) {
+      console.error('Error in fetchRecentWorkOrders:', error);
+      setError(error.message || 'Failed to fetch work orders');
+      toast({
+        title: "Error",
+        description: "Failed to load recent work orders",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchWorkOrders = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const data = await getRecentWorkOrders();
-        setWorkOrders(data);
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch work orders");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    fetchRecentWorkOrders();
 
-    fetchWorkOrders();
+    // Set up auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchRecentWorkOrders();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  if (isLoading) {
-    return (
-      <Card className="w-full">
-        <CardContent className="p-6">
-          <div className="flex flex-col space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center space-x-4 animate-pulse">
-                <div className="h-10 w-10 bg-slate-200 rounded-full"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-slate-200 rounded w-1/2"></div>
-                </div>
-                <div className="h-8 w-16 bg-slate-200 rounded"></div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'in-progress':
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'pending':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const formatStatus = (status: string) => {
+    return status?.replace(/[_-]/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ') || 'Unknown';
+  };
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    fetchRecentWorkOrders();
+  };
 
   if (error) {
     return (
-      <Card className="w-full">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center h-32 text-red-500">
-            Error: {error}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-red-600">
+            <AlertCircle className="h-5 w-5" />
+            <span className="font-medium">Failed to load work orders</span>
           </div>
-        </CardContent>
-      </Card>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
+        </div>
+        <div className="text-sm text-gray-600 bg-red-50 p-4 rounded-lg border border-red-200">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5 rounded" />
+            <Skeleton className="h-5 w-32" />
+          </div>
+          <Skeleton className="h-8 w-20" />
+        </div>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="p-4 border border-gray-200 rounded-lg space-y-3">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+              <Skeleton className="h-6 w-20 rounded-full" />
+            </div>
+            <div className="flex items-center gap-4 text-sm">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (workOrders.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-gray-600">
+            <Wrench className="h-5 w-5" />
+            <span className="font-medium">Recent Work Orders</span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
+        <div className="text-center py-12 text-gray-500">
+          <Wrench className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <h3 className="text-lg font-medium mb-2">No work orders yet</h3>
+          <p className="text-sm">Work orders will appear here once created.</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="relative overflow-x-auto">
-      <table className="w-full text-sm text-left text-slate-700">
-        <thead className="text-xs text-slate-700 uppercase bg-slate-50">
-          <tr>
-            <th scope="col" className="px-4 py-3">
-              Work Order
-            </th>
-            <th scope="col" className="px-4 py-3">
-              Customer
-            </th>
-            <th scope="col" className="px-4 py-3">
-              Service
-            </th>
-            <th scope="col" className="px-4 py-3">
-              Date
-            </th>
-            <th scope="col" className="px-4 py-3">
-              Status
-            </th>
-            <th scope="col" className="px-4 py-3">
-              Priority
-            </th>
-            <th scope="col" className="px-4 py-3">
-              <span className="sr-only">View</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {workOrders.map((order) => (
-            <tr key={order.id} className="bg-white border-b hover:bg-slate-50">
-              <th scope="row" className="px-4 py-4 font-medium text-slate-900 whitespace-nowrap">
-                {order.id.slice(0, 8)}
-              </th>
-              <td className="px-4 py-4">{order.customer}</td>
-              <td className="px-4 py-4">{order.service}</td>
-              <td className="px-4 py-4">{order.date}</td>
-              <td className="px-4 py-4">
-                <StatusBadge status={order.status} />
-              </td>
-              <td className="px-4 py-4">
-                <PriorityIcon priority={order.priority} />
-              </td>
-              <td className="px-4 py-4 text-right">
-                <Button variant="secondary" size="sm">
-                  View
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-4">
+      {/* Header with refresh info */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-gray-600">
+          <Wrench className="h-5 w-5" />
+          <span className="font-medium">Recent Work Orders</span>
+          <span className="text-xs text-gray-500">
+            ({workOrders.length} orders)
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">
+            Updated {formatDistanceToNow(lastRefresh, { addSuffix: true })}
+          </span>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Work Orders List */}
+      <div className="space-y-3">
+        {workOrders.map((order) => (
+          <div
+            key={order.id}
+            className="group p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200 bg-white"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-medium text-gray-900 truncate">
+                    {order.work_order_number ? `#${order.work_order_number}` : `#${order.id.slice(0, 8)}`}
+                  </h4>
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs ${getStatusColor(order.status)}`}
+                  >
+                    {formatStatus(order.status)}
+                  </Badge>
+                </div>
+                <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                  {order.description || order.service_type || 'No description available'}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                onClick={() => window.open(`/work-orders/${order.id}`, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <User className="h-4 w-4" />
+                  <span className="truncate max-w-32">
+                    {order.customer_name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
+                  </span>
+                </div>
+              </div>
+              {order.service_type && (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                    {order.service_type}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* View All Link */}
+      <div className="pt-4 border-t border-gray-100">
+        <Button 
+          variant="outline" 
+          className="w-full gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          onClick={() => window.open('/work-orders', '_blank')}
+        >
+          <ExternalLink className="h-4 w-4" />
+          View All Work Orders
+        </Button>
+      </div>
     </div>
   );
 }
