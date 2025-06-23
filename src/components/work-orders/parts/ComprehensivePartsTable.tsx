@@ -1,15 +1,16 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Save, X, Edit2, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Trash2, Save, X, Edit } from 'lucide-react';
 import { WorkOrderPart, WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { createWorkOrderPart, updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder';
+import { workOrderPartsService } from '@/services/workOrder/workOrderPartsService';
+import { toast } from 'sonner';
 
 interface ComprehensivePartsTableProps {
   workOrderId: string;
@@ -19,114 +20,168 @@ interface ComprehensivePartsTableProps {
   isEditMode?: boolean;
 }
 
-interface EditablePart extends Omit<WorkOrderPart, 'id' | 'created_at' | 'updated_at'> {
-  id?: string;
-  isNew?: boolean;
-  isEditing?: boolean;
-}
-
-// Helper functions to convert between display values and database values
-const convertToDisplayValue = (value: string | null | undefined): string => {
-  return value || 'none';
+// Convert display values to database values
+const convertToDbValue = (value: string | boolean, fieldType: 'string' | 'number' | 'boolean' = 'string') => {
+  if (fieldType === 'boolean') {
+    return value === 'true' || value === true;
+  }
+  if (fieldType === 'number') {
+    const num = parseFloat(value as string);
+    return isNaN(num) ? 0 : num;
+  }
+  return value === 'none' ? '' : value;
 };
 
-const convertToDatabaseValue = (value: string): string | null => {
-  return value === 'none' ? null : value;
+// Convert database values to display values  
+const convertToDisplayValue = (value: any, fieldType: 'string' | 'number' | 'boolean' = 'string') => {
+  if (fieldType === 'boolean') {
+    return value ? 'true' : 'false';
+  }
+  if (fieldType === 'number') {
+    return value?.toString() || '0';
+  }
+  return !value || value === '' ? 'none' : value;
 };
 
-const convertBooleanToDisplayValue = (value: boolean | null | undefined): string => {
-  if (value === null || value === undefined) return 'none';
-  return value ? 'true' : 'false';
-};
+const partTypeOptions = [
+  { value: 'none', label: 'Select Type' },
+  { value: 'OEM', label: 'OEM' },
+  { value: 'Aftermarket', label: 'Aftermarket' },
+  { value: 'Remanufactured', label: 'Remanufactured' },
+  { value: 'Used', label: 'Used' }
+];
 
-const convertDisplayToBoolean = (value: string): boolean | null => {
-  if (value === 'none') return null;
-  return value === 'true';
-};
+const categoryOptions = [
+  { value: 'none', label: 'Select Category' },
+  { value: 'Engine', label: 'Engine' },
+  { value: 'Transmission', label: 'Transmission' },
+  { value: 'Brakes', label: 'Brakes' },
+  { value: 'Suspension', label: 'Suspension' },
+  { value: 'Electrical', label: 'Electrical' },
+  { value: 'Body', label: 'Body' },
+  { value: 'Interior', label: 'Interior' },
+  { value: 'Fluids', label: 'Fluids' },
+  { value: 'Filters', label: 'Filters' },
+  { value: 'Other', label: 'Other' }
+];
 
-export function ComprehensivePartsTable({
-  workOrderId,
-  parts,
-  jobLines,
+export function ComprehensivePartsTable({ 
+  workOrderId, 
+  parts, 
+  jobLines, 
   onPartsChange,
-  isEditMode = false
+  isEditMode = false 
 }: ComprehensivePartsTableProps) {
-  const [editableParts, setEditableParts] = useState<EditablePart[]>([]);
-  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [editingPartId, setEditingPartId] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingPart, setEditingPart] = useState<Partial<WorkOrderPart>>({});
 
-  const initializeNewPart = (): EditablePart => ({
-    work_order_id: workOrderId,
-    job_line_id: null,
-    part_number: '',
+  const jobLineOptions = [
+    { value: 'none', label: 'No job line' },
+    ...jobLines.map(line => ({ value: line.id, label: line.name }))
+  ];
+
+  const statusOptions = [
+    { value: 'none', label: 'Select Status' },
+    ...WORK_ORDER_PART_STATUSES.map(status => ({ 
+      value: status, 
+      label: status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ') 
+    }))
+  ];
+
+  const initializeNewPart = () => ({
     name: '',
+    part_number: '',
     description: '',
     quantity: 1,
     unit_price: 0,
-    total_price: 0,
+    customerPrice: 0,
+    supplierCost: 0,
+    retailPrice: 0,
+    markupPercentage: 0,
+    job_line_id: 'none',
     status: 'pending',
+    category: 'none',
+    partType: 'OEM',
+    supplierName: '',
+    supplierOrderRef: '',
+    isTaxable: true,
+    isStockItem: false,
+    coreChargeAmount: 0,
+    coreChargeApplied: false,
+    warrantyDuration: '',
+    warrantyExpiryDate: '',
+    installDate: '',
+    installedBy: '',
+    invoiceNumber: '',
+    poLine: '',
+    binLocation: '',
+    warehouseLocation: '',
+    shelfLocation: '',
     notes: '',
-    isNew: true,
-    isEditing: true
+    notesInternal: '',
+    inventoryItemId: '',
+    estimatedArrivalDate: '',
+    itemStatus: 'none'
   });
 
-  const handleAddNew = () => {
-    if (!isAddingNew) {
-      const newPart = initializeNewPart();
-      setEditableParts([newPart]);
-      setIsAddingNew(true);
-    }
+  const handleStartAdd = () => {
+    setIsAdding(true);
+    setEditingPart(initializeNewPart());
   };
 
-  const handleEdit = (part: WorkOrderPart) => {
-    const editablePart: EditablePart = {
+  const handleStartEdit = (part: WorkOrderPart) => {
+    setEditingPartId(part.id);
+    setEditingPart({
       ...part,
-      isEditing: true
-    };
-    setEditableParts([editablePart]);
+      job_line_id: convertToDisplayValue(part.job_line_id),
+      status: convertToDisplayValue(part.status),
+      category: convertToDisplayValue(part.category),
+      partType: convertToDisplayValue(part.partType),
+      isTaxable: convertToDisplayValue(part.isTaxable, 'boolean'),
+      isStockItem: convertToDisplayValue(part.isStockItem, 'boolean'),
+      coreChargeApplied: convertToDisplayValue(part.coreChargeApplied, 'boolean'),
+      itemStatus: convertToDisplayValue(part.itemStatus)
+    });
   };
 
   const handleCancel = () => {
-    setEditableParts([]);
-    setIsAddingNew(false);
+    setIsAdding(false);
+    setEditingPartId(null);
+    setEditingPart({});
   };
 
-  const handleSave = async (part: EditablePart) => {
+  const handleSave = async () => {
     try {
-      if (!part.name?.trim() || !part.part_number?.trim()) {
+      if (!editingPart.name || !editingPart.part_number) {
         toast.error('Part name and part number are required');
         return;
       }
 
-      // Convert display values back to database values
       const partData = {
-        name: part.name.trim(),
-        part_number: part.part_number.trim(),
-        description: part.description || '',
-        quantity: Number(part.quantity) || 1,
-        unit_price: Number(part.unit_price) || 0,
-        status: part.status || 'pending',
-        notes: part.notes || '',
-        job_line_id: convertToDatabaseValue(part.job_line_id as string),
-        category: part.category || '',
-        supplierName: part.supplierName || '',
-        partType: part.partType || 'OEM',
-        isTaxable: convertDisplayToBoolean(part.isTaxable as any) ?? true,
-        coreChargeApplied: convertDisplayToBoolean(part.coreChargeApplied as any) ?? false,
-        isStockItem: convertDisplayToBoolean(part.isStockItem as any) ?? false,
-        supplierCost: Number(part.supplierCost) || 0,
-        retailPrice: Number(part.retailPrice) || 0,
-        markupPercentage: Number(part.markupPercentage) || 0,
-        coreChargeAmount: Number(part.coreChargeAmount) || 0,
-        warrantyDuration: part.warrantyDuration || '',
-        invoiceNumber: part.invoiceNumber || '',
-        poLine: part.poLine || ''
+        ...editingPart,
+        job_line_id: convertToDbValue(editingPart.job_line_id),
+        status: convertToDbValue(editingPart.status),
+        category: convertToDbValue(editingPart.category),
+        partType: convertToDbValue(editingPart.partType),
+        isTaxable: convertToDbValue(editingPart.isTaxable, 'boolean'),
+        isStockItem: convertToDbValue(editingPart.isStockItem, 'boolean'),
+        coreChargeApplied: convertToDbValue(editingPart.coreChargeApplied, 'boolean'),
+        itemStatus: convertToDbValue(editingPart.itemStatus),
+        quantity: convertToDbValue(editingPart.quantity?.toString() || '1', 'number'),
+        unit_price: convertToDbValue(editingPart.unit_price?.toString() || '0', 'number'),
+        customerPrice: convertToDbValue(editingPart.customerPrice?.toString() || '0', 'number'),
+        supplierCost: convertToDbValue(editingPart.supplierCost?.toString() || '0', 'number'),
+        retailPrice: convertToDbValue(editingPart.retailPrice?.toString() || '0', 'number'),
+        markupPercentage: convertToDbValue(editingPart.markupPercentage?.toString() || '0', 'number'),
+        coreChargeAmount: convertToDbValue(editingPart.coreChargeAmount?.toString() || '0', 'number')
       };
 
-      if (part.isNew) {
-        await createWorkOrderPart(partData, workOrderId);
+      if (isAdding) {
+        await workOrderPartsService.createWorkOrderPart(partData as any, workOrderId);
         toast.success('Part added successfully');
-      } else if (part.id) {
-        await updateWorkOrderPart(part.id, partData);
+      } else if (editingPartId) {
+        await workOrderPartsService.updateWorkOrderPart(editingPartId, partData as any);
         toast.success('Part updated successfully');
       }
 
@@ -134,17 +189,13 @@ export function ComprehensivePartsTable({
       handleCancel();
     } catch (error) {
       console.error('Error saving part:', error);
-      toast.error(part.isNew ? 'Failed to add part' : 'Failed to update part');
+      toast.error('Failed to save part');
     }
   };
 
   const handleDelete = async (partId: string) => {
-    if (!window.confirm('Are you sure you want to delete this part?')) {
-      return;
-    }
-
     try {
-      await deleteWorkOrderPart(partId);
+      await workOrderPartsService.deleteWorkOrderPart(partId);
       toast.success('Part deleted successfully');
       await onPartsChange();
     } catch (error) {
@@ -153,273 +204,258 @@ export function ComprehensivePartsTable({
     }
   };
 
-  const handleFieldChange = (index: number, field: string, value: string | number) => {
-    setEditableParts(prev => prev.map((part, i) => {
-      if (i === index) {
-        const updatedPart = { ...part, [field]: value };
-        
-        // Recalculate total price when quantity or unit_price changes
-        if (field === 'quantity' || field === 'unit_price') {
-          const quantity = field === 'quantity' ? Number(value) : Number(part.quantity);
-          const unitPrice = field === 'unit_price' ? Number(value) : Number(part.unit_price);
-          updatedPart.total_price = quantity * unitPrice;
-        }
-        
-        return updatedPart;
-      }
-      return part;
-    }));
+  const updateEditingPart = (field: string, value: any) => {
+    setEditingPart(prev => ({ ...prev, [field]: value }));
   };
 
-  // Job line options with safe values
-  const jobLineOptions = [
-    { value: 'none', label: 'No job line' },
-    ...jobLines.map(jobLine => ({
-      value: jobLine.id,
-      label: `${jobLine.name}${jobLine.category ? ` (${jobLine.category})` : ''}`
-    }))
-  ];
-
-  // Status options
-  const statusOptions = WORK_ORDER_PART_STATUSES.map(status => ({
-    value: status,
-    label: status.split('-').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ')
-  }));
-
-  // Boolean options for various fields
-  const booleanOptions = [
-    { value: 'none', label: 'Not set' },
-    { value: 'true', label: 'Yes' },
-    { value: 'false', label: 'No' }
-  ];
-
-  const renderEditableRow = (part: EditablePart, index: number) => (
-    <TableRow key={`editable-${index}`} className="bg-blue-50">
-      <TableCell>
-        <Input
-          value={part.part_number}
-          onChange={(e) => handleFieldChange(index, 'part_number', e.target.value)}
-          placeholder="Part number"
-          className="w-full"
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          value={part.name}
-          onChange={(e) => handleFieldChange(index, 'name', e.target.value)}
-          placeholder="Part name"
-          className="w-full"
-        />
-      </TableCell>
-      <TableCell>
-        <Textarea
-          value={part.description || ''}
-          onChange={(e) => handleFieldChange(index, 'description', e.target.value)}
-          placeholder="Description"
-          className="w-full min-h-[60px]"
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          type="number"
-          value={part.quantity}
-          onChange={(e) => handleFieldChange(index, 'quantity', Number(e.target.value))}
-          min="1"
-          className="w-20"
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          type="number"
-          step="0.01"
-          value={part.unit_price}
-          onChange={(e) => handleFieldChange(index, 'unit_price', Number(e.target.value))}
-          min="0"
-          className="w-24"
-        />
-      </TableCell>
-      <TableCell>
-        <span className="font-medium">
-          ${(part.total_price || 0).toFixed(2)}
-        </span>
-      </TableCell>
-      <TableCell>
-        <Select
-          value={convertToDisplayValue(part.job_line_id as string)}
-          onValueChange={(value) => handleFieldChange(index, 'job_line_id', convertToDatabaseValue(value) || '')}
-        >
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-white border-slate-200 shadow-lg z-50">
-            {jobLineOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
-      <TableCell>
-        <Select
-          value={part.status || 'pending'}
-          onValueChange={(value) => handleFieldChange(index, 'status', value)}
-        >
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-white border-slate-200 shadow-lg z-50">
-            {statusOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
-      <TableCell>
-        <div className="flex gap-1">
-          <Button
-            size="sm"
-            onClick={() => handleSave(part)}
-            className="h-8 w-8 p-0"
-          >
-            <Save className="h-4 w-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleCancel}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-
-  const renderDisplayRow = (part: WorkOrderPart) => {
-    const jobLine = jobLines.find(jl => jl.id === part.job_line_id);
+  const renderEditableCell = (field: string, value: any, type: 'text' | 'number' | 'select' | 'textarea' | 'checkbox' | 'date' = 'text', options: any[] = []) => {
+    const isEditing = isAdding || editingPartId;
     
-    return (
-      <TableRow key={part.id}>
-        <TableCell className="font-medium">{part.part_number}</TableCell>
-        <TableCell>{part.name}</TableCell>
-        <TableCell className="max-w-xs">
-          <div className="truncate" title={part.description}>
-            {part.description || '-'}
-          </div>
-        </TableCell>
-        <TableCell className="text-center">{part.quantity}</TableCell>
-        <TableCell className="text-right">${part.unit_price?.toFixed(2) || '0.00'}</TableCell>
-        <TableCell className="text-right font-medium">
-          ${part.total_price?.toFixed(2) || '0.00'}
-        </TableCell>
-        <TableCell>
-          {jobLine ? (
-            <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
-              {jobLine.name}
-            </span>
-          ) : (
-            <span className="text-sm text-gray-500">No job line</span>
-          )}
-        </TableCell>
-        <TableCell>
-          <span className={`text-xs px-2 py-1 rounded ${
-            part.status === 'installed' ? 'bg-green-100 text-green-800' :
-            part.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
-            part.status === 'received' ? 'bg-purple-100 text-purple-800' :
-            'bg-yellow-100 text-yellow-800'
-          }`}>
-            {part.status?.split('-').map(word => 
-              word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ') || 'Pending'}
-          </span>
-        </TableCell>
-        <TableCell>
-          {isEditMode && (
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleEdit(part)}
-                className="h-8 w-8 p-0"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleDelete(part.id)}
-                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </TableCell>
-      </TableRow>
-    );
+    if (!isEditing) {
+      if (type === 'checkbox') {
+        return <Checkbox checked={value} disabled />;
+      }
+      if (type === 'select' && options.length > 0) {
+        const option = options.find(opt => opt.value === value);
+        return option?.label || value;
+      }
+      return value || '-';
+    }
+
+    switch (type) {
+      case 'number':
+        return (
+          <Input
+            type="number"
+            value={value || 0}
+            onChange={(e) => updateEditingPart(field, parseFloat(e.target.value) || 0)}
+            className="min-w-[100px]"
+          />
+        );
+      case 'select':
+        return (
+          <Select value={value || 'none'} onValueChange={(val) => updateEditingPart(field, val)}>
+            <SelectTrigger className="min-w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      case 'textarea':
+        return (
+          <Textarea
+            value={value || ''}
+            onChange={(e) => updateEditingPart(field, e.target.value)}
+            className="min-w-[200px] min-h-[60px]"
+          />
+        );
+      case 'checkbox':
+        return (
+          <Checkbox
+            checked={value === true || value === 'true'}
+            onCheckedChange={(checked) => updateEditingPart(field, checked)}
+          />
+        );
+      case 'date':
+        return (
+          <Input
+            type="date"
+            value={value || ''}
+            onChange={(e) => updateEditingPart(field, e.target.value)}
+            className="min-w-[130px]"
+          />
+        );
+      default:
+        return (
+          <Input
+            value={value || ''}
+            onChange={(e) => updateEditingPart(field, e.target.value)}
+            className="min-w-[120px]"
+          />
+        );
+    }
   };
 
   return (
     <div className="space-y-4">
-      {isEditMode && (
-        <div className="flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            {parts.length} parts • Total: ${parts.reduce((sum, part) => sum + (part.total_price || 0), 0).toFixed(2)}
-          </div>
-          <Button
-            onClick={handleAddNew}
-            disabled={isAddingNew || editableParts.length > 0}
-            size="sm"
-            className="flex items-center gap-2"
-          >
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Parts & Materials</h3>
+        {isEditMode && !isAdding && !editingPartId && (
+          <Button onClick={handleStartAdd} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Add Part
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
-      <div className="border rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Actions</TableHead>
+              <TableHead>Part Name</TableHead>
               <TableHead>Part Number</TableHead>
-              <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead className="text-center">Qty</TableHead>
-              <TableHead className="text-right">Unit Price</TableHead>
-              <TableHead className="text-right">Total</TableHead>
+              <TableHead>Quantity</TableHead>
+              <TableHead>Unit Price</TableHead>
+              <TableHead>Customer Price</TableHead>
+              <TableHead>Supplier Cost</TableHead>
+              <TableHead>Retail Price</TableHead>
+              <TableHead>Markup %</TableHead>
               <TableHead>Job Line</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-20">Actions</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Part Type</TableHead>
+              <TableHead>Supplier</TableHead>
+              <TableHead>Supplier Ref</TableHead>
+              <TableHead>Taxable</TableHead>
+              <TableHead>Stock Item</TableHead>
+              <TableHead>Core Charge</TableHead>
+              <TableHead>Core Applied</TableHead>
+              <TableHead>Warranty</TableHead>
+              <TableHead>Warranty Expiry</TableHead>
+              <TableHead>Install Date</TableHead>
+              <TableHead>Installed By</TableHead>
+              <TableHead>Invoice #</TableHead>
+              <TableHead>PO Line</TableHead>
+              <TableHead>Bin Location</TableHead>
+              <TableHead>Warehouse</TableHead>
+              <TableHead>Shelf Location</TableHead>
+              <TableHead>Est. Arrival</TableHead>
+              <TableHead>Item Status</TableHead>
+              <TableHead>Notes</TableHead>
+              <TableHead>Internal Notes</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {editableParts.map((part, index) => renderEditableRow(part, index))}
-            {parts.map(part => renderDisplayRow(part))}
-            {parts.length === 0 && editableParts.length === 0 && (
+            {parts.map((part) => {
+              const isEditing = editingPartId === part.id;
+              const currentPart = isEditing ? editingPart : part;
+              
+              return (
+                <TableRow key={part.id}>
+                  <TableCell>
+                    {isEditMode && (
+                      <div className="flex gap-1">
+                        {!isEditing ? (
+                          <>
+                            <Button size="sm" variant="ghost" onClick={() => handleStartEdit(part)}>
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleDelete(part.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button size="sm" variant="ghost" onClick={handleSave}>
+                              <Save className="h-3 w-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={handleCancel}>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>{renderEditableCell('name', currentPart.name, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('part_number', currentPart.part_number, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('description', currentPart.description, 'textarea')}</TableCell>
+                  <TableCell>{renderEditableCell('quantity', currentPart.quantity, 'number')}</TableCell>
+                  <TableCell>${renderEditableCell('unit_price', currentPart.unit_price, 'number')}</TableCell>
+                  <TableCell>${renderEditableCell('customerPrice', currentPart.customerPrice, 'number')}</TableCell>
+                  <TableCell>${renderEditableCell('supplierCost', currentPart.supplierCost, 'number')}</TableCell>
+                  <TableCell>${renderEditableCell('retailPrice', currentPart.retailPrice, 'number')}</TableCell>
+                  <TableCell>{renderEditableCell('markupPercentage', currentPart.markupPercentage, 'number')}%</TableCell>
+                  <TableCell>{renderEditableCell('job_line_id', currentPart.job_line_id, 'select', jobLineOptions)}</TableCell>
+                  <TableCell>{renderEditableCell('status', currentPart.status, 'select', statusOptions)}</TableCell>
+                  <TableCell>{renderEditableCell('category', currentPart.category, 'select', categoryOptions)}</TableCell>
+                  <TableCell>{renderEditableCell('partType', currentPart.partType, 'select', partTypeOptions)}</TableCell>
+                  <TableCell>{renderEditableCell('supplierName', currentPart.supplierName, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('supplierOrderRef', currentPart.supplierOrderRef, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('isTaxable', currentPart.isTaxable, 'checkbox')}</TableCell>
+                  <TableCell>{renderEditableCell('isStockItem', currentPart.isStockItem, 'checkbox')}</TableCell>
+                  <TableCell>${renderEditableCell('coreChargeAmount', currentPart.coreChargeAmount, 'number')}</TableCell>
+                  <TableCell>{renderEditableCell('coreChargeApplied', currentPart.coreChargeApplied, 'checkbox')}</TableCell>
+                  <TableCell>{renderEditableCell('warrantyDuration', currentPart.warrantyDuration, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('warrantyExpiryDate', currentPart.warrantyExpiryDate, 'date')}</TableCell>
+                  <TableCell>{renderEditableCell('installDate', currentPart.installDate, 'date')}</TableCell>
+                  <TableCell>{renderEditableCell('installedBy', currentPart.installedBy, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('invoiceNumber', currentPart.invoiceNumber, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('poLine', currentPart.poLine, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('binLocation', currentPart.binLocation, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('warehouseLocation', currentPart.warehouseLocation, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('shelfLocation', currentPart.shelfLocation, 'text')}</TableCell>
+                  <TableCell>{renderEditableCell('estimatedArrivalDate', currentPart.estimatedArrivalDate, 'date')}</TableCell>
+                  <TableCell>{renderEditableCell('itemStatus', currentPart.itemStatus, 'select', statusOptions)}</TableCell>
+                  <TableCell>{renderEditableCell('notes', currentPart.notes, 'textarea')}</TableCell>
+                  <TableCell>{renderEditableCell('notesInternal', currentPart.notesInternal, 'textarea')}</TableCell>
+                </TableRow>
+              );
+            })}
+            
+            {isAdding && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
-                  No parts added to this work order yet.
-                  {isEditMode && (
-                    <div className="mt-2">
-                      <Button onClick={handleAddNew} size="sm" variant="outline">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Your First Part
-                      </Button>
-                    </div>
-                  )}
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={handleSave}>
+                      <Save className="h-3 w-3" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={handleCancel}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </TableCell>
+                <TableCell>{renderEditableCell('name', editingPart.name, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('part_number', editingPart.part_number, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('description', editingPart.description, 'textarea')}</TableCell>
+                <TableCell>{renderEditableCell('quantity', editingPart.quantity, 'number')}</TableCell>
+                <TableCell>${renderEditableCell('unit_price', editingPart.unit_price, 'number')}</TableCell>
+                <TableCell>${renderEditableCell('customerPrice', editingPart.customerPrice, 'number')}</TableCell>
+                <TableCell>${renderEditableCell('supplierCost', editingPart.supplierCost, 'number')}</TableCell>
+                <TableCell>${renderEditableCell('retailPrice', editingPart.retailPrice, 'number')}</TableCell>
+                <TableCell>{renderEditableCell('markupPercentage', editingPart.markupPercentage, 'number')}%</TableCell>
+                <TableCell>{renderEditableCell('job_line_id', editingPart.job_line_id, 'select', jobLineOptions)}</TableCell>
+                <TableCell>{renderEditableCell('status', editingPart.status, 'select', statusOptions)}</TableCell>
+                <TableCell>{renderEditableCell('category', editingPart.category, 'select', categoryOptions)}</TableCell>
+                <TableCell>{renderEditableCell('partType', editingPart.partType, 'select', partTypeOptions)}</TableCell>
+                <TableCell>{renderEditableCell('supplierName', editingPart.supplierName, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('supplierOrderRef', editingPart.supplierOrderRef, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('isTaxable', editingPart.isTaxable, 'checkbox')}</TableCell>
+                <TableCell>{renderEditableCell('isStockItem', editingPart.isStockItem, 'checkbox')}</TableCell>
+                <TableCell>${renderEditableCell('coreChargeAmount', editingPart.coreChargeAmount, 'number')}</TableCell>
+                <TableCell>{renderEditableCell('coreChargeApplied', editingPart.coreChargeApplied, 'checkbox')}</TableCell>
+                <TableCell>{renderEditableCell('warrantyDuration', editingPart.warrantyDuration, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('warrantyExpiryDate', editingPart.warrantyExpiryDate, 'date')}</TableCell>
+                <TableCell>{renderEditableCell('installDate', editingPart.installDate, 'date')}</TableCell>
+                <TableCell>{renderEditableCell('installedBy', editingPart.installedBy, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('invoiceNumber', editingPart.invoiceNumber, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('poLine', editingPart.poLine, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('binLocation', editingPart.binLocation, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('warehouseLocation', editingPart.warehouseLocation, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('shelfLocation', editingPart.shelfLocation, 'text')}</TableCell>
+                <TableCell>{renderEditableCell('estimatedArrivalDate', editingPart.estimatedArrivalDate, 'date')}</TableCell>
+                <TableCell>{renderEditableCell('itemStatus', editingPart.itemStatus, 'select', statusOptions)}</TableCell>
+                <TableCell>{renderEditableCell('notes', editingPart.notes, 'textarea')}</TableCell>
+                <TableCell>{renderEditableCell('notesInternal', editingPart.notesInternal, 'textarea')}</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+
+      {parts.length === 0 && !isAdding && (
+        <div className="text-center py-8 text-muted-foreground">
+          No parts added yet. {isEditMode && 'Click "Add Part" to get started.'}
+        </div>
+      )}
     </div>
   );
 }
