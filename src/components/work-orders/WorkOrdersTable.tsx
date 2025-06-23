@@ -3,17 +3,15 @@ import { Link } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Eye, Edit, AlertTriangle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Eye, AlertTriangle } from "lucide-react";
 import { WorkOrder } from "@/types/workOrder";
-import { 
-  getVehicleInfo, 
-  getTechnicianName, 
-  getWorkOrderDate, 
-  getStatusBadgeVariant,
-  getPriorityBadgeVariant,
-  validateWorkOrderData
-} from "@/utils/workOrders/dataHelpers";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
@@ -21,9 +19,17 @@ interface WorkOrdersTableProps {
 
 // Helper function to get customer name with better error handling
 const getCustomerDisplayName = (workOrder: WorkOrder): string => {
+  // Debug logging to understand the data structure
+  console.log('WorkOrder customer data:', {
+    customer: workOrder.customer,
+    customer_name: workOrder.customer_name,
+    customer_id: workOrder.customer_id,
+    workOrderId: workOrder.id
+  });
+
   // Try direct customer_name field first
-  if (workOrder.customer_name && workOrder.customer_name.trim()) {
-    return workOrder.customer_name;
+  if (workOrder.customer_name && typeof workOrder.customer_name === 'string' && workOrder.customer_name.trim()) {
+    return workOrder.customer_name.trim();
   }
   
   // If customer is an object, extract name parts
@@ -45,46 +51,67 @@ const getCustomerDisplayName = (workOrder: WorkOrder): string => {
     
     // Try name field
     if (customer.name && customer.name.trim()) {
-      return customer.name;
+      return customer.name.trim();
     }
   }
   
   // If customer is a string
   if (typeof workOrder.customer === 'string' && workOrder.customer.trim()) {
-    return workOrder.customer;
+    return workOrder.customer.trim();
   }
   
-  // User-friendly fallback instead of customer ID
+  // User-friendly fallback
   return 'Customer Name Missing';
 };
 
 const WorkOrderRow: React.FC<{ workOrder: WorkOrder }> = ({ workOrder }) => {
-  const validation = validateWorkOrderData(workOrder);
-  const hasWarnings = validation.warnings.length > 0;
-  
+  const validationIssues: string[] = [];
+
+  if (!workOrder.id) {
+    validationIssues.push("Work Order ID is missing.");
+  }
+
+  if (!workOrder.customer && !workOrder.customer_name) {
+    validationIssues.push("Customer information is missing.");
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'bg-green-500 text-white';
+      case 'in-progress':
+        return 'bg-blue-500 text-white';
+      case 'pending':
+        return 'bg-yellow-500 text-black';
+      case 'cancelled':
+        return 'bg-red-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
+    }
+  };
+
   return (
-    <TableRow key={workOrder.id} className={hasWarnings ? "bg-yellow-50" : ""}>
-      <TableCell className="font-mono text-sm">
+    <TableRow key={workOrder.id}>
+      <TableCell className="font-medium">
         <div className="flex items-center gap-2">
-          <span className="font-medium">
-            #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
-          </span>
-          {hasWarnings && (
+          <span>{workOrder.work_order_number || workOrder.id.slice(0, 8)}</span>
+          {validationIssues.length > 0 && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <AlertTriangle className="h-4 w-4 text-yellow-500 hover:text-yellow-600 transition-colors" />
-                  </div>
+                  <AlertTriangle className="h-4 w-4 text-yellow-500 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   <div className="space-y-1">
-                    <p className="font-semibold text-xs">Data Validation Warnings:</p>
-                    {validation.warnings.map((warning, index) => (
-                      <p key={index} className="text-xs text-muted-foreground">
-                        • {warning}
-                      </p>
-                    ))}
+                    <p className="font-medium">Data Issues:</p>
+                    <ul className="text-sm space-y-1">
+                      {validationIssues.map((issue, index) => (
+                        <li key={index} className="flex items-start gap-1">
+                          <span className="text-yellow-500 mt-0.5">•</span>
+                          <span>{issue}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -92,99 +119,89 @@ const WorkOrderRow: React.FC<{ workOrder: WorkOrder }> = ({ workOrder }) => {
           )}
         </div>
       </TableCell>
-      
       <TableCell>
-        <div className="font-medium">
-          {getCustomerDisplayName(workOrder)}
-        </div>
+        {getCustomerDisplayName(workOrder)}
       </TableCell>
-      
       <TableCell>
-        {getVehicleInfo(workOrder)}
+        {workOrder.description || 'No description'}
       </TableCell>
-      
       <TableCell>
-        <div className="max-w-xs truncate" title={workOrder.description}>
-          {workOrder.description || 'No description'}
-        </div>
-      </TableCell>
-      
-      <TableCell>
-        <Badge variant={getStatusBadgeVariant(workOrder.status)}>
-          {workOrder.status || 'Unknown'}
+        <Badge className={getStatusColor(workOrder.status)}>
+          {workOrder.status}
         </Badge>
       </TableCell>
-      
       <TableCell>
-        {workOrder.priority && (
-          <Badge variant={getPriorityBadgeVariant(workOrder.priority)}>
-            {workOrder.priority}
-          </Badge>
-        )}
+        {workOrder.created_at ? new Date(workOrder.created_at).toLocaleDateString() : 'N/A'}
       </TableCell>
-      
       <TableCell>
-        {getTechnicianName(workOrder)}
-      </TableCell>
-      
-      <TableCell>
-        {getWorkOrderDate(workOrder)}
-      </TableCell>
-      
-      <TableCell>
-        {workOrder.total_cost ? `$${workOrder.total_cost.toFixed(2)}` : 'N/A'}
-      </TableCell>
-      
-      <TableCell>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to={`/work-orders/${workOrder.id}`}>
-              <Eye className="h-4 w-4" />
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to={`/work-orders/${workOrder.id}/edit`}>
-              <Edit className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link to={`/work-orders/${workOrder.id}`}>
+            <Eye className="h-4 w-4 mr-2" />
+            View
+          </Link>
+        </Button>
       </TableCell>
     </TableRow>
   );
 };
 
-export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
-  if (!workOrders || workOrders.length === 0) {
+export function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'bg-green-500 text-white';
+      case 'in-progress':
+        return 'bg-blue-500 text-white';
+      case 'pending':
+        return 'bg-yellow-500 text-black';
+      case 'cancelled':
+        return 'bg-red-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
+    }
+  };
+
+  if (workOrders.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">No work orders found.</p>
-      </div>
+      <Card>
+        <CardContent className="py-12">
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No work orders found</h3>
+            <p className="text-gray-500 mb-6">
+              Get started by creating your first work order.
+            </p>
+            <Button asChild>
+              <Link to="/work-orders/create">
+                Create Work Order
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Work Order #</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Vehicle</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead>Technician</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {workOrders.map((workOrder) => (
-            <WorkOrderRow key={workOrder.id} workOrder={workOrder} />
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <Card>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Work Order #</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {workOrders.map((workOrder) => (
+              <WorkOrderRow key={workOrder.id} workOrder={workOrder} />
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
