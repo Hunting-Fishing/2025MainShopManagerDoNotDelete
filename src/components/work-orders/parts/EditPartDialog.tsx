@@ -6,35 +6,34 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart, WorkOrderPartFormValues, WORK_ORDER_PART_STATUSES, PART_TYPES } from '@/types/workOrderPart';
+import { PartsFormValidator } from '@/utils/partsErrorHandler';
+import { updateWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 
-export interface EditPartDialogProps {
-  part: WorkOrderPart | null;
+interface EditPartDialogProps {
   open: boolean;
-  onClose?: () => void;
-  onOpenChange?: (open: boolean) => void;
-  onSave: (part: WorkOrderPart) => Promise<void>;
-  jobLines?: WorkOrderJobLine[];
+  onOpenChange: (open: boolean) => void;
+  part: WorkOrderPart | null;
+  onPartUpdated: () => Promise<void>;
 }
 
-export function EditPartDialog({
+export function EditPartDialog({ 
+  open, 
+  onOpenChange, 
   part,
-  open,
-  onClose,
-  onOpenChange,
-  onSave,
-  jobLines = []
+  onPartUpdated 
 }: EditPartDialogProps) {
-  const [formData, setFormData] = useState<Partial<WorkOrderPart>>({
+  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
     name: '',
     part_number: '',
     description: '',
     quantity: 1,
     unit_price: 0,
     status: 'pending',
-    notes: ''
+    notes: '',
+    part_type: 'inventory'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (part) {
@@ -46,66 +45,92 @@ export function EditPartDialog({
         unit_price: part.unit_price || 0,
         status: part.status || 'pending',
         notes: part.notes || '',
-        job_line_id: part.job_line_id || ''
+        part_type: part.part_type || 'inventory',
+        job_line_id: part.job_line_id,
+        customerPrice: part.unit_price || 0,
+        supplierCost: part.supplierCost,
+        retailPrice: part.retailPrice,
+        markupPercentage: part.markupPercentage,
+        isTaxable: part.isTaxable,
+        coreChargeAmount: part.coreChargeAmount,
+        coreChargeApplied: part.coreChargeApplied,
+        warrantyDuration: part.warrantyDuration,
+        warrantyExpiryDate: part.warrantyExpiryDate,
+        installDate: part.installDate,
+        installedBy: part.installedBy,
+        invoiceNumber: part.invoiceNumber,
+        poLine: part.poLine,
+        isStockItem: part.isStockItem,
+        supplierName: part.supplierName,
+        supplierOrderRef: part.supplierOrderRef,
+        notesInternal: part.notesInternal,
+        inventoryItemId: part.inventoryItemId,
+        estimatedArrivalDate: part.estimatedArrivalDate,
+        itemStatus: part.itemStatus,
+        category: part.category
       });
     }
   }, [part]);
 
-  const handleClose = () => {
-    if (onClose) {
-      onClose();
-    } else if (onOpenChange) {
-      onOpenChange(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!part) return;
+    
+    const validationErrors = PartsFormValidator.validatePartForm(formData);
+    if (validationErrors.length > 0) {
+      PartsFormValidator.showValidationErrors(validationErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await updateWorkOrderPart(part.id, formData);
+      PartsFormValidator.showSuccessToast('Part updated successfully');
+      await onPartUpdated();
+    } catch (error) {
+      const errorMessage = PartsFormValidator.handleApiError(error);
+      PartsFormValidator.showErrorToast(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleSave = async () => {
-    if (!part) return;
-
-    const updatedPart: WorkOrderPart = {
-      ...part,
-      ...formData,
-      total_price: (formData.quantity || 0) * (formData.unit_price || 0),
-      updated_at: new Date().toISOString()
-    };
-
-    await onSave(updatedPart);
-  };
-
-  const handleInputChange = (field: keyof WorkOrderPart, value: any) => {
+  const handleChange = (field: keyof WorkOrderPartFormValues, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange || handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {part?.id?.startsWith('temp-') ? 'Add Part' : 'Edit Part'}
-          </DialogTitle>
-        </DialogHeader>
+  if (!part) return null;
 
-        <div className="grid gap-4 py-4">
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Part</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Part Name</Label>
+              <Label htmlFor="name">Part Name *</Label>
               <Input
                 id="name"
-                value={formData.name || ''}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Enter part name"
+                value={formData.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                required
               />
             </div>
+            
             <div>
-              <Label htmlFor="part_number">Part Number</Label>
+              <Label htmlFor="part_number">Part Number *</Label>
               <Input
                 id="part_number"
-                value={formData.part_number || ''}
-                onChange={(e) => handleInputChange('part_number', e.target.value)}
-                placeholder="Enter part number"
+                value={formData.part_number}
+                onChange={(e) => handleChange('part_number', e.target.value)}
+                required
               />
             </div>
           </div>
@@ -114,110 +139,100 @@ export function EditPartDialog({
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={formData.description || ''}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Enter part description"
-              rows={3}
+              value={formData.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+              rows={2}
             />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="quantity">Quantity</Label>
+              <Label htmlFor="quantity">Quantity *</Label>
               <Input
                 id="quantity"
                 type="number"
                 min="1"
-                value={formData.quantity || 1}
-                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+                value={formData.quantity}
+                onChange={(e) => handleChange('quantity', parseInt(e.target.value) || 1)}
+                required
               />
             </div>
+            
             <div>
-              <Label htmlFor="unit_price">Unit Price</Label>
+              <Label htmlFor="unit_price">Unit Price *</Label>
               <Input
                 id="unit_price"
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.unit_price || 0}
-                onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
+                value={formData.unit_price}
+                onChange={(e) => handleChange('unit_price', parseFloat(e.target.value) || 0)}
+                required
               />
             </div>
-            <div>
-              <Label htmlFor="total">Total</Label>
-              <Input
-                id="total"
-                type="number"
-                value={((formData.quantity || 0) * (formData.unit_price || 0)).toFixed(2)}
-                disabled
-                className="bg-muted"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status || 'pending'}
-                onValueChange={(value) => handleInputChange('status', value)}
+              <Label htmlFor="part_type">Part Type *</Label>
+              <Select 
+                value={formData.part_type} 
+                onValueChange={(value) => handleChange('part_type', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="ordered">Ordered</SelectItem>
-                  <SelectItem value="received">Received</SelectItem>
-                  <SelectItem value="installed">Installed</SelectItem>
-                  <SelectItem value="returned">Returned</SelectItem>
+                  {PART_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            {jobLines.length > 0 && (
-              <div>
-                <Label htmlFor="job_line">Assign to Job Line</Label>
-                <Select
-                  value={formData.job_line_id || ''}
-                  onValueChange={(value) => handleInputChange('job_line_id', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select job line" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
-                    {jobLines.map((jobLine) => (
-                      <SelectItem key={jobLine.id} value={jobLine.id}>
-                        {jobLine.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value) => handleChange('status', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {WORK_ORDER_PART_STATUSES.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              value={formData.notes || ''}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Additional notes about this part"
-              rows={2}
+              value={formData.notes}
+              onChange={(e) => handleChange('notes', e.target.value)}
+              rows={3}
             />
           </div>
-        </div>
 
-        <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            Save Part
-          </Button>
-        </div>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Updating...' : 'Update Part'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -1,209 +1,271 @@
 import { supabase } from '@/lib/supabase';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { mapPartFormToDatabase, mapDatabaseToPart } from '@/utils/databaseMappers';
-import { PartsFormValidator } from '@/utils/partsErrorHandler';
 
-export const workOrderPartsService = {
-  async getWorkOrderParts(workOrderId: string): Promise<WorkOrderPart[]> {
-    console.log('Fetching parts for work order:', workOrderId);
+// Helper function to map database response to WorkOrderPart
+const mapDatabaseToWorkOrderPart = (dbPart: any): WorkOrderPart => {
+  return {
+    id: dbPart.id,
+    work_order_id: dbPart.work_order_id,
+    job_line_id: dbPart.job_line_id,
+    part_number: dbPart.part_number,
+    name: dbPart.part_name || dbPart.name || '',
+    description: dbPart.part_description || dbPart.description || '',
+    quantity: dbPart.quantity || 0,
+    unit_price: dbPart.customer_price || dbPart.unit_price || 0,
+    total_price: (dbPart.customer_price || dbPart.unit_price || 0) * (dbPart.quantity || 0),
+    status: dbPart.status || 'pending',
+    notes: dbPart.notes_internal || dbPart.notes || '',
+    created_at: dbPart.created_at,
+    updated_at: dbPart.updated_at,
     
-    if (!workOrderId) {
-      throw new Error('Work order ID is required');
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('work_order_parts')
-        .select('*')
-        .eq('work_order_id', workOrderId)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Database error fetching work order parts:', error);
-        throw new Error(`Failed to fetch parts: ${error.message}`);
-      }
-
-      console.log('Raw parts data from database:', data);
-
-      // Map database results to WorkOrderPart interface
-      const mappedParts = (data || []).map(mapDatabaseToPart);
-      console.log('Mapped parts:', mappedParts);
-
-      return mappedParts;
-    } catch (error) {
-      const errorMessage = PartsFormValidator.handleApiError(error);
-      throw new Error(errorMessage);
-    }
-  },
-
-  async createWorkOrderPart(workOrderId: string, partData: WorkOrderPartFormValues, jobLineId?: string): Promise<WorkOrderPart> {
-    try {
-      console.log('Creating work order part:', { workOrderId, partData, jobLineId });
-      
-      // Validate required fields before sending to database
-      if (!partData.name?.trim()) {
-        throw new Error('Part name is required');
-      }
-      
-      if (!partData.part_number?.trim()) {
-        throw new Error('Part number is required');
-      }
-      
-      if (!partData.part_type) {
-        throw new Error('Part type is required');
-      }
-      
-      const customerPrice = partData.unit_price || partData.customerPrice;
-      if (!customerPrice || customerPrice < 0) {
-        throw new Error('Customer price is required and must be non-negative');
-      }
-
-      // Map form data to database schema
-      const mappedData = mapPartFormToDatabase(partData, workOrderId, jobLineId);
-      console.log('Mapped part data for database:', mappedData);
-      
-      const { data, error } = await supabase
-        .from('work_order_parts')
-        .insert([mappedData])
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Database error creating part:', error);
-        throw new Error(PartsFormValidator.handleApiError(error));
-      }
-
-      if (!data) {
-        throw new Error('No data returned from part creation');
-      }
-
-      console.log('Part created successfully:', data);
-      
-      // Map database result back to application format
-      return mapDatabaseToPart(data);
-    } catch (error) {
-      console.error('Error in createWorkOrderPart:', error);
-      throw error;
-    }
-  },
-
-  async updateWorkOrderPart(partId: string, updates: Partial<WorkOrderPartFormValues>): Promise<WorkOrderPart> {
-    console.log('Updating work order part:', { partId, updates });
-
-    if (!partId) {
-      throw new Error('Part ID is required');
-    }
-
-    try {
-      // Map updates to database schema
-      const dbUpdates = mapPartFormToDatabase(updates, '', updates.job_line_id);
-      
-      // Remove fields that shouldn't be updated
-      delete (dbUpdates as any).work_order_id;
-      delete (dbUpdates as any).created_at;
-
-      const { data, error } = await supabase
-        .from('work_order_parts')
-        .update(dbUpdates)
-        .eq('id', partId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Database error updating work order part:', error);
-        throw new Error(`Failed to update part: ${error.message}`);
-      }
-
-      console.log('Updated part data:', data);
-      return mapDatabaseToPart(data);
-    } catch (error) {
-      const errorMessage = PartsFormValidator.handleApiError(error);
-      throw new Error(errorMessage);
-    }
-  },
-
-  async deleteWorkOrderPart(partId: string): Promise<void> {
-    console.log('Deleting work order part:', partId);
-
-    if (!partId) {
-      throw new Error('Part ID is required');
-    }
-
-    try {
-      const { error } = await supabase
-        .from('work_order_parts')
-        .delete()
-        .eq('id', partId);
-
-      if (error) {
-        console.error('Database error deleting work order part:', error);
-        throw new Error(`Failed to delete part: ${error.message}`);
-      }
-
-      console.log('Part deleted successfully');
-    } catch (error) {
-      const errorMessage = PartsFormValidator.handleApiError(error);
-      throw new Error(errorMessage);
-    }
-  },
-
-  async getPartsByJobLine(jobLineId: string): Promise<WorkOrderPart[]> {
-    console.log('Fetching parts for job line:', jobLineId);
-    
-    if (!jobLineId) {
-      throw new Error('Job line ID is required');
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('work_order_parts')
-        .select('*')
-        .eq('job_line_id', jobLineId)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Database error fetching parts by job line:', error);
-        throw new Error(`Failed to fetch parts: ${error.message}`);
-      }
-
-      return (data || []).map(mapDatabaseToPart);
-    } catch (error) {
-      const errorMessage = PartsFormValidator.handleApiError(error);
-      throw new Error(errorMessage);
-    }
-  },
-
-  async getJobLineParts(jobLineId: string): Promise<WorkOrderPart[]> {
-    console.log('Fetching parts for job line:', jobLineId);
-    
-    if (!jobLineId) {
-      throw new Error('Job line ID is required');
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('work_order_parts')
-        .select('*')
-        .eq('job_line_id', jobLineId)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Database error fetching job line parts:', error);
-        throw new Error(`Failed to fetch job line parts: ${error.message}`);
-      }
-
-      return (data || []).map(mapDatabaseToPart);
-    } catch (error) {
-      const errorMessage = PartsFormValidator.handleApiError(error);
-      throw new Error(errorMessage);
-    }
-  }
+    // Additional properties with fallbacks
+    partName: dbPart.part_name || dbPart.name,
+    partNumber: dbPart.part_number,
+    supplierName: dbPart.supplier_name,
+    supplierCost: dbPart.supplier_cost,
+    supplierSuggestedRetailPrice: dbPart.supplier_suggested_retail_price,
+    customerPrice: dbPart.customer_price,
+    retailPrice: dbPart.retail_price,
+    category: dbPart.category,
+    warrantyDuration: dbPart.warranty_duration,
+    warrantyExpiryDate: dbPart.warranty_expiry_date,
+    binLocation: dbPart.bin_location,
+    installDate: dbPart.install_date,
+    dateAdded: dbPart.date_added || dbPart.created_at,
+    part_type: dbPart.part_type,
+    installedBy: dbPart.installed_by,
+    markupPercentage: dbPart.markup_percentage,
+    inventoryItemId: dbPart.inventory_item_id,
+    coreChargeApplied: dbPart.core_charge_applied,
+    coreChargeAmount: dbPart.core_charge_amount,
+    isTaxable: dbPart.is_taxable,
+    invoiceNumber: dbPart.invoice_number,
+    poLine: dbPart.po_line,
+    isStockItem: dbPart.is_stock_item,
+    supplierOrderRef: dbPart.supplier_order_ref,
+    notesInternal: dbPart.notes_internal,
+    attachments: dbPart.attachments,
+    warehouseLocation: dbPart.warehouse_location,
+    shelfLocation: dbPart.shelf_location
+  };
 };
 
-// Export individual functions for backward compatibility
-export const getWorkOrderParts = workOrderPartsService.getWorkOrderParts;
-export const createWorkOrderPart = workOrderPartsService.createWorkOrderPart;
-export const updateWorkOrderPart = workOrderPartsService.updateWorkOrderPart;
-export const deleteWorkOrderPart = workOrderPartsService.deleteWorkOrderPart;
-export const getPartsByJobLine = workOrderPartsService.getPartsByJobLine;
-export const getJobLineParts = workOrderPartsService.getJobLineParts;
+// Helper function to map form values to database columns
+const mapFormToDatabase = (formData: WorkOrderPartFormValues) => {
+  return {
+    part_name: formData.name,
+    part_number: formData.part_number,
+    part_description: formData.description,
+    quantity: formData.quantity,
+    customer_price: formData.unit_price || formData.customerPrice,
+    status: formData.status,
+    notes_internal: formData.notes,
+    part_type: formData.part_type,
+    supplier_cost: formData.supplierCost,
+    retail_price: formData.retailPrice,
+    markup_percentage: formData.markupPercentage,
+    is_taxable: formData.isTaxable,
+    core_charge_amount: formData.coreChargeAmount,
+    core_charge_applied: formData.coreChargeApplied,
+    warranty_duration: formData.warrantyDuration,
+    warranty_expiry_date: formData.warrantyExpiryDate,
+    install_date: formData.installDate,
+    installed_by: formData.installedBy,
+    invoice_number: formData.invoiceNumber,
+    po_line: formData.poLine,
+    is_stock_item: formData.isStockItem,
+    supplier_name: formData.supplierName,
+    supplier_order_ref: formData.supplierOrderRef,
+    notes: formData.notesInternal,
+    inventory_item_id: formData.inventoryItemId,
+    category: formData.category
+  };
+};
+
+export async function getWorkOrderParts(workOrderId: string): Promise<WorkOrderPart[]> {
+  const { data, error } = await supabase
+    .from('work_order_parts')
+    .select('*')
+    .eq('work_order_id', workOrderId);
+
+  if (error) {
+    console.error('Error fetching work order parts:', error);
+    throw error;
+  }
+
+  return (data || []).map(mapDatabaseToWorkOrderPart);
+}
+
+export async function addWorkOrderPart(
+  workOrderId: string,
+  formData: WorkOrderPartFormValues
+): Promise<WorkOrderPart> {
+  try {
+    const mappedData = mapFormToDatabase(formData);
+
+    const { data, error } = await supabase
+      .from('work_order_parts')
+      .insert({ ...mappedData, work_order_id: workOrderId })
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error adding work order part:', error);
+      throw error;
+    }
+
+    return mapDatabaseToWorkOrderPart(data);
+  } catch (error) {
+    console.error('Failed to add work order part:', error);
+    throw error;
+  }
+}
+
+export async function getWorkOrderPartById(partId: string): Promise<WorkOrderPart | null> {
+  const { data, error } = await supabase
+    .from('work_order_parts')
+    .select('*')
+    .eq('id', partId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching work order part by ID:', error);
+    throw error;
+  }
+
+  return data ? mapDatabaseToWorkOrderPart(data) : null;
+}
+
+export async function deleteWorkOrderPart(partId: string): Promise<void> {
+  const { error } = await supabase
+    .from('work_order_parts')
+    .delete()
+    .eq('id', partId);
+
+  if (error) {
+    console.error('Error deleting work order part:', error);
+    throw error;
+  }
+}
+
+export async function updateWorkOrderPart(
+  partId: string,
+  formData: WorkOrderPartFormValues
+): Promise<WorkOrderPart> {
+  console.log('🔄 Updating work order part:', { partId, formData });
+  
+  try {
+    const mappedData = mapFormToDatabase(formData);
+    console.log('📝 Mapped data for update:', mappedData);
+
+    const { data, error } = await supabase
+      .from('work_order_parts')
+      .update(mappedData)
+      .eq('id', partId)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('❌ Error updating part:', error);
+      throw error;
+    }
+
+    console.log('✅ Part updated successfully:', data);
+    return mapDatabaseToWorkOrderPart(data);
+  } catch (error) {
+    console.error('❌ Update part failed:', error);
+    throw error;
+  }
+}
+
+export async function getUnassignedParts(workOrderId: string): Promise<WorkOrderPart[]> {
+  const { data, error } = await supabase
+    .from('work_order_parts')
+    .select('*')
+    .eq('work_order_id', workOrderId)
+    .is('job_line_id', null);
+
+  if (error) {
+    console.error('Error fetching unassigned parts:', error);
+    throw error;
+  }
+
+  return (data || []).map(mapDatabaseToWorkOrderPart);
+}
+
+export async function assignPartToJobLine(partId: string, jobLineId: string): Promise<WorkOrderPart> {
+  const { data, error } = await supabase
+    .from('work_order_parts')
+    .update({ job_line_id: jobLineId })
+    .eq('id', partId)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Error assigning part to job line:', error);
+    throw error;
+  }
+
+  return mapDatabaseToWorkOrderPart(data);
+}
+
+export async function unassignPart(partId: string): Promise<WorkOrderPart> {
+  const { data, error } = await supabase
+    .from('work_order_parts')
+    .update({ job_line_id: null })
+    .eq('id', partId)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Error unassigning part:', error);
+    throw error;
+  }
+
+  return mapDatabaseToWorkOrderPart(data);
+}
+
+export async function bulkAssignParts(partIds: string[], jobLineId: string): Promise<WorkOrderPart[]> {
+  const { data, error } = await supabase
+    .from('work_order_parts')
+    .update({ job_line_id: jobLineId })
+    .in('id', partIds)
+    .select('*');
+
+  if (error) {
+    console.error('Error bulk assigning parts:', error);
+    throw error;
+  }
+
+  return (data || []).map(mapDatabaseToWorkOrderPart);
+}
+
+export async function bulkUnassignParts(partIds: string[]): Promise<WorkOrderPart[]> {
+  const { data, error } = await supabase
+    .from('work_order_parts')
+    .update({ job_line_id: null })
+    .in('id', partIds)
+    .select('*');
+
+  if (error) {
+    console.error('Error bulk unassigning parts:', error);
+    throw error;
+  }
+
+  return (data || []).map(mapDatabaseToWorkOrderPart);
+}
+
+export async function getPartsByJobLine(workOrderId: string, jobLineId: string): Promise<WorkOrderPart[]> {
+  const { data, error } = await supabase
+    .from('work_order_parts')
+    .select('*')
+    .eq('work_order_id', workOrderId)
+    .eq('job_line_id', jobLineId);
+
+  if (error) {
+    console.error('Error fetching parts by job line:', error);
+    throw error;
+  }
+
+  return (data || []).map(mapDatabaseToWorkOrderPart);
+}
