@@ -57,7 +57,7 @@ ReactDOM.createRoot(rootElement).render(
                     <App />
                     <ReactQueryDevtools 
                       initialIsOpen={false} 
-                      position="bottom-right"
+                      position="bottom"
                     />
                   </GlobalErrorBoundary>
                 </BrowserRouter>
