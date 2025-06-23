@@ -1,43 +1,47 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form } from '@/components/ui/form';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPartFormValues, PART_TYPES, WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
+import { WorkOrderJobLine } from '@/types/jobLine';
 import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
-import { PartsFormValidator, PartsFormError } from '@/utils/partsErrorHandler';
-import { BasicPartFields } from './BasicPartFields';
-import { JobLineSelector } from './JobLineSelector';
 import { PartTypeAndStatusFields } from './PartTypeAndStatusFields';
 import { AdvancedPartFields } from './AdvancedPartFields';
 import { toast } from 'sonner';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
 const addPartSchema = z.object({
-  name: z.string().min(2, 'Part name must be at least 2 characters'),
-  part_number: z.string().min(3, 'Part number must be at least 3 characters'),
+  name: z.string().min(1, 'Part name is required'),
+  part_number: z.string().min(1, 'Part number is required'),
+  part_type: z.enum(['inventory', 'non-inventory']),
   description: z.string().optional(),
-  quantity: z.number().min(1, 'Quantity must be at least 1'),
-  unit_price: z.number().min(0, 'Unit price cannot be negative'),
-  status: z.enum(WORK_ORDER_PART_STATUSES).default('pending'),
+  quantity: z.number().min(1, 'Quantity must be at least 1').default(1),
+  unit_price: z.number().min(0, 'Price cannot be negative').default(0),
+  status: z.string().optional().default('pending'),
   notes: z.string().optional(),
   job_line_id: z.string().optional(),
-  part_type: z.enum(PART_TYPES),
   category: z.string().optional(),
   supplierName: z.string().optional(),
-  supplierCost: z.number().min(0).optional(),
-  retailPrice: z.number().min(0).optional(),
-  markupPercentage: z.number().min(0).max(1000).optional(),
-  isTaxable: z.boolean().default(false),
-  coreChargeAmount: z.number().min(0).optional(),
-  coreChargeApplied: z.boolean().default(false),
+  supplierCost: z.number().optional(),
+  retailPrice: z.number().optional(),
+  markupPercentage: z.number().optional(),
+  isTaxable: z.boolean().optional(),
+  coreChargeAmount: z.number().optional(),
+  coreChargeApplied: z.boolean().optional(),
   warrantyDuration: z.string().optional(),
-  isStockItem: z.boolean().default(false)
+  invoiceNumber: z.string().optional(),
+  isStockItem: z.boolean().optional(),
 });
-type AddPartFormValues = z.infer<typeof addPartSchema>;
+
 interface EnhancedAddPartDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -45,6 +49,7 @@ interface EnhancedAddPartDialogProps {
   jobLines: WorkOrderJobLine[];
   onPartAdded: () => Promise<void>;
 }
+
 export function EnhancedAddPartDialog({
   open,
   onOpenChange,
@@ -54,207 +59,271 @@ export function EnhancedAddPartDialog({
 }: EnhancedAddPartDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<PartsFormError[]>([]);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  console.log('EnhancedAddPartDialog render:', {
-    open,
-    workOrderId,
-    jobLinesCount: jobLines.length
-  });
-  const form = useForm<AddPartFormValues>({
+
+  const form = useForm<WorkOrderPartFormValues>({
     resolver: zodResolver(addPartSchema),
     defaultValues: {
       name: '',
       part_number: '',
+      part_type: 'inventory',
       description: '',
       quantity: 1,
       unit_price: 0,
       status: 'pending',
       notes: '',
-      job_line_id: undefined,
-      part_type: 'inventory',
+      job_line_id: '',
       category: '',
       supplierName: '',
-      supplierCost: undefined,
-      retailPrice: undefined,
-      markupPercentage: undefined,
+      supplierCost: 0,
+      retailPrice: 0,
+      markupPercentage: 0,
       isTaxable: false,
-      coreChargeAmount: undefined,
+      coreChargeAmount: 0,
       coreChargeApplied: false,
       warrantyDuration: '',
-      isStockItem: false
-    }
+      invoiceNumber: '',
+      isStockItem: false,
+    },
   });
-  const resetForm = useCallback(() => {
-    form.reset();
-    setSubmitError(null);
-    setValidationErrors([]);
-    setSubmitSuccess(false);
-  }, [form]);
-  const handleClose = useCallback(() => {
-    if (!isSubmitting) {
-      resetForm();
-      onOpenChange(false);
-    }
-  }, [isSubmitting, resetForm, onOpenChange]);
-  const validateFormData = useCallback((data: AddPartFormValues): PartsFormError[] => {
-    console.log('Validating form data:', data);
-    const errors = PartsFormValidator.validatePartForm(data);
 
-    // Additional business logic validations
-    if (data.supplierCost && data.unit_price && data.supplierCost > data.unit_price) {
-      errors.push({
-        field: 'unit_price',
-        message: 'Customer price should not be less than supplier cost'
-      });
-    }
-    if (data.coreChargeApplied && !data.coreChargeAmount) {
-      errors.push({
-        field: 'coreChargeAmount',
-        message: 'Core charge amount is required when core charge is applied'
-      });
-    }
-    return errors;
-  }, []);
-  const onSubmit = useCallback(async (data: AddPartFormValues) => {
+  const handleSubmit = async (data: WorkOrderPartFormValues) => {
     try {
-      console.log('Submitting part form:', data);
       setIsSubmitting(true);
       setSubmitError(null);
-      setValidationErrors([]);
-
-      // Validate work order ID
-      if (!workOrderId) {
-        throw new Error('Work order ID is required');
-      }
-
-      // Client-side validation
-      const errors = validateFormData(data);
-      if (errors.length > 0) {
-        setValidationErrors(errors);
-        PartsFormValidator.showValidationErrors(errors);
-        return;
-      }
-
-      // Convert form data to service format
+      
+      console.log('Adding part with data:', data);
+      
+      // Calculate total price
+      const total_price = (data.quantity || 0) * (data.unit_price || 0);
+      
       const partData: WorkOrderPartFormValues = {
-        name: data.name,
-        part_number: data.part_number,
-        description: data.description,
-        quantity: data.quantity,
-        unit_price: data.unit_price,
-        status: data.status,
-        notes: data.notes,
-        job_line_id: data.job_line_id === 'none' ? undefined : data.job_line_id,
-        part_type: data.part_type,
-        category: data.category,
-        supplierName: data.supplierName,
-        supplierCost: data.supplierCost,
-        retailPrice: data.retailPrice,
-        markupPercentage: data.markupPercentage,
-        isTaxable: data.isTaxable,
-        coreChargeAmount: data.coreChargeAmount,
-        coreChargeApplied: data.coreChargeApplied,
-        warrantyDuration: data.warrantyDuration,
-        isStockItem: data.isStockItem
+        ...data,
+        total_price,
       };
-      console.log('Creating work order part with data:', partData);
 
-      // Create the part
-      const createdPart = await createWorkOrderPart(workOrderId, partData);
-      console.log('Part created successfully:', createdPart.id);
-
-      // Show success state briefly
-      setSubmitSuccess(true);
-      PartsFormValidator.showSuccessToast('Part added successfully');
-
-      // Wait a moment to show success, then close and refresh
-      setTimeout(async () => {
-        try {
-          await onPartAdded();
-          handleClose();
-        } catch (refreshError) {
-          console.error('Error refreshing parts after creation:', refreshError);
-          toast.error('Part was created but failed to refresh the list');
-        }
-      }, 1000);
+      await createWorkOrderPart(workOrderId, partData);
+      
+      // Reset form
+      form.reset();
+      
+      // Close dialog and refresh data
+      onOpenChange(false);
+      await onPartAdded();
+      
+      toast.success('Part added successfully');
+      console.log('Part added successfully');
     } catch (error) {
-      console.error('Error creating part:', error);
-      const errorMessage = PartsFormValidator.handleApiError(error);
+      console.error('Error adding part:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add part';
       setSubmitError(errorMessage);
-      PartsFormValidator.showErrorToast(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
-  }, [workOrderId, validateFormData, onPartAdded, handleClose]);
+  };
 
-  // Reset form when dialog opens
-  React.useEffect(() => {
-    if (open) {
-      resetForm();
+  const handleDialogClose = (open: boolean) => {
+    if (!isSubmitting) {
+      if (!open) {
+        form.reset();
+        setSubmitError(null);
+      }
+      onOpenChange(open);
     }
-  }, [open, resetForm]);
-  return <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-stone-50">
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleDialogClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Part to Work Order</DialogTitle>
+          <DialogTitle>Add New Part</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Error Display */}
-            {submitError && <Alert variant="destructive">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {submitError && (
+              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>{submitError}</AlertDescription>
-              </Alert>}
+              </Alert>
+            )}
 
-            {/* Validation Errors */}
-            {validationErrors.length > 0 && <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  <div className="space-y-1">
-                    <div className="font-medium">Please fix the following errors:</div>
-                    <ul className="list-disc list-inside space-y-1">
-                      {validationErrors.map((error, index) => <li key={index} className="text-sm">{error.message}</li>)}
-                    </ul>
-                  </div>
-                </AlertDescription>
-              </Alert>}
+            {/* Basic Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Part Name *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter part name..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Success Display */}
-            {submitSuccess && <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  Part added successfully! Refreshing data...
-                </AlertDescription>
-              </Alert>}
+              <FormField
+                control={form.control}
+                name="part_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Part Number *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter part number..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-            {/* Form Fields */}
-            <BasicPartFields form={form} />
-            
-            <JobLineSelector form={form} jobLines={jobLines} />
-            
+            {/* Quantity and Price */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="1" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                        placeholder="Enter quantity..."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="unit_price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit Price *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.01"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Part Type and Status */}
             <PartTypeAndStatusFields form={form} />
 
+            {/* Advanced Fields */}
             <AdvancedPartFields form={form} />
 
+            {/* Description and Notes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="Enter part description..."
+                        rows={3}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="Enter any additional notes..."
+                        rows={3}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Job Line Assignment */}
+            {jobLines.length > 0 && (
+              <FormField
+                control={form.control}
+                name="job_line_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assign to Job Line</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select job line..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">No Assignment</SelectItem>
+                          {jobLines.map((jobLine) => (
+                            <SelectItem key={jobLine.id} value={jobLine.id}>
+                              {jobLine.name} - {jobLine.category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             {/* Form Actions */}
-            <div className="flex justify-end space-x-3 pt-6 border-t">
-              <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+            <div className="flex justify-end space-x-2 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleDialogClose(false)}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting || submitSuccess} className="min-w-[120px]">
-                {isSubmitting ? <>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Adding...
-                  </> : submitSuccess ? <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Added!
-                  </> : 'Add Part'}
+                    Adding Part...
+                  </>
+                ) : (
+                  'Add Part'
+                )}
               </Button>
             </div>
           </form>
         </Form>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 }

@@ -16,6 +16,14 @@ interface PartsErrorBoundaryProps {
   fallback?: React.ComponentType<{ error: Error; resetError: () => void }>;
 }
 
+declare global {
+  interface Window {
+    Sentry?: {
+      captureException: (error: Error, context?: any) => void;
+    };
+  }
+}
+
 export class PartsErrorBoundary extends React.Component<
   PartsErrorBoundaryProps,
   PartsErrorBoundaryState
@@ -46,7 +54,7 @@ export class PartsErrorBoundary extends React.Component<
     });
 
     // Log to external service if available
-    if (window.Sentry) {
+    if (typeof window !== 'undefined' && window.Sentry) {
       window.Sentry.captureException(error, {
         contexts: {
           react: {
