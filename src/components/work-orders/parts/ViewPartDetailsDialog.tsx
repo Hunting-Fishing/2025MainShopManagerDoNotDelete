@@ -2,133 +2,126 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, DollarSign, TrendingUp } from 'lucide-react';
 import { WorkOrderPart } from '@/types/workOrderPart';
+import { Separator } from '@/components/ui/separator';
 
 interface ViewPartDetailsDialogProps {
-  part: WorkOrderPart;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  part: WorkOrderPart | null;
 }
 
-export function ViewPartDetailsDialog({ part, open, onOpenChange }: ViewPartDetailsDialogProps) {
-  const totalCost = part.quantity * part.customerPrice;
-  const markup = part.customerPrice - part.supplierCost;
-  const markupAmount = markup * part.quantity;
+export function ViewPartDetailsDialog({ 
+  open, 
+  onOpenChange, 
+  part 
+}: ViewPartDetailsDialogProps) {
+  if (!part) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Part Details: {part.partName}
-          </DialogTitle>
+          <DialogTitle>Part Details</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Part Name</label>
-                  <p className="font-medium">{part.partName}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Part Type</label>
-                  <div>
-                    <Badge variant={part.partType === 'inventory' ? 'default' : 'secondary'}>
-                      {part.partType}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              
-              {part.partNumber && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Part Number</label>
-                  <p className="font-medium">{part.partNumber}</p>
-                </div>
-              )}
-              
-              {part.supplierName && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Supplier</label>
-                  <p className="font-medium">{part.supplierName}</p>
-                </div>
-              )}
-              
+          <div>
+            <h3 className="font-semibold mb-3">Basic Information</h3>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Quantity</label>
-                <p className="font-medium">{part.quantity}</p>
+                <label className="text-sm font-medium text-gray-600">Part Name</label>
+                <p className="text-sm">{part.name}</p>
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Part Number</label>
+                <p className="text-sm font-mono">{part.part_number}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Type</label>
+                <Badge variant="outline">{part.part_type || 'Standard'}</Badge>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Status</label>
+                <Badge>{part.status}</Badge>
+              </div>
+            </div>
+            
+            {part.description && (
+              <div className="mt-4">
+                <label className="text-sm font-medium text-gray-600">Description</label>
+                <p className="text-sm mt-1">{part.description}</p>
+              </div>
+            )}
+          </div>
 
-          {/* Cost Breakdown */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Cost Breakdown
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Supplier Cost (each)</label>
-                  <p className="font-medium">${part.supplierCost.toFixed(2)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Retail Price (each)</label>
-                  <p className="font-medium">${part.retailPrice.toFixed(2)}</p>
-                </div>
+          <Separator />
+
+          {/* Pricing Information */}
+          <div>
+            <h3 className="font-semibold mb-3">Pricing & Quantity</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-600">Quantity</label>
+                <p className="text-sm font-medium">{part.quantity}</p>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Markup Percentage</label>
-                  <p className="font-medium flex items-center gap-1">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                    {part.markupPercentage.toFixed(1)}%
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Customer Price (each)</label>
-                  <p className="font-medium text-green-600">${part.customerPrice.toFixed(2)}</p>
-                </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Unit Price</label>
+                <p className="text-sm font-medium">${(part.unit_price || 0).toFixed(2)}</p>
               </div>
-              
-              <div className="border-t pt-3">
+              <div>
+                <label className="text-sm font-medium text-gray-600">Total Price</label>
+                <p className="text-sm font-medium">${part.total_price.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Information */}
+          {(part.supplierName || part.supplierCost || part.category) && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="font-semibold mb-3">Additional Information</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Total Cost</label>
-                    <p className="text-lg font-bold">${totalCost.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Total Markup</label>
-                    <p className="text-lg font-bold text-green-600">+${markupAmount.toFixed(2)}</p>
-                  </div>
+                  {part.supplierName && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Supplier</label>
+                      <p className="text-sm">{part.supplierName}</p>
+                    </div>
+                  )}
+                  {part.supplierCost && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Supplier Cost</label>
+                      <p className="text-sm">${part.supplierCost.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {part.category && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Category</label>
+                      <p className="text-sm">{part.category}</p>
+                    </div>
+                  )}
+                  {part.warrantyDuration && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Warranty</label>
+                      <p className="text-sm">{part.warrantyDuration}</p>
+                    </div>
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </>
+          )}
 
           {/* Notes */}
           {part.notes && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">{part.notes}</p>
-              </CardContent>
-            </Card>
+            <>
+              <Separator />
+              <div>
+                <h3 className="font-semibold mb-3">Notes</h3>
+                <p className="text-sm bg-gray-50 p-3 rounded-md">{part.notes}</p>
+              </div>
+            </>
           )}
         </div>
       </DialogContent>

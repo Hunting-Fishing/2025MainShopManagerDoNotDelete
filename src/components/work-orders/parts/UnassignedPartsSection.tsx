@@ -83,7 +83,7 @@ export function UnassignedPartsSection({
                         Status: {part.status}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
-                        Type: {part.partType || 'N/A'}
+                        Type: {part.part_type || 'N/A'}
                       </Badge>
                     </div>
                   </div>

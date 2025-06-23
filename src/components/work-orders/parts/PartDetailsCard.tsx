@@ -75,7 +75,7 @@ export function PartDetailsCard({
           
           <div>
             <p className="text-muted-foreground">Type</p>
-            <p className="font-medium">{part.partType || 'Standard'}</p>
+            <p className="font-medium">{part.part_type || 'Standard'}</p>
           </div>
         </div>
 

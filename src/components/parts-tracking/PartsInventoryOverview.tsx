@@ -26,7 +26,7 @@ export function PartsInventoryOverview() {
       retailPrice: 45.99,
       warrantyDuration: '1 year',
       binLocation: 'A-12',
-      partType: 'OEM',
+      part_type: 'OEM',
       markupPercentage: 31.4,
       isTaxable: true
     }

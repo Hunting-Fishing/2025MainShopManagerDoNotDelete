@@ -106,7 +106,7 @@ export function JobLineWithParts({
                     )}
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant="outline" className="text-xs">
-                        Type: {part.partType || 'N/A'}
+                        Type: {part.part_type || 'N/A'}
                       </Badge>
                     </div>
                   </div>

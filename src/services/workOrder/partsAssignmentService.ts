@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { WorkOrderPart } from '@/types/workOrderPart';
 
@@ -32,7 +33,7 @@ const mapDatabasePartToWorkOrderPart = (dbPart: any): WorkOrderPart => {
     binLocation: dbPart.bin_location,
     installDate: dbPart.install_date,
     dateAdded: dbPart.date_added || dbPart.created_at,
-    partType: dbPart.part_type,
+    part_type: dbPart.part_type,
     installedBy: dbPart.installed_by,
     markupPercentage: dbPart.markup_percentage,
     inventoryItemId: dbPart.inventory_item_id,
