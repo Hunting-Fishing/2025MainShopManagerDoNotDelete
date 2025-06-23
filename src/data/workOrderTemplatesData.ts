@@ -1,16 +1,21 @@
 
-import { WorkOrderTemplate } from "@/types/workOrder";
+// This file now uses real database data through the WorkOrderTemplateService
+import { WorkOrderTemplateService } from '@/lib/services/WorkOrderTemplateService';
 
-// All work order templates should come from the database - no mock data
-export const workOrderTemplates: WorkOrderTemplate[] = [];
+const templateService = new WorkOrderTemplateService();
+
+// Export functions that use real database data
+export const getWorkOrderTemplates = async () => {
+  return await templateService.getActiveTemplates();
+};
 
 export const updateTemplateUsage = async (templateId: string) => {
-  console.warn('Template usage tracking should be implemented with real database calls.');
-  // This is a no-op for compatibility - implement with real database calls
+  return await templateService.useTemplate(templateId);
 };
 
-export const createTemplate = async (): Promise<WorkOrderTemplate | null> => {
-  console.warn('Template creation should be implemented with real database calls.');
-  // Return null instead of mock data - implement with real database calls
-  return null;
+export const createTemplate = async (templateData: any) => {
+  return await templateService.createTemplate(templateData);
 };
+
+// Remove the mock data export
+export const workOrderTemplates = [];

@@ -1,132 +1,89 @@
 
-import { useState, useCallback, useEffect } from "react";
-import { WorkOrderTemplate } from "@/types/workOrder";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { useState, useEffect, useCallback } from 'react';
+import { WorkOrderTemplateService } from '@/lib/services/WorkOrderTemplateService';
+import { WorkOrderTemplate } from '@/lib/database/repositories/WorkOrderTemplateRepository';
 
-export const useWorkOrderTemplates = () => {
+const templateService = new WorkOrderTemplateService();
+
+export function useWorkOrderTemplates() {
   const [templates, setTemplates] = useState<WorkOrderTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const loadTemplates = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
+
+  const fetchTemplates = useCallback(async () => {
     try {
-      const { data, error: fetchError } = await supabase
-        .from('work_order_templates')
-        .select('*')
-        .order('usage_count', { ascending: false });
-
-      if (fetchError) throw fetchError;
-
-      const formattedTemplates: WorkOrderTemplate[] = (data || []).map(template => ({
-        id: template.id,
-        name: template.name,
-        description: template.description || "",
-        status: template.status || "pending",
-        priority: template.priority || "medium", 
-        technician: template.technician || "",
-        notes: template.notes || "",
-        usage_count: template.usage_count || 0,
-        last_used: template.last_used || "",
-        created_at: template.created_at || new Date().toISOString(),
-        updated_at: template.created_at || new Date().toISOString() // Use created_at as fallback
-      }));
-
-      setTemplates(formattedTemplates);
+      setLoading(true);
+      setError(null);
+      const data = await templateService.getActiveTemplates();
+      setTemplates(data);
     } catch (err) {
-      console.error("Failed to load templates:", err);
-      setError("Failed to load work order templates");
-      toast.error("Failed to load templates");
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch templates';
+      setError(errorMessage);
+      console.error('Error fetching work order templates:', err);
     } finally {
       setLoading(false);
     }
   }, []);
-  
-  useEffect(() => {
-    loadTemplates();
-  }, [loadTemplates]);
-  
-  const handleApplyTemplate = useCallback(async (template: WorkOrderTemplate) => {
+
+  const createTemplate = useCallback(async (templateData: Partial<WorkOrderTemplate>) => {
     try {
-      // Update template usage count in database
-      const { error } = await supabase
-        .from('work_order_templates')
-        .update({ 
-          usage_count: (template.usage_count || 0) + 1,
-          last_used: new Date().toISOString()
-        })
-        .eq('id', template.id);
-
-      if (error) throw error;
-
-      // Update local state
-      setTemplates(prev => prev.map(t => 
-        t.id === template.id 
-          ? { ...t, usage_count: (t.usage_count || 0) + 1, last_used: new Date().toISOString() }
-          : t
-      ));
-
-      return template;
+      const newTemplate = await templateService.createTemplate(templateData);
+      setTemplates(prev => [newTemplate, ...prev]);
+      return newTemplate;
     } catch (err) {
-      console.error("Failed to update template usage:", err);
-      toast.error("Failed to update template usage");
-      return template;
-    }
-  }, []);
-  
-  const handleSaveTemplate = useCallback(async (newTemplate: Omit<WorkOrderTemplate, "id" | "usage_count" | "created_at" | "updated_at">) => {
-    try {
-      const now = new Date().toISOString();
-      const { data, error } = await supabase
-        .from('work_order_templates')
-        .insert({
-          name: newTemplate.name,
-          description: newTemplate.description,
-          status: newTemplate.status,
-          priority: newTemplate.priority,
-          technician: newTemplate.technician,
-          notes: newTemplate.notes,
-          usage_count: 0,
-          created_at: now
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const savedTemplate: WorkOrderTemplate = {
-        id: data.id,
-        name: data.name,
-        description: data.description || "",
-        status: data.status || "pending",
-        priority: data.priority || "medium",
-        technician: data.technician || "",
-        notes: data.notes || "",
-        usage_count: 0,
-        last_used: "",
-        created_at: data.created_at || now,
-        updated_at: data.created_at || now // Use created_at as fallback
-      };
-      
-      setTemplates(prev => [...prev, savedTemplate]);
-      toast.success("Template saved successfully");
-      return savedTemplate;
-    } catch (err) {
-      console.error("Failed to save template:", err);
-      toast.error("Failed to save template");
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create template';
+      setError(errorMessage);
       throw err;
     }
   }, []);
-  
+
+  const updateTemplate = useCallback(async (id: string, updates: Partial<WorkOrderTemplate>) => {
+    try {
+      const updatedTemplate = await templateService.updateTemplate(id, updates);
+      setTemplates(prev => prev.map(t => t.id === id ? updatedTemplate : t));
+      return updatedTemplate;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update template';
+      setError(errorMessage);
+      throw err;
+    }
+  }, []);
+
+  const deleteTemplate = useCallback(async (id: string) => {
+    try {
+      await templateService.deleteTemplate(id);
+      setTemplates(prev => prev.filter(t => t.id !== id));
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete template';
+      setError(errorMessage);
+      throw err;
+    }
+  }, []);
+
+  const useTemplate = useCallback(async (templateId: string) => {
+    try {
+      const updatedTemplate = await templateService.useTemplate(templateId);
+      setTemplates(prev => prev.map(t => t.id === templateId ? updatedTemplate : t));
+      return updatedTemplate;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update template usage';
+      setError(errorMessage);
+      throw err;
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
   return {
     templates,
     loading,
     error,
-    handleApplyTemplate,
-    handleSaveTemplate,
-    refreshTemplates: loadTemplates
+    refetch: fetchTemplates,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate,
+    useTemplate
   };
-};
+}

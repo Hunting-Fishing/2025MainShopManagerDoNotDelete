@@ -1,33 +1,16 @@
 
-/**
- * Vehicle utility functions that work with available database tables
- */
+import { VehicleService } from '@/lib/services/VehicleService';
+import { Vehicle } from '@/lib/database/repositories/VehicleRepository';
 
-// Since customer_vehicles table doesn't exist in the current schema,
-// we'll provide a placeholder implementation that can be updated
-// when the proper vehicle management is implemented
+const vehicleService = new VehicleService();
 
 /**
- * Get vehicle by ID - placeholder implementation
+ * Get vehicle by ID using real database
  */
-export const getVehicleById = async (vehicleId: string) => {
+export const getVehicleById = async (vehicleId: string): Promise<Vehicle | null> => {
   try {
-    // For now, return a mock vehicle object
-    // This should be updated when proper vehicle tables are available
-    console.warn('Vehicle table not found in database schema. Using mock data.');
-    
-    return {
-      id: vehicleId,
-      make: 'Unknown',
-      model: 'Unknown',
-      year: new Date().getFullYear(),
-      vin: '',
-      license_plate: '',
-      customer_id: '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      notes: 'Vehicle data not available - table missing from schema'
-    };
+    console.log('Fetching vehicle with ID:', vehicleId);
+    return await vehicleService.getCustomerVehicles(vehicleId).then(vehicles => vehicles[0] || null);
   } catch (error) {
     console.error('Error fetching vehicle:', error);
     throw error;
@@ -35,19 +18,49 @@ export const getVehicleById = async (vehicleId: string) => {
 };
 
 /**
- * Placeholder for future vehicle operations
+ * Create a new vehicle in the database
  */
-export const createVehicle = async (vehicleData: any) => {
-  console.warn('Vehicle creation not implemented - customer_vehicles table missing');
-  return null;
+export const createVehicle = async (vehicleData: Partial<Vehicle>): Promise<Vehicle> => {
+  try {
+    return await vehicleService.createVehicle(vehicleData);
+  } catch (error) {
+    console.error('Error creating vehicle:', error);
+    throw error;
+  }
 };
 
-export const updateVehicle = async (vehicleId: string, updates: any) => {
-  console.warn('Vehicle update not implemented - customer_vehicles table missing');
-  return null;
+/**
+ * Update vehicle in the database
+ */
+export const updateVehicle = async (vehicleId: string, updates: Partial<Vehicle>): Promise<Vehicle> => {
+  try {
+    return await vehicleService.updateVehicle(vehicleId, updates);
+  } catch (error) {
+    console.error('Error updating vehicle:', error);
+    throw error;
+  }
 };
 
-export const deleteVehicle = async (vehicleId: string) => {
-  console.warn('Vehicle deletion not implemented - customer_vehicles table missing');
-  return false;
+/**
+ * Delete vehicle from the database
+ */
+export const deleteVehicle = async (vehicleId: string): Promise<void> => {
+  try {
+    await vehicleService.deleteVehicle(vehicleId);
+  } catch (error) {
+    console.error('Error deleting vehicle:', error);
+    throw error;
+  }
+};
+
+/**
+ * Search vehicles by various criteria
+ */
+export const searchVehicles = async (searchTerm: string): Promise<Vehicle[]> => {
+  try {
+    return await vehicleService.searchVehicles(searchTerm);
+  } catch (error) {
+    console.error('Error searching vehicles:', error);
+    throw error;
+  }
 };
