@@ -36,7 +36,7 @@ export interface WorkOrderPart {
   supplierOrderRef?: string;
   notesInternal?: string;
   inventoryItemId?: string;
-  partType?: string;
+  part_type?: string; // Make this available on the interface
   estimatedArrivalDate?: string;
   itemStatus?: string;
   
@@ -54,12 +54,12 @@ export interface WorkOrderPartFormValues {
   part_number: string;
   description?: string;
   quantity: number;
-  unit_price: number;
+  unit_price: number; // This maps to customer_price in database
   status?: string;
   notes?: string;
   job_line_id?: string;
   category?: string;
-  customerPrice?: number;
+  customerPrice?: number; // Optional alias, unit_price is primary
   supplierCost?: number;
   retailPrice?: number;
   markupPercentage?: number;
@@ -77,7 +77,7 @@ export interface WorkOrderPartFormValues {
   supplierOrderRef?: string;
   notesInternal?: string;
   inventoryItemId?: string;
-  part_type: string; // Make this required
+  part_type: string; // Required field
   estimatedArrivalDate?: string;
   itemStatus?: string;
 }

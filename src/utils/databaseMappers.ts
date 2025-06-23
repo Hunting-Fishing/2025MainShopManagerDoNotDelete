@@ -1,4 +1,3 @@
-
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
 
@@ -6,18 +5,21 @@ import { WorkOrderJobLine } from '@/types/jobLine';
  * Maps form data to work_order_parts database schema
  */
 export const mapPartFormToDatabase = (formData: any, workOrderId: string, jobLineId?: string) => {
+  const quantity = formData.quantity || 1;
+  const customerPrice = formData.unit_price || formData.customerPrice || 0;
+  
   return {
     work_order_id: workOrderId,
     job_line_id: jobLineId || null,
-    part_name: formData.name,
+    part_name: formData.name, // Map name to part_name for database
     part_number: formData.part_number,
-    quantity: formData.quantity || 1,
-    customer_price: formData.unit_price || formData.customerPrice || 0,
+    quantity: quantity,
+    customer_price: customerPrice, // This is the required field in database
     supplier_cost: formData.supplierCost || 0,
     retail_price: formData.retailPrice || 0,
     supplier_name: formData.supplierName || '',
     category: formData.category || '',
-    part_type: formData.part_type || 'inventory',
+    part_type: formData.part_type || 'inventory', // Required field
     markup_percentage: formData.markupPercentage || 0,
     is_taxable: formData.isTaxable !== undefined ? formData.isTaxable : true,
     core_charge_amount: formData.coreChargeAmount || 0,
@@ -27,7 +29,9 @@ export const mapPartFormToDatabase = (formData: any, workOrderId: string, jobLin
     po_line: formData.poLine || '',
     is_stock_item: formData.isStockItem || false,
     notes: formData.notes || formData.description || '',
-    status: formData.status || 'pending'
+    status: formData.status || 'pending',
+    // Calculate total price dynamically
+    total_price: quantity * customerPrice
   };
 };
 
@@ -63,12 +67,12 @@ export const mapDatabaseToPart = (dbData: any): WorkOrderPart => {
     work_order_id: dbData.work_order_id,
     job_line_id: dbData.job_line_id,
     part_number: dbData.part_number,
-    name: dbData.part_name || dbData.name,
+    name: dbData.part_name || dbData.name, // Handle both field names
     partName: dbData.part_name,
     description: dbData.notes || dbData.description,
     quantity: quantity,
     unit_price: unitPrice,
-    total_price: quantity * unitPrice,
+    total_price: dbData.total_price || (quantity * unitPrice), // Use database value or calculate
     status: dbData.status,
     notes: dbData.notes,
     created_at: dbData.created_at,
@@ -79,7 +83,7 @@ export const mapDatabaseToPart = (dbData: any): WorkOrderPart => {
     supplierCost: dbData.supplier_cost,
     retailPrice: dbData.retail_price,
     supplierName: dbData.supplier_name,
-    partType: dbData.part_type,
+    part_type: dbData.part_type, // Fix field name
     markupPercentage: dbData.markup_percentage,
     isTaxable: dbData.is_taxable,
     coreChargeAmount: dbData.core_charge_amount,

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { mapPartFormToDatabase, mapDatabaseToPart } from '@/utils/databaseMappers';
@@ -37,42 +36,54 @@ export const workOrderPartsService = {
     }
   },
 
-  async createWorkOrderPart(formData: WorkOrderPartFormValues, workOrderId: string): Promise<WorkOrderPart> {
-    console.log('Creating work order part:', { formData, workOrderId });
-
-    // Validate input parameters
-    if (!workOrderId) {
-      throw new Error('Work order ID is required');
-    }
-
-    // Validate form data
-    const validationErrors = PartsFormValidator.validatePartForm(formData);
-    if (validationErrors.length > 0) {
-      const errorMessage = validationErrors.map(e => e.message).join(', ');
-      throw new Error(`Validation failed: ${errorMessage}`);
-    }
-
+  async createWorkOrderPart(workOrderId: string, partData: WorkOrderPartFormValues, jobLineId?: string): Promise<WorkOrderPart> {
     try {
-      // Map form data to database schema
-      const dbData = mapPartFormToDatabase(formData, workOrderId, formData.job_line_id);
-      console.log('Mapped database data:', dbData);
+      console.log('Creating work order part:', { workOrderId, partData, jobLineId });
+      
+      // Validate required fields before sending to database
+      if (!partData.name?.trim()) {
+        throw new Error('Part name is required');
+      }
+      
+      if (!partData.part_number?.trim()) {
+        throw new Error('Part number is required');
+      }
+      
+      if (!partData.part_type) {
+        throw new Error('Part type is required');
+      }
+      
+      const customerPrice = partData.unit_price || partData.customerPrice;
+      if (!customerPrice || customerPrice < 0) {
+        throw new Error('Customer price is required and must be non-negative');
+      }
 
+      // Map form data to database schema
+      const mappedData = mapPartFormToDatabase(partData, workOrderId, jobLineId);
+      console.log('Mapped part data for database:', mappedData);
+      
       const { data, error } = await supabase
         .from('work_order_parts')
-        .insert([dbData])
-        .select()
+        .insert([mappedData])
+        .select('*')
         .single();
 
       if (error) {
-        console.error('Database error creating work order part:', error);
-        throw new Error(`Failed to create part: ${error.message}`);
+        console.error('Database error creating part:', error);
+        throw new Error(PartsFormValidator.handleApiError(error));
       }
 
-      console.log('Created part data:', data);
+      if (!data) {
+        throw new Error('No data returned from part creation');
+      }
+
+      console.log('Part created successfully:', data);
+      
+      // Map database result back to application format
       return mapDatabaseToPart(data);
     } catch (error) {
-      const errorMessage = PartsFormValidator.handleApiError(error);
-      throw new Error(errorMessage);
+      console.error('Error in createWorkOrderPart:', error);
+      throw error;
     }
   },
 

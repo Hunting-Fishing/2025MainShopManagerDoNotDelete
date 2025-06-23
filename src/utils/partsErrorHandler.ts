@@ -23,21 +23,23 @@ export class PartsFormValidator {
       errors.push({ field: 'part_type', message: 'Part type is required' });
     }
 
+    // Customer price is required for database
+    const customerPrice = formData.unit_price || formData.customerPrice;
+    if (!customerPrice || customerPrice < 0) {
+      errors.push({ field: 'unit_price', message: 'Customer price is required and must be non-negative' });
+    }
+
     // Numeric validations
-    if (formData.quantity <= 0) {
+    if (!formData.quantity || formData.quantity <= 0) {
       errors.push({ field: 'quantity', message: 'Quantity must be greater than 0' });
-    }
-
-    if (formData.unit_price < 0) {
-      errors.push({ field: 'unit_price', message: 'Unit price cannot be negative' });
-    }
-
-    if (formData.customerPrice && formData.customerPrice < 0) {
-      errors.push({ field: 'customerPrice', message: 'Customer price cannot be negative' });
     }
 
     if (formData.supplierCost && formData.supplierCost < 0) {
       errors.push({ field: 'supplierCost', message: 'Supplier cost cannot be negative' });
+    }
+
+    if (formData.retailPrice && formData.retailPrice < 0) {
+      errors.push({ field: 'retailPrice', message: 'Retail price cannot be negative' });
     }
 
     // Business logic validations
@@ -73,6 +75,19 @@ export class PartsFormValidator {
         return 'Network error. Please check your connection and try again';
       }
 
+      // Handle database field errors
+      if (error.message.includes('customer_price')) {
+        return 'Customer price is required and must be a valid number';
+      }
+
+      if (error.message.includes('part_name')) {
+        return 'Part name is required';
+      }
+
+      if (error.message.includes('part_type')) {
+        return 'Part type is required';
+      }
+
       return error.message;
     }
 
@@ -91,5 +106,13 @@ export class PartsFormValidator {
       duration: 3000,
       position: 'top-right'
     });
+  }
+
+  static showValidationErrors(errors: PartsFormError[]) {
+    const errorMessage = errors.length === 1 
+      ? errors[0].message 
+      : `Please fix ${errors.length} validation errors`;
+    
+    this.showErrorToast(errorMessage);
   }
 }
