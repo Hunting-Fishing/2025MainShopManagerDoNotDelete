@@ -3,10 +3,12 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { BasicPartFields } from './BasicPartFields';
@@ -42,6 +44,9 @@ export function AddPartDialog({
   onPartAdded
 }: AddPartDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  console.log('AddPartDialog render:', { isOpen, workOrderId, jobLinesCount: jobLines.length });
 
   const form = useForm<WorkOrderPartFormValues>({
     resolver: zodResolver(partFormSchema),
@@ -61,6 +66,17 @@ export function AddPartDialog({
   const handleSubmit = async (data: WorkOrderPartFormValues) => {
     try {
       setIsSubmitting(true);
+      setSubmitError(null);
+      
+      console.log('Submitting part data:', data);
+      
+      // Validate required fields
+      if (!data.name.trim()) {
+        throw new Error('Part name is required');
+      }
+      if (!data.part_number.trim()) {
+        throw new Error('Part number is required');
+      }
       
       const partData = {
         ...data,
@@ -68,17 +84,32 @@ export function AddPartDialog({
         total_price: data.quantity * data.unit_price
       };
 
+      console.log('Creating work order part:', partData);
       await createWorkOrderPart(partData, workOrderId);
       
-      toast.success('Part added successfully');
+      console.log('Part created successfully, calling onPartAdded');
       await onPartAdded();
-      onOpenChange(false);
+      
+      // Reset form and close dialog
       form.reset();
+      onOpenChange(false);
+      
+      toast.success('Part added successfully');
     } catch (error) {
-      console.error('Error adding part:', error);
-      toast.error('Failed to add part');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add part';
+      console.error('Error adding part:', errorMessage, error);
+      setSubmitError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!isSubmitting) {
+      setSubmitError(null);
+      form.reset();
+      onOpenChange(false);
     }
   };
 
@@ -88,6 +119,13 @@ export function AddPartDialog({
         <DialogHeader>
           <DialogTitle>Add New Part</DialogTitle>
         </DialogHeader>
+
+        {submitError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{submitError}</AlertDescription>
+          </Alert>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -101,13 +139,20 @@ export function AddPartDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={handleCancel}
                 disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Adding...' : 'Add Part'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Adding...
+                  </>
+                ) : (
+                  'Add Part'
+                )}
               </Button>
             </div>
           </form>

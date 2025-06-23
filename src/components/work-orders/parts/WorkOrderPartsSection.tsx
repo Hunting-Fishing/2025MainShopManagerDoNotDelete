@@ -1,13 +1,15 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { AddPartDialog } from './AddPartDialog';
 import { updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { PartsList } from './PartsList';
+import { AddPartButton } from './AddPartButton';
+import { useWorkOrderPartsData } from '@/hooks/useWorkOrderPartsData';
+import { toast } from 'sonner';
 
 interface WorkOrderPartsSectionProps {
   workOrderId: string;
@@ -19,70 +21,109 @@ interface WorkOrderPartsSectionProps {
 
 export function WorkOrderPartsSection({
   workOrderId,
-  parts,
+  parts: initialParts,
   jobLines,
   onPartsChange,
   isEditMode = false
 }: WorkOrderPartsSectionProps) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { parts: liveParts, isLoading, error, refreshParts } = useWorkOrderPartsData(workOrderId);
+  
+  // Use live parts if available, otherwise fall back to initial parts
+  const displayParts = liveParts.length > 0 ? liveParts : initialParts;
+
+  console.log('WorkOrderPartsSection render:', { 
+    workOrderId, 
+    isEditMode, 
+    partsCount: displayParts.length,
+    jobLinesCount: jobLines.length,
+    isLoading,
+    error
+  });
 
   const handlePartAdded = async () => {
-    console.log('Part added successfully');
-    await onPartsChange();
+    console.log('Part added, refreshing parts and parent data...');
+    await Promise.all([
+      refreshParts(),
+      onPartsChange()
+    ]);
   };
 
   const handlePartUpdate = async (partId: string, updates: Partial<WorkOrderPart>) => {
     try {
+      console.log('Updating part:', partId, updates);
       await updateWorkOrderPart(partId, updates);
-      await onPartsChange();
+      await handlePartAdded();
+      toast.success('Part updated successfully');
     } catch (error) {
       console.error('Error updating part:', error);
+      toast.error('Failed to update part');
     }
   };
 
   const handlePartDelete = async (partId: string) => {
     try {
+      console.log('Deleting part:', partId);
       await deleteWorkOrderPart(partId);
-      await onPartsChange();
+      await handlePartAdded();
+      toast.success('Part deleted successfully');
     } catch (error) {
       console.error('Error deleting part:', error);
+      toast.error('Failed to delete part');
     }
   };
 
-  return (
-    <>
+  if (error) {
+    return (
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>Parts & Materials</CardTitle>
-          {isEditMode && (
-            <Button
-              onClick={() => setIsAddDialogOpen(true)}
-              size="sm"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Part
-            </Button>
-          )}
         </CardHeader>
         <CardContent>
-          <PartsList
-            parts={parts}
-            jobLines={jobLines}
-            onPartUpdate={handlePartUpdate}
-            onPartDelete={handlePartDelete}
-            isEditMode={isEditMode}
-          />
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load parts: {error}
+              <button 
+                onClick={refreshParts}
+                className="ml-2 underline hover:no-underline"
+              >
+                Try again
+              </button>
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
+    );
+  }
 
-      <AddPartDialog
-        isOpen={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        workOrderId={workOrderId}
-        jobLines={jobLines}
-        onPartAdded={handlePartAdded}
-      />
-    </>
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          Parts & Materials
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          <span className="text-sm font-normal text-muted-foreground">
+            ({displayParts.length})
+          </span>
+        </CardTitle>
+        
+        <AddPartButton
+          workOrderId={workOrderId}
+          jobLines={jobLines}
+          onPartAdded={handlePartAdded}
+          isEditMode={isEditMode}
+          disabled={isLoading}
+        />
+      </CardHeader>
+      <CardContent>
+        <PartsList
+          parts={displayParts}
+          jobLines={jobLines}
+          onPartUpdate={handlePartUpdate}
+          onPartDelete={handlePartDelete}
+          isEditMode={isEditMode}
+        />
+      </CardContent>
+    </Card>
   );
 }
