@@ -19,14 +19,12 @@ export function PartsInventoryOverview() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       category: 'Brakes',
+      part_type: 'inventory',
       supplierName: 'AutoParts Inc',
       supplierCost: 35.00,
-      supplierSuggestedRetailPrice: 50.99,
-      customerPrice: 45.99,
       retailPrice: 45.99,
+      customerPrice: 45.99,
       warrantyDuration: '1 year',
-      binLocation: 'A-12',
-      part_type: 'OEM',
       markupPercentage: 31.4,
       isTaxable: true
     }

@@ -27,9 +27,10 @@ export function PartsSearchAndFilter() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       category: 'Brakes',
+      part_type: 'inventory',
       supplierName: 'AutoParts Inc',
       supplierCost: 35.00,
-      supplierSuggestedRetailPrice: 50.99
+      retailPrice: 50.99
     }
   ];
 

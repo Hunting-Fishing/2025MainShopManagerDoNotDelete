@@ -15,8 +15,7 @@ export function PartTypeAndStatusFields({ form }: PartTypeAndStatusFieldsProps) 
   const validStatuses = WORK_ORDER_PART_STATUSES.filter(status => 
     status && 
     typeof status === 'string' && 
-    status.trim() !== '' &&
-    status !== 'undefined'
+    status.trim() !== ''
   );
 
   const validPartTypes = PART_TYPES.filter(type => 

@@ -38,9 +38,9 @@ export function PartDetailsCard({
           <div className="flex items-start gap-3">
             <Package className="h-5 w-5 text-blue-500 mt-0.5" />
             <div>
-              <h4 className="font-semibold text-sm">{part.name || part.partName}</h4>
+              <h4 className="font-semibold text-sm">{part.name}</h4>
               <p className="text-xs text-muted-foreground">
-                Part #: {part.part_number || part.partNumber}
+                Part #: {part.part_number}
               </p>
               {part.description && (
                 <p className="text-xs text-muted-foreground mt-1">
