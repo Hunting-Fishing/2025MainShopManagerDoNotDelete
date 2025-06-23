@@ -1,160 +1,85 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, Plus, Edit, Save, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Edit2, Trash2, Plus, Save, X } from 'lucide-react';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { addWorkOrderPart, updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { WorkOrderJobLine } from '@/types/workOrderJobLine';
 import { toast } from 'sonner';
+import { 
+  createWorkOrderPart, 
+  updateWorkOrderPart, 
+  deleteWorkOrderPart 
+} from '@/services/workOrder/workOrderPartsService';
 
-interface ComprehensivePartsTableProps {
+interface EditPartState {
+  id: string;
+  isEditing: boolean;
+}
+
+const getEmptyFormData = (): WorkOrderPartFormValues => ({
+  name: '',
+  part_number: '',
+  description: '',
+  quantity: 1,
+  unit_price: 0,
+  total_price: 0,
+  notes: '',
+  job_line_id: ''
+});
+
+export interface ComprehensivePartsTableProps {
   workOrderId: string;
   parts: WorkOrderPart[];
   jobLines: WorkOrderJobLine[];
   onPartsChange: () => Promise<void>;
-  isEditMode?: boolean;
+  isEditMode: boolean;
 }
 
-// Valid part types for database
-const VALID_PART_TYPES = ['inventory', 'non-inventory'] as const;
-type ValidPartType = typeof VALID_PART_TYPES[number];
-
-// User-friendly part type options
-const PART_TYPE_OPTIONS = [
-  { label: 'OEM', value: 'inventory' },
-  { label: 'Aftermarket', value: 'non-inventory' },
-  { label: 'Used', value: 'non-inventory' },
-  { label: 'Remanufactured', value: 'inventory' }
-] as const;
-
-// Helper functions for part type conversion
-const getPartTypeLabel = (value: string): string => {
-  const option = PART_TYPE_OPTIONS.find(opt => opt.value === value);
-  return option ? option.label : value;
-};
-
-const getPartTypeValue = (label: string): ValidPartType => {
-  const option = PART_TYPE_OPTIONS.find(opt => opt.label === label);
-  return option ? option.value : 'non-inventory';
-};
-
-const calculateTotal = (quantity: number, unitPrice: number): number => {
-  return quantity * unitPrice;
-};
-
-export function ComprehensivePartsTable({
+export const ComprehensivePartsTable: React.FC<ComprehensivePartsTableProps> = ({
   workOrderId,
   parts,
   jobLines,
   onPartsChange,
-  isEditMode = false
-}: ComprehensivePartsTableProps) {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
-  const [newPart, setNewPart] = useState<Partial<WorkOrderPartFormValues>>({
-    name: '',
-    part_number: '',
-    description: '',
-    quantity: 1,
-    unit_price: 0,
-    status: 'pending',
-    notes: '',
-    partType: 'non-inventory'
-  });
+  isEditMode
+}) => {
+  const [editingPart, setEditingPart] = useState<WorkOrderPart | null>(null);
+  const [newPart, setNewPart] = useState<WorkOrderPartFormValues>(getEmptyFormData());
+  const [editStates, setEditStates] = useState<EditPartState[]>([]);
 
-  const handleAddPart = () => {
-    setIsAdding(true);
+  useEffect(() => {
+    // Initialize edit states for existing parts
+    const initialEditStates = parts.map(part => ({
+      id: part.id,
+      isEditing: false,
+    }));
+    setEditStates(initialEditStates);
+  }, [parts]);
+
+  const handleEdit = (part: WorkOrderPart) => {
+    setEditingPart(part);
     setNewPart({
-      name: '',
-      part_number: '',
-      description: '',
-      quantity: 1,
-      unit_price: 0,
-      status: 'pending',
-      notes: '',
-      partType: 'non-inventory'
+      name: part.name,
+      part_number: part.part_number,
+      description: part.description || '',
+      quantity: part.quantity,
+      unit_price: part.unit_price,
+      total_price: part.total_price,
+      notes: part.notes || '',
+      job_line_id: part.job_line_id || ''
     });
   };
 
-  const handleSave = async (formData: WorkOrderPartFormValues) => {
-    try {
-      console.log('Saving part with data:', formData);
-      
-      // Convert user-friendly part type to database value
-      const partTypeValue = formData.partType ? getPartTypeValue(formData.partType) : 'non-inventory';
-      
-      const partData = {
-        work_order_id: workOrderId,
-        name: formData.name,
-        part_number: formData.part_number,
-        description: formData.description || '',
-        quantity: formData.quantity,
-        unit_price: formData.unit_price,
-        status: formData.status || 'pending',
-        notes: formData.notes || '',
-        partType: partTypeValue,
-        job_line_id: formData.job_line_id
-      };
-
-      await addWorkOrderPart(partData);
-      
-      toast.success('Part added successfully');
-      await onPartsChange();
-      setIsAdding(false);
-      setNewPart({
-        name: '',
-        part_number: '',
-        description: '',
-        quantity: 1,
-        unit_price: 0,
-        status: 'pending',
-        notes: '',
-        partType: 'non-inventory'
-      });
-    } catch (error) {
-      console.error('Error adding part:', error);
-      toast.error(`Failed to add part: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+  const handleCancelEdit = () => {
+    setEditingPart(null);
+    setNewPart(getEmptyFormData());
   };
 
-  const handleUpdate = async (id: string, formData: WorkOrderPartFormValues) => {
+  const handleDelete = async (partId: string) => {
     try {
-      console.log('Updating part with data:', formData);
-      
-      // Convert user-friendly part type to database value
-      const partTypeValue = formData.partType ? getPartTypeValue(formData.partType) : 'non-inventory';
-      
-      const updateData = {
-        name: formData.name,
-        part_number: formData.part_number,
-        description: formData.description || '',
-        quantity: formData.quantity,
-        unit_price: formData.unit_price,
-        status: formData.status || 'pending',
-        notes: formData.notes || '',
-        partType: partTypeValue,
-        job_line_id: formData.job_line_id
-      };
-
-      await updateWorkOrderPart(id, updateData);
-      
-      toast.success('Part updated successfully');
-      await onPartsChange();
-      setEditingId(null);
-    } catch (error) {
-      console.error('Error updating part:', error);
-      toast.error(`Failed to update part: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteWorkOrderPart(id);
+      await deleteWorkOrderPart(partId);
       toast.success('Part deleted successfully');
       await onPartsChange();
     } catch (error) {
@@ -163,356 +88,212 @@ export function ComprehensivePartsTable({
     }
   };
 
-  const handleCancel = () => {
-    setIsAdding(false);
-    setEditingId(null);
-    setNewPart({
-      name: '',
-      part_number: '',
-      description: '',
-      quantity: 1,
-      unit_price: 0,
-      status: 'pending',
-      notes: '',
-      partType: 'non-inventory'
-    });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewPart(prev => ({ ...prev, [name]: value }));
   };
 
-  if (!isEditMode && parts.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        No parts assigned to this work order.
-      </div>
-    );
-  }
+  const handleSelectChange = (value: string, name: string) => {
+    setNewPart(prev => ({ ...prev, [name]: value }));
+  };
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Parts & Materials</CardTitle>
-        {isEditMode && (
-          <Button onClick={handleAddPart} size="sm" disabled={isAdding}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Part
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Part Number</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Unit Price</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Type</TableHead>
-              {isEditMode && <TableHead>Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {parts.map((part) => (
-              <PartRow
-                key={part.id}
-                part={part}
-                jobLines={jobLines}
-                isEditing={editingId === part.id}
-                isEditMode={isEditMode}
-                onEdit={() => setEditingId(part.id)}
-                onSave={(formData) => handleUpdate(part.id, formData)}
-                onCancel={() => setEditingId(null)}
-                onDelete={() => handleDelete(part.id)}
-              />
-            ))}
-            {isAdding && (
-              <NewPartRow
-                newPart={newPart}
-                setNewPart={setNewPart}
-                jobLines={jobLines}
-                onSave={handleSave}
-                onCancel={handleCancel}
-              />
-            )}
-          </TableBody>
-        </Table>
-
-        {parts.length === 0 && !isAdding && (
-          <div className="text-center py-8 text-muted-foreground">
-            No parts assigned to this work order.
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-interface PartRowProps {
-  part: WorkOrderPart;
-  jobLines: WorkOrderJobLine[];
-  isEditing: boolean;
-  isEditMode: boolean;
-  onEdit: () => void;
-  onSave: (formData: WorkOrderPartFormValues) => void;
-  onCancel: () => void;
-  onDelete: () => void;
-}
-
-function PartRow({ part, jobLines, isEditing, isEditMode, onEdit, onSave, onCancel, onDelete }: PartRowProps) {
-  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
-    name: part.name,
-    part_number: part.part_number,
-    description: part.description || '',
-    quantity: part.quantity,
-    unit_price: part.unit_price,
-    status: part.status || 'pending',
-    notes: part.notes || '',
-    partType: getPartTypeLabel(part.partType || 'non-inventory'),
-    job_line_id: part.job_line_id
-  });
-
-  if (isEditing && isEditMode) {
-    return (
-      <TableRow>
-        <TableCell>
-          <Input
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Part name"
-          />
-        </TableCell>
-        <TableCell>
-          <Input
-            value={formData.part_number}
-            onChange={(e) => setFormData({ ...formData, part_number: e.target.value })}
-            placeholder="Part number"
-          />
-        </TableCell>
-        <TableCell>
-          <Textarea
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Description"
-            className="min-h-[60px]"
-          />
-        </TableCell>
-        <TableCell>
-          <Input
-            type="number"
-            value={formData.quantity}
-            onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
-            min="1"
-          />
-        </TableCell>
-        <TableCell>
-          <Input
-            type="number"
-            value={formData.unit_price}
-            onChange={(e) => setFormData({ ...formData, unit_price: Number(e.target.value) })}
-            min="0"
-            step="0.01"
-          />
-        </TableCell>
-        <TableCell>
-          ${calculateTotal(formData.quantity, formData.unit_price).toFixed(2)}
-        </TableCell>
-        <TableCell>
-          <Select
-            value={formData.status}
-            onValueChange={(value) => setFormData({ ...formData, status: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="ordered">Ordered</SelectItem>
-              <SelectItem value="received">Received</SelectItem>
-              <SelectItem value="installed">Installed</SelectItem>
-              <SelectItem value="returned">Returned</SelectItem>
-            </SelectContent>
-          </Select>
-        </TableCell>
-        <TableCell>
-          <Select
-            value={formData.partType}
-            onValueChange={(value) => setFormData({ ...formData, partType: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PART_TYPE_OPTIONS.map((option) => (
-                <SelectItem key={option.label} value={option.label}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </TableCell>
-        <TableCell>
-          <div className="flex space-x-2">
-            <Button size="sm" onClick={() => onSave(formData)}>
-              <Save className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="outline" onClick={onCancel}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  }
-
-  return (
-    <TableRow>
-      <TableCell className="font-medium">{part.name}</TableCell>
-      <TableCell>{part.part_number}</TableCell>
-      <TableCell>{part.description}</TableCell>
-      <TableCell>{part.quantity}</TableCell>
-      <TableCell>${part.unit_price.toFixed(2)}</TableCell>
-      <TableCell>${part.total_price.toFixed(2)}</TableCell>
-      <TableCell>
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          {part.status}
-        </span>
-      </TableCell>
-      <TableCell>{getPartTypeLabel(part.partType || 'non-inventory')}</TableCell>
-      {isEditMode && (
-        <TableCell>
-          <div className="flex space-x-2">
-            <Button size="sm" variant="outline" onClick={onEdit}>
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="outline" onClick={onDelete}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </TableCell>
-      )}
-    </TableRow>
-  );
-}
-
-interface NewPartRowProps {
-  newPart: Partial<WorkOrderPartFormValues>;
-  setNewPart: React.Dispatch<React.SetStateAction<Partial<WorkOrderPartFormValues>>>;
-  jobLines: WorkOrderJobLine[];
-  onSave: (formData: WorkOrderPartFormValues) => void;
-  onCancel: () => void;
-}
-
-function NewPartRow({ newPart, setNewPart, jobLines, onSave, onCancel }: NewPartRowProps) {
-  const handleSave = () => {
-    if (!newPart.name || !newPart.part_number) {
-      toast.error('Name and part number are required');
-      return;
+  const handleSave = async (formData: WorkOrderPartFormValues) => {
+    try {
+      if (editingPart?.id) {
+        // Update existing part
+        await updateWorkOrderPart(editingPart.id, formData);
+        toast.success('Part updated successfully');
+      } else {
+        // Create new part - use createWorkOrderPart instead of addWorkOrderPart
+        await createWorkOrderPart(formData, workOrderId);
+        toast.success('Part added successfully');
+      }
+      
+      setEditingPart(null);
+      setNewPart(getEmptyFormData());
+      await onPartsChange();
+    } catch (error) {
+      console.error('Error saving part:', error);
+      toast.error('Failed to save part');
     }
+  };
 
-    const formData: WorkOrderPartFormValues = {
-      name: newPart.name,
-      part_number: newPart.part_number,
-      description: newPart.description || '',
-      quantity: newPart.quantity || 1,
-      unit_price: newPart.unit_price || 0,
-      status: newPart.status || 'pending',
-      notes: newPart.notes || '',
-      partType: newPart.partType || 'non-inventory',
-      job_line_id: newPart.job_line_id
-    };
-
-    onSave(formData);
+  const isJobLineUsed = (jobLineId: string): boolean => {
+    return parts.some(part => part.job_line_id === jobLineId);
   };
 
   return (
-    <TableRow>
-      <TableCell>
-        <Input
-          value={newPart.name || ''}
-          onChange={(e) => setNewPart({ ...newPart, name: e.target.value })}
-          placeholder="Part name"
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          value={newPart.part_number || ''}
-          onChange={(e) => setNewPart({ ...newPart, part_number: e.target.value })}
-          placeholder="Part number"
-        />
-      </TableCell>
-      <TableCell>
-        <Textarea
-          value={newPart.description || ''}
-          onChange={(e) => setNewPart({ ...newPart, description: e.target.value })}
-          placeholder="Description"
-          className="min-h-[60px]"
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          type="number"
-          value={newPart.quantity || 1}
-          onChange={(e) => setNewPart({ ...newPart, quantity: Number(e.target.value) })}
-          min="1"
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          type="number"
-          value={newPart.unit_price || 0}
-          onChange={(e) => setNewPart({ ...newPart, unit_price: Number(e.target.value) })}
-          min="0"
-          step="0.01"
-        />
-      </TableCell>
-      <TableCell>
-        ${calculateTotal(newPart.quantity || 1, newPart.unit_price || 0).toFixed(2)}
-      </TableCell>
-      <TableCell>
-        <Select
-          value={newPart.status || 'pending'}
-          onValueChange={(value) => setNewPart({ ...newPart, status: value })}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="ordered">Ordered</SelectItem>
-            <SelectItem value="received">Received</SelectItem>
-            <SelectItem value="installed">Installed</SelectItem>
-            <SelectItem value="returned">Returned</SelectItem>
-          </SelectContent>
-        </Select>
-      </TableCell>
-      <TableCell>
-        <Select
-          value={newPart.partType || 'non-inventory'}
-          onValueChange={(value) => setNewPart({ ...newPart, partType: value })}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PART_TYPE_OPTIONS.map((option) => (
-              <SelectItem key={option.label} value={option.label}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
-      <TableCell>
-        <div className="flex space-x-2">
-          <Button size="sm" onClick={handleSave}>
-            <Save className="h-4 w-4" />
-          </Button>
-          <Button size="sm" variant="outline" onClick={onCancel}>
-            <X className="h-4 w-4" />
-          </Button>
+    <div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Part Number</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Quantity</TableHead>
+            <TableHead>Unit Price</TableHead>
+            <TableHead>Total Price</TableHead>
+            <TableHead>Job Line</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {parts.map((part) => (
+            <TableRow key={part.id}>
+              <TableCell>{part.name}</TableCell>
+              <TableCell>{part.part_number}</TableCell>
+              <TableCell>{part.description}</TableCell>
+              <TableCell>{part.quantity}</TableCell>
+              <TableCell>{part.unit_price}</TableCell>
+              <TableCell>{part.total_price}</TableCell>
+              <TableCell>
+                {jobLines.find(jobLine => jobLine.id === part.job_line_id)?.name || 'N/A'}
+              </TableCell>
+              <TableCell className="text-right">
+                {isEditMode && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(part)}
+                    >
+                      <Edit2 className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(part.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {isEditMode && (
+        <div className="mt-4 p-4 border rounded-md">
+          <h3 className="text-lg font-semibold mb-4">
+            {editingPart ? 'Edit Part' : 'Add New Part'}
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <Input
+                type="text"
+                name="name"
+                value={newPart.name}
+                onChange={handleInputChange}
+                placeholder="Part Name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Part Number</label>
+              <Input
+                type="text"
+                name="part_number"
+                value={newPart.part_number}
+                onChange={handleInputChange}
+                placeholder="Part Number"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Quantity</label>
+              <Input
+                type="number"
+                name="quantity"
+                value={newPart.quantity}
+                onChange={handleInputChange}
+                placeholder="Quantity"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Unit Price</label>
+              <Input
+                type="number"
+                name="unit_price"
+                value={newPart.unit_price}
+                onChange={handleInputChange}
+                placeholder="Unit Price"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Total Price</label>
+              <Input
+                type="number"
+                name="total_price"
+                value={newPart.total_price}
+                onChange={handleInputChange}
+                placeholder="Total Price"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Job Line</label>
+              <Select onValueChange={(value) => handleSelectChange(value, "job_line_id")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Job Line" />
+                </SelectTrigger>
+                <SelectContent>
+                  {jobLines.map((jobLine) => (
+                    <SelectItem key={jobLine.id} value={jobLine.id} disabled={isJobLineUsed(jobLine.id)}>
+                      {jobLine.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <Input
+              name="description"
+              value={newPart.description}
+              onChange={handleInputChange}
+              placeholder="Description"
+            />
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700">Notes</label>
+            <Input
+              name="notes"
+              value={newPart.notes}
+              onChange={handleInputChange}
+              placeholder="Notes"
+            />
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            {editingPart && (
+              <Button
+                variant="ghost"
+                className="mr-2"
+                onClick={handleCancelEdit}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            )}
+            <Button onClick={() => handleSave(newPart)}>
+              <Save className="h-4 w-4 mr-2" />
+              {editingPart ? 'Update Part' : 'Add Part'}
+            </Button>
+          </div>
         </div>
-      </TableCell>
-    </TableRow>
+      )}
+    </div>
   );
-}
+};
