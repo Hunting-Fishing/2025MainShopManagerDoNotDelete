@@ -12,55 +12,32 @@ interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
 }
 
-// Helper function to get customer display name
-const getCustomerDisplayName = (workOrder: WorkOrder): string => {
-  console.log('Processing work order customer data:', {
-    workOrderId: workOrder.id,
-    customer_name: workOrder.customer_name,
+function getCustomerDisplayName(workOrder: WorkOrder): string {
+  console.log('Getting customer display name for work order:', workOrder.id, {
     customer_first_name: workOrder.customer_first_name,
     customer_last_name: workOrder.customer_last_name,
-    customer: workOrder.customer,
-    customer_id: workOrder.customer_id
+    customer_name: workOrder.customer_name,
+    customer: workOrder.customer
   });
 
-  // Try customer_name field first
-  if (workOrder.customer_name && typeof workOrder.customer_name === 'string') {
+  // Try first_name + last_name first
+  if (workOrder.customer_first_name || workOrder.customer_last_name) {
+    const fullName = `${workOrder.customer_first_name || ''} ${workOrder.customer_last_name || ''}`.trim();
+    if (fullName) return fullName;
+  }
+
+  // Fallback to customer_name
+  if (workOrder.customer_name) {
     return workOrder.customer_name;
   }
 
-  // Try first_name + last_name combination
-  if (workOrder.customer_first_name || workOrder.customer_last_name) {
-    const firstName = workOrder.customer_first_name || '';
-    const lastName = workOrder.customer_last_name || '';
-    const fullName = `${firstName} ${lastName}`.trim();
-    if (fullName) {
-      return fullName;
-    }
-  }
-
-  // Try customer field if it's a string
-  if (workOrder.customer && typeof workOrder.customer === 'string') {
-    return workOrder.customer;
-  }
-
-  // Try customer field if it's an object with name properties
-  if (workOrder.customer && typeof workOrder.customer === 'object') {
-    const customerObj = workOrder.customer as any;
-    if (customerObj.first_name || customerObj.last_name) {
-      const firstName = customerObj.first_name || '';
-      const lastName = customerObj.last_name || '';
-      const fullName = `${firstName} ${lastName}`.trim();
-      if (fullName) {
-        return fullName;
-      }
-    }
-    if (customerObj.name) {
-      return customerObj.name;
-    }
+  // Fallback to customer (legacy field)
+  if (workOrder.customer) {
+    return typeof workOrder.customer === 'string' ? workOrder.customer : 'Unknown Customer';
   }
 
   return 'Customer Name Missing';
-};
+}
 
 export function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
   const getStatusColor = (status: string) => {
@@ -148,6 +125,3 @@ export function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
     </Card>
   );
 }
-
-// Named export (this is what we're using)
-export default WorkOrdersTable;

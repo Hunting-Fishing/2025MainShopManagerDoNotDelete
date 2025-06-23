@@ -81,8 +81,10 @@ export interface WorkOrder {
   invoice_id?: string;
   work_order_number?: string;
   
-  // Customer fields
+  // Customer fields - both legacy and new format
   customer_name?: string;
+  customer_first_name?: string;
+  customer_last_name?: string;
   customer_email?: string;
   customer_phone?: string;
   customer_address?: string;

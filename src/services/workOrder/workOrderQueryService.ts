@@ -1,61 +1,72 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrder } from '@/types/workOrder';
-import { mapFromDbWorkOrder } from '@/utils/databaseMappers';
+import { Database } from '@/types/supabase';
+
+type WorkOrderRow = Database['public']['Tables']['work_orders']['Row'];
+type CustomerRow = Database['public']['Tables']['customers']['Row'];
 
 export async function getAllWorkOrders(): Promise<WorkOrder[]> {
   try {
-    console.log('Fetching all work orders...');
+    console.log('Fetching all work orders with customer information...');
     
-    const { data, error } = await supabase
+    // Fetch work orders and customers separately to avoid relationship ambiguity issues
+    const { data: workOrdersData, error: workOrdersError } = await supabase
       .from('work_orders')
-      .select(`
-        *,
-        customers:customer_id (
-          id,
-          first_name,
-          last_name,
-          email,
-          phone
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching work orders:', error);
-      throw error;
+    if (workOrdersError) {
+      console.error('Error fetching work orders:', workOrdersError);
+      throw new Error(`Failed to fetch work orders: ${workOrdersError.message}`);
     }
 
-    console.log('Raw work orders data:', data);
+    if (!workOrdersData || workOrdersData.length === 0) {
+      console.log('No work orders found');
+      return [];
+    }
 
-    const workOrders = data?.map((workOrder: any) => {
-      // Extract customer information
-      const customer = workOrder.customers;
-      const customerName = customer 
-        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-        : null;
+    // Get unique customer IDs
+    const customerIds = [...new Set(workOrdersData
+      .map(wo => wo.customer_id)
+      .filter(Boolean))] as string[];
 
-      // Create enhanced work order object
-      const enhancedWorkOrder = {
+    let customersMap = new Map<string, CustomerRow>();
+    
+    if (customerIds.length > 0) {
+      const { data: customersData, error: customersError } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name, email, phone')
+        .in('id', customerIds);
+
+      if (customersError) {
+        console.error('Error fetching customers:', customersError);
+      } else if (customersData) {
+        customersData.forEach(customer => {
+          customersMap.set(customer.id, customer);
+        });
+      }
+    }
+
+    // Transform and combine the data
+    const workOrders: WorkOrder[] = workOrdersData.map((workOrder) => {
+      const customer = workOrder.customer_id ? customersMap.get(workOrder.customer_id) : null;
+      
+      console.log('Processing work order:', workOrder.id, 'Customer:', customer);
+      
+      return {
         ...workOrder,
-        customer_name: customerName || 'Unknown Customer',
-        customer_first_name: customer?.first_name || null,
-        customer_last_name: customer?.last_name || null,
-        customer_email: customer?.email || null,
-        customer_phone: customer?.phone || null
+        customer_first_name: customer?.first_name || undefined,
+        customer_last_name: customer?.last_name || undefined,
+        customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Unnamed Customer' : undefined,
+        customer_email: customer?.email || undefined,
+        customer_phone: customer?.phone || undefined,
       };
+    });
 
-      console.log('Processed work order:', {
-        id: workOrder.id,
-        original_customer: workOrder.customers,
-        enhanced_customer_name: enhancedWorkOrder.customer_name
-      });
-
-      return mapFromDbWorkOrder(enhancedWorkOrder);
-    }) || [];
-
-    console.log('Processed work orders:', workOrders.length);
+    console.log(`Successfully processed ${workOrders.length} work orders`);
     return workOrders;
+
   } catch (error) {
     console.error('Error in getAllWorkOrders:', error);
     throw error;
@@ -66,55 +77,47 @@ export async function getWorkOrderById(id: string): Promise<WorkOrder | null> {
   try {
     console.log('Fetching work order by ID:', id);
     
-    const { data, error } = await supabase
+    const { data: workOrderData, error: workOrderError } = await supabase
       .from('work_orders')
-      .select(`
-        *,
-        customers:customer_id (
-          id,
-          first_name,
-          last_name,
-          email,
-          phone
-        )
-      `)
+      .select('*')
       .eq('id', id)
       .single();
 
-    if (error) {
-      console.error('Error fetching work order:', error);
-      throw error;
+    if (workOrderError) {
+      if (workOrderError.code === 'PGRST116') {
+        return null; // Work order not found
+      }
+      console.error('Error fetching work order:', workOrderError);
+      throw new Error(`Failed to fetch work order: ${workOrderError.message}`);
     }
 
-    if (!data) {
+    if (!workOrderData) {
       return null;
     }
 
-    console.log('Raw work order data:', data);
+    // Fetch customer data if customer_id exists
+    let customer: CustomerRow | null = null;
+    if (workOrderData.customer_id) {
+      const { data: customerData } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name, email, phone')
+        .eq('id', workOrderData.customer_id)
+        .single();
+      
+      customer = customerData;
+    }
 
-    // Extract customer information
-    const customer = data.customers;
-    const customerName = customer 
-      ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-      : null;
-
-    // Create enhanced work order object
-    const enhancedWorkOrder = {
-      ...data,
-      customer_name: customerName || 'Unknown Customer',
-      customer_first_name: customer?.first_name || null,
-      customer_last_name: customer?.last_name || null,
-      customer_email: customer?.email || null,
-      customer_phone: customer?.phone || null
+    const workOrder: WorkOrder = {
+      ...workOrderData,
+      customer_first_name: customer?.first_name || undefined,
+      customer_last_name: customer?.last_name || undefined,
+      customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Unnamed Customer' : undefined,
+      customer_email: customer?.email || undefined,
+      customer_phone: customer?.phone || undefined,
     };
 
-    console.log('Processed work order:', {
-      id: data.id,
-      original_customer: data.customers,
-      enhanced_customer_name: enhancedWorkOrder.customer_name
-    });
+    return workOrder;
 
-    return mapFromDbWorkOrder(enhancedWorkOrder);
   } catch (error) {
     console.error('Error in getWorkOrderById:', error);
     throw error;
@@ -125,95 +128,99 @@ export async function getWorkOrdersByCustomerId(customerId: string): Promise<Wor
   try {
     console.log('Fetching work orders by customer ID:', customerId);
     
-    const { data, error } = await supabase
+    const { data: workOrdersData, error: workOrdersError } = await supabase
       .from('work_orders')
-      .select(`
-        *,
-        customers:customer_id (
-          id,
-          first_name,
-          last_name,
-          email,
-          phone
-        )
-      `)
+      .select('*')
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching work orders:', error);
-      throw error;
+    if (workOrdersError) {
+      console.error('Error fetching work orders by customer ID:', workOrdersError);
+      throw new Error(`Failed to fetch work orders: ${workOrdersError.message}`);
     }
 
-    const workOrders = data?.map((workOrder: any) => {
-      // Extract customer information
-      const customer = workOrder.customers;
-      const customerName = customer 
-        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-        : null;
+    if (!workOrdersData || workOrdersData.length === 0) {
+      return [];
+    }
 
-      // Create enhanced work order object
-      const enhancedWorkOrder = {
-        ...workOrder,
-        customer_name: customerName || 'Unknown Customer',
-        customer_first_name: customer?.first_name || null,
-        customer_last_name: customer?.last_name || null,
-        customer_email: customer?.email || null,
-        customer_phone: customer?.phone || null
-      };
+    // Get customer data
+    const { data: customerData } = await supabase
+      .from('customers')
+      .select('id, first_name, last_name, email, phone')
+      .eq('id', customerId)
+      .single();
 
-      return mapFromDbWorkOrder(enhancedWorkOrder);
-    }) || [];
+    const workOrders: WorkOrder[] = workOrdersData.map((workOrder) => ({
+      ...workOrder,
+      customer_first_name: customerData?.first_name || undefined,
+      customer_last_name: customerData?.last_name || undefined,
+      customer_name: customerData ? `${customerData.first_name || ''} ${customerData.last_name || ''}`.trim() || 'Unnamed Customer' : undefined,
+      customer_email: customerData?.email || undefined,
+      customer_phone: customerData?.phone || undefined,
+    }));
 
-    console.log('Processed work orders for customer:', workOrders.length);
     return workOrders;
+
   } catch (error) {
     console.error('Error in getWorkOrdersByCustomerId:', error);
     throw error;
   }
 }
 
-// Add missing exports that are referenced in the index file
 export async function getWorkOrdersByStatus(status: string): Promise<WorkOrder[]> {
   try {
-    const { data, error } = await supabase
+    console.log('Fetching work orders by status:', status);
+    
+    const { data: workOrdersData, error: workOrdersError } = await supabase
       .from('work_orders')
-      .select(`
-        *,
-        customers:customer_id (
-          id,
-          first_name,
-          last_name,
-          email,
-          phone
-        )
-      `)
+      .select('*')
       .eq('status', status)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      throw error;
+    if (workOrdersError) {
+      console.error('Error fetching work orders by status:', workOrdersError);
+      throw new Error(`Failed to fetch work orders: ${workOrdersError.message}`);
     }
 
-    const workOrders = data?.map((workOrder: any) => {
-      const customer = workOrder.customers;
-      const customerName = customer 
-        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-        : null;
+    if (!workOrdersData || workOrdersData.length === 0) {
+      return [];
+    }
 
-      const enhancedWorkOrder = {
+    // Get unique customer IDs and fetch customer data
+    const customerIds = [...new Set(workOrdersData
+      .map(wo => wo.customer_id)
+      .filter(Boolean))] as string[];
+
+    let customersMap = new Map<string, CustomerRow>();
+    
+    if (customerIds.length > 0) {
+      const { data: customersData } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name, email, phone')
+        .in('id', customerIds);
+
+      if (customersData) {
+        customersData.forEach(customer => {
+          customersMap.set(customer.id, customer);
+        });
+      }
+    }
+
+    const workOrders: WorkOrder[] = workOrdersData.map((workOrder) => {
+      const customer = workOrder.customer_id ? customersMap.get(workOrder.customer_id) : null;
+      
+      return {
         ...workOrder,
-        customer_name: customerName || 'Unknown Customer',
-        customer_first_name: customer?.first_name || null,
-        customer_last_name: customer?.last_name || null,
-        customer_email: customer?.email || null,
-        customer_phone: customer?.phone || null
+        customer_first_name: customer?.first_name || undefined,
+        customer_last_name: customer?.last_name || undefined,
+        customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Unnamed Customer' : undefined,
+        customer_email: customer?.email || undefined,
+        customer_phone: customer?.phone || undefined,
       };
-
-      return mapFromDbWorkOrder(enhancedWorkOrder);
-    }) || [];
+    });
 
     return workOrders;
+
   } catch (error) {
     console.error('Error in getWorkOrdersByStatus:', error);
     throw error;
@@ -224,15 +231,18 @@ export async function getUniqueTechnicians(): Promise<string[]> {
   try {
     const { data, error } = await supabase
       .from('work_orders')
-      .select('technician')
-      .not('technician', 'is', null);
+      .select('technician_id')
+      .not('technician_id', 'is', null);
 
     if (error) {
-      throw error;
+      console.error('Error fetching unique technicians:', error);
+      throw new Error(`Failed to fetch technicians: ${error.message}`);
     }
 
-    const technicians = Array.from(new Set(data?.map(item => item.technician).filter(Boolean))) as string[];
-    return technicians;
+    // Extract unique technician IDs
+    const uniqueTechnicians = [...new Set(data?.map(wo => wo.technician_id).filter(Boolean))] as string[];
+    
+    return uniqueTechnicians;
   } catch (error) {
     console.error('Error in getUniqueTechnicians:', error);
     throw error;
@@ -248,7 +258,8 @@ export async function getWorkOrderTimeEntries(workOrderId: string) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw error;
+      console.error('Error fetching work order time entries:', error);
+      throw new Error(`Failed to fetch time entries: ${error.message}`);
     }
 
     return data || [];
