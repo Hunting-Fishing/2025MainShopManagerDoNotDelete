@@ -38,7 +38,7 @@ export function EditModeIndicator({
           {isEditMode && onStatusChange ? (
             <StatusSelector
               currentStatus={workOrder.status}
-              type="jobLine"
+              type="workOrder"
               onStatusChange={handleStatusChange}
               disabled={false}
             />
