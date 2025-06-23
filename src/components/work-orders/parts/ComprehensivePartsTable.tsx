@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -34,7 +33,8 @@ export function ComprehensivePartsTable({
   error
 }: ComprehensivePartsTableProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingPart, setEditingPart] = useState<WorkOrderPart | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedPart, setSelectedPart] = useState<WorkOrderPart | null>(null);
   const [deletingPart, setDeletingPart] = useState<WorkOrderPart | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [operationError, setOperationError] = useState<string | null>(null);
@@ -96,7 +96,7 @@ export function ComprehensivePartsTable({
   const handleEditPart = useCallback((part: WorkOrderPart) => {
     try {
       console.log('Opening edit dialog for part:', part.id);
-      setEditingPart(part);
+      setSelectedPart(part);
       setOperationError(null);
     } catch (error) {
       console.error('Error opening edit dialog:', error);
@@ -110,7 +110,7 @@ export function ComprehensivePartsTable({
       setOperationError(null);
       
       await onPartsChange();
-      setEditingPart(null);
+      setSelectedPart(null);
       
       toast.success('Part updated successfully');
     } catch (error) {
@@ -319,13 +319,13 @@ export function ComprehensivePartsTable({
       />
 
       {/* Edit Part Dialog */}
-      {editingPart && (
+      {editDialogOpen && (
         <EditPartDialog
-          open={!!editingPart}
-          onOpenChange={(open) => !open && setEditingPart(null)}
-          part={editingPart}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          part={selectedPart!}
           jobLines={jobLines}
-          onPartUpdated={handlePartUpdated}
+          onSave={handlePartUpdated}
         />
       )}
 

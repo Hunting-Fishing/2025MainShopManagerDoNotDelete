@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { mapDatabasePartToWorkOrderPart } from '@/utils/databaseMappers';
@@ -136,4 +135,29 @@ export async function deleteWorkOrderPart(partId: string): Promise<void> {
   }
 
   console.log('Successfully deleted part:', partId);
+}
+
+export async function getPartsByJobLine(jobLineId: string): Promise<WorkOrderPart[]> {
+  console.log('Fetching parts for job line:', jobLineId);
+  
+  const { data, error } = await supabase
+    .from('work_order_parts')
+    .select('*')
+    .eq('job_line_id', jobLineId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching job line parts:', error);
+    throw new Error(`Failed to fetch job line parts: ${error.message}`);
+  }
+
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+  return data.map(mapDatabasePartToWorkOrderPart);
+}
+
+export async function getJobLineParts(jobLineId: string): Promise<WorkOrderPart[]> {
+  return getPartsByJobLine(jobLineId);
 }

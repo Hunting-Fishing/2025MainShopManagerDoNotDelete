@@ -24,6 +24,16 @@ export class PartsFormValidator {
     return errors;
   }
 
+  static validatePartForm(data: any): string[] {
+    return this.validatePartData(data);
+  }
+
+  static showValidationErrors(errors: string[]) {
+    errors.forEach(error => {
+      this.showErrorToast(error);
+    });
+  }
+
   static handleApiError(error: any): string {
     console.error('API Error:', error);
     

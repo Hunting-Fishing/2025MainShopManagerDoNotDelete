@@ -55,6 +55,7 @@ export interface WorkOrderPartFormValues {
   description?: string;
   quantity: number;
   unit_price: number; // This maps to customer_price in database
+  total_price?: number; // Calculated field
   status?: string;
   notes?: string;
   job_line_id?: string;
