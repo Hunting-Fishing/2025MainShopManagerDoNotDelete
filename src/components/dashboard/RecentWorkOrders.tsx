@@ -18,13 +18,15 @@ export function RecentWorkOrders() {
     const fetchWorkOrders = async () => {
       try {
         setLoading(true);
+        console.log("Fetching recent work orders for dashboard...");
         const data = await getRecentWorkOrders();
-        setWorkOrders(data);
+        console.log("Received work orders data:", data);
+        setWorkOrders(data || []);
         setError(null);
       } catch (err) {
         console.error("Error fetching recent work orders:", err);
         setError("Failed to load recent work orders");
-        setWorkOrders([]); // No fallback to mock data
+        setWorkOrders([]);
       } finally {
         setLoading(false);
       }
@@ -40,7 +42,8 @@ export function RecentWorkOrders() {
   const getStatusColor = (status: string): string => {
     switch (status.toLowerCase()) {
       case 'pending': return 'bg-blue-100 text-blue-800';
-      case 'in-progress': return 'bg-amber-100 text-amber-800';
+      case 'in-progress': 
+      case 'in_progress': return 'bg-amber-100 text-amber-800';
       case 'completed': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -122,7 +125,7 @@ export function RecentWorkOrders() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className={getStatusColor(order.status)}>
-                    {order.status}
+                    {order.status.replace('_', ' ')}
                   </Badge>
                   <Badge variant="outline" className={getPriorityColor(order.priority)}>
                     {order.priority}
