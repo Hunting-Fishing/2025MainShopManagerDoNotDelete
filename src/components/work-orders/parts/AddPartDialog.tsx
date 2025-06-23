@@ -1,32 +1,40 @@
 
 import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPartFormValues, WORK_ORDER_PART_STATUSES, PART_TYPES } from '@/types/workOrderPart';
 import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { toast } from 'sonner';
 import { BasicPartFields } from './BasicPartFields';
 import { PartTypeAndStatusFields } from './PartTypeAndStatusFields';
 import { SelectJobLine } from './SelectJobLine';
-import { toast } from 'sonner';
 
-// Create Zod schema that matches WorkOrderPartFormValues exactly
-const addPartFormSchema = z.object({
+interface AddPartDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  workOrderId: string;
+  jobLines: WorkOrderJobLine[];
+  onPartAdded: () => Promise<void>;
+}
+
+// Create a Zod schema that matches WorkOrderPartFormValues exactly
+const partFormSchema = z.object({
   name: z.string().min(1, "Part name is required"),
   part_number: z.string().min(1, "Part number is required"),
   description: z.string().optional(),
   quantity: z.number().min(1, "Quantity must be at least 1"),
   unit_price: z.number().min(0, "Unit price must be non-negative"),
   total_price: z.number().optional(),
-  status: z.enum(WORK_ORDER_PART_STATUSES as readonly [string, ...string[]]),
+  status: z.enum(WORK_ORDER_PART_STATUSES as [string, ...string[]]),
   notes: z.string().optional(),
   job_line_id: z.string().optional(),
   category: z.string().optional(),
-  part_type: z.enum(PART_TYPES as readonly [string, ...string[]]),
+  part_type: z.enum(PART_TYPES as [string, ...string[]]),
   
   // Optional extended fields
   customerPrice: z.number().optional(),
@@ -48,19 +56,8 @@ const addPartFormSchema = z.object({
   notesInternal: z.string().optional(),
   inventoryItemId: z.string().optional(),
   estimatedArrivalDate: z.string().optional(),
-  itemStatus: z.string().optional()
+  itemStatus: z.string().optional(),
 });
-
-// Create a type from the schema for internal use
-type AddPartFormValues = z.infer<typeof addPartFormSchema>;
-
-interface AddPartDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  workOrderId: string;
-  jobLines: WorkOrderJobLine[];
-  onPartAdded: () => Promise<void>;
-}
 
 export function AddPartDialog({
   open,
@@ -71,8 +68,8 @@ export function AddPartDialog({
 }: AddPartDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<AddPartFormValues>({
-    resolver: zodResolver(addPartFormSchema),
+  const form = useForm<WorkOrderPartFormValues>({
+    resolver: zodResolver(partFormSchema),
     defaultValues: {
       name: '',
       part_number: '',
@@ -80,10 +77,10 @@ export function AddPartDialog({
       quantity: 1,
       unit_price: 0,
       status: 'pending',
-      part_type: 'inventory',
       notes: '',
       job_line_id: '',
       category: '',
+      part_type: 'inventory',
       
       // Extended fields defaults
       customerPrice: undefined,
@@ -93,84 +90,59 @@ export function AddPartDialog({
       isTaxable: false,
       coreChargeAmount: undefined,
       coreChargeApplied: false,
-      warrantyDuration: undefined,
-      warrantyExpiryDate: undefined,
-      installDate: undefined,
-      installedBy: undefined,
-      invoiceNumber: undefined,
-      poLine: undefined,
+      warrantyDuration: '',
+      warrantyExpiryDate: '',
+      installDate: '',
+      installedBy: '',
+      invoiceNumber: '',
+      poLine: '',
       isStockItem: false,
-      supplierName: undefined,
-      supplierOrderRef: undefined,
-      notesInternal: undefined,
-      inventoryItemId: undefined,
-      estimatedArrivalDate: undefined,
-      itemStatus: undefined
-    }
+      supplierName: '',
+      supplierOrderRef: '',
+      notesInternal: '',
+      inventoryItemId: '',
+      estimatedArrivalDate: '',
+      itemStatus: '',
+    },
   });
 
-  // Watch quantity and unit_price to calculate total_price
-  const watchedQuantity = form.watch('quantity');
-  const watchedUnitPrice = form.watch('unit_price');
+  const handleSubmit = async (data: WorkOrderPartFormValues) => {
+    if (!workOrderId) {
+      toast.error('No work order ID provided');
+      return;
+    }
 
-  React.useEffect(() => {
-    const quantity = watchedQuantity || 0;
-    const unitPrice = watchedUnitPrice || 0;
-    const totalPrice = quantity * unitPrice;
-    form.setValue('total_price', totalPrice);
-  }, [watchedQuantity, watchedUnitPrice, form]);
-
-  const handleSubmit = async (values: AddPartFormValues) => {
     try {
       setIsSubmitting(true);
-      console.log('Adding part with values:', values);
+      console.log('Creating part with data:', data);
 
-      // Convert form values to WorkOrderPartFormValues format
-      const partData: WorkOrderPartFormValues = {
-        name: values.name,
-        part_number: values.part_number,
-        description: values.description,
-        quantity: values.quantity,
-        unit_price: values.unit_price,
-        total_price: values.total_price,
-        status: values.status,
-        notes: values.notes,
-        job_line_id: values.job_line_id || undefined,
-        category: values.category,
-        part_type: values.part_type,
-        
-        // Extended fields
-        customerPrice: values.customerPrice,
-        supplierCost: values.supplierCost,
-        retailPrice: values.retailPrice,
-        markupPercentage: values.markupPercentage,
-        isTaxable: values.isTaxable,
-        coreChargeAmount: values.coreChargeAmount,
-        coreChargeApplied: values.coreChargeApplied,
-        warrantyDuration: values.warrantyDuration,
-        warrantyExpiryDate: values.warrantyExpiryDate,
-        installDate: values.installDate,
-        installedBy: values.installedBy,
-        invoiceNumber: values.invoiceNumber,
-        poLine: values.poLine,
-        isStockItem: values.isStockItem,
-        supplierName: values.supplierName,
-        supplierOrderRef: values.supplierOrderRef,
-        notesInternal: values.notesInternal,
-        inventoryItemId: values.inventoryItemId,
-        estimatedArrivalDate: values.estimatedArrivalDate,
-        itemStatus: values.itemStatus
+      // Calculate total price if not provided
+      const totalPrice = data.total_price || (data.quantity * data.unit_price);
+
+      const partData = {
+        ...data,
+        work_order_id: workOrderId,
+        total_price: totalPrice,
       };
 
-      await createWorkOrderPart(workOrderId, partData);
+      const result = await createWorkOrderPart(partData);
       
-      toast.success('Part added successfully');
-      await onPartAdded();
-      onOpenChange(false);
-      form.reset();
+      if (result) {
+        console.log('Part created successfully:', result);
+        toast.success('Part added successfully');
+        
+        // Reset form and close dialog
+        form.reset();
+        onOpenChange(false);
+        
+        // Refresh the parts list
+        await onPartAdded();
+      } else {
+        throw new Error('Failed to create part');
+      }
     } catch (error) {
-      console.error('Error adding part:', error);
-      toast.error('Failed to add part');
+      console.error('Error creating part:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to add part');
     } finally {
       setIsSubmitting(false);
     }
@@ -181,26 +153,41 @@ export function AddPartDialog({
     onOpenChange(false);
   };
 
+  // Watch quantity and unit price to calculate total
+  const quantity = form.watch('quantity');
+  const unitPrice = form.watch('unit_price');
+
+  // Update total price when quantity or unit price changes
+  React.useEffect(() => {
+    if (quantity && unitPrice) {
+      const total = quantity * unitPrice;
+      form.setValue('total_price', total);
+    }
+  }, [quantity, unitPrice, form]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Part</DialogTitle>
+          <DialogTitle>Add Part to Work Order</DialogTitle>
+          <DialogDescription>
+            Add a new part to this work order. Fill in the part details below.
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <BasicPartFields form={form} />
-            
-            <PartTypeAndStatusFields form={form} />
-            
-            <SelectJobLine 
-              form={form} 
-              jobLines={jobLines} 
-              workOrderId={workOrderId} 
-            />
+            <div className="grid gap-4">
+              <BasicPartFields form={form} />
+              <PartTypeAndStatusFields form={form} />
+              <SelectJobLine 
+                form={form}
+                jobLines={jobLines}
+                workOrderId={workOrderId}
+              />
+            </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 pt-6 border-t">
               <Button
                 type="button"
                 variant="outline"
