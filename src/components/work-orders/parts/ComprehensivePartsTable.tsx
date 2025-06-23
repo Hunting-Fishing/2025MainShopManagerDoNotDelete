@@ -1,24 +1,42 @@
-
 import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Eye, Package } from 'lucide-react';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { WorkOrderJobLine } from '@/types/jobLine';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Package, Plus, Edit, Trash2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { AddPartDialog } from './AddPartDialog';
 import { EditPartDialog } from './EditPartDialog';
-import { ViewPartDetailsDialog } from './ViewPartDetailsDialog';
-import { partStatusMap } from '@/types/workOrderPart';
-import { PartsFormValidator } from '@/utils/partsErrorHandler';
-import { deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { deleteWorkOrderPart, updateWorkOrderPart } from '@/services/workOrder';
+import { toast } from 'sonner';
 
 interface ComprehensivePartsTableProps {
   workOrderId: string;
   parts: WorkOrderPart[];
   jobLines: WorkOrderJobLine[];
   onPartsChange: () => Promise<void>;
-  isEditMode?: boolean;
+  isEditMode: boolean;
 }
 
 export function ComprehensivePartsTable({
@@ -26,174 +44,237 @@ export function ComprehensivePartsTable({
   parts,
   jobLines,
   onPartsChange,
-  isEditMode = false
+  isEditMode
 }: ComprehensivePartsTableProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
-  const [selectedPart, setSelectedPart] = useState<WorkOrderPart | null>(null);
-
-  const handleEdit = (part: WorkOrderPart) => {
-    setSelectedPart(part);
-    setShowEditDialog(true);
-  };
-
-  const handleView = (part: WorkOrderPart) => {
-    setSelectedPart(part);
-    setShowViewDialog(true);
-  };
-
-  const handleDelete = async (partId: string) => {
-    try {
-      await deleteWorkOrderPart(partId);
-      PartsFormValidator.showSuccessToast('Part deleted successfully');
-      await onPartsChange();
-    } catch (error) {
-      const errorMessage = PartsFormValidator.handleApiError(error);
-      PartsFormValidator.showErrorToast(errorMessage);
-    }
-  };
+  const [editingPart, setEditingPart] = useState<WorkOrderPart | null>(null);
 
   const handlePartAdded = async () => {
-    setShowAddDialog(false);
+    console.log('Part added, refreshing data...');
     await onPartsChange();
+    setShowAddDialog(false);
   };
 
   const handlePartUpdated = async () => {
-    setShowEditDialog(false);
-    setSelectedPart(null);
+    console.log('Part updated, refreshing data...');
     await onPartsChange();
+    setEditingPart(null);
   };
 
-  const getJobLineName = (jobLineId?: string) => {
-    if (!jobLineId) return 'Unassigned';
-    const jobLine = jobLines.find(jl => jl.id === jobLineId);
-    return jobLine?.name || 'Unknown Job Line';
+  const handleDeletePart = async (partId: string) => {
+    try {
+      await deleteWorkOrderPart(partId);
+      toast.success('Part deleted successfully');
+      await onPartsChange();
+    } catch (error) {
+      console.error('Error deleting part:', error);
+      toast.error('Failed to delete part');
+    }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusInfo = partStatusMap[status] || { label: status, classes: 'bg-gray-100 text-gray-800' };
-    return (
-      <Badge className={`${statusInfo.classes} text-xs`}>
-        {statusInfo.label}
-      </Badge>
-    );
+  const handleEditPart = (part: WorkOrderPart) => {
+    setEditingPart(part);
   };
 
-  if (parts.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-        <p className="text-gray-500 mb-4">No parts added yet</p>
-        {isEditMode && (
-          <Button onClick={() => setShowAddDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add First Part
-          </Button>
-        )}
-        
-        <AddPartDialog
-          open={showAddDialog}
-          onOpenChange={setShowAddDialog}
-          workOrderId={workOrderId}
-          jobLines={jobLines}
-          onPartAdded={handlePartAdded}
-        />
-      </div>
-    );
-  }
+  const handleQuickUpdate = async (partId: string, field: string, value: any) => {
+    try {
+      const updateData: Partial<WorkOrderPartFormValues> = {};
+      
+      if (field === 'quantity') {
+        updateData.quantity = parseInt(value) || 0;
+      } else if (field === 'unit_price') {
+        updateData.unit_price = parseFloat(value) || 0;
+      } else if (field === 'status') {
+        updateData.status = value;
+      } else if (field === 'job_line_id') {
+        updateData.job_line_id = value || undefined;
+      }
+
+      await updateWorkOrderPart(partId, updateData);
+      toast.success('Part updated successfully');
+      await onPartsChange();
+    } catch (error) {
+      console.error('Error updating part:', error);
+      toast.error('Failed to update part');
+    }
+  };
+
+  // Helper function to format the status
+  const formatStatus = (status: string | undefined) => {
+    if (!status) return 'Pending';
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
+  // Helper function to find job line name
+  const getJobLineName = (jobLineId: string | undefined) => {
+    return jobLines.find(jl => jl.id === jobLineId)?.name || 'Unassigned';
+  };
 
   return (
     <div className="space-y-4">
-      {isEditMode && (
-        <div className="flex justify-end">
-          <Button onClick={() => setShowAddDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          <h3 className="text-lg font-medium">Parts Management</h3>
+          <Badge variant="outline">{parts.length} parts</Badge>
+        </div>
+        {isEditMode && (
+          <Button
+            onClick={() => setShowAddDialog(true)}
+            size="sm"
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
             Add Part
           </Button>
-        </div>
-      )}
-
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Part Details</TableHead>
-              <TableHead>Job Line</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Unit Price</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Type</TableHead>
-              {isEditMode && <TableHead>Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {parts.map((part) => (
-              <TableRow key={part.id}>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{part.name}</div>
-                    <div className="text-sm text-gray-500">{part.part_number}</div>
-                    {part.description && (
-                      <div className="text-sm text-gray-400 mt-1">{part.description}</div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm">{getJobLineName(part.job_line_id)}</span>
-                </TableCell>
-                <TableCell>
-                  <span className="font-medium">{part.quantity}</span>
-                </TableCell>
-                <TableCell>
-                  <span className="font-medium">${(part.unit_price || 0).toFixed(2)}</span>
-                </TableCell>
-                <TableCell>
-                  <span className="font-medium">${part.total_price.toFixed(2)}</span>
-                </TableCell>
-                <TableCell>
-                  {getStatusBadge(part.status || 'pending')}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {part.part_type || 'Standard'}
-                  </Badge>
-                </TableCell>
-                {isEditMode && (
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleView(part)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(part)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(part.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        )}
       </div>
 
+      {/* Parts Table */}
+      {parts.length === 0 ? (
+        <Card className="p-8">
+          <div className="text-center text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-lg font-medium mb-2">No parts added yet</p>
+            <p>Add parts to track inventory and costs for this work order</p>
+          </div>
+        </Card>
+      ) : (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Part Details</TableHead>
+                <TableHead>Job Line</TableHead>
+                <TableHead>Quantity</TableHead>
+                <TableHead>Unit Price</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Status</TableHead>
+                {isEditMode && <TableHead>Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {parts.map((part) => (
+                <TableRow key={part.id}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{part.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Part #: {part.part_number}
+                      </div>
+                      {part.description && (
+                        <div className="text-sm text-muted-foreground">
+                          {part.description}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {isEditMode ? (
+                      <Select
+                        value={part.job_line_id || ''}
+                        onValueChange={(value) => handleQuickUpdate(part.id, 'job_line_id', value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Unassigned</SelectItem>
+                          {jobLines.map((jobLine) => (
+                            <SelectItem key={jobLine.id} value={jobLine.id}>
+                              {jobLine.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span>
+                        {jobLines.find(jl => jl.id === part.job_line_id)?.name || 'Unassigned'}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {isEditMode ? (
+                      <Input
+                        type="number"
+                        min="0"
+                        value={part.quantity}
+                        onChange={(e) => handleQuickUpdate(part.id, 'quantity', e.target.value)}
+                        className="w-20"
+                      />
+                    ) : (
+                      part.quantity
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {isEditMode ? (
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={part.unit_price}
+                        onChange={(e) => handleQuickUpdate(part.id, 'unit_price', e.target.value)}
+                        className="w-24"
+                      />
+                    ) : (
+                      `$${(part.unit_price || 0).toFixed(2)}`
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium">
+                      ${part.total_price.toFixed(2)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {isEditMode ? (
+                      <Select
+                        value={part.status || 'pending'}
+                        onValueChange={(value) => handleQuickUpdate(part.id, 'status', value)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="ordered">Ordered</SelectItem>
+                          <SelectItem value="received">Received</SelectItem>
+                          <SelectItem value="installed">Installed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge variant="outline">{part.status}</Badge>
+                    )}
+                  </TableCell>
+                  {isEditMode && (
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditPart(part)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeletePart(part.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
+      {/* Add Part Dialog */}
       <AddPartDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
@@ -202,17 +283,13 @@ export function ComprehensivePartsTable({
         onPartAdded={handlePartAdded}
       />
 
+      {/* Edit Part Dialog */}
       <EditPartDialog
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        part={selectedPart}
-        onPartUpdated={handlePartUpdated}
-      />
-
-      <ViewPartDetailsDialog
-        open={showViewDialog}
-        onOpenChange={setShowViewDialog}
-        part={selectedPart}
+        open={!!editingPart}
+        onOpenChange={(open) => !open && setEditingPart(null)}
+        part={editingPart!}
+        jobLines={jobLines}
+        onSave={handlePartUpdated}
       />
     </div>
   );

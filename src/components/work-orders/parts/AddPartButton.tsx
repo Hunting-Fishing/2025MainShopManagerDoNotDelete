@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
@@ -78,7 +77,7 @@ export function AddPartButton({
       </Button>
 
       <AddPartDialog
-        isOpen={isDialogOpen}
+        open={isDialogOpen}
         onOpenChange={handleDialogClose}
         workOrderId={workOrderId}
         jobLines={jobLines}
