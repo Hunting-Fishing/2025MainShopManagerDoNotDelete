@@ -2,91 +2,110 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { WorkOrderPart, WorkOrderPartFormValues, WORK_ORDER_PART_STATUSES, PART_TYPES } from '@/types/workOrderPart';
+import { Form } from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { WorkOrderPart, WorkOrderPartFormValues, PART_TYPES, WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { updateWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { PartsFormValidator } from '@/utils/partsErrorHandler';
+import { BasicPartFields } from './BasicPartFields';
+import { JobLineSelector } from './JobLineSelector';
+import { PartTypeAndStatusFields } from './PartTypeAndStatusFields';
 
-export interface EditPartDialogProps {
+const editPartSchema = z.object({
+  name: z.string().min(2, 'Part name must be at least 2 characters'),
+  part_number: z.string().min(3, 'Part number must be at least 3 characters'),
+  description: z.string().optional(),
+  quantity: z.number().min(1, 'Quantity must be at least 1'),
+  unit_price: z.number().min(0, 'Unit price cannot be negative'),
+  status: z.enum(WORK_ORDER_PART_STATUSES).default('pending'),
+  notes: z.string().optional(),
+  job_line_id: z.string().optional(),
+  part_type: z.enum(PART_TYPES),
+});
+
+type EditPartFormValues = z.infer<typeof editPartSchema>;
+
+interface EditPartDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onClose?: () => void;
   part: WorkOrderPart;
   jobLines: WorkOrderJobLine[];
-  onSave: (updatedPart: WorkOrderPartFormValues) => Promise<void>;
-  onPartUpdated?: (formData: WorkOrderPartFormValues) => Promise<void>;
+  onPartUpdated: () => Promise<void>;
 }
 
 export function EditPartDialog({
   open,
   onOpenChange,
-  onClose,
   part,
   jobLines,
-  onSave,
   onPartUpdated
 }: EditPartDialogProps) {
-  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
-    name: '',
-    part_number: '',
-    description: '',
-    quantity: 1,
-    unit_price: 0,
-    status: 'pending',
-    notes: '',
-    job_line_id: '',
-    part_type: 'inventory'
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const form = useForm<EditPartFormValues>({
+    resolver: zodResolver(editPartSchema),
+    defaultValues: {
+      name: '',
+      part_number: '',
+      description: '',
+      quantity: 1,
+      unit_price: 0,
+      status: 'pending',
+      notes: '',
+      job_line_id: undefined,
+      part_type: 'inventory',
+    }
+  });
+
+  // Update form when part changes
   useEffect(() => {
-    if (part) {
-      setFormData({
+    if (part && open) {
+      form.reset({
         name: part.name || '',
         part_number: part.part_number || '',
         description: part.description || '',
         quantity: part.quantity || 1,
         unit_price: part.unit_price || 0,
-        status: part.status || 'pending',
+        status: part.status as any || 'pending',
         notes: part.notes || '',
-        job_line_id: part.job_line_id || '',
-        part_type: part.part_type || 'inventory'
+        job_line_id: part.job_line_id || undefined,
+        part_type: (part.part_type as any) || 'inventory',
       });
     }
-  }, [part]);
+  }, [part, open, form]);
 
-  const handleClose = () => {
-    if (onClose) {
-      onClose();
-    } else {
-      onOpenChange(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate form
-    const errors = PartsFormValidator.validatePartForm(formData);
-    if (errors.length > 0) {
-      PartsFormValidator.showValidationErrors(errors);
-      return;
-    }
-
-    setIsSubmitting(true);
+  const onSubmit = async (data: EditPartFormValues) => {
     try {
-      if (onPartUpdated) {
-        await onPartUpdated(formData);
-      } else {
-        await onSave(formData);
-      }
+      setIsSubmitting(true);
+      setSubmitError(null);
+
+      const updateData: Partial<WorkOrderPartFormValues> = {
+        name: data.name,
+        part_number: data.part_number,
+        description: data.description,
+        quantity: data.quantity,
+        unit_price: data.unit_price,
+        status: data.status,
+        notes: data.notes,
+        job_line_id: data.job_line_id === 'none' ? undefined : data.job_line_id,
+        part_type: data.part_type,
+      };
+
+      await updateWorkOrderPart(part.id, updateData);
+      
       PartsFormValidator.showSuccessToast('Part updated successfully');
-      handleClose();
+      await onPartUpdated();
+      
     } catch (error) {
+      console.error('Error updating part:', error);
       const errorMessage = PartsFormValidator.handleApiError(error);
+      setSubmitError(errorMessage);
       PartsFormValidator.showErrorToast(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -95,148 +114,49 @@ export function EditPartDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Part</DialogTitle>
+          <DialogTitle>Edit Part: {part.name}</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Part Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="part_number">Part Number *</Label>
-              <Input
-                id="part_number"
-                value={formData.part_number}
-                onChange={(e) => setFormData({...formData, part_number: e.target.value})}
-                required
-              />
-            </div>
-          </div>
 
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-            />
-          </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {submitError && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{submitError}</AlertDescription>
+              </Alert>
+            )}
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="quantity">Quantity *</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="unit_price">Unit Price *</Label>
-              <Input
-                id="unit_price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.unit_price}
-                onChange={(e) => setFormData({...formData, unit_price: parseFloat(e.target.value) || 0})}
-                required
-              />
-            </div>
+            <BasicPartFields form={form} />
+            <JobLineSelector form={form} jobLines={jobLines} />
+            <PartTypeAndStatusFields form={form} />
 
-            <div>
-              <Label htmlFor="part_type">Part Type *</Label>
-              <Select
-                value={formData.part_type}
-                onValueChange={(value) => setFormData({...formData, part_type: value as any})}
+            <div className="flex justify-end space-x-3 pt-6 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PART_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({...formData, status: value})}
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {WORK_ORDER_PART_STATUSES.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update Part'
+                )}
+              </Button>
             </div>
-
-            <div>
-              <Label htmlFor="job_line_id">Assign to Job Line</Label>
-              <Select
-                value={formData.job_line_id}
-                onValueChange={(value) => setFormData({...formData, job_line_id: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select job line..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
-                  {jobLines.map((jobLine) => (
-                    <SelectItem key={jobLine.id} value={jobLine.id}>
-                      {jobLine.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Updating...' : 'Update Part'}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
