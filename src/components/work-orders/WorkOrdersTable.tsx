@@ -1,9 +1,9 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Eye, Edit, AlertTriangle } from "lucide-react";
 import { WorkOrder } from "@/types/workOrder";
 import { 
@@ -28,11 +28,29 @@ const WorkOrderRow: React.FC<{ workOrder: WorkOrder }> = ({ workOrder }) => {
     <TableRow key={workOrder.id} className={hasWarnings ? "bg-yellow-50" : ""}>
       <TableCell className="font-mono text-sm">
         <div className="flex items-center gap-2">
-          #{workOrder.id.slice(0, 8)}
+          <span className="font-medium">
+            #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
+          </span>
           {hasWarnings && (
-            <div title={`Warnings: ${validation.warnings.join(', ')}`}>
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <AlertTriangle className="h-4 w-4 text-yellow-500 hover:text-yellow-600 transition-colors" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <div className="space-y-1">
+                    <p className="font-semibold text-xs">Data Validation Warnings:</p>
+                    {validation.warnings.map((warning, index) => (
+                      <p key={index} className="text-xs text-muted-foreground">
+                        • {warning}
+                      </p>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       </TableCell>
@@ -111,7 +129,7 @@ export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>ID</TableHead>
+            <TableHead>Work Order #</TableHead>
             <TableHead>Customer</TableHead>
             <TableHead>Vehicle</TableHead>
             <TableHead>Description</TableHead>
