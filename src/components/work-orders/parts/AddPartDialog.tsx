@@ -1,35 +1,40 @@
 
-import React, { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form } from '@/components/ui/form';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { WorkOrderPartFormValues, WORK_ORDER_PART_STATUSES, PART_TYPES } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { BasicPartFields } from './BasicPartFields';
 import { PartTypeAndStatusFields } from './PartTypeAndStatusFields';
 import { JobLineSelector } from './JobLineSelector';
-import { SupplierSelector } from './SupplierSelector';
+import { toast } from 'sonner';
 
-// Create a Zod schema that matches WorkOrderPartFormValues exactly
-const partFormSchema = z.object({
+interface AddPartDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  workOrderId: string;
+  jobLines: WorkOrderJobLine[];
+  onPartAdded: () => void;
+}
+
+// Create Zod schema that exactly matches WorkOrderPartFormValues
+const addPartSchema = z.object({
   name: z.string().min(1, "Part name is required"),
   part_number: z.string().min(1, "Part number is required"),
   description: z.string().optional(),
   quantity: z.number().min(1, "Quantity must be at least 1"),
-  unit_price: z.number().min(0, "Unit price must be at least 0"),
+  unit_price: z.number().min(0, "Unit price must be non-negative"),
   total_price: z.number().optional(),
-  status: z.string().min(1, "Status is required"),
+  status: z.enum([...WORK_ORDER_PART_STATUSES]),
   notes: z.string().optional(),
   job_line_id: z.string().optional(),
   category: z.string().optional(),
-  part_type: z.string().min(1, "Part type is required"),
-  
-  // Extended fields - all optional
+  part_type: z.enum([...PART_TYPES]),
   customerPrice: z.number().optional(),
   supplierCost: z.number().optional(),
   retailPrice: z.number().optional(),
@@ -52,14 +57,6 @@ const partFormSchema = z.object({
   itemStatus: z.string().optional(),
 });
 
-interface AddPartDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  workOrderId: string;
-  jobLines: WorkOrderJobLine[];
-  onPartAdded: () => Promise<void>;
-}
-
 export function AddPartDialog({
   open,
   onOpenChange,
@@ -67,10 +64,10 @@ export function AddPartDialog({
   jobLines,
   onPartAdded
 }: AddPartDialogProps) {
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<WorkOrderPartFormValues>({
-    resolver: zodResolver(partFormSchema),
+    resolver: zodResolver(addPartSchema),
     defaultValues: {
       name: '',
       part_number: '',
@@ -103,45 +100,48 @@ export function AddPartDialog({
       inventoryItemId: '',
       estimatedArrivalDate: '',
       itemStatus: '',
-    },
+    }
   });
 
+  // Watch quantity and unit_price to auto-calculate total_price
   const quantity = form.watch('quantity');
   const unitPrice = form.watch('unit_price');
 
-  // Auto-calculate total price when quantity or unit price changes
-  React.useEffect(() => {
-    const total = (quantity || 0) * (unitPrice || 0);
-    form.setValue('total_price', total);
+  useEffect(() => {
+    if (quantity && unitPrice) {
+      const total = quantity * unitPrice;
+      form.setValue('total_price', total);
+    }
   }, [quantity, unitPrice, form]);
 
-  const onSubmit = async (data: WorkOrderPartFormValues) => {
-    try {
-      setLoading(true);
-      console.log('Creating work order part:', data);
+  const handleSubmit = async (data: WorkOrderPartFormValues) => {
+    if (!workOrderId) {
+      toast.error('Work Order ID is required');
+      return;
+    }
 
-      // Ensure total_price is calculated
-      const formData = {
+    try {
+      setIsSubmitting(true);
+      console.log('Creating part with data:', data);
+
+      const partData = {
         ...data,
-        total_price: (data.quantity || 0) * (data.unit_price || 0),
+        work_order_id: workOrderId,
+        total_price: data.total_price || (data.quantity * data.unit_price)
       };
 
-      await createWorkOrderPart(workOrderId, formData);
+      await createWorkOrderPart(partData);
       
-      console.log('Part created successfully');
       toast.success('Part added successfully');
-      
-      // Reset form and close dialog
       form.reset();
+      onPartAdded();
       onOpenChange(false);
       
-      // Refresh parts data
-      await onPartAdded();
     } catch (error) {
       console.error('Error creating part:', error);
       toast.error('Failed to add part');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -154,44 +154,37 @@ export function AddPartDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Part</DialogTitle>
-          <DialogDescription>
-            Add a new part to this work order
-          </DialogDescription>
+          <DialogTitle>Add Part to Work Order</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-4">
-                <BasicPartFields form={form} />
-                <PartTypeAndStatusFields form={form} />
-              </div>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <BasicPartFields form={form} />
+            
+            <PartTypeAndStatusFields form={form} />
+            
+            <JobLineSelector 
+              form={form} 
+              jobLines={jobLines}
+              workOrderId={workOrderId}
+            />
 
-              {/* Right Column */}
-              <div className="space-y-4">
-                <JobLineSelector 
-                  form={form}
-                  jobLines={jobLines}
-                />
-                <SupplierSelector form={form} />
-              </div>
-            </div>
-
-            <DialogFooter>
+            <div className="flex justify-end space-x-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleCancel}
-                disabled={loading}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Adding...' : 'Add Part'}
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Adding...' : 'Add Part'}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
       </DialogContent>
