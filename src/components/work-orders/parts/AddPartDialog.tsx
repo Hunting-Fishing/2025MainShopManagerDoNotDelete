@@ -2,38 +2,28 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { BasicPartFields } from './BasicPartFields';
-import { JobLineSelector } from './JobLineSelector';
-import { SupplierSelector } from './SupplierSelector';
-import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { WorkOrderPartFormValues, PART_TYPES, WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
+import { createWorkOrderPart } from '@/services/workOrder';
+import { toast } from 'sonner';
 
-const partFormSchema = z.object({
-  name: z.string().min(1, 'Part name is required'),
-  part_number: z.string().min(1, 'Part number is required'),
-  description: z.string().optional(),
-  quantity: z.number().min(1, 'Quantity must be at least 1'),
-  unit_price: z.number().min(0, 'Price must be non-negative'),
-  job_line_id: z.string().optional(),
-  supplierName: z.string().optional(),
-  status: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-export interface AddPartDialogProps {
+interface AddPartDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   workOrderId: string;
   jobLines: WorkOrderJobLine[];
   onPartAdded: () => Promise<void>;
+}
+
+interface FormErrors {
+  [key: string]: string;
 }
 
 export function AddPartDialog({
@@ -43,120 +33,456 @@ export function AddPartDialog({
   jobLines,
   onPartAdded
 }: AddPartDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  console.log('AddPartDialog render:', { isOpen, workOrderId, jobLinesCount: jobLines.length });
-
-  const form = useForm<WorkOrderPartFormValues>({
-    resolver: zodResolver(partFormSchema),
-    defaultValues: {
-      name: '',
-      part_number: '',
-      description: '',
-      quantity: 1,
-      unit_price: 0,
-      job_line_id: '',
-      supplierName: '',
-      status: 'pending',
-      notes: ''
-    }
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [generalError, setGeneralError] = useState<string>('');
+  
+  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
+    name: '',
+    part_number: '',
+    description: '',
+    quantity: 1,
+    unit_price: 0,
+    status: 'pending',
+    notes: '',
+    job_line_id: '',
+    category: '',
+    customerPrice: 0,
+    supplierCost: 0,
+    retailPrice: 0,
+    markupPercentage: 0,
+    isTaxable: true,
+    coreChargeAmount: 0,
+    coreChargeApplied: false,
+    warrantyDuration: '',
+    warrantyExpiryDate: '',
+    installDate: '',
+    installedBy: '',
+    invoiceNumber: '',
+    poLine: '',
+    isStockItem: false,
+    supplierName: '',
+    supplierOrderRef: '',
+    notesInternal: '',
+    inventoryItemId: '',
+    part_type: 'inventory',
+    estimatedArrivalDate: '',
+    itemStatus: ''
   });
 
-  const handleSubmit = async (data: WorkOrderPartFormValues) => {
-    try {
-      setIsSubmitting(true);
-      setSubmitError(null);
-      
-      console.log('Submitting part data:', data);
-      
-      // Validate required fields
-      if (!data.name.trim()) {
-        throw new Error('Part name is required');
-      }
-      if (!data.part_number.trim()) {
-        throw new Error('Part number is required');
-      }
-      
-      const partData = {
-        ...data,
-        work_order_id: workOrderId,
-        total_price: data.quantity * data.unit_price
-      };
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Part name is required';
+    }
+    
+    if (!formData.part_number.trim()) {
+      newErrors.part_number = 'Part number is required';
+    }
+    
+    if (!formData.part_type) {
+      newErrors.part_type = 'Part type is required';
+    }
+    
+    if (formData.quantity <= 0) {
+      newErrors.quantity = 'Quantity must be greater than 0';
+    }
+    
+    if (formData.unit_price < 0) {
+      newErrors.unit_price = 'Unit price cannot be negative';
+    }
 
-      console.log('Creating work order part:', partData);
-      await createWorkOrderPart(partData, workOrderId);
+    if (formData.customerPrice && formData.customerPrice < 0) {
+      newErrors.customerPrice = 'Customer price cannot be negative';
+    }
+
+    if (formData.supplierCost && formData.supplierCost < 0) {
+      newErrors.supplierCost = 'Supplier cost cannot be negative';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: keyof WorkOrderPartFormValues, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+    
+    // Clear general error when user makes changes
+    if (generalError) {
+      setGeneralError('');
+    }
+  };
+
+  const calculateTotalPrice = () => {
+    const price = formData.customerPrice || formData.unit_price || 0;
+    return price * formData.quantity;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    setGeneralError('');
+
+    try {
+      console.log('Submitting part form:', formData);
       
-      console.log('Part created successfully, calling onPartAdded');
-      await onPartAdded();
-      
-      // Reset form and close dialog
-      form.reset();
-      onOpenChange(false);
+      await createWorkOrderPart(formData, workOrderId);
       
       toast.success('Part added successfully');
+      
+      // Reset form
+      setFormData({
+        name: '',
+        part_number: '',
+        description: '',
+        quantity: 1,
+        unit_price: 0,
+        status: 'pending',
+        notes: '',
+        job_line_id: '',
+        category: '',
+        customerPrice: 0,
+        supplierCost: 0,
+        retailPrice: 0,
+        markupPercentage: 0,
+        isTaxable: true,
+        coreChargeAmount: 0,
+        coreChargeApplied: false,
+        warrantyDuration: '',
+        warrantyExpiryDate: '',
+        installDate: '',
+        installedBy: '',
+        invoiceNumber: '',
+        poLine: '',
+        isStockItem: false,
+        supplierName: '',
+        supplierOrderRef: '',
+        notesInternal: '',
+        inventoryItemId: '',
+        part_type: 'inventory',
+        estimatedArrivalDate: '',
+        itemStatus: ''
+      });
+      
+      await onPartAdded();
+      onOpenChange(false);
+      
     } catch (error) {
+      console.error('Error adding part:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to add part';
-      console.error('Error adding part:', errorMessage, error);
-      setSubmitError(errorMessage);
-      toast.error(errorMessage);
+      setGeneralError(errorMessage);
+      toast.error(`Failed to add part: ${errorMessage}`);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    if (!isSubmitting) {
-      setSubmitError(null);
-      form.reset();
-      onOpenChange(false);
-    }
-  };
+  const totalPrice = calculateTotalPrice();
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Part</DialogTitle>
+          <DialogTitle>Add Part to Work Order</DialogTitle>
         </DialogHeader>
 
-        {submitError && (
+        {generalError && (
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{submitError}</AlertDescription>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{generalError}</AlertDescription>
           </Alert>
         )}
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <BasicPartFields form={form} />
-            
-            <JobLineSelector form={form} jobLines={jobLines} />
-            
-            <SupplierSelector form={form} />
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Adding...
-                  </>
-                ) : (
-                  'Add Part'
-                )}
-              </Button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Part Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Enter part name"
+                className={errors.name ? 'border-red-500' : ''}
+              />
+              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
             </div>
-          </form>
-        </Form>
+
+            <div className="space-y-2">
+              <Label htmlFor="part_number">Part Number *</Label>
+              <Input
+                id="part_number"
+                value={formData.part_number}
+                onChange={(e) => handleInputChange('part_number', e.target.value)}
+                placeholder="Enter part number"
+                className={errors.part_number ? 'border-red-500' : ''}
+              />
+              {errors.part_number && <p className="text-sm text-red-500">{errors.part_number}</p>}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description || ''}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Enter part description"
+              rows={3}
+            />
+          </div>
+
+          {/* Part Type and Job Line */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="part_type">Part Type *</Label>
+              <Select
+                value={formData.part_type}
+                onValueChange={(value) => handleInputChange('part_type', value)}
+              >
+                <SelectTrigger className={errors.part_type ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select part type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PART_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type === 'inventory' ? 'Inventory Item' : 'Non-Inventory Item'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.part_type && <p className="text-sm text-red-500">{errors.part_type}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="job_line_id">Job Line (Optional)</Label>
+              <Select
+                value={formData.job_line_id || ''}
+                onValueChange={(value) => handleInputChange('job_line_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select job line" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No Job Line</SelectItem>
+                  {jobLines.map((jobLine) => (
+                    <SelectItem key={jobLine.id} value={jobLine.id}>
+                      {jobLine.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Quantity and Pricing */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantity *</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                step="1"
+                value={formData.quantity}
+                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+                className={errors.quantity ? 'border-red-500' : ''}
+              />
+              {errors.quantity && <p className="text-sm text-red-500">{errors.quantity}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="unit_price">Unit Price</Label>
+              <Input
+                id="unit_price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.unit_price}
+                onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
+                className={errors.unit_price ? 'border-red-500' : ''}
+              />
+              {errors.unit_price && <p className="text-sm text-red-500">{errors.unit_price}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customerPrice">Customer Price</Label>
+              <Input
+                id="customerPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.customerPrice || 0}
+                onChange={(e) => handleInputChange('customerPrice', parseFloat(e.target.value) || 0)}
+                className={errors.customerPrice ? 'border-red-500' : ''}
+              />
+              {errors.customerPrice && <p className="text-sm text-red-500">{errors.customerPrice}</p>}
+            </div>
+          </div>
+
+          {/* Total Price Display */}
+          <div className="bg-gray-50 p-3 rounded-md">
+            <Label className="text-sm font-medium">Total Price: ${totalPrice.toFixed(2)}</Label>
+          </div>
+
+          {/* Status and Category */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status || 'pending'}
+                onValueChange={(value) => handleInputChange('status', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WORK_ORDER_PART_STATUSES.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={formData.category || ''}
+                onChange={(e) => handleInputChange('category', e.target.value)}
+                placeholder="Enter category"
+              />
+            </div>
+          </div>
+
+          {/* Supplier Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="supplierName">Supplier Name</Label>
+              <Input
+                id="supplierName"
+                value={formData.supplierName || ''}
+                onChange={(e) => handleInputChange('supplierName', e.target.value)}
+                placeholder="Enter supplier name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplierCost">Supplier Cost</Label>
+              <Input
+                id="supplierCost"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.supplierCost || 0}
+                onChange={(e) => handleInputChange('supplierCost', parseFloat(e.target.value) || 0)}
+                className={errors.supplierCost ? 'border-red-500' : ''}
+              />
+              {errors.supplierCost && <p className="text-sm text-red-500">{errors.supplierCost}</p>}
+            </div>
+          </div>
+
+          {/* Toggles */}
+          <div className="flex flex-wrap gap-6">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isStockItem"
+                checked={formData.isStockItem || false}
+                onCheckedChange={(checked) => handleInputChange('isStockItem', checked)}
+              />
+              <Label htmlFor="isStockItem">Stock Item</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isTaxable"
+                checked={formData.isTaxable !== false}
+                onCheckedChange={(checked) => handleInputChange('isTaxable', checked)}
+              />
+              <Label htmlFor="isTaxable">Taxable</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="coreChargeApplied"
+                checked={formData.coreChargeApplied || false}
+                onCheckedChange={(checked) => handleInputChange('coreChargeApplied', checked)}
+              />
+              <Label htmlFor="coreChargeApplied">Core Charge Applied</Label>
+            </div>
+          </div>
+
+          {/* Core Charge Amount (conditionally shown) */}
+          {formData.coreChargeApplied && (
+            <div className="space-y-2">
+              <Label htmlFor="coreChargeAmount">Core Charge Amount</Label>
+              <Input
+                id="coreChargeAmount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.coreChargeAmount || 0}
+                onChange={(e) => handleInputChange('coreChargeAmount', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+          )}
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes || ''}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Enter any additional notes"
+              rows={3}
+            />
+          </div>
+
+          {/* Form Actions */}
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Adding Part...
+                </>
+              ) : (
+                'Add Part'
+              )}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
