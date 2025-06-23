@@ -1,10 +1,8 @@
-
 import React, { useMemo } from 'react';
 import { ServiceSector, ServiceJob } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
 import { SmartServiceSelector } from './SmartServiceSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 interface IntegratedServiceSelectorProps {
   sectors: ServiceSector[];
   onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
@@ -12,7 +10,6 @@ interface IntegratedServiceSelectorProps {
   onRemoveService?: (serviceId: string) => void;
   onUpdateServices?: (services: SelectedService[]) => void;
 }
-
 export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps> = ({
   sectors,
   onServiceSelect,
@@ -27,7 +24,8 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
 
     // Create new selected service
     const newService: SelectedService = {
-      id: `${service.id}-${Date.now()}`, // Unique ID for the selection
+      id: `${service.id}-${Date.now()}`,
+      // Unique ID for the selection
       serviceId: service.id,
       name: service.name,
       description: service.description,
@@ -51,7 +49,6 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
     // Also call the original callback
     onServiceSelect(service, categoryName, subcategoryName);
   };
-
   const handleRemoveService = (serviceId: string) => {
     if (onUpdateServices) {
       const updatedServices = selectedServices.filter(s => s.id !== serviceId);
@@ -61,57 +58,37 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
       onRemoveService(serviceId);
     }
   };
-
-  return (
-    <div className="space-y-4 bg-background">
-      <SmartServiceSelector
-        sectors={sectors}
-        onServiceSelect={handleServiceSelect}
-        selectedServices={selectedServices}
-        onRemoveService={handleRemoveService}
-        onUpdateServices={onUpdateServices}
-      />
+  return <div className="space-y-4 bg-background">
+      <SmartServiceSelector sectors={sectors} onServiceSelect={handleServiceSelect} selectedServices={selectedServices} onRemoveService={handleRemoveService} onUpdateServices={onUpdateServices} />
 
       {/* Selected Services Summary */}
-      {selectedServices.length > 0 && (
-        <Card className="border shadow-sm bg-card rounded">
+      {selectedServices.length > 0 && <Card className="border shadow-sm bg-card rounded">
           <CardHeader className="bg-card border-b">
             <CardTitle className="text-sm">Selected Services ({selectedServices.length})</CardTitle>
           </CardHeader>
           <CardContent className="bg-card">
             <div className="space-y-2">
-              {selectedServices.map(service => (
-                <div key={service.id} className="flex items-center justify-between p-2 border rounded-md bg-muted/50">
+              {selectedServices.map(service => <div key={service.id} className="flex items-center justify-between p-2 border rounded-md bg-muted/50">
                   <div className="flex-1">
                     <div className="font-medium text-sm">{service.name}</div>
                     <div className="text-xs text-muted-foreground">
                       {service.category} › {service.subcategory}
                     </div>
                     <div className="flex items-center gap-4 mt-1">
-                      {service.estimatedTime && (
-                        <span className="text-xs text-muted-foreground">
+                      {service.estimatedTime && <span className="text-xs text-muted-foreground">
                           {service.estimatedTime} min
-                        </span>
-                      )}
-                      {service.price && (
-                        <span className="text-xs font-medium text-green-600">
+                        </span>}
+                      {service.price && <span className="text-xs font-medium text-green-600">
                           ${service.price}
-                        </span>
-                      )}
+                        </span>}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleRemoveService(service.id)}
-                    className="text-destructive hover:text-destructive/80 text-sm px-2 py-1"
-                  >
+                  <button onClick={() => handleRemoveService(service.id)} className="text-destructive hover:text-destructive/80 px-2 py-1 text-lg bg-amber-400 hover:bg-amber-300">
                     Remove
                   </button>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+        </Card>}
+    </div>;
 };
