@@ -4,24 +4,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { WorkOrderPart, WorkOrderPartFormValues, WORK_ORDER_PART_STATUSES, PART_TYPES } from '@/types/workOrderPart';
+import { WorkOrderJobLine } from '@/types/jobLine';
 import { PartsFormValidator } from '@/utils/partsErrorHandler';
-import { updateWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 
-interface EditPartDialogProps {
+export interface EditPartDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  part: WorkOrderPart | null;
-  onPartUpdated: () => Promise<void>;
+  onClose?: () => void;
+  part: WorkOrderPart;
+  jobLines: WorkOrderJobLine[];
+  onSave: (updatedPart: WorkOrderPartFormValues) => Promise<void>;
+  onPartUpdated?: (formData: WorkOrderPartFormValues) => Promise<void>;
 }
 
-export function EditPartDialog({ 
-  open, 
-  onOpenChange, 
+export function EditPartDialog({
+  open,
+  onOpenChange,
+  onClose,
   part,
-  onPartUpdated 
+  jobLines,
+  onSave,
+  onPartUpdated
 }: EditPartDialogProps) {
   const [formData, setFormData] = useState<WorkOrderPartFormValues>({
     name: '',
@@ -31,6 +37,7 @@ export function EditPartDialog({
     unit_price: 0,
     status: 'pending',
     notes: '',
+    job_line_id: '',
     part_type: 'inventory'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,49 +52,39 @@ export function EditPartDialog({
         unit_price: part.unit_price || 0,
         status: part.status || 'pending',
         notes: part.notes || '',
-        part_type: part.part_type || 'inventory',
-        job_line_id: part.job_line_id,
-        customerPrice: part.unit_price || 0,
-        supplierCost: part.supplierCost,
-        retailPrice: part.retailPrice,
-        markupPercentage: part.markupPercentage,
-        isTaxable: part.isTaxable,
-        coreChargeAmount: part.coreChargeAmount,
-        coreChargeApplied: part.coreChargeApplied,
-        warrantyDuration: part.warrantyDuration,
-        warrantyExpiryDate: part.warrantyExpiryDate,
-        installDate: part.installDate,
-        installedBy: part.installedBy,
-        invoiceNumber: part.invoiceNumber,
-        poLine: part.poLine,
-        isStockItem: part.isStockItem,
-        supplierName: part.supplierName,
-        supplierOrderRef: part.supplierOrderRef,
-        notesInternal: part.notesInternal,
-        inventoryItemId: part.inventoryItemId,
-        estimatedArrivalDate: part.estimatedArrivalDate,
-        itemStatus: part.itemStatus,
-        category: part.category
+        job_line_id: part.job_line_id || '',
+        part_type: part.part_type || 'inventory'
       });
     }
   }, [part]);
 
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      onOpenChange(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!part) return;
-    
-    const validationErrors = PartsFormValidator.validatePartForm(formData);
-    if (validationErrors.length > 0) {
-      PartsFormValidator.showValidationErrors(validationErrors);
+    // Validate form
+    const errors = PartsFormValidator.validatePartForm(formData);
+    if (errors.length > 0) {
+      PartsFormValidator.showValidationErrors(errors);
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await updateWorkOrderPart(part.id, formData);
+      if (onPartUpdated) {
+        await onPartUpdated(formData);
+      } else {
+        await onSave(formData);
+      }
       PartsFormValidator.showSuccessToast('Part updated successfully');
-      await onPartUpdated();
+      handleClose();
     } catch (error) {
       const errorMessage = PartsFormValidator.handleApiError(error);
       PartsFormValidator.showErrorToast(errorMessage);
@@ -96,18 +93,9 @@ export function EditPartDialog({
     }
   };
 
-  const handleChange = (field: keyof WorkOrderPartFormValues, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  if (!part) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Part</DialogTitle>
         </DialogHeader>
@@ -119,7 +107,7 @@ export function EditPartDialog({
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
                 required
               />
             </div>
@@ -129,7 +117,7 @@ export function EditPartDialog({
               <Input
                 id="part_number"
                 value={formData.part_number}
-                onChange={(e) => handleChange('part_number', e.target.value)}
+                onChange={(e) => setFormData({...formData, part_number: e.target.value})}
                 required
               />
             </div>
@@ -140,8 +128,7 @@ export function EditPartDialog({
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              rows={2}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
             />
           </div>
 
@@ -153,7 +140,7 @@ export function EditPartDialog({
                 type="number"
                 min="1"
                 value={formData.quantity}
-                onChange={(e) => handleChange('quantity', parseInt(e.target.value) || 1)}
+                onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
                 required
               />
             </div>
@@ -163,22 +150,22 @@ export function EditPartDialog({
               <Input
                 id="unit_price"
                 type="number"
-                min="0"
                 step="0.01"
+                min="0"
                 value={formData.unit_price}
-                onChange={(e) => handleChange('unit_price', parseFloat(e.target.value) || 0)}
+                onChange={(e) => setFormData({...formData, unit_price: parseFloat(e.target.value) || 0})}
                 required
               />
             </div>
 
             <div>
               <Label htmlFor="part_type">Part Type *</Label>
-              <Select 
-                value={formData.part_type} 
-                onValueChange={(value) => handleChange('part_type', value)}
+              <Select
+                value={formData.part_type}
+                onValueChange={(value) => setFormData({...formData, part_type: value as any})}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {PART_TYPES.map((type) => (
@@ -191,23 +178,45 @@ export function EditPartDialog({
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="status">Status</Label>
-            <Select 
-              value={formData.status} 
-              onValueChange={(value) => handleChange('status', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                {WORK_ORDER_PART_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({...formData, status: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {WORK_ORDER_PART_STATUSES.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="job_line_id">Assign to Job Line</Label>
+              <Select
+                value={formData.job_line_id}
+                onValueChange={(value) => setFormData({...formData, job_line_id: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select job line..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Unassigned</SelectItem>
+                  {jobLines.map((jobLine) => (
+                    <SelectItem key={jobLine.id} value={jobLine.id}>
+                      {jobLine.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>
@@ -215,17 +224,12 @@ export function EditPartDialog({
             <Textarea
               id="notes"
               value={formData.notes}
-              onChange={(e) => handleChange('notes', e.target.value)}
-              rows={3}
+              onChange={(e) => setFormData({...formData, notes: e.target.value})}
             />
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
