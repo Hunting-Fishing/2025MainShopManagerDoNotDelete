@@ -1,197 +1,343 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/lib/supabase';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { AuthService } from '@/lib/services/AuthService';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { ServiceErrorBoundary } from '@/components/common/ServiceErrorBoundary';
+import { BaseFormField } from '@/components/forms/BaseFormField';
+import { useToast } from '@/hooks/use-toast';
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [isSignUp, setIsSignUp] = useState(false);
+const Login: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuthUser();
+  const { toast } = useToast();
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [signupForm, setSignupForm] = useState({ 
+    email: '', 
+    password: '', 
+    confirmPassword: '',
+    firstName: '',
+    lastName: ''
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string): boolean => {
+    return password.length >= 6;
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
+    setErrors({});
+    
+    // Validation
+    const newErrors: Record<string, string> = {};
+    if (!validateEmail(loginForm.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    if (!validatePassword(loginForm.password)) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
-    console.log('Login attempt:', { email, isSignUp });
-
+    setIsSubmitting(true);
     try {
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`
-          }
+      const { error } = await AuthService.signIn(loginForm.email, loginForm.password);
+      
+      if (error) {
+        setErrors({ submit: error.message });
+        toast({
+          title: 'Login Failed',
+          description: error.message,
+          variant: 'destructive'
         });
-        
-        console.log('Sign up response:', { data, error });
-        
-        if (error) {
-          console.error('Sign up error:', error);
-          throw error;
-        }
-        
-        if (data?.user && !data?.user?.email_confirmed_at) {
-          setSuccess('Please check your email for a confirmation link before signing in.');
-        } else if (data?.user) {
-          setSuccess('Account created successfully! You can now sign in.');
-          setIsSignUp(false);
-        }
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        toast({
+          title: 'Welcome back!',
+          description: 'You have successfully logged in.',
         });
-        
-        console.log('Sign in response:', { data, error });
-        
-        if (error) {
-          console.error('Sign in error:', error);
-          throw error;
-        }
-        
-        if (data?.user) {
-          console.log('Sign in successful, redirecting...');
-          navigate('/dashboard');
-        }
+        // Navigation will be handled by the useEffect hook
       }
-    } catch (error: any) {
-      console.error('Auth error:', error);
-      let errorMessage = 'An unexpected error occurred. Please try again.';
-      
-      if (error?.message) {
-        // Handle common Supabase auth errors
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-        } else if (error.message.includes('User already registered')) {
-          errorMessage = 'An account with this email already exists. Please sign in instead.';
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Please check your email and click the confirmation link before signing in.';
-        } else if (error.message.includes('Password should be at least')) {
-          errorMessage = 'Password must be at least 6 characters long.';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
-      setError(errorMessage);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      setErrors({ submit: errorMessage });
+      toast({
+        title: 'Login Error',
+        description: errorMessage,
+        variant: 'destructive'
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Don't render if still checking auth status
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+    
+    // Validation
+    const newErrors: Record<string, string> = {};
+    if (!validateEmail(signupForm.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    if (!validatePassword(signupForm.password)) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    if (signupForm.password !== signupForm.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    if (!signupForm.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    if (!signupForm.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await AuthService.signUp(
+        signupForm.email, 
+        signupForm.password,
+        {
+          firstName: signupForm.firstName,
+          lastName: signupForm.lastName
+        }
+      );
+      
+      if (error) {
+        setErrors({ submit: error.message });
+        toast({
+          title: 'Signup Failed',
+          description: error.message,
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Account Created!',
+          description: 'Please check your email to verify your account.',
+        });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      setErrors({ submit: errorMessage });
+      toast({
+        title: 'Signup Error',
+        description: errorMessage,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Show loading while checking auth state
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <LoadingSpinner size="lg" message="Loading..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl font-bold">
-            {isSignUp ? 'Create Account' : 'Welcome Back'}
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-gray-900">
+            Welcome to Auto Shop Manager
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
             
-            {success && (
-              <Alert>
-                <AlertDescription>{success}</AlertDescription>
-              </Alert>
-            )}
+            <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <BaseFormField
+                  label="Email"
+                  error={errors.email}
+                  required
+                  htmlFor="login-email"
+                >
+                  <Input
+                    id="login-email"
+                    type="email"
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="Enter your email"
+                    disabled={isSubmitting}
+                    className="w-full"
+                  />
+                </BaseFormField>
+
+                <BaseFormField
+                  label="Password"
+                  error={errors.password}
+                  required
+                  htmlFor="login-password"
+                >
+                  <Input
+                    id="login-password"
+                    type="password"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Enter your password"
+                    disabled={isSubmitting}
+                    className="w-full"
+                  />
+                </BaseFormField>
+
+                {errors.submit && (
+                  <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                    {errors.submit}
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Signing in...' : 'Sign In'}
+                </Button>
+              </form>
+            </TabsContent>
             
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="Enter your email"
-                disabled={isLoading}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Enter your password"
-                disabled={isLoading}
-                minLength={6}
-              />
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
-              {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
-            </Button>
-          </form>
-          
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-                setSuccess(null);
-              }}
-              className="text-sm text-blue-600 hover:underline"
-              disabled={isLoading}
-            >
-              {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
-            </button>
-          </div>
-          
-          <div className="mt-4 text-center">
-            <Link to="/customer-portal" className="text-sm text-gray-600 hover:underline">
-              Customer Portal Login
-            </Link>
-          </div>
+            <TabsContent value="signup">
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <BaseFormField
+                    label="First Name"
+                    error={errors.firstName}
+                    required
+                    htmlFor="signup-firstName"
+                  >
+                    <Input
+                      id="signup-firstName"
+                      type="text"
+                      value={signupForm.firstName}
+                      onChange={(e) => setSignupForm(prev => ({ ...prev, firstName: e.target.value }))}
+                      placeholder="First name"
+                      disabled={isSubmitting}
+                    />
+                  </BaseFormField>
+
+                  <BaseFormField
+                    label="Last Name"
+                    error={errors.lastName}
+                    required
+                    htmlFor="signup-lastName"
+                  >
+                    <Input
+                      id="signup-lastName"
+                      type="text"
+                      value={signupForm.lastName}
+                      onChange={(e) => setSignupForm(prev => ({ ...prev, lastName: e.target.value }))}
+                      placeholder="Last name"
+                      disabled={isSubmitting}
+                    />
+                  </BaseFormField>
+                </div>
+
+                <BaseFormField
+                  label="Email"
+                  error={errors.email}
+                  required
+                  htmlFor="signup-email"
+                >
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    value={signupForm.email}
+                    onChange={(e) => setSignupForm(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="Enter your email"
+                    disabled={isSubmitting}
+                  />
+                </BaseFormField>
+
+                <BaseFormField
+                  label="Password"
+                  error={errors.password}
+                  required
+                  htmlFor="signup-password"
+                >
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    value={signupForm.password}
+                    onChange={(e) => setSignupForm(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Create a password"
+                    disabled={isSubmitting}
+                  />
+                </BaseFormField>
+
+                <BaseFormField
+                  label="Confirm Password"
+                  error={errors.confirmPassword}
+                  required
+                  htmlFor="signup-confirmPassword"
+                >
+                  <Input
+                    id="signup-confirmPassword"
+                    type="password"
+                    value={signupForm.confirmPassword}
+                    onChange={(e) => setSignupForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="Confirm your password"
+                    disabled={isSubmitting}
+                  />
+                </BaseFormField>
+
+                {errors.submit && (
+                  <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                    {errors.submit}
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating account...' : 'Create Account'}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
   );
-}
+};
+
+export default Login;

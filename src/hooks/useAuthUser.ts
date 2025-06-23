@@ -24,9 +24,9 @@ export function useAuthUser() {
       setUser(session?.user ?? null);
       setIsAuthenticated(!!session);
       setUserId(session?.user?.id ?? null);
-      setUserName(session?.user?.email ?? null);
+      setUserName(session?.user?.email ?? session?.user?.user_metadata?.full_name ?? null);
       
-      // For now, set basic roles - you can expand this later
+      // For now, set basic roles - you can expand this later with real role checking
       setIsAdmin(false);
       setIsOwner(false);
       
@@ -57,28 +57,27 @@ export function useAuthUser() {
         if (error) {
           console.error('useAuthUser: Error getting session:', error);
           setError('Failed to get session');
+          setIsLoading(false);
         } else {
           console.log('useAuthUser: Initial session check:', session?.user?.id);
           // The onAuthStateChange will handle setting the state
+          if (!session) {
+            // No session found, set loading to false
+            setIsLoading(false);
+          }
         }
       } catch (error) {
         if (isMounted) {
           console.error('useAuthUser: Error in initial auth check:', error);
           setError('Authentication initialization failed');
-        }
-      } finally {
-        // Only set loading to false if we don't have a session
-        // If we have a session, onAuthStateChange will handle it
-        if (isMounted) {
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 1000); // Give some time for the auth state change event
+          setIsLoading(false);
         }
       }
     };
 
     initializeAuth();
 
+    // Cleanup function
     return () => {
       console.log('useAuthUser: Cleaning up auth listener');
       isMounted = false;
