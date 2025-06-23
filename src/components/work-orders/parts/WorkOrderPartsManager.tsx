@@ -1,12 +1,10 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, Package, AlertCircle, Loader2 } from 'lucide-react';
+import { Package, AlertCircle, Loader2 } from 'lucide-react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { PartsTable } from './PartsTable';
-import { AddPartForm } from './AddPartForm';
+import { ComprehensivePartsTable } from './ComprehensivePartsTable';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface WorkOrderPartsManagerProps {
@@ -28,13 +26,6 @@ export function WorkOrderPartsManager({
   isLoading = false,
   error = null
 }: WorkOrderPartsManagerProps) {
-  const [showAddForm, setShowAddForm] = useState(false);
-
-  const handlePartAdded = async () => {
-    setShowAddForm(false);
-    await onPartsChange();
-  };
-
   const totalPartsValue = parts.reduce((sum, part) => sum + part.total_price, 0);
 
   if (error) {
@@ -75,31 +66,11 @@ export function WorkOrderPartsManager({
             ({parts.length} items • ${totalPartsValue.toFixed(2)})
           </span>
         </div>
-        
-        {isEditMode && (
-          <Button
-            onClick={() => setShowAddForm(!showAddForm)}
-            size="sm"
-            variant={showAddForm ? "outline" : "default"}
-            disabled={isLoading}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {showAddForm ? 'Cancel' : 'Add Part'}
-          </Button>
-        )}
       </CardHeader>
       
-      <CardContent className="space-y-4">
-        {showAddForm && (
-          <AddPartForm
-            workOrderId={workOrderId}
-            jobLines={jobLines}
-            onPartAdded={handlePartAdded}
-            onCancel={() => setShowAddForm(false)}
-          />
-        )}
-        
-        <PartsTable
+      <CardContent>
+        <ComprehensivePartsTable
+          workOrderId={workOrderId}
           parts={parts}
           jobLines={jobLines}
           onPartsChange={onPartsChange}
