@@ -9,10 +9,10 @@ export const mapPartFormToDatabase = (formData: any, workOrderId: string, jobLin
   return {
     work_order_id: workOrderId,
     job_line_id: jobLineId || null,
-    part_name: formData.part_name || formData.name,
+    part_name: formData.name || formData.part_name,
     part_number: formData.part_number,
     quantity: formData.quantity || 1,
-    customer_price: formData.customer_price || formData.unit_price || 0,
+    customer_price: formData.unit_price || formData.customer_price || 0,
     supplier_cost: formData.supplier_cost || 0,
     retail_price: formData.retail_price || 0,
     supplier_name: formData.supplier_name || '',
@@ -55,17 +55,20 @@ export const mapJobLineFormToDatabase = (formData: any, workOrderId: string, dis
  * Maps database result to WorkOrderPart type
  */
 export const mapDatabaseToPart = (dbData: any): WorkOrderPart => {
+  const quantity = dbData.quantity || 1;
+  const unitPrice = dbData.customer_price || 0;
+  
   return {
     id: dbData.id,
     work_order_id: dbData.work_order_id,
     job_line_id: dbData.job_line_id,
     part_number: dbData.part_number,
-    name: dbData.part_name, // Map part_name to name for compatibility
+    name: dbData.part_name || dbData.name, // Handle both field names
     partName: dbData.part_name,
-    description: dbData.notes, // Map notes to description for compatibility
-    quantity: dbData.quantity,
-    unit_price: dbData.customer_price, // Map customer_price to unit_price for compatibility
-    total_price: dbData.customer_price * dbData.quantity,
+    description: dbData.notes || dbData.description,
+    quantity: quantity,
+    unit_price: unitPrice,
+    total_price: quantity * unitPrice,
     status: dbData.status,
     notes: dbData.notes,
     created_at: dbData.created_at,
@@ -84,7 +87,22 @@ export const mapDatabaseToPart = (dbData: any): WorkOrderPart => {
     warrantyDuration: dbData.warranty_duration,
     invoiceNumber: dbData.invoice_number,
     poLine: dbData.po_line,
-    isStockItem: dbData.is_stock_item
+    isStockItem: dbData.is_stock_item,
+    // Map additional fields that might be missing
+    supplierSuggestedRetailPrice: dbData.supplier_suggested_retail_price,
+    dateAdded: dbData.date_added,
+    binLocation: dbData.bin_location,
+    warehouseLocation: dbData.warehouse_location,
+    shelfLocation: dbData.shelf_location,
+    attachments: dbData.attachments,
+    warrantyExpiryDate: dbData.warranty_expiry_date,
+    installDate: dbData.install_date,
+    installedBy: dbData.installed_by,
+    notesInternal: dbData.notes_internal,
+    inventoryItemId: dbData.inventory_item_id,
+    estimatedArrivalDate: dbData.estimated_arrival_date,
+    itemStatus: dbData.item_status,
+    supplierOrderRef: dbData.supplier_order_ref
   };
 };
 
