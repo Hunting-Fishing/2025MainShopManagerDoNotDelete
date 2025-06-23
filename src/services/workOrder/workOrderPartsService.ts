@@ -123,6 +123,23 @@ export const workOrderPartsService = {
     }
 
     return (data || []).map(mapDatabaseToPart);
+  },
+
+  async getJobLineParts(jobLineId: string): Promise<WorkOrderPart[]> {
+    console.log('Fetching parts for job line:', jobLineId);
+    
+    const { data, error } = await supabase
+      .from('work_order_parts')
+      .select('*')
+      .eq('job_line_id', jobLineId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching job line parts:', error);
+      throw new Error(`Failed to fetch job line parts: ${error.message}`);
+    }
+
+    return (data || []).map(mapDatabaseToPart);
   }
 };
 
@@ -132,3 +149,4 @@ export const createWorkOrderPart = workOrderPartsService.createWorkOrderPart;
 export const updateWorkOrderPart = workOrderPartsService.updateWorkOrderPart;
 export const deleteWorkOrderPart = workOrderPartsService.deleteWorkOrderPart;
 export const getPartsByJobLine = workOrderPartsService.getPartsByJobLine;
+export const getJobLineParts = workOrderPartsService.getJobLineParts;
