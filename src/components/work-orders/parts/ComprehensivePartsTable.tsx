@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import { WorkOrderPart, WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { workOrderPartsService } from '@/services/workOrder/workOrderPartsService';
 import { toast } from 'sonner';
-
 interface ComprehensivePartsTableProps {
   workOrderId: string;
   parts: WorkOrderPart[];
@@ -42,53 +40,80 @@ const convertToDisplayValue = (value: any, fieldType: 'string' | 'number' | 'boo
   }
   return !value || value === '' ? 'none' : value;
 };
-
-const partTypeOptions = [
-  { value: 'none', label: 'Select Type' },
-  { value: 'OEM', label: 'OEM' },
-  { value: 'Aftermarket', label: 'Aftermarket' },
-  { value: 'Remanufactured', label: 'Remanufactured' },
-  { value: 'Used', label: 'Used' }
-];
-
-const categoryOptions = [
-  { value: 'none', label: 'Select Category' },
-  { value: 'Engine', label: 'Engine' },
-  { value: 'Transmission', label: 'Transmission' },
-  { value: 'Brakes', label: 'Brakes' },
-  { value: 'Suspension', label: 'Suspension' },
-  { value: 'Electrical', label: 'Electrical' },
-  { value: 'Body', label: 'Body' },
-  { value: 'Interior', label: 'Interior' },
-  { value: 'Fluids', label: 'Fluids' },
-  { value: 'Filters', label: 'Filters' },
-  { value: 'Other', label: 'Other' }
-];
-
-export function ComprehensivePartsTable({ 
-  workOrderId, 
-  parts, 
-  jobLines, 
+const partTypeOptions = [{
+  value: 'none',
+  label: 'Select Type'
+}, {
+  value: 'OEM',
+  label: 'OEM'
+}, {
+  value: 'Aftermarket',
+  label: 'Aftermarket'
+}, {
+  value: 'Remanufactured',
+  label: 'Remanufactured'
+}, {
+  value: 'Used',
+  label: 'Used'
+}];
+const categoryOptions = [{
+  value: 'none',
+  label: 'Select Category'
+}, {
+  value: 'Engine',
+  label: 'Engine'
+}, {
+  value: 'Transmission',
+  label: 'Transmission'
+}, {
+  value: 'Brakes',
+  label: 'Brakes'
+}, {
+  value: 'Suspension',
+  label: 'Suspension'
+}, {
+  value: 'Electrical',
+  label: 'Electrical'
+}, {
+  value: 'Body',
+  label: 'Body'
+}, {
+  value: 'Interior',
+  label: 'Interior'
+}, {
+  value: 'Fluids',
+  label: 'Fluids'
+}, {
+  value: 'Filters',
+  label: 'Filters'
+}, {
+  value: 'Other',
+  label: 'Other'
+}];
+export function ComprehensivePartsTable({
+  workOrderId,
+  parts,
+  jobLines,
   onPartsChange,
-  isEditMode = false 
+  isEditMode = false
 }: ComprehensivePartsTableProps) {
   const [editingPartId, setEditingPartId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [editingPart, setEditingPart] = useState<Partial<WorkOrderPart>>({});
-
-  const jobLineOptions = [
-    { value: 'none', label: 'No job line' },
-    ...jobLines.map(line => ({ value: line.id, label: line.name }))
-  ];
-
-  const statusOptions = [
-    { value: 'none', label: 'Select Status' },
-    ...WORK_ORDER_PART_STATUSES.map(status => ({ 
-      value: status, 
-      label: status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ') 
-    }))
-  ];
-
+  const jobLineOptions = [{
+    value: 'none',
+    label: 'No job line'
+  }, ...jobLines.map(line => ({
+    value: line.id,
+    label: line.name
+  }))];
+  const statusOptions = [{
+    value: 'none',
+    label: 'Select Status'
+  }, ...WORK_ORDER_PART_STATUSES.map(status => ({
+    value: status,
+    label: status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')
+  }))];
   const initializeNewPart = () => ({
     name: '',
     part_number: '',
@@ -124,12 +149,10 @@ export function ComprehensivePartsTable({
     estimatedArrivalDate: '',
     itemStatus: 'none'
   });
-
   const handleStartAdd = () => {
     setIsAdding(true);
     setEditingPart(initializeNewPart());
   };
-
   const handleStartEdit = (part: WorkOrderPart) => {
     setEditingPartId(part.id);
     setEditingPart({
@@ -144,20 +167,17 @@ export function ComprehensivePartsTable({
       itemStatus: convertToDisplayValue(part.itemStatus)
     });
   };
-
   const handleCancel = () => {
     setIsAdding(false);
     setEditingPartId(null);
     setEditingPart({});
   };
-
   const handleSave = async () => {
     try {
       if (!editingPart.name || !editingPart.part_number) {
         toast.error('Part name and part number are required');
         return;
       }
-
       const partData = {
         ...editingPart,
         job_line_id: convertToDbValue(editingPart.job_line_id),
@@ -176,7 +196,6 @@ export function ComprehensivePartsTable({
         markupPercentage: convertToDbValue(editingPart.markupPercentage?.toString() || '0', 'number'),
         coreChargeAmount: convertToDbValue(editingPart.coreChargeAmount?.toString() || '0', 'number')
       };
-
       if (isAdding) {
         await workOrderPartsService.createWorkOrderPart(partData as any, workOrderId);
         toast.success('Part added successfully');
@@ -184,7 +203,6 @@ export function ComprehensivePartsTable({
         await workOrderPartsService.updateWorkOrderPart(editingPartId, partData as any);
         toast.success('Part updated successfully');
       }
-
       await onPartsChange();
       handleCancel();
     } catch (error) {
@@ -192,7 +210,6 @@ export function ComprehensivePartsTable({
       toast.error('Failed to save part');
     }
   };
-
   const handleDelete = async (partId: string) => {
     try {
       await workOrderPartsService.deleteWorkOrderPart(partId);
@@ -203,14 +220,14 @@ export function ComprehensivePartsTable({
       toast.error('Failed to delete part');
     }
   };
-
   const updateEditingPart = (field: string, value: any) => {
-    setEditingPart(prev => ({ ...prev, [field]: value }));
+    setEditingPart(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-
   const renderEditableCell = (field: string, value: any, type: 'text' | 'number' | 'select' | 'textarea' | 'checkbox' | 'date' = 'text', options: any[] = []) => {
     const isEditing = isAdding || editingPartId;
-    
     if (!isEditing) {
       if (type === 'checkbox') {
         return <Checkbox checked={value} disabled />;
@@ -221,77 +238,37 @@ export function ComprehensivePartsTable({
       }
       return value || '-';
     }
-
     switch (type) {
       case 'number':
-        return (
-          <Input
-            type="number"
-            value={value || 0}
-            onChange={(e) => updateEditingPart(field, parseFloat(e.target.value) || 0)}
-            className="min-w-[100px]"
-          />
-        );
+        return <Input type="number" value={value || 0} onChange={e => updateEditingPart(field, parseFloat(e.target.value) || 0)} className="min-w-[100px]" />;
       case 'select':
-        return (
-          <Select value={value || 'none'} onValueChange={(val) => updateEditingPart(field, val)}>
+        return <Select value={value || 'none'} onValueChange={val => updateEditingPart(field, val)}>
             <SelectTrigger className="min-w-[120px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {options.map(option => (
-                <SelectItem key={option.value} value={option.value}>
+              {options.map(option => <SelectItem key={option.value} value={option.value}>
                   {option.label}
-                </SelectItem>
-              ))}
+                </SelectItem>)}
             </SelectContent>
-          </Select>
-        );
+          </Select>;
       case 'textarea':
-        return (
-          <Textarea
-            value={value || ''}
-            onChange={(e) => updateEditingPart(field, e.target.value)}
-            className="min-w-[200px] min-h-[60px]"
-          />
-        );
+        return <Textarea value={value || ''} onChange={e => updateEditingPart(field, e.target.value)} className="min-w-[200px] min-h-[60px]" />;
       case 'checkbox':
-        return (
-          <Checkbox
-            checked={value === true || value === 'true'}
-            onCheckedChange={(checked) => updateEditingPart(field, checked)}
-          />
-        );
+        return <Checkbox checked={value === true || value === 'true'} onCheckedChange={checked => updateEditingPart(field, checked)} />;
       case 'date':
-        return (
-          <Input
-            type="date"
-            value={value || ''}
-            onChange={(e) => updateEditingPart(field, e.target.value)}
-            className="min-w-[130px]"
-          />
-        );
+        return <Input type="date" value={value || ''} onChange={e => updateEditingPart(field, e.target.value)} className="min-w-[130px]" />;
       default:
-        return (
-          <Input
-            value={value || ''}
-            onChange={(e) => updateEditingPart(field, e.target.value)}
-            className="min-w-[120px]"
-          />
-        );
+        return <Input value={value || ''} onChange={e => updateEditingPart(field, e.target.value)} className="min-w-[120px]" />;
     }
   };
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Parts & Materials</h3>
-        {isEditMode && !isAdding && !editingPartId && (
-          <Button onClick={handleStartAdd} className="flex items-center gap-2">
+        {isEditMode && !isAdding && !editingPartId && <Button onClick={handleStartAdd} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Add Part
-          </Button>
-        )}
+          </Button>}
       </div>
 
       <div className="overflow-x-auto">
@@ -334,36 +311,28 @@ export function ComprehensivePartsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {parts.map((part) => {
-              const isEditing = editingPartId === part.id;
-              const currentPart = isEditing ? editingPart : part;
-              
-              return (
-                <TableRow key={part.id}>
+            {parts.map(part => {
+            const isEditing = editingPartId === part.id;
+            const currentPart = isEditing ? editingPart : part;
+            return <TableRow key={part.id}>
                   <TableCell>
-                    {isEditMode && (
-                      <div className="flex gap-1">
-                        {!isEditing ? (
-                          <>
+                    {isEditMode && <div className="flex gap-1">
+                        {!isEditing ? <>
                             <Button size="sm" variant="ghost" onClick={() => handleStartEdit(part)}>
                               <Edit className="h-3 w-3" />
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => handleDelete(part.id)}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
-                          </>
-                        ) : (
-                          <>
+                          </> : <>
                             <Button size="sm" variant="ghost" onClick={handleSave}>
                               <Save className="h-3 w-3" />
                             </Button>
                             <Button size="sm" variant="ghost" onClick={handleCancel}>
                               <X className="h-3 w-3" />
                             </Button>
-                          </>
-                        )}
-                      </div>
-                    )}
+                          </>}
+                      </div>}
                   </TableCell>
                   <TableCell>{renderEditableCell('name', currentPart.name, 'text')}</TableCell>
                   <TableCell>{renderEditableCell('part_number', currentPart.part_number, 'text')}</TableCell>
@@ -397,15 +366,13 @@ export function ComprehensivePartsTable({
                   <TableCell>{renderEditableCell('itemStatus', currentPart.itemStatus, 'select', statusOptions)}</TableCell>
                   <TableCell>{renderEditableCell('notes', currentPart.notes, 'textarea')}</TableCell>
                   <TableCell>{renderEditableCell('notesInternal', currentPart.notesInternal, 'textarea')}</TableCell>
-                </TableRow>
-              );
-            })}
+                </TableRow>;
+          })}
             
-            {isAdding && (
-              <TableRow>
+            {isAdding && <TableRow>
                 <TableCell>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={handleSave}>
+                    <Button size="sm" variant="ghost" onClick={handleSave} className="text-stone-900 bg-emerald-500 hover:bg-emerald-400">
                       <Save className="h-3 w-3" />
                     </Button>
                     <Button size="sm" variant="ghost" onClick={handleCancel}>
@@ -445,17 +412,13 @@ export function ComprehensivePartsTable({
                 <TableCell>{renderEditableCell('itemStatus', editingPart.itemStatus, 'select', statusOptions)}</TableCell>
                 <TableCell>{renderEditableCell('notes', editingPart.notes, 'textarea')}</TableCell>
                 <TableCell>{renderEditableCell('notesInternal', editingPart.notesInternal, 'textarea')}</TableCell>
-              </TableRow>
-            )}
+              </TableRow>}
           </TableBody>
         </Table>
       </div>
 
-      {parts.length === 0 && !isAdding && (
-        <div className="text-center py-8 text-muted-foreground">
+      {parts.length === 0 && !isAdding && <div className="text-center py-8 text-muted-foreground">
           No parts added yet. {isEditMode && 'Click "Add Part" to get started.'}
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 }
