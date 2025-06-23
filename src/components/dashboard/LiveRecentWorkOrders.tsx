@@ -17,6 +17,8 @@ interface WorkOrder {
 }
 
 async function fetchRecentWorkOrders(): Promise<WorkOrder[]> {
+  console.log('Fetching recent work orders for dashboard...');
+  
   const { data, error } = await supabase
     .from('work_orders')
     .select(`
@@ -31,18 +33,25 @@ async function fetchRecentWorkOrders(): Promise<WorkOrder[]> {
       )
     `)
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(10);
 
   if (error) {
     console.error('Error fetching recent work orders:', error);
+    throw error;
+  }
+
+  console.log('Raw work orders data:', data);
+
+  if (!data || data.length === 0) {
+    console.log('No work orders found in database');
     return [];
   }
 
-  return (data || []).map(wo => {
+  const formattedOrders = data.map(wo => {
     // Handle customers data - it could be null, an array, or an object
     const customerData = Array.isArray(wo.customers) ? wo.customers[0] : wo.customers;
     
-    return {
+    const formattedOrder = {
       id: wo.id,
       work_order_number: wo.work_order_number || `WO-${wo.id.slice(0, 8)}`,
       status: wo.status,
@@ -51,7 +60,13 @@ async function fetchRecentWorkOrders(): Promise<WorkOrder[]> {
       customer_last_name: customerData?.last_name,
       description: wo.description,
     };
+    
+    console.log('Formatted work order:', formattedOrder);
+    return formattedOrder;
   });
+
+  console.log('Final formatted work orders:', formattedOrders);
+  return formattedOrders;
 }
 
 function getStatusColor(status: string) {
@@ -60,6 +75,7 @@ function getStatusColor(status: string) {
       return 'bg-yellow-100 text-yellow-800';
     case 'in_progress':
     case 'in progress':
+    case 'in-progress':
       return 'bg-blue-100 text-blue-800';
     case 'completed':
       return 'bg-green-100 text-green-800';
@@ -74,7 +90,10 @@ export function LiveRecentWorkOrders() {
   const { data: workOrders = [], isLoading, error } = useQuery({
     queryKey: ['recent-work-orders'],
     queryFn: fetchRecentWorkOrders,
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
+
+  console.log('LiveRecentWorkOrders render - workOrders:', workOrders, 'isLoading:', isLoading, 'error:', error);
 
   if (isLoading) {
     return (
@@ -98,13 +117,14 @@ export function LiveRecentWorkOrders() {
   }
 
   if (error) {
+    console.error('Error in LiveRecentWorkOrders:', error);
     return (
       <Card>
         <CardHeader>
           <CardTitle>Recent Work Orders</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-red-600">Error loading recent work orders</p>
+          <p className="text-red-600">Error loading recent work orders: {error.message}</p>
         </CardContent>
       </Card>
     );
@@ -117,11 +137,14 @@ export function LiveRecentWorkOrders() {
       </CardHeader>
       <CardContent>
         {workOrders.length === 0 ? (
-          <p className="text-muted-foreground">No work orders found</p>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">No work orders found</p>
+            <p className="text-sm text-muted-foreground">Start by creating your first work order to track service jobs.</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {workOrders.map((workOrder) => (
-              <div key={workOrder.id} className="flex items-center justify-between space-x-4">
+              <div key={workOrder.id} className="flex items-center justify-between space-x-4 p-3 border rounded-lg hover:bg-gray-50">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
                     {workOrder.work_order_number}

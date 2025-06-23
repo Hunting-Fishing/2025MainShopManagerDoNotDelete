@@ -2,7 +2,7 @@
 import React from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { StatsCards } from '@/components/dashboard/StatsCards';
-import { RecentWorkOrders } from '@/components/dashboard/RecentWorkOrders';
+import { LiveRecentWorkOrders } from '@/components/dashboard/LiveRecentWorkOrders';
 import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
 import { InventoryStats } from '@/components/inventory/InventoryStats';
 import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
@@ -40,7 +40,7 @@ export default function Dashboard() {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <RecentWorkOrders />
+          <LiveRecentWorkOrders />
         </div>
         <div className="space-y-6">
           <TodaySchedule />
