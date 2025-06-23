@@ -65,6 +65,10 @@ export function WorkOrderDetailsHeader({
           onInvoiceCreated={(invoiceId) => {
             console.log('Invoice created:', invoiceId);
           }}
+          onWorkOrderUpdated={() => {
+            // This will trigger a refresh of the work order data
+            window.location.reload();
+          }}
         />
       </div>
     </div>
