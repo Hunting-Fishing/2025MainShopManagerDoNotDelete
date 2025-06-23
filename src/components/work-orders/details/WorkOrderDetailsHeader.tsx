@@ -23,6 +23,10 @@ export function WorkOrderDetailsHeader({
   onStatusChange,
   isEditMode
 }: WorkOrderDetailsHeaderProps) {
+  const handleStatusChange = async (newStatus: string) => {
+    await onStatusChange(newStatus);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-6 mb-6">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -35,6 +39,7 @@ export function WorkOrderDetailsHeader({
             <EditModeIndicator 
               workOrder={workOrder} 
               isEditMode={isEditMode}
+              onStatusChange={handleStatusChange}
               className="ml-2"
             />
           </div>
