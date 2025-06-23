@@ -1,6 +1,6 @@
 
-import { BaseRepository } from './BaseRepository';
 import { supabase } from '@/integrations/supabase/client';
+import { PostgrestError } from '@supabase/supabase-js';
 
 export interface WorkOrderTemplate {
   id: string;
@@ -19,14 +19,31 @@ export interface WorkOrderTemplate {
   updated_at: string;
 }
 
-export class WorkOrderTemplateRepository extends BaseRepository<WorkOrderTemplate> {
-  constructor() {
-    super('work_order_templates');
+export class WorkOrderTemplateRepository {
+  async findAll(): Promise<WorkOrderTemplate[]> {
+    const { data, error } = await supabase
+      .from('work_order_templates')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw this.handleError(error);
+    return data || [];
+  }
+
+  async findById(id: string): Promise<WorkOrderTemplate | null> {
+    const { data, error } = await supabase
+      .from('work_order_templates')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw this.handleError(error);
+    return data || null;
   }
 
   async findActive(): Promise<WorkOrderTemplate[]> {
     const { data, error } = await supabase
-      .from(this.tableName)
+      .from('work_order_templates')
       .select('*')
       .eq('is_active', true)
       .order('usage_count', { ascending: false });
@@ -37,7 +54,7 @@ export class WorkOrderTemplateRepository extends BaseRepository<WorkOrderTemplat
 
   async findByCategory(categoryId: string): Promise<WorkOrderTemplate[]> {
     const { data, error } = await supabase
-      .from(this.tableName)
+      .from('work_order_templates')
       .select('*')
       .eq('category_id', categoryId)
       .eq('is_active', true)
@@ -47,6 +64,38 @@ export class WorkOrderTemplateRepository extends BaseRepository<WorkOrderTemplat
     return data || [];
   }
 
+  async create(entity: Partial<WorkOrderTemplate>): Promise<WorkOrderTemplate> {
+    const { data, error } = await supabase
+      .from('work_order_templates')
+      .insert(entity)
+      .select()
+      .single();
+    
+    if (error) throw this.handleError(error);
+    return data;
+  }
+
+  async update(id: string, updates: Partial<WorkOrderTemplate>): Promise<WorkOrderTemplate> {
+    const { data, error } = await supabase
+      .from('work_order_templates')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw this.handleError(error);
+    return data;
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('work_order_templates')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw this.handleError(error);
+  }
+
   async incrementUsage(id: string): Promise<WorkOrderTemplate> {
     const { data, error } = await supabase
       .rpc('increment_template_usage', { template_id: id });
@@ -54,12 +103,14 @@ export class WorkOrderTemplateRepository extends BaseRepository<WorkOrderTemplat
     if (error) throw this.handleError(error);
     
     // Return updated template
-    return this.findById(id) as Promise<WorkOrderTemplate>;
+    const template = await this.findById(id);
+    if (!template) throw new Error('Template not found after increment');
+    return template;
   }
 
   async getMostUsed(limit: number = 10): Promise<WorkOrderTemplate[]> {
     const { data, error } = await supabase
-      .from(this.tableName)
+      .from('work_order_templates')
       .select('*')
       .eq('is_active', true)
       .order('usage_count', { ascending: false })
@@ -67,5 +118,10 @@ export class WorkOrderTemplateRepository extends BaseRepository<WorkOrderTemplat
     
     if (error) throw this.handleError(error);
     return data || [];
+  }
+
+  private handleError(error: PostgrestError): Error {
+    console.error('Database error in work_order_templates:', error);
+    return new Error(`Work order template operation failed: ${error.message}`);
   }
 }

@@ -10,7 +10,8 @@ const vehicleService = new VehicleService();
 export const getVehicleById = async (vehicleId: string): Promise<Vehicle | null> => {
   try {
     console.log('Fetching vehicle with ID:', vehicleId);
-    return await vehicleService.getCustomerVehicles(vehicleId).then(vehicles => vehicles[0] || null);
+    const vehicles = await vehicleService.getCustomerVehicles(vehicleId);
+    return vehicles[0] || null;
   } catch (error) {
     console.error('Error fetching vehicle:', error);
     throw error;
