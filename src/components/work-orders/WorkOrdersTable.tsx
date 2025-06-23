@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,7 +8,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Eye, Edit, AlertTriangle } from "lucide-react";
 import { WorkOrder } from "@/types/workOrder";
 import { 
-  getCustomerName, 
   getVehicleInfo, 
   getTechnicianName, 
   getWorkOrderDate, 
@@ -19,6 +19,37 @@ import {
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
 }
+
+// Helper function to get customer name with better error handling
+const getCustomerDisplayName = (workOrder: WorkOrder): string => {
+  // Try multiple possible customer name fields
+  if (workOrder.customer_name) {
+    return workOrder.customer_name;
+  }
+  
+  // If customer is an object, extract name
+  if (typeof workOrder.customer === 'object' && workOrder.customer) {
+    const customer = workOrder.customer as any;
+    if (customer.first_name && customer.last_name) {
+      return `${customer.first_name} ${customer.last_name}`;
+    }
+    if (customer.name) {
+      return customer.name;
+    }
+  }
+  
+  // If customer is a string
+  if (typeof workOrder.customer === 'string' && workOrder.customer) {
+    return workOrder.customer;
+  }
+  
+  // Fallback to customer_id if available
+  if (workOrder.customer_id) {
+    return `Customer ID: ${workOrder.customer_id.slice(0, 8)}`;
+  }
+  
+  return 'Unknown Customer';
+};
 
 const WorkOrderRow: React.FC<{ workOrder: WorkOrder }> = ({ workOrder }) => {
   const validation = validateWorkOrderData(workOrder);
@@ -57,7 +88,7 @@ const WorkOrderRow: React.FC<{ workOrder: WorkOrder }> = ({ workOrder }) => {
       
       <TableCell>
         <div className="font-medium">
-          {getCustomerName(workOrder)}
+          {getCustomerDisplayName(workOrder)}
         </div>
       </TableCell>
       
