@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Edit, Save, X } from 'lucide-react';
-import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { Trash2, Plus, Edit3, Save, X } from 'lucide-react';
+import { WorkOrderPart, WorkOrderPartFormValues, WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { createWorkOrderPart, updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder';
 import { toast } from 'sonner';
@@ -19,6 +19,10 @@ interface ComprehensivePartsTableProps {
   isEditMode?: boolean;
 }
 
+interface EditingPart extends WorkOrderPartFormValues {
+  id?: string;
+}
+
 export function ComprehensivePartsTable({
   workOrderId,
   parts,
@@ -27,120 +31,153 @@ export function ComprehensivePartsTable({
   isEditMode = false
 }: ComprehensivePartsTableProps) {
   const [editingPartId, setEditingPartId] = useState<string | null>(null);
-  const [editingValues, setEditingValues] = useState<Partial<WorkOrderPartFormValues>>({});
+  const [editingPart, setEditingPart] = useState<EditingPart | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [newPartValues, setNewPartValues] = useState<WorkOrderPartFormValues>({
+  const [newPart, setNewPart] = useState<EditingPart>({
     name: '',
     part_number: '',
     quantity: 1,
     unit_price: 0,
     description: '',
     status: 'pending',
+    job_line_id: '',
     category: '',
     supplierName: '',
-    partType: 'OEM',
     isTaxable: true
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleEdit = (part: WorkOrderPart) => {
     setEditingPartId(part.id);
-    setEditingValues({
+    setEditingPart({
       name: part.name,
       part_number: part.part_number,
       quantity: part.quantity,
       unit_price: part.unit_price,
-      description: part.description,
-      status: part.status,
-      category: part.category,
-      supplierName: part.supplierName,
-      partType: part.partType,
-      job_line_id: part.job_line_id || undefined,
-      isTaxable: part.isTaxable
+      description: part.description || '',
+      status: part.status || 'pending',
+      job_line_id: part.job_line_id || '',
+      category: part.category || '',
+      supplierName: part.supplierName || '',
+      isTaxable: part.isTaxable !== undefined ? part.isTaxable : true
     });
   };
 
   const handleSave = async (partId: string) => {
+    if (!editingPart) return;
+
     try {
-      setIsLoading(true);
-      await updateWorkOrderPart(partId, editingValues);
-      setEditingPartId(null);
-      setEditingValues({});
-      await onPartsChange();
+      await updateWorkOrderPart(partId, editingPart);
       toast.success('Part updated successfully');
+      setEditingPartId(null);
+      setEditingPart(null);
+      await onPartsChange();
     } catch (error) {
       console.error('Error updating part:', error);
       toast.error('Failed to update part');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
     setEditingPartId(null);
-    setEditingValues({});
+    setEditingPart(null);
   };
 
   const handleDelete = async (partId: string) => {
-    if (!confirm('Are you sure you want to delete this part?')) return;
-    
     try {
-      setIsLoading(true);
       await deleteWorkOrderPart(partId);
-      await onPartsChange();
       toast.success('Part deleted successfully');
+      await onPartsChange();
     } catch (error) {
       console.error('Error deleting part:', error);
       toast.error('Failed to delete part');
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleAddNew = async () => {
+  const handleAddNew = () => {
+    setIsAddingNew(true);
+  };
+
+  const handleSaveNew = async () => {
     try {
-      setIsLoading(true);
-      await createWorkOrderPart(newPartValues, workOrderId);
+      await createWorkOrderPart(newPart, workOrderId);
+      toast.success('Part added successfully');
       setIsAddingNew(false);
-      setNewPartValues({
+      setNewPart({
         name: '',
         part_number: '',
         quantity: 1,
         unit_price: 0,
         description: '',
         status: 'pending',
+        job_line_id: '',
         category: '',
         supplierName: '',
-        partType: 'OEM',
         isTaxable: true
       });
       await onPartsChange();
-      toast.success('Part added successfully');
     } catch (error) {
       console.error('Error adding part:', error);
       toast.error('Failed to add part');
-    } finally {
-      setIsLoading(false);
     }
   };
 
+  const handleCancelNew = () => {
+    setIsAddingNew(false);
+    setNewPart({
+      name: '',
+      part_number: '',
+      quantity: 1,
+      unit_price: 0,
+      description: '',
+      status: 'pending',
+      job_line_id: '',
+      category: '',
+      supplierName: '',
+      isTaxable: true
+    });
+  };
+
+  const updateEditingPartField = (field: keyof EditingPart, value: string | number | boolean) => {
+    if (editingPart) {
+      setEditingPart({ ...editingPart, [field]: value });
+    }
+  };
+
+  const updateNewPartField = (field: keyof EditingPart, value: string | number | boolean) => {
+    setNewPart({ ...newPart, [field]: value });
+  };
+
   const renderEditableCell = (
-    value: string | number,
-    field: keyof WorkOrderPartFormValues,
-    type: 'text' | 'number' | 'select' = 'text',
+    part: WorkOrderPart,
+    field: keyof EditingPart,
+    type: 'text' | 'number' | 'select' | 'checkbox' = 'text',
     options?: { value: string; label: string }[]
   ) => {
+    const isEditing = editingPartId === part.id;
+    const currentValue = editingPart?.[field];
+
+    if (!isEditing) {
+      if (type === 'checkbox') {
+        return (
+          <Badge variant={part[field as keyof WorkOrderPart] ? 'default' : 'secondary'}>
+            {part[field as keyof WorkOrderPart] ? 'Yes' : 'No'}
+          </Badge>
+        );
+      }
+      return <span>{part[field as keyof WorkOrderPart] || '-'}</span>;
+    }
+
     if (type === 'select' && options) {
       return (
-        <Select 
-          value={String(editingValues[field] || value)} 
-          onValueChange={(newValue) => setEditingValues(prev => ({ ...prev, [field]: newValue }))}
+        <Select
+          value={String(currentValue || '')}
+          onValueChange={(value) => updateEditingPartField(field, value)}
         >
-          <SelectTrigger className="h-8">
+          <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {options.map(option => (
+            {options.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -150,294 +187,229 @@ export function ComprehensivePartsTable({
       );
     }
 
+    if (type === 'checkbox') {
+      return (
+        <Select
+          value={String(currentValue)}
+          onValueChange={(value) => updateEditingPartField(field, value === 'true')}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">Yes</SelectItem>
+            <SelectItem value="false">No</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+
     return (
       <Input
         type={type}
-        value={editingValues[field] !== undefined ? editingValues[field] : value}
+        value={String(currentValue || '')}
         onChange={(e) => {
-          const newValue = type === 'number' ? Number(e.target.value) : e.target.value;
-          setEditingValues(prev => ({ ...prev, [field]: newValue }));
+          const value = type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value;
+          updateEditingPartField(field, value);
         }}
-        className="h-8"
+        className="w-full"
       />
     );
   };
 
-  const renderAddNewRow = () => {
-    if (!isAddingNew) return null;
+  const renderNewPartCell = (
+    field: keyof EditingPart,
+    type: 'text' | 'number' | 'select' | 'checkbox' = 'text',
+    options?: { value: string; label: string }[]
+  ) => {
+    const currentValue = newPart[field];
+
+    if (type === 'select' && options) {
+      return (
+        <Select
+          value={String(currentValue || '')}
+          onValueChange={(value) => updateNewPartField(field, value)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    if (type === 'checkbox') {
+      return (
+        <Select
+          value={String(currentValue)}
+          onValueChange={(value) => updateNewPartField(field, value === 'true')}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">Yes</SelectItem>
+            <SelectItem value="false">No</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
 
     return (
-      <TableRow>
-        <TableCell>
-          <Input
-            placeholder="Part name"
-            value={newPartValues.name}
-            onChange={(e) => setNewPartValues(prev => ({ ...prev, name: e.target.value }))}
-            className="h-8"
-          />
-        </TableCell>
-        <TableCell>
-          <Input
-            placeholder="Part number"
-            value={newPartValues.part_number}
-            onChange={(e) => setNewPartValues(prev => ({ ...prev, part_number: e.target.value }))}
-            className="h-8"
-          />
-        </TableCell>
-        <TableCell>
-          <Input
-            type="number"
-            value={newPartValues.quantity}
-            onChange={(e) => setNewPartValues(prev => ({ ...prev, quantity: Number(e.target.value) }))}
-            className="h-8"
-          />
-        </TableCell>
-        <TableCell>
-          <Input
-            type="number"
-            step="0.01"
-            value={newPartValues.unit_price}
-            onChange={(e) => setNewPartValues(prev => ({ ...prev, unit_price: Number(e.target.value) }))}
-            className="h-8"
-          />
-        </TableCell>
-        <TableCell>
-          ${(newPartValues.quantity * newPartValues.unit_price).toFixed(2)}
-        </TableCell>
-        <TableCell>
-          <Select 
-            value={newPartValues.status} 
-            onValueChange={(value) => setNewPartValues(prev => ({ ...prev, status: value }))}
-          >
-            <SelectTrigger className="h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="ordered">Ordered</SelectItem>
-              <SelectItem value="received">Received</SelectItem>
-              <SelectItem value="installed">Installed</SelectItem>
-            </SelectContent>
-          </Select>
-        </TableCell>
-        <TableCell>
-          <Select 
-            value={newPartValues.job_line_id || "none"} 
-            onValueChange={(value) => setNewPartValues(prev => ({ 
-              ...prev, 
-              job_line_id: value === "none" ? undefined : value 
-            }))}
-          >
-            <SelectTrigger className="h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No job line</SelectItem>
-              {jobLines.map(jobLine => (
-                <SelectItem key={jobLine.id} value={jobLine.id}>
-                  {jobLine.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </TableCell>
-        <TableCell>
-          <Input
-            placeholder="Supplier"
-            value={newPartValues.supplierName || ''}
-            onChange={(e) => setNewPartValues(prev => ({ ...prev, supplierName: e.target.value }))}
-            className="h-8"
-          />
-        </TableCell>
-        <TableCell>
-          <div className="flex gap-1">
-            <Button size="sm" onClick={handleAddNew} disabled={isLoading}>
-              <Save className="h-3 w-3" />
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setIsAddingNew(false)}>
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-        </TableCell>
-      </TableRow>
+      <Input
+        type={type}
+        value={String(currentValue || '')}
+        onChange={(e) => {
+          const value = type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value;
+          updateNewPartField(field, value);
+        }}
+        className="w-full"
+        placeholder={`Enter ${field.replace('_', ' ')}`}
+      />
     );
   };
 
-  const statusOptions = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'ordered', label: 'Ordered' },
-    { value: 'received', label: 'Received' },
-    { value: 'installed', label: 'Installed' },
-    { value: 'returned', label: 'Returned' }
+  const jobLineOptions = [
+    { value: '', label: 'No job line' },
+    ...jobLines.map(jl => ({ value: jl.id, label: `${jl.name}${jl.category ? ` (${jl.category})` : ''}` }))
   ];
+
+  const statusOptions = WORK_ORDER_PART_STATUSES.map(status => ({
+    value: status,
+    label: status.charAt(0).toUpperCase() + status.slice(1).replace(/[-_]/g, ' ')
+  }));
 
   return (
     <div className="space-y-4">
-      {isEditMode && (
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Parts & Materials</h3>
-          <Button
-            onClick={() => setIsAddingNew(true)}
-            disabled={isAddingNew || isLoading}
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Part
-          </Button>
-        </div>
-      )}
-
-      <div className="border rounded-lg overflow-hidden">
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Part Name</TableHead>
               <TableHead>Part Number</TableHead>
-              <TableHead>Qty</TableHead>
+              <TableHead>Quantity</TableHead>
               <TableHead>Unit Price</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Job Line</TableHead>
               <TableHead>Supplier</TableHead>
+              <TableHead>Taxable</TableHead>
               {isEditMode && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {renderAddNewRow()}
-            {parts.map((part) => {
-              const isEditing = editingPartId === part.id;
-              const assignedJobLine = jobLines.find(jl => jl.id === part.job_line_id);
-              
-              return (
-                <TableRow key={part.id}>
+            {parts.map((part) => (
+              <TableRow key={part.id}>
+                <TableCell>
+                  {renderEditableCell(part, 'name')}
+                </TableCell>
+                <TableCell>
+                  {renderEditableCell(part, 'part_number')}
+                </TableCell>
+                <TableCell>
+                  {renderEditableCell(part, 'quantity', 'number')}
+                </TableCell>
+                <TableCell>
+                  ${renderEditableCell(part, 'unit_price', 'number')}
+                </TableCell>
+                <TableCell>
+                  ${((editingPartId === part.id ? (editingPart?.quantity || 0) * (editingPart?.unit_price || 0) : part.total_price) || 0).toFixed(2)}
+                </TableCell>
+                <TableCell>
+                  {renderEditableCell(part, 'status', 'select', statusOptions)}
+                </TableCell>
+                <TableCell>
+                  {renderEditableCell(part, 'job_line_id', 'select', jobLineOptions)}
+                </TableCell>
+                <TableCell>
+                  {renderEditableCell(part, 'supplierName')}
+                </TableCell>
+                <TableCell>
+                  {renderEditableCell(part, 'isTaxable', 'checkbox')}
+                </TableCell>
+                {isEditMode && (
                   <TableCell>
-                    {isEditing ? (
-                      renderEditableCell(part.name, 'name')
-                    ) : (
-                      <div>
-                        <div className="font-medium">{part.name}</div>
-                        {part.description && (
-                          <div className="text-sm text-muted-foreground">{part.description}</div>
-                        )}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? 
-                      renderEditableCell(part.part_number, 'part_number') : 
-                      part.part_number
-                    }
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? 
-                      renderEditableCell(part.quantity, 'quantity', 'number') : 
-                      part.quantity
-                    }
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? 
-                      renderEditableCell(part.unit_price, 'unit_price', 'number') : 
-                      `$${part.unit_price.toFixed(2)}`
-                    }
-                  </TableCell>
-                  <TableCell>
-                    ${part.total_price.toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? (
-                      renderEditableCell(part.status || 'pending', 'status', 'select', statusOptions)
-                    ) : (
-                      <Badge variant="outline">{part.status || 'pending'}</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? (
-                      <Select 
-                        value={editingValues.job_line_id || part.job_line_id || "none"} 
-                        onValueChange={(value) => setEditingValues(prev => ({ 
-                          ...prev, 
-                          job_line_id: value === "none" ? undefined : value 
-                        }))}
-                      >
-                        <SelectTrigger className="h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">No job line</SelectItem>
-                          {jobLines.map(jobLine => (
-                            <SelectItem key={jobLine.id} value={jobLine.id}>
-                              {jobLine.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      assignedJobLine ? (
-                        <Badge variant="secondary" className="text-xs">
-                          {assignedJobLine.name}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">Unassigned</span>
-                      )
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? 
-                      renderEditableCell(part.supplierName || '', 'supplierName') : 
-                      (part.supplierName || '-')
-                    }
-                  </TableCell>
-                  {isEditMode && (
-                    <TableCell>
-                      {isEditing ? (
-                        <div className="flex gap-1">
-                          <Button size="sm" onClick={() => handleSave(part.id)} disabled={isLoading}>
-                            <Save className="h-3 w-3" />
+                    <div className="flex items-center gap-2">
+                      {editingPartId === part.id ? (
+                        <>
+                          <Button size="sm" onClick={() => handleSave(part.id)}>
+                            <Save className="h-4 w-4" />
                           </Button>
                           <Button size="sm" variant="outline" onClick={handleCancel}>
-                            <X className="h-3 w-3" />
+                            <X className="h-4 w-4" />
                           </Button>
-                        </div>
+                        </>
                       ) : (
-                        <div className="flex gap-1">
+                        <>
                           <Button size="sm" variant="outline" onClick={() => handleEdit(part)}>
-                            <Edit className="h-3 w-3" />
+                            <Edit3 className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleDelete(part.id)}
-                            className="text-red-600 hover:text-red-700"
-                            disabled={isLoading}
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        </div>
+                        </>
                       )}
-                    </TableCell>
-                  )}
-                </TableRow>
-              );
-            })}
-            {parts.length === 0 && !isAddingNew && (
+                    </div>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+
+            {isAddingNew && (
               <TableRow>
-                <TableCell colSpan={isEditMode ? 9 : 8} className="text-center py-8 text-muted-foreground">
-                  No parts added yet. {isEditMode && 'Click "Add Part" to get started.'}
-                </TableCell>
+                <TableCell>{renderNewPartCell('name')}</TableCell>
+                <TableCell>{renderNewPartCell('part_number')}</TableCell>
+                <TableCell>{renderNewPartCell('quantity', 'number')}</TableCell>
+                <TableCell>{renderNewPartCell('unit_price', 'number')}</TableCell>
+                <TableCell>${(newPart.quantity * newPart.unit_price).toFixed(2)}</TableCell>
+                <TableCell>{renderNewPartCell('status', 'select', statusOptions)}</TableCell>
+                <TableCell>{renderNewPartCell('job_line_id', 'select', jobLineOptions)}</TableCell>
+                <TableCell>{renderNewPartCell('supplierName')}</TableCell>
+                <TableCell>{renderNewPartCell('isTaxable', 'checkbox')}</TableCell>
+                {isEditMode && (
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={handleSaveNew}>
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={handleCancelNew}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
 
-      {parts.length > 0 && (
-        <div className="flex justify-end">
-          <div className="text-right">
-            <div className="text-sm text-muted-foreground">Total Parts Value</div>
-            <div className="text-lg font-semibold">
-              ${parts.reduce((sum, part) => sum + part.total_price, 0).toFixed(2)}
-            </div>
-          </div>
+      {isEditMode && !isAddingNew && (
+        <Button onClick={handleAddNew} className="w-full">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Part
+        </Button>
+      )}
+
+      {parts.length === 0 && !isAddingNew && (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No parts added yet.</p>
+          {isEditMode && (
+            <Button onClick={handleAddNew} className="mt-4">
+              <Plus className="h-4 w-4 mr-2" />
+              Add First Part
+            </Button>
+          )}
         </div>
       )}
     </div>
