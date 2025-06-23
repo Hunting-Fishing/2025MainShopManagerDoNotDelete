@@ -1,64 +1,79 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WorkOrder {
   id: string;
-  work_order_number: string;
+  work_order_number?: string;
   status: string;
   created_at: string;
+  description?: string;
   customer_first_name?: string;
   customer_last_name?: string;
-  description?: string;
+  customer_id?: string;
 }
 
 async function fetchRecentWorkOrders(): Promise<WorkOrder[]> {
   console.log('Fetching recent work orders for dashboard...');
   
-  const { data, error } = await supabase
+  // First, get work orders without embedded relationships
+  const { data: workOrdersData, error: workOrdersError } = await supabase
     .from('work_orders')
-    .select(`
-      id,
-      work_order_number,
-      status,
-      created_at,
-      description,
-      customers (
-        first_name,
-        last_name
-      )
-    `)
+    .select('id, work_order_number, status, created_at, description, customer_id')
     .order('created_at', { ascending: false })
     .limit(10);
 
-  if (error) {
-    console.error('Error fetching recent work orders:', error);
-    throw error;
+  if (workOrdersError) {
+    console.error('Error fetching work orders:', workOrdersError);
+    throw workOrdersError;
   }
 
-  console.log('Raw work orders data:', data);
+  console.log('Raw work orders data:', workOrdersData);
 
-  if (!data || data.length === 0) {
+  if (!workOrdersData || workOrdersData.length === 0) {
     console.log('No work orders found in database');
     return [];
   }
 
-  const formattedOrders = data.map(wo => {
-    // Handle customers data - it could be null, an array, or an object
-    const customerData = Array.isArray(wo.customers) ? wo.customers[0] : wo.customers;
+  // Get unique customer IDs
+  const customerIds = [...new Set(workOrdersData
+    .map(wo => wo.customer_id)
+    .filter(Boolean))];
+
+  // Fetch customer data separately if we have customer IDs
+  let customersData: any[] = [];
+  if (customerIds.length > 0) {
+    const { data: customers, error: customersError } = await supabase
+      .from('customers')
+      .select('id, first_name, last_name')
+      .in('id', customerIds);
+
+    if (customersError) {
+      console.error('Error fetching customers:', customersError);
+    } else {
+      customersData = customers || [];
+    }
+  }
+
+  console.log('Customers data:', customersData);
+
+  // Combine work orders with customer data
+  const formattedOrders = workOrdersData.map(wo => {
+    const customer = customersData.find(c => c.id === wo.customer_id);
     
     const formattedOrder = {
       id: wo.id,
       work_order_number: wo.work_order_number || `WO-${wo.id.slice(0, 8)}`,
       status: wo.status,
       created_at: wo.created_at,
-      customer_first_name: customerData?.first_name,
-      customer_last_name: customerData?.last_name,
+      customer_first_name: customer?.first_name,
+      customer_last_name: customer?.last_name,
       description: wo.description,
+      customer_id: wo.customer_id,
     };
     
     console.log('Formatted work order:', formattedOrder);
@@ -91,6 +106,7 @@ export function LiveRecentWorkOrders() {
     queryKey: ['recent-work-orders'],
     queryFn: fetchRecentWorkOrders,
     refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 2,
   });
 
   console.log('LiveRecentWorkOrders render - workOrders:', workOrders, 'isLoading:', isLoading, 'error:', error);
@@ -103,11 +119,13 @@ export function LiveRecentWorkOrders() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center space-x-4 animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-20"></div>
-                <div className="h-4 bg-gray-200 rounded w-32"></div>
-                <div className="h-6 bg-gray-200 rounded w-16"></div>
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between space-x-4">
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-32 mb-2" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-6 w-20" />
               </div>
             ))}
           </div>
@@ -124,7 +142,10 @@ export function LiveRecentWorkOrders() {
           <CardTitle>Recent Work Orders</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-red-600">Error loading recent work orders: {error.message}</p>
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-2">Error loading recent work orders</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -149,24 +170,29 @@ export function LiveRecentWorkOrders() {
                   <p className="text-sm font-medium truncate">
                     {workOrder.work_order_number}
                   </p>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {workOrder.customer_first_name && workOrder.customer_last_name
+                  <p className="text-xs text-muted-foreground truncate">
+                    {workOrder.customer_first_name && workOrder.customer_last_name 
                       ? `${workOrder.customer_first_name} ${workOrder.customer_last_name}`
-                      : 'No customer assigned'
+                      : workOrder.customer_id 
+                        ? `Customer ID: ${workOrder.customer_id.slice(0, 8)}`
+                        : 'No customer assigned'
                     }
                   </p>
                   {workOrder.description && (
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate mt-1">
                       {workOrder.description}
                     </p>
                   )}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className={getStatusColor(workOrder.status)}>
-                    {workOrder.status?.replace('_', ' ') || 'Unknown'}
+                <div className="flex flex-col items-end space-y-1">
+                  <Badge 
+                    variant="secondary" 
+                    className={getStatusColor(workOrder.status)}
+                  >
+                    {workOrder.status}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(workOrder.created_at), { addSuffix: true })}
+                    {new Date(workOrder.created_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
