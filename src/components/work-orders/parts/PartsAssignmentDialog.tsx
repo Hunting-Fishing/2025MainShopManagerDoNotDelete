@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Package, ArrowRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { bulkAssignParts } from '@/services/workOrder/partsAssignmentService';
+import { PartsAssignmentService } from '@/services/workOrder/partsAssignmentService';
 
 export interface PartsAssignmentDialogProps {
   open: boolean;
@@ -40,17 +40,42 @@ export function PartsAssignmentDialog({
 
     setIsAssigning(true);
     try {
-      const partIds = parts.map(part => part.id);
-      const assignedParts = await bulkAssignParts(partIds, selectedJobLineId);
+      const assignmentPromises = parts.map(part => 
+        PartsAssignmentService.assignPartToJobLine({
+          partId: part.id,
+          jobLineId: selectedJobLineId,
+          quantity: part.quantity,
+          assignedBy: 'current-user', // This should come from auth context
+          assignmentDate: new Date().toISOString(),
+          notes: `Bulk assigned to job line`
+        })
+      );
+
+      const results = await Promise.all(assignmentPromises);
+      const successCount = results.filter(result => result).length;
       
-      const jobLine = jobLines.find(jl => jl.id === selectedJobLineId);
-      toast({
-        title: "Parts Assigned",
-        description: `${parts.length} part(s) assigned to ${jobLine?.name || 'job line'}`,
-      });
-      
-      onPartsAssigned(assignedParts);
-      onClose();
+      if (successCount === parts.length) {
+        const jobLine = jobLines.find(jl => jl.id === selectedJobLineId);
+        toast({
+          title: "Parts Assigned",
+          description: `${parts.length} part(s) assigned to ${jobLine?.name || 'job line'}`,
+        });
+        
+        // Update parts with job line assignment
+        const updatedParts = parts.map(part => ({
+          ...part,
+          job_line_id: selectedJobLineId
+        }));
+        
+        onPartsAssigned(updatedParts);
+        onClose();
+      } else {
+        toast({
+          title: "Partial Success",
+          description: `${successCount} of ${parts.length} parts were assigned successfully`,
+          variant: "destructive"
+        });
+      }
     } catch (error) {
       console.error('Error assigning parts:', error);
       toast({
