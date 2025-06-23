@@ -6,28 +6,35 @@ export function mapDatabasePartToWorkOrderPart(dbPart: any): WorkOrderPart {
     throw new Error('Invalid database part data');
   }
 
+  // Handle both old and new field names for backward compatibility
+  const partName = dbPart.name || dbPart.part_name || '';
+  const partNumber = dbPart.part_number || '';
+  const description = dbPart.description || dbPart.part_description || '';
+  const unitPrice = parseFloat(dbPart.unit_price || dbPart.customer_price || 0);
+  const quantity = parseInt(dbPart.quantity) || 0;
+  const totalPrice = parseFloat(dbPart.total_price) || (unitPrice * quantity);
+
   return {
     id: dbPart.id,
     work_order_id: dbPart.work_order_id,
     job_line_id: dbPart.job_line_id || undefined,
-    part_number: dbPart.part_number || '',
-    name: dbPart.part_name || dbPart.name || '',
-    description: dbPart.part_description || dbPart.description || '',
-    quantity: parseInt(dbPart.quantity) || 0,
-    unit_price: parseFloat(dbPart.customer_price || dbPart.unit_price) || 0,
-    total_price: parseFloat(dbPart.total_price) || 
-                 (parseInt(dbPart.quantity) || 0) * (parseFloat(dbPart.customer_price || dbPart.unit_price) || 0),
+    part_number: partNumber,
+    name: partName,
+    description: description || undefined,
+    quantity: quantity,
+    unit_price: unitPrice,
+    total_price: totalPrice,
     status: dbPart.status || 'pending',
-    notes: dbPart.notes_internal || dbPart.notes || '',
-    created_at: dbPart.created_at,
-    updated_at: dbPart.updated_at,
+    notes: dbPart.notes || dbPart.notes_internal || undefined,
+    created_at: dbPart.created_at || new Date().toISOString(),
+    updated_at: dbPart.updated_at || new Date().toISOString(),
     
     // Core fields
-    category: dbPart.category || '',
+    category: dbPart.category || undefined,
     part_type: dbPart.part_type || 'inventory',
     
-    // Pricing fields
-    customerPrice: parseFloat(dbPart.customer_price) || undefined,
+    // Pricing fields - handle various field names from database
+    customerPrice: parseFloat(dbPart.customer_price) || unitPrice || undefined,
     supplierCost: parseFloat(dbPart.supplier_cost) || undefined,
     retailPrice: parseFloat(dbPart.retail_price) || undefined,
     markupPercentage: parseFloat(dbPart.markup_percentage) || undefined,

@@ -1,16 +1,22 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState } from 'react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Package, Plus, Edit, Trash2, AlertCircle } from 'lucide-react';
+import { AddPartButton } from './AddPartButton';
+import { EnhancedPartRow } from './EnhancedPartRow';
 import { partStatusMap } from '@/types/workOrderPart';
-import { EnhancedAddPartDialog } from './EnhancedAddPartDialog';
-import { EditPartDialog } from './EditPartDialog';
-import { DeletePartDialog } from './DeletePartDialog';
-import { PartsErrorBoundary } from './PartsErrorBoundary';
 import { toast } from 'sonner';
 
 interface ComprehensivePartsTableProps {
@@ -19,8 +25,6 @@ interface ComprehensivePartsTableProps {
   jobLines: WorkOrderJobLine[];
   onPartsChange: () => Promise<void>;
   isEditMode?: boolean;
-  isLoading?: boolean;
-  error?: string | null;
 }
 
 export function ComprehensivePartsTable({
@@ -28,164 +32,85 @@ export function ComprehensivePartsTable({
   parts,
   jobLines,
   onPartsChange,
-  isEditMode = false,
-  isLoading = false,
-  error
+  isEditMode = false
 }: ComprehensivePartsTableProps) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedPart, setSelectedPart] = useState<WorkOrderPart | null>(null);
-  const [deletingPart, setDeletingPart] = useState<WorkOrderPart | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [operationError, setOperationError] = useState<string | null>(null);
 
   console.log('ComprehensivePartsTable render:', { 
     workOrderId, 
     partsCount: parts.length, 
-    isEditMode, 
-    isLoading,
-    error 
+    jobLinesCount: jobLines.length,
+    isEditMode 
   });
 
-  const handleAddPartClick = useCallback(() => {
-    try {
-      console.log('Opening Add Part dialog with data:', {
-        workOrderId,
-        jobLinesCount: jobLines.length,
-        isEditMode
-      });
+  const handlePartEdit = async (part: WorkOrderPart) => {
+    console.log('Editing part:', part);
+    // This would open an edit dialog - for now just log
+    toast.info('Edit functionality will be implemented');
+  };
 
-      if (!workOrderId) {
-        toast.error('Work order ID is required to add parts');
-        return;
-      }
-
-      if (!isEditMode) {
-        toast.error('Work order must be in edit mode to add parts');
-        return;
-      }
-
-      setOperationError(null);
-      setIsAddDialogOpen(true);
-    } catch (error) {
-      console.error('Error opening add part dialog:', error);
-      toast.error('Failed to open add part dialog');
-    }
-  }, [workOrderId, jobLines.length, isEditMode]);
-
-  const handlePartAdded = useCallback(async () => {
+  const handlePartDelete = async (partId: string) => {
     try {
       setIsProcessing(true);
-      setOperationError(null);
-      console.log('Part added successfully, refreshing parts data...');
+      console.log('Deleting part:', partId);
       
-      await onPartsChange();
-      setIsAddDialogOpen(false);
-      
-      toast.success('Part added successfully');
-    } catch (error) {
-      console.error('Error after adding part:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh parts data';
-      setOperationError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [onPartsChange]);
-
-  const handleEditPart = useCallback((part: WorkOrderPart) => {
-    try {
-      console.log('Opening edit dialog for part:', part.id);
-      setSelectedPart(part);
-      setOperationError(null);
-    } catch (error) {
-      console.error('Error opening edit dialog:', error);
-      toast.error('Failed to open edit dialog');
-    }
-  }, []);
-
-  const handlePartUpdated = useCallback(async () => {
-    try {
-      setIsProcessing(true);
-      setOperationError(null);
-      
-      await onPartsChange();
-      setSelectedPart(null);
-      
-      toast.success('Part updated successfully');
-    } catch (error) {
-      console.error('Error after updating part:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh parts data';
-      setOperationError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [onPartsChange]);
-
-  const handleDeletePart = useCallback((part: WorkOrderPart) => {
-    try {
-      console.log('Opening delete dialog for part:', part.id);
-      setDeletingPart(part);
-      setOperationError(null);
-    } catch (error) {
-      console.error('Error opening delete dialog:', error);
-      toast.error('Failed to open delete dialog');
-    }
-  }, []);
-
-  const handlePartDeleted = useCallback(async () => {
-    try {
-      setIsProcessing(true);
-      setOperationError(null);
-      
-      await onPartsChange();
-      setDeletingPart(null);
+      // Import the delete function
+      const { deleteWorkOrderPart } = await import('@/services/workOrder/workOrderPartsService');
+      await deleteWorkOrderPart(partId);
       
       toast.success('Part deleted successfully');
+      await onPartsChange();
     } catch (error) {
-      console.error('Error after deleting part:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh parts data';
-      setOperationError(errorMessage);
-      toast.error(errorMessage);
+      console.error('Error deleting part:', error);
+      toast.error('Failed to delete part');
     } finally {
       setIsProcessing(false);
     }
-  }, [onPartsChange]);
+  };
 
-  const getJobLineName = useCallback((jobLineId?: string) => {
+  const handlePartAdded = async () => {
+    console.log('Part added, refreshing data...');
+    await onPartsChange();
+  };
+
+  const getJobLineName = (jobLineId?: string) => {
     if (!jobLineId) return 'Unassigned';
     const jobLine = jobLines.find(jl => jl.id === jobLineId);
     return jobLine?.name || 'Unknown Job Line';
-  }, [jobLines]);
+  };
 
-  const formatCurrency = useCallback((amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  }, []);
+  const totalPartsValue = parts.reduce((sum, part) => sum + (part.total_price || 0), 0);
+  const partsByStatus = parts.reduce((acc, part) => {
+    const status = part.status || 'pending';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
-  if (error) {
+  if (parts.length === 0) {
     return (
       <Card>
-        <CardContent className="py-8">
-          <div className="flex items-center justify-center space-x-2 text-red-600">
-            <AlertTriangle className="h-5 w-5" />
-            <span>Error loading parts: {error}</span>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            <CardTitle>Parts & Materials</CardTitle>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="flex items-center justify-center space-x-2">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Loading parts...</span>
+          {isEditMode && (
+            <AddPartButton
+              workOrderId={workOrderId}
+              jobLines={jobLines}
+              onPartAdded={handlePartAdded}
+              isEditMode={isEditMode}
+              disabled={isProcessing}
+            />
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium">No parts added yet</p>
+            <p className="text-sm">
+              {isEditMode ? 'Click "Add Part" to get started' : 'No parts assigned to this work order'}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -193,151 +118,83 @@ export function ComprehensivePartsTable({
   }
 
   return (
-    <PartsErrorBoundary>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Work Order Parts ({parts.length})</CardTitle>
-            {isEditMode && (
-              <Button 
-                onClick={handleAddPartClick}
-                size="sm"
-                disabled={isProcessing || !workOrderId}
-                className="gap-2"
-              >
-                {isProcessing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-                Add Part
-              </Button>
-            )}
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          <CardTitle>Parts & Materials</CardTitle>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>({parts.length} items • ${totalPartsValue.toFixed(2)})</span>
           </div>
-          {operationError && (
-            <div className="flex items-center space-x-2 text-red-600 text-sm">
-              <AlertTriangle className="h-4 w-4" />
-              <span>{operationError}</span>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent>
-          {parts.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <div className="mb-4">No parts added to this work order yet.</div>
-              {isEditMode && (
-                <Button onClick={handleAddPartClick} disabled={isProcessing}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add First Part
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Part Number</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Job Line</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    {isEditMode && <TableHead>Actions</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {parts.map((part) => (
-                    <TableRow key={part.id}>
-                      <TableCell className="font-medium">
-                        {part.part_number}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{part.name}</div>
-                          {part.description && (
-                            <div className="text-sm text-muted-foreground">
-                              {part.description}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {getJobLineName(part.job_line_id)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{part.quantity}</TableCell>
-                      <TableCell>{formatCurrency(part.unit_price)}</TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(part.total_price)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={partStatusMap[part.status || 'pending']?.classes || 'bg-gray-100 text-gray-800'}>
-                          {partStatusMap[part.status || 'pending']?.label || part.status}
-                        </Badge>
-                      </TableCell>
-                      {isEditMode && (
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditPart(part)}
-                              disabled={isProcessing}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeletePart(part)}
-                              disabled={isProcessing}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+        {isEditMode && (
+          <AddPartButton
+            workOrderId={workOrderId}
+            jobLines={jobLines}
+            onPartAdded={handlePartAdded}
+            isEditMode={isEditMode}
+            disabled={isProcessing}
+          />
+        )}
+      </CardHeader>
+      
+      <CardContent>
+        {/* Status Summary */}
+        {Object.keys(partsByStatus).length > 1 && (
+          <div className="flex flex-wrap gap-2 mb-4 p-3 bg-muted/50 rounded-lg">
+            {Object.entries(partsByStatus).map(([status, count]) => {
+              const statusInfo = partStatusMap[status] || { label: status, classes: 'bg-gray-100 text-gray-800' };
+              return (
+                <Badge key={status} className={`${statusInfo.classes} text-xs`}>
+                  {statusInfo.label}: {count}
+                </Badge>
+              );
+            })}
+          </div>
+        )}
 
-      {/* Enhanced Add Part Dialog */}
-      <EnhancedAddPartDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        workOrderId={workOrderId}
-        jobLines={jobLines}
-        onPartAdded={handlePartAdded}
-      />
+        {/* Parts Table */}
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Part Details</TableHead>
+                <TableHead className="w-20">Qty</TableHead>
+                <TableHead className="w-24">Unit Price</TableHead>
+                <TableHead className="w-24">Total</TableHead>
+                <TableHead className="w-20">Status</TableHead>
+                <TableHead className="w-24">Type</TableHead>
+                <TableHead className="w-32">Supplier</TableHead>
+                <TableHead className="w-24">Job Line</TableHead>
+                {isEditMode && <TableHead className="w-20">Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {parts.map((part) => (
+                <EnhancedPartRow
+                  key={part.id}
+                  part={part}
+                  onEdit={handlePartEdit}
+                  onDelete={handlePartDelete}
+                  isEditMode={isEditMode}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
 
-      {/* Edit Part Dialog */}
-      {editDialogOpen && (
-        <EditPartDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          part={selectedPart!}
-          jobLines={jobLines}
-          onSave={handlePartUpdated}
-        />
-      )}
-
-      {/* Delete Part Dialog */}
-      {deletingPart && (
-        <DeletePartDialog
-          open={!!deletingPart}
-          onOpenChange={(open) => !open && setDeletingPart(null)}
-          part={deletingPart}
-          onPartDeleted={handlePartDeleted}
-        />
-      )}
-    </PartsErrorBoundary>
+        {/* Summary Footer */}
+        <div className="mt-4 pt-4 border-t">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-muted-foreground">
+              Total Parts: {parts.length}
+            </div>
+            <div className="text-lg font-semibold">
+              Total Value: ${totalPartsValue.toFixed(2)}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
