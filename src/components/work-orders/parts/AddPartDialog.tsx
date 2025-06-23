@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { SelectJobLine } from './SelectJobLine';
 import { PartTypeAndStatusFields } from './PartTypeAndStatusFields';
+import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
 
 const formSchema = z.object({
@@ -25,16 +26,16 @@ const formSchema = z.object({
   description: z.string().optional(),
   quantity: z.number().min(1, {
     message: 'Quantity must be at least 1.'
-  }).default(1),
+  }),
   unit_price: z.number().min(0, {
     message: 'Unit price must be at least 0.'
-  }).default(0),
+  }),
   total_price: z.number().optional(),
-  status: z.string().optional().default('pending'),
+  status: z.string().default('pending'),
   notes: z.string().optional(),
   job_line_id: z.string().optional(),
   category: z.string().optional(),
-  part_type: z.string().optional().default('inventory'),
+  part_type: z.string().default('inventory'),
   // Optional extended fields
   customerPrice: z.number().optional(),
   supplierCost: z.number().optional(),
@@ -56,26 +57,26 @@ const formSchema = z.object({
   inventoryItemId: z.string().optional(),
   estimatedArrivalDate: z.string().optional(),
   itemStatus: z.string().optional()
-});
+}) satisfies z.ZodType<WorkOrderPartFormValues>;
 
 interface AddPartDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workOrderId: string;
   jobLines: WorkOrderJobLine[];
-  onPartAdded: () => Promise<void>;
+  onPartAdded?: () => Promise<void>;
 }
 
-export function AddPartDialog({
-  open,
-  onOpenChange,
-  workOrderId,
-  jobLines,
-  onPartAdded
+export function AddPartDialog({ 
+  open, 
+  onOpenChange, 
+  workOrderId, 
+  jobLines, 
+  onPartAdded 
 }: AddPartDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<WorkOrderPartFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
@@ -87,12 +88,12 @@ export function AddPartDialog({
     }
   });
 
-  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+  const handleSubmit = async (values: WorkOrderPartFormValues) => {
     try {
       setIsSubmitting(true);
       console.log('Submitting part form:', values);
       
-      // Create the part with work order ID  
+      // Create the part with work order ID
       const partData = {
         ...values,
         work_order_id: workOrderId
@@ -100,7 +101,6 @@ export function AddPartDialog({
       
       await createWorkOrderPart(partData);
       console.log('Part created successfully');
-      
       toast.success('Part added successfully');
       
       // Close dialog and refresh data
@@ -145,7 +145,7 @@ export function AddPartDialog({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="part_number"
@@ -159,23 +159,7 @@ export function AddPartDialog({
                   </FormItem>
                 )}
               />
-            </div>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Part description..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="quantity"
@@ -194,13 +178,13 @@ export function AddPartDialog({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="unit_price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Unit Price</FormLabel>
+                    <FormLabel>Unit Price *</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -215,6 +199,25 @@ export function AddPartDialog({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Part description..."
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <PartTypeAndStatusFields form={form} />
 
@@ -231,7 +234,12 @@ export function AddPartDialog({
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Additional notes..." {...field} />
+                    <Textarea 
+                      placeholder="Additional notes..."
+                      className="resize-none"
+                      rows={2}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -239,9 +247,7 @@ export function AddPartDialog({
             />
 
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isSubmitting}>
-                Cancel
-              </AlertDialogCancel>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
