@@ -4,23 +4,9 @@ import { WorkOrder } from '@/types/workOrder';
 import { mapFromDbWorkOrder } from '@/utils/databaseMappers';
 
 export async function getAllWorkOrders(): Promise<WorkOrder[]> {
-  console.log('🔄 getAllWorkOrders: Starting fetch from database...');
-  
   try {
-    // Check authentication first
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('Fetching all work orders...');
     
-    if (authError) {
-      console.error('❌ Authentication error:', authError);
-      throw new Error(`Authentication failed: ${authError.message}`);
-    }
-
-    if (!user) {
-      console.warn('⚠️ No authenticated user found');
-      return [];
-    }
-
-    // Fetch work orders with customer information joined
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -36,46 +22,50 @@ export async function getAllWorkOrders(): Promise<WorkOrder[]> {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ getAllWorkOrders error:', error);
+      console.error('Error fetching work orders:', error);
       throw error;
     }
 
-    console.log('✅ getAllWorkOrders: Fetched', data?.length || 0, 'work orders from database');
-    console.log('📊 getAllWorkOrders: Sample data with customer info:', data?.slice(0, 2));
-    
-    // Transform the data to include customer name
-    const workOrders = (data || []).map(workOrder => {
+    console.log('Raw work orders data:', data);
+
+    const workOrders = data?.map((workOrder: any) => {
+      // Extract customer information
       const customer = workOrder.customers;
-      let customer_name = '';
-      
-      if (customer) {
-        if (customer.first_name && customer.last_name) {
-          customer_name = `${customer.first_name} ${customer.last_name}`;
-        } else if (customer.first_name) {
-          customer_name = customer.first_name;
-        } else if (customer.last_name) {
-          customer_name = customer.last_name;
-        }
-      }
-      
-      return {
+      const customerName = customer 
+        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+        : null;
+
+      // Create enhanced work order object
+      const enhancedWorkOrder = {
         ...workOrder,
-        customer_name,
-        customer: customer || null
+        customer_name: customerName || 'Unknown Customer',
+        customer_first_name: customer?.first_name || null,
+        customer_last_name: customer?.last_name || null,
+        customer_email: customer?.email || null,
+        customer_phone: customer?.phone || null
       };
-    });
-    
+
+      console.log('Processed work order:', {
+        id: workOrder.id,
+        original_customer: workOrder.customers,
+        enhanced_customer_name: enhancedWorkOrder.customer_name
+      });
+
+      return mapFromDbWorkOrder(enhancedWorkOrder);
+    }) || [];
+
+    console.log('Processed work orders:', workOrders.length);
     return workOrders;
   } catch (error) {
-    console.error('❌ getAllWorkOrders: Exception caught:', error);
+    console.error('Error in getAllWorkOrders:', error);
     throw error;
   }
 }
 
 export async function getWorkOrderById(id: string): Promise<WorkOrder | null> {
-  console.log('🔍 getWorkOrderById: Fetching work order with id:', id);
-  
   try {
+    console.log('Fetching work order by ID:', id);
+    
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -89,49 +79,52 @@ export async function getWorkOrderById(id: string): Promise<WorkOrder | null> {
         )
       `)
       .eq('id', id)
-      .maybeSingle();
+      .single();
 
     if (error) {
-      console.error('❌ getWorkOrderById error:', error);
+      console.error('Error fetching work order:', error);
       throw error;
     }
 
     if (!data) {
-      console.log('⚠️ getWorkOrderById: No work order found with id:', id);
       return null;
     }
 
-    console.log('✅ getWorkOrderById: Found work order:', data);
-    
-    // Transform the data to include customer name
+    console.log('Raw work order data:', data);
+
+    // Extract customer information
     const customer = data.customers;
-    let customer_name = '';
-    
-    if (customer) {
-      if (customer.first_name && customer.last_name) {
-        customer_name = `${customer.first_name} ${customer.last_name}`;
-      } else if (customer.first_name) {
-        customer_name = customer.first_name;
-      } else if (customer.last_name) {
-        customer_name = customer.last_name;
-      }
-    }
-    
-    return {
+    const customerName = customer 
+      ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+      : null;
+
+    // Create enhanced work order object
+    const enhancedWorkOrder = {
       ...data,
-      customer_name,
-      customer: customer || null
+      customer_name: customerName || 'Unknown Customer',
+      customer_first_name: customer?.first_name || null,
+      customer_last_name: customer?.last_name || null,
+      customer_email: customer?.email || null,
+      customer_phone: customer?.phone || null
     };
+
+    console.log('Processed work order:', {
+      id: data.id,
+      original_customer: data.customers,
+      enhanced_customer_name: enhancedWorkOrder.customer_name
+    });
+
+    return mapFromDbWorkOrder(enhancedWorkOrder);
   } catch (error) {
-    console.error('❌ getWorkOrderById: Exception caught:', error);
+    console.error('Error in getWorkOrderById:', error);
     throw error;
   }
 }
 
 export async function getWorkOrdersByCustomerId(customerId: string): Promise<WorkOrder[]> {
-  console.log('🔍 getWorkOrdersByCustomerId: Fetching work orders for customer:', customerId);
-  
   try {
+    console.log('Fetching work orders by customer ID:', customerId);
+    
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -148,37 +141,119 @@ export async function getWorkOrdersByCustomerId(customerId: string): Promise<Wor
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ getWorkOrdersByCustomerId error:', error);
+      console.error('Error fetching work orders:', error);
       throw error;
     }
 
-    console.log('✅ getWorkOrdersByCustomerId: Found', data?.length || 0, 'work orders');
-    
-    // Transform the data to include customer name
-    const workOrders = (data || []).map(workOrder => {
+    const workOrders = data?.map((workOrder: any) => {
+      // Extract customer information
       const customer = workOrder.customers;
-      let customer_name = '';
-      
-      if (customer) {
-        if (customer.first_name && customer.last_name) {
-          customer_name = `${customer.first_name} ${customer.last_name}`;
-        } else if (customer.first_name) {
-          customer_name = customer.first_name;
-        } else if (customer.last_name) {
-          customer_name = customer.last_name;
-        }
-      }
-      
-      return {
+      const customerName = customer 
+        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+        : null;
+
+      // Create enhanced work order object
+      const enhancedWorkOrder = {
         ...workOrder,
-        customer_name,
-        customer: customer || null
+        customer_name: customerName || 'Unknown Customer',
+        customer_first_name: customer?.first_name || null,
+        customer_last_name: customer?.last_name || null,
+        customer_email: customer?.email || null,
+        customer_phone: customer?.phone || null
       };
-    });
-    
+
+      return mapFromDbWorkOrder(enhancedWorkOrder);
+    }) || [];
+
+    console.log('Processed work orders for customer:', workOrders.length);
     return workOrders;
   } catch (error) {
-    console.error('❌ getWorkOrdersByCustomerId: Exception caught:', error);
+    console.error('Error in getWorkOrdersByCustomerId:', error);
+    throw error;
+  }
+}
+
+// Add missing exports that are referenced in the index file
+export async function getWorkOrdersByStatus(status: string): Promise<WorkOrder[]> {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select(`
+        *,
+        customers:customer_id (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone
+        )
+      `)
+      .eq('status', status)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    const workOrders = data?.map((workOrder: any) => {
+      const customer = workOrder.customers;
+      const customerName = customer 
+        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+        : null;
+
+      const enhancedWorkOrder = {
+        ...workOrder,
+        customer_name: customerName || 'Unknown Customer',
+        customer_first_name: customer?.first_name || null,
+        customer_last_name: customer?.last_name || null,
+        customer_email: customer?.email || null,
+        customer_phone: customer?.phone || null
+      };
+
+      return mapFromDbWorkOrder(enhancedWorkOrder);
+    }) || [];
+
+    return workOrders;
+  } catch (error) {
+    console.error('Error in getWorkOrdersByStatus:', error);
+    throw error;
+  }
+}
+
+export async function getUniqueTechnicians(): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('technician')
+      .not('technician', 'is', null);
+
+    if (error) {
+      throw error;
+    }
+
+    const technicians = Array.from(new Set(data?.map(item => item.technician).filter(Boolean))) as string[];
+    return technicians;
+  } catch (error) {
+    console.error('Error in getUniqueTechnicians:', error);
+    throw error;
+  }
+}
+
+export async function getWorkOrderTimeEntries(workOrderId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('work_order_time_entries')
+      .select('*')
+      .eq('work_order_id', workOrderId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getWorkOrderTimeEntries:', error);
     throw error;
   }
 }
