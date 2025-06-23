@@ -20,12 +20,12 @@ export function JobLineSelector({ form, jobLines }: JobLineSelectorProps) {
         <FormItem>
           <FormLabel>Job Line (Optional)</FormLabel>
           <FormControl>
-            <Select onValueChange={field.onChange} value={field.value || ""}>
+            <Select onValueChange={field.onChange} value={field.value || "none"}>
               <SelectTrigger>
                 <SelectValue placeholder="Select job line..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No job line</SelectItem>
+                <SelectItem value="none">No job line</SelectItem>
                 {jobLines.map((jobLine) => (
                   <SelectItem key={jobLine.id} value={jobLine.id}>
                     {jobLine.name}
