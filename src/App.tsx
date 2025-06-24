@@ -21,6 +21,9 @@ const Inventory = React.lazy(() => import('@/pages/Inventory'));
 const Team = React.lazy(() => import('@/pages/Team'));
 const Settings = React.lazy(() => import('@/pages/Settings'));
 
+// Customer detail pages
+const CustomerDetailsPage = React.lazy(() => import('@/pages/CustomersPage'));
+
 function App() {
   return (
     <div className="min-h-screen bg-background">
@@ -39,7 +42,9 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/customers/*" element={<Customers />} />
+                    <Route path="/customers" element={<Customers />} />
+                    <Route path="/customers/:customerId" element={<CustomerDetailsPage />} />
+                    <Route path="/customers/create" element={<CustomerDetailsPage />} />
                     <Route path="/work-orders/*" element={<WorkOrders />} />
                     <Route path="/inventory/*" element={<Inventory />} />
                     <Route path="/team/*" element={<Team />} />
