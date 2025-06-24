@@ -1,535 +1,220 @@
 import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { AuthErrorBoundary } from '@/components/auth/AuthErrorBoundary';
-import { ServiceErrorBoundary } from '@/components/common/ServiceErrorBoundary';
+import { Toaster } from '@/components/ui/sonner';
 import { Layout } from '@/components/layout/Layout';
-import { AuthGate } from '@/components/AuthGate';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { OnboardingGate } from '@/components/onboarding/OnboardingGate';
+import { OnboardingRedirectGate } from '@/components/onboarding/OnboardingRedirectGate';
+import { CustomerLoginRequired } from '@/components/customer-portal/CustomerLoginRequired';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-// Lazy load components for better performance
-const Login = React.lazy(() => import('@/pages/Login'));
+// Public routes (lazy loaded)
 const Authentication = React.lazy(() => import('@/pages/Authentication'));
+const Signup = React.lazy(() => import('@/pages/Signup'));
 const CustomerPortalLogin = React.lazy(() => import('@/pages/CustomerPortalLogin'));
+const NotFound = React.lazy(() => import('@/pages/NotFound'));
+const Unauthorized = React.lazy(() => import('@/pages/Unauthorized'));
 
-// Dashboard and main app pages
+// Main application routes (lazy loaded)
 const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
-const WorkOrders = React.lazy(() => import('@/pages/WorkOrders'));
-const WorkOrderDetails = React.lazy(() => import('@/pages/WorkOrderDetails'));
-const CreateWorkOrder = React.lazy(() => import('@/pages/CreateWorkOrder'));
-const EditWorkOrder = React.lazy(() => import('@/pages/EditWorkOrder'));
 const Customers = React.lazy(() => import('@/pages/Customers'));
-const CustomerDetails = React.lazy(() => import('@/pages/CustomerDetails'));
 const CreateCustomer = React.lazy(() => import('@/pages/CreateCustomer'));
-const VehicleDetails = React.lazy(() => import('@/pages/VehicleDetails'));
-const Inventory = React.lazy(() => import('@/pages/Inventory'));
+const CustomerDetails = React.lazy(() => import('@/pages/CustomerDetails'));
+const CustomerVehicleDetails = React.lazy(() => import('@/pages/CustomerVehicleDetails'));
+const WorkOrders = React.lazy(() => import('@/pages/WorkOrders'));
+const WorkOrderCreate = React.lazy(() => import('@/pages/WorkOrderCreate'));
+const WorkOrderDetails = React.lazy(() => import('@/pages/WorkOrderDetails'));
+const WorkOrderEdit = React.lazy(() => import('@/pages/WorkOrderEdit'));
 const Invoices = React.lazy(() => import('@/pages/Invoices'));
+const InvoiceCreate = React.lazy(() => import('@/pages/InvoiceCreate'));
 const InvoiceDetails = React.lazy(() => import('@/pages/InvoiceDetails'));
-const CreateInvoice = React.lazy(() => import('@/pages/CreateInvoice'));
+const InvoiceEdit = React.lazy(() => import('@/pages/InvoiceEdit'));
+const Inventory = React.lazy(() => import('@/pages/Inventory'));
+const InventoryAdd = React.lazy(() => import('@/pages/InventoryAdd'));
+const InventoryCategories = React.lazy(() => import('@/pages/InventoryCategories'));
+const InventoryLocations = React.lazy(() => import('@/pages/InventoryLocations'));
+const InventorySuppliers = React.lazy(() => import('@/pages/InventorySuppliers'));
+const InventoryOrders = React.lazy(() => import('@/pages/InventoryOrders'));
 const Team = React.lazy(() => import('@/pages/Team'));
+const TeamCreate = React.lazy(() => import('@/pages/TeamCreate'));
 const TeamMemberProfile = React.lazy(() => import('@/pages/TeamMemberProfile'));
-const CreateTeamMember = React.lazy(() => import('@/pages/CreateTeamMember'));
 const TeamRoles = React.lazy(() => import('@/pages/TeamRoles'));
-const Calendar = React.lazy(() => import('@/pages/Calendar'));
-const Chat = React.lazy(() => import('@/pages/Chat'));
-const Reports = React.lazy(() => import('@/pages/Reports'));
-const Settings = React.lazy(() => import('@/pages/Settings'));
 const Equipment = React.lazy(() => import('@/pages/Equipment'));
 const EquipmentDetails = React.lazy(() => import('@/pages/EquipmentDetails'));
-const Maintenance = React.lazy(() => import('@/pages/Maintenance'));
-const CallLogger = React.lazy(() => import('@/pages/CallLogger'));
+const Calendar = React.lazy(() => import('@/pages/Calendar'));
+const Reports = React.lazy(() => import('@/pages/Reports'));
 const Analytics = React.lazy(() => import('@/pages/Analytics'));
-const Quotes = React.lazy(() => import('@/pages/Quotes'));
-const Reminders = React.lazy(() => import('@/pages/Reminders'));
+const Settings = React.lazy(() => import('@/pages/Settings'));
+const Notifications = React.lazy(() => import('@/pages/Notifications'));
+const Chat = React.lazy(() => import('@/pages/Chat'));
 const Documents = React.lazy(() => import('@/pages/Documents'));
+const Quotes = React.lazy(() => import('@/pages/Quotes'));
+const QuoteDetails = React.lazy(() => import('@/pages/QuoteDetails'));
+const Reminders = React.lazy(() => import('@/pages/Reminders'));
+const Payments = React.lazy(() => import('@/pages/Payments'));
+const Maintenance = React.lazy(() => import('@/pages/Maintenance'));
+const PartsTracking = React.lazy(() => import('@/pages/PartsTracking'));
+const Forms = React.lazy(() => import('@/pages/Forms'));
+const FormPreview = React.lazy(() => import('@/pages/FormPreview'));
 const Feedback = React.lazy(() => import('@/pages/Feedback'));
-const AffiliateTool = React.lazy(() => import('@/pages/AffiliateTool'));
-const ClientBooking = React.lazy(() => import('@/pages/ClientBooking'));
-const Onboarding = React.lazy(() => import('@/pages/Onboarding'));
+const FeedbackForm = React.lazy(() => import('@/pages/FeedbackForm'));
+const FeedbackAnalytics = React.lazy(() => import('@/pages/FeedbackAnalytics'));
+const VehicleInspectionForm = React.lazy(() => import('@/pages/VehicleInspectionForm'));
+const SmsTemplates = React.lazy(() => import('@/pages/SmsTemplates'));
+const EmailTemplates = React.lazy(() => import('@/pages/EmailTemplates'));
+const EmailSequenceDetails = React.lazy(() => import('@/pages/EmailSequenceDetails'));
 
-// Developer pages
-const DeveloperDashboard = React.lazy(() => import('@/pages/DeveloperDashboard'));
-const ServiceManagement = React.lazy(() => import('@/pages/ServiceManagement'));
-const ServiceManagementTree = React.lazy(() => import('@/pages/ServiceManagementTree'));
-const ServiceManagementExcel = React.lazy(() => import('@/pages/ServiceManagementExcel'));
-const ServiceManagementImport = React.lazy(() => import('@/pages/ServiceManagementImport'));
-const ShoppingSite = React.lazy(() => import('@/pages/ShoppingSite'));
+// Developer routes (lazy loaded)
+const Developer = React.lazy(() => import('@/pages/Developer'));
+const ServiceManagementPage = React.lazy(() => import('@/pages/developer/ServiceManagementPage'));
+const Shopping = React.lazy(() => import('@/pages/Shopping'));
 
-// Customer Portal pages
+// Customer portal routes (lazy loaded)
 const CustomerPortal = React.lazy(() => import('@/pages/CustomerPortal'));
-const CustomerPortalBooking = React.lazy(() => import('@/pages/CustomerPortalBooking'));
-const CustomerPortalWorkOrders = React.lazy(() => import('@/pages/CustomerPortalWorkOrders'));
-const CustomerPortalVehicles = React.lazy(() => import('@/pages/CustomerPortalVehicles'));
-const CustomerPortalInvoices = React.lazy(() => import('@/pages/CustomerPortalInvoices'));
-const CustomerPortalProfile = React.lazy(() => import('@/pages/CustomerPortalProfile'));
+const ClientBooking = React.lazy(() => import('@/pages/ClientBooking'));
 
-// Shared loading component
-const PageLoader = ({ message = "Loading..." }: { message?: string }) => (
-  <div className="min-h-screen flex items-center justify-center">
-    <LoadingSpinner size="lg" message={message} />
+// Settings pages (lazy loaded)
+const AccountSettings = React.lazy(() => import('@/pages/settings/AccountSettings'));
+const CompanySettings = React.lazy(() => import('@/pages/settings/CompanySettings'));
+const TeamHistorySettings = React.lazy(() => import('@/pages/settings/TeamHistorySettings'));
+const BrandingSettings = React.lazy(() => import('@/pages/settings/BrandingSettings'));
+const NotificationSettings = React.lazy(() => import('@/pages/settings/NotificationSettings'));
+const SecuritySettings = React.lazy(() => import('@/pages/settings/SecuritySettings'));
+const IntegrationSettings = React.lazy(() => import('@/pages/settings/IntegrationSettings'));
+const EmailSchedulingSettings = React.lazy(() => import('@/pages/settings/EmailSchedulingSettings'));
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <LoadingSpinner />
   </div>
-);
-
-// Protected route wrapper
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
-  <AuthGate>
-    <Layout>
-      {children}
-    </Layout>
-  </AuthGate>
 );
 
 function App() {
   return (
     <div className="min-h-screen bg-background">
-      <ServiceErrorBoundary>
-        <Suspense fallback={<PageLoader message="Loading application..." />}>
-          <Routes>
-            {/* Public routes */}
-            <Route 
-              path="/auth/login" 
-              element={
-                <AuthErrorBoundary>
-                  <Login />
-                </AuthErrorBoundary>
-              } 
-            />
-            <Route 
-              path="/login" 
-              element={
-                <AuthErrorBoundary>
-                  <Login />
-                </AuthErrorBoundary>
-              } 
-            />
-            
-            {/* Customer Portal Public Routes */}
-            <Route 
-              path="/customer-portal" 
-              element={
-                <AuthErrorBoundary>
-                  <CustomerPortalLogin />
-                </AuthErrorBoundary>
-              } 
-            />
-            <Route 
-              path="/customer-portal/login" 
-              element={
-                <AuthErrorBoundary>
-                  <CustomerPortalLogin />
-                </AuthErrorBoundary>
-              } 
-            />
-            
-            {/* Auth redirect handler */}
-            <Route 
-              path="/auth" 
-              element={
-                <Suspense fallback={<PageLoader message="Authenticating..." />}>
-                  <Authentication />
-                </Suspense>
-              } 
-            />
-            
-            {/* Client booking (public) */}
-            <Route 
-              path="/booking/:shopId" 
-              element={
-                <Suspense fallback={<PageLoader message="Loading booking..." />}>
-                  <ClientBooking />
-                </Suspense>
-              } 
-            />
-            
-            {/* Protected Customer Portal Routes */}
-            <Route 
-              path="/customer-portal/dashboard" 
-              element={
-                <Suspense fallback={<PageLoader message="Loading customer portal..." />}>
-                  <CustomerPortal />
-                </Suspense>
-              } 
-            />
-            <Route 
-              path="/customer-portal/booking" 
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <CustomerPortalBooking />
-                </Suspense>
-              } 
-            />
-            <Route 
-              path="/customer-portal/work-orders" 
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <CustomerPortalWorkOrders />
-                </Suspense>
-              } 
-            />
-            <Route 
-              path="/customer-portal/vehicles" 
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <CustomerPortalVehicles />
-                </Suspense>
-              } 
-            />
-            <Route 
-              path="/customer-portal/invoices" 
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <CustomerPortalInvoices />
-                </Suspense>
-              } 
-            />
-            <Route 
-              path="/customer-portal/profile" 
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <CustomerPortalProfile />
-                </Suspense>
-              } 
-            />
-            
-            {/* Onboarding (protected) */}
-            <Route 
-              path="/onboarding" 
-              element={
-                <Suspense fallback={<PageLoader message="Loading onboarding..." />}>
-                  <Onboarding />
-                </Suspense>
-              } 
-            />
-            
-            {/* Main Protected Routes */}
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Work Orders */}
-            <Route 
-              path="/work-orders" 
-              element={
-                <ProtectedRoute>
-                  <WorkOrders />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/work-orders/create" 
-              element={
-                <ProtectedRoute>
-                  <CreateWorkOrder />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/work-orders/:id" 
-              element={
-                <ProtectedRoute>
-                  <WorkOrderDetails />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/work-orders/:id/edit" 
-              element={
-                <ProtectedRoute>
-                  <EditWorkOrder />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Customers */}
-            <Route 
-              path="/customers" 
-              element={
-                <ProtectedRoute>
-                  <Customers />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/customers/create" 
-              element={
-                <ProtectedRoute>
-                  <CreateCustomer />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/customers/:id" 
-              element={
-                <ProtectedRoute>
-                  <CustomerDetails />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/customers/:customerId/vehicles/:vehicleId" 
-              element={
-                <ProtectedRoute>
-                  <VehicleDetails />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Inventory */}
-            <Route 
-              path="/inventory" 
-              element={
-                <ProtectedRoute>
-                  <Inventory />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Invoices */}
-            <Route 
-              path="/invoices" 
-              element={
-                <ProtectedRoute>
-                  <Invoices />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/invoices/create" 
-              element={
-                <ProtectedRoute>
-                  <CreateInvoice />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/invoices/:id" 
-              element={
-                <ProtectedRoute>
-                  <InvoiceDetails />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Team Management */}
-            <Route 
-              path="/team" 
-              element={
-                <ProtectedRoute>
-                  <Team />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/team/create" 
-              element={
-                <ProtectedRoute>
-                  <CreateTeamMember />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/team/:id" 
-              element={
-                <ProtectedRoute>
-                  <TeamMemberProfile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/team/roles" 
-              element={
-                <ProtectedRoute>
-                  <TeamRoles />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Other Main Features */}
-            <Route 
-              path="/calendar" 
-              element={
-                <ProtectedRoute>
-                  <Calendar />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/chat" 
-              element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/reports" 
-              element={
-                <ProtectedRoute>
-                  <Reports />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/settings" 
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/equipment" 
-              element={
-                <ProtectedRoute>
-                  <Equipment />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/equipment/:id" 
-              element={
-                <ProtectedRoute>
-                  <EquipmentDetails />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/maintenance" 
-              element={
-                <ProtectedRoute>
-                  <Maintenance />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/calls" 
-              element={
-                <ProtectedRoute>
-                  <CallLogger />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/analytics" 
-              element={
-                <ProtectedRoute>
-                  <Analytics />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/quotes" 
-              element={
-                <ProtectedRoute>
-                  <Quotes />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/reminders" 
-              element={
-                <ProtectedRoute>
-                  <Reminders />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/documents" 
-              element={
-                <ProtectedRoute>
-                  <Documents />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/feedback" 
-              element={
-                <ProtectedRoute>
-                  <Feedback />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/affiliate" 
-              element={
-                <ProtectedRoute>
-                  <AffiliateTool />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Developer Routes */}
-            <Route 
-              path="/developer" 
-              element={
-                <ProtectedRoute>
-                  <DeveloperDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/developer/service-management" 
-              element={
-                <ProtectedRoute>
-                  <ServiceManagement />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/developer/service-management/overview" 
-              element={
-                <ProtectedRoute>
-                  <ServiceManagement />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/developer/service-management/tree" 
-              element={
-                <ProtectedRoute>
-                  <ServiceManagementTree />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/developer/service-management/excel" 
-              element={
-                <ProtectedRoute>
-                  <ServiceManagementExcel />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/developer/service-management/import" 
-              element={
-                <ProtectedRoute>
-                  <ServiceManagementImport />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/developer/shopping" 
-              element={
-                <ProtectedRoute>
-                  <ShoppingSite />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* Catch all - redirect to dashboard */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </Suspense>
-      </ServiceErrorBoundary>
-      
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Authentication />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/customer-portal/login" element={<CustomerPortalLogin />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          
+          {/* Customer portal routes */}
+          <Route path="/customer-portal/*" element={
+            <CustomerLoginRequired>
+              <Routes>
+                <Route path="/" element={<CustomerPortal />} />
+                <Route path="/booking" element={<ClientBooking />} />
+              </Routes>
+            </CustomerLoginRequired>
+          } />
+          
+          {/* Form routes (public) */}
+          <Route path="/forms/:formId" element={<FormPreview />} />
+          <Route path="/feedback/:formId" element={<FeedbackForm />} />
+          <Route path="/inspection/:workOrderId" element={<VehicleInspectionForm />} />
+          
+          {/* Main application routes */}
+          <Route path="/*" element={
+            <ProtectedRoute>
+              <OnboardingRedirectGate>
+                <OnboardingGate>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      
+                      {/* Customer management */}
+                      <Route path="/customers" element={<Customers />} />
+                      <Route path="/customers/new" element={<CreateCustomer />} />
+                      <Route path="/customers/:id" element={<CustomerDetails />} />
+                      <Route path="/customers/:customerId/vehicles/:vehicleId" element={<CustomerVehicleDetails />} />
+                      
+                      {/* Work order management */}
+                      <Route path="/work-orders" element={<WorkOrders />} />
+                      <Route path="/work-orders/new" element={<WorkOrderCreate />} />
+                      <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
+                      <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
+                      
+                      {/* Invoice management */}
+                      <Route path="/invoices" element={<Invoices />} />
+                      <Route path="/invoices/new" element={<InvoiceCreate />} />
+                      <Route path="/invoices/:id" element={<InvoiceDetails />} />
+                      <Route path="/invoices/:id/edit" element={<InvoiceEdit />} />
+                      
+                      {/* Inventory management */}
+                      <Route path="/inventory" element={<Inventory />} />
+                      <Route path="/inventory/add" element={<InventoryAdd />} />
+                      <Route path="/inventory/categories" element={<InventoryCategories />} />
+                      <Route path="/inventory/locations" element={<InventoryLocations />} />
+                      <Route path="/inventory/suppliers" element={<InventorySuppliers />} />
+                      <Route path="/inventory/orders" element={<InventoryOrders />} />
+                      
+                      {/* Team management */}
+                      <Route path="/team" element={<Team />} />
+                      <Route path="/team/new" element={<TeamCreate />} />
+                      <Route path="/team/:id" element={<TeamMemberProfile />} />
+                      <Route path="/team/roles" element={<TeamRoles />} />
+                      
+                      {/* Equipment management */}
+                      <Route path="/equipment" element={<Equipment />} />
+                      <Route path="/equipment/:id" element={<EquipmentDetails />} />
+                      
+                      {/* Other features */}
+                      <Route path="/calendar" element={<Calendar />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/analytics" element={<Analytics />} />
+                      <Route path="/notifications" element={<Notifications />} />
+                      <Route path="/chat" element={<Chat />} />
+                      <Route path="/documents" element={<Documents />} />
+                      <Route path="/quotes" element={<Quotes />} />
+                      <Route path="/quotes/:id" element={<QuoteDetails />} />
+                      <Route path="/reminders" element={<Reminders />} />
+                      <Route path="/payments" element={<Payments />} />
+                      <Route path="/maintenance" element={<Maintenance />} />
+                      <Route path="/parts-tracking" element={<PartsTracking />} />
+                      <Route path="/forms" element={<Forms />} />
+                      <Route path="/feedback" element={<Feedback />} />
+                      <Route path="/feedback/:id/analytics" element={<FeedbackAnalytics />} />
+                      <Route path="/sms-templates" element={<SmsTemplates />} />
+                      <Route path="/email-templates" element={<EmailTemplates />} />
+                      <Route path="/email-sequences/:id" element={<EmailSequenceDetails />} />
+                      
+                      {/* Settings routes */}
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/settings/account" element={<AccountSettings />} />
+                      <Route path="/settings/company" element={<CompanySettings />} />
+                      <Route path="/settings/team-history" element={<TeamHistorySettings />} />
+                      <Route path="/settings/branding" element={<BrandingSettings />} />
+                      <Route path="/settings/notifications" element={<NotificationSettings />} />
+                      <Route path="/settings/security" element={<SecuritySettings />} />
+                      <Route path="/settings/integrations" element={<IntegrationSettings />} />
+                      <Route path="/settings/email-scheduling" element={<EmailSchedulingSettings />} />
+                      
+                      {/* Developer routes */}
+                      <Route path="/developer" element={
+                        <ProtectedRoute requireOwner>
+                          <Developer />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/developer/service-management/*" element={
+                        <ProtectedRoute requireOwner>
+                          <ServiceManagementPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/shopping" element={<Shopping />} />
+                      
+                      {/* Catch-all route */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Layout>
+                </OnboardingGate>
+              </OnboardingRedirectGate>
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Suspense>
       <Toaster />
     </div>
   );
