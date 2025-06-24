@@ -30,6 +30,7 @@ export function useAuthUser() {
       setIsAdmin(false);
       setIsOwner(false);
       
+      // Always set loading to false after handling auth state change
       setIsLoading(false);
     } catch (err) {
       console.error('Error in auth state change handler:', err);
@@ -46,13 +47,13 @@ export function useAuthUser() {
     // Set up auth state listener with cleanup
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Check for existing session with abort controller
+    // Check for existing session
     const initializeAuth = async () => {
       try {
         console.log('useAuthUser: Checking for existing session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (!isMounted) return; // Prevent state updates if component unmounted
+        if (!isMounted) return;
         
         if (error) {
           console.error('useAuthUser: Error getting session:', error);
@@ -60,10 +61,8 @@ export function useAuthUser() {
           setIsLoading(false);
         } else {
           console.log('useAuthUser: Initial session check:', session?.user?.id);
-          // Only update state if no session found, otherwise let onAuthStateChange handle it
-          if (!session) {
-            setIsLoading(false);
-          }
+          // Manually trigger the auth state handler for initial session
+          handleAuthStateChange('INITIAL_SESSION', session);
         }
       } catch (error) {
         if (isMounted) {

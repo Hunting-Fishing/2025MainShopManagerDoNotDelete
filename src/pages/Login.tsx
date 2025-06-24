@@ -11,17 +11,17 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuthUser();
+  const { isAuthenticated } = useAuthUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (isAuthenticated) {
       navigate('/dashboard', { replace: true });
     }
-  }, [navigate, isAuthenticated, isLoading]);
+  }, [navigate, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,14 +52,6 @@ export default function Login() {
       setIsSubmitting(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
