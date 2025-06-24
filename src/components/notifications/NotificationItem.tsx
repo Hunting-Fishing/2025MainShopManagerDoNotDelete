@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Notification } from '@/types/notification';
-import { Check, Info, AlertTriangle, CheckCircle2, XCircle, X, Clock, ArrowUp, User, FileText, Package, CreditCard, Users } from 'lucide-react';
+import { Check, Info, AlertTriangle, CheckCircle2, XCircle, X, Clock, ArrowUp, User, FileText, Package, CreditCard, Users, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -34,7 +34,7 @@ export function NotificationItem({ notification, onMarkAsRead, onClear }: Notifi
     // First, determine the icon based on category
     let categoryIcon;
     switch (notification.category) {
-      case 'workOrder':
+      case 'work-order':
         categoryIcon = <FileText className="h-4 w-4" />;
         break;
       case 'inventory':
@@ -48,6 +48,9 @@ export function NotificationItem({ notification, onMarkAsRead, onClear }: Notifi
         break;
       case 'team':
         categoryIcon = <Users className="h-4 w-4" />;
+        break;
+      case 'chat':
+        categoryIcon = <MessageSquare className="h-4 w-4" />;
         break;
       default:
         categoryIcon = null;
