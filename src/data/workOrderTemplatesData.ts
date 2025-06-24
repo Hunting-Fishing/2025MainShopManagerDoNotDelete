@@ -17,5 +17,17 @@ export const createTemplate = async (templateData: any) => {
   return await templateService.createTemplate(templateData);
 };
 
+export const getTemplateById = async (templateId: string) => {
+  return await templateService.getTemplateById(templateId);
+};
+
+export const getMostUsedTemplates = async (limit: number = 10) => {
+  return await templateService.getMostUsedTemplates(limit);
+};
+
+export const getTemplatesByCategory = async (categoryId: string) => {
+  return await templateService.getTemplatesByCategory(categoryId);
+};
+
 // Remove the mock data export
 export const workOrderTemplates = [];

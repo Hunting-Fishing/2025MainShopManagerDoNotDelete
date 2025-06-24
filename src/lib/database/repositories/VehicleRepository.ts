@@ -20,6 +20,35 @@ export interface Vehicle {
   updated_at: string;
 }
 
+export interface CreateVehicleInput {
+  customer_id: string;
+  year?: number;
+  make?: string;
+  model?: string;
+  vin?: string;
+  license_plate?: string;
+  color?: string;
+  mileage?: number;
+  engine_size?: string;
+  transmission_type?: string;
+  fuel_type?: string;
+  notes?: string;
+}
+
+export interface UpdateVehicleInput {
+  year?: number;
+  make?: string;
+  model?: string;
+  vin?: string;
+  license_plate?: string;
+  color?: string;
+  mileage?: number;
+  engine_size?: string;
+  transmission_type?: string;
+  fuel_type?: string;
+  notes?: string;
+}
+
 export class VehicleRepository {
   async findAll(): Promise<Vehicle[]> {
     const { data, error } = await supabase
@@ -75,7 +104,7 @@ export class VehicleRepository {
     return data || null;
   }
 
-  async create(entity: Partial<Vehicle>): Promise<Vehicle> {
+  async create(entity: CreateVehicleInput): Promise<Vehicle> {
     const { data, error } = await supabase
       .from('vehicles')
       .insert(entity)
@@ -86,7 +115,7 @@ export class VehicleRepository {
     return data;
   }
 
-  async update(id: string, updates: Partial<Vehicle>): Promise<Vehicle> {
+  async update(id: string, updates: UpdateVehicleInput): Promise<Vehicle> {
     const { data, error } = await supabase
       .from('vehicles')
       .update(updates)

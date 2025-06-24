@@ -1,5 +1,5 @@
 
-import { VehicleRepository, Vehicle } from '@/lib/database/repositories/VehicleRepository';
+import { VehicleRepository, Vehicle, CreateVehicleInput, UpdateVehicleInput } from '@/lib/database/repositories/VehicleRepository';
 
 export class VehicleService {
   private repository: VehicleRepository;
@@ -17,7 +17,7 @@ export class VehicleService {
     }
   }
 
-  async createVehicle(vehicleData: Partial<Vehicle>): Promise<Vehicle> {
+  async createVehicle(vehicleData: CreateVehicleInput): Promise<Vehicle> {
     try {
       // Validate required fields
       if (!vehicleData.customer_id) {
@@ -42,7 +42,7 @@ export class VehicleService {
     }
   }
 
-  async updateVehicle(id: string, updates: Partial<Vehicle>): Promise<Vehicle> {
+  async updateVehicle(id: string, updates: UpdateVehicleInput): Promise<Vehicle> {
     try {
       // Check for duplicate VIN if updating VIN
       if (updates.vin) {
@@ -89,6 +89,15 @@ export class VehicleService {
     } catch (error) {
       console.error('Error finding vehicle by VIN:', error);
       throw new Error('Failed to find vehicle by VIN');
+    }
+  }
+
+  async getVehicleById(id: string): Promise<Vehicle | null> {
+    try {
+      return await this.repository.findById(id);
+    } catch (error) {
+      console.error('Error finding vehicle by ID:', error);
+      throw new Error('Failed to find vehicle by ID');
     }
   }
 }

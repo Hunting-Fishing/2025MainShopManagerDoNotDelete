@@ -1,6 +1,6 @@
 
 import { VehicleService } from '@/lib/services/VehicleService';
-import { Vehicle } from '@/lib/database/repositories/VehicleRepository';
+import { Vehicle, CreateVehicleInput, UpdateVehicleInput } from '@/lib/database/repositories/VehicleRepository';
 
 const vehicleService = new VehicleService();
 
@@ -10,8 +10,7 @@ const vehicleService = new VehicleService();
 export const getVehicleById = async (vehicleId: string): Promise<Vehicle | null> => {
   try {
     console.log('Fetching vehicle with ID:', vehicleId);
-    const vehicles = await vehicleService.getCustomerVehicles(vehicleId);
-    return vehicles[0] || null;
+    return await vehicleService.getVehicleById(vehicleId);
   } catch (error) {
     console.error('Error fetching vehicle:', error);
     throw error;
@@ -19,9 +18,22 @@ export const getVehicleById = async (vehicleId: string): Promise<Vehicle | null>
 };
 
 /**
+ * Get vehicles by customer ID using real database
+ */
+export const getCustomerVehicles = async (customerId: string): Promise<Vehicle[]> => {
+  try {
+    console.log('Fetching vehicles for customer ID:', customerId);
+    return await vehicleService.getCustomerVehicles(customerId);
+  } catch (error) {
+    console.error('Error fetching customer vehicles:', error);
+    throw error;
+  }
+};
+
+/**
  * Create a new vehicle in the database
  */
-export const createVehicle = async (vehicleData: Partial<Vehicle>): Promise<Vehicle> => {
+export const createVehicle = async (vehicleData: CreateVehicleInput): Promise<Vehicle> => {
   try {
     return await vehicleService.createVehicle(vehicleData);
   } catch (error) {
@@ -33,7 +45,7 @@ export const createVehicle = async (vehicleData: Partial<Vehicle>): Promise<Vehi
 /**
  * Update vehicle in the database
  */
-export const updateVehicle = async (vehicleId: string, updates: Partial<Vehicle>): Promise<Vehicle> => {
+export const updateVehicle = async (vehicleId: string, updates: UpdateVehicleInput): Promise<Vehicle> => {
   try {
     return await vehicleService.updateVehicle(vehicleId, updates);
   } catch (error) {
@@ -62,6 +74,18 @@ export const searchVehicles = async (searchTerm: string): Promise<Vehicle[]> => 
     return await vehicleService.searchVehicles(searchTerm);
   } catch (error) {
     console.error('Error searching vehicles:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get vehicle by VIN using real database
+ */
+export const getVehicleByVin = async (vin: string): Promise<Vehicle | null> => {
+  try {
+    return await vehicleService.getVehicleByVin(vin);
+  } catch (error) {
+    console.error('Error fetching vehicle by VIN:', error);
     throw error;
   }
 };

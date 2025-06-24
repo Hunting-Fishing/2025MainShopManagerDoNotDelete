@@ -19,6 +19,29 @@ export interface WorkOrderTemplate {
   updated_at: string;
 }
 
+export interface CreateWorkOrderTemplateInput {
+  name: string;
+  description?: string;
+  category_id?: string;
+  estimated_hours?: number;
+  labor_rate?: number;
+  parts_list?: any[];
+  instructions?: string;
+  is_active?: boolean;
+  created_by?: string;
+}
+
+export interface UpdateWorkOrderTemplateInput {
+  name?: string;
+  description?: string;
+  category_id?: string;
+  estimated_hours?: number;
+  labor_rate?: number;
+  parts_list?: any[];
+  instructions?: string;
+  is_active?: boolean;
+}
+
 export class WorkOrderTemplateRepository {
   async findAll(): Promise<WorkOrderTemplate[]> {
     const { data, error } = await supabase
@@ -64,10 +87,17 @@ export class WorkOrderTemplateRepository {
     return data || [];
   }
 
-  async create(entity: Partial<WorkOrderTemplate>): Promise<WorkOrderTemplate> {
+  async create(entity: CreateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
+    const createData = {
+      ...entity,
+      parts_list: entity.parts_list || [],
+      is_active: entity.is_active ?? true,
+      usage_count: 0
+    };
+
     const { data, error } = await supabase
       .from('work_order_templates')
-      .insert(entity)
+      .insert(createData)
       .select()
       .single();
     
@@ -75,7 +105,7 @@ export class WorkOrderTemplateRepository {
     return data;
   }
 
-  async update(id: string, updates: Partial<WorkOrderTemplate>): Promise<WorkOrderTemplate> {
+  async update(id: string, updates: UpdateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
     const { data, error } = await supabase
       .from('work_order_templates')
       .update(updates)

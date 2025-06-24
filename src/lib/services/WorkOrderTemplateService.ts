@@ -1,5 +1,5 @@
 
-import { WorkOrderTemplateRepository, WorkOrderTemplate } from '@/lib/database/repositories/WorkOrderTemplateRepository';
+import { WorkOrderTemplateRepository, WorkOrderTemplate, CreateWorkOrderTemplateInput, UpdateWorkOrderTemplateInput } from '@/lib/database/repositories/WorkOrderTemplateRepository';
 
 export class WorkOrderTemplateService {
   private repository: WorkOrderTemplateRepository;
@@ -17,23 +17,16 @@ export class WorkOrderTemplateService {
     }
   }
 
-  async createTemplate(templateData: Partial<WorkOrderTemplate>): Promise<WorkOrderTemplate> {
+  async createTemplate(templateData: CreateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
     try {
-      const template = {
-        ...templateData,
-        is_active: templateData.is_active ?? true,
-        usage_count: 0,
-        parts_list: templateData.parts_list || [],
-      };
-
-      return await this.repository.create(template);
+      return await this.repository.create(templateData);
     } catch (error) {
       console.error('Error creating template:', error);
       throw new Error('Failed to create template');
     }
   }
 
-  async updateTemplate(id: string, updates: Partial<WorkOrderTemplate>): Promise<WorkOrderTemplate> {
+  async updateTemplate(id: string, updates: UpdateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
     try {
       return await this.repository.update(id, updates);
     } catch (error) {
@@ -75,6 +68,15 @@ export class WorkOrderTemplateService {
     } catch (error) {
       console.error('Error fetching templates by category:', error);
       throw new Error('Failed to fetch templates by category');
+    }
+  }
+
+  async getTemplateById(id: string): Promise<WorkOrderTemplate | null> {
+    try {
+      return await this.repository.findById(id);
+    } catch (error) {
+      console.error('Error fetching template by ID:', error);
+      throw new Error('Failed to fetch template by ID');
     }
   }
 }
