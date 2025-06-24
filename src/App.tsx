@@ -1,122 +1,120 @@
-import React, { Suspense } from 'react';
+
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from '@/components/ui/sonner';
 import { Layout } from '@/components/layout/Layout';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { RoleGuard } from '@/components/auth/RoleGuard';
+import { AuthGate } from '@/components/AuthGate';
 import { OnboardingGate } from '@/components/onboarding/OnboardingGate';
-import { CustomerLoginRequired } from '@/components/customer-portal/CustomerLoginRequired';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-// Lazy load components for better performance
-const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
-const Customers = React.lazy(() => import('@/pages/Customers'));
-const CreateCustomer = React.lazy(() => import('@/pages/CreateCustomer'));
-const CustomerDetails = React.lazy(() => import('@/pages/CustomerDetails'));
-const CustomerVehicleDetails = React.lazy(() => import('@/pages/CustomerVehicleDetails'));
-const CreateWorkOrder = React.lazy(() => import('@/pages/CreateWorkOrder'));
-const WorkOrderDetails = React.lazy(() => import('@/pages/WorkOrderDetails'));
-const Invoices = React.lazy(() => import('@/pages/Invoices'));
-const InvoiceCreate = React.lazy(() => import('@/pages/InvoiceCreate'));
-const InvoiceDetails = React.lazy(() => import('@/pages/InvoiceDetails'));
-const Inventory = React.lazy(() => import('@/pages/Inventory'));
-const InventoryAdd = React.lazy(() => import('@/pages/InventoryAdd'));
-const Equipment = React.lazy(() => import('@/pages/Equipment'));
-const EquipmentDetails = React.lazy(() => import('@/pages/EquipmentDetails'));
-const Team = React.lazy(() => import('@/pages/Team'));
-const Reports = React.lazy(() => import('@/pages/Reports'));
-const Calendar = React.lazy(() => import('@/pages/Calendar'));
-const Chat = React.lazy(() => import('@/pages/Chat'));
-const Maintenance = React.lazy(() => import('@/pages/Maintenance'));
-const Settings = React.lazy(() => import('@/pages/Settings'));
-const Authentication = React.lazy(() => import('@/pages/Authentication'));
-const NotFound = React.lazy(() => import('@/pages/NotFound'));
-const VehicleInspectionForm = React.lazy(() => import('@/pages/VehicleInspectionForm'));
+// Lazy load pages for better performance
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Customers = lazy(() => import('@/pages/Customers'));
+const CustomerDetails = lazy(() => import('@/pages/CustomerDetails'));
+const CustomerCreate = lazy(() => import('@/pages/CustomerCreate'));
+const WorkOrders = lazy(() => import('@/pages/WorkOrders'));
+const WorkOrderDetails = lazy(() => import('@/pages/WorkOrderDetails'));
+const WorkOrderCreate = lazy(() => import('@/pages/WorkOrderCreate'));
+const WorkOrderEdit = lazy(() => import('@/pages/WorkOrderEdit'));
+const Inventory = lazy(() => import('@/pages/Inventory'));
+const Calendar = lazy(() => import('@/pages/Calendar'));
+const Settings = lazy(() => import('@/pages/Settings'));
+const Team = lazy(() => import('@/pages/Team'));
+const TeamCreate = lazy(() => import('@/pages/TeamCreate'));
+const TeamMemberProfile = lazy(() => import('@/pages/TeamMemberProfile'));
+const Authentication = lazy(() => import('@/pages/Authentication'));
+const CustomerPortal = lazy(() => import('@/pages/CustomerPortal'));
+const CustomerPortalLogin = lazy(() => import('@/pages/CustomerPortalLogin'));
+const DeveloperPortal = lazy(() => import('@/pages/DeveloperPortal'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
 
-// Developer pages
-const DeveloperPortal = React.lazy(() => import('@/pages/DeveloperPortal'));
-
-// Customer Portal pages
-const CustomerPortal = React.lazy(() => import('@/pages/CustomerPortal'));
-const CustomerPortalLogin = React.lazy(() => import('@/pages/CustomerPortalLogin'));
-
-// Public pages
-const AffiliateTool = React.lazy(() => import('@/pages/AffiliateTool'));
+// Additional pages
+const Invoices = lazy(() => import('@/pages/Invoices'));
+const InvoiceCreate = lazy(() => import('@/pages/InvoiceCreate'));
+const InvoiceDetails = lazy(() => import('@/pages/InvoiceDetails'));
+const Quotes = lazy(() => import('@/pages/Quotes'));
+const Reports = lazy(() => import('@/pages/Reports'));
+const Maintenance = lazy(() => import('@/pages/Maintenance'));
+const Equipment = lazy(() => import('@/pages/Equipment'));
+const EquipmentDetails = lazy(() => import('@/pages/EquipmentDetails'));
 
 function App() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/auth" element={<Authentication />} />
-        <Route path="/affiliate" element={<AffiliateTool />} />
-        
-        {/* Customer Portal routes */}
-        <Route path="/customer-portal">
-          <Route path="login" element={<CustomerPortalLogin />} />
-          <Route path="" element={
-            <CustomerLoginRequired>
-              <CustomerPortal />
-            </CustomerLoginRequired>
-          } />
-        </Route>
-
-        {/* Main application routes */}
-        <Route path="/*" element={
-          <ProtectedRoute>
-            <OnboardingGate>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  
-                  {/* Customer routes */}
-                  <Route path="/customers" element={<Customers />} />
-                  <Route path="/customers/create" element={<CreateCustomer />} />
-                  <Route path="/customers/:id" element={<CustomerDetails />} />
-                  <Route path="/customers/:customerId/vehicles/:vehicleId" element={<CustomerVehicleDetails />} />
-                  
-                  {/* Work Order routes */}
-                  <Route path="/work-orders/create" element={<CreateWorkOrder />} />
-                  <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
-                  
-                  {/* Invoice routes */}
-                  <Route path="/invoices" element={<Invoices />} />
-                  <Route path="/invoices/create" element={<InvoiceCreate />} />
-                  <Route path="/invoices/:id" element={<InvoiceDetails />} />
-                  
-                  {/* Inventory routes */}
-                  <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/inventory/add" element={<InventoryAdd />} />
-                  
-                  {/* Equipment routes */}
-                  <Route path="/equipment" element={<Equipment />} />
-                  <Route path="/equipment/:id" element={<EquipmentDetails />} />
-                  
-                  {/* Other main routes */}
-                  <Route path="/team" element={<Team />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/calendar" element={<Calendar />} />
-                  <Route path="/chat" element={<Chat />} />
-                  <Route path="/maintenance" element={<Maintenance />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/inspection" element={<VehicleInspectionForm />} />
-                  
-                  {/* Developer routes */}
-                  <Route path="/developer/*" element={
-                    <RoleGuard allowedRoles={['owner', 'admin']}>
-                      <DeveloperPortal />
-                    </RoleGuard>
-                  } />
-                  
-                  {/* Fallback */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Layout>
-            </OnboardingGate>
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </Suspense>
+    <>
+      <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Authentication />} />
+          <Route path="/signup" element={<Authentication />} />
+          <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
+          
+          {/* Customer Portal Routes */}
+          <Route path="/customer-portal/*" element={<CustomerPortal />} />
+          
+          {/* Protected Main Application Routes */}
+          <Route 
+            path="/*" 
+            element={
+              <AuthGate>
+                <OnboardingGate>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      
+                      {/* Customer Management */}
+                      <Route path="/customers" element={<Customers />} />
+                      <Route path="/customers/create" element={<CustomerCreate />} />
+                      <Route path="/customers/:id" element={<CustomerDetails />} />
+                      
+                      {/* Work Orders */}
+                      <Route path="/work-orders" element={<WorkOrders />} />
+                      <Route path="/work-orders/create" element={<WorkOrderCreate />} />
+                      <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
+                      <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
+                      
+                      {/* Inventory & Parts */}
+                      <Route path="/inventory" element={<Inventory />} />
+                      
+                      {/* Financial */}
+                      <Route path="/invoices" element={<Invoices />} />
+                      <Route path="/invoices/create" element={<InvoiceCreate />} />
+                      <Route path="/invoices/:id" element={<InvoiceDetails />} />
+                      <Route path="/quotes" element={<Quotes />} />
+                      
+                      {/* Operations */}
+                      <Route path="/calendar" element={<Calendar />} />
+                      <Route path="/maintenance" element={<Maintenance />} />
+                      <Route path="/equipment" element={<Equipment />} />
+                      <Route path="/equipment/:id" element={<EquipmentDetails />} />
+                      
+                      {/* Team Management */}
+                      <Route path="/team" element={<Team />} />
+                      <Route path="/team/create" element={<TeamCreate />} />
+                      <Route path="/team/:id" element={<TeamMemberProfile />} />
+                      
+                      {/* Reports & Analytics */}
+                      <Route path="/reports" element={<Reports />} />
+                      
+                      {/* Settings */}
+                      <Route path="/settings/*" element={<Settings />} />
+                      
+                      {/* Developer Tools */}
+                      <Route path="/developer/*" element={<DeveloperPortal />} />
+                      
+                      {/* 404 */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Layout>
+                </OnboardingGate>
+              </AuthGate>
+            } 
+          />
+        </Routes>
+      </Suspense>
+      
+      <Toaster />
+    </>
   );
 }
 
