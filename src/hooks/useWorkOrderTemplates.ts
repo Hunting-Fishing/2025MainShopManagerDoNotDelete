@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { WorkOrderTemplateService } from '@/lib/services/WorkOrderTemplateService';
-import { WorkOrderTemplate } from '@/lib/database/repositories/WorkOrderTemplateRepository';
+import { WorkOrderTemplate, CreateWorkOrderTemplateInput, UpdateWorkOrderTemplateInput } from '@/lib/database/repositories/WorkOrderTemplateRepository';
 
 const templateService = new WorkOrderTemplateService();
 
@@ -25,7 +25,7 @@ export function useWorkOrderTemplates() {
     }
   }, []);
 
-  const createTemplate = useCallback(async (templateData: Partial<WorkOrderTemplate>) => {
+  const createTemplate = useCallback(async (templateData: CreateWorkOrderTemplateInput) => {
     try {
       const newTemplate = await templateService.createTemplate(templateData);
       setTemplates(prev => [newTemplate, ...prev]);
@@ -37,7 +37,7 @@ export function useWorkOrderTemplates() {
     }
   }, []);
 
-  const updateTemplate = useCallback(async (id: string, updates: Partial<WorkOrderTemplate>) => {
+  const updateTemplate = useCallback(async (id: string, updates: UpdateWorkOrderTemplateInput) => {
     try {
       const updatedTemplate = await templateService.updateTemplate(id, updates);
       setTemplates(prev => prev.map(t => t.id === id ? updatedTemplate : t));

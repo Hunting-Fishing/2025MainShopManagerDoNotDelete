@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { VehicleService } from '@/lib/services/VehicleService';
-import { Vehicle } from '@/lib/database/repositories/VehicleRepository';
+import { Vehicle, CreateVehicleInput, UpdateVehicleInput } from '@/lib/database/repositories/VehicleRepository';
 
 const vehicleService = new VehicleService();
 
@@ -31,7 +31,7 @@ export function useVehicles(customerId?: string) {
     }
   }, [customerId]);
 
-  const createVehicle = useCallback(async (vehicleData: Partial<Vehicle>) => {
+  const createVehicle = useCallback(async (vehicleData: CreateVehicleInput) => {
     try {
       const newVehicle = await vehicleService.createVehicle(vehicleData);
       setVehicles(prev => [newVehicle, ...prev]);
@@ -43,7 +43,7 @@ export function useVehicles(customerId?: string) {
     }
   }, []);
 
-  const updateVehicle = useCallback(async (id: string, updates: Partial<Vehicle>) => {
+  const updateVehicle = useCallback(async (id: string, updates: UpdateVehicleInput) => {
     try {
       const updatedVehicle = await vehicleService.updateVehicle(id, updates);
       setVehicles(prev => prev.map(v => v.id === id ? updatedVehicle : v));

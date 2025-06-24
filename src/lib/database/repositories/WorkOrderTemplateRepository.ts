@@ -128,7 +128,7 @@ export class WorkOrderTemplateRepository {
 
   async incrementUsage(id: string): Promise<WorkOrderTemplate> {
     const { data, error } = await supabase
-      .rpc('increment_template_usage', { template_id: id });
+      .rpc('increment_usage_count', { template_id: id });
     
     if (error) throw this.handleError(error);
     
