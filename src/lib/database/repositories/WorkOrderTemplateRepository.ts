@@ -2,50 +2,49 @@
 import { supabase } from '@/integrations/supabase/client';
 import { PostgrestError } from '@supabase/supabase-js';
 
+// Updated interface to match actual database schema
 export interface WorkOrderTemplate {
   id: string;
   name: string;
   description?: string;
-  category?: string;
-  subcategory?: string;
-  estimated_hours?: number;
-  labor_rate?: number;
-  total_amount?: number;
   status: string;
+  priority?: string;
+  technician?: string;
   notes?: string;
   usage_count: number;
   last_used?: string;
-  is_active: boolean;
   created_at: string;
-  updated_at: string;
-  created_by?: string;
-  created_by_name?: string;
+  inventory_items?: WorkOrderInventoryItem[];
+  location?: string;
+}
+
+export interface WorkOrderInventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unit_price?: number;
 }
 
 export interface CreateWorkOrderTemplateInput {
   name: string;
   description?: string;
-  category?: string;
-  subcategory?: string;
-  estimated_hours?: number;
-  labor_rate?: number;
-  total_amount?: number;
-  status?: string;
+  status: string;
+  priority?: string;
+  technician?: string;
   notes?: string;
-  created_by?: string;
-  created_by_name?: string;
+  location?: string;
+  inventory_items?: WorkOrderInventoryItem[];
 }
 
 export interface UpdateWorkOrderTemplateInput {
   name?: string;
   description?: string;
-  category?: string;
-  subcategory?: string;
-  estimated_hours?: number;
-  labor_rate?: number;
-  total_amount?: number;
   status?: string;
+  priority?: string;
+  technician?: string;
   notes?: string;
+  location?: string;
+  inventory_items?: WorkOrderInventoryItem[];
 }
 
 export class WorkOrderTemplateRepository {
@@ -53,11 +52,10 @@ export class WorkOrderTemplateRepository {
     const { data, error } = await supabase
       .from('work_order_templates')
       .select('*')
-      .eq('is_active', true)
       .order('created_at', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return (data || []) as WorkOrderTemplate[];
+    return data || [];
   }
 
   async findById(id: string): Promise<WorkOrderTemplate | null> {
@@ -68,48 +66,41 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error && error.code !== 'PGRST116') throw this.handleError(error);
-    return data as WorkOrderTemplate | null;
+    return data || null;
   }
 
   async findByCategory(categoryId: string): Promise<WorkOrderTemplate[]> {
     const { data, error } = await supabase
       .from('work_order_templates')
       .select('*')
-      .eq('category', categoryId)
-      .eq('is_active', true)
+      .eq('category_id', categoryId)
       .order('usage_count', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return (data || []) as WorkOrderTemplate[];
+    return data || [];
   }
 
   async getMostUsed(limit: number = 10): Promise<WorkOrderTemplate[]> {
     const { data, error } = await supabase
       .from('work_order_templates')
       .select('*')
-      .eq('is_active', true)
       .order('usage_count', { ascending: false })
       .limit(limit);
     
     if (error) throw this.handleError(error);
-    return (data || []) as WorkOrderTemplate[];
+    return data || [];
   }
 
   async create(templateData: CreateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
+    // Prepare data for database insertion
     const insertData = {
       name: templateData.name,
       description: templateData.description || null,
-      category: templateData.category || null,
-      subcategory: templateData.subcategory || null,
-      estimated_hours: templateData.estimated_hours || 0,
-      labor_rate: templateData.labor_rate || 0,
-      total_amount: templateData.total_amount || 0,
-      status: templateData.status || 'active',
+      status: templateData.status,
+      priority: templateData.priority || null,
+      technician: templateData.technician || null,
       notes: templateData.notes || null,
-      usage_count: 0,
-      is_active: true,
-      created_by: templateData.created_by || null,
-      created_by_name: templateData.created_by_name || null,
+      usage_count: 0
     };
 
     const { data, error } = await supabase
@@ -119,7 +110,7 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data as WorkOrderTemplate;
+    return data;
   }
 
   async update(id: string, updates: UpdateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
@@ -131,13 +122,13 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data as WorkOrderTemplate;
+    return data;
   }
 
   async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('work_order_templates')
-      .update({ is_active: false })
+      .delete()
       .eq('id', id);
     
     if (error) throw this.handleError(error);
@@ -165,7 +156,7 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data as WorkOrderTemplate;
+    return data;
   }
 
   private handleError(error: PostgrestError): Error {
