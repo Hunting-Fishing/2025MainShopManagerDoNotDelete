@@ -11,11 +11,14 @@ import { Customer } from '@/types/customer';
  */
 
 interface CustomerFilters {
-  search: string;
-  segment: string;
-  hasVehicles: boolean | null;
-  vehicleType: string;
-  dateRange: {
+  search?: string;
+  searchQuery?: string;
+  status?: string;
+  sortBy?: string;
+  tags?: string[];
+  vehicleType?: string;
+  hasVehicles?: string;
+  dateRange?: {
     from: Date | null;
     to: Date | null;
   };
@@ -23,9 +26,12 @@ interface CustomerFilters {
 
 const defaultFilters: CustomerFilters = {
   search: '',
-  segment: '',
-  hasVehicles: null,
+  searchQuery: '',
+  status: 'all',
+  sortBy: 'name',
+  tags: [],
   vehicleType: '',
+  hasVehicles: '',
   dateRange: {
     from: null,
     to: null,
@@ -71,10 +77,13 @@ export function useCustomers() {
       }
     }
 
-    // Segment filter
-    if (filters.segment && customer.segments) {
-      const segments = Array.isArray(customer.segments) ? customer.segments : [];
-      if (!segments.includes(filters.segment)) {
+    // Has vehicles filter
+    if (filters.hasVehicles && filters.hasVehicles !== '') {
+      const hasVehicles = (customer.vehicles?.length || 0) > 0;
+      if (filters.hasVehicles === 'yes' && !hasVehicles) {
+        return false;
+      }
+      if (filters.hasVehicles === 'no' && hasVehicles) {
         return false;
       }
     }
@@ -82,8 +91,8 @@ export function useCustomers() {
     return true;
   });
 
-  const handleFilterChange = (newFilters: Partial<CustomerFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+  const handleFilterChange = (newFilters: CustomerFilters) => {
+    setFilters(newFilters);
   };
 
   const clearFilters = () => {
