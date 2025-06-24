@@ -2,7 +2,22 @@
 import { supabase } from '@/integrations/supabase/client';
 import { PostgrestError } from '@supabase/supabase-js';
 
-// Updated interface to match actual database schema
+// Simple database row type that matches what we actually get from the database
+interface DatabaseWorkOrderTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  status: string;
+  priority: string | null;
+  technician: string | null;
+  notes: string | null;
+  usage_count: number;
+  last_used: string | null;
+  created_at: string;
+  location?: string | null;
+}
+
+// Application interface with optional fields
 export interface WorkOrderTemplate {
   id: string;
   name: string;
@@ -47,6 +62,24 @@ export interface UpdateWorkOrderTemplateInput {
   inventory_items?: WorkOrderInventoryItem[];
 }
 
+// Helper function to convert database row to application type
+function mapToWorkOrderTemplate(row: DatabaseWorkOrderTemplate): WorkOrderTemplate {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description || undefined,
+    status: row.status,
+    priority: row.priority || undefined,
+    technician: row.technician || undefined,
+    notes: row.notes || undefined,
+    usage_count: row.usage_count,
+    last_used: row.last_used || undefined,
+    created_at: row.created_at,
+    location: row.location || undefined,
+    inventory_items: []
+  };
+}
+
 export class WorkOrderTemplateRepository {
   async findActive(): Promise<WorkOrderTemplate[]> {
     const { data, error } = await supabase
@@ -55,7 +88,9 @@ export class WorkOrderTemplateRepository {
       .order('created_at', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return data || [];
+    if (!data) return [];
+    
+    return data.map(mapToWorkOrderTemplate);
   }
 
   async findById(id: string): Promise<WorkOrderTemplate | null> {
@@ -66,7 +101,9 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error && error.code !== 'PGRST116') throw this.handleError(error);
-    return data || null;
+    if (!data) return null;
+    
+    return mapToWorkOrderTemplate(data);
   }
 
   async findByCategory(categoryId: string): Promise<WorkOrderTemplate[]> {
@@ -77,7 +114,9 @@ export class WorkOrderTemplateRepository {
       .order('usage_count', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return data || [];
+    if (!data) return [];
+    
+    return data.map(mapToWorkOrderTemplate);
   }
 
   async getMostUsed(limit: number = 10): Promise<WorkOrderTemplate[]> {
@@ -88,7 +127,9 @@ export class WorkOrderTemplateRepository {
       .limit(limit);
     
     if (error) throw this.handleError(error);
-    return data || [];
+    if (!data) return [];
+    
+    return data.map(mapToWorkOrderTemplate);
   }
 
   async create(templateData: CreateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
@@ -110,7 +151,9 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data;
+    if (!data) throw new Error('Failed to create work order template');
+    
+    return mapToWorkOrderTemplate(data);
   }
 
   async update(id: string, updates: UpdateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
@@ -122,7 +165,9 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data;
+    if (!data) throw new Error('Failed to update work order template');
+    
+    return mapToWorkOrderTemplate(data);
   }
 
   async delete(id: string): Promise<void> {
@@ -143,6 +188,7 @@ export class WorkOrderTemplateRepository {
       .single();
 
     if (fetchError) throw this.handleError(fetchError);
+    if (!currentTemplate) throw new Error('Template not found');
 
     // Update the usage count and last_used timestamp
     const { data, error } = await supabase
@@ -156,7 +202,9 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data;
+    if (!data) throw new Error('Failed to increment template usage');
+    
+    return mapToWorkOrderTemplate(data);
   }
 
   private handleError(error: PostgrestError): Error {
