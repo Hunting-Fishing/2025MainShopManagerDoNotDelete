@@ -6,7 +6,7 @@ import {
   disableAutoReorder as disableAutoReorderService
 } from "@/services/inventory/autoReorderService";
 import { getInventoryItemById } from "@/services/inventory/crudService";
-import { useNotifications } from "@/context/NotificationsContext";
+import { useNotifications } from "@/context/notifications";
 import { toast } from "@/hooks/use-toast";
 
 export interface AutoReorderSettings {
@@ -108,6 +108,7 @@ export function useAutoReorder() {
         title: "Automatic Order Placed",
         message: `Ordered ${orderQuantity} units of ${item.name}`,
         type: "info",
+        category: "inventory",
         link: "/inventory"
       });
     } catch (error) {
