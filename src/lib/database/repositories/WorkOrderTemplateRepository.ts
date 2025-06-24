@@ -57,7 +57,7 @@ export class WorkOrderTemplateRepository {
       .order('created_at', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return data || [];
+    return (data || []) as WorkOrderTemplate[];
   }
 
   async findById(id: string): Promise<WorkOrderTemplate | null> {
@@ -68,7 +68,7 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error && error.code !== 'PGRST116') throw this.handleError(error);
-    return data || null;
+    return data as WorkOrderTemplate | null;
   }
 
   async findByCategory(categoryId: string): Promise<WorkOrderTemplate[]> {
@@ -80,7 +80,7 @@ export class WorkOrderTemplateRepository {
       .order('usage_count', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return data || [];
+    return (data || []) as WorkOrderTemplate[];
   }
 
   async getMostUsed(limit: number = 10): Promise<WorkOrderTemplate[]> {
@@ -92,7 +92,7 @@ export class WorkOrderTemplateRepository {
       .limit(limit);
     
     if (error) throw this.handleError(error);
-    return data || [];
+    return (data || []) as WorkOrderTemplate[];
   }
 
   async create(templateData: CreateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
@@ -119,7 +119,7 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data;
+    return data as WorkOrderTemplate;
   }
 
   async update(id: string, updates: UpdateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
@@ -131,7 +131,7 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data;
+    return data as WorkOrderTemplate;
   }
 
   async delete(id: string): Promise<void> {
@@ -144,14 +144,28 @@ export class WorkOrderTemplateRepository {
   }
 
   async incrementUsage(id: string): Promise<WorkOrderTemplate> {
+    // First get the current template
+    const { data: currentTemplate, error: fetchError } = await supabase
+      .from('work_order_templates')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw this.handleError(fetchError);
+
+    // Update the usage count and last_used timestamp
     const { data, error } = await supabase
       .from('work_order_templates')
-      .rpc('increment_usage_count', { template_id: id })
+      .update({ 
+        usage_count: (currentTemplate.usage_count || 0) + 1,
+        last_used: new Date().toISOString()
+      })
+      .eq('id', id)
       .select()
       .single();
     
     if (error) throw this.handleError(error);
-    return data;
+    return data as WorkOrderTemplate;
   }
 
   private handleError(error: PostgrestError): Error {
