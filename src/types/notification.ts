@@ -3,28 +3,29 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  read: boolean;
+  type: 'info' | 'success' | 'warning' | 'error';
+  category: 'system' | 'work-order' | 'inventory' | 'customer' | 'team';
   timestamp: string;
-  type: 'info' | 'warning' | 'success' | 'error';
-  link?: string;
-  sender?: string;
-  recipient?: string;
-  category?: 'system' | 'invoice' | 'workOrder' | 'inventory' | 'customer' | 'team' | 'chat';
-  priority?: 'low' | 'medium' | 'high';
-  expiresAt?: string;
-  duration?: number; // Adding duration property for toast display time
+  read: boolean;
+  duration?: number;
+  actionUrl?: string;
 }
 
-export type NotificationSubscription = {
-  category: string;
-  enabled: boolean;
-}
-
-export type NotificationPreferences = {
-  email: boolean;
-  push: boolean;
-  inApp: boolean;
-  sound?: string;
-  frequencies?: Record<string, 'realtime' | 'hourly' | 'daily' | 'weekly'>;
-  subscriptions: NotificationSubscription[];
+export interface NotificationPreferences {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  smsNotifications: boolean;
+  categories: {
+    system: boolean;
+    'work-order': boolean;
+    inventory: boolean;
+    customer: boolean;
+    team: boolean;
+  };
+  frequency: 'immediate' | 'hourly' | 'daily';
+  quietHours: {
+    enabled: boolean;
+    start: string;
+    end: string;
+  };
 }

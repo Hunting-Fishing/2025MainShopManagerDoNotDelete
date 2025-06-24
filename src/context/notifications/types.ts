@@ -1,5 +1,5 @@
 
-import { Notification, NotificationPreferences, NotificationSubscription } from '@/types/notification';
+import { Notification, NotificationPreferences } from '@/types/notification';
 
 export interface NotificationsContextProps {
   notifications: Notification[];
@@ -11,7 +11,7 @@ export interface NotificationsContextProps {
   markAllAsRead: () => void;
   clearNotification: (id: string) => void;
   clearAllNotifications: () => void;
-  updatePreferences: (preferences: Partial<NotificationPreferences>) => void;
-  updateSubscription: (category: string, enabled: boolean) => void;
+  updatePreferences: (updates: Partial<NotificationPreferences>) => void;
+  updateSubscription: (category: keyof NotificationPreferences['categories'], enabled: boolean) => void;
   triggerTestNotification: () => void;
 }
