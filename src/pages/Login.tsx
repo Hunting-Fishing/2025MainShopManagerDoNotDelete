@@ -35,6 +35,12 @@ export default function Login() {
           description: error.message,
           variant: "destructive",
         });
+      } else {
+        // Success will be handled by the auth state change listener
+        toast({
+          title: "Success",
+          description: "Signing you in...",
+        });
       }
     } catch (error) {
       toast({

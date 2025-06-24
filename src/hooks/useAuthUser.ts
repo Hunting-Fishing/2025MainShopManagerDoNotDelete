@@ -60,9 +60,8 @@ export function useAuthUser() {
           setIsLoading(false);
         } else {
           console.log('useAuthUser: Initial session check:', session?.user?.id);
-          // The onAuthStateChange will handle setting the state
+          // Only update state if no session found, otherwise let onAuthStateChange handle it
           if (!session) {
-            // No session found, set loading to false
             setIsLoading(false);
           }
         }

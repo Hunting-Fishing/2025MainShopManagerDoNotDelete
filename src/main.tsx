@@ -11,6 +11,7 @@ import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
 import { NotificationsProvider } from '@/context/notifications';
 import { ConsoleErrorLogger } from '@/components/debug/ConsoleErrorLogger';
 import { GlobalErrorBoundary } from '@/components/error/GlobalErrorBoundary';
+import './i18n/config'; // Initialize i18n before rendering
 import App from './App';
 import './App.css';
 
