@@ -2,102 +2,81 @@
 import { supabase } from '@/integrations/supabase/client';
 import { PostgrestError } from '@supabase/supabase-js';
 
-// Database schema interface - matches actual table structure
-interface WorkOrderTemplateDB {
-  id: string;
-  name: string;
-  description: string | null;
-  status: string | null;
-  priority: string | null;
-  technician: string | null;
-  notes: string | null;
-  usage_count: number;
-  last_used: string | null;
-  created_at: string;
-  // Note: Based on the errors, these fields don't exist in the database
-  // parts_list, is_active, updated_at are not in the actual schema
-}
-
-// Application interface - what the app expects
 export interface WorkOrderTemplate {
   id: string;
   name: string;
-  description: string | null;
-  status: string | null;
-  priority: string | null;
-  technician: string | null;
-  notes: string | null;
-  usage_count: number;
-  last_used: string | null;
-  created_at: string;
-  // These fields are expected by the app but don't exist in DB
+  description?: string;
+  status?: string;
+  priority?: string;
+  technician?: string;
+  notes?: string;
   parts_list: any[];
   is_active: boolean;
+  usage_count: number;
+  last_used?: string;
+  created_at: string;
   updated_at: string;
-  // Additional fields that might be needed
-  category_id?: string | null;
-  estimated_hours?: number | null;
-  labor_rate?: number | null;
-  instructions?: string | null;
-  created_by?: string | null;
-  inventory_items?: any[];
 }
 
 export interface CreateWorkOrderTemplateInput {
   name: string;
-  description?: string | null;
-  status?: string | null;
-  priority?: string | null;
-  technician?: string | null;
-  notes?: string | null;
-  category_id?: string | null;
-  estimated_hours?: number | null;
-  labor_rate?: number | null;
-  instructions?: string | null;
-  created_by?: string | null;
-  parts_list?: any[];
-  is_active?: boolean;
-  inventory_items?: any[];
+  description?: string;
+  status?: string;
+  priority?: string;
+  technician?: string;
+  notes?: string;
 }
 
 export interface UpdateWorkOrderTemplateInput {
   name?: string;
-  description?: string | null;
-  status?: string | null;
-  priority?: string | null;
-  technician?: string | null;
-  notes?: string | null;
-  category_id?: string | null;
-  estimated_hours?: number | null;
-  labor_rate?: number | null;
-  instructions?: string | null;
-  parts_list?: any[];
-  is_active?: boolean;
-  inventory_items?: any[];
+  description?: string;
+  status?: string;
+  priority?: string;
+  technician?: string;
+  notes?: string;
+}
+
+// Database row type (what actually comes from Supabase)
+interface WorkOrderTemplateRow {
+  id: string;
+  name: string;
+  description: string | null;
+  status: string | null;
+  priority: string | null;
+  technician: string | null;
+  notes: string | null;
+  usage_count: number;
+  last_used: string | null;
+  created_at: string;
 }
 
 export class WorkOrderTemplateRepository {
-  
-  // Helper method to transform database data to application interface
-  private transformDbToApp(dbItem: WorkOrderTemplateDB): WorkOrderTemplate {
+  private transformRow(row: WorkOrderTemplateRow): WorkOrderTemplate {
     return {
-      ...dbItem,
-      parts_list: [], // Default empty array since not in DB
-      is_active: true, // Default true since not in DB
-      updated_at: dbItem.created_at, // Use created_at as fallback
-      inventory_items: [] // Default empty array
+      id: row.id,
+      name: row.name,
+      description: row.description || undefined,
+      status: row.status || undefined,
+      priority: row.priority || undefined,
+      technician: row.technician || undefined,
+      notes: row.notes || undefined,
+      parts_list: [],
+      is_active: true,
+      usage_count: row.usage_count,
+      last_used: row.last_used || undefined,
+      created_at: row.created_at,
+      updated_at: row.created_at, // Use created_at as fallback for updated_at
     };
   }
 
-  async findAll(): Promise<WorkOrderTemplate[]> {
+  async findActive(): Promise<WorkOrderTemplate[]> {
     const { data, error } = await supabase
       .from('work_order_templates')
       .select('*')
       .order('created_at', { ascending: false });
     
     if (error) throw this.handleError(error);
-    
-    return (data || []).map(item => this.transformDbToApp(item));
+    return (data || []).map(row => this.transformRow(row));
   }
 
   async findById(id: string): Promise<WorkOrderTemplate | null> {
@@ -108,21 +87,18 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error && error.code !== 'PGRST116') throw this.handleError(error);
-    
-    if (!data) return null;
-    
-    return this.transformDbToApp(data);
+    return data ? this.transformRow(data) : null;
   }
 
-  async findActive(): Promise<WorkOrderTemplate[]> {
+  async getMostUsed(limit: number): Promise<WorkOrderTemplate[]> {
     const { data, error } = await supabase
       .from('work_order_templates')
       .select('*')
-      .order('usage_count', { ascending: false });
+      .order('usage_count', { ascending: false })
+      .limit(limit);
     
     if (error) throw this.handleError(error);
-    
-    return (data || []).map(item => this.transformDbToApp(item));
+    return (data || []).map(row => this.transformRow(row));
   }
 
   async findByCategory(categoryId: string): Promise<WorkOrderTemplate[]> {
@@ -130,40 +106,35 @@ export class WorkOrderTemplateRepository {
       .from('work_order_templates')
       .select('*')
       .eq('category_id', categoryId)
-      .order('name');
+      .order('created_at', { ascending: false });
     
     if (error) throw this.handleError(error);
-    
-    return (data || []).map(item => this.transformDbToApp(item));
+    return (data || []).map(row => this.transformRow(row));
   }
 
   async create(entity: CreateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
-    // Only include fields that exist in the database
-    const createData = {
+    const insertData = {
       name: entity.name,
       description: entity.description || null,
       status: entity.status || null,
       priority: entity.priority || null,
       technician: entity.technician || null,
       notes: entity.notes || null,
-      usage_count: 0
-      // Don't include parts_list, is_active, etc. as they don't exist in DB
+      usage_count: 0,
     };
 
     const { data, error } = await supabase
       .from('work_order_templates')
-      .insert(createData)
+      .insert(insertData)
       .select()
       .single();
     
     if (error) throw this.handleError(error);
-    
-    return this.transformDbToApp(data);
+    return this.transformRow(data);
   }
 
   async update(id: string, updates: UpdateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
-    // Only include fields that exist in the database
-    const updateData: Partial<WorkOrderTemplateDB> = {};
+    const updateData: Record<string, any> = {};
     
     if (updates.name !== undefined) updateData.name = updates.name;
     if (updates.description !== undefined) updateData.description = updates.description;
@@ -180,8 +151,7 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    
-    return this.transformDbToApp(data);
+    return this.transformRow(data);
   }
 
   async delete(id: string): Promise<void> {
@@ -194,10 +164,22 @@ export class WorkOrderTemplateRepository {
   }
 
   async incrementUsage(id: string): Promise<WorkOrderTemplate> {
+    // First get current usage count
+    const { data: currentData, error: fetchError } = await supabase
+      .from('work_order_templates')
+      .select('usage_count')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError) throw this.handleError(fetchError);
+    
+    const newUsageCount = (currentData?.usage_count || 0) + 1;
+    
+    // Then update it
     const { data, error } = await supabase
       .from('work_order_templates')
       .update({ 
-        usage_count: supabase.rpc('increment_usage_count', { template_id: id }),
+        usage_count: newUsageCount,
         last_used: new Date().toISOString()
       })
       .eq('id', id)
@@ -205,20 +187,7 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    
-    return this.transformDbToApp(data);
-  }
-
-  async getMostUsed(limit: number = 10): Promise<WorkOrderTemplate[]> {
-    const { data, error } = await supabase
-      .from('work_order_templates')
-      .select('*')
-      .order('usage_count', { ascending: false })
-      .limit(limit);
-    
-    if (error) throw this.handleError(error);
-    
-    return (data || []).map(item => this.transformDbToApp(item));
+    return this.transformRow(data);
   }
 
   private handleError(error: PostgrestError): Error {
