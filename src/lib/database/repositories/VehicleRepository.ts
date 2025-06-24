@@ -105,9 +105,25 @@ export class VehicleRepository {
   }
 
   async create(entity: CreateVehicleInput): Promise<Vehicle> {
+    // Ensure all required fields are present for Supabase
+    const insertData = {
+      customer_id: entity.customer_id,
+      year: entity.year || null,
+      make: entity.make || null,
+      model: entity.model || null,
+      vin: entity.vin || null,
+      license_plate: entity.license_plate || null,
+      color: entity.color || null,
+      mileage: entity.mileage || null,
+      engine_size: entity.engine_size || null,
+      transmission_type: entity.transmission_type || null,
+      fuel_type: entity.fuel_type || null,
+      notes: entity.notes || null,
+    };
+
     const { data, error } = await supabase
       .from('vehicles')
-      .insert(entity)
+      .insert(insertData)
       .select()
       .single();
     

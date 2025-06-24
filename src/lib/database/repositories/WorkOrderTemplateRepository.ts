@@ -50,7 +50,14 @@ export class WorkOrderTemplateRepository {
       .order('created_at', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return data || [];
+    
+    // Transform data to ensure all required fields are present
+    return (data || []).map(item => ({
+      ...item,
+      parts_list: item.parts_list || [],
+      is_active: item.is_active ?? true,
+      usage_count: item.usage_count || 0
+    }));
   }
 
   async findById(id: string): Promise<WorkOrderTemplate | null> {
@@ -61,7 +68,16 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error && error.code !== 'PGRST116') throw this.handleError(error);
-    return data || null;
+    
+    if (!data) return null;
+    
+    // Transform data to ensure all required fields are present
+    return {
+      ...data,
+      parts_list: data.parts_list || [],
+      is_active: data.is_active ?? true,
+      usage_count: data.usage_count || 0
+    };
   }
 
   async findActive(): Promise<WorkOrderTemplate[]> {
@@ -72,7 +88,14 @@ export class WorkOrderTemplateRepository {
       .order('usage_count', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return data || [];
+    
+    // Transform data to ensure all required fields are present
+    return (data || []).map(item => ({
+      ...item,
+      parts_list: item.parts_list || [],
+      is_active: item.is_active ?? true,
+      usage_count: item.usage_count || 0
+    }));
   }
 
   async findByCategory(categoryId: string): Promise<WorkOrderTemplate[]> {
@@ -84,15 +107,28 @@ export class WorkOrderTemplateRepository {
       .order('name');
     
     if (error) throw this.handleError(error);
-    return data || [];
+    
+    // Transform data to ensure all required fields are present
+    return (data || []).map(item => ({
+      ...item,
+      parts_list: item.parts_list || [],
+      is_active: item.is_active ?? true,
+      usage_count: item.usage_count || 0
+    }));
   }
 
   async create(entity: CreateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
     const createData = {
-      ...entity,
+      name: entity.name,
+      description: entity.description || null,
+      category_id: entity.category_id || null,
+      estimated_hours: entity.estimated_hours || null,
+      labor_rate: entity.labor_rate || null,
       parts_list: entity.parts_list || [],
+      instructions: entity.instructions || null,
       is_active: entity.is_active ?? true,
-      usage_count: 0
+      usage_count: 0,
+      created_by: entity.created_by || null
     };
 
     const { data, error } = await supabase
@@ -102,7 +138,14 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data;
+    
+    // Transform data to ensure all required fields are present
+    return {
+      ...data,
+      parts_list: data.parts_list || [],
+      is_active: data.is_active ?? true,
+      usage_count: data.usage_count || 0
+    };
   }
 
   async update(id: string, updates: UpdateWorkOrderTemplateInput): Promise<WorkOrderTemplate> {
@@ -114,7 +157,14 @@ export class WorkOrderTemplateRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data;
+    
+    // Transform data to ensure all required fields are present
+    return {
+      ...data,
+      parts_list: data.parts_list || [],
+      is_active: data.is_active ?? true,
+      usage_count: data.usage_count || 0
+    };
   }
 
   async delete(id: string): Promise<void> {
@@ -147,7 +197,14 @@ export class WorkOrderTemplateRepository {
       .limit(limit);
     
     if (error) throw this.handleError(error);
-    return data || [];
+    
+    // Transform data to ensure all required fields are present
+    return (data || []).map(item => ({
+      ...item,
+      parts_list: item.parts_list || [],
+      is_active: item.is_active ?? true,
+      usage_count: item.usage_count || 0
+    }));
   }
 
   private handleError(error: PostgrestError): Error {
