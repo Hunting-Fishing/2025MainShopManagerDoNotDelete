@@ -1,6 +1,6 @@
 
 import React from "react";
-import { InventoryTable } from "@/components/inventory/InventoryTable";
+import { OptimizedInventoryTable } from "./OptimizedInventoryTable";
 import { EmptyInventory } from "@/components/inventory/EmptyInventory";
 import { InventoryItemExtended } from "@/types/inventory";
 
@@ -13,9 +13,8 @@ export function InventoryContent({ items, onUpdateItem }: InventoryContentProps)
   return (
     <>
       {items.length > 0 ? (
-        <InventoryTable 
-          items={items} 
-          onUpdateItem={onUpdateItem}
+        <OptimizedInventoryTable 
+          items={items}
         />
       ) : (
         <EmptyInventory />

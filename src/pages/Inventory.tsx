@@ -3,7 +3,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { InventoryPageHeader } from '@/components/inventory/InventoryPageHeader';
 import { InventoryContent } from '@/components/inventory/InventoryContent';
-import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
+import { useOptimizedInventoryItems } from '@/hooks/inventory/useOptimizedInventoryItems';
 import { InventoryLoadingState } from '@/components/inventory/InventoryLoadingState';
 import { InventoryErrorState } from '@/components/inventory/InventoryErrorState';
 import InventoryCreate from '@/pages/InventoryCreate';
@@ -14,12 +14,12 @@ import InventoryOrders from '@/pages/InventoryOrders';
 import InventoryManager from '@/pages/InventoryManager';
 
 /**
- * IMPORTANT: This page uses full inventory functionality
- * DO NOT replace with placeholder text - full functionality exists
+ * IMPORTANT: This page uses optimized inventory functionality with centralized data management
+ * Performance optimizations: consolidated data fetching, memoization, efficient caching
  * Includes: inventory list, creation, categories, suppliers, locations, etc.
  */
 export default function Inventory() {
-  const { items, loading, error, updateItem } = useInventoryItems();
+  const { items, loading, error, updateItem } = useOptimizedInventoryItems();
 
   return (
     <Routes>
