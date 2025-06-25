@@ -8675,6 +8675,50 @@ export type Database = {
           },
         ]
       }
+      work_order_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_by_name: string
+          assignment_notes: string | null
+          id: string
+          is_active: boolean | null
+          technician_id: string | null
+          unassigned_at: string | null
+          work_order_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_by_name: string
+          assignment_notes?: string | null
+          id?: string
+          is_active?: boolean | null
+          technician_id?: string | null
+          unassigned_at?: string | null
+          work_order_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_by_name?: string
+          assignment_notes?: string | null
+          id?: string
+          is_active?: boolean | null
+          technician_id?: string | null
+          unassigned_at?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_assignments_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_discounts: {
         Row: {
           applies_to: string
@@ -9247,6 +9291,36 @@ export type Database = {
           },
         ]
       }
+      work_order_priorities: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          level: number
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          level: number
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          level?: number
+          name?: string
+        }
+        Relationships: []
+      }
       work_order_signatures: {
         Row: {
           created_at: string | null
@@ -9278,6 +9352,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "work_order_signatures_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_status_history: {
+        Row: {
+          change_reason: string | null
+          changed_at: string | null
+          changed_by: string | null
+          changed_by_name: string
+          id: string
+          new_status: string
+          old_status: string | null
+          work_order_id: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string | null
+          changed_by?: string | null
+          changed_by_name: string
+          id?: string
+          new_status: string
+          old_status?: string | null
+          work_order_id: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string | null
+          changed_by?: string | null
+          changed_by_name?: string
+          id?: string
+          new_status?: string
+          old_status?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_status_history_work_order_id_fkey"
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "work_orders"

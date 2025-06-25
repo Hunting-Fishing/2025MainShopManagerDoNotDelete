@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
 import { toast } from "sonner";
-import { getWorkOrderById, updateWorkOrder } from "@/services/workOrder";
+import { useWorkOrderService } from './useWorkOrderService';
 import { useNavigate } from "react-router-dom";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
@@ -14,25 +14,32 @@ export const useWorkOrderEditForm = (workOrderId: string) => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   
+  const { fetchWorkOrderById, updateWorkOrder } = useWorkOrderService();
+  
   // Fetch work order data
   useEffect(() => {
     const fetchWorkOrder = async () => {
       try {
-        const data = await getWorkOrderById(workOrderId);
-        setWorkOrder(data);
-        setOriginalWorkOrder(data);
-        setLoading(false);
+        setLoading(true);
+        const data = await fetchWorkOrderById(workOrderId);
+        if (data) {
+          setWorkOrder(data);
+          setOriginalWorkOrder(data);
+        } else {
+          setError('Work order not found');
+        }
       } catch (err) {
         console.error("Error fetching work order:", err);
         const errorMessage = err instanceof Error ? err.message : "Failed to fetch work order";
         setError(errorMessage);
-        setLoading(false);
         toast.error(errorMessage);
+      } finally {
+        setLoading(false);
       }
     };
     
     fetchWorkOrder();
-  }, [workOrderId]);
+  }, [workOrderId, fetchWorkOrderById]);
   
   // Function to update a single field
   const updateField = useCallback((field: keyof WorkOrder, value: any) => {
@@ -80,8 +87,12 @@ export const useWorkOrderEditForm = (workOrderId: string) => {
       };
       
       const result = await updateWorkOrder(workOrderId, formData);
-      toast.success("Work order updated successfully");
-      return result;
+      if (result) {
+        toast.success("Work order updated successfully");
+        return result;
+      } else {
+        throw new Error('Failed to update work order');
+      }
     } catch (err) {
       console.error("Error updating work order:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to update work order";
@@ -91,7 +102,7 @@ export const useWorkOrderEditForm = (workOrderId: string) => {
     } finally {
       setSaving(false);
     }
-  }, [workOrder, workOrderId]);
+  }, [workOrder, workOrderId, updateWorkOrder]);
   
   return {
     workOrder,

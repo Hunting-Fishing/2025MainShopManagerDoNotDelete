@@ -1,52 +1,43 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
 import { WorkOrder } from '@/types/workOrder';
+import { WorkOrderService } from '@/services/workOrder/WorkOrderService';
 
 export function useWorkOrdersByCustomer(customerId: string) {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const service = new WorkOrderService();
 
-  useEffect(() => {
+  const fetchWorkOrders = useCallback(async () => {
     if (!customerId) {
       setWorkOrders([]);
       setLoading(false);
       return;
     }
 
-    const fetchWorkOrders = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        console.log('Fetching work orders for customer:', customerId);
-        
-        const { data, error: fetchError } = await supabase
-          .from('work_orders')
-          .select('*')
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false });
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Fetching work orders for customer:', customerId);
+      const data = await service.getWorkOrdersByCustomer(customerId);
+      console.log('Work orders fetched:', data?.length || 0);
+      setWorkOrders(data || []);
+    } catch (err) {
+      console.error('Error fetching work orders by customer:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch work orders';
+      setError(errorMessage);
+      setWorkOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [customerId, service]);
 
-        if (fetchError) {
-          console.error('Error fetching work orders:', fetchError);
-          setError(fetchError.message);
-          setWorkOrders([]);
-        } else {
-          console.log('Work orders fetched:', data?.length || 0);
-          setWorkOrders(data || []);
-        }
-      } catch (err) {
-        console.error('Exception fetching work orders:', err);
-        setError('Failed to fetch work orders');
-        setWorkOrders([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchWorkOrders();
-  }, [customerId]);
+  }, [fetchWorkOrders]);
 
-  return { workOrders, loading, error };
+  return { workOrders, loading, error, refetch: fetchWorkOrders };
 }

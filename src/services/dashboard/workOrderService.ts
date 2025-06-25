@@ -1,20 +1,22 @@
 
-import { supabase } from "@/lib/supabase";
+import { WorkOrderService } from "@/services/workOrder/WorkOrderService";
 import { PhaseProgressItem, RecentWorkOrder } from "@/types/dashboard";
+
+const workOrderService = new WorkOrderService();
 
 export const getPhaseProgress = async (): Promise<PhaseProgressItem[]> => {
   try {
-    // Only return real work orders with phase tracking - no mock data
-    const { data: workOrders, error } = await supabase
-      .from('work_orders')
-      .select('id, description, status, created_at')
-      .in('status', ['in-progress', 'in_progress', 'pending']);
+    const workOrders = await workOrderService.getAllWorkOrders();
+    
+    // Filter for work orders that are in progress or pending
+    const activeWorkOrders = workOrders.filter(order => 
+      ['in-progress', 'in_progress', 'pending'].includes(order.status || '')
+    );
 
-    if (error) throw error;
-    if (!workOrders || workOrders.length === 0) return [];
+    if (activeWorkOrders.length === 0) return [];
 
     // Convert real work orders to phase progress format
-    return workOrders.map((order) => ({
+    return activeWorkOrders.map((order) => ({
       id: order.id,
       name: order.description || `Work Order ${order.id.slice(0, 8)}`,
       totalPhases: 4,
@@ -29,60 +31,41 @@ export const getPhaseProgress = async (): Promise<PhaseProgressItem[]> => {
 
 export const getRecentWorkOrders = async (): Promise<RecentWorkOrder[]> => {
   try {
-    console.log("Starting to fetch recent work orders from database...");
+    console.log("Starting to fetch recent work orders from service...");
     
-    const { data: workOrders, error } = await supabase
-      .from('work_orders')
-      .select(`
-        id,
-        description,
-        status,
-        service_type,
-        created_at,
-        work_order_number,
-        customers (
-          first_name,
-          last_name
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    if (error) {
-      console.error("Database error fetching work orders:", error);
-      throw error;
-    }
-    
-    console.log("Raw work orders from database:", workOrders);
+    const workOrders = await workOrderService.getAllWorkOrders();
+    console.log("Raw work orders from service:", workOrders?.length || 0);
 
     if (!workOrders || workOrders.length === 0) {
-      console.log("No work orders found in database");
+      console.log("No work orders found in service");
       return [];
     }
 
-    const formattedOrders = workOrders.map(order => {
-      console.log("Processing work order:", order);
+    // Take the 10 most recent work orders
+    const recentOrders = workOrders.slice(0, 10);
+
+    const formattedOrders = recentOrders.map(order => {
+      console.log("Processing work order:", order.id);
       
-      // Handle customers data - it could be null, an array, or an object
-      const customerData = Array.isArray(order.customers) ? order.customers[0] : order.customers;
-      const customerName = customerData 
-        ? `${customerData.first_name || ''} ${customerData.last_name || ''}`.trim() 
-        : 'Unknown Customer';
+      const customerName = order.customer_name || 
+        (order.customer_first_name && order.customer_last_name 
+          ? `${order.customer_first_name} ${order.customer_last_name}`.trim()
+          : 'Unknown Customer');
 
       const formattedOrder = {
         id: order.id,
         customer: customerName,
         service: order.service_type || order.description || 'Service',
-        status: order.status,
-        date: new Date(order.created_at).toLocaleDateString(),
-        priority: 'medium' // Default priority since we don't have this field yet
+        status: order.status || 'pending',
+        date: order.created_at ? new Date(order.created_at).toLocaleDateString() : '',
+        priority: order.priority || 'medium'
       };
       
       console.log("Formatted work order:", formattedOrder);
       return formattedOrder;
     });
 
-    console.log("Final formatted work orders:", formattedOrders);
+    console.log("Final formatted work orders:", formattedOrders.length);
     return formattedOrders;
   } catch (error) {
     console.error("Error fetching recent work orders:", error);

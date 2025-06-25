@@ -1,54 +1,20 @@
 
-// Main work order service exports - single source of truth
+// Export the main service classes and functions
+export { WorkOrderService } from './WorkOrderService';
+export { WorkOrderRepository } from './WorkOrderRepository';
 
-// Query operations
-export { 
-  getAllWorkOrders, 
-  getWorkOrderById,
-  getWorkOrdersByCustomerId,
-  getWorkOrdersByStatus,
-  getUniqueTechnicians,
-  getWorkOrderTimeEntries
-} from './workOrderQueryService';
+// Export the main hook
+export { useWorkOrderService } from '@/hooks/useWorkOrderService';
 
-// Mutation operations (when the file exists)
-export { 
-  createWorkOrder, 
-  updateWorkOrder, 
-  updateWorkOrderStatus,
-  deleteWorkOrder 
-} from './workOrderMutationService';
+// Legacy exports for backward compatibility
+export { WorkOrderService as default } from './WorkOrderService';
 
-// Job lines operations
-export { 
-  getWorkOrderJobLines,
-  createWorkOrderJobLine,
-  updateWorkOrderJobLine,
-  upsertWorkOrderJobLine,
-  deleteWorkOrderJobLine
-} from './jobLinesService';
+// Create singleton instances for immediate use
+const workOrderService = new WorkOrderService();
 
-// Parts operations - updated exports
-export { 
-  getWorkOrderParts,
-  createWorkOrderPart,
-  updateWorkOrderPart,
-  deleteWorkOrderPart,
-  getPartsByJobLine,
-  getJobLineParts
-} from './workOrderPartsService';
-
-// Time tracking operations
-export { 
-  getWorkOrderTimeEntries as getTimeEntries,
-  addTimeEntryToWorkOrder,
-  updateTimeEntry,
-  deleteTimeEntry
-} from './workOrderTimeTrackingService';
-
-// Activity operations
-export { 
-  recordWorkOrderActivity,
-  getWorkOrderActivities,
-  flagWorkOrderActivity
-} from './workOrderActivityService';
+export const getAllWorkOrders = () => workOrderService.getAllWorkOrders();
+export const getWorkOrderById = (id: string) => workOrderService.getWorkOrderById(id);
+export const createWorkOrder = (data: any) => workOrderService.createWorkOrder(data);
+export const updateWorkOrder = (id: string, data: any) => workOrderService.updateWorkOrder(id, data);
+export const updateWorkOrderStatus = (id: string, status: string) => workOrderService.updateWorkOrderStatus(id, status);
+export const deleteWorkOrder = (id: string) => workOrderService.deleteWorkOrder(id);
