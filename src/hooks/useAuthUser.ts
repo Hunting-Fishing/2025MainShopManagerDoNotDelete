@@ -30,11 +30,16 @@ export function useAuthUser() {
       setIsAdmin(false);
       setIsOwner(false);
       
-      // Always set loading to false after handling auth state change
-      setIsLoading(false);
     } catch (err) {
       console.error('Error in auth state change handler:', err);
       setError('Authentication error occurred');
+      setIsAuthenticated(false);
+      setUser(null);
+      setSession(null);
+      setUserId(null);
+      setUserName(null);
+    } finally {
+      // Always set loading to false after handling auth state change
       setIsLoading(false);
     }
   }, []);
@@ -43,9 +48,20 @@ export function useAuthUser() {
     console.log('useAuthUser: Setting up auth state listener...');
     
     let isMounted = true;
+    let authSubscription: { unsubscribe: () => void } | null = null;
     
     // Set up auth state listener with cleanup
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+    try {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+      authSubscription = subscription;
+    } catch (err) {
+      console.error('useAuthUser: Error setting up auth listener:', err);
+      if (isMounted) {
+        setError('Failed to initialize authentication');
+        setIsLoading(false);
+      }
+      return;
+    }
 
     // Check for existing session
     const initializeAuth = async () => {
@@ -73,13 +89,21 @@ export function useAuthUser() {
       }
     };
 
-    initializeAuth();
+    // Add small delay to prevent race conditions
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        initializeAuth();
+      }
+    }, 50);
 
     // Cleanup function
     return () => {
       console.log('useAuthUser: Cleaning up auth listener');
       isMounted = false;
-      subscription.unsubscribe();
+      clearTimeout(timer);
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
     };
   }, [handleAuthStateChange]);
 

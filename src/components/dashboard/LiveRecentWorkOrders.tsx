@@ -2,339 +2,158 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Clock, User, MapPin, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Clock, User, Calendar, Wrench, RefreshCw, ExternalLink } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
-
-interface WorkOrderData {
-  id: string;
-  description: string;
-  status: string;
-  service_type: string;
-  created_at: string;
-  work_order_number: string;
-  customer_id: string;
-  customer_name?: string;
-}
-
-interface CustomerData {
-  id: string;
-  first_name: string;
-  last_name: string;
-}
+import { Link } from 'react-router-dom';
+import { useWorkOrders } from '@/hooks/useWorkOrders';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export function LiveRecentWorkOrders() {
-  const [workOrders, setWorkOrders] = useState<WorkOrderData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const { toast } = useToast();
+  const { workOrders, loading, error } = useWorkOrders();
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const fetchRecentWorkOrders = async () => {
-    try {
-      console.log('Fetching recent work orders...');
-      setError(null);
-
-      // Fetch work orders
-      const { data: workOrdersData, error: workOrdersError } = await supabase
-        .from('work_orders')
-        .select(`
-          id,
-          description,
-          status,
-          service_type,
-          created_at,
-          work_order_number,
-          customer_id
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (workOrdersError) {
-        console.error('Error fetching work orders:', workOrdersError);
-        throw workOrdersError;
-      }
-
-      console.log('Fetched work orders:', workOrdersData);
-
-      if (!workOrdersData || workOrdersData.length === 0) {
-        console.log('No work orders found');
-        setWorkOrders([]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Get unique customer IDs
-      const customerIds = [...new Set(workOrdersData
-        .map(wo => wo.customer_id)
-        .filter(Boolean)
-      )];
-
-      let customersData: CustomerData[] = [];
-      if (customerIds.length > 0) {
-        const { data: customers, error: customersError } = await supabase
-          .from('customers')
-          .select('id, first_name, last_name')
-          .in('id', customerIds);
-
-        if (customersError) {
-          console.error('Error fetching customers:', customersError);
-        } else {
-          customersData = customers || [];
-        }
-      }
-
-      // Combine work orders with customer data
-      const combinedData = workOrdersData.map(workOrder => {
-        const customer = customersData.find(c => c.id === workOrder.customer_id);
-        return {
-          ...workOrder,
-          customer_name: customer 
-            ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() 
-            : 'Unknown Customer'
-        };
-      });
-
-      console.log('Combined work orders data:', combinedData);
-      setWorkOrders(combinedData);
-      setLastRefresh(new Date());
-
-    } catch (error: any) {
-      console.error('Error in fetchRecentWorkOrders:', error);
-      setError(error.message || 'Failed to fetch work orders');
-      toast({
-        title: "Error",
-        description: "Failed to load recent work orders",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Add safety check and error handling
   useEffect(() => {
-    fetchRecentWorkOrders();
+    if (error) {
+      console.log('LiveRecentWorkOrders: Error from useWorkOrders:', error);
+      setLocalError(error);
+    }
+  }, [error]);
 
-    // Set up auto-refresh every 30 seconds
-    const interval = setInterval(() => {
-      fetchRecentWorkOrders();
-    }, 30000);
+  // Handle loading state
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-48">
+          <LoadingSpinner size="lg" />
+          <span className="ml-3 text-lg">Loading recent work orders...</span>
+        </div>
+      </div>
+    );
+  }
 
-    return () => clearInterval(interval);
-  }, []);
+  // Handle error state
+  if (localError || error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-red-400 mr-2" />
+            <h3 className="text-sm font-medium text-red-800">
+              Unable to load recent work orders
+            </h3>
+          </div>
+          <div className="mt-2 text-sm text-red-700">
+            {localError || error || 'An unexpected error occurred'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle empty state safely
+  const safeWorkOrders = Array.isArray(workOrders) ? workOrders : [];
+  const recentWorkOrders = safeWorkOrders.slice(0, 5);
+
+  if (safeWorkOrders.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-8 text-muted-foreground">
+          <div className="mb-4">
+            <Clock className="h-12 w-12 mx-auto opacity-50" />
+          </div>
+          <p className="text-lg font-medium mb-2">No work orders yet</p>
+          <p className="text-sm mb-4">Create your first work order to get started</p>
+          <Button asChild>
+            <Link to="/work-orders/create">
+              Create Work Order
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
+    if (!status) return 'bg-gray-500 text-white';
+    
+    switch (status.toLowerCase()) {
       case 'completed':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        return 'bg-green-500 text-white';
       case 'in-progress':
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-500 text-white';
       case 'pending':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
+        return 'bg-yellow-500 text-black';
       case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-500 text-white';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-500 text-white';
     }
   };
 
-  const formatStatus = (status: string) => {
-    return status?.replace(/[_-]/g, ' ')
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ') || 'Unknown';
-  };
-
-  const handleRefresh = () => {
-    setIsLoading(true);
-    fetchRecentWorkOrders();
-  };
-
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-red-600">
-            <AlertCircle className="h-5 w-5" />
-            <span className="font-medium">Failed to load work orders</span>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Retry
-          </Button>
-        </div>
-        <div className="text-sm text-gray-600 bg-red-50 p-4 rounded-lg border border-red-200">
-          {error}
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-5 w-5 rounded" />
-            <Skeleton className="h-5 w-32" />
-          </div>
-          <Skeleton className="h-8 w-20" />
-        </div>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="p-4 border border-gray-200 rounded-lg space-y-3">
-            <div className="flex items-start justify-between">
-              <div className="space-y-2 flex-1">
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-              <Skeleton className="h-6 w-20 rounded-full" />
-            </div>
-            <div className="flex items-center gap-4 text-sm">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-20" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (workOrders.length === 0) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-gray-600">
-            <Wrench className="h-5 w-5" />
-            <span className="font-medium">Recent Work Orders</span>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
-        <div className="text-center py-12 text-gray-500">
-          <Wrench className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-lg font-medium mb-2">No work orders yet</h3>
-          <p className="text-sm">Work orders will appear here once created.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      {/* Header with refresh info */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-gray-600">
-          <Wrench className="h-5 w-5" />
-          <span className="font-medium">Recent Work Orders</span>
-          <span className="text-xs text-gray-500">
-            ({workOrders.length} orders)
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">
-            Updated {formatDistanceToNow(lastRefresh, { addSuffix: true })}
-          </span>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* Work Orders List */}
-      <div className="space-y-3">
-        {workOrders.map((order) => (
-          <div
-            key={order.id}
-            className="group p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200 bg-white"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-medium text-gray-900 truncate">
-                    {order.work_order_number ? `#${order.work_order_number}` : `#${order.id.slice(0, 8)}`}
+    <div className="p-6">
+      <div className="space-y-4">
+        {recentWorkOrders.map((workOrder) => {
+          // Add null checks for all properties
+          const workOrderNumber = workOrder?.work_order_number || workOrder?.id?.slice(0, 8) || 'Unknown';
+          const customerName = workOrder?.customer_name || 'Unknown Customer';
+          const description = workOrder?.description || 'No description available';
+          const status = workOrder?.status || 'unknown';
+          const createdAt = workOrder?.created_at;
+          
+          return (
+            <div 
+              key={workOrder?.id || Math.random()} 
+              className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">
+                    Work Order #{workOrderNumber}
                   </h4>
-                  <Badge 
-                    variant="outline" 
-                    className={`text-xs ${getStatusColor(order.status)}`}
-                  >
-                    {formatStatus(order.status)}
-                  </Badge>
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                    <div className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      <span>{customerName}</span>
+                    </div>
+                    {createdAt && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>{new Date(createdAt).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                  {order.description || order.service_type || 'No description available'}
-                </p>
+                <Badge className={getStatusColor(status)}>
+                  {status}
+                </Badge>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-opacity ml-2"
-                onClick={() => window.open(`/work-orders/${order.id}`, '_blank')}
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="flex items-center justify-between text-sm text-gray-500">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
-                  <span className="truncate max-w-32">
-                    {order.customer_name}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
-                  </span>
-                </div>
+              
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                {description}
+              </p>
+              
+              <div className="flex justify-between items-center">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/work-orders/${workOrder?.id || ''}`}>
+                    View Details
+                  </Link>
+                </Button>
               </div>
-              {order.service_type && (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                    {order.service_type}
-                  </span>
-                </div>
-              )}
             </div>
+          );
+        })}
+        
+        {safeWorkOrders.length > 5 && (
+          <div className="text-center pt-4">
+            <Button variant="outline" asChild>
+              <Link to="/work-orders">
+                View All Work Orders ({safeWorkOrders.length})
+              </Link>
+            </Button>
           </div>
-        ))}
-      </div>
-
-      {/* View All Link */}
-      <div className="pt-4 border-t border-gray-100">
-        <Button 
-          variant="outline" 
-          className="w-full gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-          onClick={() => window.open('/work-orders', '_blank')}
-        >
-          <ExternalLink className="h-4 w-4" />
-          View All Work Orders
-        </Button>
+        )}
       </div>
     </div>
   );

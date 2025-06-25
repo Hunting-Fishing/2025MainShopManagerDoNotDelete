@@ -13,43 +13,73 @@ export function useWorkOrders() {
 
   // Memoized fetch function to prevent unnecessary re-renders
   const fetchWorkOrders = useCallback(async () => {
+    // Don't fetch if auth is still loading
+    if (authLoading) {
+      console.log('useWorkOrders: Auth still loading, waiting...');
+      return;
+    }
+
+    // Don't fetch if not authenticated
+    if (!isAuthenticated) {
+      console.log('useWorkOrders: User not authenticated, clearing data');
+      setWorkOrders([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching work orders for authenticated user...');
+      console.log('useWorkOrders: Fetching work orders for authenticated user...');
+      
       const data = await getAllWorkOrders();
-      setWorkOrders(data || []);
+      console.log('useWorkOrders: Received data:', data);
+      
+      // Ensure data is always an array
+      const safeData = Array.isArray(data) ? data : [];
+      setWorkOrders(safeData);
+      
     } catch (err: any) {
+      console.error('useWorkOrders: Error fetching work orders:', err);
       const errorMessage = err?.message || 'Failed to fetch work orders';
       setError(errorMessage);
-      console.error('Work orders fetch error:', err);
-      handleApiError(err, 'Failed to fetch work orders');
+      setWorkOrders([]); // Set empty array on error
+      
+      // Handle API errors but don't throw
+      try {
+        handleApiError(err, 'Failed to fetch work orders');
+      } catch (handleError) {
+        console.error('useWorkOrders: Error in handleApiError:', handleError);
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   useEffect(() => {
     let isMounted = true;
     
-    // Don't fetch if still loading auth or not authenticated
-    if (authLoading) return;
+    console.log('useWorkOrders: Effect triggered', { authLoading, isAuthenticated });
     
-    if (!isAuthenticated) {
-      console.log('User not authenticated, skipping work orders fetch');
+    // Add delay to ensure auth state is stable
+    const timer = setTimeout(() => {
       if (isMounted) {
-        setLoading(false);
-        setWorkOrders([]);
+        fetchWorkOrders();
       }
-      return;
-    }
-
-    fetchWorkOrders();
+    }, 100);
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
-  }, [isAuthenticated, authLoading, fetchWorkOrders]);
+  }, [fetchWorkOrders]);
 
-  return { workOrders, loading, error, setWorkOrders, refetch: fetchWorkOrders };
+  return { 
+    workOrders, 
+    loading, 
+    error, 
+    setWorkOrders, 
+    refetch: fetchWorkOrders 
+  };
 }
