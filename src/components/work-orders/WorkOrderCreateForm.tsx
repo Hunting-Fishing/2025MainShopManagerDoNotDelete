@@ -13,7 +13,7 @@ interface WorkOrderCreateFormProps {
 export function WorkOrderCreateForm({ form, onSubmit }: WorkOrderCreateFormProps) {
   const navigate = useNavigate();
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = async (data: any) => {
     console.log('Work order form submitted:', data);
     if (onSubmit) {
       onSubmit();
