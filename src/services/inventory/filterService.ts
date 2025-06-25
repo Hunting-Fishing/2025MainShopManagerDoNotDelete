@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { InventoryItemExtended } from '@/types/inventory';
+import { formatInventoryItem } from '@/utils/inventory/inventoryUtils';
 
 export async function filterInventoryItems(filters: any): Promise<InventoryItemExtended[]> {
   try {
@@ -39,7 +40,8 @@ export async function filterInventoryItems(filters: any): Promise<InventoryItemE
     }
 
     console.log(`Successfully filtered ${data?.length || 0} inventory items`);
-    return data || [];
+    // Format each item to ensure it matches InventoryItemExtended type
+    return data?.map(formatInventoryItem) || [];
   } catch (error) {
     console.error('Error in filterInventoryItems:', error);
     throw error;
