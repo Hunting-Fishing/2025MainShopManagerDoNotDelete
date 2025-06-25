@@ -10,6 +10,7 @@ export { useWorkOrderService } from '@/hooks/useWorkOrderService';
 export { WorkOrderService as default } from './WorkOrderService';
 
 // Create singleton instances for immediate use
+import { WorkOrderService } from './WorkOrderService';
 const workOrderService = new WorkOrderService();
 
 export const getAllWorkOrders = () => workOrderService.getAllWorkOrders();

@@ -120,8 +120,9 @@ export interface WorkOrder {
   inventory_items?: WorkOrderInventoryItem[];
 }
 
-// Form-related types
+// Enhanced form-related types to include all fields being used
 export interface WorkOrderFormValues {
+  // Basic fields
   customer: string;
   description: string;
   status: string;
@@ -130,13 +131,27 @@ export interface WorkOrderFormValues {
   location: string;
   dueDate: string;
   notes: string;
+  
+  // Vehicle fields
   vehicleMake: string;
   vehicleModel: string;
   vehicleYear: string;
   licensePlate: string;
   vin: string;
   odometer: string;
+  
+  // Inventory
   inventoryItems: WorkOrderInventoryItem[];
+  
+  // Extended fields that might be used in forms
+  customerId?: string;
+  vehicleId?: string;
+  technicianId?: string;
+  serviceType?: string;
+  estimatedHours?: number;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerAddress?: string;
 }
 
 // Template interface

@@ -80,18 +80,19 @@ export class WorkOrderService {
 
   private mapFormToWorkOrder(formData: Partial<WorkOrderFormValues>): any {
     return {
-      customer_id: formData.customerId,
-      vehicle_id: formData.vehicleId,
+      // Map form fields to database fields
+      customer_id: (formData as any).customerId,
+      vehicle_id: (formData as any).vehicleId,
       description: formData.description,
       status: formData.status,
       priority: formData.priority,
       technician: formData.technician,
-      technician_id: formData.technicianId,
+      technician_id: (formData as any).technicianId,
       location: formData.location,
       due_date: formData.dueDate,
       notes: formData.notes,
-      service_type: formData.serviceType,
-      estimated_hours: formData.estimatedHours,
+      service_type: (formData as any).serviceType,
+      estimated_hours: (formData as any).estimatedHours,
       
       // Vehicle information (if creating inline)
       vehicle_make: formData.vehicleMake,
@@ -103,9 +104,9 @@ export class WorkOrderService {
       
       // Customer information (if creating inline)
       customer_name: formData.customer,
-      customer_email: formData.customerEmail,
-      customer_phone: formData.customerPhone,
-      customer_address: formData.customerAddress,
+      customer_email: (formData as any).customerEmail,
+      customer_phone: (formData as any).customerPhone,
+      customer_address: (formData as any).customerAddress,
     };
   }
 }

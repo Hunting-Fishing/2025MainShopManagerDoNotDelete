@@ -1,160 +1,45 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { getCustomerById } from '@/services/customer/customerQueryService';
-import { getWorkOrdersByCustomerId } from '@/services/workOrder';
-import { useCustomerLoyalty } from '@/hooks/useCustomerLoyalty';
-import { Customer, CustomerCommunication, CustomerNote } from '@/types/customer';
-import { CustomerInteraction } from '@/types/interaction';
+import { useState, useEffect } from 'react';
+import { Customer } from '@/types/customer';
 import { WorkOrder } from '@/types/workOrder';
+import { getWorkOrdersByCustomerId } from '@/services/workOrder';
 
-export const useCustomerDetails = (customerId: string | undefined) => {
+export function useCustomerDetails(customerId: string) {
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [customerWorkOrders, setCustomerWorkOrders] = useState<WorkOrder[]>([]);
-  const [customerInteractions, setCustomerInteractions] = useState<CustomerInteraction[]>([]);
-  const [customerCommunications, setCustomerCommunications] = useState<CustomerCommunication[]>([]);
-  const [customerNotes, setCustomerNotes] = useState<CustomerNote[]>([]);
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [workOrdersLoading, setWorkOrdersLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [workOrdersError, setWorkOrdersError] = useState<string | null>(null);
-  const [addInteractionOpen, setAddInteractionOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("service");
 
-  const { toast } = useToast();
-  
-  // Use the loyalty hook
-  const { customerLoyalty, loading: loyaltyLoading, refreshLoyalty } = useCustomerLoyalty(customerId);
-
-  const fetchCustomerData = useCallback(async () => {
-    if (!customerId || customerId === "undefined") {
-      setError("Invalid customer ID");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      console.log('useCustomerDetails: Fetching customer data for ID:', customerId);
+  useEffect(() => {
+    const fetchCustomerDetails = async () => {
+      if (!customerId) return;
+      
       setLoading(true);
       setError(null);
       
-      const customerData = await getCustomerById(customerId);
-      
-      if (!customerData) {
-        setError("Customer not found");
-        setCustomer(null);
-      } else {
-        console.log('useCustomerDetails: Customer data loaded:', customerData);
-        setCustomer(customerData);
+      try {
+        // For now, just fetch work orders
+        // Customer data would need to be fetched from customer service
+        const orders = await getWorkOrdersByCustomerId(customerId);
+        setWorkOrders(orders);
+      } catch (err) {
+        console.error('Error fetching customer details:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch customer details');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('useCustomerDetails: Error fetching customer:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load customer';
-      setError(errorMessage);
-      setCustomer(null);
-      
-      toast({
-        title: "Error",
-        description: "Failed to load customer details. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [customerId, toast]);
+    };
 
-  const fetchWorkOrders = useCallback(async () => {
-    if (!customerId || customerId === "undefined") {
-      setWorkOrdersLoading(false);
-      setCustomerWorkOrders([]);
-      return;
-    }
-
-    try {
-      console.log('useCustomerDetails: Fetching work orders for customer:', customerId);
-      setWorkOrdersLoading(true);
-      setWorkOrdersError(null);
-      
-      const workOrders = await getWorkOrdersByCustomerId(customerId);
-      console.log('useCustomerDetails: Work orders loaded:', workOrders.length);
-      setCustomerWorkOrders(workOrders || []);
-    } catch (err) {
-      console.error('useCustomerDetails: Error fetching work orders:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load work orders';
-      setWorkOrdersError(errorMessage);
-      setCustomerWorkOrders([]);
-      
-      toast({
-        title: "Warning",
-        description: "Failed to load work orders for this customer.",
-        variant: "destructive",
-      });
-    } finally {
-      setWorkOrdersLoading(false);
-    }
-  }, [customerId, toast]);
-
-  const refreshCustomerData = useCallback(async () => {
-    await Promise.all([
-      fetchCustomerData(),
-      fetchWorkOrders(),
-      refreshLoyalty()
-    ]);
-  }, [fetchCustomerData, fetchWorkOrders, refreshLoyalty]);
-
-  // Initial data fetch
-  useEffect(() => {
-    fetchCustomerData();
-    fetchWorkOrders();
-  }, [fetchCustomerData, fetchWorkOrders]);
-
-  const handleInteractionAdded = useCallback((interaction: CustomerInteraction) => {
-    setCustomerInteractions(prev => [interaction, ...prev]);
-    setAddInteractionOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "Interaction added successfully",
-    });
-  }, [toast]);
-
-  const handleCommunicationAdded = useCallback((communication: CustomerCommunication) => {
-    setCustomerCommunications(prev => [communication, ...prev]);
-    
-    toast({
-      title: "Success", 
-      description: "Communication added successfully",
-    });
-  }, [toast]);
-
-  const handleNoteAdded = useCallback((note: CustomerNote) => {
-    setCustomerNotes(prev => [note, ...prev]);
-    
-    toast({
-      title: "Success",
-      description: "Note added successfully", 
-    });
-  }, [toast]);
+    fetchCustomerDetails();
+  }, [customerId]);
 
   return {
     customer,
-    customerWorkOrders,
-    customerInteractions,
-    customerCommunications,
-    customerNotes,
-    customerLoyalty,
+    workOrders,
     loading,
-    workOrdersLoading,
-    loyaltyLoading,
     error,
-    workOrdersError,
-    addInteractionOpen,
-    setAddInteractionOpen,
-    activeTab,
-    setActiveTab,
-    refreshCustomerData,
-    handleInteractionAdded,
-    handleCommunicationAdded,
-    handleNoteAdded
+    refetch: () => {
+      // Trigger refetch if needed
+    }
   };
-};
+}
