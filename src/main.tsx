@@ -60,7 +60,7 @@ ReactDOM.createRoot(rootElement).render(
                       initialIsOpen={false} 
                       position="bottom"
                     />
-                  </GlobalErrorBoundar>
+                  </GlobalErrorBoundary>
                 </BrowserRouter>
               </NotificationsProvider>
             </ImpersonationProvider>
