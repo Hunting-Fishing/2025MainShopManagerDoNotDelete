@@ -1,7 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
 import { InventoryForm } from "@/components/inventory/form/InventoryForm";
-import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
 import { InventoryItemExtended } from "@/types/inventory";
 import { toast } from "@/hooks/use-toast";
