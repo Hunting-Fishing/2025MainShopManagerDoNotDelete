@@ -46,27 +46,27 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <LanguageProvider>
-            <ImpersonationProvider>
-              <NotificationsProvider>
-                <BrowserRouter>
-                  <GlobalErrorBoundary>
+    <GlobalErrorBoundary>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <LanguageProvider>
+              <ImpersonationProvider>
+                <NotificationsProvider>
+                  <BrowserRouter>
                     <ConsoleErrorLogger />
                     <App />
                     <ReactQueryDevtools 
                       initialIsOpen={false} 
                       position="bottom"
                     />
-                  </GlobalErrorBoundary>
-                </BrowserRouter>
-              </NotificationsProvider>
-            </ImpersonationProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </HelmetProvider>
+                  </BrowserRouter>
+                </NotificationsProvider>
+              </ImpersonationProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
+    </GlobalErrorBoundary>
   </React.StrictMode>
 );
