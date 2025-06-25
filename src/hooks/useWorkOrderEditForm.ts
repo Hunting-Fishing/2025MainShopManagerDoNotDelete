@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
+import { WorkOrder, WorkOrderStatusType, WorkOrderInventoryItem } from "@/types/workOrder";
 import { toast } from "sonner";
 import { useWorkOrderService } from './useWorkOrderService';
 import { useNavigate } from "react-router-dom";
@@ -48,6 +48,24 @@ export const useWorkOrderEditForm = (workOrderId: string) => {
       [field]: value,
     }));
   }, []);
+
+  // Helper function to ensure inventory items have proper structure
+  const normalizeInventoryItems = (items: any[]): WorkOrderInventoryItem[] => {
+    return items.map(item => ({
+      id: item.id || undefined, // Allow undefined for new items
+      name: item.name || '',
+      sku: item.sku || '',
+      category: item.category || '',
+      quantity: item.quantity || 0,
+      unit_price: item.unit_price || 0,
+      total: item.total || (item.quantity * item.unit_price) || 0,
+      notes: item.notes,
+      itemStatus: item.itemStatus,
+      estimatedArrivalDate: item.estimatedArrivalDate,
+      supplierName: item.supplierName,
+      supplierOrderRef: item.supplierOrderRef
+    }));
+  };
   
   // Function to handle form submission
   const handleSubmit = useCallback(async (status?: WorkOrderStatusType) => {
@@ -83,7 +101,10 @@ export const useWorkOrderEditForm = (workOrderId: string) => {
         location: workOrderToSave.location,
         dueDate: workOrderToSave.due_date || workOrderToSave.dueDate,
         notes: workOrderToSave.notes,
-        inventoryItems: workOrderToSave.inventoryItems || workOrderToSave.inventory_items || [],
+        // Normalize inventory items to ensure proper structure
+        inventoryItems: normalizeInventoryItems(
+          workOrderToSave.inventoryItems || workOrderToSave.inventory_items || []
+        ),
       };
       
       const result = await updateWorkOrder(workOrderId, formData);

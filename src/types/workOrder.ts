@@ -16,7 +16,7 @@ export interface TimeEntry {
 }
 
 export interface WorkOrderInventoryItem {
-  id: string;
+  id?: string; // Make id optional since items might not have IDs when being created
   name: string;
   sku: string;
   category: string;
