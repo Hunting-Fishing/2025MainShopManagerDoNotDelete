@@ -25,6 +25,14 @@ const Settings = React.lazy(() => import('@/pages/Settings'));
 const CustomerDetailsPage = React.lazy(() => import('@/pages/CustomersPage'));
 const CustomerEdit = React.lazy(() => import('@/pages/CustomerEdit'));
 
+// Placeholder components for missing pages
+const PlaceholderPage = ({ title }: { title: string }) => (
+  <div className="p-6">
+    <h1 className="text-2xl font-bold mb-4">{title}</h1>
+    <p className="text-gray-600">This page is under development.</p>
+  </div>
+);
+
 function App() {
   return (
     <div className="min-h-screen bg-background">
@@ -51,6 +59,26 @@ function App() {
                     <Route path="/inventory/*" element={<Inventory />} />
                     <Route path="/team/*" element={<Team />} />
                     <Route path="/settings/*" element={<Settings />} />
+                    
+                    {/* Add missing routes with placeholder pages */}
+                    <Route path="/inventory/suppliers" element={<PlaceholderPage title="Suppliers" />} />
+                    <Route path="/stock-control" element={<PlaceholderPage title="Stock Control" />} />
+                    <Route path="/purchase-orders" element={<PlaceholderPage title="Purchase Orders" />} />
+                    <Route path="/calendar" element={<PlaceholderPage title="Calendar" />} />
+                    <Route path="/service-reminders" element={<PlaceholderPage title="Service Reminders" />} />
+                    <Route path="/customer-comms" element={<PlaceholderPage title="Customer Communications" />} />
+                    <Route path="/call-logger" element={<PlaceholderPage title="Call Logger" />} />
+                    <Route path="/quotes" element={<PlaceholderPage title="Quotes" />} />
+                    <Route path="/invoices" element={<PlaceholderPage title="Invoices" />} />
+                    <Route path="/service-board" element={<PlaceholderPage title="Service Board" />} />
+                    <Route path="/company-profile" element={<PlaceholderPage title="Company Profile" />} />
+                    <Route path="/staff-members" element={<PlaceholderPage title="Staff Members" />} />
+                    <Route path="/vehicles" element={<PlaceholderPage title="Vehicles" />} />
+                    <Route path="/documents" element={<PlaceholderPage title="Documents" />} />
+                    <Route path="/service-editor" element={<PlaceholderPage title="Service Editor" />} />
+                    <Route path="/service-library" element={<PlaceholderPage title="Service Library" />} />
+                    <Route path="/help" element={<PlaceholderPage title="Help" />} />
+                    <Route path="/security" element={<PlaceholderPage title="Security" />} />
                   </Routes>
                 </React.Suspense>
               </Layout>
