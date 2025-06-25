@@ -23,6 +23,7 @@ const Settings = React.lazy(() => import('@/pages/Settings'));
 
 // Customer detail pages
 const CustomerDetailsPage = React.lazy(() => import('@/pages/CustomersPage'));
+const CustomerEdit = React.lazy(() => import('@/pages/CustomerEdit'));
 
 function App() {
   return (
@@ -43,8 +44,9 @@ function App() {
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/customers" element={<Customers />} />
-                    <Route path="/customers/:customerId" element={<CustomerDetailsPage />} />
                     <Route path="/customers/create" element={<CustomerDetailsPage />} />
+                    <Route path="/customers/:customerId" element={<CustomerDetailsPage />} />
+                    <Route path="/customers/:customerId/edit" element={<CustomerEdit />} />
                     <Route path="/work-orders/*" element={<WorkOrders />} />
                     <Route path="/inventory/*" element={<Inventory />} />
                     <Route path="/team/*" element={<Team />} />
