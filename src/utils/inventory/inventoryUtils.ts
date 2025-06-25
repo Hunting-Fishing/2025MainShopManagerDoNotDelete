@@ -9,7 +9,7 @@ import { getInventoryStatus, needsReorder } from "./statusUtils";
 export const getInventoryItemById = async (id: string): Promise<InventoryItemExtended | null> => {
   try {
     const { data, error } = await supabase
-      .from('inventory')
+      .from('inventory_items')
       .select('*')
       .eq('id', id)
       .single();

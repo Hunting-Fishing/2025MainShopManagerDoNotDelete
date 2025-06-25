@@ -25,9 +25,15 @@ export function useInventoryData() {
     queryKey: ['inventory-items'],
     queryFn: async () => {
       console.log('🔄 useInventoryData: Fetching inventory items...');
-      const result = await getInventoryItems();
-      console.log('✅ useInventoryData: Successfully fetched', result?.length || 0, 'items');
-      return result || [];
+      try {
+        const result = await getInventoryItems();
+        console.log('✅ useInventoryData: Successfully fetched', result?.length || 0, 'items');
+        console.log('📊 useInventoryData: Sample item structure:', result?.[0]);
+        return result || [];
+      } catch (error) {
+        console.error('❌ useInventoryData: Error fetching items:', error);
+        throw error;
+      }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -47,6 +53,13 @@ export function useInventoryData() {
         getInventoryLocations(),
         getInventoryStatuses()
       ]);
+      
+      console.log('✅ useInventoryData: Filter options loaded:', {
+        categories: categories.length,
+        suppliers: suppliers.length,
+        locations: locations.length,
+        statuses: statuses.length
+      });
       
       return {
         categories,
@@ -70,6 +83,7 @@ export function useInventoryData() {
   // Memoized inventory statistics
   const inventoryStats = useMemo(() => {
     if (!items.length) {
+      console.log('📊 useInventoryData: No items for stats calculation');
       return {
         totalItems: 0,
         totalValue: 0,
@@ -87,6 +101,13 @@ export function useInventoryData() {
     }).length;
     const outOfStockCount = items.filter(item => (Number(item.quantity) || 0) <= 0).length;
 
+    console.log('📊 useInventoryData: Stats calculated:', {
+      totalItems,
+      totalValue,
+      lowStockCount,
+      outOfStockCount
+    });
+
     return {
       totalItems,
       totalValue,
@@ -97,6 +118,13 @@ export function useInventoryData() {
 
   const isLoading = itemsLoading || filtersLoading;
   const error = itemsError?.message || null;
+
+  console.log('🔍 useInventoryData: Current state:', {
+    itemsCount: items.length,
+    isLoading,
+    hasError: !!error,
+    errorMessage: error
+  });
 
   return {
     // Data
