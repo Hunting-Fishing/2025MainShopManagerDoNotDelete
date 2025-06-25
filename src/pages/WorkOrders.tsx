@@ -4,7 +4,6 @@ import { Routes, Route } from 'react-router-dom';
 import WorkOrdersHeader from '@/components/work-orders/WorkOrdersHeader';
 import { WorkOrdersTable } from '@/components/work-orders/WorkOrdersTable';
 import { WorkOrderDetailsView } from '@/components/work-orders/WorkOrderDetailsView';
-import { WorkOrderCreateForm } from '@/components/work-orders/WorkOrderCreateForm';
 import { useWorkOrders } from '@/hooks/useWorkOrders';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
@@ -49,15 +48,7 @@ export default function WorkOrders() {
           <WorkOrdersTable workOrders={workOrders} />
         </div>
       } />
-      <Route path="/create" element={
-        <WorkOrderCreateForm 
-          form={{} as any} 
-          onSubmit={() => {}} 
-        />
-      } />
-      <Route path="/:id" element={
-        <WorkOrderDetailsView workOrderId="placeholder-id" />
-      } />
+      <Route path="/:id" element={<WorkOrderDetailsView />} />
     </Routes>
   );
 }

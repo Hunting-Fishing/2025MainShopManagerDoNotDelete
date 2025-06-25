@@ -3,14 +3,22 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { WorkOrderForm } from './WorkOrderForm';
 
 interface WorkOrderCreateFormProps {
-  form: any;
-  onSubmit: () => void;
+  form?: any;
+  onSubmit?: () => void;
 }
 
 export function WorkOrderCreateForm({ form, onSubmit }: WorkOrderCreateFormProps) {
   const navigate = useNavigate();
+
+  const handleFormSubmit = (data: any) => {
+    console.log('Work order form submitted:', data);
+    if (onSubmit) {
+      onSubmit();
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -19,17 +27,7 @@ export function WorkOrderCreateForm({ form, onSubmit }: WorkOrderCreateFormProps
           <CardTitle>Create New Work Order</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <p>Work order creation form will be implemented here.</p>
-            <div className="mt-4 space-x-2">
-              <Button variant="outline" onClick={() => navigate('/work-orders')}>
-                Cancel
-              </Button>
-              <Button onClick={onSubmit}>
-                Create Work Order
-              </Button>
-            </div>
-          </div>
+          <WorkOrderForm onSubmit={handleFormSubmit} />
         </CardContent>
       </Card>
     </div>
