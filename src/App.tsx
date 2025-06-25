@@ -54,7 +54,7 @@ function App() {
                     <Route path="/dashboard" element={<Dashboard />} />
                     
                     {/* Work Orders Routes - Fixed */}
-                    <Route path="/work-orders/*" element={<WorkOrders />} />
+                    <Route path="/work-orders" element={<WorkOrders />} />
                     <Route path="/work-orders/create" element={<WorkOrderCreate />} />
                     <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
                     

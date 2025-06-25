@@ -2,18 +2,13 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import WorkOrdersHeader from '@/components/work-orders/WorkOrdersHeader';
-import { WorkOrdersTable } from '@/components/work-orders/WorkOrdersTable';
+import { WorkOrderTable } from '@/components/work-orders/WorkOrderTable';
 import { WorkOrderDetailsView } from '@/components/work-orders/WorkOrderDetailsView';
+import { WorkOrderErrorBoundary } from '@/components/work-orders/WorkOrderErrorBoundary';
 import { useWorkOrders } from '@/hooks/useWorkOrders';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-/**
- * ⚠️ CRITICAL - DO NOT REPLACE WITH PLACEHOLDERS ⚠️
- * This page uses FULL work orders functionality with live database data
- * Includes: work order list, creation, details, management, status tracking
- * All components exist in /src/components/work-orders/
- */
-export default function WorkOrders() {
+function WorkOrdersList() {
   const { workOrders, loading, error } = useWorkOrders();
 
   // Show loading state while fetching data
@@ -41,14 +36,20 @@ export default function WorkOrders() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={
-        <div className="p-6 space-y-6">
-          <WorkOrdersHeader workOrders={workOrders} />
-          <WorkOrdersTable workOrders={workOrders} />
-        </div>
-      } />
-      <Route path="/:id" element={<WorkOrderDetailsView />} />
-    </Routes>
+    <div className="p-6 space-y-6">
+      <WorkOrdersHeader workOrders={workOrders} />
+      <WorkOrderTable workOrders={workOrders} />
+    </div>
+  );
+}
+
+export default function WorkOrders() {
+  return (
+    <WorkOrderErrorBoundary>
+      <Routes>
+        <Route path="/" element={<WorkOrdersList />} />
+        <Route path="/:id" element={<WorkOrderDetailsView />} />
+      </Routes>
+    </WorkOrderErrorBoundary>
   );
 }

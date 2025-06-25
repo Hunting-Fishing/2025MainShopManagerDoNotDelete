@@ -1,22 +1,27 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { WorkOrderForm } from './WorkOrderForm';
+import { WorkOrderErrorBoundary } from './WorkOrderErrorBoundary';
 
 interface WorkOrderCreateFormProps {
   form?: any;
-  onSubmit?: () => void;
+  onSubmit?: () => Promise<void>;
 }
 
-export function WorkOrderCreateForm({ form, onSubmit }: WorkOrderCreateFormProps) {
+function WorkOrderCreateFormContent({ form, onSubmit }: WorkOrderCreateFormProps) {
   const navigate = useNavigate();
 
   const handleFormSubmit = async (data: any) => {
-    console.log('Work order form submitted:', data);
-    if (onSubmit) {
-      onSubmit();
+    try {
+      console.log('Work order form submitted:', data);
+      if (onSubmit) {
+        await onSubmit();
+      }
+    } catch (error) {
+      console.error('Error submitting work order form:', error);
+      throw error; // Re-throw to be caught by error boundary
     }
   };
 
@@ -31,5 +36,13 @@ export function WorkOrderCreateForm({ form, onSubmit }: WorkOrderCreateFormProps
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export function WorkOrderCreateForm({ form, onSubmit }: WorkOrderCreateFormProps) {
+  return (
+    <WorkOrderErrorBoundary>
+      <WorkOrderCreateFormContent form={form} onSubmit={onSubmit} />
+    </WorkOrderErrorBoundary>
   );
 }
