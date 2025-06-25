@@ -7,7 +7,7 @@ import { InventoryItemExtended } from '@/types/inventory';
 export function useInventoryItems() {
   const {
     data: items = [],
-    isLoading: loading,
+    isLoading,
     error,
     refetch
   } = useQuery({
@@ -38,11 +38,17 @@ export function useInventoryItems() {
     }
   };
 
+  const fetchItems = async () => {
+    await refetch();
+  };
+
   return {
     items,
-    loading,
+    loading: isLoading, // Keep both for backward compatibility
+    isLoading,
     error: error?.message || null,
     updateItem,
-    refetch
+    refetch,
+    fetchItems
   };
 }

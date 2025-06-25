@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { WorkOrdersHeader } from '@/components/work-orders/WorkOrdersHeader';
+import WorkOrdersHeader from '@/components/work-orders/WorkOrdersHeader';
 import { WorkOrdersTable } from '@/components/work-orders/WorkOrdersTable';
 import { WorkOrderDetailsView } from '@/components/work-orders/WorkOrderDetailsView';
 import { WorkOrderCreateForm } from '@/components/work-orders/WorkOrderCreateForm';
@@ -13,16 +13,26 @@ import { WorkOrderCreateForm } from '@/components/work-orders/WorkOrderCreateFor
  * All components exist in /src/components/work-orders/
  */
 export default function WorkOrders() {
+  // Mock data for now - in production this would come from a hook
+  const mockWorkOrders = [];
+
   return (
     <Routes>
       <Route path="/" element={
         <div className="p-6 space-y-6">
-          <WorkOrdersHeader />
-          <WorkOrdersTable />
+          <WorkOrdersHeader workOrders={mockWorkOrders} />
+          <WorkOrdersTable workOrders={mockWorkOrders} />
         </div>
       } />
-      <Route path="/create" element={<WorkOrderCreateForm />} />
-      <Route path="/:id" element={<WorkOrderDetailsView />} />
+      <Route path="/create" element={
+        <WorkOrderCreateForm 
+          form={{} as any} 
+          onSubmit={() => {}} 
+        />
+      } />
+      <Route path="/:id" element={
+        <WorkOrderDetailsView workOrderId="placeholder-id" />
+      } />
     </Routes>
   );
 }
