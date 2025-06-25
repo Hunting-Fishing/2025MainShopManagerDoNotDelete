@@ -1,11 +1,17 @@
 
 import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { SettingsContainer } from '@/components/settings/SettingsContainer';
 
+/**
+ * IMPORTANT: This page uses full settings functionality
+ * DO NOT replace with placeholder text - full functionality exists
+ * Includes: company settings, team settings, notifications, branding, etc.
+ */
 export default function Settings() {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
-      <p className="text-gray-600">Settings features coming soon.</p>
-    </div>
+    <Routes>
+      <Route path="/*" element={<SettingsContainer />} />
+    </Routes>
   );
 }

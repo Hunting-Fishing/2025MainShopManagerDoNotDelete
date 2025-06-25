@@ -1,41 +1,48 @@
 
 import { useState, useEffect } from 'react';
-import { getInventoryItems } from '@/services/inventory/crudService';
+import { useQuery } from '@tanstack/react-query';
+import { getInventoryItems, updateInventoryItem } from '@/services/inventoryService';
 import { InventoryItemExtended } from '@/types/inventory';
 
 export function useInventoryItems() {
-  const [items, setItems] = useState<InventoryItemExtended[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    data: items = [],
+    isLoading: loading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['inventory-items'],
+    queryFn: async () => {
+      console.log('🔄 useInventoryItems: Fetching inventory items...');
+      const result = await getInventoryItems();
+      console.log('✅ useInventoryItems: Successfully fetched', result?.length || 0, 'items');
+      return result || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 
-  const fetchItems = async () => {
-    console.log('useInventoryItems: Starting to fetch items...');
-    setIsLoading(true);
+  const updateItem = async (id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> => {
     try {
-      const data = await getInventoryItems();
-      console.log('useInventoryItems: Received data:', data);
-      console.log('useInventoryItems: Number of items:', data.length);
+      console.log('🔄 useInventoryItems: Updating item', id, 'with:', updates);
+      const updatedItem = await updateInventoryItem(id, updates);
+      console.log('✅ useInventoryItems: Successfully updated item:', updatedItem);
       
-      if (data.length > 0) {
-        console.log('useInventoryItems: First item:', data[0]);
-      }
+      // Refetch to ensure we have the latest data
+      refetch();
       
-      setItems(data);
-      return data;
+      return updatedItem;
     } catch (error) {
-      console.error("useInventoryItems: Failed to fetch inventory items:", error);
-      return [];
-    } finally {
-      setIsLoading(false);
-      console.log('useInventoryItems: Finished loading');
+      console.error('❌ useInventoryItems: Error updating item:', error);
+      throw error;
     }
   };
 
-  useEffect(() => {
-    console.log('useInventoryItems: Component mounted, fetching items...');
-    fetchItems();
-  }, []);
-
-  console.log('useInventoryItems: Current state - items:', items.length, 'isLoading:', isLoading);
-
-  return { items, isLoading, fetchItems };
+  return {
+    items,
+    loading,
+    error: error?.message || null,
+    updateItem,
+    refetch
+  };
 }
