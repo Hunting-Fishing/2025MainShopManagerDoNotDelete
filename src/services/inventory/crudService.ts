@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { InventoryItemExtended } from '@/types/inventory';
 import { formatInventoryForApi, formatInventoryItem } from '@/utils/inventory/inventoryUtils';
@@ -7,7 +8,7 @@ export async function getInventoryItems(): Promise<InventoryItemExtended[]> {
     console.log('Fetching inventory items from database...');
     
     const { data, error } = await supabase
-      .from('inventory')
+      .from('inventory_items')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -29,7 +30,7 @@ export async function getInventoryItemById(id: string): Promise<InventoryItemExt
     console.log('Fetching inventory item by ID:', id);
     
     const { data, error } = await supabase
-      .from('inventory')
+      .from('inventory_items')
       .select('*')
       .eq('id', id)
       .single();
@@ -56,7 +57,7 @@ export async function createInventoryItem(item: Omit<InventoryItemExtended, 'id'
     const apiData = formatInventoryForApi(item);
     
     const { data, error } = await supabase
-      .from('inventory')
+      .from('inventory_items')
       .insert([apiData])
       .select()
       .single();
@@ -81,7 +82,7 @@ export async function updateInventoryItem(id: string, updates: Partial<Inventory
     const apiData = formatInventoryForApi(updates);
     
     const { data, error } = await supabase
-      .from('inventory')
+      .from('inventory_items')
       .update(apiData)
       .eq('id', id)
       .select()
@@ -109,7 +110,7 @@ export async function deleteInventoryItem(id: string): Promise<void> {
     console.log('Deleting inventory item:', id);
     
     const { error } = await supabase
-      .from('inventory')
+      .from('inventory_items')
       .delete()
       .eq('id', id);
 
@@ -130,7 +131,7 @@ export async function clearAllInventoryItems(): Promise<void> {
     console.log('Clearing all inventory items from database...');
     
     const { error } = await supabase
-      .from('inventory')
+      .from('inventory_items')
       .delete()
       .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records (using a condition that's always true)
 
