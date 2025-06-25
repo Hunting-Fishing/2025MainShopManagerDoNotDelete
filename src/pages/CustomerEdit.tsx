@@ -3,6 +3,8 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { CustomerForm } from '@/components/customers/form/CustomerForm';
 import { useCustomerEdit } from '@/hooks/useCustomerEdit';
+import type { CustomerFormValues } from '@/components/customers/form/schemas/customerSchema';
+import { formatVehicleYear } from '@/types/customer/vehicle';
 
 export default function CustomerEdit() {
   const { customerId } = useParams<{ customerId: string }>();
@@ -44,6 +46,23 @@ export default function CustomerEdit() {
     );
   }
 
+  // Transform customer data to match form expected format
+  const transformedFormValues: CustomerFormValues = {
+    ...formValues,
+    // Ensure vehicles array is properly formatted for the form
+    vehicles: formValues.vehicles?.map(vehicle => ({
+      ...vehicle,
+      year: formatVehicleYear(vehicle.year), // Convert number to string if needed
+    })) || [],
+    // Ensure tags and segments are arrays
+    tags: Array.isArray(formValues.tags) ? formValues.tags : [],
+    segments: Array.isArray(formValues.segments) ? formValues.segments : [],
+    // Set default boolean values if undefined
+    is_fleet: formValues.is_fleet || false,
+    auto_billing: formValues.auto_billing || false,
+    terms_agreed: formValues.terms_agreed || false,
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
@@ -52,7 +71,7 @@ export default function CustomerEdit() {
       </div>
       
       <CustomerForm
-        defaultValues={formValues}
+        defaultValues={transformedFormValues}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         availableShops={availableShops}
