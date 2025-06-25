@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getAllCustomers } from '@/services/customers/crudService';
+import { getAllCustomers } from '@/services/customer/customerQueryService';
 import { Customer } from '@/types/customer';
 
 /**
