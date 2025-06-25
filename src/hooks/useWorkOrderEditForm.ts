@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { WorkOrder, WorkOrderStatusType, WorkOrderInventoryItem } from "@/types/workOrder";
 import { toast } from "sonner";
@@ -10,7 +11,7 @@ export function useWorkOrderEditForm(workOrderId: string) {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const {
-    getWorkOrderById,
+    getWorkOrder,
     updateWorkOrder: updateWorkOrderService,
     deleteWorkOrder: deleteWorkOrderService,
   } = useWorkOrderService();
@@ -20,7 +21,7 @@ export function useWorkOrderEditForm(workOrderId: string) {
       setLoading(true);
       setError(null);
       try {
-        const fetchedWorkOrder = await getWorkOrderById(workOrderId);
+        const fetchedWorkOrder = await getWorkOrder(workOrderId);
         setWorkOrder(fetchedWorkOrder);
       } catch (err: any) {
         setError(err.message || "Failed to load work order");
@@ -31,7 +32,7 @@ export function useWorkOrderEditForm(workOrderId: string) {
     };
 
     fetchWorkOrder();
-  }, [workOrderId, getWorkOrderById]);
+  }, [workOrderId, getWorkOrder]);
 
   const handleSubmit = useCallback(
     async (values: any) => {
