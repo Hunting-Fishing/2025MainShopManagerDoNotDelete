@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { InventoryItemExtended } from '@/types/inventory';
 import { formatInventoryForApi, formatInventoryItem } from '@/utils/inventory/inventoryUtils';
@@ -122,6 +121,27 @@ export async function deleteInventoryItem(id: string): Promise<void> {
     console.log('Successfully deleted inventory item:', id);
   } catch (error) {
     console.error('Error in deleteInventoryItem:', error);
+    throw error;
+  }
+}
+
+export async function clearAllInventoryItems(): Promise<void> {
+  try {
+    console.log('Clearing all inventory items from database...');
+    
+    const { error } = await supabase
+      .from('inventory')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records (using a condition that's always true)
+
+    if (error) {
+      console.error('Error clearing all inventory items:', error);
+      throw error;
+    }
+
+    console.log('Successfully cleared all inventory items');
+  } catch (error) {
+    console.error('Error in clearAllInventoryItems:', error);
     throw error;
   }
 }
