@@ -3,8 +3,8 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Eye, Edit, Phone, Mail } from "lucide-react";
 import { CustomerEntity } from "@/domain/customer/entities/Customer";
-import { Eye, Edit, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface CustomerTableProps {
@@ -15,30 +15,19 @@ interface CustomerTableProps {
 export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-slate-200">
-        <div className="p-6">
-          <div className="animate-pulse space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex space-x-4">
-                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
-                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
-                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
-                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="space-y-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-16 bg-slate-100 rounded animate-pulse" />
+        ))}
       </div>
     );
   }
 
   if (!customers.length) {
     return (
-      <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
-        <p className="text-slate-500 text-lg">No customers found</p>
-        <p className="text-slate-400 text-sm mt-2">
-          Try adjusting your search criteria or add a new customer.
-        </p>
+      <div className="text-center py-12">
+        <div className="text-slate-400 text-lg mb-2">No customers found</div>
+        <div className="text-slate-500">Try adjusting your search or filters</div>
       </div>
     );
   }
@@ -48,17 +37,18 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
       <Table>
         <TableHeader>
           <TableRow className="bg-slate-50">
-            <TableHead className="font-semibold text-slate-900">Customer</TableHead>
-            <TableHead className="font-semibold text-slate-900">Contact</TableHead>
-            <TableHead className="font-semibold text-slate-900">Location</TableHead>
-            <TableHead className="font-semibold text-slate-900">Vehicles</TableHead>
-            <TableHead className="font-semibold text-slate-900">Type</TableHead>
-            <TableHead className="font-semibold text-slate-900">Actions</TableHead>
+            <TableHead className="font-semibold text-slate-700">Customer</TableHead>
+            <TableHead className="font-semibold text-slate-700">Contact</TableHead>
+            <TableHead className="font-semibold text-slate-700">Location</TableHead>
+            <TableHead className="font-semibold text-slate-700">Vehicles</TableHead>
+            <TableHead className="font-semibold text-slate-700">Type</TableHead>
+            <TableHead className="font-semibold text-slate-700">Added</TableHead>
+            <TableHead className="font-semibold text-slate-700">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {customers.map((customer) => (
-            <TableRow key={customer.id} className="hover:bg-slate-50">
+            <TableRow key={customer.id} className="hover:bg-slate-50 transition-colors">
               <TableCell>
                 <div>
                   <div className="font-medium text-slate-900">{customer.fullName}</div>
@@ -67,50 +57,76 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
                   )}
                 </div>
               </TableCell>
+              
               <TableCell>
                 <div className="space-y-1">
-                  <div className="text-sm text-slate-900">{customer.email}</div>
-                  <div className="text-sm text-slate-500">{customer.phone}</div>
+                  <div className="flex items-center text-sm text-slate-600">
+                    <Mail className="h-3 w-3 mr-1" />
+                    {customer.email}
+                  </div>
+                  <div className="flex items-center text-sm text-slate-600">
+                    <Phone className="h-3 w-3 mr-1" />
+                    {customer.phone}
+                  </div>
                 </div>
               </TableCell>
+              
               <TableCell>
-                <div className="text-sm text-slate-900">
-                  {customer.city && customer.state 
-                    ? `${customer.city}, ${customer.state}`
-                    : customer.address || 'No address'
-                  }
+                <div className="text-sm text-slate-600">
+                  {customer.city && customer.state ? (
+                    <>{customer.city}, {customer.state}</>
+                  ) : (
+                    customer.address?.substring(0, 30) || 'No address'
+                  )}
                 </div>
               </TableCell>
-              <TableCell>
-                <Badge variant={customer.hasVehicles() ? "default" : "secondary"}>
-                  {customer.vehicleCount} {customer.vehicleCount === 1 ? 'vehicle' : 'vehicles'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {customer.isFleetCustomer() ? (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    Fleet
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">
-                    Individual
-                  </Badge>
-                )}
-              </TableCell>
+              
               <TableCell>
                 <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="sm" asChild>
+                  <Badge 
+                    variant={customer.hasVehicles() ? "default" : "secondary"}
+                    className={customer.hasVehicles() ? "bg-emerald-100 text-emerald-800" : ""}
+                  >
+                    {customer.vehicleCount} {customer.vehicleCount === 1 ? 'vehicle' : 'vehicles'}
+                  </Badge>
+                </div>
+              </TableCell>
+              
+              <TableCell>
+                {customer.isFleetCustomer() ? (
+                  <Badge className="bg-orange-100 text-orange-800">Fleet</Badge>
+                ) : (
+                  <Badge variant="secondary">Individual</Badge>
+                )}
+              </TableCell>
+              
+              <TableCell>
+                <div className="text-sm text-slate-600">
+                  {new Date(customer.created_at).toLocaleDateString()}
+                </div>
+              </TableCell>
+              
+              <TableCell>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="text-slate-600 hover:text-slate-900"
+                  >
                     <Link to={`/customers/${customer.id}`}>
                       <Eye className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button variant="ghost" size="sm" asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="text-slate-600 hover:text-slate-900"
+                  >
                     <Link to={`/customers/${customer.id}/edit`}>
                       <Edit className="h-4 w-4" />
                     </Link>
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <MessageSquare className="h-4 w-4" />
                   </Button>
                 </div>
               </TableCell>

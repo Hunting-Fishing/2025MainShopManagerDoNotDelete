@@ -51,6 +51,11 @@ export interface CustomerEntity {
   fullName: string;
   vehicleCount: number;
   vehicles?: CustomerVehicle[];
+  
+  // Methods
+  hasVehicles(): boolean;
+  isFleetCustomer(): boolean;
+  matchesSearch(searchTerm: string): boolean;
 }
 
 export class Customer implements CustomerEntity {
