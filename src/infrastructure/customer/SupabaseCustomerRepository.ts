@@ -1,167 +1,179 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CustomerEntity, Customer } from '@/domain/customer/entities/Customer';
 import { CustomerRepository, CustomerFilters } from '@/domain/customer/repositories/CustomerRepository';
+import { CustomerEntity, Customer } from '@/domain/customer/entities/Customer';
 import { CustomerVehicle } from '@/types/customer';
 
 export class SupabaseCustomerRepository implements CustomerRepository {
-  private async adaptCustomerToEntity(customerData: any): Promise<CustomerEntity> {
-    console.log('🔄 SupabaseCustomerRepository: Adapting customer data:', customerData);
-    
-    // Fetch vehicles for this customer
-    const { data: vehicles, error: vehiclesError } = await supabase
+  private mapDatabaseRowToCustomerEntity(row: any, vehicles: CustomerVehicle[] = []): CustomerEntity {
+    return new Customer(
+      row.id,
+      row.first_name,
+      row.last_name,
+      row.email,
+      row.phone,
+      row.address,
+      row.shop_id,
+      row.created_at,
+      row.updated_at,
+      row.city,
+      row.state,
+      row.postal_code,
+      row.country,
+      row.preferred_technician_id,
+      row.communication_preference,
+      row.referral_source,
+      row.referral_person_id,
+      row.other_referral_details,
+      row.household_id,
+      row.is_fleet,
+      row.fleet_company,
+      row.fleet_manager,
+      row.fleet_contact,
+      row.preferred_service_type,
+      row.notes,
+      row.tags ? JSON.parse(JSON.stringify(row.tags)) : [],
+      row.segments ? JSON.parse(JSON.stringify(row.segments)) : [],
+      row.company,
+      row.business_type,
+      row.business_industry,
+      row.other_business_industry,
+      row.tax_id,
+      row.business_email,
+      row.business_phone,
+      row.preferred_payment_method,
+      row.auto_billing,
+      row.credit_terms,
+      row.terms_agreed,
+      vehicles
+    );
+  }
+
+  private async getVehiclesForCustomers(customerIds: string[]): Promise<Map<string, CustomerVehicle[]>> {
+    if (customerIds.length === 0) return new Map();
+
+    const { data: vehicles, error } = await supabase
       .from('vehicles')
       .select('*')
-      .eq('customer_id', customerData.id);
+      .in('customer_id', customerIds);
 
-    if (vehiclesError) {
-      console.error('Error fetching vehicles:', vehiclesError);
+    if (error) {
+      console.error('Error fetching vehicles:', error);
+      return new Map();
     }
 
-    const customerVehicles: CustomerVehicle[] = vehicles?.map(vehicle => ({
-      id: vehicle.id,
-      customer_id: vehicle.customer_id,
-      year: vehicle.year,
-      make: vehicle.make,
-      model: vehicle.model,
-      vin: vehicle.vin,
-      license_plate: vehicle.license_plate,
-      color: vehicle.color,
-      engine: vehicle.engine,
-      transmission: vehicle.transmission,
-      fuel_type: vehicle.fuel_type,
-      mileage: vehicle.mileage,
-      notes: vehicle.notes,
-      created_at: vehicle.created_at,
-      updated_at: vehicle.updated_at
-    })) || [];
+    const vehicleMap = new Map<string, CustomerVehicle[]>();
+    
+    vehicles?.forEach(vehicle => {
+      const customerId = vehicle.customer_id;
+      if (!vehicleMap.has(customerId)) {
+        vehicleMap.set(customerId, []);
+      }
+      vehicleMap.get(customerId)!.push({
+        id: vehicle.id,
+        customer_id: vehicle.customer_id,
+        year: vehicle.year,
+        make: vehicle.make,
+        model: vehicle.model,
+        vin: vehicle.vin,
+        license_plate: vehicle.license_plate,
+        trim: vehicle.trim,
+        transmission: vehicle.transmission,
+        transmission_type: vehicle.transmission_type,
+        drive_type: vehicle.drive_type,
+        fuel_type: vehicle.fuel_type,
+        engine: vehicle.engine,
+        body_style: vehicle.body_style,
+        country: vehicle.country,
+        gvwr: vehicle.gvwr,
+        color: vehicle.color,
+        last_service_date: vehicle.last_service_date,
+        notes: vehicle.notes,
+        created_at: vehicle.created_at,
+        updated_at: vehicle.updated_at
+      });
+    });
 
-    return new Customer(
-      customerData.id,
-      customerData.first_name,
-      customerData.last_name,
-      customerData.email,
-      customerData.phone,
-      customerData.address,
-      customerData.shop_id,
-      customerData.created_at,
-      customerData.updated_at,
-      customerData.city,
-      customerData.state,
-      customerData.postal_code,
-      customerData.country,
-      customerData.preferred_technician_id,
-      customerData.communication_preference,
-      customerData.referral_source,
-      customerData.referral_person_id,
-      customerData.other_referral_details,
-      customerData.household_id,
-      customerData.is_fleet,
-      customerData.fleet_company,
-      customerData.fleet_manager,
-      customerData.fleet_contact,
-      customerData.preferred_service_type,
-      customerData.notes,
-      customerData.tags,
-      customerData.segments,
-      customerData.company,
-      customerData.business_type,
-      customerData.business_industry,
-      customerData.other_business_industry,
-      customerData.tax_id,
-      customerData.business_email,
-      customerData.business_phone,
-      customerData.preferred_payment_method,
-      customerData.auto_billing,
-      customerData.credit_terms,
-      customerData.terms_agreed,
-      customerVehicles
-    );
+    return vehicleMap;
   }
 
   async getAll(): Promise<CustomerEntity[]> {
-    console.log('🔄 SupabaseCustomerRepository: Fetching all customers');
-    
-    const { data, error } = await supabase
+    const { data: customers, error } = await supabase
       .from('customers')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ SupabaseCustomerRepository: Error fetching customers:', error);
+      console.error('Error fetching customers:', error);
       throw new Error(`Failed to fetch customers: ${error.message}`);
     }
 
-    if (!data || data.length === 0) {
-      console.log('ℹ️ SupabaseCustomerRepository: No customers found');
+    if (!customers || customers.length === 0) {
       return [];
     }
 
-    console.log('✅ SupabaseCustomerRepository: Successfully fetched', data.length, 'customers');
-    
-    // Adapt each customer to entity with vehicles
-    const customerEntities = await Promise.all(
-      data.map(customer => this.adaptCustomerToEntity(customer))
-    );
+    // Get vehicles for all customers
+    const customerIds = customers.map(c => c.id);
+    const vehicleMap = await this.getVehiclesForCustomers(customerIds);
 
-    return customerEntities;
+    return customers.map(customer => {
+      const vehicles = vehicleMap.get(customer.id) || [];
+      return this.mapDatabaseRowToCustomerEntity(customer, vehicles);
+    });
   }
 
   async getById(id: string): Promise<CustomerEntity | null> {
-    console.log('🔄 SupabaseCustomerRepository: Fetching customer by ID:', id);
-    
-    const { data, error } = await supabase
+    const { data: customer, error } = await supabase
       .from('customers')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      console.error('❌ SupabaseCustomerRepository: Error fetching customer:', error);
+      console.error('Error fetching customer:', error);
+      throw new Error(`Failed to fetch customer: ${error.message}`);
+    }
+
+    if (!customer) {
       return null;
     }
 
-    if (!data) {
-      console.log('ℹ️ SupabaseCustomerRepository: Customer not found');
-      return null;
-    }
+    // Get vehicles for this customer
+    const vehicleMap = await this.getVehiclesForCustomers([customer.id]);
+    const vehicles = vehicleMap.get(customer.id) || [];
 
-    console.log('✅ SupabaseCustomerRepository: Successfully fetched customer');
-    return this.adaptCustomerToEntity(data);
+    return this.mapDatabaseRowToCustomerEntity(customer, vehicles);
   }
 
   async search(query: string): Promise<CustomerEntity[]> {
-    console.log('🔄 SupabaseCustomerRepository: Searching customers with query:', query);
+    const searchTerm = query.toLowerCase();
     
-    const { data, error } = await supabase
+    const { data: customers, error } = await supabase
       .from('customers')
       .select('*')
-      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%,company.ilike.%${query}%`)
+      .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,company.ilike.%${searchTerm}%`)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ SupabaseCustomerRepository: Error searching customers:', error);
+      console.error('Error searching customers:', error);
       throw new Error(`Failed to search customers: ${error.message}`);
     }
 
-    if (!data || data.length === 0) {
-      console.log('ℹ️ SupabaseCustomerRepository: No customers found for search query');
+    if (!customers || customers.length === 0) {
       return [];
     }
 
-    console.log('✅ SupabaseCustomerRepository: Successfully found', data.length, 'customers');
-    
-    // Adapt each customer to entity with vehicles
-    const customerEntities = await Promise.all(
-      data.map(customer => this.adaptCustomerToEntity(customer))
-    );
+    // Get vehicles for found customers
+    const customerIds = customers.map(c => c.id);
+    const vehicleMap = await this.getVehiclesForCustomers(customerIds);
 
-    return customerEntities;
+    return customers.map(customer => {
+      const vehicles = vehicleMap.get(customer.id) || [];
+      return this.mapDatabaseRowToCustomerEntity(customer, vehicles);
+    });
   }
 
   async filter(filters: CustomerFilters): Promise<CustomerEntity[]> {
-    console.log('🔄 SupabaseCustomerRepository: Filtering customers with filters:', filters);
-    
     let query = supabase
       .from('customers')
       .select('*');
@@ -180,94 +192,152 @@ export class SupabaseCustomerRepository implements CustomerRepository {
       query = query.lte('created_at', filters.dateRange.to.toISOString());
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data: customers, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ SupabaseCustomerRepository: Error filtering customers:', error);
+      console.error('Error filtering customers:', error);
       throw new Error(`Failed to filter customers: ${error.message}`);
     }
 
-    if (!data || data.length === 0) {
-      console.log('ℹ️ SupabaseCustomerRepository: No customers found for filters');
+    if (!customers || customers.length === 0) {
       return [];
     }
 
-    console.log('✅ SupabaseCustomerRepository: Successfully filtered', data.length, 'customers');
-    
-    // Adapt each customer to entity with vehicles
-    let customerEntities = await Promise.all(
-      data.map(customer => this.adaptCustomerToEntity(customer))
-    );
+    // Get vehicles for all customers
+    const customerIds = customers.map(c => c.id);
+    const vehicleMap = await this.getVehiclesForCustomers(customerIds);
 
-    // Apply has vehicles filter (post-processing since we need to check vehicle count)
+    let results = customers.map(customer => {
+      const vehicles = vehicleMap.get(customer.id) || [];
+      return this.mapDatabaseRowToCustomerEntity(customer, vehicles);
+    });
+
+    // Apply has vehicles filter (done in memory since it depends on vehicle relationships)
     if (filters.hasVehicles && filters.hasVehicles !== '') {
-      customerEntities = customerEntities.filter(customer => {
+      results = results.filter(customer => {
         const hasVehicles = customer.hasVehicles();
         return filters.hasVehicles === 'yes' ? hasVehicles : !hasVehicles;
       });
     }
 
-    return customerEntities;
+    return results;
   }
 
   async create(customerData: Omit<CustomerEntity, 'id' | 'created_at' | 'updated_at' | 'fullName' | 'vehicleCount' | 'hasVehicles' | 'isFleetCustomer' | 'matchesSearch'>): Promise<CustomerEntity> {
-    console.log('🔄 SupabaseCustomerRepository: Creating new customer');
-    
-    const { data, error } = await supabase
+    const { data: customer, error } = await supabase
       .from('customers')
-      .insert([{
+      .insert({
         first_name: customerData.first_name,
         last_name: customerData.last_name,
         email: customerData.email,
         phone: customerData.phone,
         address: customerData.address,
         shop_id: customerData.shop_id,
-        // Add other fields as needed
-      }])
+        city: customerData.city,
+        state: customerData.state,
+        postal_code: customerData.postal_code,
+        country: customerData.country,
+        preferred_technician_id: customerData.preferred_technician_id,
+        communication_preference: customerData.communication_preference,
+        referral_source: customerData.referral_source,
+        referral_person_id: customerData.referral_person_id,
+        other_referral_details: customerData.other_referral_details,
+        household_id: customerData.household_id,
+        is_fleet: customerData.is_fleet,
+        fleet_company: customerData.fleet_company,
+        fleet_manager: customerData.fleet_manager,
+        fleet_contact: customerData.fleet_contact,
+        preferred_service_type: customerData.preferred_service_type,
+        notes: customerData.notes,
+        tags: customerData.tags,
+        segments: customerData.segments,
+        company: customerData.company,
+        business_type: customerData.business_type,
+        business_industry: customerData.business_industry,
+        other_business_industry: customerData.other_business_industry,
+        tax_id: customerData.tax_id,
+        business_email: customerData.business_email,
+        business_phone: customerData.business_phone,
+        preferred_payment_method: customerData.preferred_payment_method,
+        auto_billing: customerData.auto_billing,
+        credit_terms: customerData.credit_terms,
+        terms_agreed: customerData.terms_agreed
+      })
       .select()
       .single();
 
     if (error) {
-      console.error('❌ SupabaseCustomerRepository: Error creating customer:', error);
+      console.error('Error creating customer:', error);
       throw new Error(`Failed to create customer: ${error.message}`);
     }
 
-    console.log('✅ SupabaseCustomerRepository: Successfully created customer');
-    return this.adaptCustomerToEntity(data);
+    return this.mapDatabaseRowToCustomerEntity(customer, []);
   }
 
   async update(id: string, customerData: Partial<CustomerEntity>): Promise<CustomerEntity> {
-    console.log('🔄 SupabaseCustomerRepository: Updating customer:', id);
-    
-    const { data, error } = await supabase
+    const { data: customer, error } = await supabase
       .from('customers')
-      .update(customerData)
+      .update({
+        first_name: customerData.first_name,
+        last_name: customerData.last_name,
+        email: customerData.email,
+        phone: customerData.phone,
+        address: customerData.address,
+        city: customerData.city,
+        state: customerData.state,
+        postal_code: customerData.postal_code,
+        country: customerData.country,
+        preferred_technician_id: customerData.preferred_technician_id,
+        communication_preference: customerData.communication_preference,
+        referral_source: customerData.referral_source,
+        referral_person_id: customerData.referral_person_id,
+        other_referral_details: customerData.other_referral_details,
+        household_id: customerData.household_id,
+        is_fleet: customerData.is_fleet,
+        fleet_company: customerData.fleet_company,
+        fleet_manager: customerData.fleet_manager,
+        fleet_contact: customerData.fleet_contact,
+        preferred_service_type: customerData.preferred_service_type,
+        notes: customerData.notes,
+        tags: customerData.tags,
+        segments: customerData.segments,
+        company: customerData.company,
+        business_type: customerData.business_type,
+        business_industry: customerData.business_industry,
+        other_business_industry: customerData.other_business_industry,
+        tax_id: customerData.tax_id,
+        business_email: customerData.business_email,
+        business_phone: customerData.business_phone,
+        preferred_payment_method: customerData.preferred_payment_method,
+        auto_billing: customerData.auto_billing,
+        credit_terms: customerData.credit_terms,
+        terms_agreed: customerData.terms_agreed
+      })
       .eq('id', id)
       .select()
       .single();
 
     if (error) {
-      console.error('❌ SupabaseCustomerRepository: Error updating customer:', error);
+      console.error('Error updating customer:', error);
       throw new Error(`Failed to update customer: ${error.message}`);
     }
 
-    console.log('✅ SupabaseCustomerRepository: Successfully updated customer');
-    return this.adaptCustomerToEntity(data);
+    // Get vehicles for updated customer
+    const vehicleMap = await this.getVehiclesForCustomers([customer.id]);
+    const vehicles = vehicleMap.get(customer.id) || [];
+
+    return this.mapDatabaseRowToCustomerEntity(customer, vehicles);
   }
 
   async delete(id: string): Promise<void> {
-    console.log('🔄 SupabaseCustomerRepository: Deleting customer:', id);
-    
     const { error } = await supabase
       .from('customers')
       .delete()
       .eq('id', id);
 
     if (error) {
-      console.error('❌ SupabaseCustomerRepository: Error deleting customer:', error);
+      console.error('Error deleting customer:', error);
       throw new Error(`Failed to delete customer: ${error.message}`);
     }
-
-    console.log('✅ SupabaseCustomerRepository: Successfully deleted customer');
   }
 }
