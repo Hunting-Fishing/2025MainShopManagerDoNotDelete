@@ -1,323 +1,254 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { WorkOrder } from '@/types/workOrder';
 
 export class WorkOrderRepository {
   async findAll(): Promise<WorkOrder[]> {
     try {
-      const { data, error } = await supabase
+      console.log('WorkOrderRepository: Starting to fetch all work orders...');
+      
+      // First, try the simple query without joins to ensure basic functionality
+      const { data: basicData, error: basicError } = await supabase
         .from('work_orders')
-        .select(`
-          *,
-          customers (
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            address,
-            city,
-            state,
-            postal_code
-          ),
-          vehicles (
-            id,
-            make,
-            model,
-            year,
-            license_plate,
-            vin,
-            odometer
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Repository: Error fetching work orders:', error);
-        throw error;
+      if (basicError) {
+        console.error('WorkOrderRepository: Basic query failed:', basicError);
+        throw new Error(`Failed to fetch work orders: ${basicError.message}`);
       }
 
-      return this.transformWorkOrders(data || []);
+      console.log('WorkOrderRepository: Basic query successful, found:', basicData?.length || 0, 'work orders');
+
+      // If basic query works, try to enhance with customer data
+      try {
+        const { data: enhancedData, error: enhancedError } = await supabase
+          .from('work_orders')
+          .select(`
+            *,
+            customers:customer_id (
+              id,
+              first_name,
+              last_name,
+              email,
+              phone
+            ),
+            vehicles:vehicle_id (
+              id,
+              make,
+              model,
+              year,
+              vin,
+              license_plate
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (!enhancedError && enhancedData) {
+          console.log('WorkOrderRepository: Enhanced query successful');
+          return this.transformWorkOrders(enhancedData);
+        } else {
+          console.warn('WorkOrderRepository: Enhanced query failed, using basic data:', enhancedError?.message);
+        }
+      } catch (enhanceError) {
+        console.warn('WorkOrderRepository: Enhanced query error, using basic data:', enhanceError);
+      }
+
+      // Return basic data if enhanced query fails
+      return this.transformWorkOrders(basicData || []);
     } catch (error) {
-      console.error('Repository: Error in findAll:', error);
+      console.error('WorkOrderRepository: Critical error in findAll:', error);
       throw error;
     }
   }
 
   async findById(id: string): Promise<WorkOrder | null> {
     try {
+      console.log('WorkOrderRepository: Fetching work order by ID:', id);
+      
       const { data, error } = await supabase
         .from('work_orders')
         .select(`
           *,
-          customers (
+          customers:customer_id (
             id,
             first_name,
             last_name,
             email,
-            phone,
-            address,
-            city,
-            state,
-            postal_code
+            phone
           ),
-          vehicles (
+          vehicles:vehicle_id (
             id,
             make,
             model,
             year,
-            license_plate,
             vin,
-            odometer
+            license_plate
           )
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          return null;
-        }
-        console.error('Repository: Error fetching work order by ID:', error);
-        throw error;
+        console.error('WorkOrderRepository: Error fetching work order by ID:', error);
+        throw new Error(`Failed to fetch work order: ${error.message}`);
       }
 
+      if (!data) {
+        console.log('WorkOrderRepository: No work order found with ID:', id);
+        return null;
+      }
+
+      console.log('WorkOrderRepository: Successfully fetched work order:', data.id);
       return this.transformWorkOrder(data);
     } catch (error) {
-      console.error('Repository: Error in findById:', error);
-      throw error;
-    }
-  }
-
-  async create(workOrderData: any): Promise<WorkOrder> {
-    try {
-      // Ensure required fields are set
-      const dataToInsert = {
-        ...workOrderData,
-        status: workOrderData.status || 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      const { data, error } = await supabase
-        .from('work_orders')
-        .insert(dataToInsert)
-        .select(`
-          *,
-          customers (
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            address,
-            city,
-            state,
-            postal_code
-          ),
-          vehicles (
-            id,
-            make,
-            model,
-            year,
-            license_plate,
-            vin,
-            odometer
-          )
-        `)
-        .single();
-
-      if (error) {
-        console.error('Repository: Error creating work order:', error);
-        throw error;
-      }
-
-      return this.transformWorkOrder(data);
-    } catch (error) {
-      console.error('Repository: Error in create:', error);
-      throw error;
-    }
-  }
-
-  async update(id: string, updateData: any): Promise<WorkOrder> {
-    try {
-      // Ensure required fields are properly typed - don't make status optional
-      const dataToUpdate = {
-        ...updateData,
-        updated_at: new Date().toISOString()
-      };
-
-      const { data, error } = await supabase
-        .from('work_orders')
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select(`
-          *,
-          customers (
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            address,
-            city,
-            state,
-            postal_code
-          ),
-          vehicles (
-            id,
-            make,
-            model,
-            year,
-            license_plate,
-            vin,
-            odometer
-          )
-        `)
-        .single();
-
-      if (error) {
-        console.error('Repository: Error updating work order:', error);
-        throw error;
-      }
-
-      return this.transformWorkOrder(data);
-    } catch (error) {
-      console.error('Repository: Error in update:', error);
-      throw error;
-    }
-  }
-
-  async updateStatus(id: string, status: string, userId?: string, userName?: string): Promise<WorkOrder> {
-    try {
-      // First get the current work order to check old status
-      const currentWorkOrder = await this.findById(id);
-      if (!currentWorkOrder) {
-        throw new Error(`Work order with ID ${id} not found`);
-      }
-
-      // Update the work order status
-      const { data, error } = await supabase
-        .from('work_orders')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select(`
-          *,
-          customers (
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            address,
-            city,
-            state,
-            postal_code
-          ),
-          vehicles (
-            id,
-            make,
-            model,
-            year,
-            license_plate,
-            vin,
-            odometer
-          )
-        `)
-        .single();
-
-      if (error) {
-        console.error('Repository: Error updating work order status:', error);
-        throw error;
-      }
-
-      // Record status history
-      await this.recordStatusHistory(id, currentWorkOrder.status, status, userId, userName);
-
-      return this.transformWorkOrder(data);
-    } catch (error) {
-      console.error('Repository: Error in updateStatus:', error);
-      throw error;
-    }
-  }
-
-  async delete(id: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('work_orders')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Repository: Error deleting work order:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Repository: Error in delete:', error);
+      console.error('WorkOrderRepository: Error in findById:', error);
       throw error;
     }
   }
 
   async findByCustomerId(customerId: string): Promise<WorkOrder[]> {
     try {
+      console.log('WorkOrderRepository: Fetching work orders for customer:', customerId);
+      
       const { data, error } = await supabase
         .from('work_orders')
         .select(`
           *,
-          customers (
+          customers:customer_id (
             id,
             first_name,
             last_name,
             email,
-            phone,
-            address,
-            city,
-            state,
-            postal_code
+            phone
           ),
-          vehicles (
+          vehicles:vehicle_id (
             id,
             make,
             model,
             year,
-            license_plate,
             vin,
-            odometer
+            license_plate
           )
         `)
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Repository: Error fetching work orders by customer:', error);
-        throw error;
+        console.error('WorkOrderRepository: Error fetching work orders by customer ID:', error);
+        throw new Error(`Failed to fetch work orders for customer: ${error.message}`);
       }
 
+      console.log('WorkOrderRepository: Successfully fetched work orders for customer:', data?.length || 0);
       return this.transformWorkOrders(data || []);
     } catch (error) {
-      console.error('Repository: Error in findByCustomerId:', error);
+      console.error('WorkOrderRepository: Error in findByCustomerId:', error);
       throw error;
     }
   }
 
-  private async recordStatusHistory(workOrderId: string, oldStatus: string | undefined, newStatus: string, userId?: string, userName?: string): Promise<void> {
+  async create(workOrderData: any): Promise<WorkOrder> {
     try {
-      await supabase
-        .from('work_order_status_history')
-        .insert({
-          work_order_id: workOrderId,
-          old_status: oldStatus,
-          new_status: newStatus,
-          changed_by: userId,
-          changed_by_name: userName || 'System',
-          changed_at: new Date().toISOString()
-        });
+      console.log('WorkOrderRepository: Creating work order with data:', workOrderData);
+      
+      const { data, error } = await supabase
+        .from('work_orders')
+        .insert([workOrderData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('WorkOrderRepository: Error creating work order:', error);
+        throw new Error(`Failed to create work order: ${error.message}`);
+      }
+
+      console.log('WorkOrderRepository: Successfully created work order:', data.id);
+      return this.transformWorkOrder(data);
     } catch (error) {
-      console.error('Repository: Error recording status history:', error);
-      // Don't throw - status history is nice to have but not critical
+      console.error('WorkOrderRepository: Error in create:', error);
+      throw error;
+    }
+  }
+
+  async update(id: string, updateData: any): Promise<WorkOrder> {
+    try {
+      console.log('WorkOrderRepository: Updating work order:', id, 'with data:', updateData);
+      
+      const { data, error } = await supabase
+        .from('work_orders')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('WorkOrderRepository: Error updating work order:', error);
+        throw new Error(`Failed to update work order: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error(`Work order with ID ${id} not found`);
+      }
+
+      console.log('WorkOrderRepository: Successfully updated work order:', data.id);
+      return this.transformWorkOrder(data);
+    } catch (error) {
+      console.error('WorkOrderRepository: Error in update:', error);
+      throw error;
+    }
+  }
+
+  async updateStatus(id: string, status: string, userId?: string, userName?: string): Promise<WorkOrder> {
+    try {
+      console.log('WorkOrderRepository: Updating work order status:', id, 'to', status);
+      
+      const updateData: any = { 
+        status,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('work_orders')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('WorkOrderRepository: Error updating work order status:', error);
+        throw new Error(`Failed to update work order status: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error(`Work order with ID ${id} not found`);
+      }
+
+      console.log('WorkOrderRepository: Successfully updated work order status:', data.id);
+      return this.transformWorkOrder(data);
+    } catch (error) {
+      console.error('WorkOrderRepository: Error in updateStatus:', error);
+      throw error;
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      console.log('WorkOrderRepository: Deleting work order:', id);
+      
+      const { error } = await supabase
+        .from('work_orders')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('WorkOrderRepository: Error deleting work order:', error);
+        throw new Error(`Failed to delete work order: ${error.message}`);
+      }
+
+      console.log('WorkOrderRepository: Successfully deleted work order:', id);
+    } catch (error) {
+      console.error('WorkOrderRepository: Error in delete:', error);
+      throw error;
     }
   }
 
@@ -326,55 +257,49 @@ export class WorkOrderRepository {
   }
 
   private transformWorkOrder(data: any): WorkOrder {
+    // Handle customer data from joined table
     const customer = data.customers;
+    let customerName = 'Unknown Customer';
+    
+    if (customer) {
+      if (customer.first_name && customer.last_name) {
+        customerName = `${customer.first_name} ${customer.last_name}`.trim();
+      } else if (customer.first_name) {
+        customerName = customer.first_name;
+      } else if (customer.last_name) {
+        customerName = customer.last_name;
+      }
+    }
+
+    // Handle vehicle data from joined table
     const vehicle = data.vehicles;
 
     return {
-      id: data.id,
-      customer_id: data.customer_id,
-      vehicle_id: data.vehicle_id,
-      description: data.description,
-      status: data.status,
-      priority: data.priority,
-      technician: data.technician,
-      technician_id: data.technician_id,
-      location: data.location,
-      due_date: data.due_date,
-      notes: data.notes,
-      service_type: data.service_type,
-      estimated_hours: data.estimated_hours,
-      total_cost: data.total_cost,
+      ...data,
+      // Ensure customer name is available in multiple formats for compatibility
+      customer_name: customerName,
+      customer_first_name: customer?.first_name || null,
+      customer_last_name: customer?.last_name || null,
+      customer_email: customer?.email || null,
+      customer_phone: customer?.phone || null,
+      
+      // Ensure vehicle data is available
+      vehicle_make: vehicle?.make || null,
+      vehicle_model: vehicle?.model || null,
+      vehicle_year: vehicle?.year?.toString() || null,
+      vehicle_vin: vehicle?.vin || null,
+      vehicle_license_plate: vehicle?.license_plate || null,
+      
+      // Ensure status is always available
+      status: data.status || 'pending',
+      
+      // Convert dates to proper format
       created_at: data.created_at,
       updated_at: data.updated_at,
-      created_by: data.created_by,
       
-      // Customer fields
-      customer_name: customer ? `${customer.first_name} ${customer.last_name}`.trim() : '',
-      customer_first_name: customer?.first_name,
-      customer_last_name: customer?.last_name,
-      customer_email: customer?.email,
-      customer_phone: customer?.phone,
-      customer_address: customer?.address,
-      customer_city: customer?.city,
-      customer_state: customer?.state,
-      customer_postal_code: customer?.postal_code,
-      
-      // Vehicle fields
-      vehicle_make: vehicle?.make,
-      vehicle_model: vehicle?.model,
-      vehicle_year: vehicle?.year?.toString(),
-      vehicle_license_plate: vehicle?.license_plate,
-      vehicle_vin: vehicle?.vin,
-      vehicle_odometer: vehicle?.odometer?.toString(),
-      
-      // Legacy fields for backward compatibility
-      customer: customer ? `${customer.first_name} ${customer.last_name}`.trim() : '',
-      dueDate: data.due_date,
-      date: data.created_at,
-      
-      // Initialize arrays
-      inventoryItems: data.inventory_items || [],
-      timeEntries: data.time_entries || []
-    };
+      // Clean up the nested objects to avoid confusion
+      customers: undefined,
+      vehicles: undefined
+    } as WorkOrder;
   }
 }

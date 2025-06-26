@@ -16,9 +16,17 @@ export function useWorkOrders() {
   const [initialized, setInitialized] = useState(false);
 
   const refetch = useCallback(async () => {
-    if (isAuthenticated && !authLoading) {
-      console.log('useWorkOrders: Fetching work orders for authenticated user...');
+    if (!isAuthenticated || authLoading) {
+      console.log('useWorkOrders: User not authenticated or auth loading, skipping fetch');
+      return;
+    }
+
+    console.log('useWorkOrders: Refetching work orders for authenticated user...');
+    try {
       await fetchWorkOrders();
+      console.log('useWorkOrders: Successfully refetched work orders');
+    } catch (err) {
+      console.error('useWorkOrders: Error during refetch:', err);
     }
   }, [isAuthenticated, authLoading, fetchWorkOrders]);
 
@@ -36,8 +44,13 @@ export function useWorkOrders() {
 
     if (!initialized) {
       console.log('useWorkOrders: Initializing work orders fetch...');
-      refetch();
-      setInitialized(true);
+      refetch().then(() => {
+        setInitialized(true);
+        console.log('useWorkOrders: Initialization complete');
+      }).catch((err) => {
+        console.error('useWorkOrders: Initialization failed:', err);
+        setInitialized(true); // Set to true anyway to prevent infinite retries
+      });
     }
   }, [isAuthenticated, authLoading, initialized, refetch]);
 
