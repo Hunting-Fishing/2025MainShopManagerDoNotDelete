@@ -26,7 +26,7 @@ export function useCustomerFilters(customers: CustomerEntity[]) {
       result = result.filter(customer => customer.matchesSearch(searchTerm));
     }
 
-    // Has vehicles filter
+    // Has vehicles filter - only apply if it's not empty string
     if (filters.hasVehicles && filters.hasVehicles !== '') {
       result = result.filter(customer => {
         const hasVehicles = customer.hasVehicles();

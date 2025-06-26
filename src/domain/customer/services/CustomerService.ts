@@ -2,6 +2,13 @@
 import { CustomerRepository } from '../repositories/CustomerRepository';
 import { CustomerEntity } from '../entities/Customer';
 
+export interface CustomerStats {
+  total: number;
+  withVehicles: number;
+  fleetCustomers: number;
+  recentlyAdded: number;
+}
+
 export class CustomerService {
   constructor(private customerRepository: CustomerRepository) {}
 
@@ -27,5 +34,24 @@ export class CustomerService {
 
   async deleteCustomer(id: string): Promise<void> {
     return this.customerRepository.delete(id);
+  }
+
+  async calculateStats(customers: CustomerEntity[]): Promise<CustomerStats> {
+    const total = customers.length;
+    const withVehicles = customers.filter(c => c.hasVehicles()).length;
+    const fleetCustomers = customers.filter(c => c.isFleetCustomer()).length;
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentlyAdded = customers.filter(c => 
+      new Date(c.created_at) >= thirtyDaysAgo
+    ).length;
+
+    return {
+      total,
+      withVehicles,
+      fleetCustomers,
+      recentlyAdded
+    };
   }
 }
