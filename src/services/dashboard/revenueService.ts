@@ -1,174 +1,51 @@
 
 import { supabase } from "@/lib/supabase";
+import { MonthlyRevenueData } from "@/types/dashboard";
+import { subDays, format } from "date-fns";
 
-export interface MonthlyRevenueData {
-  date: string;
-  revenue: number;
-}
-
-export interface ServiceTypeData {
-  name: string;
-  value: number;
-}
-
-// Get daily revenue data for the chart
 export const getRevenueData = async (): Promise<MonthlyRevenueData[]> => {
   try {
-    // Get the last 30 days range
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
+    console.log("Fetching live revenue data from work orders...");
+
+    // Get completed work orders from the last 30 days with total cost
+    const thirtyDaysAgo = subDays(new Date(), 30);
     
-    // Fetch completed work orders with revenue in date range
     const { data: workOrders, error } = await supabase
       .from('work_orders')
-      .select('id, created_at, total_cost, status')
+      .select('total_cost, updated_at, status')
       .eq('status', 'completed')
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString())
-      .order('created_at');
-      
+      .gte('updated_at', thirtyDaysAgo.toISOString())
+      .order('updated_at', { ascending: true });
+
     if (error) throw error;
+
+    // Group by date and sum revenue
+    const revenueByDate = new Map<string, number>();
     
-    if (!workOrders || workOrders.length === 0) return [];
-    
-    // Group by date and sum revenues
-    const revenueByDate = workOrders.reduce((acc: Record<string, number>, order) => {
-      const date = new Date(order.created_at).toISOString().split('T')[0];
-      const revenue = order.total_cost ? parseFloat(order.total_cost.toString()) : 0;
-      
-      if (!acc[date]) {
-        acc[date] = 0;
-      }
-      acc[date] += revenue;
-      return acc;
-    }, {});
-    
-    // Convert to array format for the chart
-    return Object.entries(revenueByDate).map(([date, revenue]) => ({
-      date,
-      revenue
-    }));
+    if (workOrders && workOrders.length > 0) {
+      workOrders.forEach(order => {
+        const date = format(new Date(order.updated_at), 'MMM dd');
+        const revenue = order.total_cost || 0;
+        revenueByDate.set(date, (revenueByDate.get(date) || 0) + revenue);
+      });
+    }
+
+    // Fill in missing dates with 0 revenue
+    const result: MonthlyRevenueData[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = subDays(new Date(), i);
+      const dateKey = format(date, 'MMM dd');
+      result.push({
+        date: dateKey,
+        revenue: revenueByDate.get(dateKey) || 0
+      });
+    }
+
+    console.log("Live revenue data loaded:", result.length, "data points");
+    return result;
+
   } catch (error) {
     console.error("Error fetching revenue data:", error);
-    return [];
-  }
-};
-
-// Get monthly revenue data
-export const getMonthlyRevenue = async (): Promise<{ month: string; revenue: number }[]> => {
-  try {
-    // Get the last 6 months
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 6);
-    
-    // Fetch completed work orders with revenue in date range
-    const { data: workOrders, error } = await supabase
-      .from('work_orders')
-      .select('created_at, total_cost')
-      .eq('status', 'completed')
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString());
-      
-    if (error) throw error;
-    
-    if (!workOrders || workOrders.length === 0) return [];
-    
-    // Group by month and sum revenues
-    const revenueByMonth = workOrders.reduce((acc: Record<string, number>, order) => {
-      const date = new Date(order.created_at);
-      const month = date.toLocaleString('default', { month: 'short' });
-      const revenue = order.total_cost ? parseFloat(order.total_cost.toString()) : 0;
-      
-      if (!acc[month]) {
-        acc[month] = 0;
-      }
-      acc[month] += revenue;
-      return acc;
-    }, {});
-    
-    // Get month names in correct order
-    const months = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      months.push(d.toLocaleString('default', { month: 'short' }));
-    }
-    
-    // Convert to array format for the chart
-    return months.map(month => ({
-      month,
-      revenue: revenueByMonth[month] || 0
-    }));
-  } catch (error) {
-    console.error("Error fetching monthly revenue data:", error);
-    return [];
-  }
-};
-
-// Get service type distribution data
-export const getServiceTypeDistribution = async (): Promise<ServiceTypeData[]> => {
-  try {
-    // Fetch work orders grouped by service type
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select('service_type, id');
-      
-    if (error) throw error;
-    
-    if (!data || data.length === 0) return [];
-    
-    // Count work orders by service type
-    const countByType = data.reduce((acc: Record<string, number>, order) => {
-      const type = order.service_type || 'Other';
-      if (!acc[type]) {
-        acc[type] = 0;
-      }
-      acc[type]++;
-      return acc;
-    }, {});
-    
-    // Convert to chart data format
-    return Object.entries(countByType)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 6); // Top 6 service types
-  } catch (error) {
-    console.error("Error fetching service type distribution:", error);
-    return [];
-  }
-};
-
-// Get work orders by status
-export const getWorkOrdersByStatus = async (): Promise<{ name: string; value: number }[]> => {
-  try {
-    // Fetch work order counts grouped by status
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select('status');
-      
-    if (error) throw error;
-    
-    if (!data || data.length === 0) return [];
-    
-    // Count work orders by status
-    const countByStatus = data.reduce((acc: Record<string, number>, order) => {
-      const status = order.status || 'Unknown';
-      if (!acc[status]) {
-        acc[status] = 0;
-      }
-      acc[status]++;
-      return acc;
-    }, {});
-    
-    // Convert to chart data format and make status names readable
-    return Object.entries(countByStatus).map(([status, count]) => ({
-      name: status.charAt(0).toUpperCase() + status.slice(1).replace(/-/g, ' '),
-      value: count
-    }));
-  } catch (error) {
-    console.error("Error fetching work orders by status:", error);
     return [];
   }
 };

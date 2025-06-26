@@ -1,25 +1,29 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Wrench, Package, Clock, Star, TrendingUp, TrendingDown } from "lucide-react";
+import { Users, Wrench, Package, Clock, TrendingUp, TrendingDown } from "lucide-react";
+import { getStats, DashboardStats } from "@/services/dashboard/statsService";
 
-interface StatsCardsProps {
-  stats?: {
-    activeWorkOrders: number;
-    workOrderChange: string;
-    teamMembers: number;
-    teamChange: string;
-    inventoryItems: number;
-    inventoryChange: string;
-    avgCompletionTime: string;
-    completionTimeChange: string;
-    customerSatisfaction: number;
-    schedulingEfficiency: string;
-  };
-  isLoading?: boolean;
-}
+export function StatsCards() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-export function StatsCards({ stats, isLoading }: StatsCardsProps) {
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getStats();
+        setStats(data);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
@@ -41,20 +45,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
     );
   }
 
-  const defaultStats = {
-    activeWorkOrders: 0,
-    workOrderChange: "No change",
-    teamMembers: 0,
-    teamChange: "No change",
-    inventoryItems: 0,
-    inventoryChange: "No change",
-    avgCompletionTime: "0 hours",
-    completionTimeChange: "No change",
-    customerSatisfaction: 0,
-    schedulingEfficiency: "0%",
-  };
-
-  const currentStats = stats || defaultStats;
+  if (!stats) return null;
 
   const getChangeIcon = (change: string) => {
     if (change.includes('+')) return <TrendingUp className="h-3 w-3 text-emerald-600" />;
@@ -71,32 +62,32 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
   const statsData = [
     {
       title: "Active Work Orders",
-      value: currentStats.activeWorkOrders,
-      change: currentStats.workOrderChange,
+      value: stats.activeWorkOrders,
+      change: stats.workOrderChange,
       icon: Wrench,
       color: "bg-blue-500",
       bgGradient: "from-blue-50 to-blue-100/50"
     },
     {
       title: "Team Members",
-      value: currentStats.teamMembers,
-      change: currentStats.teamChange,
+      value: stats.teamMembers,
+      change: stats.teamChange,
       icon: Users,
       color: "bg-emerald-500",
       bgGradient: "from-emerald-50 to-emerald-100/50"
     },
     {
       title: "Inventory Items",
-      value: currentStats.inventoryItems,
-      change: currentStats.inventoryChange,
+      value: stats.inventoryItems,
+      change: stats.inventoryChange,
       icon: Package,
       color: "bg-orange-500",
       bgGradient: "from-orange-50 to-orange-100/50"
     },
     {
       title: "Avg Completion Time",
-      value: currentStats.avgCompletionTime,
-      change: currentStats.completionTimeChange,
+      value: stats.avgCompletionTime,
+      change: stats.completionTimeChange,
       icon: Clock,
       color: "bg-purple-500",
       bgGradient: "from-purple-50 to-purple-100/50"

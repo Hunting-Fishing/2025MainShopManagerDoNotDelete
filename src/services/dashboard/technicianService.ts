@@ -1,50 +1,52 @@
 
 import { supabase } from "@/lib/supabase";
-import { TechnicianEfficiencyData } from "@/types/dashboard";
-
-export interface TechnicianPerformanceData {
-  chartData: Array<{
-    month: string;
-    [key: string]: string | number;
-  }>;
-  technicians: string[];
-}
+import { TechnicianEfficiencyData, TechnicianPerformanceData } from "@/types/dashboard";
 
 export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyData[]> => {
   try {
-    // Get technician data from profiles and work order time entries
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name')
-      .not('first_name', 'is', null);
+    console.log("Fetching live technician efficiency data...");
 
-    if (!profiles) return [];
+    // Get work order time entries grouped by technician
+    const { data: timeEntries, error } = await supabase
+      .from('work_order_time_entries')
+      .select('employee_name, duration, billable')
+      .not('employee_name', 'is', null);
 
-    // For each technician, calculate efficiency based on time entries
-    const efficiencyData = await Promise.all(
-      profiles.map(async (profile) => {
-        const { data: timeEntries } = await supabase
-          .from('work_order_time_entries')
-          .select('duration, billable')
-          .eq('employee_id', profile.id);
+    if (error) throw error;
 
-        const totalHours = timeEntries?.reduce((sum, entry) => sum + (entry.duration / 60), 0) || 0;
-        const billableHours = timeEntries?.reduce((sum, entry) => 
-          sum + (entry.billable ? entry.duration / 60 : 0), 0) || 0;
-        
-        const efficiency = totalHours > 0 ? Math.round((billableHours / totalHours) * 100) : 0;
+    if (!timeEntries || timeEntries.length === 0) {
+      console.log("No time entries found");
+      return [];
+    }
 
-        return {
-          id: profile.id,
-          name: `${profile.first_name} ${profile.last_name}`,
-          totalHours,
-          billableHours,
-          efficiency
-        };
-      })
-    );
+    // Group by technician and calculate efficiency
+    const technicianMap = new Map<string, { totalHours: number; billableHours: number }>();
 
-    return efficiencyData.filter(data => data.totalHours > 0);
+    timeEntries.forEach(entry => {
+      const name = entry.employee_name;
+      const hours = entry.duration / 60; // Convert minutes to hours
+      const billableHours = entry.billable ? hours : 0;
+
+      if (!technicianMap.has(name)) {
+        technicianMap.set(name, { totalHours: 0, billableHours: 0 });
+      }
+
+      const current = technicianMap.get(name)!;
+      current.totalHours += hours;
+      current.billableHours += billableHours;
+    });
+
+    const result: TechnicianEfficiencyData[] = Array.from(technicianMap.entries()).map(([name, data]) => ({
+      id: name.toLowerCase().replace(/\s+/g, '-'),
+      name,
+      totalHours: Math.round(data.totalHours * 10) / 10,
+      billableHours: Math.round(data.billableHours * 10) / 10,
+      efficiency: data.totalHours > 0 ? Math.round((data.billableHours / data.totalHours) * 100) : 0
+    }));
+
+    console.log("Live technician efficiency data loaded:", result.length, "technicians");
+    return result;
+
   } catch (error) {
     console.error("Error fetching technician efficiency:", error);
     return [];
@@ -53,70 +55,60 @@ export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyDat
 
 export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceData> => {
   try {
-    // Get technician profiles with time entries
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name')
-      .not('first_name', 'is', null)
-      .limit(5);
+    console.log("Fetching live technician performance data...");
 
-    if (!profiles || profiles.length === 0) {
-      return { chartData: [], technicians: [] };
-    }
-
-    const technicians = profiles.map(p => `${p.first_name} ${p.last_name}`);
-    
-    // Get work order time entries for the last 6 months
+    // Get completed work orders with technician data from last 6 months
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    
-    const { data: timeEntries } = await supabase
-      .from('work_order_time_entries')
-      .select('employee_id, duration, created_at')
-      .gte('created_at', sixMonthsAgo.toISOString())
-      .in('employee_id', profiles.map(p => p.id));
 
-    // Group time entries by month
-    const monthlyData: { [key: string]: { [key: string]: number } } = {};
-    
-    // Initialize months
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const currentMonth = new Date().getMonth();
-    const actualMonths = [];
-    
-    for (let i = 5; i >= 0; i--) {
-      const monthIndex = (currentMonth - i + 12) % 12;
-      actualMonths.push(months[monthIndex]);
-      monthlyData[months[monthIndex]] = {};
-      profiles.forEach(profile => {
-        const techKey = `${profile.first_name} ${profile.last_name}`.toLowerCase().replace(/\s+/g, '_');
-        monthlyData[months[monthIndex]][techKey] = 0;
-      });
+    const { data: workOrders, error } = await supabase
+      .from('work_orders')
+      .select('technician, updated_at, total_cost')
+      .eq('status', 'completed')
+      .not('technician', 'is', null)
+      .gte('updated_at', sixMonthsAgo.toISOString());
+
+    if (error) throw error;
+
+    if (!workOrders || workOrders.length === 0) {
+      console.log("No completed work orders found");
+      return { technicians: [], chartData: [] };
     }
 
-    // Process time entries
-    timeEntries?.forEach(entry => {
-      const entryDate = new Date(entry.created_at);
-      const monthName = months[entryDate.getMonth()];
-      const profile = profiles.find(p => p.id === entry.employee_id);
-      
-      if (profile && monthlyData[monthName]) {
-        const techKey = `${profile.first_name} ${profile.last_name}`.toLowerCase().replace(/\s+/g, '_');
-        monthlyData[monthName][techKey] += entry.duration / 60; // Convert minutes to hours
+    // Group by month and technician
+    const monthlyData = new Map<string, Map<string, number>>();
+    const technicianSet = new Set<string>();
+
+    workOrders.forEach(order => {
+      const month = new Date(order.updated_at).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      const technician = order.technician;
+      const revenue = order.total_cost || 0;
+
+      technicianSet.add(technician);
+
+      if (!monthlyData.has(month)) {
+        monthlyData.set(month, new Map());
       }
+
+      const monthData = monthlyData.get(month)!;
+      monthData.set(technician, (monthData.get(technician) || 0) + revenue);
     });
 
-    const chartData = actualMonths.map(month => ({
-      month,
-      ...monthlyData[month]
-    }));
+    const technicians = Array.from(technicianSet);
+    const chartData = Array.from(monthlyData.entries()).map(([month, techData]) => {
+      const monthEntry: any = { month };
+      technicians.forEach(tech => {
+        const techKey = tech.toLowerCase().replace(/\s+/g, '_');
+        monthEntry[techKey] = techData.get(tech) || 0;
+      });
+      return monthEntry;
+    });
 
-    return {
-      chartData,
-      technicians
-    };
+    console.log("Live technician performance data loaded:", chartData.length, "months");
+    return { technicians, chartData };
+
   } catch (error) {
     console.error("Error fetching technician performance:", error);
-    return { chartData: [], technicians: [] };
+    return { technicians: [], chartData: [] };
   }
 };
