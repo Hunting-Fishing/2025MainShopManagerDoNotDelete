@@ -1,205 +1,170 @@
 
 import { supabase } from "@/lib/supabase";
-import { getAllReminders } from "@/services/reminderService";
 
-export interface Alert {
-  id: string;
-  type: 'reminder' | 'inventory' | 'equipment' | 'payment';
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  title: string;
-  message: string;
-  timestamp: string;
-  resolved: boolean;
-  link?: string;
-  metadata?: Record<string, any>;
-}
-
-// Add DashboardAlert type alias for compatibility
 export interface DashboardAlert {
   id: string;
-  type: string;
-  priority: string;
+  type: 'warning' | 'error' | 'info';
   title: string;
   message: string;
   timestamp: string;
-  resolved: boolean;
-  link?: string;
-  metadata?: Record<string, any>;
+  priority: 'high' | 'medium' | 'low';
 }
 
-export interface AlertSummary {
-  total: number;
-  byType: Record<string, number>;
-  bySeverity: Record<string, number>;
-  unresolved: number;
-}
-
-// Get all active alerts
-export const getActiveAlerts = async (): Promise<Alert[]> => {
-  try {
-    const alerts: Alert[] = [];
-    
-    // Get reminder-based alerts
-    const reminderAlerts = await getReminderAlerts();
-    alerts.push(...reminderAlerts);
-    
-    // Get inventory alerts (placeholder - would need inventory service)
-    // const inventoryAlerts = await getInventoryAlerts();
-    // alerts.push(...inventoryAlerts);
-    
-    // Get equipment alerts (placeholder - would need equipment service)
-    // const equipmentAlerts = await getEquipmentAlerts();
-    // alerts.push(...equipmentAlerts);
-    
-    // Sort by severity and timestamp
-    return alerts.sort((a, b) => {
-      const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-      const severityDiff = severityOrder[b.severity] - severityOrder[a.severity];
-      if (severityDiff !== 0) return severityDiff;
-      
-      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-    });
-  } catch (error) {
-    console.error("Error fetching active alerts:", error);
-    return [];
-  }
-};
-
-// Export as getDashboardAlerts for compatibility
 export const getDashboardAlerts = async (): Promise<DashboardAlert[]> => {
-  const alerts = await getActiveAlerts();
-  return alerts.map(alert => ({
-    id: alert.id,
-    type: alert.type,
-    priority: alert.severity,
-    title: alert.title,
-    message: alert.message,
-    timestamp: alert.timestamp,
-    resolved: alert.resolved,
-    link: alert.link,
-    metadata: alert.metadata
-  }));
-};
-
-// Get summary of alerts
-export const getAlertSummary = async (): Promise<AlertSummary> => {
   try {
-    const alerts = await getActiveAlerts();
+    console.log("Fetching dashboard alerts...");
     
-    const summary: AlertSummary = {
-      total: alerts.length,
-      byType: {},
-      bySeverity: {},
-      unresolved: 0
-    };
+    const alerts: DashboardAlert[] = [];
     
-    alerts.forEach(alert => {
-      // Count by type
-      summary.byType[alert.type] = (summary.byType[alert.type] || 0) + 1;
-      
-      // Count by severity
-      summary.bySeverity[alert.severity] = (summary.bySeverity[alert.severity] || 0) + 1;
-      
-      // Count unresolved
-      if (!alert.resolved) {
-        summary.unresolved++;
-      }
-    });
-    
-    return summary;
-  } catch (error) {
-    console.error("Error getting alert summary:", error);
-    return {
-      total: 0,
-      byType: {},
-      bySeverity: {},
-      unresolved: 0
-    };
-  }
-};
+    // Check for low stock inventory items
+    const { data: lowStockItems, error: invError } = await supabase
+      .from('inventory_items')
+      .select('name, quantity_in_stock, minimum_stock_level')
+      .lt('quantity_in_stock', supabase.rpc('minimum_stock_level'));
 
-// Get reminder-based alerts
-const getReminderAlerts = async (): Promise<Alert[]> => {
-  try {
-    const alerts: Alert[] = [];
-    
-    // Get overdue reminders
-    const overdueReminders = await getAllReminders({
-      status: 'pending',
-      dateRange: {
-        to: new Date() // Past due date
-      }
-    });
-    
-    overdueReminders.forEach(reminder => {
+    if (!invError && lowStockItems && lowStockItems.length > 0) {
       alerts.push({
-        id: `reminder-overdue-${reminder.id}`,
-        type: 'reminder',
-        severity: 'high',
-        title: 'Overdue Reminder',
-        message: `Reminder "${reminder.title}" is overdue (due ${reminder.dueDate})`,
-        timestamp: reminder.dueDate,
-        resolved: false,
-        link: `/reminders/${reminder.id}`,
-        metadata: { reminderId: reminder.id, customerId: reminder.customerId }
+        id: 'low-stock',
+        type: 'warning',
+        title: 'Low Stock Alert',
+        message: `${lowStockItems.length} item(s) are running low on stock`,
+        timestamp: new Date().toISOString(),
+        priority: 'high'
       });
-    });
+    }
+
+    // Check for overdue work orders
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
     
-    // Get reminders due soon (next 3 days)
-    const upcomingSoon = new Date();
-    upcomingSoon.setDate(upcomingSoon.getDate() + 3);
-    
-    const upcomingReminders = await getAllReminders({
-      status: 'pending',
-      dateRange: {
-        from: new Date(),
-        to: upcomingSoon
-      }
-    });
-    
-    upcomingReminders.forEach(reminder => {
+    const { data: overdueOrders, error: woError } = await supabase
+      .from('work_orders')
+      .select('id')
+      .neq('status', 'completed')
+      .lt('updated_at', oneDayAgo.toISOString());
+
+    if (!woError && overdueOrders && overdueOrders.length > 0) {
       alerts.push({
-        id: `reminder-upcoming-${reminder.id}`,
-        type: 'reminder',
-        severity: 'medium',
-        title: 'Upcoming Reminder',
-        message: `Reminder "${reminder.title}" is due ${reminder.dueDate}`,
-        timestamp: reminder.dueDate,
-        resolved: false,
-        link: `/reminders/${reminder.id}`,
-        metadata: { reminderId: reminder.id, customerId: reminder.customerId }
+        id: 'overdue-orders',
+        type: 'error',
+        title: 'Overdue Work Orders',
+        message: `${overdueOrders.length} work order(s) may be overdue`,
+        timestamp: new Date().toISOString(),
+        priority: 'high'
       });
-    });
-    
+    }
+
+    console.log("Dashboard alerts loaded:", alerts.length);
     return alerts;
+
   } catch (error) {
-    console.error("Error getting reminder alerts:", error);
+    console.error("Error fetching dashboard alerts:", error);
     return [];
   }
 };
 
-// Mark alert as resolved
-export const resolveAlert = async (alertId: string): Promise<void> => {
+export const getWorkOrdersByStatus = async () => {
   try {
-    // For now, we'll handle this in memory/localStorage
-    // In a real app, you'd save alert states to the database
-    const resolvedAlerts = JSON.parse(localStorage.getItem('resolvedAlerts') || '[]');
-    if (!resolvedAlerts.includes(alertId)) {
-      resolvedAlerts.push(alertId);
-      localStorage.setItem('resolvedAlerts', JSON.stringify(resolvedAlerts));
-    }
+    console.log("Fetching work orders by status...");
+
+    const { data: workOrders, error } = await supabase
+      .from('work_orders')
+      .select('status');
+
+    if (error) throw error;
+
+    const statusCounts = workOrders?.reduce((acc: Record<string, number>, order) => {
+      const status = order.status || 'unknown';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {}) || {};
+
+    const result = Object.entries(statusCounts).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' '),
+      value
+    }));
+
+    console.log("Work orders by status loaded:", result);
+    return result;
+
   } catch (error) {
-    console.error("Error resolving alert:", error);
+    console.error("Error fetching work orders by status:", error);
+    return [];
   }
 };
 
-// Check if alert is resolved
-export const isAlertResolved = (alertId: string): boolean => {
+export const getServiceTypeDistribution = async () => {
   try {
-    const resolvedAlerts = JSON.parse(localStorage.getItem('resolvedAlerts') || '[]');
-    return resolvedAlerts.includes(alertId);
+    console.log("Fetching service type distribution...");
+
+    const { data: workOrders, error } = await supabase
+      .from('work_orders')
+      .select('service_type');
+
+    if (error) throw error;
+
+    const serviceCounts = workOrders?.reduce((acc: Record<string, number>, order) => {
+      const serviceType = order.service_type || 'General Service';
+      acc[serviceType] = (acc[serviceType] || 0) + 1;
+      return acc;
+    }, {}) || {};
+
+    const result = Object.entries(serviceCounts).map(([name, value]) => ({
+      name,
+      value
+    }));
+
+    console.log("Service type distribution loaded:", result);
+    return result;
+
   } catch (error) {
-    console.error("Error checking alert resolution:", error);
-    return false;
+    console.error("Error fetching service type distribution:", error);
+    return [];
+  }
+};
+
+export const getMonthlyRevenue = async () => {
+  try {
+    console.log("Fetching monthly revenue...");
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const { data: workOrders, error } = await supabase
+      .from('work_orders')
+      .select('total_cost, updated_at')
+      .eq('status', 'completed')
+      .gte('updated_at', sixMonthsAgo.toISOString())
+      .order('updated_at', { ascending: true });
+
+    if (error) throw error;
+
+    const monthlyRevenue = new Map<string, number>();
+
+    workOrders?.forEach(order => {
+      const date = new Date(order.updated_at);
+      const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      const revenue = order.total_cost || 0;
+      monthlyRevenue.set(monthKey, (monthlyRevenue.get(monthKey) || 0) + revenue);
+    });
+
+    // Fill in missing months with 0
+    const result = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      result.push({
+        month: monthKey,
+        revenue: monthlyRevenue.get(monthKey) || 0
+      });
+    }
+
+    console.log("Monthly revenue loaded:", result);
+    return result;
+
+  } catch (error) {
+    console.error("Error fetching monthly revenue:", error);
+    return [];
   }
 };

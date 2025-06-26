@@ -14,3 +14,4 @@ export { getPhaseProgress } from './workOrderService';
 export { getRecentWorkOrders } from './workOrderService';
 export { getTechnicianEfficiency, getTechnicianPerformance } from './technicianService';
 export { getChecklistStats } from './checklistService';
+export { getDashboardAlerts, getWorkOrdersByStatus, getServiceTypeDistribution, getMonthlyRevenue } from './alertsService';
