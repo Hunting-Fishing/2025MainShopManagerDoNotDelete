@@ -1,219 +1,159 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { Customer } from '@/domain/customer/entities/Customer';
 import { CustomerRepository, CustomerFilters } from '@/domain/customer/repositories/CustomerRepository';
+import { CustomerEntity, Customer } from '@/domain/customer/entities/Customer';
+import { CustomerVehicle } from '@/types/customer';
 
 export class SupabaseCustomerRepository implements CustomerRepository {
-  async getAll(): Promise<Customer[]> {
+  private convertToCustomerEntity(data: any): CustomerEntity {
+    // Ensure vehicles is an array
+    const vehicles = Array.isArray(data.vehicles) ? data.vehicles : [];
+    
+    return new Customer(
+      data.id,
+      data.first_name || '',
+      data.last_name || '',
+      data.email || '',
+      data.phone || '',
+      data.address || '',
+      data.shop_id,
+      data.created_at,
+      data.updated_at,
+      data.city,
+      data.state,
+      data.postal_code,
+      data.country,
+      data.preferred_technician_id,
+      data.communication_preference,
+      data.referral_source,
+      data.referral_person_id,
+      data.other_referral_details,
+      data.household_id,
+      data.is_fleet,
+      data.fleet_company,
+      data.fleet_manager,
+      data.fleet_contact,
+      data.preferred_service_type,
+      data.notes,
+      Array.isArray(data.tags) ? data.tags : [],
+      Array.isArray(data.segments) ? data.segments : [],
+      data.company,
+      data.business_type,
+      data.business_industry,
+      data.other_business_industry,
+      data.tax_id,
+      data.business_email,
+      data.business_phone,
+      data.preferred_payment_method,
+      data.auto_billing,
+      data.credit_terms,
+      data.terms_agreed,
+      vehicles
+    );
+  }
+
+  async getAll(): Promise<CustomerEntity[]> {
     console.log('🔄 SupabaseCustomerRepository: Fetching all customers...');
     
     try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('❌ Authentication error:', authError);
+        throw new Error(`Authentication failed: ${authError.message}`);
+      }
+
+      if (!user) {
+        console.warn('⚠️ No authenticated user found');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('customers')
         .select(`
           *,
-          vehicles:vehicles(*)
+          vehicles(*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ SupabaseCustomerRepository error:', error);
+        console.error('❌ Error fetching customers:', error);
         throw error;
       }
 
       console.log('✅ SupabaseCustomerRepository: Fetched', data?.length || 0, 'customers');
-      
-      return data?.map(customerData => {
-        console.log('🔄 Creating Customer entity for:', customerData.id);
-        return new Customer(
-          customerData.id,
-          customerData.first_name || '',
-          customerData.last_name || '',
-          customerData.email || '',
-          customerData.phone || '',
-          customerData.address || '',
-          customerData.shop_id,
-          customerData.created_at,
-          customerData.updated_at,
-          {
-            city: customerData.city,
-            state: customerData.state,
-            postal_code: customerData.postal_code,
-            country: customerData.country,
-            preferred_technician_id: customerData.preferred_technician_id,
-            communication_preference: customerData.communication_preference,
-            referral_source: customerData.referral_source,
-            referral_person_id: customerData.referral_person_id,
-            other_referral_details: customerData.other_referral_details,
-            household_id: customerData.household_id,
-            is_fleet: customerData.is_fleet,
-            fleet_company: customerData.fleet_company,
-            fleet_manager: customerData.fleet_manager,
-            fleet_contact: customerData.fleet_contact,
-            preferred_service_type: customerData.preferred_service_type,
-            notes: customerData.notes,
-            tags: customerData.tags,
-            segments: customerData.segments,
-            business_type: customerData.business_type,
-            business_industry: customerData.business_industry,
-            other_business_industry: customerData.other_business_industry,
-            tax_id: customerData.tax_id,
-            business_email: customerData.business_email,
-            business_phone: customerData.business_phone,
-            preferred_payment_method: customerData.preferred_payment_method,
-            auto_billing: customerData.auto_billing,
-            credit_terms: customerData.credit_terms,
-            terms_agreed: customerData.terms_agreed,
-            vehicles: customerData.vehicles || []
-          }
-        );
-      }) || [];
+      return (data || []).map(customer => this.convertToCustomerEntity(customer));
     } catch (error) {
-      console.error('❌ SupabaseCustomerRepository: Exception:', error);
+      console.error('❌ SupabaseCustomerRepository: Exception caught:', error);
       throw error;
     }
   }
 
-  async getById(id: string): Promise<Customer | null> {
-    console.log('🔍 SupabaseCustomerRepository: Fetching customer by id:', id);
+  async getById(id: string): Promise<CustomerEntity | null> {
+    console.log('🔍 SupabaseCustomerRepository: Fetching customer with id:', id);
     
     try {
       const { data, error } = await supabase
         .from('customers')
         .select(`
           *,
-          vehicles:vehicles(*)
+          vehicles(*)
         `)
         .eq('id', id)
         .maybeSingle();
 
       if (error) {
-        console.error('❌ SupabaseCustomerRepository getById error:', error);
+        console.error('❌ Error fetching customer by id:', error);
         throw error;
       }
 
       if (!data) {
-        console.log('⚠️ SupabaseCustomerRepository: Customer not found');
+        console.log('❌ Customer not found with id:', id);
         return null;
       }
 
-      console.log('✅ SupabaseCustomerRepository: Found customer');
-      return new Customer(
-        data.id,
-        data.first_name || '',
-        data.last_name || '',
-        data.email || '',
-        data.phone || '',
-        data.address || '',
-        data.shop_id,
-        data.created_at,
-        data.updated_at,
-        {
-          city: data.city,
-          state: data.state,
-          postal_code: data.postal_code,
-          country: data.country,
-          preferred_technician_id: data.preferred_technician_id,
-          communication_preference: data.communication_preference,
-          referral_source: data.referral_source,
-          referral_person_id: data.referral_person_id,
-          other_referral_details: data.other_referral_details,
-          household_id: data.household_id,
-          is_fleet: data.is_fleet,
-          fleet_company: data.fleet_company,
-          fleet_manager: data.fleet_manager,
-          fleet_contact: data.fleet_contact,
-          preferred_service_type: data.preferred_service_type,
-          notes: data.notes,
-          tags: data.tags,
-          segments: data.segments,
-          business_type: data.business_type,
-          business_industry: data.business_industry,
-          other_business_industry: data.other_business_industry,
-          tax_id: data.tax_id,
-          business_email: data.business_email,
-          business_phone: data.business_phone,
-          preferred_payment_method: data.preferred_payment_method,
-          auto_billing: data.auto_billing,
-          credit_terms: data.credit_terms,
-          terms_agreed: data.terms_agreed,
-          vehicles: data.vehicles || []
-        }
-      );
+      console.log('✅ SupabaseCustomerRepository: Found customer:', data.first_name, data.last_name);
+      return this.convertToCustomerEntity(data);
     } catch (error) {
-      console.error('❌ SupabaseCustomerRepository getById: Exception:', error);
+      console.error('❌ SupabaseCustomerRepository: Exception caught:', error);
       throw error;
     }
   }
 
-  async search(query: string): Promise<Customer[]> {
+  async search(query: string): Promise<CustomerEntity[]> {
     console.log('🔍 SupabaseCustomerRepository: Searching customers with query:', query);
     
     try {
+      if (!query || query.trim().length === 0) {
+        return [];
+      }
+
+      const searchTerm = query.trim();
+      
       const { data, error } = await supabase
         .from('customers')
         .select(`
           *,
-          vehicles:vehicles(*)
+          vehicles(*)
         `)
-        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%`)
-        .order('created_at', { ascending: false });
-
+        .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+        .limit(50)
+        .order('last_name', { ascending: true });
+      
       if (error) {
-        console.error('❌ SupabaseCustomerRepository search error:', error);
+        console.error('❌ Error searching customers:', error);
         throw error;
       }
-
-      console.log('✅ SupabaseCustomerRepository: Found', data?.length || 0, 'customers');
       
-      return data?.map(customerData => new Customer(
-        customerData.id,
-        customerData.first_name || '',
-        customerData.last_name || '',
-        customerData.email || '',
-        customerData.phone || '',
-        customerData.address || '',
-        customerData.shop_id,
-        customerData.created_at,
-        customerData.updated_at,
-        {
-          city: customerData.city,
-          state: customerData.state,
-          postal_code: customerData.postal_code,
-          country: customerData.country,
-          preferred_technician_id: customerData.preferred_technician_id,
-          communication_preference: customerData.communication_preference,
-          referral_source: customerData.referral_source,
-          referral_person_id: customerData.referral_person_id,
-          other_referral_details: customerData.other_referral_details,
-          household_id: customerData.household_id,
-          is_fleet: customerData.is_fleet,
-          fleet_company: customerData.fleet_company,
-          fleet_manager: customerData.fleet_manager,
-          fleet_contact: customerData.fleet_contact,
-          preferred_service_type: customerData.preferred_service_type,
-          notes: customerData.notes,
-          tags: customerData.tags,
-          segments: customerData.segments,
-          business_type: customerData.business_type,
-          business_industry: customerData.business_industry,
-          other_business_industry: customerData.other_business_industry,
-          tax_id: customerData.tax_id,
-          business_email: customerData.business_email,
-          business_phone: customerData.business_phone,
-          preferred_payment_method: customerData.preferred_payment_method,
-          auto_billing: customerData.auto_billing,
-          credit_terms: customerData.credit_terms,
-          terms_agreed: customerData.terms_agreed,
-          vehicles: customerData.vehicles || []
-        }
-      )) || [];
+      console.log('✅ SupabaseCustomerRepository: Found', data?.length || 0, 'customers');
+      return (data || []).map(customer => this.convertToCustomerEntity(customer));
     } catch (error) {
-      console.error('❌ SupabaseCustomerRepository search: Exception:', error);
+      console.error('❌ SupabaseCustomerRepository: Exception caught:', error);
       throw error;
     }
   }
 
-  async filter(filters: CustomerFilters): Promise<Customer[]> {
+  async filter(filters: CustomerFilters): Promise<CustomerEntity[]> {
     console.log('🔍 SupabaseCustomerRepository: Filtering customers with filters:', filters);
     
     try {
@@ -221,7 +161,7 @@ export class SupabaseCustomerRepository implements CustomerRepository {
         .from('customers')
         .select(`
           *,
-          vehicles:vehicles(*)
+          vehicles(*)
         `);
 
       // Apply search filter
@@ -230,35 +170,111 @@ export class SupabaseCustomerRepository implements CustomerRepository {
         query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
       }
 
-      // Apply has vehicles filter
-      if (filters.hasVehicles && filters.hasVehicles !== '') {
-        if (filters.hasVehicles === 'yes') {
-          query = query.not('vehicles', 'is', null);
-        } else if (filters.hasVehicles === 'no') {
-          query = query.is('vehicles', null);
-        }
+      // Apply date range filter
+      if (filters.dateRange?.from) {
+        query = query.gte('created_at', filters.dateRange.from.toISOString());
+      }
+      
+      if (filters.dateRange?.to) {
+        query = query.lte('created_at', filters.dateRange.to.toISOString());
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ SupabaseCustomerRepository filter error:', error);
+        console.error('❌ Error filtering customers:', error);
         throw error;
       }
 
-      console.log('✅ SupabaseCustomerRepository: Filtered', data?.length || 0, 'customers');
-      
-      return data?.map(customerData => new Customer(
-        customerData.id,
-        customerData.first_name || '',
-        customerData.last_name || '',
-        customerData.email || '',
-        customerData.phone || '',
-        customerData.address || '',
-        customerData.shop_id,
-        customerData.created_at,
-        customerData.updated_at,
-        {
+      let result = (data || []).map(customer => this.convertToCustomerEntity(customer));
+
+      // Apply hasVehicles filter (done client-side since it requires joined data)
+      if (filters.hasVehicles && filters.hasVehicles !== '') {
+        result = result.filter(customer => {
+          const hasVehicles = customer.hasVehicles();
+          return filters.hasVehicles === 'yes' ? hasVehicles : !hasVehicles;
+        });
+      }
+
+      console.log('✅ SupabaseCustomerRepository: Filtered to', result.length, 'customers');
+      return result;
+    } catch (error) {
+      console.error('❌ SupabaseCustomerRepository: Exception caught:', error);
+      throw error;
+    }
+  }
+
+  async create(customerData: Omit<CustomerEntity, 'id' | 'created_at' | 'updated_at' | 'fullName' | 'vehicleCount' | 'hasVehicles' | 'isFleetCustomer' | 'matchesSearch'>): Promise<CustomerEntity> {
+    console.log('➕ SupabaseCustomerRepository: Creating customer...');
+    
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .insert({
+          first_name: customerData.first_name,
+          last_name: customerData.last_name,
+          email: customerData.email,
+          phone: customerData.phone,
+          address: customerData.address,
+          city: customerData.city,
+          state: customerData.state,
+          postal_code: customerData.postal_code,
+          country: customerData.country,
+          shop_id: customerData.shop_id,
+          preferred_technician_id: customerData.preferred_technician_id,
+          communication_preference: customerData.communication_preference,
+          referral_source: customerData.referral_source,
+          referral_person_id: customerData.referral_person_id,
+          other_referral_details: customerData.other_referral_details,
+          household_id: customerData.household_id,
+          is_fleet: customerData.is_fleet,
+          fleet_company: customerData.fleet_company,
+          fleet_manager: customerData.fleet_manager,
+          fleet_contact: customerData.fleet_contact,
+          preferred_service_type: customerData.preferred_service_type,
+          notes: customerData.notes,
+          tags: customerData.tags,
+          segments: customerData.segments,
+          company: customerData.company,
+          business_type: customerData.business_type,
+          business_industry: customerData.business_industry,
+          other_business_industry: customerData.other_business_industry,
+          tax_id: customerData.tax_id,
+          business_email: customerData.business_email,
+          business_phone: customerData.business_phone,
+          preferred_payment_method: customerData.preferred_payment_method,
+          auto_billing: customerData.auto_billing,
+          credit_terms: customerData.credit_terms,
+          terms_agreed: customerData.terms_agreed
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error creating customer:', error);
+        throw error;
+      }
+
+      console.log('✅ SupabaseCustomerRepository: Created customer:', data.id);
+      return this.convertToCustomerEntity({ ...data, vehicles: [] });
+    } catch (error) {
+      console.error('❌ SupabaseCustomerRepository: Exception caught:', error);
+      throw error;
+    }
+  }
+
+  async update(id: string, customerData: Partial<CustomerEntity>): Promise<CustomerEntity> {
+    console.log('✏️ SupabaseCustomerRepository: Updating customer:', id);
+    
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .update({
+          first_name: customerData.first_name,
+          last_name: customerData.last_name,
+          email: customerData.email,
+          phone: customerData.phone,
+          address: customerData.address,
           city: customerData.city,
           state: customerData.state,
           postal_code: customerData.postal_code,
@@ -277,6 +293,7 @@ export class SupabaseCustomerRepository implements CustomerRepository {
           notes: customerData.notes,
           tags: customerData.tags,
           segments: customerData.segments,
+          company: customerData.company,
           business_type: customerData.business_type,
           business_industry: customerData.business_industry,
           other_business_industry: customerData.other_business_industry,
@@ -286,144 +303,31 @@ export class SupabaseCustomerRepository implements CustomerRepository {
           preferred_payment_method: customerData.preferred_payment_method,
           auto_billing: customerData.auto_billing,
           credit_terms: customerData.credit_terms,
-          terms_agreed: customerData.terms_agreed,
-          vehicles: customerData.vehicles || []
-        }
-      )) || [];
-    } catch (error) {
-      console.error('❌ SupabaseCustomerRepository filter: Exception:', error);
-      throw error;
-    }
-  }
-
-  async create(customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'fullName' | 'vehicleCount' | 'hasVehicles' | 'isFleetCustomer' | 'matchesSearch'>): Promise<Customer> {
-    try {
-      const { data, error } = await supabase
-        .from('customers')
-        .insert([
-          {
-            ...customerData,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ SupabaseCustomerRepository create error:', error);
-        throw error;
-      }
-
-      return new Customer(
-        data.id,
-        data.first_name || '',
-        data.last_name || '',
-        data.email || '',
-        data.phone || '',
-        data.address || '',
-        data.shop_id,
-        data.created_at,
-        data.updated_at,
-        {
-          city: data.city,
-          state: data.state,
-          postal_code: data.postal_code,
-          country: data.country,
-          preferred_technician_id: data.preferred_technician_id,
-          communication_preference: data.communication_preference,
-          referral_source: data.referral_source,
-          referral_person_id: data.referral_person_id,
-          other_referral_details: data.other_referral_details,
-          household_id: data.household_id,
-          is_fleet: data.is_fleet,
-          fleet_company: data.fleet_company,
-          fleet_manager: data.fleet_manager,
-          fleet_contact: data.fleet_contact,
-          preferred_service_type: data.preferred_service_type,
-          notes: data.notes,
-          tags: data.tags,
-          segments: data.segments,
-          business_type: data.business_type,
-          business_industry: data.business_industry,
-          other_business_industry: data.other_business_industry,
-          tax_id: data.tax_id,
-          business_email: data.business_email,
-          business_phone: data.business_phone,
-          preferred_payment_method: data.preferred_payment_method,
-          auto_billing: data.auto_billing,
-          credit_terms: data.credit_terms,
-          terms_agreed: data.terms_agreed,
-          vehicles: []
-        }
-      );
-    } catch (error) {
-      console.error('❌ SupabaseCustomerRepository create: Exception:', error);
-      throw error;
-    }
-  }
-
-  async update(id: string, updates: Partial<Customer>): Promise<Customer> {
-    try {
-      const { data, error } = await supabase
-        .from('customers')
-        .update(updates)
+          terms_agreed: customerData.terms_agreed
+        })
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          vehicles(*)
+        `)
         .single();
 
       if (error) {
-        console.error('❌ SupabaseCustomerRepository update error:', error);
+        console.error('❌ Error updating customer:', error);
         throw error;
       }
 
-      return new Customer(
-        data.id,
-        data.first_name || '',
-        data.last_name || '',
-        data.email || '',
-        data.phone || '',
-        data.address || '',
-        data.shop_id,
-        data.created_at,
-        data.updated_at,
-        {
-          city: data.city,
-          state: data.state,
-          postal_code: data.postal_code,
-          country: data.country,
-          preferred_technician_id: data.preferred_technician_id,
-          communication_preference: data.communication_preference,
-          referral_source: data.referral_source,
-          referral_person_id: data.referral_person_id,
-          other_referral_details: data.other_referral_details,
-          household_id: data.household_id,
-          is_fleet: data.is_fleet,
-          fleet_company: data.fleet_company,
-          fleet_manager: data.fleet_manager,
-          fleet_contact: data.fleet_contact,
-          preferred_service_type: data.preferred_service_type,
-          notes: data.notes,
-          tags: data.tags,
-          segments: data.segments,
-          business_type: data.business_type,
-          business_industry: data.business_industry,
-          other_business_industry: data.other_business_industry,
-          tax_id: data.tax_id,
-          business_email: data.business_email,
-          business_phone: data.business_phone,
-          preferred_payment_method: data.preferred_payment_method,
-          auto_billing: data.auto_billing,
-          credit_terms: data.credit_terms,
-          terms_agreed: data.terms_agreed,
-          vehicles: []
-        }
-      );
+      console.log('✅ SupabaseCustomerRepository: Updated customer:', data.id);
+      return this.convertToCustomerEntity(data);
     } catch (error) {
-      console.error('❌ SupabaseCustomerRepository update: Exception:', error);
+      console.error('❌ SupabaseCustomerRepository: Exception caught:', error);
       throw error;
     }
   }
 
   async delete(id: string): Promise<void> {
+    console.log('🗑️ SupabaseCustomerRepository: Deleting customer:', id);
+    
     try {
       const { error } = await supabase
         .from('customers')
@@ -431,11 +335,13 @@ export class SupabaseCustomerRepository implements CustomerRepository {
         .eq('id', id);
 
       if (error) {
-        console.error('❌ SupabaseCustomerRepository delete error:', error);
+        console.error('❌ Error deleting customer:', error);
         throw error;
       }
+
+      console.log('✅ SupabaseCustomerRepository: Deleted customer:', id);
     } catch (error) {
-      console.error('❌ SupabaseCustomerRepository delete: Exception:', error);
+      console.error('❌ SupabaseCustomerRepository: Exception caught:', error);
       throw error;
     }
   }
