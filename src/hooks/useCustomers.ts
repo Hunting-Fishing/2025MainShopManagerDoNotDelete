@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getAllCustomers } from '@/services/customer/customerQueryService';
 import { Customer } from '@/types/customer';
@@ -17,11 +17,18 @@ interface CustomerFilters {
   sortBy?: string;
   tags?: string[];
   vehicleType?: string;
-  hasVehicles?: string;
+  hasVehicles?: 'yes' | 'no' | '';
   dateRange?: {
     from: Date | null;
     to: Date | null;
   };
+}
+
+interface CustomerStats {
+  total: number;
+  withVehicles: number;
+  fleetCustomers: number;
+  recentlyAdded: number;
 }
 
 const defaultFilters: CustomerFilters = {
@@ -61,6 +68,26 @@ export function useCustomers() {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
+  // Calculate customer stats
+  const customerStats: CustomerStats = useMemo(() => {
+    const total = customers.length;
+    const withVehicles = customers.filter(c => (c.vehicles?.length || 0) > 0).length;
+    const fleetCustomers = customers.filter(c => c.is_fleet === true).length;
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentlyAdded = customers.filter(c => 
+      new Date(c.created_at) >= thirtyDaysAgo
+    ).length;
+
+    return {
+      total,
+      withVehicles,
+      fleetCustomers,
+      recentlyAdded
+    };
+  }, [customers]);
+
   // Filter customers based on current filters
   const filteredCustomers = customers.filter((customer: Customer) => {
     // Search filter
@@ -77,13 +104,26 @@ export function useCustomers() {
       }
     }
 
-    // Has vehicles filter
+    // Has vehicles filter - only apply if it's not empty string
     if (filters.hasVehicles && filters.hasVehicles !== '') {
       const hasVehicles = (customer.vehicles?.length || 0) > 0;
       if (filters.hasVehicles === 'yes' && !hasVehicles) {
         return false;
       }
       if (filters.hasVehicles === 'no' && hasVehicles) {
+        return false;
+      }
+    }
+
+    // Date range filter
+    if (filters.dateRange?.from || filters.dateRange?.to) {
+      const customerDate = new Date(customer.created_at);
+      
+      if (filters.dateRange?.from && customerDate < filters.dateRange.from) {
+        return false;
+      }
+      
+      if (filters.dateRange?.to && customerDate > filters.dateRange.to) {
         return false;
       }
     }
@@ -102,6 +142,7 @@ export function useCustomers() {
   return {
     customers,
     filteredCustomers,
+    customerStats,
     loading,
     error: error?.message || null,
     filters,

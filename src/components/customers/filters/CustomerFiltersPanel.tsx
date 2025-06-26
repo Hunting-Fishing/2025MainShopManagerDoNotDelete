@@ -4,11 +4,24 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
-import { CustomerFilters } from "@/domain/customer/repositories/CustomerRepository";
+
+interface CustomerFilters {
+  search?: string;
+  searchQuery?: string;
+  status?: string;
+  sortBy?: string;
+  tags?: string[];
+  vehicleType?: string;
+  hasVehicles?: 'yes' | 'no' | '';
+  dateRange?: {
+    from: Date | null;
+    to: Date | null;
+  };
+}
 
 interface CustomerFiltersPanelProps {
   filters: CustomerFilters;
-  onFilterChange: (filters: Partial<CustomerFilters>) => void;
+  onFilterChange: (filters: CustomerFilters) => void;
   onClearFilters: () => void;
 }
 
@@ -25,6 +38,21 @@ export function CustomerFiltersPanel({
     filters.dateRange?.from ||
     filters.dateRange?.to
   );
+
+  const handleSearchChange = (value: string) => {
+    onFilterChange({ ...filters, search: value });
+  };
+
+  const handleHasVehiclesChange = (value: string) => {
+    onFilterChange({ 
+      ...filters, 
+      hasVehicles: value as 'yes' | 'no' | ''
+    });
+  };
+
+  const handleVehicleTypeChange = (value: string) => {
+    onFilterChange({ ...filters, vehicleType: value });
+  };
 
   return (
     <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-4">
@@ -49,16 +77,14 @@ export function CustomerFiltersPanel({
           <Input
             placeholder="Search customers..."
             value={filters.search || ''}
-            onChange={(e) => onFilterChange({ search: e.target.value })}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10"
           />
         </div>
 
         <Select
           value={filters.hasVehicles || ''}
-          onValueChange={(value) => onFilterChange({ 
-            hasVehicles: value as 'yes' | 'no' | '' 
-          })}
+          onValueChange={handleHasVehiclesChange}
         >
           <SelectTrigger>
             <SelectValue placeholder="Has vehicles?" />
@@ -72,7 +98,7 @@ export function CustomerFiltersPanel({
 
         <Select
           value={filters.vehicleType || ''}
-          onValueChange={(value) => onFilterChange({ vehicleType: value })}
+          onValueChange={handleVehicleTypeChange}
         >
           <SelectTrigger>
             <SelectValue placeholder="Vehicle type" />

@@ -1,57 +1,34 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Car, Building2, TrendingUp } from "lucide-react";
-import { CustomerEntity } from "@/domain/customer/entities/Customer";
+import { Users, Car, Building, UserPlus } from "lucide-react";
+import { Customer } from "@/types/customer";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CustomerStatsCardsProps {
-  customers: CustomerEntity[];
+  customers: Customer[];
+  customerStats?: {
+    total: number;
+    withVehicles: number;
+    fleetCustomers: number;
+    recentlyAdded: number;
+  };
   isLoading: boolean;
 }
 
-export function CustomerStatsCards({ customers, isLoading }: CustomerStatsCardsProps) {
-  const stats = React.useMemo(() => {
-    if (!customers.length) {
-      return {
-        total: 0,
-        withVehicles: 0,
-        fleetCustomers: 0,
-        recentlyAdded: 0
-      };
-    }
-
-    const total = customers.length;
-    const withVehicles = customers.filter(c => c.hasVehicles()).length;
-    const fleetCustomers = customers.filter(c => c.isFleetCustomer()).length;
-    
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const recentlyAdded = customers.filter(c => 
-      new Date(c.created_at) >= thirtyDaysAgo
-    ).length;
-
-    return {
-      total,
-      withVehicles,
-      fleetCustomers,
-      recentlyAdded
-    };
-  }, [customers]);
-
+export function CustomerStatsCards({ customers, customerStats, isLoading }: CustomerStatsCardsProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="bg-white shadow-sm border-slate-200/60">
+          <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                <div className="h-4 bg-slate-200 rounded animate-pulse w-20" />
-              </CardTitle>
-              <div className="h-4 w-4 bg-slate-200 rounded animate-pulse" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="h-8 bg-slate-200 rounded animate-pulse mb-2" />
-              <div className="h-3 bg-slate-200 rounded animate-pulse w-16" />
+              <Skeleton className="h-8 w-16 mb-1" />
+              <Skeleton className="h-3 w-24" />
             </CardContent>
           </Card>
         ))}
@@ -59,59 +36,63 @@ export function CustomerStatsCards({ customers, isLoading }: CustomerStatsCardsP
     );
   }
 
-  const statsData = [
+  const stats = customerStats || {
+    total: customers.length,
+    withVehicles: customers.filter(c => (c.vehicles?.length || 0) > 0).length,
+    fleetCustomers: customers.filter(c => c.is_fleet === true).length,
+    recentlyAdded: customers.filter(c => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return new Date(c.created_at) >= thirtyDaysAgo;
+    }).length
+  };
+
+  const cards = [
     {
       title: "Total Customers",
       value: stats.total,
+      description: "All registered customers",
       icon: Users,
-      color: "bg-blue-500",
-      bgGradient: "from-blue-50 to-blue-100/50"
+      color: "text-blue-600"
     },
     {
       title: "With Vehicles",
       value: stats.withVehicles,
+      description: "Customers with registered vehicles",
       icon: Car,
-      color: "bg-emerald-500",
-      bgGradient: "from-emerald-50 to-emerald-100/50"
+      color: "text-green-600"
     },
     {
       title: "Fleet Customers",
       value: stats.fleetCustomers,
-      icon: Building2,
-      color: "bg-orange-500",
-      bgGradient: "from-orange-50 to-orange-100/50"
+      description: "Business fleet customers",
+      icon: Building,
+      color: "text-purple-600"
     },
     {
       title: "Recently Added",
       value: stats.recentlyAdded,
-      icon: TrendingUp,
-      color: "bg-purple-500",
-      bgGradient: "from-purple-50 to-purple-100/50"
+      description: "Added in last 30 days",
+      icon: UserPlus,
+      color: "text-orange-600"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-      {statsData.map((stat, index) => {
-        const IconComponent = stat.icon;
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      {cards.map((card) => {
+        const Icon = card.icon;
         return (
-          <Card key={index} className="bg-white shadow-sm border-slate-200/60 hover:shadow-md transition-all duration-200 overflow-hidden">
-            <div className={`h-1 bg-gradient-to-r ${stat.bgGradient}`} />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 pt-4">
-              <CardTitle className="text-sm font-medium text-slate-700">
-                {stat.title}
+          <Card key={card.title}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600">
+                {card.title}
               </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.color} bg-opacity-10`}>
-                <IconComponent className={`h-4 w-4 ${stat.color.replace('bg-', 'text-')}`} />
-              </div>
+              <Icon className={`h-4 w-4 ${card.color}`} />
             </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-2xl font-bold text-slate-900 mb-1">
-                {stat.value.toLocaleString()}
-              </div>
-              <div className="text-xs text-slate-500">
-                Live from database
-              </div>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-900">{card.value}</div>
+              <p className="text-xs text-slate-500 mt-1">{card.description}</p>
             </CardContent>
           </Card>
         );

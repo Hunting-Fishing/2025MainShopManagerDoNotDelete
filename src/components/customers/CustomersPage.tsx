@@ -5,31 +5,31 @@ import { CustomersHeader } from "./list/CustomersHeader";
 import { CustomerStatsCards } from "./stats/CustomerStatsCards";
 import { CustomerFiltersPanel } from "./filters/CustomerFiltersPanel";
 import { CustomerTable } from "./table/CustomerTable";
-import { useCustomerData } from "@/application/customer/hooks/useCustomerData";
-import { useCustomerFilters } from "@/application/customer/hooks/useCustomerFilters";
+import { useCustomers } from "@/hooks/useCustomers";
 
 /**
- * REFACTORED: Main customers page using clean architecture
- * - Domain layer: Customer entity and business logic
- * - Infrastructure layer: Supabase repository implementation
- * - Application layer: Use cases and hooks
- * - Presentation layer: React components
+ * REFACTORED: Main customers page using existing real customer infrastructure
+ * - Uses existing useCustomers hook with real Supabase data
+ * - Integrates with existing customer service layer
+ * - Maintains all existing functionality while fixing TypeScript errors
  * 
- * Uses 100% live data from Supabase with proper separation of concerns
+ * Uses 100% live data from Supabase with proper error handling
  */
 export function CustomersPage() {
-  console.log('🔄 CustomersPage: Rendering with clean architecture');
+  console.log('🔄 CustomersPage: Rendering with existing customer infrastructure');
   
-  // Application layer - data management
-  const { customers, loading, error, refetch } = useCustomerData();
-  
-  // Application layer - filter management
+  // Use existing customer hook with enhanced functionality
   const { 
-    filters, 
-    filteredCustomers, 
-    handleFilterChange, 
-    clearFilters 
-  } = useCustomerFilters(customers);
+    customers,
+    filteredCustomers,
+    customerStats,
+    loading, 
+    error, 
+    filters,
+    handleFilterChange,
+    clearFilters,
+    refetch 
+  } = useCustomers();
 
   if (error) {
     return (
@@ -54,6 +54,7 @@ export function CustomersPage() {
       
       <CustomerStatsCards 
         customers={customers}
+        customerStats={customerStats}
         isLoading={loading}
       />
       
