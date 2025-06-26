@@ -104,7 +104,7 @@ export function useCustomers() {
       }
     }
 
-    // Has vehicles filter - only apply if it's not empty string
+    // Has vehicles filter - check if filter is set and not empty
     if (filters.hasVehicles && filters.hasVehicles !== '') {
       const hasVehicles = (customer.vehicles?.length || 0) > 0;
       if (filters.hasVehicles === 'yes' && !hasVehicles) {
