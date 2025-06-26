@@ -10,8 +10,11 @@ import { WorkOrderPhaseProgress } from '@/components/dashboard/WorkOrderPhasePro
 import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
 import { EquipmentRecommendations } from '@/components/dashboard/EquipmentRecommendations';
 import { DashboardAlerts } from '@/components/dashboard/DashboardAlerts';
+import { useDashboardData } from '@/hooks/useDashboardData';
 
 export default function Dashboard() {
+  const { phaseProgressData, isLoading } = useDashboardData();
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -29,7 +32,7 @@ export default function Dashboard() {
             <TechnicianPerformanceChart />
           </div>
           <div>
-            <WorkOrderPhaseProgress />
+            <WorkOrderPhaseProgress data={phaseProgressData} isLoading={isLoading} />
           </div>
         </div>
         
