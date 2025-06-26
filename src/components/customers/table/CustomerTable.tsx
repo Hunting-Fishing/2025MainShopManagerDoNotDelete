@@ -3,135 +3,122 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Phone, Mail } from "lucide-react";
-import { CustomerEntity } from "@/domain/customer/entities/Customer";
+import { Eye, Edit, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Customer, getCustomerFullName } from "@/types/customer";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CustomerTableProps {
-  customers: CustomerEntity[];
+  customers: Customer[];
   isLoading: boolean;
 }
 
 export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-16 bg-slate-100 rounded animate-pulse" />
-        ))}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Company</TableHead>
+              <TableHead>Vehicles</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     );
   }
 
-  if (!customers.length) {
+  if (customers.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-slate-400 text-lg mb-2">No customers found</div>
-        <div className="text-slate-500">Try adjusting your search or filters</div>
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No customers found.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+    <div className="rounded-md border">
       <Table>
         <TableHeader>
-          <TableRow className="bg-slate-50">
-            <TableHead className="font-semibold text-slate-700">Customer</TableHead>
-            <TableHead className="font-semibold text-slate-700">Contact</TableHead>
-            <TableHead className="font-semibold text-slate-700">Location</TableHead>
-            <TableHead className="font-semibold text-slate-700">Vehicles</TableHead>
-            <TableHead className="font-semibold text-slate-700">Type</TableHead>
-            <TableHead className="font-semibold text-slate-700">Added</TableHead>
-            <TableHead className="font-semibold text-slate-700">Actions</TableHead>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Phone</TableHead>
+            <TableHead>Company</TableHead>
+            <TableHead>Vehicles</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {customers.map((customer) => (
-            <TableRow key={customer.id} className="hover:bg-slate-50 transition-colors">
-              <TableCell>
-                <div>
-                  <div className="font-medium text-slate-900">{customer.fullName}</div>
-                  {customer.company && (
-                    <div className="text-sm text-slate-500">{customer.company}</div>
-                  )}
-                </div>
-              </TableCell>
-              
-              <TableCell>
-                <div className="space-y-1">
-                  <div className="flex items-center text-sm text-slate-600">
-                    <Mail className="h-3 w-3 mr-1" />
-                    {customer.email}
-                  </div>
-                  <div className="flex items-center text-sm text-slate-600">
-                    <Phone className="h-3 w-3 mr-1" />
-                    {customer.phone}
-                  </div>
-                </div>
-              </TableCell>
-              
-              <TableCell>
-                <div className="text-sm text-slate-600">
-                  {customer.city && customer.state ? (
-                    <>{customer.city}, {customer.state}</>
-                  ) : (
-                    customer.address?.substring(0, 30) || 'No address'
-                  )}
-                </div>
-              </TableCell>
-              
-              <TableCell>
-                <div className="flex items-center space-x-2">
-                  <Badge 
-                    variant={customer.hasVehicles() ? "default" : "secondary"}
-                    className={customer.hasVehicles() ? "bg-emerald-100 text-emerald-800" : ""}
+          {customers.map((customer) => {
+            const fullName = getCustomerFullName(customer);
+            const vehicleCount = customer.vehicles?.length || 0;
+            const hasVehicles = vehicleCount > 0;
+            const isFleetCustomer = customer.is_fleet === true;
+
+            return (
+              <TableRow key={customer.id}>
+                <TableCell className="font-medium">
+                  <Link 
+                    to={`/customers/${customer.id}`}
+                    className="hover:underline text-blue-600"
                   >
-                    {customer.vehicleCount} {customer.vehicleCount === 1 ? 'vehicle' : 'vehicles'}
+                    {fullName}
+                  </Link>
+                </TableCell>
+                <TableCell>{customer.email}</TableCell>
+                <TableCell>{customer.phone}</TableCell>
+                <TableCell>{customer.company || '-'}</TableCell>
+                <TableCell>
+                  <Badge variant={hasVehicles ? "default" : "secondary"}>
+                    {vehicleCount} {vehicleCount === 1 ? 'vehicle' : 'vehicles'}
                   </Badge>
-                </div>
-              </TableCell>
-              
-              <TableCell>
-                {customer.isFleetCustomer() ? (
-                  <Badge className="bg-orange-100 text-orange-800">Fleet</Badge>
-                ) : (
-                  <Badge variant="secondary">Individual</Badge>
-                )}
-              </TableCell>
-              
-              <TableCell>
-                <div className="text-sm text-slate-600">
-                  {new Date(customer.created_at).toLocaleDateString()}
-                </div>
-              </TableCell>
-              
-              <TableCell>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className="text-slate-600 hover:text-slate-900"
-                  >
-                    <Link to={`/customers/${customer.id}`}>
-                      <Eye className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className="text-slate-600 hover:text-slate-900"
-                  >
-                    <Link to={`/customers/${customer.id}/edit`}>
-                      <Edit className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={isFleetCustomer ? "default" : "outline"}>
+                    {isFleetCustomer ? 'Fleet' : 'Individual'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/customers/${customer.id}`}>
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/customers/${customer.id}/edit`}>
+                        <Edit className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <MessageSquare className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
