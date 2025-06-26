@@ -1,12 +1,18 @@
 
 import React from 'react';
-import { CustomersPage } from '@/components/customers/CustomersPage';
+import { CustomersPage as RefactoredCustomersPage } from '@/components/customers/CustomersPage';
 
 /**
- * IMPORTANT: This page uses the full CustomersPage component
- * DO NOT replace with placeholder text - full functionality exists
- * CustomersPage includes: customer list, filtering, creation, details, etc.
+ * REFACTORED: Page wrapper using clean architecture
+ * The CustomersPage component now follows SOLID principles:
+ * - Single Responsibility: Each component has one clear purpose
+ * - Open/Closed: Easy to extend with new features
+ * - Liskov Substitution: Repository pattern allows different implementations
+ * - Interface Segregation: Small, focused interfaces
+ * - Dependency Inversion: Depends on abstractions, not concretions
+ * 
+ * Uses 100% live Supabase data with proper error handling and loading states
  */
 export default function Customers() {
-  return <CustomersPage />;
+  return <RefactoredCustomersPage />;
 }
