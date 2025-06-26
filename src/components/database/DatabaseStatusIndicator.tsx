@@ -1,163 +1,163 @@
 
 import React, { useState, useEffect } from 'react';
+import { AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 import { databaseHealthMonitor } from '@/services/database/DatabaseHealthMonitor';
 import { hardcodedWorkOrderService } from '@/services/workOrder/HardcodedWorkOrderService';
-import { startupDiagnostics, DiagnosticResult } from '@/services/database/StartupDiagnostics';
 
 export function DatabaseStatusIndicator() {
-  const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastCheck, setLastCheck] = useState<Date | null>(null);
+  const [healthStatus, setHealthStatus] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const refreshDiagnostics = async () => {
-    setIsRefreshing(true);
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const diagnostics = await databaseHealthMonitor.getDiagnostics();
+        setHealthStatus(diagnostics);
+      } catch (error) {
+        console.error('Failed to get database health:', error);
+        setHealthStatus({ status: 'error', message: 'Health check failed' });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkHealth();
+    
+    // Check health every 30 seconds
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleRefresh = async () => {
+    setLoading(true);
     try {
-      const results = await startupDiagnostics.runStartupDiagnostics();
-      setDiagnostics(results);
-      setLastCheck(new Date());
+      await databaseHealthMonitor.runHealthCheck();
+      const diagnostics = await databaseHealthMonitor.getDiagnostics();
+      setHealthStatus(diagnostics);
     } catch (error) {
-      console.error('Failed to refresh diagnostics:', error);
+      console.error('Failed to refresh health status:', error);
     } finally {
-      setIsRefreshing(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    // Load initial diagnostics
-    const initialResults = startupDiagnostics.getLastResults();
-    if (initialResults.length > 0) {
-      setDiagnostics(initialResults);
-    } else {
-      refreshDiagnostics();
-    }
-  }, []);
-
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'success':
+      case 'healthy':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'warning':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
       case 'error':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
       default:
-        return <AlertCircle className="h-4 w-4 text-gray-500" />;
+        return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'success':
-        return 'bg-green-100 text-green-800';
+      case 'healthy':
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'error':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const overallStatus = diagnostics.some(d => d.status === 'error') ? 'error' :
-    diagnostics.some(d => d.status === 'warning') ? 'warning' : 'success';
-
   const cacheStatus = hardcodedWorkOrderService.getCacheStatus();
+
+  if (loading) {
+    return (
+      <Card className="w-full">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-2">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            <span className="text-sm text-gray-600">Checking database health...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          {getStatusIcon(overallStatus)}
-          Database Status
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center justify-between">
+          <span className="flex items-center space-x-2">
+            {getStatusIcon(healthStatus?.status || 'unknown')}
+            <span>Database Status</span>
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            className="h-8"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Refresh
+          </Button>
         </CardTitle>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={refreshDiagnostics}
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Overall Status */}
-        <div className="flex items-center justify-between">
-          <span className="font-medium">Overall Status:</span>
-          <Badge className={getStatusColor(overallStatus)}>
-            {overallStatus.toUpperCase()}
+        <div className="flex items-center space-x-2">
+          <Badge className={getStatusColor(healthStatus?.status || 'unknown')}>
+            {healthStatus?.status?.toUpperCase() || 'UNKNOWN'}
           </Badge>
-        </div>
-
-        {/* Individual Components */}
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm text-gray-700">Components:</h4>
-          {diagnostics.map((diagnostic, index) => (
-            <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-              <div className="flex items-center gap-2">
-                {getStatusIcon(diagnostic.status)}
-                <span className="text-sm font-medium">{diagnostic.component}</span>
-              </div>
-              <Badge className={getStatusColor(diagnostic.status)} variant="outline">
-                {diagnostic.status}
-              </Badge>
-            </div>
-          ))}
+          <span className="text-sm text-gray-600">
+            {healthStatus?.message || 'Status unknown'}
+          </span>
         </div>
 
         {/* Cache Status */}
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm text-gray-700">Cache Status:</h4>
-          <div className="p-2 bg-blue-50 rounded">
-            <div className="flex justify-between text-sm">
-              <span>Cached Items:</span>
-              <span className="font-medium">{cacheStatus.size}</span>
+        <div className="bg-blue-50 p-3 rounded-lg space-y-2">
+          <h4 className="font-medium text-blue-900 text-sm">Work Orders Cache</h4>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-blue-600">Cached Items:</span>
+              <span className="ml-1 font-mono">{cacheStatus.size}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Last Fetch:</span>
-              <span className="font-medium">
-                {cacheStatus.lastFetch ? 
-                  new Date(cacheStatus.lastFetch).toLocaleTimeString() : 
-                  'Never'
-                }
+            <div>
+              <span className="text-blue-600">Last Updated:</span>
+              <span className="ml-1 font-mono">
+                {cacheStatus.lastFetch ? new Date(cacheStatus.lastFetch).toLocaleTimeString() : 'Never'}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Cache Age:</span>
-              <span className="font-medium">
-                {cacheStatus.cacheAge ? 
-                  `${Math.round(cacheStatus.cacheAge / 1000)}s` : 
-                  'N/A'
-                }
+            <div className="col-span-2">
+              <span className="text-blue-600">Cache Age:</span>
+              <span className="ml-1 font-mono">
+                {cacheStatus.cacheAge > 0 ? `${Math.floor(cacheStatus.cacheAge / 1000)}s` : 'Fresh'}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Last Check */}
-        {lastCheck && (
-          <div className="text-xs text-gray-500 text-center">
-            Last checked: {lastCheck.toLocaleString()}
-          </div>
-        )}
-
-        {/* Error Details */}
-        {diagnostics.some(d => d.status === 'error') && (
+        {/* Health Checks */}
+        {healthStatus?.checks && (
           <div className="space-y-2">
-            <h4 className="font-medium text-sm text-red-700">Error Details:</h4>
-            {diagnostics
-              .filter(d => d.status === 'error')
-              .map((diagnostic, index) => (
-                <div key={index} className="p-2 bg-red-50 rounded text-sm">
-                  <div className="font-medium text-red-800">{diagnostic.component}</div>
-                  <div className="text-red-700">{diagnostic.message}</div>
+            <h4 className="font-medium text-sm">Health Checks</h4>
+            <div className="space-y-1">
+              {Object.entries(healthStatus.checks).map(([check, result]: [string, any]) => (
+                <div key={check} className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600">{check.replace(/_/g, ' ')}</span>
+                  <div className="flex items-center space-x-1">
+                    {getStatusIcon(result.status)}
+                    <span className={`font-mono ${
+                      result.status === 'healthy' ? 'text-green-600' : 
+                      result.status === 'warning' ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {result.status}
+                    </span>
+                  </div>
                 </div>
-              ))
-            }
+              ))}
+            </div>
           </div>
         )}
       </CardContent>
