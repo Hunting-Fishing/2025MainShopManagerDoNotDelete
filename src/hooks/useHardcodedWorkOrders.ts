@@ -38,7 +38,7 @@ export function useHardcodedWorkOrders() {
       
       // Even on error, try to get cached data
       try {
-        const cachedData = hardcodedWorkOrderService.getCachedWorkOrders?.() || [];
+        const cachedData = hardcodedWorkOrderService.getCachedWorkOrders();
         if (cachedData.length > 0) {
           setWorkOrders(cachedData);
           setError(`Using cached data: ${errorMessage}`);

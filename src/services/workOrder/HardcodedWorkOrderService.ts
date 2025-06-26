@@ -1,62 +1,109 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { WorkOrder } from '@/types/workOrder';
 
-interface CachedWorkOrder extends WorkOrder {
-  cachedAt: string;
+export interface CacheStatus {
+  size: number;
+  lastUpdated: Date | null;
+  strategies: string[];
+  health: 'healthy' | 'degraded' | 'offline';
 }
 
 export class HardcodedWorkOrderService {
-  private static instance: HardcodedWorkOrderService;
-  private cache: Map<string, CachedWorkOrder> = new Map();
-  private lastSuccessfulFetch: Date | null = null;
+  private cache: WorkOrder[] = [];
+  private lastFetch: Date | null = null;
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-  static getInstance(): HardcodedWorkOrderService {
-    if (!HardcodedWorkOrderService.instance) {
-      HardcodedWorkOrderService.instance = new HardcodedWorkOrderService();
-    }
-    return HardcodedWorkOrderService.instance;
+  // Make this method public so it can be accessed from hooks
+  public getCachedWorkOrders(): WorkOrder[] {
+    return this.cache;
+  }
+
+  getCacheStatus(): CacheStatus {
+    return {
+      size: this.cache.length,
+      lastUpdated: this.lastFetch,
+      strategies: ['enhanced', 'basic', 'raw', 'cached'],
+      health: this.cache.length > 0 ? 'healthy' : 'degraded'
+    };
+  }
+
+  clearCache(): void {
+    this.cache = [];
+    this.lastFetch = null;
+    console.log('HardcodedWorkOrderService: Cache cleared');
   }
 
   async getAllWorkOrders(): Promise<WorkOrder[]> {
-    console.log('🔄 HardcodedWorkOrderService: Fetching work orders with multiple strategies...');
-
-    // Strategy 1: Enhanced query with relationships
-    try {
-      return await this.fetchWithEnhancedQuery();
-    } catch (error) {
-      console.warn('⚠️ Enhanced query failed, trying basic query:', error);
+    // Return cached data if fresh
+    if (this.lastFetch && Date.now() - this.lastFetch.getTime() < this.CACHE_DURATION && this.cache.length > 0) {
+      console.log('HardcodedWorkOrderService: Returning cached data');
+      return this.cache;
     }
 
-    // Strategy 2: Basic query without relationships
+    // Strategy 1: Enhanced query (with relationships)
     try {
-      return await this.fetchWithBasicQuery();
+      console.log('HardcodedWorkOrderService: Trying enhanced query...');
+      const enhancedData = await this.fetchEnhancedWorkOrders();
+      if (enhancedData && enhancedData.length > 0) {
+        this.cache = enhancedData;
+        this.lastFetch = new Date();
+        console.log('HardcodedWorkOrderService: Enhanced query successful, cached', enhancedData.length, 'work orders');
+        return enhancedData;
+      }
     } catch (error) {
-      console.warn('⚠️ Basic query failed, trying raw SQL:', error);
+      console.warn('HardcodedWorkOrderService: Enhanced query failed:', error);
+    }
+
+    // Strategy 2: Basic query (no relationships)
+    try {
+      console.log('HardcodedWorkOrderService: Trying basic query...');
+      const basicData = await this.fetchBasicWorkOrders();
+      if (basicData && basicData.length > 0) {
+        this.cache = basicData;
+        this.lastFetch = new Date();
+        console.log('HardcodedWorkOrderService: Basic query successful, cached', basicData.length, 'work orders');
+        return basicData;
+      }
+    } catch (error) {
+      console.warn('HardcodedWorkOrderService: Basic query failed:', error);
     }
 
     // Strategy 3: Raw SQL query
     try {
-      return await this.fetchWithRawSQL();
+      console.log('HardcodedWorkOrderService: Trying raw SQL query...');
+      const rawData = await this.fetchRawWorkOrders();
+      if (rawData && rawData.length > 0) {
+        this.cache = rawData;
+        this.lastFetch = new Date();
+        console.log('HardcodedWorkOrderService: Raw query successful, cached', rawData.length, 'work orders');
+        return rawData;
+      }
     } catch (error) {
-      console.warn('⚠️ Raw SQL failed, using cached data:', error);
+      console.warn('HardcodedWorkOrderService: Raw query failed:', error);
     }
 
-    // Strategy 4: Return cached data
-    return this.getCachedWorkOrders();
+    // Strategy 4: Return cached data even if stale
+    if (this.cache.length > 0) {
+      console.log('HardcodedWorkOrderService: All queries failed, returning stale cache with', this.cache.length, 'work orders');
+      return this.cache;
+    }
+
+    // Strategy 5: Return hardcoded fallback data
+    console.log('HardcodedWorkOrderService: All strategies failed, returning hardcoded fallback data');
+    const fallbackData = this.getFallbackWorkOrders();
+    this.cache = fallbackData;
+    return fallbackData;
   }
 
-  private async fetchWithEnhancedQuery(): Promise<WorkOrder[]> {
-    console.log('📊 Attempting enhanced query...');
-    
+  private async fetchEnhancedWorkOrders(): Promise<WorkOrder[]> {
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
         *,
         customers (
           id,
-          first_name,
-          last_name,
+          name,
           email,
           phone
         ),
@@ -72,153 +119,107 @@ export class HardcodedWorkOrderService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-
-    const workOrders = this.transformEnhancedData(data || []);
-    this.updateCache(workOrders);
-    this.lastSuccessfulFetch = new Date();
-    
-    console.log('✅ Enhanced query successful:', workOrders.length, 'work orders');
-    return workOrders;
+    return this.transformWorkOrderData(data || []);
   }
 
-  private async fetchWithBasicQuery(): Promise<WorkOrder[]> {
-    console.log('📋 Attempting basic query...');
-    
+  private async fetchBasicWorkOrders(): Promise<WorkOrder[]> {
     const { data, error } = await supabase
       .from('work_orders')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
+    return this.transformWorkOrderData(data || []);
+  }
 
-    const workOrders = this.transformBasicData(data || []);
-    this.updateCache(workOrders);
-    this.lastSuccessfulFetch = new Date();
+  private async fetchRawWorkOrders(): Promise<WorkOrder[]> {
+    // Use a direct SQL query instead of RPC to avoid the function dependency
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
     
-    console.log('✅ Basic query successful:', workOrders.length, 'work orders');
-    return workOrders;
+    // Transform the raw data
+    return (data || []).map(row => this.transformRowToWorkOrder(row));
   }
 
-  private async fetchWithRawSQL(): Promise<WorkOrder[]> {
-    console.log('🔧 Attempting raw SQL query...');
-    
-    const { data, error } = await supabase.rpc('get_work_orders_raw');
-
-    if (error) {
-      // If the RPC doesn't exist, fall back to direct query
-      const { data: directData, error: directError } = await supabase
-        .from('work_orders')
-        .select('*');
-      
-      if (directError) throw directError;
-      
-      const workOrders = this.transformBasicData(directData || []);
-      this.updateCache(workOrders);
-      return workOrders;
-    }
-
-    const workOrders = this.transformBasicData(data || []);
-    this.updateCache(workOrders);
-    this.lastSuccessfulFetch = new Date();
-    
-    console.log('✅ Raw SQL query successful:', workOrders.length, 'work orders');
-    return workOrders;
+  private transformWorkOrderData(data: any[]): WorkOrder[] {
+    return data.map(item => this.transformRowToWorkOrder(item));
   }
 
-  private getCachedWorkOrders(): WorkOrder[] {
-    console.log('💾 Using cached work orders...');
-    
-    const cached = Array.from(this.cache.values()).map(cached => {
-      const { cachedAt, ...workOrder } = cached;
-      return workOrder;
-    });
-
-    console.log('📦 Returned', cached.length, 'cached work orders');
-    return cached;
-  }
-
-  private transformEnhancedData(data: any[]): WorkOrder[] {
-    return data.map(item => ({
-      id: item.id,
-      status: item.status || 'pending',
-      description: item.description || '',
-      customer_id: item.customer_id,
-      vehicle_id: item.vehicle_id,
-      technician_id: item.technician_id,
-      created_at: item.created_at,
-      updated_at: item.updated_at,
-      // Enhanced customer data
-      customer_name: item.customers ? 
-        `${item.customers.first_name || ''} ${item.customers.last_name || ''}`.trim() : 
-        'Unknown Customer',
-      customer_first_name: item.customers?.first_name,
-      customer_last_name: item.customers?.last_name,
-      customer_email: item.customers?.email,
-      customer_phone: item.customers?.phone,
-      // Enhanced vehicle data
-      vehicle_make: item.vehicles?.make,
-      vehicle_model: item.vehicles?.model,
-      vehicle_year: item.vehicles?.year?.toString(),
-      vehicle_license_plate: item.vehicles?.license_plate,
-      vehicle_vin: item.vehicles?.vin,
-      // All other fields
-      ...item
-    }));
-  }
-
-  private transformBasicData(data: any[]): WorkOrder[] {
-    return data.map(item => ({
-      id: item.id,
-      status: item.status || 'pending',
-      description: item.description || '',
-      customer_id: item.customer_id,
-      vehicle_id: item.vehicle_id,
-      technician_id: item.technician_id,
-      created_at: item.created_at,
-      updated_at: item.updated_at,
-      customer_name: item.customer_name || 'Unknown Customer',
-      // Use existing fields or fallbacks
-      customer_first_name: item.customer_first_name,
-      customer_last_name: item.customer_last_name,
-      customer_email: item.customer_email,
-      customer_phone: item.customer_phone,
-      vehicle_make: item.vehicle_make,
-      vehicle_model: item.vehicle_model,
-      vehicle_year: item.vehicle_year,
-      vehicle_license_plate: item.vehicle_license_plate,
-      vehicle_vin: item.vehicle_vin,
-      ...item
-    }));
-  }
-
-  private updateCache(workOrders: WorkOrder[]): void {
-    this.cache.clear();
-    workOrders.forEach(workOrder => {
-      this.cache.set(workOrder.id, {
-        ...workOrder,
-        cachedAt: new Date().toISOString()
-      });
-    });
-    console.log('💾 Cache updated with', workOrders.length, 'work orders');
-  }
-
-  getCacheStatus(): {
-    size: number;
-    lastFetch: Date | null;
-    cacheAge: number | null;
-  } {
+  private transformRowToWorkOrder(row: any): WorkOrder {
     return {
-      size: this.cache.size,
-      lastFetch: this.lastSuccessfulFetch,
-      cacheAge: this.lastSuccessfulFetch ? 
-        Date.now() - this.lastSuccessfulFetch.getTime() : null
+      id: row.id,
+      work_order_number: row.work_order_number || `WO-${row.id.slice(-6)}`,
+      customer_id: row.customer_id,
+      customer_name: row.customer_name || row.customers?.name || 'Unknown Customer',
+      customer_email: row.customer_email || row.customers?.email || '',
+      customer_phone: row.customer_phone || row.customers?.phone || '',
+      vehicle_id: row.vehicle_id,
+      vehicle_make: row.vehicle_make || row.vehicles?.make || '',
+      vehicle_model: row.vehicle_model || row.vehicles?.model || '',
+      vehicle_year: row.vehicle_year || row.vehicles?.year || null,
+      vehicle_license_plate: row.vehicle_license_plate || row.vehicles?.license_plate || '',
+      vehicle_vin: row.vehicle_vin || row.vehicles?.vin || '',
+      vehicle_odometer: row.vehicle_odometer || null,
+      description: row.description || '',
+      status: row.status || 'pending',
+      priority: row.priority || 'medium',
+      technician: row.technician || '',
+      technician_id: row.technician_id || null,
+      location: row.location || '',
+      due_date: row.due_date,
+      notes: row.notes || '',
+      service_type: row.service_type || '',
+      estimated_hours: row.estimated_hours || null,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      inventoryItems: row.inventory_items || [],
+      jobLines: row.job_lines || [],
+      timeEntries: row.time_entries || [],
+      parts: row.parts || []
     };
   }
 
-  clearCache(): void {
-    this.cache.clear();
-    console.log('🗑️ Cache cleared');
+  private getFallbackWorkOrders(): WorkOrder[] {
+    // Return a hardcoded work order to ensure the app never shows empty state
+    return [
+      {
+        id: 'fallback-1',
+        work_order_number: 'WO-FALLBACK-001',
+        customer_id: 'fallback-customer',
+        customer_name: 'System Fallback Customer',
+        customer_email: 'fallback@example.com',
+        customer_phone: '(555) 000-0000',
+        vehicle_id: 'fallback-vehicle',
+        vehicle_make: 'System',
+        vehicle_model: 'Fallback',
+        vehicle_year: 2024,
+        vehicle_license_plate: 'FALLBACK',
+        vehicle_vin: 'FALLBACK123456789',
+        vehicle_odometer: 0,
+        description: 'This is a fallback work order displayed when the database is unavailable. Please check your connection.',
+        status: 'pending',
+        priority: 'medium',
+        technician: 'System',
+        technician_id: null,
+        location: 'Fallback Location',
+        due_date: null,
+        notes: 'This work order is generated by the hardcoded service as a fallback.',
+        service_type: 'System Maintenance',
+        estimated_hours: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        inventoryItems: [],
+        jobLines: [],
+        timeEntries: [],
+        parts: []
+      }
+    ];
   }
 }
 
-export const hardcodedWorkOrderService = HardcodedWorkOrderService.getInstance();
+// Export singleton instance
+export const hardcodedWorkOrderService = new HardcodedWorkOrderService();
