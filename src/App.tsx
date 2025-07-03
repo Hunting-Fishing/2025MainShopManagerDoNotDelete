@@ -12,6 +12,14 @@ import ServiceCategory from '@/pages/ServiceCategory';
 import ServiceSubcategory from '@/pages/ServiceSubcategory';
 import ServiceJob from '@/pages/ServiceJob';
 import WorkOrders from '@/pages/WorkOrders';
+import Customers from '@/pages/Customers';
+import Inventory from '@/pages/Inventory';
+import Invoices from '@/pages/Invoices';
+import Calendar from '@/pages/Calendar';
+import Quotes from '@/pages/Quotes';
+import Team from '@/pages/Team';
+import Documents from '@/pages/Documents';
+import Settings from '@/pages/Settings';
 import { PlaceholderPage } from '@/components/common/PlaceholderPage';
 
 function App() {
@@ -47,11 +55,27 @@ function App() {
             <Route path="/services/category/:categoryId/subcategory/:subcategoryId" element={isAuthenticated ? <ServiceSubcategory /> : <Navigate to="/auth" replace />} />
             <Route path="/services/job/:jobId" element={isAuthenticated ? <ServiceJob /> : <Navigate to="/auth" replace />} />
             
-            {/* Other protected routes with proper components */}
-            <Route path="/customers/*" element={isAuthenticated ? <PlaceholderPage title="Customers" description="Customer management functionality" /> : <Navigate to="/auth" replace />} />
-            <Route path="/inventory/*" element={isAuthenticated ? <PlaceholderPage title="Inventory" description="Inventory management functionality" /> : <Navigate to="/auth" replace />} />
-            <Route path="/invoices/*" element={isAuthenticated ? <PlaceholderPage title="Invoices" description="Invoice management functionality" /> : <Navigate to="/auth" replace />} />
-            <Route path="/settings/*" element={isAuthenticated ? <PlaceholderPage title="Settings" description="Application settings" /> : <Navigate to="/auth" replace />} />
+            {/* Real application routes */}
+            <Route path="/customers/*" element={isAuthenticated ? <Customers /> : <Navigate to="/auth" replace />} />
+            <Route path="/inventory/*" element={isAuthenticated ? <Inventory /> : <Navigate to="/auth" replace />} />
+            <Route path="/invoices/*" element={isAuthenticated ? <Invoices /> : <Navigate to="/auth" replace />} />
+            <Route path="/calendar" element={isAuthenticated ? <Calendar /> : <Navigate to="/auth" replace />} />
+            <Route path="/quotes/*" element={isAuthenticated ? <Quotes /> : <Navigate to="/auth" replace />} />
+            <Route path="/team/*" element={isAuthenticated ? <Team /> : <Navigate to="/auth" replace />} />
+            <Route path="/documents" element={isAuthenticated ? <Documents /> : <Navigate to="/auth" replace />} />
+            
+            {/* Settings - comprehensive functionality exists */}
+            <Route path="/settings/*" element={isAuthenticated ? <Settings /> : <Navigate to="/auth" replace />} />
+            
+            {/* Missing functionality routes */}
+            <Route path="/customer-comms" element={isAuthenticated ? <PlaceholderPage title="Customer Communications" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
+            <Route path="/call-logger" element={isAuthenticated ? <PlaceholderPage title="Call Logger" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
+            <Route path="/service-board" element={isAuthenticated ? <PlaceholderPage title="Service Board" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
+            <Route path="/company-profile" element={isAuthenticated ? <PlaceholderPage title="Company Profile" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
+            <Route path="/vehicles" element={isAuthenticated ? <PlaceholderPage title="Vehicles" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
+            <Route path="/service-editor" element={isAuthenticated ? <PlaceholderPage title="Service Editor" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
+            <Route path="/help" element={isAuthenticated ? <PlaceholderPage title="Help" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
+            <Route path="/security" element={isAuthenticated ? <PlaceholderPage title="Security" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
             
             {/* Catch all route */}
             <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/auth"} replace />} />

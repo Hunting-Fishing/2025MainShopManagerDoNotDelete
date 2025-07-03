@@ -49,24 +49,9 @@ export const navigation = [
     title: 'Inventory',
     items: [
       {
-        title: 'Products',
-        href: '/products',
+        title: 'Inventory',
+        href: '/inventory',
         icon: Package,
-      },
-      {
-        title: 'Suppliers',
-        href: '/suppliers',
-        icon: Truck,
-      },
-      {
-        title: 'Stock Control',
-        href: '/stock-control',
-        icon: BarChart3,
-      },
-      {
-        title: 'Purchase Orders',
-        href: '/purchase-orders',
-        icon: ShoppingCart,
       },
     ],
   },
@@ -134,8 +119,8 @@ export const navigation = [
         icon: Building,
       },
       {
-        title: 'Staff Members',
-        href: '/staff-members',
+        title: 'Team',
+        href: '/team',
         icon: UserCog,
       },
       {
@@ -160,7 +145,7 @@ export const navigation = [
       },
       {
         title: 'Service Library',
-        href: '/service-library',
+        href: '/services',
         icon: Star,
       },
     ],
