@@ -10,6 +10,8 @@ import { WorkOrderOverviewTab } from './WorkOrderOverviewTab';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { JobLinesSection } from '../form-fields/JobLinesSection';
 import { WorkOrderActivityTab } from './WorkOrderActivityTab';
+import { WorkOrderNotifications } from '../notifications/WorkOrderNotifications';
+import { WorkOrderDocuments } from '../documents/WorkOrderDocuments';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -40,11 +42,13 @@ export function WorkOrderDetailsTabs({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-6 max-w-4xl">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="parts">Parts</TabsTrigger>
         <TabsTrigger value="labor">Labor</TabsTrigger>
         <TabsTrigger value="activity">Activity</TabsTrigger>
+        <TabsTrigger value="notifications">Notifications</TabsTrigger>
+        <TabsTrigger value="documents">Documents</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview" className="mt-6">
@@ -81,6 +85,17 @@ export function WorkOrderDetailsTabs({
 
       <TabsContent value="activity" className="mt-6">
         <WorkOrderActivityTab workOrderId={workOrder.id} />
+      </TabsContent>
+
+      <TabsContent value="notifications" className="mt-6">
+        <WorkOrderNotifications workOrderId={workOrder.id} />
+      </TabsContent>
+
+      <TabsContent value="documents" className="mt-6">
+        <WorkOrderDocuments 
+          workOrderId={workOrder.id} 
+          isEditMode={isEditMode} 
+        />
       </TabsContent>
     </Tabs>
   );

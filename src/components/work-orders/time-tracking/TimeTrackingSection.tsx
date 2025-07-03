@@ -4,20 +4,29 @@ import { TimeEntry } from '@/types/workOrder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Clock } from 'lucide-react';
+import { TimeEntryDialog } from './TimeEntryDialog';
 
 interface TimeTrackingSectionProps {
   workOrderId: string;
   timeEntries: TimeEntry[];
   onUpdateTimeEntries: (entries: TimeEntry[]) => void;
   isEditMode?: boolean;
+  onTimeEntryAdded?: () => void;
 }
 
 export function TimeTrackingSection({
   workOrderId,
   timeEntries,
   onUpdateTimeEntries,
-  isEditMode = false
+  isEditMode = false,
+  onTimeEntryAdded
 }: TimeTrackingSectionProps) {
+  
+  const handleTimeEntryAdded = () => {
+    if (onTimeEntryAdded) {
+      onTimeEntryAdded();
+    }
+  };
   const totalTime = timeEntries.reduce((total, entry) => total + (entry.duration || 0), 0);
   const billableTime = timeEntries.filter(entry => entry.billable).reduce((total, entry) => total + (entry.duration || 0), 0);
 
@@ -33,10 +42,11 @@ export function TimeTrackingSection({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Time Tracking</CardTitle>
           {isEditMode && (
-            <Button size="sm" className="h-8 px-3">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Time Entry
-            </Button>
+            <TimeEntryDialog
+              workOrderId={workOrderId}
+              onTimeEntryAdded={handleTimeEntryAdded}
+              isEditMode={isEditMode}
+            />
           )}
         </div>
       </CardHeader>
@@ -46,10 +56,16 @@ export function TimeTrackingSection({
             <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No time entries recorded yet</p>
             {isEditMode && (
-              <Button variant="outline" className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Add First Time Entry
-              </Button>
+              <TimeEntryDialog
+                workOrderId={workOrderId}
+                onTimeEntryAdded={handleTimeEntryAdded}
+                isEditMode={isEditMode}
+              >
+                <Button variant="outline" className="mt-4 gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add First Time Entry
+                </Button>
+              </TimeEntryDialog>
             )}
           </div>
         ) : (
