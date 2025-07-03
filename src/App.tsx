@@ -20,7 +20,11 @@ import Quotes from '@/pages/Quotes';
 import Team from '@/pages/Team';
 import Documents from '@/pages/Documents';
 import Settings from '@/pages/Settings';
-import { PlaceholderPage } from '@/components/common/PlaceholderPage';
+import CustomerCommunications from '@/pages/CustomerCommunications';
+import CallLogger from '@/pages/CallLogger';
+import ServiceBoard from '@/pages/ServiceBoard';
+import CompanyProfile from '@/pages/CompanyProfile';
+import VehiclesPage from '@/pages/VehiclesPage';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuthUser();
@@ -68,14 +72,14 @@ function App() {
             <Route path="/settings/*" element={isAuthenticated ? <Settings /> : <Navigate to="/auth" replace />} />
             
             {/* Missing functionality routes */}
-            <Route path="/customer-comms" element={isAuthenticated ? <PlaceholderPage title="Customer Communications" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
-            <Route path="/call-logger" element={isAuthenticated ? <PlaceholderPage title="Call Logger" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
-            <Route path="/service-board" element={isAuthenticated ? <PlaceholderPage title="Service Board" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
-            <Route path="/company-profile" element={isAuthenticated ? <PlaceholderPage title="Company Profile" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
-            <Route path="/vehicles" element={isAuthenticated ? <PlaceholderPage title="Vehicles" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
-            <Route path="/service-editor" element={isAuthenticated ? <PlaceholderPage title="Service Editor" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
-            <Route path="/help" element={isAuthenticated ? <PlaceholderPage title="Help" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
-            <Route path="/security" element={isAuthenticated ? <PlaceholderPage title="Security" description="*Real data needs to be created first to display this information*" /> : <Navigate to="/auth" replace />} />
+            <Route path="/customer-comms" element={isAuthenticated ? <CustomerCommunications /> : <Navigate to="/auth" replace />} />
+            <Route path="/call-logger" element={isAuthenticated ? <CallLogger /> : <Navigate to="/auth" replace />} />
+            <Route path="/service-board" element={isAuthenticated ? <ServiceBoard /> : <Navigate to="/auth" replace />} />
+            <Route path="/company-profile" element={isAuthenticated ? <CompanyProfile /> : <Navigate to="/auth" replace />} />
+            <Route path="/vehicles" element={isAuthenticated ? <VehiclesPage /> : <Navigate to="/auth" replace />} />
+            <Route path="/service-editor" element={isAuthenticated ? <Navigate to="/services" replace /> : <Navigate to="/auth" replace />} />
+            <Route path="/help" element={isAuthenticated ? <Navigate to="/settings" replace /> : <Navigate to="/auth" replace />} />
+            <Route path="/security" element={isAuthenticated ? <Navigate to="/settings/security" replace /> : <Navigate to="/auth" replace />} />
             
             {/* Catch all route */}
             <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/auth"} replace />} />
