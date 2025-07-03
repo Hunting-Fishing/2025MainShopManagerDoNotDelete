@@ -18,6 +18,8 @@ export default function CustomerDetails() {
   const {
     customer,
     workOrders,
+    customerNotes,
+    customerLoyalty,
     loading,
     error,
     refetch
@@ -88,6 +90,8 @@ export default function CustomerDetails() {
       <div className="container mx-auto px-4 py-8 space-y-8">
         <CustomerDetailsHeader
           customer={customer}
+          customerLoyalty={customerLoyalty}
+          loyaltyLoading={loading}
           setAddInteractionOpen={setAddInteractionOpen}
         />
 
@@ -96,10 +100,10 @@ export default function CustomerDetails() {
           customerWorkOrders={workOrders}
           customerInteractions={[]}
           customerCommunications={[]}
-          customerNotes={[]}
+          customerNotes={customerNotes}
           setAddInteractionOpen={setAddInteractionOpen}
           onCommunicationAdded={() => {}}
-          onNoteAdded={() => {}}
+          onNoteAdded={refetch}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           workOrdersLoading={loading}
