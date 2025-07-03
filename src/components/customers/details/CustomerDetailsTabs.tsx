@@ -1,11 +1,14 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Customer } from "@/types/customer";
+import { Customer, CustomerNote } from "@/types/customer";
 import { CustomerInteraction } from "@/types/interaction";
-import { CustomerCommunication } from "@/types/customer";
+import { CustomerCommunication } from "@/types/customer/notes";
 import { CustomerWorkOrdersTab } from "./CustomerWorkOrdersTab";
-import { AddCommunicationDialog } from "@/components/customers/communications/AddCommunicationDialog";
+import { CustomerDocumentsTab } from "../documents/CustomerDocumentsTab";
+import { InteractionsTab } from "../interactions/InteractionsTab";
+import { CommunicationsTab } from "../communications/CommunicationsTab";
+import { ActivityTimeline } from "../activity/ActivityTimeline";
 import { CustomerAnalyticsSection } from './CustomerAnalyticsSection';
 import { WorkOrder } from "@/types/workOrder";
 
@@ -14,10 +17,10 @@ interface CustomerDetailsTabsProps {
   customerWorkOrders: WorkOrder[];
   customerInteractions: CustomerInteraction[];
   customerCommunications: CustomerCommunication[];
-  customerNotes: any[];
+  customerNotes: CustomerNote[];
   setAddInteractionOpen: (open: boolean) => void;
-  onCommunicationAdded: (communication: CustomerCommunication) => void;
-  onNoteAdded: (note: any) => void;
+  onCommunicationAdded: () => void;
+  onNoteAdded: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   workOrdersLoading?: boolean;
@@ -38,7 +41,7 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
   workOrdersLoading = false,
   workOrdersError
 }) => {
-  const [addCommunicationOpen, setAddCommunicationOpen] = React.useState(false);
+  
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
@@ -60,53 +63,36 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
       </TabsContent>
       
       <TabsContent value="interactions">
-        <div>
-          {customerInteractions && customerInteractions.length > 0 ? (
-            <ul>
-              {customerInteractions.map((interaction) => (
-                <li key={interaction.id}>{interaction.notes}</li>
-              ))}
-            </ul>
-          ) : (
-            <div>No interactions found.</div>
-          )}
-        </div>
+        <InteractionsTab
+          customer={customer}
+          interactions={customerInteractions}
+          setAddInteractionOpen={setAddInteractionOpen}
+        />
       </TabsContent>
       
       <TabsContent value="communications">
-        <AddCommunicationDialog
+        <CommunicationsTab
           customer={customer}
-          open={addCommunicationOpen}
-          onOpenChange={setAddCommunicationOpen}
+          communications={customerCommunications}
           onCommunicationAdded={onCommunicationAdded}
         />
-        <div className="flex justify-end pb-4">
-          <button onClick={() => setAddCommunicationOpen(true)} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">Add Communication</button>
-        </div>
-        <div>
-          {customerCommunications && customerCommunications.length > 0 ? (
-            <ul>
-              {customerCommunications.map((communication) => (
-                <li key={communication.id}>{communication.content}</li>
-              ))}
-            </ul>
-          ) : (
-            <div>No communications found.</div>
-          )}
-        </div>
       </TabsContent>
       
       <TabsContent value="documents">
-        <div>
-          <h3 className="text-lg font-medium mb-4">Customer Documents</h3>
-          <div className="text-center py-8 text-muted-foreground">
-            No documents found for this customer.
-          </div>
-        </div>
+        <CustomerDocumentsTab customer={customer} />
       </TabsContent>
       
       <TabsContent value="analytics">
-        <CustomerAnalyticsSection customer={customer} />
+        <div className="space-y-8">
+          <CustomerAnalyticsSection customer={customer} />
+          <ActivityTimeline
+            customer={customer}
+            workOrders={customerWorkOrders}
+            interactions={customerInteractions}
+            communications={customerCommunications}
+            notes={customerNotes}
+          />
+        </div>
       </TabsContent>
     </Tabs>
   );

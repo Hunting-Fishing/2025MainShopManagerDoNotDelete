@@ -20,6 +20,8 @@ export default function CustomerDetails() {
     workOrders,
     customerNotes,
     customerLoyalty,
+    customerInteractions,
+    customerCommunications,
     loading,
     error,
     refetch
@@ -98,11 +100,11 @@ export default function CustomerDetails() {
         <CustomerDetailsTabs
           customer={customer}
           customerWorkOrders={workOrders}
-          customerInteractions={[]}
-          customerCommunications={[]}
+          customerInteractions={customerInteractions}
+          customerCommunications={customerCommunications}
           customerNotes={customerNotes}
           setAddInteractionOpen={setAddInteractionOpen}
-          onCommunicationAdded={() => {}}
+          onCommunicationAdded={refetch}
           onNoteAdded={refetch}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
