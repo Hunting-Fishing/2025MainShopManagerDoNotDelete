@@ -64,10 +64,10 @@ export function EnhancedStatusBadge({
 
   return (
     <Badge 
-      className={`status-badge ${config.className} ${sizeClasses[size]} inline-flex items-center gap-2`}
+      className={`status-badge ${config.className} ${sizeClasses[size]} inline-flex items-center gap-2 font-medium tracking-wide`}
     >
-      {showIcon && <Icon className={iconSizes[size]} />}
-      {config.label}
+      {showIcon && <Icon className={`${iconSizes[size]} flex-shrink-0`} />}
+      <span className="font-semibold">{config.label}</span>
     </Badge>
   );
 }

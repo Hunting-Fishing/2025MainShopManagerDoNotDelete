@@ -19,40 +19,62 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'sans': ['Inter', 'system-ui', 'sans-serif'],
+				'heading': ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				
+				// Modern Primary System
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))',
+					dark: 'hsl(var(--primary-dark))'
 				},
+				
+				// Enhanced Secondary
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
-					foreground: 'hsl(var(--secondary-foreground))'
+					foreground: 'hsl(var(--secondary-foreground))',
+					light: 'hsl(var(--secondary-light))'
 				},
+				
+				// Interactive States
+				accent: {
+					DEFAULT: 'hsl(var(--accent))',
+					foreground: 'hsl(var(--accent-foreground))',
+					hover: 'hsl(var(--accent-hover))'
+				},
+				
+				// Refined Neutrals
+				muted: {
+					DEFAULT: 'hsl(var(--muted))',
+					foreground: 'hsl(var(--muted-foreground))',
+					light: 'hsl(var(--muted-light))'
+				},
+				
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
 					foreground: 'hsl(var(--destructive-foreground))'
 				},
-				muted: {
-					DEFAULT: 'hsl(var(--muted))',
-					foreground: 'hsl(var(--muted-foreground))'
-				},
-				accent: {
-					DEFAULT: 'hsl(var(--accent))',
-					foreground: 'hsl(var(--accent-foreground))'
-				},
+				
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
 					foreground: 'hsl(var(--popover-foreground))'
 				},
+				
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				
+				// Modern Sidebar
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -63,31 +85,44 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Enhanced Work Order Color System
+				
+				// Enhanced Work Order System
 				'work-order-card': 'hsl(var(--work-order-card))',
+				'work-order-card-hover': 'hsl(var(--work-order-card-hover))',
 				'work-order-border': 'hsl(var(--work-order-border))',
 				'work-order-accent': 'hsl(var(--work-order-accent))',
+				'work-order-section': 'hsl(var(--work-order-section))',
 				
-				// Status Colors
+				// Modern Status System
 				'status-pending': 'hsl(var(--status-pending))',
+				'status-pending-bg': 'hsl(var(--status-pending-bg))',
+				'status-pending-border': 'hsl(var(--status-pending-border))',
 				'status-in-progress': 'hsl(var(--status-in-progress))',
+				'status-in-progress-bg': 'hsl(var(--status-in-progress-bg))',
+				'status-in-progress-border': 'hsl(var(--status-in-progress-border))',
 				'status-completed': 'hsl(var(--status-completed))',
+				'status-completed-bg': 'hsl(var(--status-completed-bg))',
+				'status-completed-border': 'hsl(var(--status-completed-border))',
 				'status-cancelled': 'hsl(var(--status-cancelled))',
+				'status-cancelled-bg': 'hsl(var(--status-cancelled-bg))',
+				'status-cancelled-border': 'hsl(var(--status-cancelled-border))',
 				'status-on-hold': 'hsl(var(--status-on-hold))',
+				'status-on-hold-bg': 'hsl(var(--status-on-hold-bg))',
+				'status-on-hold-border': 'hsl(var(--status-on-hold-border))',
 				
-				// Priority Colors
+				// Priority System
 				'priority-low': 'hsl(var(--priority-low))',
 				'priority-medium': 'hsl(var(--priority-medium))',
 				'priority-high': 'hsl(var(--priority-high))',
 				'priority-critical': 'hsl(var(--priority-critical))',
 				
-				// Financial & Utility Colors
+				// Semantic Colors
 				success: 'hsl(var(--success))',
 				warning: 'hsl(var(--warning))',
 				error: 'hsl(var(--error))',
 				info: 'hsl(var(--info))',
 				
-				// Chart Colors
+				// Enhanced Chart Colors
 				chart: {
 					'1': 'hsl(var(--chart-1))',
 					'2': 'hsl(var(--chart-2))',
@@ -95,6 +130,19 @@ export default {
 					'4': 'hsl(var(--chart-4))',
 					'5': 'hsl(var(--chart-5))',
 				}
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-secondary': 'var(--gradient-secondary)',
+				'gradient-card': 'var(--gradient-card)',
+				'gradient-status': 'var(--gradient-status)',
+			},
+			boxShadow: {
+				'sm': 'var(--shadow-sm)',
+				'DEFAULT': 'var(--shadow)',
+				'md': 'var(--shadow-md)',
+				'lg': 'var(--shadow-lg)',
+				'glow': 'var(--shadow-glow)',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
