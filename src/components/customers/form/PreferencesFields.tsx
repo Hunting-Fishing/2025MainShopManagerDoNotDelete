@@ -62,7 +62,7 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
                     </SelectItem>
                   ))}
                   {error && (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="none" disabled>
                       Failed to load technicians
                     </SelectItem>
                   )}

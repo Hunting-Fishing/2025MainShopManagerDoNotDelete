@@ -38,8 +38,8 @@ export const CommunicationHistory: React.FC<CommunicationHistoryProps> = ({
       comm.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (comm.subject && comm.subject.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    const matchesType = typeFilter === "" || comm.type === typeFilter;
-    const matchesDirection = directionFilter === "" || comm.direction === directionFilter;
+    const matchesType = typeFilter === "" || typeFilter === "all" || comm.type === typeFilter;
+    const matchesDirection = directionFilter === "" || directionFilter === "all" || comm.direction === directionFilter;
     
     return matchesSearch && matchesType && matchesDirection;
   });
@@ -116,7 +116,7 @@ export const CommunicationHistory: React.FC<CommunicationHistoryProps> = ({
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All types</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
                 <SelectItem value="email">Email</SelectItem>
                 <SelectItem value="phone">Phone</SelectItem>
                 <SelectItem value="text">Text</SelectItem>
@@ -128,7 +128,7 @@ export const CommunicationHistory: React.FC<CommunicationHistoryProps> = ({
                 <SelectValue placeholder="All directions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All directions</SelectItem>
+                <SelectItem value="all">All directions</SelectItem>
                 <SelectItem value="incoming">Incoming</SelectItem>
                 <SelectItem value="outgoing">Outgoing</SelectItem>
               </SelectContent>

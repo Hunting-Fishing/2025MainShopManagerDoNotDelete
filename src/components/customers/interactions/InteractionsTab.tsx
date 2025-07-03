@@ -79,8 +79,8 @@ export const InteractionsTab: React.FC<InteractionsTabProps> = ({
         interaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (interaction.notes && interaction.notes.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      const matchesType = !typeFilter || interaction.type === typeFilter;
-      const matchesStatus = !statusFilter || interaction.status === statusFilter;
+      const matchesType = !typeFilter || typeFilter === 'all' || interaction.type === typeFilter;
+      const matchesStatus = !statusFilter || statusFilter === 'all' || interaction.status === statusFilter;
       
       return matchesSearch && matchesType && matchesStatus;
     });
@@ -131,7 +131,7 @@ export const InteractionsTab: React.FC<InteractionsTabProps> = ({
             <SelectValue placeholder="All Types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Types</SelectItem>
+            <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="inquiry">Inquiry</SelectItem>
             <SelectItem value="complaint">Complaint</SelectItem>
             <SelectItem value="follow_up">Follow-up</SelectItem>
@@ -144,7 +144,7 @@ export const InteractionsTab: React.FC<InteractionsTabProps> = ({
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="follow_up_required">Follow-up Required</SelectItem>

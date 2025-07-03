@@ -69,7 +69,7 @@ export function PaymentForm({ customerId, invoiceId, initialData, onSubmit }: Pa
       // Ensure we have the correct typing for PaymentFormValues
       const paymentValues: PaymentFormValues = {
         amount: values.amount,
-        payment_method_id: values.payment_method_id,
+        payment_method_id: values.payment_method_id === 'none' ? undefined : values.payment_method_id,
         payment_type: values.payment_type as "full" | "partial" | "deposit" | "refund",
         status: values.status as "pending" | "processed" | "failed" | "refunded",
         transaction_id: values.transaction_id,
@@ -116,7 +116,7 @@ export function PaymentForm({ customerId, invoiceId, initialData, onSubmit }: Pa
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">None / Other</SelectItem>
+                  <SelectItem value="none">None / Other</SelectItem>
                   {paymentMethods.map((method) => (
                     <SelectItem key={method.id} value={method.id}>
                       {method.method_type === 'credit_card' && method.card_brand 

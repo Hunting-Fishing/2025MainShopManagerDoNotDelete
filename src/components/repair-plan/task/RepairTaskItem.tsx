@@ -114,7 +114,7 @@ export function RepairTaskItem({
                     <SelectValue placeholder="Assign technician" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
+                    <SelectItem value="none">Unassigned</SelectItem>
                     {technicians.map((tech) => (
                       <SelectItem key={tech} value={tech}>
                         {tech}

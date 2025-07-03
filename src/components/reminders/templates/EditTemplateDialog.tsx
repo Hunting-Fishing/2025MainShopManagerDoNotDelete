@@ -223,7 +223,7 @@ export function EditTemplateDialog({
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         <div className="flex items-center">

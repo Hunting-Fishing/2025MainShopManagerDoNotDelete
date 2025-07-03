@@ -185,7 +185,8 @@ export function UltimateAddPartDialog({
       const partData = {
         ...values,
         work_order_id: workOrderId,
-        total_price: values.total_price || (values.quantity * values.unit_price)
+        total_price: values.total_price || (values.quantity * values.unit_price),
+        job_line_id: values.job_line_id === 'none' ? null : values.job_line_id
       };
 
       await createWorkOrderPart(partData);
@@ -447,7 +448,7 @@ export function UltimateAddPartDialog({
                                 <SelectValue placeholder="Select job line..." />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">No Assignment</SelectItem>
+                                <SelectItem value="none">No Assignment</SelectItem>
                                 {jobLines.map((jobLine) => (
                                   <SelectItem key={jobLine.id} value={jobLine.id}>
                                     {jobLine.name} - {jobLine.category}

@@ -174,7 +174,7 @@ export function WorkOrderNumberingTab() {
                 <SelectContent>
                   <SelectItem value="-">Dash (-)</SelectItem>
                   <SelectItem value="_">Underscore (_)</SelectItem>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   <SelectItem value=".">Period (.)</SelectItem>
                 </SelectContent>
               </Select>

@@ -314,7 +314,7 @@ export function AdvancedSearchFilter({
                   <Select
                     value={categoryFilter.length > 0 ? categoryFilter[0] : ""}
                     onValueChange={(value) => {
-                      if (value) {
+                    if (value && value !== "all") {
                         setCategoryFilter([value]);
                       } else {
                         setCategoryFilter([]);
@@ -325,7 +325,7 @@ export function AdvancedSearchFilter({
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
+                      <SelectItem value="all">All Categories</SelectItem>
                       {categories.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}

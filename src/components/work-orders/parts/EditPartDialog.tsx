@@ -204,7 +204,7 @@ export function EditPartDialog({
                           <SelectValue placeholder="Select job line..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No Assignment</SelectItem>
+                          <SelectItem value="none">No Assignment</SelectItem>
                           {jobLines.map((jobLine) => (
                             <SelectItem key={jobLine.id} value={jobLine.id}>
                               {jobLine.name} - {jobLine.category}

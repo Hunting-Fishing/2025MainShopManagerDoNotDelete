@@ -75,7 +75,7 @@ export function InventoryLocationsPage() {
         name: newLocation.name.trim(),
         type: newLocation.type,
         description: newLocation.description,
-        parent_id: newLocation.parent_id,
+        parent_id: newLocation.parent_id === 'none' ? null : newLocation.parent_id,
       });
       
       setNewLocation({
@@ -305,7 +305,7 @@ export function InventoryLocationsPage() {
                   <SelectValue placeholder="Select parent location (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None (Top Level)</SelectItem>
+                  <SelectItem value="none">None (Top Level)</SelectItem>
                   {locationHierarchy.map(location => (
                     <SelectItem key={location.id} value={location.id}>
                       {location.name} (Warehouse)

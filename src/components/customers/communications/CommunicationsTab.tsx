@@ -59,8 +59,8 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
         comm.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (comm.subject && comm.subject.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      const matchesType = !typeFilter || comm.type === typeFilter;
-      const matchesDirection = !directionFilter || comm.direction === directionFilter;
+      const matchesType = !typeFilter || typeFilter === "all" || comm.type === typeFilter;
+      const matchesDirection = !directionFilter || directionFilter === "all" || comm.direction === directionFilter;
       
       return matchesSearch && matchesType && matchesDirection;
     });
@@ -111,7 +111,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
             <SelectValue placeholder="All Types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Types</SelectItem>
+            <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="email">Email</SelectItem>
             <SelectItem value="phone">Phone</SelectItem>
             <SelectItem value="text">Text</SelectItem>
@@ -124,7 +124,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
             <SelectValue placeholder="All Directions" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Directions</SelectItem>
+            <SelectItem value="all">All Directions</SelectItem>
             <SelectItem value="incoming">Incoming</SelectItem>
             <SelectItem value="outgoing">Outgoing</SelectItem>
           </SelectContent>

@@ -170,7 +170,7 @@ export function ReminderDetailsFields({ form }: ReminderDetailsFieldsProps) {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {form.getValues("categories")?.map(category => (
                       <SelectItem key={category.id} value={category.id}>
                         <div className="flex items-center">

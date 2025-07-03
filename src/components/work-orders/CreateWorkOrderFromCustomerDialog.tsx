@@ -50,7 +50,7 @@ export function CreateWorkOrderFromCustomerDialog({
       });
 
       // Add vehicle information if selected
-      if (formData.vehicleId && customer.vehicles) {
+      if (formData.vehicleId && formData.vehicleId !== 'none' && customer.vehicles) {
         const selectedVehicle = customer.vehicles.find(v => v.id === formData.vehicleId);
         if (selectedVehicle) {
           console.log('Selected vehicle for work order:', selectedVehicle);
@@ -145,7 +145,7 @@ export function CreateWorkOrderFromCustomerDialog({
                   <SelectValue placeholder="Select a vehicle" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No vehicle selected</SelectItem>
+                  <SelectItem value="none">No vehicle selected</SelectItem>
                   {customer.vehicles.map((vehicle) => (
                     <SelectItem key={vehicle.id} value={vehicle.id!}>
                       {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.license_plate && `(${vehicle.license_plate})`}

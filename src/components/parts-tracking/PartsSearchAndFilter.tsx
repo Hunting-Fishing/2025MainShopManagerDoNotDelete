@@ -37,8 +37,8 @@ export function PartsSearchAndFilter() {
   const filteredParts = sampleParts.filter(part => {
     const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          part.part_number.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !category || part.category === category;
-    const matchesStatus = !status || part.status === status;
+    const matchesCategory = !category || category === 'all' || part.category === category;
+    const matchesStatus = !status || status === 'all' || part.status === status;
     
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -66,7 +66,7 @@ export function PartsSearchAndFilter() {
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="Brakes">Brakes</SelectItem>
                 <SelectItem value="Engine">Engine</SelectItem>
                 <SelectItem value="Transmission">Transmission</SelectItem>
@@ -78,7 +78,7 @@ export function PartsSearchAndFilter() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="ordered">Ordered</SelectItem>
                 <SelectItem value="received">Received</SelectItem>

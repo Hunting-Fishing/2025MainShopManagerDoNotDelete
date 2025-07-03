@@ -90,7 +90,7 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
                 <SelectContent>
                   {/* Show option to clear VIN decoded value */}
                   {isVinDecodedValue && (
-                    <SelectItem value="" className="text-muted-foreground">
+                    <SelectItem value="none" className="text-muted-foreground">
                       Clear VIN decoded value
                     </SelectItem>
                   )}

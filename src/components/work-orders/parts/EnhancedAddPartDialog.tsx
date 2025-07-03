@@ -93,7 +93,8 @@ export function EnhancedAddPartDialog({
       // Create the part with work order ID
       const partData = {
         ...values,
-        work_order_id: workOrderId
+        work_order_id: workOrderId,
+        job_line_id: values.job_line_id === 'none' ? null : values.job_line_id
       };
 
       // Fix: Call createWorkOrderPart with single argument
@@ -278,7 +279,7 @@ export function EnhancedAddPartDialog({
                           <SelectValue placeholder="Select job line..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No Assignment</SelectItem>
+                          <SelectItem value="none">No Assignment</SelectItem>
                           {jobLines.map((jobLine) => (
                             <SelectItem key={jobLine.id} value={jobLine.id}>
                               {jobLine.name} - {jobLine.category}

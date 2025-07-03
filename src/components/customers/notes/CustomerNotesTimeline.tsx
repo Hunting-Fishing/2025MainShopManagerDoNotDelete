@@ -68,7 +68,7 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
     const matchesSearch = searchQuery === "" || 
       note.content.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesCategory = categoryFilter === "" || 
+    const matchesCategory = categoryFilter === "" || categoryFilter === "all" || 
       note.category === categoryFilter;
     
     return matchesSearch && matchesCategory;
@@ -137,7 +137,7 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
                 <SelectValue placeholder="All categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All categories</SelectItem>
+                <SelectItem value="all">All categories</SelectItem>
                 <SelectItem value="service">Service</SelectItem>
                 <SelectItem value="sales">Sales</SelectItem>
                 <SelectItem value="follow-up">Follow-up</SelectItem>

@@ -70,7 +70,8 @@ export function UnifiedPartEditDialog({
       const calculatedTotal = calculateTotal();
       const updatedPart = await EditService.updatePart(part.id, {
         ...formData,
-        total_price: calculatedTotal
+        total_price: calculatedTotal,
+        job_line_id: formData.job_line_id === 'none' ? null : formData.job_line_id
       });
       
       await onSave(updatedPart);
@@ -152,7 +153,7 @@ export function UnifiedPartEditDialog({
                   <SelectValue placeholder="Select job line" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No assignment</SelectItem>
+                  <SelectItem value="none">No assignment</SelectItem>
                   {jobLines.map((jobLine) => (
                     <SelectItem key={jobLine.id} value={jobLine.id}>
                       {jobLine.name}

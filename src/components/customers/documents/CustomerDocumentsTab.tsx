@@ -42,7 +42,7 @@ export const CustomerDocumentsTab: React.FC<CustomerDocumentsTabProps> = ({ cust
       );
     }
     
-    if (categoryFilter) {
+    if (categoryFilter && categoryFilter !== "all") {
       filtered = filtered.filter(doc => doc.category_id === categoryFilter);
     }
     
@@ -109,7 +109,7 @@ export const CustomerDocumentsTab: React.FC<CustomerDocumentsTabProps> = ({ cust
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   {cat.name}
