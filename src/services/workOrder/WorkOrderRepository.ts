@@ -26,14 +26,14 @@ export class WorkOrderRepository {
           .from('work_orders')
           .select(`
             *,
-            customers:customer_id (
+            customers!work_orders_customer_id_fkey (
               id,
               first_name,
               last_name,
               email,
               phone
             ),
-            vehicles:vehicle_id (
+            vehicles!work_orders_vehicle_id_fkey (
               id,
               make,
               model,
@@ -70,14 +70,14 @@ export class WorkOrderRepository {
         .from('work_orders')
         .select(`
           *,
-          customers:customer_id (
+          customers!work_orders_customer_id_fkey (
             id,
             first_name,
             last_name,
             email,
             phone
           ),
-          vehicles:vehicle_id (
+          vehicles!work_orders_vehicle_id_fkey (
             id,
             make,
             model,
@@ -115,14 +115,14 @@ export class WorkOrderRepository {
         .from('work_orders')
         .select(`
           *,
-          customers:customer_id (
+          customers!work_orders_customer_id_fkey (
             id,
             first_name,
             last_name,
             email,
             phone
           ),
-          vehicles:vehicle_id (
+          vehicles!work_orders_vehicle_id_fkey (
             id,
             make,
             model,
