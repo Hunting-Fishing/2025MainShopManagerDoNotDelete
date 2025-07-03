@@ -39,10 +39,13 @@ export async function getAllCustomers(): Promise<Customer[]> {
 
     console.log('👑 User is owner/admin:', isOwnerOrAdmin);
 
-    // Fetch all customers (owners/admins see all, others see filtered results)
+    // Fetch all customers with their vehicles data
     const { data, error } = await supabase
       .from('customers')
-      .select('*')
+      .select(`
+        *,
+        vehicles (*)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -66,7 +69,10 @@ export async function getCustomerById(id: string): Promise<Customer | null> {
   try {
     const { data, error } = await supabase
       .from('customers')
-      .select('*')
+      .select(`
+        *,
+        vehicles (*)
+      `)
       .eq('id', id)
       .maybeSingle();
 
