@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { AddPartDialog } from './AddPartDialog';
+import { UltimateAddPartDialog } from './UltimateAddPartDialog';
 import { toast } from 'sonner';
 
 interface AddPartButtonProps {
@@ -76,7 +76,7 @@ export function AddPartButton({
         {isProcessing ? 'Processing...' : buttonText}
       </Button>
 
-      <AddPartDialog
+      <UltimateAddPartDialog
         open={isDialogOpen}
         onOpenChange={handleDialogClose}
         workOrderId={workOrderId}
