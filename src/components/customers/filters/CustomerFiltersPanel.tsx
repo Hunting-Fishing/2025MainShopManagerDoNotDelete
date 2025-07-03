@@ -46,12 +46,12 @@ export function CustomerFiltersPanel({
   const handleHasVehiclesChange = (value: string) => {
     onFilterChange({ 
       ...filters, 
-      hasVehicles: value as 'yes' | 'no' | ''
+      hasVehicles: value === 'all' ? '' : value as 'yes' | 'no' | ''
     });
   };
 
   const handleVehicleTypeChange = (value: string) => {
-    onFilterChange({ ...filters, vehicleType: value });
+    onFilterChange({ ...filters, vehicleType: value === 'all' ? '' : value });
   };
 
   return (
@@ -83,28 +83,28 @@ export function CustomerFiltersPanel({
         </div>
 
         <Select
-          value={filters.hasVehicles || ''}
+          value={filters.hasVehicles || 'all'}
           onValueChange={handleHasVehiclesChange}
         >
           <SelectTrigger>
             <SelectValue placeholder="Has vehicles?" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All customers</SelectItem>
+            <SelectItem value="all">All customers</SelectItem>
             <SelectItem value="yes">With vehicles</SelectItem>
             <SelectItem value="no">Without vehicles</SelectItem>
           </SelectContent>
         </Select>
 
         <Select
-          value={filters.vehicleType || ''}
+          value={filters.vehicleType || 'all'}
           onValueChange={handleVehicleTypeChange}
         >
           <SelectTrigger>
             <SelectValue placeholder="Vehicle type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All types</SelectItem>
+            <SelectItem value="all">All types</SelectItem>
             <SelectItem value="car">Car</SelectItem>
             <SelectItem value="truck">Truck</SelectItem>
             <SelectItem value="motorcycle">Motorcycle</SelectItem>
