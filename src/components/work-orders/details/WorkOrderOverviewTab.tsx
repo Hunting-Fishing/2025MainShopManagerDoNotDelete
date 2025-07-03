@@ -37,41 +37,45 @@ export function WorkOrderOverviewTab({
   const totalLaborCost = jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0);
 
   return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-8 fade-in">
+      {/* Enhanced Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <WorkOrderSummaryCard
           title="Total Parts"
           value={`$${totalPartsValue.toFixed(2)}`}
           subtitle={`${allParts.length} items`}
+          trend={allParts.length > 0 ? 'up' : 'neutral'}
         />
         <WorkOrderSummaryCard
           title="Labor Hours"
           value={`${totalLaborHours.toFixed(1)}h`}
           subtitle={`${jobLines.length} job lines`}
+          trend={totalLaborHours > 0 ? 'up' : 'neutral'}
         />
         <WorkOrderSummaryCard
           title="Labor Cost"
           value={`$${totalLaborCost.toFixed(2)}`}
           subtitle="Estimated"
+          trend={totalLaborCost > 0 ? 'up' : 'neutral'}
         />
         <WorkOrderSummaryCard
           title="Total Value"
           value={`$${(totalPartsValue + totalLaborCost).toFixed(2)}`}
           subtitle="Parts + Labor"
+          trend={(totalPartsValue + totalLaborCost) > 0 ? 'up' : 'neutral'}
         />
       </div>
 
-      {/* Main Content - 3 Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column - Customer Info */}
-        <div className="lg:col-span-3 space-y-6">
+      {/* Enhanced Main Content Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column - Customer & Time Info */}
+        <div className="lg:col-span-4 space-y-6 slide-up">
           <WorkOrderCustomerCard customer={customer} workOrder={workOrder} />
           <WorkOrderTimeCard timeEntries={timeEntries} workOrder={workOrder} />
         </div>
 
         {/* Middle Column - Parts & Job Lines */}
-        <div className="lg:col-span-6">
+        <div className="lg:col-span-5 slide-up">
           <WorkOrderPartsSection
             workOrderId={workOrder.id}
             parts={allParts}
@@ -81,12 +85,14 @@ export function WorkOrderOverviewTab({
           />
         </div>
 
-        {/* Right Column - Financial Totals */}
-        <div className="lg:col-span-3">
-          <WorkOrderTotals
-            jobLines={jobLines}
-            allParts={allParts}
-          />
+        {/* Right Column - Financial Summary */}
+        <div className="lg:col-span-3 slide-up">
+          <div className="financial-card">
+            <WorkOrderTotals
+              jobLines={jobLines}
+              allParts={allParts}
+            />
+          </div>
         </div>
       </div>
     </div>

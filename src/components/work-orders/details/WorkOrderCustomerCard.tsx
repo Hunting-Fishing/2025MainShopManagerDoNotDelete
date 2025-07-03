@@ -28,46 +28,50 @@ export function WorkOrderCustomerCard({ customer, workOrder }: WorkOrderCustomer
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <User className="h-4 w-4" />
+    <Card className="work-order-card">
+      <CardHeader className="pb-4">
+        <CardTitle className="section-title flex items-center gap-2">
+          <User className="h-5 w-5 text-work-order-accent" />
           Customer Information
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <p className="font-medium">{customer.first_name} {customer.last_name}</p>
+      <CardContent className="space-y-4">
+        <div className="space-y-1">
+          <p className="font-semibold text-lg text-foreground">
+            {customer.first_name} {customer.last_name}
+          </p>
           {customer.company && (
-            <p className="text-sm text-muted-foreground">{customer.company}</p>
+            <p className="text-sm font-medium text-muted-foreground">{customer.company}</p>
           )}
         </div>
         
-        {customer.email && (
-          <div className="flex items-center gap-2 text-sm">
-            <Mail className="h-3 w-3" />
-            <span>{customer.email}</span>
-          </div>
-        )}
-        
-        {customer.phone && (
-          <div className="flex items-center gap-2 text-sm">
-            <Phone className="h-3 w-3" />
-            <span>{customer.phone}</span>
-          </div>
-        )}
-        
-        {customer.address && (
-          <div className="flex items-center gap-2 text-sm">
-            <MapPin className="h-3 w-3" />
-            <span>
-              {customer.address}
-              {customer.city && `, ${customer.city}`}
-              {customer.state && `, ${customer.state}`}
-              {customer.postal_code && ` ${customer.postal_code}`}
-            </span>
-          </div>
-        )}
+        <div className="space-y-3">
+          {customer.email && (
+            <div className="flex items-center gap-3 p-2 rounded-md bg-muted/30">
+              <Mail className="h-4 w-4 text-work-order-accent flex-shrink-0" />
+              <span className="text-sm font-medium">{customer.email}</span>
+            </div>
+          )}
+          
+          {customer.phone && (
+            <div className="flex items-center gap-3 p-2 rounded-md bg-muted/30">
+              <Phone className="h-4 w-4 text-work-order-accent flex-shrink-0" />
+              <span className="text-sm font-medium">{customer.phone}</span>
+            </div>
+          )}
+          
+          {customer.address && (
+            <div className="flex items-start gap-3 p-2 rounded-md bg-muted/30">
+              <MapPin className="h-4 w-4 text-work-order-accent flex-shrink-0 mt-0.5" />
+              <span className="text-sm font-medium leading-relaxed">
+                {customer.address}
+                {customer.city && `, ${customer.city}`}
+                {customer.state && `, ${customer.state}`}
+                {customer.postal_code && ` ${customer.postal_code}`}
+              </span>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

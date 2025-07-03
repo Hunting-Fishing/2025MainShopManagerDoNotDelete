@@ -63,27 +63,37 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Custom colors for our app
-				esm: {
-					"blue": {
-						"50": "#eef5ff",
-						"100": "#d9e7ff",
-						"200": "#bcd4ff",
-						"300": "#8eb9ff",
-						"400": "#5b93ff",
-						"500": "#3a6dfc", // Primary blue
-						"600": "#1F45FC", 
-						"700": "#1938e4",
-						"800": "#1930b9",
-						"900": "#1a2e93",
-						"950": "#141c59",
-					},
-					"status": {
-						"pending": "#FFC107",
-						"in-progress": "#3a6dfc",
-						"completed": "#4CAF50",
-						"cancelled": "#F44336"
-					}
+				// Enhanced Work Order Color System
+				'work-order-card': 'hsl(var(--work-order-card))',
+				'work-order-border': 'hsl(var(--work-order-border))',
+				'work-order-accent': 'hsl(var(--work-order-accent))',
+				
+				// Status Colors
+				'status-pending': 'hsl(var(--status-pending))',
+				'status-in-progress': 'hsl(var(--status-in-progress))',
+				'status-completed': 'hsl(var(--status-completed))',
+				'status-cancelled': 'hsl(var(--status-cancelled))',
+				'status-on-hold': 'hsl(var(--status-on-hold))',
+				
+				// Priority Colors
+				'priority-low': 'hsl(var(--priority-low))',
+				'priority-medium': 'hsl(var(--priority-medium))',
+				'priority-high': 'hsl(var(--priority-high))',
+				'priority-critical': 'hsl(var(--priority-critical))',
+				
+				// Financial & Utility Colors
+				success: 'hsl(var(--success))',
+				warning: 'hsl(var(--warning))',
+				error: 'hsl(var(--error))',
+				info: 'hsl(var(--info))',
+				
+				// Chart Colors
+				chart: {
+					'1': 'hsl(var(--chart-1))',
+					'2': 'hsl(var(--chart-2))',
+					'3': 'hsl(var(--chart-3))',
+					'4': 'hsl(var(--chart-4))',
+					'5': 'hsl(var(--chart-5))',
 				}
 			},
 			borderRadius: {
