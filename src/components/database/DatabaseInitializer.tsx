@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { startupDiagnostics } from '@/services/database/StartupDiagnostics';
 import { databaseHealthMonitor } from '@/services/database/DatabaseHealthMonitor';
-import { hardcodedWorkOrderService } from '@/services/workOrder/HardcodedWorkOrderService';
+import { WorkOrderRepository } from '@/services/workOrder/WorkOrderRepository';
 
 interface DatabaseInitializerProps {
   children: React.ReactNode;
@@ -22,12 +22,13 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
         // Run startup diagnostics
         await startupDiagnostics.runStartupDiagnostics();
         
-        // Pre-load work orders cache
+        // Test work orders access
         try {
-          await hardcodedWorkOrderService.getAllWorkOrders();
-          console.log('📦 Work orders cache pre-loaded');
+          const workOrderRepo = new WorkOrderRepository();
+          await workOrderRepo.findAll();
+          console.log('📦 Work orders access verified');
         } catch (error) {
-          console.warn('⚠️ Failed to pre-load work orders cache:', error);
+          console.warn('⚠️ Failed to verify work orders access:', error);
         }
         
         if (mounted) {

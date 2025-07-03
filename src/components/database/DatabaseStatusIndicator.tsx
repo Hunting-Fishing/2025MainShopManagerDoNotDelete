@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { databaseHealthMonitor } from '@/services/database/DatabaseHealthMonitor';
-import { hardcodedWorkOrderService } from '@/services/workOrder/HardcodedWorkOrderService';
 
 export function DatabaseStatusIndicator() {
   const [healthStatus, setHealthStatus] = useState<any>(null);
@@ -70,8 +69,6 @@ export function DatabaseStatusIndicator() {
     }
   };
 
-  const cacheStatus = hardcodedWorkOrderService.getCacheStatus();
-
   if (loading) {
     return (
       <Card className="w-full">
@@ -115,26 +112,11 @@ export function DatabaseStatusIndicator() {
           </span>
         </div>
 
-        {/* Cache Status */}
-        <div className="bg-blue-50 p-3 rounded-lg space-y-2">
-          <h4 className="font-medium text-blue-900 text-sm">Work Orders Cache</h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div>
-              <span className="text-blue-600">Cached Items:</span>
-              <span className="ml-1 font-mono">{cacheStatus.size}</span>
-            </div>
-            <div>
-              <span className="text-blue-600">Last Updated:</span>
-              <span className="ml-1 font-mono">
-                {cacheStatus.lastFetch ? new Date(cacheStatus.lastFetch).toLocaleTimeString() : 'Never'}
-              </span>
-            </div>
-            <div className="col-span-2">
-              <span className="text-blue-600">Cache Age:</span>
-              <span className="ml-1 font-mono">
-                {cacheStatus.cacheAge > 0 ? `${Math.floor(cacheStatus.cacheAge / 1000)}s` : 'Fresh'}
-              </span>
-            </div>
+        {/* Database Status */}
+        <div className="bg-green-50 p-3 rounded-lg space-y-2">
+          <h4 className="font-medium text-green-900 text-sm">Live Database Connection</h4>
+          <div className="text-xs text-green-600">
+            All work order data is now fetched directly from the live database
           </div>
         </div>
 

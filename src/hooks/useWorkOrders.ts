@@ -1,35 +1,81 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { WorkOrder } from '@/types/workOrder';
-import { useWorkOrderService } from './useWorkOrderService';
+import { WorkOrderRepository } from '@/services/workOrder/WorkOrderRepository';
 import { useAuthUser } from '@/hooks/useAuthUser';
+
+const workOrderRepository = new WorkOrderRepository();
 
 export function useWorkOrders() {
   const { isAuthenticated, isLoading: authLoading } = useAuthUser();
-  const { 
-    workOrders, 
-    loading, 
-    error, 
-    fetchWorkOrders 
-  } = useWorkOrderService();
-
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
 
-  const refetch = useCallback(async () => {
+  const fetchWorkOrders = useCallback(async () => {
     if (!isAuthenticated || authLoading) {
-      console.log('useWorkOrders: User not authenticated or auth loading, skipping fetch');
+      console.log('useWorkOrders: User not authenticated, skipping fetch');
       return;
     }
 
-    console.log('useWorkOrders: Refetching work orders for authenticated user...');
-    try {
-      await fetchWorkOrders();
-      console.log('useWorkOrders: Successfully refetched work orders');
-    } catch (err) {
-      console.error('useWorkOrders: Error during refetch:', err);
-    }
-  }, [isAuthenticated, authLoading, fetchWorkOrders]);
+    setLoading(true);
+    setError(null);
 
+    try {
+      console.log('useWorkOrders: Fetching work orders from database...');
+      const data = await workOrderRepository.findAll();
+      
+      setWorkOrders(data);
+      console.log('useWorkOrders: Successfully loaded', data.length, 'work orders from database');
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch work orders';
+      console.error('useWorkOrders: Error fetching work orders:', err);
+      setError(errorMessage);
+      setWorkOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading]);
+
+  const refetch = useCallback(async () => {
+    console.log('useWorkOrders: Manual refetch requested');
+    await fetchWorkOrders();
+  }, [fetchWorkOrders]);
+
+  const updateWorkOrder = useCallback(async (id: string, updates: Partial<WorkOrder>): Promise<WorkOrder | null> => {
+    try {
+      console.log('useWorkOrders: Updating work order:', id);
+      const updatedWorkOrder = await workOrderRepository.update(id, updates);
+      
+      if (updatedWorkOrder) {
+        // Update local state
+        setWorkOrders(prev => prev.map(wo => wo.id === id ? updatedWorkOrder : wo));
+        console.log('useWorkOrders: Successfully updated work order');
+      }
+      
+      return updatedWorkOrder;
+    } catch (err) {
+      console.error('useWorkOrders: Error updating work order:', err);
+      throw err;
+    }
+  }, []);
+
+  const deleteWorkOrder = useCallback(async (id: string): Promise<void> => {
+    try {
+      console.log('useWorkOrders: Deleting work order:', id);
+      await workOrderRepository.delete(id);
+      
+      // Update local state
+      setWorkOrders(prev => prev.filter(wo => wo.id !== id));
+      console.log('useWorkOrders: Successfully deleted work order');
+    } catch (err) {
+      console.error('useWorkOrders: Error deleting work order:', err);
+      throw err;
+    }
+  }, []);
+
+  // Initialize on mount and auth changes
   useEffect(() => {
     if (authLoading) {
       console.log('useWorkOrders: Auth still loading, waiting...');
@@ -38,37 +84,28 @@ export function useWorkOrders() {
 
     if (!isAuthenticated) {
       console.log('useWorkOrders: User not authenticated, clearing data');
+      setWorkOrders([]);
+      setError(null);
+      setLoading(false);
       setInitialized(true);
       return;
     }
 
     if (!initialized) {
       console.log('useWorkOrders: Initializing work orders fetch...');
-      refetch().then(() => {
+      fetchWorkOrders().finally(() => {
         setInitialized(true);
-        console.log('useWorkOrders: Initialization complete');
-      }).catch((err) => {
-        console.error('useWorkOrders: Initialization failed:', err);
-        setInitialized(true); // Set to true anyway to prevent infinite retries
       });
     }
-  }, [isAuthenticated, authLoading, initialized, refetch]);
+  }, [isAuthenticated, authLoading, initialized, fetchWorkOrders]);
 
-  // Legacy setter function for backward compatibility
-  const setWorkOrders = useCallback((updater: WorkOrder[] | ((prev: WorkOrder[]) => WorkOrder[])) => {
-    console.warn('setWorkOrders is deprecated. Use the service methods instead.');
-    // For backward compatibility, we'll allow this but it won't persist
-    if (typeof updater === 'function') {
-      // Can't easily support function updaters without exposing internal state
-      console.warn('Function updaters not supported in refactored version');
-    }
-  }, []);
-
-  return { 
-    workOrders: workOrders || [], 
-    loading: loading || authLoading, 
-    error, 
-    setWorkOrders, 
-    refetch 
+  return {
+    workOrders,
+    loading: loading || authLoading,
+    error,
+    refetch,
+    updateWorkOrder,
+    deleteWorkOrder,
+    initialized
   };
 }

@@ -1,6 +1,6 @@
 
 import { databaseHealthMonitor } from './DatabaseHealthMonitor';
-import { hardcodedWorkOrderService } from '../workOrder/HardcodedWorkOrderService';
+import { WorkOrderRepository } from '../workOrder/WorkOrderRepository';
 
 export interface DiagnosticResult {
   component: string;
@@ -30,8 +30,8 @@ export class StartupDiagnostics {
     // Test work orders accessibility
     await this.testWorkOrdersAccess();
 
-    // Test hardcoded service
-    await this.testHardcodedService();
+    // Test work order repository
+    await this.testWorkOrderRepository();
 
     // Start health monitoring
     await this.startHealthMonitoring();
@@ -71,15 +71,15 @@ export class StartupDiagnostics {
 
   private async testWorkOrdersAccess(): Promise<void> {
     try {
-      const workOrders = await hardcodedWorkOrderService.getAllWorkOrders();
+      const workOrderRepo = new WorkOrderRepository();
+      const workOrders = await workOrderRepo.findAll();
       
       this.addResult({
         component: 'Work Orders Access',
         status: 'success',
-        message: `Successfully loaded ${workOrders.length} work orders`,
+        message: `Successfully loaded ${workOrders.length} work orders from database`,
         details: {
-          count: workOrders.length,
-          cacheStatus: hardcodedWorkOrderService.getCacheStatus()
+          count: workOrders.length
         }
       });
     } catch (error) {
@@ -92,21 +92,22 @@ export class StartupDiagnostics {
     }
   }
 
-  private async testHardcodedService(): Promise<void> {
+  private async testWorkOrderRepository(): Promise<void> {
     try {
-      const cacheStatus = hardcodedWorkOrderService.getCacheStatus();
+      const workOrderRepo = new WorkOrderRepository();
+      // Test basic connectivity
+      await workOrderRepo.findAll();
       
       this.addResult({
-        component: 'Hardcoded Service',
+        component: 'Work Order Repository',
         status: 'success',
-        message: 'Hardcoded work order service initialized successfully',
-        details: cacheStatus
+        message: 'Work order repository initialized successfully'
       });
     } catch (error) {
       this.addResult({
-        component: 'Hardcoded Service',
+        component: 'Work Order Repository',
         status: 'error',
-        message: `Hardcoded service initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        message: `Work order repository initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: error
       });
     }
