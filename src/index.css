@@ -259,6 +259,28 @@
     @apply border border-border/50 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 backdrop-blur-sm;
   }
 
+  .work-order-header {
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)/.95) 50%, hsl(var(--muted)) 100%);
+    @apply backdrop-blur-sm shadow-lg;
+  }
+
+  /* Modern Tabs System */
+  .modern-tabs-container {
+    @apply space-y-6;
+  }
+
+  .modern-tabs-list {
+    @apply rounded-xl shadow-sm;
+    background: linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--muted)/.8) 100%);
+  }
+
+  .modern-tab-trigger {
+    @apply font-medium transition-all duration-200 text-sm;
+    @apply data-[state=active]:bg-background data-[state=active]:text-foreground;
+    @apply data-[state=active]:shadow-sm data-[state=active]:border-primary/20;
+    @apply hover:bg-background/60 hover:text-foreground;
+  }
+
   /* Modern Button System */
   .btn-primary {
     background: var(--gradient-primary);
@@ -311,6 +333,18 @@
   .financial-amount-large {
     @apply text-3xl font-bold text-success;
     font-family: 'Space Grotesk', sans-serif;
+  }
+
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-border {
+    background: linear-gradient(135deg, hsl(var(--border)), hsl(var(--border)/.5));
+    border: 1px solid hsl(var(--border));
   }
 
   /* Modern Form Elements */

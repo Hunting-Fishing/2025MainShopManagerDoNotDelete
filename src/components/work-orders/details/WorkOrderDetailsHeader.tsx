@@ -28,11 +28,11 @@ export function WorkOrderDetailsHeader({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-6 mb-6">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900">
+    <div className="modern-card work-order-header gradient-border p-8">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold text-foreground font-heading gradient-text">
               Work Order #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
             </h1>
             <WorkOrderStatusBadge status={currentStatus} />
@@ -45,18 +45,23 @@ export function WorkOrderDetailsHeader({
           </div>
           
           {customer && (
-            <p className="text-slate-600">
-              Customer: {customer.first_name} {customer.last_name}
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border">
+              <span className="text-sm font-medium text-muted-foreground">Customer:</span>
+              <span className="font-semibold text-foreground">
+                {customer.first_name} {customer.last_name}
+              </span>
               {customer.email && (
-                <span className="text-slate-500 ml-2">({customer.email})</span>
+                <span className="text-sm text-muted-foreground">({customer.email})</span>
               )}
-            </p>
+            </div>
           )}
           
           {workOrder.description && (
-            <p className="text-slate-600 max-w-2xl">
-              {workOrder.description}
-            </p>
+            <div className="p-4 rounded-lg bg-muted/20 border-l-4 border-primary/40">
+              <p className="text-foreground leading-relaxed max-w-2xl font-medium">
+                {workOrder.description}
+              </p>
+            </div>
           )}
         </div>
 

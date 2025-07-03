@@ -41,15 +41,16 @@ export function WorkOrderDetailsTabs({
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-6 max-w-4xl">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="parts">Parts</TabsTrigger>
-        <TabsTrigger value="labor">Labor</TabsTrigger>
-        <TabsTrigger value="activity">Activity</TabsTrigger>
-        <TabsTrigger value="notifications">Notifications</TabsTrigger>
-        <TabsTrigger value="documents">Documents</TabsTrigger>
-      </TabsList>
+    <div className="modern-tabs-container">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="modern-tabs-list grid w-full grid-cols-6 max-w-5xl h-12 p-1.5 bg-muted/40 backdrop-blur-sm border">
+          <TabsTrigger value="overview" className="modern-tab-trigger">Overview</TabsTrigger>
+          <TabsTrigger value="parts" className="modern-tab-trigger">Parts</TabsTrigger>
+          <TabsTrigger value="labor" className="modern-tab-trigger">Labor</TabsTrigger>
+          <TabsTrigger value="activity" className="modern-tab-trigger">Activity</TabsTrigger>
+          <TabsTrigger value="notifications" className="modern-tab-trigger">Notifications</TabsTrigger>
+          <TabsTrigger value="documents" className="modern-tab-trigger">Documents</TabsTrigger>
+        </TabsList>
 
       <TabsContent value="overview" className="mt-6">
         <WorkOrderOverviewTab
@@ -97,6 +98,7 @@ export function WorkOrderDetailsTabs({
           isEditMode={isEditMode} 
         />
       </TabsContent>
-    </Tabs>
+      </Tabs>
+    </div>
   );
 }

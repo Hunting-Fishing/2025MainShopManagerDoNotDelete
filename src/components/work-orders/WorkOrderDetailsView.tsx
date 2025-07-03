@@ -102,10 +102,15 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
+    <div className="space-y-8 max-w-[1400px] mx-auto">
       {/* Navigation */}
-      <div className="flex items-center gap-2 mb-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/work-orders')}>
+      <div className="flex items-center gap-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate('/work-orders')}
+          className="hover:bg-muted/60 transition-colors"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Work Orders
         </Button>
