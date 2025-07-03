@@ -44,7 +44,7 @@ export async function getAllCustomers(): Promise<Customer[]> {
       .from('customers')
       .select(`
         *,
-        vehicles (*)
+        vehicles!vehicles_customer_id_fkey (*)
       `)
       .order('created_at', { ascending: false });
 
@@ -71,7 +71,7 @@ export async function getCustomerById(id: string): Promise<Customer | null> {
       .from('customers')
       .select(`
         *,
-        vehicles (*)
+        vehicles!vehicles_customer_id_fkey (*)
       `)
       .eq('id', id)
       .maybeSingle();
