@@ -30,13 +30,13 @@ export function WorkOrderSummaryCard({
   };
 
   return (
-    <Card className="modern-card group hover:scale-[1.02] transition-all duration-300">
+    <Card className="modern-summary-card">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground tracking-wide uppercase">{title}</p>
+            <p className="summary-card-title">{title}</p>
             <div className="flex items-baseline space-x-3">
-              <p className="text-3xl font-bold text-foreground font-heading">{value}</p>
+              <p className="summary-card-value">{value}</p>
               {trendValue && (
                 <div className={`flex items-center space-x-1 ${getTrendColor()} transition-colors duration-200`}>
                   {getTrendIcon()}
@@ -44,7 +44,7 @@ export function WorkOrderSummaryCard({
                 </div>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
+            <p className="summary-card-subtitle">{subtitle}</p>
           </div>
         </div>
       </CardContent>

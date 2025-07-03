@@ -10,13 +10,10 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status, type }: StatusBadgeProps) {
   const statusMap = type === 'jobLine' ? jobLineStatusMap : partStatusMap;
-  const statusInfo = statusMap[status] || { label: status, classes: 'bg-gray-100 text-gray-800' };
+  const statusInfo = statusMap[status] || { label: status, classes: 'bg-muted/20 text-muted-foreground border-muted/30' };
   
   return (
-    <Badge 
-      variant="secondary" 
-      className={`${statusInfo.classes} text-xs font-medium`}
-    >
+    <Badge className={`font-medium px-2 py-1 rounded-full border transition-all duration-200 hover:shadow-sm ${statusInfo.classes}`}>
       {statusInfo.label}
     </Badge>
   );
