@@ -5,6 +5,7 @@ import { Customer } from '@/types/customer';
 import { WorkOrderStatusBadge } from '../WorkOrderStatusBadge';
 import { WorkOrderDetailsActions } from './WorkOrderDetailsActions';
 import { EditModeIndicator } from '../debug/EditModeIndicator';
+import { WorkOrderProgressTimeline } from '../shared/WorkOrderProgressTimeline';
 
 interface WorkOrderDetailsHeaderProps {
   workOrder: WorkOrder;
@@ -61,6 +62,14 @@ export function WorkOrderDetailsHeader({
               </div>
             </div>
           )}
+          
+          {/* Progress Timeline */}
+          <div className="py-4">
+            <WorkOrderProgressTimeline 
+              currentStatus={currentStatus} 
+              className="max-w-4xl"
+            />
+          </div>
           
           {workOrder.description && (
             <div className="p-4 rounded-lg bg-gradient-subtle border-l-4 border-primary/40 border border-border/30">
