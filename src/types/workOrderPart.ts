@@ -54,6 +54,7 @@ export interface WorkOrderPartFormValues {
   notes?: string;
   job_line_id?: string;
   category?: string;
+  category_id?: string;
   part_type: string;
   
   // Optional extended fields

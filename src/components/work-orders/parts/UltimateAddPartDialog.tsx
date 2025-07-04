@@ -19,12 +19,13 @@ import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService'
 import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle, Package, DollarSign, Truck, Shield, Settings, Search, Calculator, Calendar } from 'lucide-react';
+import { PartsCategorySelector } from './PartsCategorySelector';
 const ultimatePartSchema = z.object({
   // Basic Information
   name: z.string().min(1, 'Part name is required'),
   part_number: z.string().min(1, 'Part number is required'),
   description: z.string().optional(),
-  category: z.string().optional(),
+  category_id: z.string().optional(),
   part_type: z.enum(['inventory', 'non-inventory', 'special-order']),
   // Quantity and Pricing
   quantity: z.number().min(1, 'Quantity must be at least 1').default(1),
@@ -89,7 +90,7 @@ export function UltimateAddPartDialog({
       name: '',
       part_number: '',
       description: '',
-      category: '',
+      category_id: undefined,
       part_type: 'inventory',
       quantity: 1,
       unit_price: 0,
@@ -147,7 +148,7 @@ export function UltimateAddPartDialog({
       form.setValue('name', item.name);
       form.setValue('part_number', item.sku || '');
       form.setValue('description', item.description || '');
-      form.setValue('category', item.category || '');
+      // Note: inventory items don't have category_id, so we'll leave it empty for now
       form.setValue('unit_price', item.price || 0);
       form.setValue('isStockItem', true);
       form.setValue('part_type', 'inventory');
@@ -282,12 +283,16 @@ export function UltimateAddPartDialog({
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="category" render={({
+                    <FormField control={form.control} name="category_id" render={({
                     field
                   }) => <FormItem>
                           <FormLabel>Category</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., Engine, Brakes, Electrical..." />
+                            <PartsCategorySelector
+                              value={field.value}
+                              onValueChange={(value) => field.onChange(value)}
+                              placeholder="Select part category..."
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>} />
