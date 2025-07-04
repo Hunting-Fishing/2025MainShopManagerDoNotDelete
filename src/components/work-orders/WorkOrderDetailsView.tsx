@@ -10,6 +10,7 @@ import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useWorkOrderData } from '@/hooks/useWorkOrderData';
 import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { WorkOrderStatsCards } from './details/WorkOrderStatsCards';
 import { useWorkOrderEditMode } from '@/hooks/useWorkOrderEditMode';
 
 interface WorkOrderDetailsViewProps {
@@ -124,6 +125,14 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
         isUpdatingStatus={isUpdatingStatus}
         onStatusChange={handleStatusChange}
         isEditMode={isEditMode}
+      />
+
+      {/* Statistics Cards */}
+      <WorkOrderStatsCards
+        workOrder={workOrder}
+        jobLines={jobLines}
+        parts={allParts}
+        timeEntries={timeEntries}
       />
 
       {/* Tabs */}

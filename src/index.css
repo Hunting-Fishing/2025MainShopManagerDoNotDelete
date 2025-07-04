@@ -32,7 +32,7 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
 
-    /* Enhanced Color System */
+/* Enhanced Color System */
     --success: 142 76% 36%;
     --success-foreground: 355 100% 97%;
     --warning: 32 95% 44%;
@@ -41,6 +41,19 @@
     --error-foreground: 355 100% 97%;
     --info: 217 91% 60%;
     --info-foreground: 355 100% 97%;
+
+    /* Modern Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)/0.8) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--secondary)/0.9) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)/0.95) 100%);
+    --gradient-status: linear-gradient(135deg, hsl(var(--muted)/0.5) 0%, hsl(var(--muted)/0.2) 100%);
+    
+    /* Enhanced Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(var(--primary)/0.05);
+    --shadow: 0 1px 3px 0 hsl(var(--primary)/0.1), 0 1px 2px -1px hsl(var(--primary)/0.1);
+    --shadow-md: 0 4px 6px -1px hsl(var(--primary)/0.1), 0 2px 4px -2px hsl(var(--primary)/0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(var(--primary)/0.1), 0 4px 6px -4px hsl(var(--primary)/0.1);
+    --shadow-glow: 0 0 0 1px hsl(var(--primary)/0.2), 0 0 20px hsl(var(--primary)/0.3);
   }
 
   .dark {
@@ -113,7 +126,7 @@
   }
 }
 
-/* Modern Card System */
+/* Enhanced Card System */
 @layer components {
   .modern-card {
     @apply relative bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm;
@@ -146,6 +159,28 @@
 
   .financial-card {
     @apply modern-card gradient-border hover:shadow-lg transition-all duration-300;
+  }
+
+  /* Glass Morphism Effects */
+  .glass-card {
+    @apply backdrop-blur-md bg-white/10 border border-white/20 shadow-xl;
+  }
+
+  .glass-dark {
+    @apply backdrop-blur-md bg-black/10 border border-black/20;
+  }
+
+  /* Enhanced Button System */
+  .btn-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+
+  .btn-gradient-secondary {
+    @apply bg-gradient-to-r from-secondary to-secondary/90 hover:from-secondary/90 hover:to-secondary/80 text-secondary-foreground;
+  }
+
+  .btn-glass {
+    @apply backdrop-blur-sm bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 text-foreground transition-all duration-300;
   }
 }
 
@@ -201,6 +236,14 @@
     animation: slide-up 0.8s ease-out;
   }
 
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
   @keyframes fade-in {
     from {
       opacity: 0;
@@ -221,6 +264,37 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0% {
+      box-shadow: 0 0 20px hsl(var(--primary)/0.3);
+    }
+    100% {
+      box-shadow: 0 0 30px hsl(var(--primary)/0.6);
+    }
+  }
+
+  /* Hover Animations */
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1;
+  }
+
+  .hover-glow {
+    @apply transition-shadow duration-300 hover:shadow-glow;
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-300 hover:scale-105;
   }
 }
 
