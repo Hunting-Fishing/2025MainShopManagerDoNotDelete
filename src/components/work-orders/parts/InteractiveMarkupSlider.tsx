@@ -112,7 +112,7 @@ export function InteractiveMarkupSlider({ form }: InteractiveMarkupSliderProps) 
                   type="number"
                   min="0"
                   step="0.01"
-                  {...field}
+                  value={field.value || ''}
                   onChange={(e) => {
                     const value = parseFloat(e.target.value) || 0;
                     field.onChange(value);
