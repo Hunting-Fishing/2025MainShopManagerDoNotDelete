@@ -110,7 +110,7 @@ export class PartsFormValidator {
       // Optional fields
       customer_price: formData.customerPrice || formData.unit_price || 0,
       supplier_cost: formData.supplierCost || null,
-      retail_price: formData.retailPrice || null,
+      retail_price: formData.supplierSuggestedRetail || null,
       markup_percentage: formData.markupPercentage || null,
       is_taxable: formData.isTaxable || false,
       core_charge_amount: formData.coreChargeAmount || null,

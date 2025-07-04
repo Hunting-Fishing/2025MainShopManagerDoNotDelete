@@ -62,10 +62,10 @@ export function AdvancedPartFields({ form }: AdvancedPartFieldsProps) {
 
             <FormField
               control={form.control}
-              name="retailPrice"
+              name="supplierSuggestedRetail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Retail Price</FormLabel>
+                  <FormLabel>Supplier Suggested Retail</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 

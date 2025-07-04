@@ -20,7 +20,7 @@ import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle, Package, DollarSign, Truck, Shield, Settings, Search, Calculator, Calendar } from 'lucide-react';
 import { PartsCategorySelector } from './PartsCategorySelector';
-import { PartsSuppliersSelector } from './PartsSuppliersSelector';
+import { InteractiveMarkupSlider } from './InteractiveMarkupSlider';
 const ultimatePartSchema = z.object({
   // Basic Information
   name: z.string().min(1, 'Part name is required'),
@@ -34,7 +34,7 @@ const ultimatePartSchema = z.object({
   total_price: z.number().optional(),
   // Advanced Pricing
   supplierCost: z.number().optional(),
-  retailPrice: z.number().optional(),
+  supplierSuggestedRetail: z.number().optional(),
   customerPrice: z.number().optional(),
   markupPercentage: z.number().optional(),
   // Supplier Information
@@ -98,7 +98,7 @@ export function UltimateAddPartDialog({
       unit_price: 0,
       total_price: 0,
       supplierCost: 0,
-      retailPrice: 0,
+      supplierSuggestedRetail: 0,
       customerPrice: 0,
       markupPercentage: 0,
       supplierName: '',
@@ -138,9 +138,9 @@ export function UltimateAddPartDialog({
   // Auto-calculate retail price from markup
   useEffect(() => {
     if (supplierCost && markupPercentage) {
-      const retailPrice = supplierCost * (1 + markupPercentage / 100);
-      form.setValue('retailPrice', Math.round(retailPrice * 100) / 100);
-      form.setValue('unit_price', Math.round(retailPrice * 100) / 100);
+      const supplierSuggestedRetail = supplierCost * (1 + markupPercentage / 100);
+      form.setValue('supplierSuggestedRetail', Math.round(supplierSuggestedRetail * 100) / 100);
+      form.setValue('unit_price', Math.round(supplierSuggestedRetail * 100) / 100);
     }
   }, [supplierCost, markupPercentage, form]);
   const handleInventoryItemSelect = (itemId: string) => {
@@ -374,52 +374,7 @@ export function UltimateAddPartDialog({
                 </TabsContent>
 
                 <TabsContent value="pricing" className="space-y-6 mt-0">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Calculator className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Pricing & Cost Analysis</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name="supplierCost" render={({
-                    field
-                  }) => <FormItem>
-                          <FormLabel>Supplier Cost</FormLabel>
-                          <FormControl>
-                            <Input type="number" min="0" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
-
-                    <FormField control={form.control} name="markupPercentage" render={({
-                    field
-                  }) => <FormItem>
-                          <FormLabel>Markup %</FormLabel>
-                          <FormControl>
-                            <Input type="number" min="0" step="0.1" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} placeholder="Auto-calculates retail price" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
-
-                    <FormField control={form.control} name="retailPrice" render={({
-                    field
-                  }) => <FormItem>
-                          <FormLabel>Retail Price</FormLabel>
-                          <FormControl>
-                            <Input type="number" min="0" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
-                  </div>
-
-                  <FormField control={form.control} name="customerPrice" render={({
-                  field
-                }) => <FormItem>
-                        <FormLabel>Customer Price (if different from unit price)</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>} />
+                  <InteractiveMarkupSlider form={form} />
 
                   {/* Core Charge Section */}
                   <div className="space-y-4">

@@ -21,7 +21,7 @@ export interface WorkOrderPart {
   // Pricing fields
   customerPrice?: number;
   supplierCost?: number;
-  retailPrice?: number;
+  supplierSuggestedRetail?: number;
   markupPercentage?: number;
   
   // Additional properties
@@ -60,7 +60,7 @@ export interface WorkOrderPartFormValues {
   // Optional extended fields
   customerPrice?: number;
   supplierCost?: number;
-  retailPrice?: number;
+  supplierSuggestedRetail?: number;
   markupPercentage?: number;
   isTaxable?: boolean;
   coreChargeAmount?: number;

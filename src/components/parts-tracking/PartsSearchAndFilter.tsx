@@ -30,7 +30,7 @@ export function PartsSearchAndFilter() {
       part_type: 'inventory',
       supplierName: 'AutoParts Inc',
       supplierCost: 35.00,
-      retailPrice: 50.99
+      supplierSuggestedRetail: 50.99
     }
   ];
 

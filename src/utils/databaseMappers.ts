@@ -36,7 +36,7 @@ export function mapDatabasePartToWorkOrderPart(dbPart: any): WorkOrderPart {
     // Pricing fields - handle various field names from database
     customerPrice: parseFloat(dbPart.customer_price) || unitPrice || undefined,
     supplierCost: parseFloat(dbPart.supplier_cost) || undefined,
-    retailPrice: parseFloat(dbPart.retail_price) || undefined,
+    supplierSuggestedRetail: parseFloat(dbPart.retail_price) || undefined,
     markupPercentage: parseFloat(dbPart.markup_percentage) || undefined,
     
     // Additional properties

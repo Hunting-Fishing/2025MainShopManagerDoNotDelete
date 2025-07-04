@@ -106,7 +106,7 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
       notes: partData.notes,
       // Extended fields
       supplier_cost: partData.supplierCost,
-      retail_price: partData.retailPrice,
+      retail_price: partData.supplierSuggestedRetail,
       markup_percentage: partData.markupPercentage,
       supplier_name: partData.supplierName,
       is_taxable: partData.isTaxable || false,
@@ -168,7 +168,7 @@ export async function updateWorkOrderPart(partId: string, updates: Partial<WorkO
 
     // Extended fields
     if (updates.supplierCost !== undefined) dbUpdates.supplier_cost = updates.supplierCost;
-    if (updates.retailPrice !== undefined) dbUpdates.retail_price = updates.retailPrice;
+    if (updates.supplierSuggestedRetail !== undefined) dbUpdates.retail_price = updates.supplierSuggestedRetail;
     if (updates.markupPercentage !== undefined) dbUpdates.markup_percentage = updates.markupPercentage;
     if (updates.supplierName !== undefined) dbUpdates.supplier_name = updates.supplierName;
     if (updates.isTaxable !== undefined) dbUpdates.is_taxable = updates.isTaxable;
