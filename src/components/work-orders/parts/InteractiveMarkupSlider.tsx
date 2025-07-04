@@ -15,20 +15,18 @@ interface InteractiveMarkupSliderProps {
 export function InteractiveMarkupSlider({ form }: InteractiveMarkupSliderProps) {
   const [supplierCost, setSupplierCost] = useState(0);
   const [markupPercentage, setMarkupPercentage] = useState(50);
-  const [supplierSuggestedRetail, setSupplierSuggestedRetail] = useState(0);
   const [customerPrice, setCustomerPrice] = useState(0);
 
-  // Watch form values for real-time updates
+  // Watch form values for real-time updates (only for calculation inputs)
   const watchedSupplierCost = form.watch('supplierCost') || 0;
   const watchedMarkup = form.watch('markupPercentage') || 50;
   const watchedSuggestedRetail = form.watch('supplierSuggestedRetail') || 0;
 
-  // Update local state when form values change
+  // Update local state when form values change (only for calculation inputs)
   useEffect(() => {
     setSupplierCost(watchedSupplierCost);
     setMarkupPercentage(watchedMarkup);
-    setSupplierSuggestedRetail(watchedSuggestedRetail);
-  }, [watchedSupplierCost, watchedMarkup, watchedSuggestedRetail]);
+  }, [watchedSupplierCost, watchedMarkup]);
 
   // Calculate customer price whenever supplier cost or markup changes
   useEffect(() => {
@@ -40,9 +38,9 @@ export function InteractiveMarkupSlider({ form }: InteractiveMarkupSliderProps) 
 
   // Color coding logic based on customer price vs supplier suggested retail
   const getPriceColorCode = () => {
-    if (supplierSuggestedRetail === 0) return { color: 'default', text: 'No comparison available' };
+    if (watchedSuggestedRetail === 0) return { color: 'default', text: 'No comparison available' };
     
-    const ratio = customerPrice / supplierSuggestedRetail;
+    const ratio = customerPrice / watchedSuggestedRetail;
     
     if (ratio <= 1.0) {
       return { color: 'success', text: `${(ratio * 100).toFixed(0)}% of suggested retail` };
@@ -69,11 +67,6 @@ export function InteractiveMarkupSlider({ form }: InteractiveMarkupSliderProps) 
   const handleSupplierCostChange = (value: number) => {
     setSupplierCost(value);
     form.setValue('supplierCost', value);
-  };
-
-  const handleSuggestedRetailChange = (value: number) => {
-    setSupplierSuggestedRetail(value);
-    form.setValue('supplierSuggestedRetail', value);
   };
 
   const profitAmount = customerPrice - supplierCost;
@@ -123,7 +116,6 @@ export function InteractiveMarkupSlider({ form }: InteractiveMarkupSliderProps) 
                   onChange={(e) => {
                     const value = parseFloat(e.target.value) || 0;
                     field.onChange(value);
-                    handleSuggestedRetailChange(value);
                   }}
                   placeholder="Supplier's suggested price"
                 />
@@ -260,13 +252,13 @@ export function InteractiveMarkupSlider({ form }: InteractiveMarkupSliderProps) 
                   {profitMargin.toFixed(1)}%
                 </span>
               </div>
-              {supplierSuggestedRetail > 0 && (
+              {watchedSuggestedRetail > 0 && (
                 <div className="text-sm">
                   <span className="text-muted-foreground">vs Suggested: </span>
                   <span className={`font-medium ${
-                    customerPrice <= supplierSuggestedRetail ? 'text-green-600' : 'text-red-600'
+                    customerPrice <= watchedSuggestedRetail ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    ${(customerPrice - supplierSuggestedRetail).toFixed(2)}
+                    ${(customerPrice - watchedSuggestedRetail).toFixed(2)}
                   </span>
                 </div>
               )}
