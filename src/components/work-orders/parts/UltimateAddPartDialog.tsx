@@ -20,6 +20,7 @@ import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle, Package, DollarSign, Truck, Shield, Settings, Search, Calculator, Calendar } from 'lucide-react';
 import { PartsCategorySelector } from './PartsCategorySelector';
+import { PartsSuppliersSelector } from './PartsSuppliersSelector';
 const ultimatePartSchema = z.object({
   // Basic Information
   name: z.string().min(1, 'Part name is required'),
@@ -38,6 +39,7 @@ const ultimatePartSchema = z.object({
   markupPercentage: z.number().optional(),
   // Supplier Information
   supplierName: z.string().optional(),
+  supplier_id: z.string().optional(),
   supplierOrderRef: z.string().optional(),
   invoiceNumber: z.string().optional(),
   poLine: z.string().optional(),
@@ -466,15 +468,19 @@ export function UltimateAddPartDialog({
 
                 <TabsContent value="supplier" className="space-y-6 mt-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="supplierName" render={({
-                    field
-                  }) => <FormItem>
-                          <FormLabel>Supplier Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Enter supplier name..." />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
+                     <FormField control={form.control} name="supplier_id" render={({
+                     field
+                   }) => <FormItem>
+                           <FormLabel>Supplier</FormLabel>
+                           <FormControl>
+                             <PartsSuppliersSelector
+                               value={field.value}
+                               onValueChange={(value) => field.onChange(value)}
+                               placeholder="Select supplier..."
+                             />
+                           </FormControl>
+                           <FormMessage />
+                         </FormItem>} />
 
                     <FormField control={form.control} name="supplierOrderRef" render={({
                     field

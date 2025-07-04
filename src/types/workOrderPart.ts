@@ -73,6 +73,7 @@ export interface WorkOrderPartFormValues {
   poLine?: string;
   isStockItem?: boolean;
   supplierName?: string;
+  supplier_id?: string;
   supplierOrderRef?: string;
   notesInternal?: string;
   inventoryItemId?: string;
