@@ -20,6 +20,7 @@ import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle, Package, DollarSign, Truck, Shield, Settings, Search, Calculator, Calendar } from 'lucide-react';
 import { PartsCategorySelector } from './PartsCategorySelector';
+import { PartsSuppliersSelector } from './PartsSuppliersSelector';
 import { InteractiveMarkupSlider } from './InteractiveMarkupSlider';
 const ultimatePartSchema = z.object({
   // Basic Information
