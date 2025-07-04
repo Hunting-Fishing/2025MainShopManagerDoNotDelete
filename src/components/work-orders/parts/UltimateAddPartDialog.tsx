@@ -136,12 +136,12 @@ export function UltimateAddPartDialog({
     }
   }, [quantity, unitPrice, form]);
 
-  // Auto-calculate retail price from markup
+  // Auto-calculate customer price from supplier cost + markup
   useEffect(() => {
     if (supplierCost && markupPercentage) {
-      const supplierSuggestedRetail = supplierCost * (1 + markupPercentage / 100);
-      form.setValue('supplierSuggestedRetail', Math.round(supplierSuggestedRetail * 100) / 100);
-      form.setValue('unit_price', Math.round(supplierSuggestedRetail * 100) / 100);
+      const customerPrice = supplierCost * (1 + markupPercentage / 100);
+      form.setValue('customerPrice', Math.round(customerPrice * 100) / 100);
+      form.setValue('unit_price', Math.round(customerPrice * 100) / 100);
     }
   }, [supplierCost, markupPercentage, form]);
   const handleInventoryItemSelect = (itemId: string) => {
