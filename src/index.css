@@ -1,502 +1,83 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Space+Grotesk:wght@300..700&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Core Colors */
     --background: 0 0% 100%;
-    --foreground: 224 71% 4%;
+    --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
-    
-    /* Modern Primary System */
-    --primary: 262 83% 58%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
-    --primary-glow: 262 83% 70%;
-    --primary-dark: 262 83% 45%;
-    
-    /* Enhanced Secondary */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 9% 46%;
-    --secondary-light: 220 14% 98%;
-    
-    /* Interactive Accent */
-    --accent: 220 14% 96%;
-    --accent-foreground: 220 9% 46%;
-    --accent-hover: 220 14% 92%;
-    
-    /* Refined Muted */
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --muted-light: 220 14% 98%;
-    
-    /* Error State */
-    --destructive: 0 84% 60%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    
-    /* Interface Elements */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 262 83% 58%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
     --radius: 0.75rem;
-    
-    /* Modern Sidebar */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 220 9% 46%;
-    --sidebar-primary: 262 83% 58%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 9% 46%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 262 83% 58%;
-    
-    /* Enhanced Chart Palette */
-    --chart-1: 262 83% 58%;
-    --chart-2: 142 69% 58%;
-    --chart-3: 39 100% 57%;
-    --chart-4: 0 84% 60%;
-    --chart-5: 221 83% 53%;
-    
-    /* Modern Status System */
-    --status-pending: 39 100% 57%;
-    --status-pending-bg: 39 100% 57% / 0.1;
-    --status-pending-border: 39 100% 57% / 0.2;
-    --status-in-progress: 221 83% 53%;
-    --status-in-progress-bg: 221 83% 53% / 0.1;
-    --status-in-progress-border: 221 83% 53% / 0.2;
-    --status-completed: 142 69% 58%;
-    --status-completed-bg: 142 69% 58% / 0.1;
-    --status-completed-border: 142 69% 58% / 0.2;
-    --status-cancelled: 0 84% 60%;
-    --status-cancelled-bg: 0 84% 60% / 0.1;
-    --status-cancelled-border: 0 84% 60% / 0.2;
-    --status-on-hold: 262 83% 58%;
-    --status-on-hold-bg: 262 83% 58% / 0.1;
-    --status-on-hold-border: 262 83% 58% / 0.2;
-    
-    /* Priority System */
-    --priority-low: 142 69% 58%;
-    --priority-medium: 39 100% 57%;
-    --priority-high: 25 95% 53%;
-    --priority-critical: 0 84% 60%;
-    
-    /* Semantic Colors */
-    --success: 142 69% 58%;
-    --warning: 39 100% 57%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+
+    /* Enhanced Color System */
+    --success: 142 76% 36%;
+    --success-foreground: 355 100% 97%;
+    --warning: 32 95% 44%;
+    --warning-foreground: 355 100% 97%;
     --error: 0 84% 60%;
-    --info: 221 83% 53%;
-    
-    /* Work Order Enhanced System */
-    --work-order-card: 0 0% 100%;
-    --work-order-card-hover: 220 14% 96%;
-    --work-order-border: 220 13% 91%;
-    --work-order-accent: 262 83% 58%;
-    --work-order-section: 220 14% 96%;
-    
-    /* Modern Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 70%));
-    --gradient-secondary: linear-gradient(135deg, hsl(220 14% 96%), hsl(220 14% 98%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(220 14% 96%));
-    --gradient-status: linear-gradient(135deg, hsl(var(--status-completed)), hsl(var(--status-in-progress)));
-    
-    /* Enhanced Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(262 83% 58% / 0.05);
-    --shadow: 0 1px 3px 0 hsl(262 83% 58% / 0.1), 0 1px 2px 0 hsl(262 83% 58% / 0.06);
-    --shadow-md: 0 4px 6px -1px hsl(262 83% 58% / 0.1), 0 2px 4px -1px hsl(262 83% 58% / 0.06);
-    --shadow-lg: 0 10px 15px -3px hsl(262 83% 58% / 0.1), 0 4px 6px -2px hsl(262 83% 58% / 0.05);
-    --shadow-glow: 0 0 20px hsl(262 83% 58% / 0.3);
+    --error-foreground: 355 100% 97%;
+    --info: 217 91% 60%;
+    --info-foreground: 355 100% 97%;
   }
 
   .dark {
-    /* Core Colors */
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
-    --popover: 224 71% 4%;
-    --popover-foreground: 213 31% 91%;
-    
-    /* Modern Primary System */
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
-    --primary-glow: 262 83% 70%;
-    --primary-dark: 262 83% 45%;
-    
-    /* Enhanced Secondary */
-    --secondary: 215 28% 17%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-    --secondary-light: 215 28% 25%;
-    
-    /* Interactive Accent */
-    --accent: 262 83% 58%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-    --accent-hover: 262 83% 65%;
-    
-    /* Refined Muted */
-    --muted: 215 28% 17%;
-    --muted-foreground: 217 10% 65%;
-    --muted-light: 217 19% 27%;
-    
-    /* Error State */
-    --destructive: 0 91% 71%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    
-    /* Interface Elements */
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 262 83% 58%;
-    
-    /* Modern Sidebar */
-    --sidebar-background: 224 71% 4%;
-    --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 262 83% 58%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 215 28% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 215 28% 17%;
-    --sidebar-ring: 262 83% 58%;
-    
-    /* Enhanced Chart Palette */
-    --chart-1: 262 83% 58%;
-    --chart-2: 142 69% 58%;
-    --chart-3: 39 100% 57%;
-    --chart-4: 0 91% 71%;
-    --chart-5: 221 83% 53%;
-    
-    /* Modern Status System */
-    --status-pending: 39 100% 57%;
-    --status-pending-bg: 39 100% 57% / 0.1;
-    --status-pending-border: 39 100% 57% / 0.2;
-    --status-in-progress: 221 83% 53%;
-    --status-in-progress-bg: 221 83% 53% / 0.1;
-    --status-in-progress-border: 221 83% 53% / 0.2;
-    --status-completed: 142 69% 58%;
-    --status-completed-bg: 142 69% 58% / 0.1;
-    --status-completed-border: 142 69% 58% / 0.2;
-    --status-cancelled: 0 91% 71%;
-    --status-cancelled-bg: 0 91% 71% / 0.1;
-    --status-cancelled-border: 0 91% 71% / 0.2;
-    --status-on-hold: 262 83% 58%;
-    --status-on-hold-bg: 262 83% 58% / 0.1;
-    --status-on-hold-border: 262 83% 58% / 0.2;
-    
-    /* Work Order Enhanced System */
-    --work-order-card: 224 71% 4%;
-    --work-order-card-hover: 215 28% 17%;
-    --work-order-border: 215 28% 17%;
-    --work-order-accent: 262 83% 58%;
-    --work-order-section: 215 28% 17%;
-    
-    /* Modern Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 70%));
-    --gradient-secondary: linear-gradient(135deg, hsl(215 28% 17%), hsl(215 28% 25%));
-    --gradient-card: linear-gradient(135deg, hsl(224 71% 4%), hsl(215 28% 17%));
-    --gradient-status: linear-gradient(135deg, hsl(var(--status-completed)), hsl(var(--status-in-progress)));
-    
-    /* Enhanced Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(262 83% 58% / 0.05);
-    --shadow: 0 1px 3px 0 hsl(262 83% 58% / 0.1), 0 1px 2px 0 hsl(262 83% 58% / 0.06);
-    --shadow-md: 0 4px 6px -1px hsl(262 83% 58% / 0.1), 0 2px 4px -1px hsl(262 83% 58% / 0.06);
-    --shadow-lg: 0 10px 15px -3px hsl(262 83% 58% / 0.1), 0 4px 6px -2px hsl(262 83% 58% / 0.05);
-    --shadow-glow: 0 0 20px hsl(262 83% 58% / 0.3);
-  }
-}
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
 
-/* Modern Component System */
-@layer components {
-  /* Modern Status Badge System */
-  .status-badge {
-    @apply inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-all duration-200;
-  }
-  
-  .status-pending {
-    @apply text-status-pending bg-status-pending-bg border border-status-pending-border backdrop-blur-sm;
-  }
-  
-  .status-in-progress {
-    @apply text-status-in-progress bg-status-in-progress-bg border border-status-in-progress-border backdrop-blur-sm;
-  }
-  
-  .status-completed {
-    @apply text-status-completed bg-status-completed-bg border border-status-completed-border backdrop-blur-sm;
-  }
-  
-  .status-cancelled {
-    @apply text-status-cancelled bg-status-cancelled-bg border border-status-cancelled-border backdrop-blur-sm;
-  }
-
-  .status-on-hold {
-    @apply text-status-on-hold bg-status-on-hold-bg border border-status-on-hold-border backdrop-blur-sm;
-  }
-
-  /* Modern Card System */
-  .work-order-card {
-    @apply bg-work-order-card border border-work-order-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-6 backdrop-blur-sm;
-  }
-
-  .work-order-card:hover {
-    @apply bg-work-order-card-hover border-work-order-accent/20 shadow-lg transform scale-[1.01];
-  }
-
-  .work-order-summary-card {
-    background: var(--gradient-card);
-    @apply border border-work-order-border rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 backdrop-blur-sm;
-  }
-
-  .financial-card {
-    background: linear-gradient(135deg, hsl(var(--success) / 0.1), hsl(var(--success) / 0.05));
-    @apply border border-success/20 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300;
-  }
-
-  .modern-card {
-    background: var(--gradient-card);
-    @apply border border-border/50 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 backdrop-blur-sm;
-  }
-
-  .work-order-header {
-    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)/.95) 50%, hsl(var(--muted)) 100%);
-    @apply backdrop-blur-sm shadow-lg;
-  }
-
-  /* Modern Tabs System */
-  .modern-tabs-container {
-    @apply space-y-6;
-  }
-
-  .modern-tabs-list {
-    @apply rounded-xl shadow-sm;
-    background: linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--muted)/.8) 100%);
-  }
-
-  .modern-tab-trigger {
-    @apply font-medium transition-all duration-200 text-sm;
-    @apply data-[state=active]:bg-background data-[state=active]:text-foreground;
-    @apply data-[state=active]:shadow-sm data-[state=active]:border-primary/20;
-    @apply hover:bg-background/60 hover:text-foreground;
-  }
-
-  /* Modern Button System */
-  .btn-primary {
-    background: var(--gradient-primary);
-    @apply text-primary-foreground rounded-lg font-medium text-sm px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200 border-0;
-  }
-
-  .btn-primary:hover {
-    @apply shadow-lg transform translate-y-[-1px];
-  }
-
-  .btn-secondary {
-    @apply bg-secondary hover:bg-secondary-light text-secondary-foreground rounded-lg font-medium text-sm px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200 border border-border;
-  }
-
-  .btn-ghost {
-    @apply text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-lg font-medium text-sm px-4 py-2 transition-all duration-200;
-  }
-
-  /* Enhanced Typography */
-  .heading-xl {
-    @apply text-3xl font-bold tracking-tight text-foreground;
-    font-family: 'Space Grotesk', sans-serif;
-  }
-
-  .heading-lg {
-    @apply text-2xl font-bold tracking-tight text-foreground;
-    font-family: 'Space Grotesk', sans-serif;
-  }
-
-  .heading-md {
-    @apply text-xl font-semibold text-foreground;
-    font-family: 'Space Grotesk', sans-serif;
-  }
-
-  .text-body {
-    @apply text-sm text-muted-foreground leading-relaxed;
-    font-family: 'Inter', sans-serif;
-  }
-
-  /* Modern Card Components */
-  .modern-summary-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6;
-  }
-
-  .modern-summary-card {
-    @apply p-6 rounded-xl bg-gradient-to-br from-card via-card/95 to-card/90 border border-border/50 shadow-md hover:shadow-lg transition-all duration-300 group backdrop-blur-sm;
-  }
-
-  .modern-summary-card:hover {
-    @apply scale-[1.02] border-primary/30;
-  }
-
-  .summary-card-title {
-    @apply text-sm font-medium text-muted-foreground tracking-wide uppercase font-body;
-  }
-
-  .summary-card-value {
-    @apply text-3xl font-bold text-foreground font-heading gradient-text;
-  }
-
-  .summary-card-subtitle {
-    @apply text-sm text-muted-foreground font-body;
-  }
-
-  /* Enhanced Status Colors */
-  .status-pending {
-    @apply bg-warning/20 text-warning border-warning/30 hover:bg-warning/30;
-  }
-
-  .status-in-progress {
-    @apply bg-primary/20 text-primary border-primary/30 hover:bg-primary/30;
-  }
-
-  .status-completed {
-    @apply bg-success/20 text-success border-success/30 hover:bg-success/30;
-  }
-
-  .status-cancelled {
-    @apply bg-destructive/20 text-destructive border-destructive/30 hover:bg-destructive/30;
-  }
-
-  .section-title {
-    @apply text-lg font-semibold text-foreground mb-4 tracking-tight;
-    font-family: 'Space Grotesk', sans-serif;
-  }
-
-  .financial-amount {
-    @apply text-xl font-bold text-success;
-    font-family: 'Space Grotesk', sans-serif;
-  }
-
-  .financial-amount-large {
-    @apply text-3xl font-bold text-success;
-    font-family: 'Space Grotesk', sans-serif;
-  }
-
-  .gradient-text {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .gradient-border {
-    background: linear-gradient(135deg, hsl(var(--border)), hsl(var(--border)/.5));
-    border: 1px solid hsl(var(--border));
-  }
-
-  /* Modern Form Elements */
-  .form-input {
-    @apply w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200;
-  }
-
-  .form-label {
-    @apply text-sm font-medium text-foreground mb-2 block tracking-tight;
-    font-family: 'Inter', sans-serif;
-  }
-
-  /* Enhanced Tables */
-  .modern-table {
-    @apply w-full border-collapse rounded-xl overflow-hidden shadow-sm border border-border;
-  }
-
-  .table-header {
-    @apply bg-muted/30 text-muted-foreground font-semibold text-sm uppercase tracking-wider;
-    font-family: 'Space Grotesk', sans-serif;
-  }
-
-  .table-cell {
-    @apply px-6 py-4 border-b border-border text-sm text-foreground;
-  }
-
-  .table-row:hover {
-    @apply bg-muted/20 transition-colors duration-200;
-  }
-
-  /* Modern Animations */
-  .fade-in-up {
-    @apply animate-in fade-in-0 slide-in-from-bottom-4 duration-500;
-  }
-
-  .fade-in {
-    @apply animate-in fade-in-0 duration-300;
-  }
-
-  .scale-in {
-    @apply animate-in zoom-in-95 duration-300;
-  }
-
-  .slide-in-left {
-    @apply animate-in slide-in-from-left-4 duration-300;
-  }
-
-  /* Glassmorphism Effects */
-  .glass-card {
-    @apply bg-background/80 backdrop-blur-md border border-border/50 rounded-xl shadow-lg;
-  }
-
-  .glass-panel {
-    @apply bg-background/60 backdrop-blur-lg border border-border/30 rounded-xl;
-  }
-
-  /* Modern Spacing */
-  .section-spacing {
-    @apply space-y-6;
-  }
-
-  .content-spacing {
-    @apply space-y-4;
-  }
-
-  .tight-spacing {
-    @apply space-y-2;
-  }
-
-  /* Responsive Grid */
-  .responsive-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
-  }
-
-  .responsive-grid-2 {
-    @apply grid grid-cols-1 lg:grid-cols-2 gap-6;
-  }
-
-  /* Mobile Optimizations */
-  .mobile-optimized {
-    @apply p-4 space-y-4 border-l-4 border-work-order-accent;
-  }
-
-  .mobile-stack {
-    @apply flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center;
-  }
-
-  /* Status Indicators */
-  .status-dot {
-    @apply w-2 h-2 rounded-full inline-block;
-  }
-
-  .status-dot-pending {
-    @apply bg-status-pending;
-  }
-
-  .status-dot-in-progress {
-    @apply bg-status-in-progress;
-  }
-
-  .status-dot-completed {
-    @apply bg-status-completed;
-  }
-
-  .status-dot-cancelled {
-    @apply bg-status-cancelled;
-  }
-
-  .status-dot-on-hold {
-    @apply bg-status-on-hold;
+    /* Enhanced Dark Mode Colors */
+    --success: 142 76% 36%;
+    --success-foreground: 355 100% 97%;
+    --warning: 32 95% 44%;
+    --warning-foreground: 355 100% 97%;
+    --error: 0 84% 60%;
+    --error-foreground: 355 100% 97%;
+    --info: 217 91% 60%;
+    --info-foreground: 355 100% 97%;
   }
 }
 
@@ -504,8 +85,199 @@
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
+  }
+}
+
+/* Enhanced Typography System */
+@layer utilities {
+  .font-heading {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+  
+  .font-body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  .section-title {
+    @apply text-lg font-heading font-semibold text-foreground;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent;
+  }
+}
+
+/* Modern Card System */
+@layer components {
+  .modern-card {
+    @apply relative bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm;
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card))/0.95 100%);
+  }
+
+  .gradient-border {
+    @apply before:absolute before:inset-0 before:rounded-xl before:p-px before:bg-gradient-to-r before:from-primary/20 before:to-accent/20 before:-z-10;
+  }
+
+  .bg-gradient-subtle {
+    background: linear-gradient(135deg, hsl(var(--muted))/0.3 0%, hsl(var(--muted))/0.1 100%);
+  }
+
+  .modern-summary-card {
+    @apply modern-card hover:shadow-md transition-all duration-300 group;
+  }
+
+  .summary-card-title {
+    @apply text-sm font-medium text-muted-foreground font-body;
+  }
+
+  .summary-card-value {
+    @apply text-2xl font-bold text-foreground font-heading;
+  }
+
+  .summary-card-subtitle {
+    @apply text-xs text-muted-foreground font-body;
+  }
+
+  .financial-card {
+    @apply modern-card gradient-border hover:shadow-lg transition-all duration-300;
+  }
+}
+
+/* Enhanced Status System */
+@layer components {
+  .status-pending {
+    @apply bg-warning/20 text-warning border-warning/30;
+  }
+
+  .status-in-progress {
+    @apply bg-info/20 text-info border-info/30;
+  }
+
+  .status-completed {
+    @apply bg-success/20 text-success border-success/30;
+  }
+
+  .status-cancelled {
+    @apply bg-error/20 text-error border-error/30;
+  }
+
+  .status-on-hold {
+    @apply bg-muted/40 text-muted-foreground border-muted/60;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border font-medium transition-all duration-200 hover:shadow-sm;
+  }
+}
+
+/* Modern Tabs System */
+@layer components {
+  .modern-tabs-container {
+    @apply space-y-6;
+  }
+
+  .modern-tabs-list {
+    @apply inline-flex items-center justify-center rounded-lg bg-muted/40 p-1 text-muted-foreground;
+  }
+
+  .modern-tab-trigger {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm font-body;
+  }
+}
+
+/* Animation System */
+@layer utilities {
+  .fade-in {
+    animation: fade-in 0.6s ease-out;
+  }
+
+  .slide-up {
+    animation: slide-up 0.8s ease-out;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Work Order Header Styling */
+@layer components {
+  .work-order-header {
+    @apply bg-gradient-to-br from-card via-card/95 to-muted/30 backdrop-blur-md;
+  }
+}
+
+/* Enhanced Color Utilities */
+@layer utilities {
+  .text-success {
+    color: hsl(var(--success));
+  }
+  
+  .text-warning {
+    color: hsl(var(--warning));
+  }
+  
+  .text-error {
+    color: hsl(var(--error));
+  }
+  
+  .text-info {
+    color: hsl(var(--info));
+  }
+
+  .bg-success {
+    background-color: hsl(var(--success));
+  }
+  
+  .bg-warning {
+    background-color: hsl(var(--warning));
+  }
+  
+  .bg-error {
+    background-color: hsl(var(--error));
+  }
+  
+  .bg-info {
+    background-color: hsl(var(--info));
+  }
+
+  .border-success {
+    border-color: hsl(var(--success));
+  }
+  
+  .border-warning {
+    border-color: hsl(var(--warning));
+  }
+  
+  .border-error {
+    border-color: hsl(var(--error));
+  }
+  
+  .border-info {
+    border-color: hsl(var(--info));
   }
 }

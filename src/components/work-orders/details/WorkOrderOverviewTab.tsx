@@ -38,8 +38,8 @@ export function WorkOrderOverviewTab({
 
   return (
     <div className="space-y-8 fade-in">
-      {/* Enhanced Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Enhanced Summary Cards - Now with better responsive grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <WorkOrderSummaryCard
           title="Total Parts"
           value={`$${totalPartsValue.toFixed(2)}`}
@@ -66,8 +66,8 @@ export function WorkOrderOverviewTab({
         />
       </div>
 
-      {/* Enhanced Main Content Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {/* Enhanced Main Content Layout with better spacing */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         {/* Left Column - Customer & Time Info */}
         <div className="lg:col-span-4 space-y-6 slide-up">
           <WorkOrderCustomerCard customer={customer} workOrder={workOrder} />
@@ -76,23 +76,23 @@ export function WorkOrderOverviewTab({
 
         {/* Middle Column - Parts & Job Lines */}
         <div className="lg:col-span-5 slide-up">
-          <WorkOrderPartsSection
-            workOrderId={workOrder.id}
-            parts={allParts}
-            jobLines={jobLines}
-            onPartsChange={onPartsChange}
-            isEditMode={isEditMode}
-          />
+          <div className="modern-card gradient-border">
+            <WorkOrderPartsSection
+              workOrderId={workOrder.id}
+              parts={allParts}
+              jobLines={jobLines}
+              onPartsChange={onPartsChange}
+              isEditMode={isEditMode}
+            />
+          </div>
         </div>
 
         {/* Right Column - Financial Summary */}
         <div className="lg:col-span-3 slide-up">
-          <div className="financial-card">
-            <WorkOrderTotals
-              jobLines={jobLines}
-              allParts={allParts}
-            />
-          </div>
+          <WorkOrderTotals
+            jobLines={jobLines}
+            allParts={allParts}
+          />
         </div>
       </div>
     </div>
