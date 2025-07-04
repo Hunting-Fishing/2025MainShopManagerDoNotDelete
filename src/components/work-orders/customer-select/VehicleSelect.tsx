@@ -104,7 +104,7 @@ export function VehicleSelect({ customerId, onSelectVehicle, selectedVehicleId }
       </SelectTrigger>
       <SelectContent>
         {vehicles.map((vehicle) => (
-          <SelectItem key={vehicle.id} value={vehicle.id || ""}>
+          <SelectItem key={vehicle.id} value={vehicle.id || "no-id"}>
             <div className="flex items-center">
               <Car className="h-4 w-4 mr-2" />
               <span>{getVehicleDisplay(vehicle)}</span>

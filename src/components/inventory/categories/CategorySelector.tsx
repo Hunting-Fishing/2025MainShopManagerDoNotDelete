@@ -64,7 +64,7 @@ export function CategorySelector({
       </SelectTrigger>
       <SelectContent className="modern-dropdown max-h-60 overflow-y-auto">
         {categories.length === 0 ? (
-          <SelectItem value="" disabled>
+          <SelectItem value="no-categories" disabled>
             No categories available
           </SelectItem>
         ) : (

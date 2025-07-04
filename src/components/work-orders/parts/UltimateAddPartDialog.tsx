@@ -80,7 +80,7 @@ export function UltimateAddPartDialog({
     try {
       await createWorkOrderPart({
         work_order_id: workOrderId,
-        job_line_id: values.job_line_id || null,
+        job_line_id: values.job_line_id === 'unassigned' ? null : values.job_line_id || null,
         part_number: values.part_number,
         name: values.name,
         description: values.description || null,
@@ -355,7 +355,7 @@ export function UltimateAddPartDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="modern-dropdown">
-                          <SelectItem value="">Unassigned</SelectItem>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
                           {jobLines.map((jobLine) => (
                             <SelectItem key={jobLine.id} value={jobLine.id}>
                               {jobLine.name}
