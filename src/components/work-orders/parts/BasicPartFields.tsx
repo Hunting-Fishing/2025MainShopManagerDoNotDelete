@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { UseFormReturn } from 'react-hook-form';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { CategorySelector } from '@/components/inventory/categories/CategorySelector';
 
 interface BasicPartFieldsProps {
   form: UseFormReturn<WorkOrderPartFormValues>;
@@ -35,6 +36,24 @@ export function BasicPartFields({ form }: BasicPartFieldsProps) {
             <FormLabel>Part Number</FormLabel>
             <FormControl>
               <Input placeholder="Enter part number..." {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="category"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Category</FormLabel>
+            <FormControl>
+              <CategorySelector
+                value={field.value || ''}
+                onValueChange={field.onChange}
+                placeholder="Select a category"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
