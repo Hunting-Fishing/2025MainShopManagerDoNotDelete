@@ -36,9 +36,9 @@ export function WorkOrderStatsCards({
 
   const totalLaborHours = React.useMemo(() => {
     return timeEntries?.reduce((sum, entry) => {
-      const hours = entry.hours_worked || 0;
-      const minutes = entry.minutes_worked || 0;
-      return sum + hours + (minutes / 60);
+      // Duration is stored in minutes, convert to hours
+      const durationInMinutes = entry.duration || 0;
+      return sum + (durationInMinutes / 60);
     }, 0) || 0;
   }, [timeEntries]);
 

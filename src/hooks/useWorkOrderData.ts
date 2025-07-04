@@ -9,6 +9,7 @@ import { getWorkOrderById } from '@/services/workOrder';
 import { getCustomerById } from '@/services/customer';
 import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderQueryService';
 
 export function useWorkOrderData(workOrderId: string) {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
@@ -51,6 +52,11 @@ export function useWorkOrderData(workOrderId: string) {
       setAllParts(parts);
       console.log('✅ Parts fetched:', parts.length, 'items');
 
+      console.log('⏱️ Fetching time entries...');
+      const entries = await getWorkOrderTimeEntries(workOrderId);
+      setTimeEntries(entries);
+      console.log('✅ Time entries fetched:', entries.length, 'items');
+
       if (wo.customer_id) {
         console.log('👤 Fetching customer details...');
         const cust = await getCustomerById(wo.customer_id);
@@ -58,7 +64,6 @@ export function useWorkOrderData(workOrderId: string) {
         console.log('✅ Customer fetched:', cust);
       }
       
-      setTimeEntries([]);
       console.log('✅ All data fetched successfully');
     } catch (err: any) {
       console.error('❌ Error fetching work order data:', err);
