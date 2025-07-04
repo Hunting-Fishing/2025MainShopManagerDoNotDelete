@@ -95,7 +95,7 @@ export function CustomerSelect({ onSelectCustomer, selectedCustomerId }: Custome
         </SelectTrigger>
         <SelectContent>
           {filteredCustomers.map((customer) => (
-            <SelectItem key={customer.id} value={customer.id || "no-id"}>
+            <SelectItem key={customer.id} value={customer.id || ""}>
               <div className="flex items-center">
                 <User className="h-4 w-4 mr-2" />
                 <span>{getCustomerDisplay(customer)}</span>
