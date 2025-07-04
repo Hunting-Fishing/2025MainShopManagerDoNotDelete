@@ -4,7 +4,7 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Clock, DollarSign, TrendingUp, Package } from 'lucide-react';
 import { UnifiedJobLineEditDialog } from './UnifiedJobLineEditDialog';
 import { jobLineStatusMap } from '@/types/jobLine';
 
@@ -52,71 +52,102 @@ export function JobLineCard({
 
   return (
     <>
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="work-order-card hover:shadow-lg transition-all duration-300 group">
+        <CardHeader className="pb-4">
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <CardTitle className="text-base">{jobLine.name}</CardTitle>
-                <Badge className={`${statusInfo.classes} text-xs font-medium`}>
+              <div className="flex items-center gap-3 mb-2">
+                <CardTitle className="text-lg font-heading gradient-text">{jobLine.name}</CardTitle>
+                <Badge className={`status-badge ${statusInfo.classes}`}>
                   {statusInfo.label}
                 </Badge>
               </div>
               {jobLine.description && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground font-body">
                   {jobLine.description}
                 </p>
               )}
             </div>
             {isEditMode && (
-              <div className="flex gap-1">
+              <div className="flex gap-2">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={handleEditClick}
+                  className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <Edit2 className="h-3 w-3" />
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={handleDeleteClick}
+                  className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
-                  <Trash2 className="h-4 w-4 text-red-500" />
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
             )}
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Hours: </span>
-              {jobLine.estimated_hours || 0}
+          {/* Labor Details Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-info/10">
+                <Clock className="w-4 h-4 text-info" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-body">Hours</p>
+                <p className="text-sm font-bold font-heading">{jobLine.estimated_hours || 0}</p>
+              </div>
             </div>
-            <div>
-              <span className="text-muted-foreground">Rate: </span>
-              ${jobLine.labor_rate || 0}
+            
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-warning/10">
+                <DollarSign className="w-4 h-4 text-warning" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-body">Rate</p>
+                <p className="text-sm font-bold font-heading">${jobLine.labor_rate || 0}/hr</p>
+              </div>
             </div>
-            <div>
-              <span className="text-muted-foreground">Total: </span>
-              ${jobLine.total_amount || 0}
+            
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-success/10">
+                <TrendingUp className="w-4 h-4 text-success" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-body">Total</p>
+                <p className="text-lg font-bold font-heading text-success">${jobLine.total_amount || 0}</p>
+              </div>
             </div>
           </div>
           
+          {/* Associated Parts Section */}
           {jobLine.parts && jobLine.parts.length > 0 && (
-            <div className="mt-4 pt-3 border-t">
-              <h5 className="text-sm font-medium mb-2">Associated Parts:</h5>
+            <div className="border-t pt-4 mt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-1.5 rounded-lg bg-purple-500/10">
+                  <Package className="w-4 h-4 text-purple-500" />
+                </div>
+                <h5 className="text-sm font-semibold font-heading">Associated Parts ({jobLine.parts.length})</h5>
+              </div>
               <div className="space-y-2">
                 {jobLine.parts.map((part) => (
-                  <div key={part.id} className="flex justify-between items-center text-sm">
-                    <div>
-                      <span className="font-medium">{part.name}</span>
-                      <span className="text-muted-foreground ml-2">
-                        Qty: {part.quantity}
-                      </span>
+                  <div key={part.id} className="flex justify-between items-center p-2 rounded-lg bg-gradient-subtle border border-border/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-primary"></div>
+                      <div>
+                        <p className="text-sm font-medium font-body">{part.name}</p>
+                        <p className="text-xs text-muted-foreground font-body">
+                          Qty: {part.quantity} × ${part.unit_price}
+                        </p>
+                      </div>
                     </div>
-                    <span>${part.unit_price}</span>
+                    <p className="text-sm font-bold font-heading text-success">
+                      ${((part.quantity || 0) * (part.unit_price || 0)).toFixed(2)}
+                    </p>
                   </div>
                 ))}
               </div>

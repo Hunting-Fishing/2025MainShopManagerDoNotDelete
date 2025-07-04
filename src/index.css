@@ -42,6 +42,25 @@
     --info: 217 91% 60%;
     --info-foreground: 355 100% 97%;
 
+    /* Work Order Status Colors */
+    --status-draft: 220 14% 71%;
+    --status-pending: 32 95% 44%;
+    --status-scheduled: 217 91% 60%;
+    --status-in-progress: 221 83% 53%;
+    --status-awaiting-parts: 271 91% 65%;
+    --status-quality-check: 43 74% 66%;
+    --status-completed: 142 76% 36%;
+    --status-cancelled: 0 84% 60%;
+    --status-on-hold: 220 14% 71%;
+    --status-ready-pickup: 173 58% 39%;
+
+    /* Work Order Component Colors */
+    --work-order-card: 0 0% 100%;
+    --work-order-card-hover: 210 40% 98%;
+    --work-order-border: 214.3 31.8% 91.4%;
+    --work-order-accent: 221.2 83.2% 53.3%;
+    --work-order-section: 210 40% 96%;
+
     /* Modern Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)/0.8) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--secondary)/0.9) 100%);
@@ -186,28 +205,58 @@
 
 /* Enhanced Status System */
 @layer components {
+  .status-draft {
+    @apply bg-[hsl(var(--status-draft)_/_0.2)] text-[hsl(var(--status-draft))] border-[hsl(var(--status-draft)_/_0.3)] hover:bg-[hsl(var(--status-draft)_/_0.3)];
+  }
+
   .status-pending {
-    @apply bg-warning/20 text-warning border-warning/30;
+    @apply bg-[hsl(var(--status-pending)_/_0.2)] text-[hsl(var(--status-pending))] border-[hsl(var(--status-pending)_/_0.3)] hover:bg-[hsl(var(--status-pending)_/_0.3)];
+  }
+
+  .status-scheduled {
+    @apply bg-[hsl(var(--status-scheduled)_/_0.2)] text-[hsl(var(--status-scheduled))] border-[hsl(var(--status-scheduled)_/_0.3)] hover:bg-[hsl(var(--status-scheduled)_/_0.3)];
   }
 
   .status-in-progress {
-    @apply bg-info/20 text-info border-info/30;
+    @apply bg-[hsl(var(--status-in-progress)_/_0.2)] text-[hsl(var(--status-in-progress))] border-[hsl(var(--status-in-progress)_/_0.3)] hover:bg-[hsl(var(--status-in-progress)_/_0.3)];
+  }
+
+  .status-awaiting-parts {
+    @apply bg-[hsl(var(--status-awaiting-parts)_/_0.2)] text-[hsl(var(--status-awaiting-parts))] border-[hsl(var(--status-awaiting-parts)_/_0.3)] hover:bg-[hsl(var(--status-awaiting-parts)_/_0.3)];
+  }
+
+  .status-quality-check {
+    @apply bg-[hsl(var(--status-quality-check)_/_0.2)] text-[hsl(var(--status-quality-check))] border-[hsl(var(--status-quality-check)_/_0.3)] hover:bg-[hsl(var(--status-quality-check)_/_0.3)];
   }
 
   .status-completed {
-    @apply bg-success/20 text-success border-success/30;
+    @apply bg-[hsl(var(--status-completed)_/_0.2)] text-[hsl(var(--status-completed))] border-[hsl(var(--status-completed)_/_0.3)] hover:bg-[hsl(var(--status-completed)_/_0.3)];
   }
 
   .status-cancelled {
-    @apply bg-error/20 text-error border-error/30;
+    @apply bg-[hsl(var(--status-cancelled)_/_0.2)] text-[hsl(var(--status-cancelled))] border-[hsl(var(--status-cancelled)_/_0.3)] hover:bg-[hsl(var(--status-cancelled)_/_0.3)];
   }
 
   .status-on-hold {
-    @apply bg-muted/40 text-muted-foreground border-muted/60;
+    @apply bg-[hsl(var(--status-on-hold)_/_0.2)] text-[hsl(var(--status-on-hold))] border-[hsl(var(--status-on-hold)_/_0.3)] hover:bg-[hsl(var(--status-on-hold)_/_0.3)];
+  }
+
+  .status-ready-pickup {
+    @apply bg-[hsl(var(--status-ready-pickup)_/_0.2)] text-[hsl(var(--status-ready-pickup))] border-[hsl(var(--status-ready-pickup)_/_0.3)] hover:bg-[hsl(var(--status-ready-pickup)_/_0.3)];
   }
 
   .status-badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border font-medium transition-all duration-200 hover:shadow-sm;
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-medium transition-all duration-300 hover:shadow-md hover:scale-105 backdrop-blur-sm;
+  }
+
+  /* Work Order Card Styles */
+  .work-order-card {
+    @apply modern-card gradient-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer;
+    background: linear-gradient(135deg, hsl(var(--work-order-card)) 0%, hsl(var(--work-order-card-hover))/0.5 100%);
+  }
+
+  .work-order-card:hover {
+    box-shadow: 0 10px 25px -5px hsl(var(--primary)/0.15), 0 8px 10px -6px hsl(var(--primary)/0.1);
   }
 }
 
@@ -218,11 +267,15 @@
   }
 
   .modern-tabs-list {
-    @apply inline-flex items-center justify-center rounded-lg bg-muted/40 p-1 text-muted-foreground;
+    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-muted/60 to-muted/40 p-1.5 text-muted-foreground backdrop-blur-sm border border-border/30 shadow-sm;
   }
 
   .modern-tab-trigger {
-    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm font-body;
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:scale-105 font-body hover:bg-background/60;
+  }
+
+  .modern-tab-trigger[data-state=active] {
+    @apply bg-gradient-to-r from-background to-background/95 shadow-lg;
   }
 }
 
