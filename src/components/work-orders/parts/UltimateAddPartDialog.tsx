@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CategorySelector } from '@/components/inventory/categories/CategorySelector';
-import { useCreateWorkOrderPart } from '@/hooks/work-orders/useCreateWorkOrderPart';
+import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WORK_ORDER_PART_STATUSES, PART_TYPES } from '@/types/workOrderPart';
 import { toast } from '@/hooks/use-toast';
@@ -48,7 +48,6 @@ export function UltimateAddPartDialog({
   onPartAdded
 }: UltimateAddPartDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const createPartMutation = useCreateWorkOrderPart();
 
   const form = useForm<PartFormValues>({
     resolver: zodResolver(partFormSchema),
@@ -79,7 +78,7 @@ export function UltimateAddPartDialog({
   const onSubmit = async (values: PartFormValues) => {
     setIsSubmitting(true);
     try {
-      await createPartMutation.mutateAsync({
+      await createWorkOrderPart({
         work_order_id: workOrderId,
         job_line_id: values.job_line_id || null,
         part_number: values.part_number,
