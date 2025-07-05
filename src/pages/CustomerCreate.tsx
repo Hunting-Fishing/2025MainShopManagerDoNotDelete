@@ -1,12 +1,7 @@
 
 import React from 'react';
-import { PlaceholderPage } from '@/components/common/PlaceholderPage';
+import { CustomerCreateForm } from '@/components/customers/create/CustomerCreateForm';
 
 export default function CustomerCreate() {
-  return (
-    <PlaceholderPage
-      title="Create Customer"
-      description="Customer creation form will be available here."
-    />
-  );
+  return <CustomerCreateForm />;
 }
