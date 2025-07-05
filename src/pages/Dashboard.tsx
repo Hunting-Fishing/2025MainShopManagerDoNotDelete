@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Layout } from '@/components/layout/Layout';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { RevenueChart } from '@/components/dashboard/RevenueChart';
@@ -16,33 +15,31 @@ export default function Dashboard() {
   const { phaseProgressData, isLoading } = useDashboardData();
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        <DashboardHeader />
-        
-        <StatsCards />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RevenueChart />
-          <ServiceTypeDistributionChart />
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <TechnicianPerformanceChart />
-          </div>
-          <div>
-            <WorkOrderPhaseProgress data={phaseProgressData} isLoading={isLoading} />
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TodaySchedule />
-          <EquipmentRecommendations />
-        </div>
-        
-        <DashboardAlerts />
+    <div className="space-y-6">
+      <DashboardHeader />
+      
+      <StatsCards />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RevenueChart />
+        <ServiceTypeDistributionChart />
       </div>
-    </Layout>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <TechnicianPerformanceChart />
+        </div>
+        <div>
+          <WorkOrderPhaseProgress data={phaseProgressData} isLoading={isLoading} />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TodaySchedule />
+        <EquipmentRecommendations />
+      </div>
+      
+      <DashboardAlerts />
+    </div>
   );
 }
