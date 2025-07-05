@@ -23,8 +23,8 @@ export function useWorkOrderData(workOrderId: string) {
   const fetchData = async () => {
     console.log('🔄 useWorkOrderData - Fetching data for work order:', workOrderId);
     
-    if (!workOrderId || workOrderId === 'new') {
-      console.log('⚠️ No valid work order ID provided');
+    if (!workOrderId || workOrderId === 'new' || workOrderId === 'create') {
+      console.log('⚠️ No valid work order ID provided or creating new work order');
       setIsLoading(false);
       return;
     }
@@ -84,7 +84,7 @@ export function useWorkOrderData(workOrderId: string) {
 
   const refreshJobLines = async () => {
     console.log('🔄 useWorkOrderData - Refreshing job lines only...');
-    if (!workOrderId || workOrderId === 'new') return;
+    if (!workOrderId || workOrderId === 'new' || workOrderId === 'create') return;
     
     try {
       const lines = await getWorkOrderJobLines(workOrderId);
