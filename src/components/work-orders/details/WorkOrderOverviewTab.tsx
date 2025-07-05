@@ -6,7 +6,6 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
-import { WorkOrderSummaryCard } from './WorkOrderSummaryCard';
 import { WorkOrderCustomerCard } from './WorkOrderCustomerCard';
 import { WorkOrderTimeCard } from './WorkOrderTimeCard';
 import { WorkOrderTotals } from '../shared/WorkOrderTotals';
@@ -32,41 +31,9 @@ export function WorkOrderOverviewTab({
   onPartsChange,
   isEditMode
 }: WorkOrderOverviewTabProps) {
-  const totalPartsValue = allParts.reduce((sum, part) => sum + part.total_price, 0);
-  const totalLaborHours = jobLines.reduce((sum, line) => sum + (line.estimated_hours || 0), 0);
-  const totalLaborCost = jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0);
-
   return (
-    <div className="space-y-8 fade-in">
-      {/* Enhanced Summary Cards - Now with better responsive grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <WorkOrderSummaryCard
-          title="Total Parts"
-          value={`$${totalPartsValue.toFixed(2)}`}
-          subtitle={`${allParts.length} items`}
-          trend={allParts.length > 0 ? 'up' : 'neutral'}
-        />
-        <WorkOrderSummaryCard
-          title="Labor Hours"
-          value={`${totalLaborHours.toFixed(1)}h`}
-          subtitle={`${jobLines.length} job lines`}
-          trend={totalLaborHours > 0 ? 'up' : 'neutral'}
-        />
-        <WorkOrderSummaryCard
-          title="Labor Cost"
-          value={`$${totalLaborCost.toFixed(2)}`}
-          subtitle="Estimated"
-          trend={totalLaborCost > 0 ? 'up' : 'neutral'}
-        />
-        <WorkOrderSummaryCard
-          title="Total Value"
-          value={`$${(totalPartsValue + totalLaborCost).toFixed(2)}`}
-          subtitle="Parts + Labor"
-          trend={(totalPartsValue + totalLaborCost) > 0 ? 'up' : 'neutral'}
-        />
-      </div>
-
-      {/* Enhanced Main Content Layout with better spacing */}
+    <div className="space-y-6 fade-in">
+      {/* Main Content Layout - Focused on detailed information */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         {/* Left Column - Customer & Time Info */}
         <div className="lg:col-span-4 space-y-6 slide-up">
