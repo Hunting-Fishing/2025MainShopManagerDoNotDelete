@@ -2,6 +2,44 @@ import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from '@/components/customers/form/schemas/customerSchema';
 
+// Helper function to extract values from VIN-decoded objects or return string values
+const extractValue = (field: any): string | null => {
+  if (!field) return null;
+  
+  // If it's already a string, return it
+  if (typeof field === 'string') {
+    return field.trim() || null;
+  }
+  
+  // If it's a VIN-decoded object with _type and value properties
+  if (typeof field === 'object' && field.hasOwnProperty('value')) {
+    const value = field.value;
+    if (typeof value === 'string' && value.trim() && value !== 'undefined') {
+      return value.trim();
+    }
+    return null;
+  }
+  
+  // If it's some other object, try to convert to string
+  if (typeof field === 'object') {
+    const str = String(field).trim();
+    return str && str !== 'undefined' && str !== '[object Object]' ? str : null;
+  }
+  
+  // Convert other types to string
+  const str = String(field).trim();
+  return str && str !== 'undefined' ? str : null;
+};
+
+// Helper function to extract numeric values (like year or GVWR)
+const extractNumericValue = (field: any): number | null => {
+  const value = extractValue(field);
+  if (!value) return null;
+  
+  const num = parseInt(value, 10);
+  return isNaN(num) ? null : num;
+};
+
 // Update a customer
 export const updateCustomer = async (id: string, updates: CustomerFormValues): Promise<Customer> => {
   console.log("Updating customer with data:", updates);
@@ -95,48 +133,64 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
         // Process each submitted vehicle
         for (let i = 0; i < updates.vehicles.length; i++) {
           const vehicle = updates.vehicles[i];
+          console.log(`Processing vehicle ${i}:`, vehicle);
+          
+          // Extract cleaned values from potentially VIN-decoded objects
+          const make = extractValue(vehicle.make);
+          const model = extractValue(vehicle.model);
+          const year = extractNumericValue(vehicle.year);
+          const vin = extractValue(vehicle.vin);
+          const licensePlate = extractValue(vehicle.license_plate);
+          const color = extractValue(vehicle.color);
+          const transmission = extractValue(vehicle.transmission);
+          const transmissionType = extractValue(vehicle.transmission_type);
+          const driveType = extractValue(vehicle.drive_type);
+          const fuelType = extractValue(vehicle.fuel_type);
+          const engine = extractValue(vehicle.engine);
+          const bodyStyle = extractValue(vehicle.body_style);
+          const country = extractValue(vehicle.country);
+          const gvwr = extractNumericValue(vehicle.gvwr);
+          
+          console.log(`Extracted values - Make: ${make}, Model: ${model}, Year: ${year}, VIN: ${vin}`);
           
           // Skip empty vehicles
-          if (!vehicle.make && !vehicle.model && !vehicle.year && !vehicle.vin && !vehicle.license_plate) {
+          if (!make && !model && !year && !vin && !licensePlate) {
             console.log("Skipping empty vehicle at index", i);
             continue;
           }
           
-          // Convert year from string to number if present
-          const vehicleYear = vehicle.year ? parseInt(vehicle.year.toString(), 10) : null;
-          
           // Find if this vehicle already exists for the customer
           const existingVehicleIndex = existingVehicles?.findIndex(v => 
             (v.id && vehicle.id && v.id === vehicle.id) || 
-            (v.vin && vehicle.vin && v.vin === vehicle.vin) ||
-            (v.make === vehicle.make && 
-             v.model === vehicle.model &&
-             v.year === vehicleYear &&
-             v.license_plate === vehicle.license_plate)
+            (v.vin && vin && v.vin === vin) ||
+            (v.make === make && 
+             v.model === model &&
+             v.year === year &&
+             v.license_plate === licensePlate)
           );
           
           if (existingVehicleIndex >= 0 && existingVehicles) {
             // Update existing vehicle
             const existingVehicle = existingVehicles[existingVehicleIndex];
-            console.log(`Updating vehicle: ${vehicleYear} ${vehicle.make} ${vehicle.model}`, existingVehicle.id);
+            console.log(`Updating vehicle: ${year} ${make} ${model}`, existingVehicle.id);
             
             const { error: updateError } = await supabase
               .from("vehicles")
               .update({
-                make: vehicle.make,
-                model: vehicle.model,
-                year: vehicleYear,
-                vin: vehicle.vin || null,
-                license_plate: vehicle.license_plate || null,
-                color: vehicle.color || null,
-                transmission: vehicle.transmission || null,
-                transmission_type: vehicle.transmission_type || null,
-                drive_type: vehicle.drive_type || null,
-                fuel_type: vehicle.fuel_type || null,
-                engine: vehicle.engine || null,
-                body_style: vehicle.body_style || null,
-                country: vehicle.country || null,
-                gvwr: vehicle.gvwr || null
+                make,
+                model,
+                year,
+                vin,
+                license_plate: licensePlate,
+                color,
+                transmission,
+                transmission_type: transmissionType,
+                drive_type: driveType,
+                fuel_type: fuelType,
+                engine,
+                body_style: bodyStyle,
+                country,
+                gvwr
               })
               .eq("id", existingVehicle.id);
               
@@ -144,35 +198,37 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
               console.error("Error updating vehicle:", updateError);
             } else {
               vehiclesUpdated++;
+              console.log("Successfully updated vehicle");
             }
           } else {
             // Insert new vehicle
-            console.log(`Adding new vehicle: ${vehicleYear} ${vehicle.make} ${vehicle.model}`);
+            console.log(`Adding new vehicle: ${year} ${make} ${model}`);
             
             const { error: insertError } = await supabase
               .from("vehicles")
               .insert({
                 customer_id: id,
-                make: vehicle.make,
-                model: vehicle.model,
-                year: vehicleYear,
-                vin: vehicle.vin || null,
-                license_plate: vehicle.license_plate || null,
-                color: vehicle.color || null,
-                transmission: vehicle.transmission || null,
-                transmission_type: vehicle.transmission_type || null,
-                drive_type: vehicle.drive_type || null,
-                fuel_type: vehicle.fuel_type || null,
-                engine: vehicle.engine || null,
-                body_style: vehicle.body_style || null,
-                country: vehicle.country || null,
-                gvwr: vehicle.gvwr || null
+                make,
+                model,
+                year,
+                vin,
+                license_plate: licensePlate,
+                color,
+                transmission,
+                transmission_type: transmissionType,
+                drive_type: driveType,
+                fuel_type: fuelType,
+                engine,
+                body_style: bodyStyle,
+                country,
+                gvwr
               });
               
             if (insertError) {
               console.error("Error adding vehicle:", insertError);
             } else {
               vehiclesUpdated++;
+              console.log("Successfully added new vehicle");
             }
           }
         }
@@ -183,9 +239,16 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
         updates.vehicles.forEach(vehicle => {
           if (vehicle.id) {
             vehiclesToKeep.add(vehicle.id);
-          } else if (vehicle.make && vehicle.model) {
-            const key = `${vehicle.make}-${vehicle.model}-${vehicle.vin || ""}-${vehicle.license_plate || ""}`;
-            vehiclesToKeep.add(key);
+          } else {
+            const make = extractValue(vehicle.make);
+            const model = extractValue(vehicle.model);
+            const vin = extractValue(vehicle.vin);
+            const licensePlate = extractValue(vehicle.license_plate);
+            
+            if (make && model) {
+              const key = `${make}-${model}-${vin || ""}-${licensePlate || ""}`;
+              vehiclesToKeep.add(key);
+            }
           }
         });
         
@@ -217,6 +280,8 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
           }
         }
       }
+      
+      console.log(`Vehicle processing completed. Updated/Added ${vehiclesUpdated} vehicles.`);
     } catch (error) {
       console.error("Error processing vehicles:", error);
     }
