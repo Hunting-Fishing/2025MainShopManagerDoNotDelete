@@ -79,8 +79,11 @@ export function useCustomerEdit(customerId: string | undefined) {
       // Normalize vehicles array
       const vehiclesToUpdate = values.vehicles ? values.vehicles.map(convertFormVehicleToCustomerVehicle) : [];
       
-      // Omit vehicles from the customer update payload
-      const { vehicles, ...customerUpdates } = values;
+      // Include processed vehicles in the customer update payload
+      const customerUpdates = {
+        ...values,
+        vehicles: vehiclesToUpdate
+      };
 
       // Update customer information
       const updatedCustomer = await updateCustomer(customerId as string, customerUpdates);
