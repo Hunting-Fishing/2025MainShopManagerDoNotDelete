@@ -5,6 +5,7 @@ import WorkOrdersHeader from '@/components/work-orders/WorkOrdersHeader';
 import { WorkOrderTable } from '@/components/work-orders/WorkOrderTable';
 import { WorkOrderDetailsView } from '@/components/work-orders/WorkOrderDetailsView';
 import { WorkOrderErrorBoundary } from '@/components/work-orders/WorkOrderErrorBoundary';
+import WorkOrderCreate from './WorkOrderCreate';
 import { DatabaseStatusIndicator } from '@/components/database/DatabaseStatusIndicator';
 import { useWorkOrders } from '@/hooks/useWorkOrders';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -58,6 +59,7 @@ export default function WorkOrders() {
     <WorkOrderErrorBoundary>
       <Routes>
         <Route path="/" element={<WorkOrdersList />} />
+        <Route path="/create" element={<WorkOrderCreate />} />
         <Route path="/:id" element={<WorkOrderDetailsView />} />
       </Routes>
     </WorkOrderErrorBoundary>
