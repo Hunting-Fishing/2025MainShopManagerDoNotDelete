@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Customer, CustomerVehicle } from '@/types/customer';
 import { Car, Plus, Pencil, AlertTriangle, Wrench } from 'lucide-react';
@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { CreateWorkOrderFromCustomerDialog } from '@/components/work-orders/CreateWorkOrderFromCustomerDialog';
 
 interface CustomerVehiclesTabProps {
   customer: Customer;
@@ -18,8 +17,6 @@ interface CustomerVehiclesTabProps {
 export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ customer }) => {
   const navigate = useNavigate();
   const vehicles = customer?.vehicles || [];
-  const [createWorkOrderOpen, setCreateWorkOrderOpen] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState<CustomerVehicle | null>(null);
   
   console.log('Rendering CustomerVehiclesTab with vehicles:', vehicles);
 
@@ -60,13 +57,36 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
   };
 
   const handleCreateWorkOrderForVehicle = (vehicle: CustomerVehicle) => {
-    // Create a modified customer object with only the selected vehicle
-    const customerWithSelectedVehicle = {
-      ...customer,
-      vehicles: [vehicle]
-    };
-    setSelectedVehicle(vehicle);
-    setCreateWorkOrderOpen(true);
+    // Navigate directly to work order creation with pre-populated vehicle data
+    const customerName = `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+    
+    const params = new URLSearchParams({
+      customerId: customer.id,
+      customer: customerName,
+      customerEmail: customer.email || '',
+      customerPhone: customer.phone || '',
+      customerAddress: customer.address || '',
+      vehicleId: vehicle.id!,
+      vehicleMake: vehicle.make || '',
+      vehicleModel: vehicle.model || '',
+      vehicleYear: vehicle.year?.toString() || '',
+      vehicleLicensePlate: vehicle.license_plate || '',
+      vehicleVin: vehicle.vin || ''
+    });
+
+    // Create vehicle info string for display
+    const vehicleInfo = `${vehicle.year || ''} ${vehicle.make || ''} ${vehicle.model || ''}`.trim();
+    if (vehicleInfo) {
+      params.append('vehicleInfo', vehicleInfo);
+    }
+
+    console.log('Navigating directly to work order creation with vehicle:', vehicle);
+    navigate(`/work-orders/create?${params.toString()}`);
+    
+    toast({
+      title: "Success",
+      description: `Creating work order for ${vehicleInfo}`,
+    });
   };
 
   if (!vehicles || vehicles.length === 0) {
@@ -156,12 +176,6 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
           </TableBody>
         </Table>
       </Card>
-
-      <CreateWorkOrderFromCustomerDialog
-        customer={customer}
-        open={createWorkOrderOpen}
-        onOpenChange={setCreateWorkOrderOpen}
-      />
     </div>
   );
 };
