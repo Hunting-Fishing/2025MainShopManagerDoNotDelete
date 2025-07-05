@@ -10,12 +10,31 @@ interface AddressAutocompleteProps {
   disabled?: boolean;
 }
 
-// This component uses the browser's Geolocation API for address autocomplete
+interface NominatimResult {
+  display_name: string;
+  place_id: number;
+  address: {
+    house_number?: string;
+    road?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    postcode?: string;
+    country?: string;
+    country_code?: string;
+    state?: string;
+    province?: string;
+  };
+}
+
+// This component uses Nominatim (OpenStreetMap) API for free address autocomplete
 export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ form, field, disabled }) => {
-  const [predictions, setPredictions] = useState<Array<{ description: string; place_id: string }>>([]);
+  const [predictions, setPredictions] = useState<NominatimResult[]>([]);
   const [showPredictions, setShowPredictions] = useState(false);
   const [inputValue, setInputValue] = useState(field.value || "");
+  const [isLoading, setIsLoading] = useState(false);
   const autocompleteRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<NodeJS.Timeout>();
 
   // Set up click outside listener to close predictions
   useEffect(() => {
@@ -31,68 +50,118 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ form, 
     };
   }, []);
 
-  // Function to fetch address predictions
+  // Function to fetch address predictions from Nominatim
   const fetchAddressPredictions = async (input: string) => {
     if (!input || input.length < 3) {
       setPredictions([]);
+      setShowPredictions(false);
       return;
     }
 
-    try {
-      // In a real implementation, you would make an API call to a geocoding service here
-      // For demo purposes, we'll simulate some predictions based on the input
-      const mockPredictions = [
-        { description: `${input}, Main Street`, place_id: "place-1" },
-        { description: `${input}, Broadway Avenue`, place_id: "place-2" },
-        { description: `${input}, Oak Road`, place_id: "place-3" }
-      ];
+    setIsLoading(true);
 
-      // Delayed to simulate API call
-      setTimeout(() => {
-        setPredictions(mockPredictions);
-        setShowPredictions(input.length > 0);
-      }, 300);
+    try {
+      // Nominatim API call with structured results
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)}&format=json&addressdetails=1&limit=5&countrycodes=us,ca,gb,au`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Address search failed');
+      }
+
+      const results: NominatimResult[] = await response.json();
+      setPredictions(results);
+      setShowPredictions(results.length > 0);
     } catch (error) {
       console.error("Error fetching address predictions:", error);
       setPredictions([]);
+      setShowPredictions(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle input change
+  // Handle input change with debouncing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
     field.onChange(value);
-    fetchAddressPredictions(value);
+
+    // Clear existing debounce
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    // Debounce API calls to respect rate limits
+    debounceRef.current = setTimeout(() => {
+      fetchAddressPredictions(value);
+    }, 500);
   };
 
-  // Handle prediction selection
-  const handleSelectPrediction = (prediction: { description: string; place_id: string }) => {
-    setInputValue(prediction.description);
-    field.onChange(prediction.description);
+  // Handle prediction selection and auto-populate fields
+  const handleSelectPrediction = (prediction: NominatimResult) => {
+    const address = prediction.address;
+    const fullAddress = `${address.house_number || ''} ${address.road || ''}`.trim();
+    
+    // Set the street address
+    setInputValue(fullAddress || prediction.display_name.split(',')[0]);
+    field.onChange(fullAddress || prediction.display_name.split(',')[0]);
+
+    // Auto-populate other address fields
+    if (address.city || address.town || address.village) {
+      form.setValue('city', address.city || address.town || address.village);
+    }
+    
+    if (address.postcode) {
+      form.setValue('postal_code', address.postcode);
+    }
+    
+    if (address.country_code) {
+      // Convert country code to format expected by form
+      const countryCode = address.country_code.toUpperCase();
+      form.setValue('country', countryCode);
+    }
+    
+    if (address.state || address.province) {
+      form.setValue('state', address.state || address.province);
+    }
+
     setShowPredictions(false);
   };
 
   return (
     <div className="relative" ref={autocompleteRef}>
-      <Input
-        placeholder="Enter address"
-        {...field}
-        value={inputValue}
-        onChange={handleInputChange}
-        disabled={disabled}
-        className="w-full"
-      />
+      <div className="relative">
+        <Input
+          placeholder="Start typing an address..."
+          {...field}
+          value={inputValue}
+          onChange={handleInputChange}
+          disabled={disabled}
+          className="w-full pr-10"
+        />
+        {isLoading && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+          </div>
+        )}
+      </div>
 
       {showPredictions && predictions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
           {predictions.map((prediction) => (
             <div
               key={prediction.place_id}
-              className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+              className="px-4 py-2 cursor-pointer hover:bg-muted transition-colors"
               onClick={() => handleSelectPrediction(prediction)}
             >
-              {prediction.description}
+              <div className="font-medium text-sm">
+                {prediction.display_name.split(',')[0]}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {prediction.display_name.split(',').slice(1).join(',').trim()}
+              </div>
             </div>
           ))}
         </div>

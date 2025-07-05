@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { AddressAutocomplete } from "./AddressAutocomplete";
 
 interface AddressFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -41,7 +42,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
           <FormItem>
             <FormLabel>Street Address</FormLabel>
             <FormControl>
-              <Input placeholder="Enter street address" {...field} value={field.value || ''} />
+              <AddressAutocomplete form={form} field={field} />
             </FormControl>
             <FormMessage />
           </FormItem>
