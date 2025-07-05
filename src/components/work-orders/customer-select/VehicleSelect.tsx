@@ -7,7 +7,7 @@ import { CustomerVehicle } from "@/types/customer";
 
 interface VehicleSelectProps {
   customerId: string | null;
-  onSelectVehicle: (vehicle: CustomerVehicle | null) => void;
+  onSelectVehicle: (vehicle: CustomerVehicle | null, vehiclesList?: CustomerVehicle[]) => void;
   selectedVehicleId?: string | null;
 }
 
@@ -20,7 +20,7 @@ export function VehicleSelect({ customerId, onSelectVehicle, selectedVehicleId }
     const fetchVehicles = async () => {
       if (!customerId) {
         setVehicles([]);
-        onSelectVehicle(null);
+        onSelectVehicle(null, []);
         return;
       }
 
@@ -34,22 +34,25 @@ export function VehicleSelect({ customerId, onSelectVehicle, selectedVehicleId }
         if (error) throw error;
         setVehicles(data || []);
         
+        // Pass vehicles list to parent component
+        onSelectVehicle(null, data || []);
+        
         // If there was a previously selected vehicle, try to find it in the new list
         if (selectedVehicleId && data) {
           const selected = data.find(v => v.id === selectedVehicleId);
           if (selected) {
-            onSelectVehicle(selected);
+            onSelectVehicle(selected, data);
           } else if (data.length > 0) {
             // Default to first vehicle if previous selection not found
-            onSelectVehicle(data[0]);
+            onSelectVehicle(data[0], data);
           } else {
-            onSelectVehicle(null);
+            onSelectVehicle(null, data);
           }
         } else if (data && data.length > 0) {
           // Default select first vehicle
-          onSelectVehicle(data[0]);
+          onSelectVehicle(data[0], data);
         } else {
-          onSelectVehicle(null);
+          onSelectVehicle(null, data || []);
         }
       } catch (error) {
         console.error("Error fetching vehicles:", error);
@@ -87,7 +90,7 @@ export function VehicleSelect({ customerId, onSelectVehicle, selectedVehicleId }
       value={selectedVehicleId || ""}
       onValueChange={(value) => {
         const vehicle = vehicles.find(v => v.id === value);
-        onSelectVehicle(vehicle || null);
+        onSelectVehicle(vehicle || null, vehicles);
       }}
     >
       <SelectTrigger className="bg-white dark:bg-slate-800">

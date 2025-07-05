@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { User, Car, Plus } from "lucide-react";
 import { CustomerSelect } from "../customer-select/CustomerSelect";
 import { VehicleSelect } from "../customer-select/VehicleSelect";
+import { QuickAddVehicleDialog } from "../vehicle/QuickAddVehicleDialog";
 import { Customer, CustomerVehicle } from "@/types/customer";
 import { useSearchParams } from "react-router-dom";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
@@ -35,6 +36,8 @@ export const CustomerFields: React.FC<CustomerFieldsProps> = ({
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<CustomerVehicle | null>(null);
   const [showManualVehicleEntry, setShowManualVehicleEntry] = useState(false);
+  const [vehicles, setVehicles] = useState<CustomerVehicle[]>([]);
+  const [showAddVehicleDialog, setShowAddVehicleDialog] = useState(false);
 
   // Check if we have customer ID from URL (coming from customer page)
   const customerIdFromUrl = searchParams.get('customerId');
@@ -100,9 +103,14 @@ export const CustomerFields: React.FC<CustomerFieldsProps> = ({
   };
 
   // Handle vehicle selection
-  const handleVehicleSelect = (vehicle: CustomerVehicle | null) => {
+  const handleVehicleSelect = (vehicle: CustomerVehicle | null, vehiclesList?: CustomerVehicle[]) => {
     setSelectedVehicle(vehicle);
     setShowManualVehicleEntry(false); // Hide manual entry when vehicle is selected
+    
+    // Update vehicles list if provided
+    if (vehiclesList) {
+      setVehicles(vehiclesList);
+    }
     
     if (vehicle) {
       // Set vehicle ID for database reference
@@ -125,10 +133,26 @@ export const CustomerFields: React.FC<CustomerFieldsProps> = ({
 
   // Handle manual vehicle entry toggle
   const handleManualVehicleEntry = () => {
-    setShowManualVehicleEntry(true);
-    setSelectedVehicle(null);
-    // Clear vehicle ID since we're entering manually
-    form.setValue('vehicleId', '');
+    setShowAddVehicleDialog(true);
+  };
+
+  // Handle vehicle added from dialog
+  const handleVehicleAdded = (vehicle: CustomerVehicle, saveToCustomer: boolean) => {
+    setSelectedVehicle(vehicle);
+    setShowManualVehicleEntry(false);
+    
+    // Update vehicles list if vehicle was saved to customer
+    if (saveToCustomer && vehicle.id && !vehicle.id.startsWith('temp-')) {
+      setVehicles(prev => [...prev, vehicle]);
+    }
+    
+    // Set form values
+    form.setValue('vehicleId', vehicle.id);
+    form.setValue('vehicleMake', vehicle.make || '');
+    form.setValue('vehicleModel', vehicle.model || '');
+    form.setValue('vehicleYear', vehicle.year?.toString() || '');
+    form.setValue('licensePlate', vehicle.license_plate || '');
+    form.setValue('vin', vehicle.vin || '');
   };
 
   return (
@@ -259,6 +283,17 @@ export const CustomerFields: React.FC<CustomerFieldsProps> = ({
                 onSelectVehicle={handleVehicleSelect}
                 selectedVehicleId={selectedVehicle?.id}
               />
+              
+              {/* Helper text when no vehicles found */}
+              <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
+                <Car className="h-4 w-4" />
+                <span>
+                  {vehicles.length === 0 
+                    ? "No vehicles found for this customer. Click 'Add New Vehicle' to enter details manually."
+                    : `${vehicles.length} vehicle(s) available for selection.`
+                  }
+                </span>
+              </p>
             </div>
           )}
 
@@ -354,6 +389,15 @@ export const CustomerFields: React.FC<CustomerFieldsProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Quick Add Vehicle Dialog */}
+      <QuickAddVehicleDialog
+        open={showAddVehicleDialog}
+        onOpenChange={setShowAddVehicleDialog}
+        customerId={selectedCustomer?.id || customerIdFromUrl}
+        customerName={selectedCustomer ? `${selectedCustomer.first_name} ${selectedCustomer.last_name}`.trim() : customerNameFromUrl}
+        onVehicleAdded={handleVehicleAdded}
+      />
     </div>
   );
 };
