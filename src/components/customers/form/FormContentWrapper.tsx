@@ -126,6 +126,7 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
             handleNext={handleNext}
             isSubmitting={isSubmitting}
             isEditMode={isEditMode}
+            formId={formId}
           />
           
           {/* Save Draft Button - Only for new customers */}

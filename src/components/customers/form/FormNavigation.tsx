@@ -9,6 +9,7 @@ interface FormNavigationProps {
   handleNext: () => void;
   isSubmitting: boolean;
   isEditMode: boolean;
+  formId?: string;
 }
 
 export const FormNavigation: React.FC<FormNavigationProps> = ({
@@ -16,7 +17,8 @@ export const FormNavigation: React.FC<FormNavigationProps> = ({
   handlePrevious,
   handleNext,
   isSubmitting,
-  isEditMode
+  isEditMode,
+  formId = "customer-create-form"
 }) => {
   // Define the final tab where we show the submit button instead of next
   const finalTabs = ["segments"];
@@ -49,7 +51,7 @@ export const FormNavigation: React.FC<FormNavigationProps> = ({
       ) : (
         <Button
           type="submit"
-          form="customer-create-form"
+          form={formId}
           disabled={isSubmitting}
           className="flex items-center"
         >
