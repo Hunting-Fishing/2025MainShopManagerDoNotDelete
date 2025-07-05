@@ -15,7 +15,10 @@ export const customerSchema = z.object({
   // Personal Info
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address").nullish().transform(val => val || ""),
+  email: z.string().nullish().transform(val => val || "").refine(
+    (val) => !val || z.string().email().safeParse(val).success,
+    "Please enter a valid email address"
+  ),
   phone: z.string().nullish().transform(val => val || ""),
   
   // Address
@@ -31,7 +34,10 @@ export const customerSchema = z.object({
   business_industry: z.string().nullish().transform(val => val || ""),
   other_business_industry: z.string().nullish().transform(val => val || ""),
   tax_id: z.string().nullish().transform(val => val || ""),
-  business_email: z.string().email("Please enter a valid business email address").nullish().transform(val => val || ""),
+  business_email: z.string().nullish().transform(val => val || "").refine(
+    (val) => !val || z.string().email().safeParse(val).success,
+    "Please enter a valid business email address"
+  ),
   business_phone: z.string().nullish().transform(val => val || ""),
   
   // Payment & Billing
