@@ -12,11 +12,13 @@ import { useToast } from '@/hooks/use-toast';
 import { CustomerVehicle } from '@/types/customer';
 import { Car, Plus, Save } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { VinDecoderField } from '@/components/work-orders/fields/VinDecoderField';
+import { VinDecodeResult } from '@/types/vehicle';
 
 const vehicleSchema = z.object({
-  make: z.string().min(1, 'Make is required'),
-  model: z.string().min(1, 'Model is required'),
-  year: z.string().min(4, 'Year must be 4 digits').max(4, 'Year must be 4 digits'),
+  vehicleMake: z.string().min(1, 'Make is required'),
+  vehicleModel: z.string().min(1, 'Model is required'),
+  vehicleYear: z.string().min(4, 'Year must be 4 digits').max(4, 'Year must be 4 digits'),
   vin: z.string().optional(),
   license_plate: z.string().optional(),
   saveToCustomer: z.boolean().default(true),
@@ -45,14 +47,20 @@ export function QuickAddVehicleDialog({
   const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
-      make: '',
-      model: '',
-      year: '',
+      vehicleMake: '',
+      vehicleModel: '',
+      vehicleYear: '',
       vin: '',
       license_plate: '',
       saveToCustomer: true,
     },
   });
+
+  const handleVehicleDecoded = (vehicleData: VinDecodeResult) => {
+    console.log('Vehicle decoded:', vehicleData);
+    // The VinDecoderField already updates the form fields automatically
+    // This callback is for additional actions if needed
+  };
 
   const onSubmit = async (data: VehicleFormData) => {
     setIsSubmitting(true);
@@ -65,9 +73,9 @@ export function QuickAddVehicleDialog({
           .from('vehicles')
           .insert({
             customer_id: customerId,
-            make: data.make,
-            model: data.model,
-            year: parseInt(data.year),
+            make: data.vehicleMake,
+            model: data.vehicleModel,
+            year: parseInt(data.vehicleYear),
             vin: data.vin || null,
             license_plate: data.license_plate || null,
           })
@@ -79,16 +87,16 @@ export function QuickAddVehicleDialog({
 
         toast({
           title: 'Vehicle Added',
-          description: `${data.year} ${data.make} ${data.model} has been added to ${customerName || 'the customer'}'s account.`,
+          description: `${data.vehicleYear} ${data.vehicleMake} ${data.vehicleModel} has been added to ${customerName || 'the customer'}'s account.`,
         });
       } else {
         // Create temporary vehicle object for work order only
         savedVehicle = {
           id: `temp-${Date.now()}`,
           customer_id: customerId,
-          make: data.make,
-          model: data.model,
-          year: parseInt(data.year),
+          make: data.vehicleMake,
+          model: data.vehicleModel,
+          year: parseInt(data.vehicleYear),
           vin: data.vin || null,
           license_plate: data.license_plate || null,
           created_at: new Date().toISOString(),
@@ -138,10 +146,16 @@ export function QuickAddVehicleDialog({
               </div>
             )}
 
+            {/* VIN Decoder Field - placed first for auto-population */}
+            <VinDecoderField 
+              form={form} 
+              onVehicleDecoded={handleVehicleDecoded} 
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="make"
+                name="vehicleMake"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Make *</FormLabel>
@@ -155,7 +169,7 @@ export function QuickAddVehicleDialog({
 
               <FormField
                 control={form.control}
-                name="model"
+                name="vehicleModel"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Model *</FormLabel>
@@ -170,7 +184,7 @@ export function QuickAddVehicleDialog({
 
             <FormField
               control={form.control}
-              name="year"
+              name="vehicleYear"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Year *</FormLabel>
@@ -194,20 +208,6 @@ export function QuickAddVehicleDialog({
                   <FormLabel>License Plate</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., ABC-1234" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="vin"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>VIN</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Vehicle Identification Number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
