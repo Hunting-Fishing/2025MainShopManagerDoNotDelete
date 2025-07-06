@@ -189,10 +189,20 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                       ))}
                     </SelectContent>
                   </Select>
-                  {urgencyStyle && (
-                    <div className={`flex items-center gap-2 mt-2 px-3 py-2 rounded-lg border ${urgencyStyle.color} transition-all duration-300`}>
-                      <span className="text-sm">{urgencyStyle.icon}</span>
-                      <span className="text-sm font-medium">Current: {urgencyStyle.label}</span>
+                   {urgencyStyle && (
+                    <div className={`flex items-center gap-3 mt-3 px-4 py-3 rounded-xl border-2 ${urgencyStyle.color} transition-all duration-500 shadow-lg ring-2 ring-opacity-50 ${
+                      currentUrgency === 'Emergency' ? 'ring-red-500 animate-pulse' : 
+                      currentUrgency === 'Urgent' ? 'ring-orange-500' : 
+                      currentUrgency === 'Normal' ? 'ring-blue-500' : 'ring-green-500'
+                    }`}>
+                      <span className="text-xl animate-bounce">{urgencyStyle.icon}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold">CURRENT URGENCY</span>
+                        <span className="text-lg font-bold">{urgencyStyle.label}</span>
+                      </div>
+                      {currentUrgency === 'Emergency' && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-ping"></div>
+                      )}
                     </div>
                   )}
                   <FormMessage />
@@ -304,17 +314,22 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
       </Card>
 
       {/* Requested Services */}
-      <Card className="modern-card hover:shadow-lg transition-all duration-300">
-        <CardHeader className="bg-gradient-subtle rounded-t-xl">
+      <Card className={`modern-card hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${selectedRequestedServices.length > 0 ? 'ring-4 ring-primary/20 bg-gradient-to-br from-primary/5 to-blue-50 border-primary/30' : ''}`}>
+        <CardHeader className={`${selectedRequestedServices.length > 0 ? 'bg-gradient-to-r from-primary/20 to-blue-100' : 'bg-gradient-subtle'} rounded-t-xl`}>
           <CardTitle className="flex items-center justify-between text-foreground">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className={`p-3 rounded-xl ${selectedRequestedServices.length > 0 ? 'bg-primary text-white shadow-lg animate-pulse' : 'bg-primary/10'} transition-all duration-500`}>
+                <CheckCircle2 className={`h-6 w-6 ${selectedRequestedServices.length > 0 ? 'text-white' : 'text-primary'}`} />
               </div>
-              <span className="font-heading">Requested Services</span>
+              <div>
+                <span className="font-heading text-lg">Requested Services</span>
+                {selectedRequestedServices.length > 0 && (
+                  <p className="text-sm text-primary font-medium">Services have been selected ✓</p>
+                )}
+              </div>
             </div>
             {selectedRequestedServices.length > 0 && (
-              <Badge className="bg-primary/20 text-primary border-primary/30">
+              <Badge className="bg-gradient-to-r from-primary to-blue-600 text-white border-none shadow-lg animate-bounce px-4 py-2 text-base font-bold">
                 {selectedRequestedServices.length} selected
               </Badge>
             )}
@@ -334,17 +349,22 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                     size="sm"
                     onClick={() => handleRequestedServiceToggle(service)}
                     className={`
-                      relative text-sm font-medium transition-all duration-300 hover:scale-105
+                      relative text-sm font-semibold transition-all duration-500 hover:scale-110 transform group
                       ${isSelected 
-                        ? 'bg-primary text-primary-foreground border-primary shadow-lg hover:bg-primary/90' 
-                        : 'bg-background hover:bg-primary/10 hover:border-primary/50 hover:text-primary'
+                        ? 'bg-gradient-to-r from-primary via-primary to-primary/90 text-white border-primary-600 shadow-2xl shadow-primary/50 ring-4 ring-primary/30 hover:shadow-3xl hover:shadow-primary/60 animate-pulse' 
+                        : 'bg-gradient-to-r from-background to-muted/20 hover:from-primary/10 hover:to-primary/20 hover:border-primary hover:text-primary border-2 hover:shadow-lg hover:shadow-primary/20'
                       }
                     `}
                   >
                     {isSelected && (
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      <CheckCircle2 className="h-5 w-5 mr-2 animate-bounce text-white drop-shadow-lg" />
                     )}
-                    {service}
+                    <span className={`${isSelected ? 'text-white font-bold drop-shadow-md' : ''} group-hover:font-semibold transition-all duration-300`}>
+                      {service}
+                    </span>
+                    {isSelected && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
+                    )}
                   </Button>
                 );
               })}
@@ -354,17 +374,22 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
       </Card>
 
       {/* Service Tags & Classification */}
-      <Card className="modern-card hover:shadow-lg transition-all duration-300">
-        <CardHeader className="bg-gradient-subtle rounded-t-xl">
+      <Card className={`modern-card hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${selectedServiceTags.length > 0 ? 'ring-4 ring-orange-400/30 bg-gradient-to-br from-orange-50 to-yellow-50 border-orange-300' : ''}`}>
+        <CardHeader className={`${selectedServiceTags.length > 0 ? 'bg-gradient-to-r from-orange-200 to-yellow-200' : 'bg-gradient-subtle'} rounded-t-xl`}>
           <CardTitle className="flex items-center justify-between text-foreground">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <Tag className="h-5 w-5 text-warning" />
+            <div className="flex items-center gap-3">
+              <div className={`p-3 rounded-xl ${selectedServiceTags.length > 0 ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-lg animate-pulse' : 'bg-warning/10'} transition-all duration-500`}>
+                <Tag className={`h-6 w-6 ${selectedServiceTags.length > 0 ? 'text-white' : 'text-warning'}`} />
               </div>
-              <span className="font-heading">Service Classification</span>
+              <div>
+                <span className="font-heading text-lg">Service Classification</span>
+                {selectedServiceTags.length > 0 && (
+                  <p className="text-sm text-orange-600 font-medium">Categories have been tagged ✓</p>
+                )}
+              </div>
             </div>
             {selectedServiceTags.length > 0 && (
-              <Badge className="bg-warning/20 text-warning border-warning/30">
+              <Badge className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-none shadow-lg animate-bounce px-4 py-2 text-base font-bold">
                 {selectedServiceTags.length} tags
               </Badge>
             )}
@@ -384,17 +409,22 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                     size="sm"
                     onClick={() => handleServiceTagToggle(tag)}
                     className={`
-                      relative text-sm font-medium transition-all duration-300 hover:scale-105
+                      relative text-sm font-semibold transition-all duration-500 hover:scale-110 transform group
                       ${isSelected 
-                        ? 'bg-warning text-warning-foreground border-warning shadow-lg hover:bg-warning/90' 
-                        : 'bg-background hover:bg-warning/10 hover:border-warning/50 hover:text-warning'
+                        ? 'bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 text-white border-orange-600 shadow-2xl shadow-orange/50 ring-4 ring-orange-400/40 hover:shadow-3xl hover:shadow-orange/60 animate-pulse' 
+                        : 'bg-gradient-to-r from-background to-muted/20 hover:from-orange-100 hover:to-yellow-100 hover:border-orange-400 hover:text-orange-600 border-2 hover:shadow-lg hover:shadow-orange/20'
                       }
                     `}
                   >
                     {isSelected && (
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      <CheckCircle2 className="h-5 w-5 mr-2 animate-bounce text-white drop-shadow-lg" />
                     )}
-                    {tag}
+                    <span className={`${isSelected ? 'text-white font-bold drop-shadow-md' : ''} group-hover:font-semibold transition-all duration-300`}>
+                      {tag}
+                    </span>
+                    {isSelected && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+                    )}
                   </Button>
                 );
               })}
