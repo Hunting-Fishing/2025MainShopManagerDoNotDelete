@@ -349,10 +349,10 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                     size="sm"
                     onClick={() => handleRequestedServiceToggle(service)}
                     className={`
-                      relative text-sm font-semibold transition-all duration-500 hover:scale-105 transform group
+                      relative text-sm font-semibold transition-all duration-300 hover:scale-105 transform group border-2
                       ${isSelected 
-                        ? 'bg-primary text-primary-foreground border-primary shadow-lg ring-4 ring-primary/20 hover:shadow-xl animate-pulse' 
-                        : 'hover:bg-primary/10 hover:border-primary hover:text-primary hover:shadow-md'
+                        ? 'bg-blue-600 text-white border-blue-700 shadow-xl ring-4 ring-blue-500/30 hover:bg-blue-700 animate-pulse' 
+                        : 'bg-white hover:bg-blue-50 hover:border-blue-500 hover:text-blue-700 border-gray-300 hover:shadow-lg'
                       }
                     `}
                   >
@@ -363,7 +363,7 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                       {service}
                     </span>
                     {isSelected && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-success rounded-full animate-ping"></div>
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
                     )}
                   </Button>
                 );
@@ -409,10 +409,10 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                     size="sm"
                     onClick={() => handleServiceTagToggle(tag)}
                     className={`
-                      relative text-sm font-semibold transition-all duration-500 hover:scale-105 transform group
+                      relative text-sm font-semibold transition-all duration-300 hover:scale-105 transform group border-2
                       ${isSelected 
-                        ? 'bg-warning text-warning-foreground border-warning shadow-lg ring-4 ring-warning/20 hover:shadow-xl animate-pulse' 
-                        : 'hover:bg-warning/10 hover:border-warning hover:text-warning hover:shadow-md'
+                        ? 'bg-orange-500 text-white border-orange-600 shadow-xl ring-4 ring-orange-400/30 hover:bg-orange-600 animate-pulse' 
+                        : 'bg-white hover:bg-orange-50 hover:border-orange-500 hover:text-orange-700 border-gray-300 hover:shadow-lg'
                       }
                     `}
                   >
@@ -423,7 +423,7 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                       {tag}
                     </span>
                     {isSelected && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-info rounded-full animate-ping"></div>
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
                     )}
                   </Button>
                 );
