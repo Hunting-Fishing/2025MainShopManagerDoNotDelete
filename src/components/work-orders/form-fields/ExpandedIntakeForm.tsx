@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -76,6 +76,19 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
   const [selectedRequestedServices, setSelectedRequestedServices] = useState<string[]>(
     form.getValues("requestedServices") || []
   );
+
+  // Sync local state with form state changes
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "serviceTags") {
+        setSelectedServiceTags(value.serviceTags || []);
+      }
+      if (name === "requestedServices") {
+        setSelectedRequestedServices(value.requestedServices || []);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   // Get current urgency level for dynamic styling
   const currentUrgency = form.watch("urgencyLevel");
@@ -314,22 +327,22 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
       </Card>
 
       {/* Requested Services */}
-      <Card className={`modern-card hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${selectedRequestedServices.length > 0 ? 'ring-8 ring-info/50 bg-gradient-to-br from-info/10 to-success/10 border-info shadow-2xl animate-pulse' : 'hover:ring-4 hover:ring-info/20'}`}>
-        <CardHeader className={`${selectedRequestedServices.length > 0 ? 'bg-gradient-to-r from-info/30 to-success/30 shadow-inner animate-pulse' : 'bg-gradient-subtle'} rounded-t-xl transition-all duration-500`}>
+      <Card className={`modern-card hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${selectedRequestedServices.length > 0 ? 'ring-4 ring-info/30 bg-gradient-to-br from-info/5 to-success/5 border-info shadow-xl' : 'hover:ring-4 hover:ring-info/20'}`}>
+        <CardHeader className={`${selectedRequestedServices.length > 0 ? 'bg-gradient-to-r from-info/20 to-success/20 shadow-inner' : 'bg-gradient-subtle'} rounded-t-xl transition-all duration-500`}>
           <CardTitle className="flex items-center justify-between text-foreground">
             <div className="flex items-center gap-3">
-              <div className={`p-4 rounded-xl ${selectedRequestedServices.length > 0 ? 'bg-gradient-to-r from-info to-success text-white shadow-2xl animate-bounce ring-4 ring-white/30' : 'bg-info/10'} transition-all duration-700 hover:scale-110`}>
-                <CheckCircle2 className={`h-8 w-8 ${selectedRequestedServices.length > 0 ? 'text-white animate-pulse' : 'text-info'} transition-all duration-500`} />
+              <div className={`p-4 rounded-xl ${selectedRequestedServices.length > 0 ? 'bg-gradient-to-r from-info to-success text-white shadow-xl ring-2 ring-white/30' : 'bg-info/10'} transition-all duration-500 hover:scale-105`}>
+                <CheckCircle2 className={`h-8 w-8 ${selectedRequestedServices.length > 0 ? 'text-white' : 'text-info'} transition-all duration-500`} />
               </div>
               <div>
                 <span className="font-heading text-2xl font-black">Requested Services</span>
                 {selectedRequestedServices.length > 0 && (
-                  <p className="text-lg text-success font-black animate-pulse">✓ SERVICES SELECTED!</p>
+                  <p className="text-lg text-success font-bold">✓ Services Selected!</p>
                 )}
               </div>
             </div>
             {selectedRequestedServices.length > 0 && (
-              <Badge className="bg-gradient-to-r from-info to-success text-white border-none shadow-2xl animate-bounce px-6 py-3 text-xl font-black ring-4 ring-white/50 hover:scale-110 transition-all duration-500">
+              <Badge className="bg-gradient-to-r from-info to-success text-white border-none shadow-xl px-6 py-3 text-xl font-bold ring-2 ring-white/30 hover:scale-105 transition-all duration-300">
                 🎯 {selectedRequestedServices.length} SERVICES
               </Badge>
             )}
@@ -349,25 +362,21 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                     size="sm"
                     onClick={() => handleRequestedServiceToggle(service)}
                     className={`
-                      relative text-lg font-bold transition-all duration-500 hover:scale-110 transform group border-4 shadow-2xl
+                      relative text-lg font-bold transition-all duration-300 hover:scale-105 transform group border-2 shadow-lg
                       ${isSelected 
-                        ? 'bg-info text-white border-info shadow-glow ring-8 ring-info/40 hover:shadow-2xl animate-pulse hover:animate-bounce hover:bg-info/90' 
-                        : 'bg-card hover:bg-info/10 hover:border-info hover:text-info border-border hover:shadow-xl hover:ring-4 hover:ring-info/20'
+                        ? 'bg-info text-white border-info shadow-glow ring-4 ring-info/30 hover:shadow-xl hover:bg-info/90' 
+                        : 'bg-card hover:bg-info/10 hover:border-info hover:text-info border-border hover:shadow-xl hover:ring-2 hover:ring-info/20'
                       }
                     `}
                   >
                     {isSelected && (
-                      <CheckCircle2 className="h-6 w-6 mr-3 animate-bounce text-white drop-shadow-lg" />
+                      <CheckCircle2 className="h-6 w-6 mr-3 text-white drop-shadow-lg" />
                     )}
-                    <span className={`${isSelected ? 'font-black text-xl' : 'font-semibold'} group-hover:font-bold transition-all duration-500 uppercase tracking-wider`}>
+                    <span className={`${isSelected ? 'font-black text-xl' : 'font-semibold'} group-hover:font-bold transition-all duration-300 uppercase tracking-wider`}>
                       {service}
                     </span>
                     {isSelected && (
-                      <>
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-success rounded-full animate-ping shadow-xl"></div>
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full animate-pulse shadow-lg"></div>
-                        <div className="absolute inset-0 bg-gradient-to-r from-info/20 to-success/20 rounded-lg animate-pulse"></div>
-                      </>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full shadow-lg"></div>
                     )}
                   </Button>
                 );
@@ -378,22 +387,22 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
       </Card>
 
       {/* Service Tags & Classification */}
-      <Card className={`modern-card hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${selectedServiceTags.length > 0 ? 'ring-8 ring-warning/50 bg-gradient-to-br from-warning/10 to-success/10 border-warning shadow-2xl animate-pulse' : 'hover:ring-4 hover:ring-warning/20'}`}>
-        <CardHeader className={`${selectedServiceTags.length > 0 ? 'bg-gradient-to-r from-warning/30 to-success/30 shadow-inner animate-pulse' : 'bg-gradient-subtle'} rounded-t-xl transition-all duration-500`}>
+      <Card className={`modern-card hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${selectedServiceTags.length > 0 ? 'ring-4 ring-warning/30 bg-gradient-to-br from-warning/5 to-success/5 border-warning shadow-xl' : 'hover:ring-4 hover:ring-warning/20'}`}>
+        <CardHeader className={`${selectedServiceTags.length > 0 ? 'bg-gradient-to-r from-warning/20 to-success/20 shadow-inner' : 'bg-gradient-subtle'} rounded-t-xl transition-all duration-500`}>
           <CardTitle className="flex items-center justify-between text-foreground">
             <div className="flex items-center gap-3">
-              <div className={`p-4 rounded-xl ${selectedServiceTags.length > 0 ? 'bg-gradient-to-r from-warning to-success text-white shadow-2xl animate-bounce ring-4 ring-white/30' : 'bg-warning/10'} transition-all duration-700 hover:scale-110`}>
-                <Tag className={`h-8 w-8 ${selectedServiceTags.length > 0 ? 'text-white animate-pulse' : 'text-warning'} transition-all duration-500`} />
+              <div className={`p-4 rounded-xl ${selectedServiceTags.length > 0 ? 'bg-gradient-to-r from-warning to-success text-white shadow-xl ring-2 ring-white/30' : 'bg-warning/10'} transition-all duration-500 hover:scale-105`}>
+                <Tag className={`h-8 w-8 ${selectedServiceTags.length > 0 ? 'text-white' : 'text-warning'} transition-all duration-500`} />
               </div>
               <div>
                 <span className="font-heading text-2xl font-black">Service Classification</span>
                 {selectedServiceTags.length > 0 && (
-                  <p className="text-lg text-success font-black animate-pulse">✓ CATEGORIES TAGGED!</p>
+                  <p className="text-lg text-success font-bold">✓ Categories Tagged!</p>
                 )}
               </div>
             </div>
             {selectedServiceTags.length > 0 && (
-              <Badge className="bg-gradient-to-r from-warning to-success text-white border-none shadow-2xl animate-bounce px-6 py-3 text-xl font-black ring-4 ring-white/50 hover:scale-110 transition-all duration-500">
+              <Badge className="bg-gradient-to-r from-warning to-success text-white border-none shadow-xl px-6 py-3 text-xl font-bold ring-2 ring-white/30 hover:scale-105 transition-all duration-300">
                 🏷️ {selectedServiceTags.length} TAGS
               </Badge>
             )}
@@ -413,25 +422,21 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                     size="sm"
                     onClick={() => handleServiceTagToggle(tag)}
                     className={`
-                      relative text-lg font-bold transition-all duration-500 hover:scale-110 transform group border-4 shadow-2xl
+                      relative text-lg font-bold transition-all duration-300 hover:scale-105 transform group border-2 shadow-lg
                       ${isSelected 
-                        ? 'bg-warning text-white border-warning shadow-glow ring-8 ring-warning/40 hover:shadow-2xl animate-pulse hover:animate-bounce hover:bg-warning/90' 
-                        : 'bg-card hover:bg-warning/10 hover:border-warning hover:text-warning border-border hover:shadow-xl hover:ring-4 hover:ring-warning/20'
+                        ? 'bg-warning text-white border-warning shadow-glow ring-4 ring-warning/30 hover:shadow-xl hover:bg-warning/90' 
+                        : 'bg-card hover:bg-warning/10 hover:border-warning hover:text-warning border-border hover:shadow-xl hover:ring-2 hover:ring-warning/20'
                       }
                     `}
                   >
                     {isSelected && (
-                      <CheckCircle2 className="h-6 w-6 mr-3 animate-bounce text-white drop-shadow-lg" />
+                      <CheckCircle2 className="h-6 w-6 mr-3 text-white drop-shadow-lg" />
                     )}
-                    <span className={`${isSelected ? 'font-black text-xl' : 'font-semibold'} group-hover:font-bold transition-all duration-500 uppercase tracking-wider`}>
+                    <span className={`${isSelected ? 'font-black text-xl' : 'font-semibold'} group-hover:font-bold transition-all duration-300 uppercase tracking-wider`}>
                       {tag}
                     </span>
                     {isSelected && (
-                      <>
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-success rounded-full animate-ping shadow-xl"></div>
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full animate-pulse shadow-lg"></div>
-                        <div className="absolute inset-0 bg-gradient-to-r from-warning/20 to-success/20 rounded-lg animate-pulse"></div>
-                      </>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full shadow-lg"></div>
                     )}
                   </Button>
                 );
