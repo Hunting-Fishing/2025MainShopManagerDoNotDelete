@@ -7,14 +7,12 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
-
 interface AddCategoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sectorId: string;
   onSuccess: () => void;
 }
-
 export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   open,
   onOpenChange,
@@ -24,11 +22,11 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!name.trim()) {
       toast({
         title: "Error",
@@ -37,18 +35,17 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
       });
       return;
     }
-
     setIsLoading(true);
-    
     try {
-      const { data, error } = await supabase.rpc('insert_service_category', {
+      const {
+        data,
+        error
+      } = await supabase.rpc('insert_service_category', {
         p_name: name.trim(),
         p_description: description.trim() || null,
         p_position: null
       });
-
       if (error) throw error;
-
       toast({
         title: "Success",
         description: "Category created successfully"
@@ -70,10 +67,8 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
       setIsLoading(false);
     }
   };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+  return <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md bg-slate-50 rounded">
         <DialogHeader>
           <DialogTitle>Add New Category</DialogTitle>
         </DialogHeader>
@@ -81,35 +76,16 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="category-name">Category Name *</Label>
-            <Input
-              id="category-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Engine, Brakes, Suspension"
-              disabled={isLoading}
-              required
-            />
+            <Input id="category-name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Engine, Brakes, Suspension" disabled={isLoading} required />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="category-description">Description</Label>
-            <Textarea
-              id="category-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description of this category"
-              disabled={isLoading}
-              rows={3}
-            />
+            <Textarea id="category-description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional description of this category" disabled={isLoading} rows={3} />
           </div>
           
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading || !name.trim()}>
@@ -119,6 +95,5 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
