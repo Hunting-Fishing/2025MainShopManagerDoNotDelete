@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, Clock, DollarSign } from 'lucide-react';
 import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
 import { Badge } from '@/components/ui/badge';
+import { useServiceSearch } from '@/hooks/useServiceSearch';
 
 interface SmartServiceSelectorProps {
   sectors: ServiceSector[];
@@ -22,25 +23,65 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
   const [selectedSector, setSelectedSector] = useState<ServiceSector | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+
+  // Convert sectors to categories for the search hook
+  const allCategories = useMemo(() => {
+    return sectors.flatMap(sector => sector.categories);
+  }, [sectors]);
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    filteredCategories,
+    searchStats,
+    suggestions,
+    isSearching
+  } = useServiceSearch(allCategories);
+
+  // Get all matching services for quick search results
+  const quickSearchResults = useMemo(() => {
+    if (!isSearching) return [];
+    
+    const results: Array<{
+      service: ServiceJob;
+      categoryName: string;
+      subcategoryName: string;
+      sectorName: string;
+    }> = [];
+
+    filteredCategories.forEach(category => {
+      category.subcategories.forEach(subcategory => {
+        subcategory.jobs.forEach(service => {
+          // Find the sector this category belongs to
+          const sector = sectors.find(s => s.categories.some(c => c.id === category.id));
+          if (sector) {
+            results.push({
+              service,
+              categoryName: category.name,
+              subcategoryName: subcategory.name,
+              sectorName: sector.name
+            });
+          }
+        });
+      });
+    });
+
+    return results.slice(0, 20); // Limit to 20 results for performance
+  }, [filteredCategories, sectors, isSearching]);
 
   const filteredSectors = useMemo(() => {
-    if (!searchTerm) return sectors;
+    if (!isSearching) return sectors;
 
     return sectors.map(sector => ({
       ...sector,
-      categories: sector.categories.map(category => ({
-        ...category,
-        subcategories: category.subcategories.map(subcategory => ({
-          ...subcategory,
-          jobs: subcategory.jobs.filter(job =>
-            job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            job.description?.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-        })).filter(subcategory => subcategory.jobs.length > 0)
-      })).filter(category => category.subcategories.length > 0)
+      categories: sector.categories.filter(category => 
+        filteredCategories.some(fc => fc.id === category.id)
+      ).map(category => {
+        const filteredCategory = filteredCategories.find(fc => fc.id === category.id);
+        return filteredCategory || category;
+      })
     })).filter(sector => sector.categories.length > 0);
-  }, [sectors, searchTerm]);
+  }, [sectors, filteredCategories, isSearching]);
 
   const handleSectorClick = (sector: ServiceSector) => {
     setSelectedSector(sector);
@@ -57,14 +98,18 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
     setSelectedSubcategory(subcategory);
   };
 
-  const handleServiceClick = (service: ServiceJob) => {
-    if (selectedCategory && selectedSubcategory) {
+  const handleServiceClick = (service: ServiceJob, categoryName?: string, subcategoryName?: string) => {
+    if (categoryName && subcategoryName) {
+      // Quick search selection
+      onServiceSelect(service, categoryName, subcategoryName);
+    } else if (selectedCategory && selectedSubcategory) {
+      // Traditional hierarchy selection
       onServiceSelect(service, selectedCategory.name, selectedSubcategory.name);
     }
   };
 
   const clearSearch = () => {
-    setSearchTerm('');
+    setSearchQuery('');
   };
 
   const isServiceSelected = (serviceId: string) => {
@@ -79,12 +124,12 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
             type="text"
-            placeholder="Search services..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search services (e.g., control arm, brake pad, oil change)..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          {searchTerm && (
+          {searchQuery && (
             <button
               onClick={clearSearch}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -93,9 +138,75 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
             </button>
           )}
         </div>
+        
+        {/* Search Statistics */}
+        {searchStats && (
+          <div className="px-4 py-2 bg-blue-50 border-b text-sm text-blue-700">
+            Found {searchStats.jobs} services in {searchStats.categories} categories
+            {searchStats.highRelevanceJobs > 0 && (
+              <span className="ml-2 font-medium">({searchStats.highRelevanceJobs} highly relevant)</span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Service Selection Interface */}
+      {/* Quick Search Results */}
+      {isSearching && quickSearchResults.length > 0 && (
+        <div className="border-t bg-white">
+          <div className="p-3 border-b bg-gray-50">
+            <h3 className="font-medium text-gray-700">Search Results</h3>
+          </div>
+          <div className="max-h-96 overflow-y-auto">
+            {quickSearchResults.map((result, index) => (
+              <button
+                key={`${result.service.id}-${index}`}
+                onClick={() => handleServiceClick(result.service, result.categoryName, result.subcategoryName)}
+                disabled={isServiceSelected(result.service.id)}
+                className={`w-full text-left p-4 border-b hover:bg-gray-50 transition-colors ${
+                  isServiceSelected(result.service.id) 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'text-gray-800'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-medium text-lg">{result.service.name}</div>
+                  {isServiceSelected(result.service.id) && (
+                    <Badge variant="secondary" className="text-xs">Selected</Badge>
+                  )}
+                </div>
+                
+                <div className="text-sm text-gray-600 mb-2">
+                  {result.sectorName} → {result.categoryName} → {result.subcategoryName}
+                </div>
+                
+                {result.service.description && (
+                  <div className="text-sm text-gray-600 mb-3 line-clamp-2">
+                    {result.service.description}
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-3">
+                  {result.service.estimatedTime && (
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <Clock className="h-3 w-3" />
+                      {result.service.estimatedTime} min
+                    </div>
+                  )}
+                  {result.service.price && (
+                    <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                      <DollarSign className="h-3 w-3" />
+                      {result.service.price}
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Traditional Service Selection Interface */}
+      {!isSearching && (
       <div className="flex h-96">
         {/* Sectors Column */}
         <div className="w-1/4 border-r bg-gradient-to-b from-slate-50 to-slate-100">
@@ -219,12 +330,26 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
           </div>
         </div>
       </div>
+      )}
 
-      {/* No Results Message */}
-      {searchTerm && filteredSectors.length === 0 && (
+      {/* No Search Results Message */}
+      {isSearching && quickSearchResults.length === 0 && (
         <div className="p-8 text-center text-gray-500">
-          <div className="text-lg font-medium mb-2">No services found</div>
-          <div className="text-sm">Try adjusting your search terms</div>
+          <div className="text-lg font-medium mb-2">No services found for "{searchQuery}"</div>
+          <div className="text-sm mb-4">Try adjusting your search terms or check these suggestions:</div>
+          {suggestions.length > 0 && (
+            <div className="flex flex-wrap gap-2 justify-center">
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSearchQuery(suggestion)}
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

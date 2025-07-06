@@ -31,6 +31,7 @@ const AUTOMOTIVE_SYNONYMS: Record<string, string[]> = {
   'cv joint': ['cv', 'constant velocity joint', 'drive joint'],
   'tie rod': ['tie rod end', 'steering rod'],
   'ball joint': ['suspension ball joint', 'control arm ball joint'],
+  'control arm': ['control arm bushings', 'control arm ball joint', 'lower control arm', 'upper control arm', 'suspension arm'],
   'wheel bearing': ['hub bearing', 'wheel hub'],
   'brake rotor': ['brake disc', 'rotor', 'disc'],
   'brake caliper': ['caliper', 'brake cylinder'],
