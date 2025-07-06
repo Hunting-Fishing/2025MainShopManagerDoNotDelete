@@ -22,18 +22,18 @@ export interface DamageArea {
   createdAt: Date;
   updatedAt: Date;
   bodyPanel: string;
-  view: 'front' | 'back' | 'top' | 'side';
+  view: 'front' | 'back' | 'top' | 'driver_side' | 'passenger_side';
 }
 
 interface VehicleBodyPanel {
   id: string;
   name: string;
   coordinates: { x: number; y: number; width: number; height: number };
-  view: 'front' | 'back' | 'top' | 'side';
+  view: 'front' | 'back' | 'top' | 'driver_side' | 'passenger_side';
 }
 
 // Precise coordinate mapping for vehicle body panels
-const BODY_PANELS: Record<'front' | 'back' | 'top' | 'side', VehicleBodyPanel[]> = {
+const BODY_PANELS: Record<'front' | 'back' | 'top' | 'driver_side' | 'passenger_side', VehicleBodyPanel[]> = {
   front: [
     { id: 'front_bumper', name: 'Front Bumper', coordinates: { x: 300, y: 600, width: 600, height: 100 }, view: 'front' },
     { id: 'left_headlight', name: 'Left Headlight', coordinates: { x: 200, y: 500, width: 150, height: 100 }, view: 'front' },
@@ -64,16 +64,27 @@ const BODY_PANELS: Record<'front' | 'back' | 'top' | 'side', VehicleBodyPanel[]>
     { id: 'left_fender', name: 'Left Fender', coordinates: { x: 380, y: 200, width: 70, height: 180 }, view: 'top' },
     { id: 'right_fender', name: 'Right Fender', coordinates: { x: 750, y: 200, width: 70, height: 180 }, view: 'top' },
   ],
-  side: [
-    { id: 'front_bumper', name: 'Front Bumper', coordinates: { x: 100, y: 400, width: 80, height: 200 }, view: 'side' },
-    { id: 'rear_bumper', name: 'Rear Bumper', coordinates: { x: 1020, y: 400, width: 80, height: 200 }, view: 'side' },
-    { id: 'side_hood', name: 'Hood', coordinates: { x: 180, y: 320, width: 200, height: 80 }, view: 'side' },
-    { id: 'side_roof', name: 'Roof', coordinates: { x: 380, y: 200, width: 440, height: 120 }, view: 'side' },
-    { id: 'side_trunk', name: 'Trunk', coordinates: { x: 820, y: 320, width: 200, height: 80 }, view: 'side' },
-    { id: 'side_front_door', name: 'Front Door', coordinates: { x: 380, y: 320, width: 150, height: 280 }, view: 'side' },
-    { id: 'side_rear_door', name: 'Rear Door', coordinates: { x: 530, y: 320, width: 150, height: 280 }, view: 'side' },
-    { id: 'side_front_fender', name: 'Front Fender', coordinates: { x: 180, y: 400, width: 200, height: 200 }, view: 'side' },
-    { id: 'side_rear_fender', name: 'Rear Fender', coordinates: { x: 680, y: 400, width: 140, height: 200 }, view: 'side' },
+  driver_side: [
+    { id: 'front_bumper', name: 'Front Bumper', coordinates: { x: 100, y: 400, width: 80, height: 200 }, view: 'driver_side' },
+    { id: 'rear_bumper', name: 'Rear Bumper', coordinates: { x: 1020, y: 400, width: 80, height: 200 }, view: 'driver_side' },
+    { id: 'side_hood', name: 'Hood', coordinates: { x: 180, y: 320, width: 200, height: 80 }, view: 'driver_side' },
+    { id: 'side_roof', name: 'Roof', coordinates: { x: 380, y: 200, width: 440, height: 120 }, view: 'driver_side' },
+    { id: 'side_trunk', name: 'Trunk', coordinates: { x: 820, y: 320, width: 200, height: 80 }, view: 'driver_side' },
+    { id: 'side_front_door', name: 'Front Door', coordinates: { x: 380, y: 320, width: 150, height: 280 }, view: 'driver_side' },
+    { id: 'side_rear_door', name: 'Rear Door', coordinates: { x: 530, y: 320, width: 150, height: 280 }, view: 'driver_side' },
+    { id: 'side_front_fender', name: 'Front Fender', coordinates: { x: 180, y: 400, width: 200, height: 200 }, view: 'driver_side' },
+    { id: 'side_rear_fender', name: 'Rear Fender', coordinates: { x: 680, y: 400, width: 140, height: 200 }, view: 'driver_side' },
+  ],
+  passenger_side: [
+    { id: 'front_bumper', name: 'Front Bumper', coordinates: { x: 100, y: 400, width: 80, height: 200 }, view: 'passenger_side' },
+    { id: 'rear_bumper', name: 'Rear Bumper', coordinates: { x: 1020, y: 400, width: 80, height: 200 }, view: 'passenger_side' },
+    { id: 'side_hood', name: 'Hood', coordinates: { x: 180, y: 320, width: 200, height: 80 }, view: 'passenger_side' },
+    { id: 'side_roof', name: 'Roof', coordinates: { x: 380, y: 200, width: 440, height: 120 }, view: 'passenger_side' },
+    { id: 'side_trunk', name: 'Trunk', coordinates: { x: 820, y: 320, width: 200, height: 80 }, view: 'passenger_side' },
+    { id: 'side_front_door', name: 'Front Door', coordinates: { x: 380, y: 320, width: 150, height: 280 }, view: 'passenger_side' },
+    { id: 'side_rear_door', name: 'Rear Door', coordinates: { x: 530, y: 320, width: 150, height: 280 }, view: 'passenger_side' },
+    { id: 'side_front_fender', name: 'Front Fender', coordinates: { x: 180, y: 400, width: 200, height: 200 }, view: 'passenger_side' },
+    { id: 'side_rear_fender', name: 'Rear Fender', coordinates: { x: 680, y: 400, width: 140, height: 200 }, view: 'passenger_side' },
   ]
 };
 
@@ -105,7 +116,7 @@ export const ProfessionalVehicleInspectionDiagram: React.FC<ProfessionalVehicleI
   onDamagesChange,
   readOnly = false
 }) => {
-  const [activeView, setActiveView] = useState<'front' | 'back' | 'top' | 'side'>('front');
+  const [activeView, setActiveView] = useState<'front' | 'back' | 'top' | 'driver_side' | 'passenger_side'>('front');
   const [selectedDamage, setSelectedDamage] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [showGrid, setShowGrid] = useState(true);
@@ -118,7 +129,9 @@ export const ProfessionalVehicleInspectionDiagram: React.FC<ProfessionalVehicleI
       case 'front': return vehicleFrontView;
       case 'back': return vehicleBackView;
       case 'top': return vehicleTopView;
-      case 'side': return vehicleSideView;
+      case 'driver_side': 
+      case 'passenger_side': 
+        return vehicleSideView;
       default: return vehicleFrontView;
     }
   };
@@ -233,12 +246,13 @@ export const ProfessionalVehicleInspectionDiagram: React.FC<ProfessionalVehicleI
       <CardContent className="space-y-4">
         {/* View Controls */}
         <div className="flex justify-between items-center">
-          <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'front' | 'back' | 'top' | 'side')}>
+          <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'front' | 'back' | 'top' | 'driver_side' | 'passenger_side')}>
             <TabsList>
               <TabsTrigger value="front">Front</TabsTrigger>
               <TabsTrigger value="back">Back</TabsTrigger>
               <TabsTrigger value="top">Top</TabsTrigger>
-              <TabsTrigger value="side">Side</TabsTrigger>
+              <TabsTrigger value="driver_side">Driver Side</TabsTrigger>
+              <TabsTrigger value="passenger_side">Passenger Side</TabsTrigger>
             </TabsList>
           </Tabs>
           
@@ -287,8 +301,8 @@ export const ProfessionalVehicleInspectionDiagram: React.FC<ProfessionalVehicleI
             {/* Vehicle Diagram Background */}
             <img 
               src={getVehicleImage()}
-              alt={`Vehicle ${activeView} View`}
-              className="w-full h-full object-contain"
+              alt={`Vehicle ${activeView.replace('_', ' ')} View`}
+              className={`w-full h-full object-contain ${activeView === 'passenger_side' ? 'scale-x-[-1]' : ''}`}
               draggable={false}
             />
             

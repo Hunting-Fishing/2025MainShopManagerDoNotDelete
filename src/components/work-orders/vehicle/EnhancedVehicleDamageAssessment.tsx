@@ -51,7 +51,7 @@ export interface DamageArea {
   createdAt: Date;
   updatedAt: Date;
   bodyPanel: string;
-  view: 'front' | 'back' | 'top' | 'side';
+  view: 'front' | 'back' | 'top' | 'driver_side' | 'passenger_side';
 }
 
 interface HistoryAction {
@@ -92,7 +92,7 @@ export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAsse
   vehicleModel = '',
   readOnly = false
 }) => {
-  const [activeView, setActiveView] = useState<'front' | 'back' | 'top' | 'side'>('front');
+  const [activeView, setActiveView] = useState<'front' | 'back' | 'top' | 'driver_side' | 'passenger_side'>('front');
   const [selectedDamages, setSelectedDamages] = useState<Set<string>>(new Set());
   const [zoom, setZoom] = useState(1);
   const [showGrid, setShowGrid] = useState(true);
@@ -123,6 +123,14 @@ export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAsse
   // Get the correct image based on vehicle type and active view
   const getVehicleImage = () => {
     const bodyStyle = getVehicleBodyStyle(vehicleMake, vehicleModel);
+    
+    // For side views, we use the same side image for both driver and passenger sides
+    const getViewImage = (view: string) => {
+      if (view === 'driver_side' || view === 'passenger_side') {
+        return 'side';
+      }
+      return view;
+    };
     
     // Create image mapping based on body style
     const imageMap = {
@@ -177,7 +185,30 @@ export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAsse
       }
     };
 
-    return imageMap[bodyStyle]?.[activeView] || vehicleFrontView;
+    const viewKey = getViewImage(activeView);
+    return imageMap[bodyStyle]?.[viewKey as keyof typeof imageMap[typeof bodyStyle]] || vehicleFrontView;
+  };
+
+  // Check if current view is passenger side (needs flipping)
+  const isPassengerSide = activeView === 'passenger_side';
+
+  // Transform coordinates for flipped view
+  const transformCoordinatesForView = (x: number, containerWidth: number = 1200) => {
+    if (isPassengerSide) {
+      return containerWidth - x;
+    }
+    return x;
+  };
+
+  // Transform damage coordinates for display
+  const getTransformedDamagePosition = (damage: DamageArea) => {
+    if (damage.view === 'passenger_side') {
+      return {
+        ...damage,
+        x: transformCoordinatesForView(damage.x)
+      };
+    }
+    return damage;
   };
 
   // Add damage to history
@@ -212,8 +243,13 @@ export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAsse
     if (readOnly || !isAddingDamage) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / zoom;
+    let x = (event.clientX - rect.left) / zoom;
     const y = (event.clientY - rect.top) / zoom;
+
+    // Transform coordinates for passenger side (store original coordinates)
+    if (isPassengerSide) {
+      x = transformCoordinatesForView(x);
+    }
 
     // Show floating toolbar for damage type selection
     setToolbarPosition({ 
@@ -222,7 +258,7 @@ export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAsse
     });
     setPendingDamagePosition({ x, y });
     setToolbarVisible(true);
-  }, [readOnly, isAddingDamage, zoom]);
+  }, [readOnly, isAddingDamage, zoom, isPassengerSide]);
 
   // Confirm damage placement
   const handleConfirmDamage = useCallback(() => {
@@ -421,12 +457,17 @@ export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAsse
     const typeStyle = DAMAGE_TYPE_STYLES[damage.type];
     const severityStyle = SEVERITY_STYLES[damage.severity];
     const isSelected = selectedDamages.has(damage.id);
+    
+    // Transform coordinates for passenger side display
+    const transformedDamage = getTransformedDamagePosition(damage);
+    const displayX = (activeView === 'passenger_side' && damage.view === 'passenger_side') ? 
+      transformedDamage.x : damage.x;
 
     return (
       <div 
         className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
         style={{ 
-          left: damage.x * zoom, 
+          left: displayX * zoom, 
           top: damage.y * zoom,
           color: typeStyle.color 
         }}
@@ -498,12 +539,13 @@ export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAsse
           {/* Control Bar */}
           <div className="flex justify-between items-center flex-wrap gap-2">
             {/* View Tabs */}
-            <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'front' | 'back' | 'top' | 'side')}>
+            <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'front' | 'back' | 'top' | 'driver_side' | 'passenger_side')}>
               <TabsList>
                 <TabsTrigger value="front">Front</TabsTrigger>
                 <TabsTrigger value="back">Back</TabsTrigger>
                 <TabsTrigger value="top">Top</TabsTrigger>
-                <TabsTrigger value="side">Side</TabsTrigger>
+                <TabsTrigger value="driver_side">Driver Side</TabsTrigger>
+                <TabsTrigger value="passenger_side">Passenger Side</TabsTrigger>
               </TabsList>
             </Tabs>
             
@@ -633,8 +675,8 @@ export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAsse
               {/* Vehicle Diagram Background */}
               <img 
                 src={getVehicleImage()}
-                alt={`Vehicle ${activeView} View`}
-                className="w-full h-full object-contain"
+                alt={`Vehicle ${activeView.replace('_', ' ')} View`}
+                className={`w-full h-full object-contain ${isPassengerSide ? 'scale-x-[-1]' : ''}`}
                 draggable={false}
               />
               
