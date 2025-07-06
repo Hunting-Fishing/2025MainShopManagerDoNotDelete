@@ -33,10 +33,19 @@ export class WorkOrderService {
 
   async createWorkOrder(formData: WorkOrderFormValues): Promise<WorkOrder> {
     try {
+      console.log('=== WORK ORDER SERVICE DEBUG ===');
+      console.log('1. Service received form data:', formData);
+      
       const workOrderData = this.mapFormToWorkOrder(formData);
-      return await this.repository.create(workOrderData);
+      console.log('2. Mapped data for database:', workOrderData);
+      
+      const result = await this.repository.create(workOrderData);
+      console.log('3. Repository returned:', result);
+      
+      return result;
     } catch (error) {
       console.error('WorkOrderService: Error creating work order:', error);
+      console.error('Form data that caused error:', formData);
       throw error;
     }
   }
@@ -79,34 +88,44 @@ export class WorkOrderService {
   }
 
   private mapFormToWorkOrder(formData: Partial<WorkOrderFormValues>): any {
-    return {
+    console.log('=== MAPPING FORM TO DATABASE ===');
+    console.log('Input form data:', formData);
+    
+    const mapped = {
       // Map form fields to database fields
-      customer_id: (formData as any).customerId,
-      vehicle_id: (formData as any).vehicleId,
+      customer_id: (formData as any).customerId || null,
+      vehicle_id: (formData as any).vehicleId || null,
       description: formData.description,
-      status: formData.status,
-      priority: formData.priority,
-      technician: formData.technician,
-      technician_id: (formData as any).technicianId,
-      location: formData.location,
-      due_date: formData.dueDate,
-      notes: formData.notes,
-      service_type: (formData as any).serviceType,
-      estimated_hours: (formData as any).estimatedHours,
+      status: formData.status || 'pending',
+      priority: formData.priority || 'medium',
+      technician: formData.technician || null,
+      technician_id: (formData as any).technicianId || null,
+      location: formData.location || null,
+      due_date: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+      notes: formData.notes || null,
+      service_type: (formData as any).serviceType || null,
+      estimated_hours: (formData as any).estimatedHours || null,
       
       // Vehicle information (if creating inline)
-      vehicle_make: formData.vehicleMake,
-      vehicle_model: formData.vehicleModel,
-      vehicle_year: formData.vehicleYear,
-      vehicle_license_plate: formData.licensePlate,
-      vehicle_vin: formData.vin,
-      vehicle_odometer: formData.odometer,
+      vehicle_make: formData.vehicleMake || null,
+      vehicle_model: formData.vehicleModel || null,
+      vehicle_year: formData.vehicleYear || null,
+      vehicle_license_plate: formData.licensePlate || null,
+      vehicle_vin: formData.vin || null,
+      vehicle_odometer: formData.odometer || null,
       
       // Customer information (if creating inline)
-      customer_name: formData.customer,
-      customer_email: (formData as any).customerEmail,
-      customer_phone: (formData as any).customerPhone,
-      customer_address: (formData as any).customerAddress,
+      customer_name: formData.customer || null,
+      customer_email: (formData as any).customerEmail || null,
+      customer_phone: (formData as any).customerPhone || null,
+      customer_address: (formData as any).customerAddress || null,
+      
+      // Ensure created_at and updated_at are set
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
+    
+    console.log('Mapped database data:', mapped);
+    return mapped;
   }
 }

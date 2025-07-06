@@ -58,8 +58,12 @@ export function CreateWorkOrderTab({
   const { toast } = useToast();
 
   const onSubmit = async (data: WorkOrderFormSchemaValues) => {
+    console.log('=== CREATE WORK ORDER TAB SUBMIT ===');
+    console.log('1. Form data received:', data);
+    
     // Check if handler is provided
     if (!onCreateWorkOrder) {
+      console.error('onCreateWorkOrder handler not provided');
       toast({
         title: "Configuration Error",
         description: "Work order creation handler is not configured. Please contact support.",
@@ -78,6 +82,7 @@ export function CreateWorkOrderTab({
     }
 
     if (errors.length > 0) {
+      console.log('2. Validation errors found:', errors);
       toast({
         title: "Validation Error",
         description: errors.join(", "),
@@ -86,6 +91,7 @@ export function CreateWorkOrderTab({
       return;
     }
     
+    console.log('2. Validation passed, starting submission...');
     setIsSubmitting(true);
     try {
       // Ensure inventoryItems is properly typed
@@ -94,19 +100,23 @@ export function CreateWorkOrderTab({
         inventoryItems: Array.isArray(data.inventoryItems) ? data.inventoryItems : []
       };
       
-      console.log('Submitting work order data:', formData);
+      console.log('3. Final form data being passed to handler:', formData);
       await onCreateWorkOrder(formData);
       
+      console.log('4. Work order creation completed successfully');
       toast({
         title: "Success",
         description: `Work order ${isEditMode ? 'updated' : 'created'} successfully`,
         variant: "default",
       });
     } catch (error) {
-      console.error('Error creating work order:', error);
+      console.error('=== CREATE WORK ORDER TAB ERROR ===');
+      console.error('Error in onSubmit:', error);
+      console.error('Error message:', (error as Error)?.message);
+      
       toast({
         title: "Error",
-        description: `Failed to ${isEditMode ? 'update' : 'create'} work order. Please try again.`,
+        description: `Failed to ${isEditMode ? 'update' : 'create'} work order: ${(error as Error)?.message}`,
         variant: "destructive",
       });
     } finally {

@@ -149,23 +149,43 @@ export class WorkOrderRepository {
 
   async create(workOrderData: any): Promise<WorkOrder> {
     try {
-      console.log('WorkOrderRepository: Creating work order with data:', workOrderData);
+      console.log('=== REPOSITORY CREATE DEBUG ===');
+      console.log('1. Repository received data:', workOrderData);
+      
+      // Clean the data to remove any undefined values that might cause issues
+      const cleanedData = Object.fromEntries(
+        Object.entries(workOrderData).filter(([_, v]) => v !== undefined)
+      );
+      
+      console.log('2. Cleaned data for insert:', cleanedData);
       
       const { data, error } = await supabase
         .from('work_orders')
-        .insert([workOrderData])
+        .insert([cleanedData])
         .select()
         .single();
 
       if (error) {
-        console.error('WorkOrderRepository: Error creating work order:', error);
-        throw new Error(`Failed to create work order: ${error.message}`);
+        console.error('=== DATABASE INSERT ERROR ===');
+        console.error('Error details:', error);
+        console.error('Error code:', error.code);
+        console.error('Error hint:', error.hint);
+        console.error('Error details:', error.details);
+        throw new Error(`Failed to create work order: ${error.message} (Code: ${error.code})`);
       }
 
-      console.log('WorkOrderRepository: Successfully created work order:', data.id);
-      return this.transformWorkOrder(data);
+      if (!data) {
+        throw new Error('No data returned after creating work order');
+      }
+
+      console.log('3. Successfully created work order:', data.id);
+      const transformed = this.transformWorkOrder(data);
+      console.log('4. Transformed work order:', transformed);
+      
+      return transformed;
     } catch (error) {
-      console.error('WorkOrderRepository: Error in create:', error);
+      console.error('=== REPOSITORY CREATE ERROR ===');
+      console.error('Error in create method:', error);
       throw error;
     }
   }

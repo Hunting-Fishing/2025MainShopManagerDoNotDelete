@@ -42,9 +42,22 @@ const WorkOrderCreate = () => {
 
   const handleCreateWorkOrder = async (workOrderData: any) => {
     try {
-      console.log('Creating work order with data:', workOrderData);
+      console.log('=== WORK ORDER CREATION DEBUG ===');
+      console.log('1. Form data received:', workOrderData);
+      console.log('2. Pre-populated data:', cleanedData);
       
-      const newWorkOrder = await createWorkOrder(workOrderData);
+      // Add customer/vehicle IDs from URL if available
+      const enrichedData = {
+        ...workOrderData,
+        customerId: workOrderData.customerId || cleanedData.customerId,
+        vehicleId: workOrderData.vehicleId || cleanedData.vehicleId,
+      };
+      
+      console.log('3. Enriched data being sent to service:', enrichedData);
+      
+      const newWorkOrder = await createWorkOrder(enrichedData);
+      
+      console.log('4. Work order created successfully:', newWorkOrder);
       
       toast({
         title: 'Success',
@@ -55,10 +68,14 @@ const WorkOrderCreate = () => {
       navigate(`/work-orders/${newWorkOrder.id}`);
       
     } catch (error) {
-      console.error('Error creating work order:', error);
+      console.error('=== WORK ORDER CREATION ERROR ===');
+      console.error('Error details:', error);
+      console.error('Error message:', (error as Error)?.message);
+      console.error('Error stack:', (error as Error)?.stack);
+      
       toast({
         title: 'Error',
-        description: 'Failed to create work order. Please try again.',
+        description: `Failed to create work order: ${(error as Error)?.message}`,
         variant: 'destructive',
       });
     }
