@@ -349,21 +349,21 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                     size="sm"
                     onClick={() => handleRequestedServiceToggle(service)}
                     className={`
-                      relative text-sm font-semibold transition-all duration-500 hover:scale-110 transform group
+                      relative text-sm font-semibold transition-all duration-500 hover:scale-105 transform group
                       ${isSelected 
-                        ? 'bg-gradient-to-r from-primary via-primary to-primary/90 text-white border-primary-600 shadow-2xl shadow-primary/50 ring-4 ring-primary/30 hover:shadow-3xl hover:shadow-primary/60 animate-pulse' 
-                        : 'bg-gradient-to-r from-background to-muted/20 hover:from-primary/10 hover:to-primary/20 hover:border-primary hover:text-primary border-2 hover:shadow-lg hover:shadow-primary/20'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-lg ring-4 ring-primary/20 hover:shadow-xl animate-pulse' 
+                        : 'hover:bg-primary/10 hover:border-primary hover:text-primary hover:shadow-md'
                       }
                     `}
                   >
                     {isSelected && (
-                      <CheckCircle2 className="h-5 w-5 mr-2 animate-bounce text-white drop-shadow-lg" />
+                      <CheckCircle2 className="h-4 w-4 mr-2 animate-bounce" />
                     )}
-                    <span className={`${isSelected ? 'text-white font-bold drop-shadow-md' : ''} group-hover:font-semibold transition-all duration-300`}>
+                    <span className={`${isSelected ? 'font-bold' : ''} group-hover:font-semibold transition-all duration-300`}>
                       {service}
                     </span>
                     {isSelected && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-success rounded-full animate-ping"></div>
                     )}
                   </Button>
                 );
@@ -409,21 +409,21 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                     size="sm"
                     onClick={() => handleServiceTagToggle(tag)}
                     className={`
-                      relative text-sm font-semibold transition-all duration-500 hover:scale-110 transform group
+                      relative text-sm font-semibold transition-all duration-500 hover:scale-105 transform group
                       ${isSelected 
-                        ? 'bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 text-white border-orange-600 shadow-2xl shadow-orange/50 ring-4 ring-orange-400/40 hover:shadow-3xl hover:shadow-orange/60 animate-pulse' 
-                        : 'bg-gradient-to-r from-background to-muted/20 hover:from-orange-100 hover:to-yellow-100 hover:border-orange-400 hover:text-orange-600 border-2 hover:shadow-lg hover:shadow-orange/20'
+                        ? 'bg-warning text-warning-foreground border-warning shadow-lg ring-4 ring-warning/20 hover:shadow-xl animate-pulse' 
+                        : 'hover:bg-warning/10 hover:border-warning hover:text-warning hover:shadow-md'
                       }
                     `}
                   >
                     {isSelected && (
-                      <CheckCircle2 className="h-5 w-5 mr-2 animate-bounce text-white drop-shadow-lg" />
+                      <CheckCircle2 className="h-4 w-4 mr-2 animate-bounce" />
                     )}
-                    <span className={`${isSelected ? 'text-white font-bold drop-shadow-md' : ''} group-hover:font-semibold transition-all duration-300`}>
+                    <span className={`${isSelected ? 'font-bold' : ''} group-hover:font-semibold transition-all duration-300`}>
                       {tag}
                     </span>
                     {isSelected && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-info rounded-full animate-ping"></div>
                     )}
                   </Button>
                 );
