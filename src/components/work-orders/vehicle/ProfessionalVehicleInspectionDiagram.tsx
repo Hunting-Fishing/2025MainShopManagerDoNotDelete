@@ -4,7 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ZoomIn, ZoomOut, RotateCcw, Grid3X3, Eye, Camera, Save } from 'lucide-react';
-import vehicleInspectionDiagram from '@/assets/vehicle-inspection-diagram.jpg';
+import vehicleFrontView from '@/assets/vehicle-front-view.jpg';
+import vehicleBackView from '@/assets/vehicle-back-view.jpg';
+import vehicleTopView from '@/assets/vehicle-top-view.jpg';
+import vehicleSideView from '@/assets/vehicle-side-view.jpg';
 
 export interface DamageArea {
   id: string;
@@ -19,18 +22,37 @@ export interface DamageArea {
   createdAt: Date;
   updatedAt: Date;
   bodyPanel: string;
-  view: 'top' | 'side' | 'front' | 'rear';
+  view: 'front' | 'back' | 'top' | 'side';
 }
 
 interface VehicleBodyPanel {
   id: string;
   name: string;
   coordinates: { x: number; y: number; width: number; height: number };
-  view: 'top' | 'side';
+  view: 'front' | 'back' | 'top' | 'side';
 }
 
 // Precise coordinate mapping for vehicle body panels
-const BODY_PANELS: Record<'top' | 'side', VehicleBodyPanel[]> = {
+const BODY_PANELS: Record<'front' | 'back' | 'top' | 'side', VehicleBodyPanel[]> = {
+  front: [
+    { id: 'front_bumper', name: 'Front Bumper', coordinates: { x: 300, y: 600, width: 600, height: 100 }, view: 'front' },
+    { id: 'left_headlight', name: 'Left Headlight', coordinates: { x: 200, y: 500, width: 150, height: 100 }, view: 'front' },
+    { id: 'right_headlight', name: 'Right Headlight', coordinates: { x: 850, y: 500, width: 150, height: 100 }, view: 'front' },
+    { id: 'grille', name: 'Grille', coordinates: { x: 450, y: 520, width: 300, height: 80 }, view: 'front' },
+    { id: 'front_hood', name: 'Hood', coordinates: { x: 350, y: 300, width: 500, height: 200 }, view: 'front' },
+    { id: 'windshield', name: 'Windshield', coordinates: { x: 400, y: 200, width: 400, height: 100 }, view: 'front' },
+    { id: 'left_front_fender', name: 'Left Front Fender', coordinates: { x: 150, y: 400, width: 200, height: 300 }, view: 'front' },
+    { id: 'right_front_fender', name: 'Right Front Fender', coordinates: { x: 850, y: 400, width: 200, height: 300 }, view: 'front' },
+  ],
+  back: [
+    { id: 'rear_bumper', name: 'Rear Bumper', coordinates: { x: 300, y: 600, width: 600, height: 100 }, view: 'back' },
+    { id: 'left_taillight', name: 'Left Taillight', coordinates: { x: 200, y: 500, width: 150, height: 100 }, view: 'back' },
+    { id: 'right_taillight', name: 'Right Taillight', coordinates: { x: 850, y: 500, width: 150, height: 100 }, view: 'back' },
+    { id: 'rear_window', name: 'Rear Window', coordinates: { x: 400, y: 200, width: 400, height: 100 }, view: 'back' },
+    { id: 'trunk_hatch', name: 'Trunk/Hatch', coordinates: { x: 350, y: 300, width: 500, height: 200 }, view: 'back' },
+    { id: 'left_rear_fender', name: 'Left Rear Fender', coordinates: { x: 150, y: 400, width: 200, height: 300 }, view: 'back' },
+    { id: 'right_rear_fender', name: 'Right Rear Fender', coordinates: { x: 850, y: 400, width: 200, height: 300 }, view: 'back' },
+  ],
   top: [
     { id: 'hood', name: 'Hood', coordinates: { x: 450, y: 200, width: 300, height: 180 }, view: 'top' },
     { id: 'roof', name: 'Roof', coordinates: { x: 450, y: 380, width: 300, height: 240 }, view: 'top' },
@@ -83,12 +105,23 @@ export const ProfessionalVehicleInspectionDiagram: React.FC<ProfessionalVehicleI
   onDamagesChange,
   readOnly = false
 }) => {
-  const [activeView, setActiveView] = useState<'top' | 'side'>('top');
+  const [activeView, setActiveView] = useState<'front' | 'back' | 'top' | 'side'>('front');
   const [selectedDamage, setSelectedDamage] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [showGrid, setShowGrid] = useState(true);
   const [showPanelLabels, setShowPanelLabels] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Get the correct image based on active view
+  const getVehicleImage = () => {
+    switch (activeView) {
+      case 'front': return vehicleFrontView;
+      case 'back': return vehicleBackView;
+      case 'top': return vehicleTopView;
+      case 'side': return vehicleSideView;
+      default: return vehicleFrontView;
+    }
+  };
 
   const handleImageClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     if (readOnly) return;
@@ -200,10 +233,12 @@ export const ProfessionalVehicleInspectionDiagram: React.FC<ProfessionalVehicleI
       <CardContent className="space-y-4">
         {/* View Controls */}
         <div className="flex justify-between items-center">
-          <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'top' | 'side')}>
+          <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'front' | 'back' | 'top' | 'side')}>
             <TabsList>
-              <TabsTrigger value="top">Top View</TabsTrigger>
-              <TabsTrigger value="side">Side View</TabsTrigger>
+              <TabsTrigger value="front">Front</TabsTrigger>
+              <TabsTrigger value="back">Back</TabsTrigger>
+              <TabsTrigger value="top">Top</TabsTrigger>
+              <TabsTrigger value="side">Side</TabsTrigger>
             </TabsList>
           </Tabs>
           
@@ -251,8 +286,8 @@ export const ProfessionalVehicleInspectionDiagram: React.FC<ProfessionalVehicleI
           >
             {/* Vehicle Diagram Background */}
             <img 
-              src={vehicleInspectionDiagram}
-              alt="Vehicle Inspection Diagram"
+              src={getVehicleImage()}
+              alt={`Vehicle ${activeView} View`}
               className="w-full h-full object-contain"
               draggable={false}
             />
@@ -313,7 +348,7 @@ export const ProfessionalVehicleInspectionDiagram: React.FC<ProfessionalVehicleI
         {!readOnly && (
           <div className="text-sm text-muted-foreground p-3 bg-blue-50 rounded-lg border border-blue-200">
             <strong>Instructions:</strong> Click anywhere on the vehicle diagram to mark damage areas. 
-            Switch between Top and Side views to mark damage from different perspectives. 
+            Switch between Front, Back, Top, and Side views to mark damage from all perspectives. 
             Use the zoom controls for precision marking.
           </div>
         )}
