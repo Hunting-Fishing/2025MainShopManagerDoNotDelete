@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -11,22 +11,12 @@ import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
 interface ServicesSectionProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
+  onServicesChange?: (services: SelectedService[]) => void;
 }
 
-export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
+export const ServicesSection: React.FC<ServicesSectionProps> = ({ form, onServicesChange }) => {
   const { sectors, loading, error } = useServiceSectors();
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
-
-  // Update form description when services change
-  useEffect(() => {
-    if (selectedServices.length > 0) {
-      const serviceDescriptions = selectedServices.map(service => 
-        `${service.categoryName} - ${service.subcategoryName} - ${service.name}`
-      );
-      const newDescription = serviceDescriptions.join('\n');
-      form.setValue("description", newDescription);
-    }
-  }, [selectedServices, form]);
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     console.log('Service selected:', service.name);
@@ -38,6 +28,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
 
   const handleUpdateServices = (services: SelectedService[]) => {
     setSelectedServices(services);
+    // Pass selected services to parent component to create job lines
+    if (onServicesChange) {
+      onServicesChange(services);
+    }
   };
 
   return (
@@ -51,14 +45,13 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Service Description</FormLabel>
+            <FormLabel>Customer Complaint</FormLabel>
             <FormControl>
               <textarea
                 {...field}
-                placeholder="Services will be automatically populated as you select them..."
+                placeholder="Enter the customer's complaint or issue description here..."
                 className="w-full p-3 border border-gray-300 rounded-md min-h-[100px]"
                 rows={4}
-                readOnly
               />
             </FormControl>
             <FormMessage />

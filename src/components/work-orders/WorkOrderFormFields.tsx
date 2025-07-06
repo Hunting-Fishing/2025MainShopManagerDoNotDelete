@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFields } from "./form-fields/CustomerFields";
 import { ServicesSection } from "./form-fields/ServicesSection";
@@ -9,6 +9,7 @@ import { NotesField } from "./form-fields/NotesField";
 import { JobLinesSection } from "./form-fields/JobLinesSection";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { WorkOrderJobLine } from "@/types/jobLine";
+import { SelectedService } from "@/types/selectedService";
 
 interface Technician {
   id: string;
@@ -52,6 +53,36 @@ export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
   prePopulatedCustomer
 }) => {
   const description = form.watch('description');
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  const [serviceJobLines, setServiceJobLines] = useState<WorkOrderJobLine[]>([]);
+
+  // Convert selected services to job lines
+  const handleServicesChange = (services: SelectedService[]) => {
+    setSelectedServices(services);
+    
+    // Convert services to job lines format
+    const newJobLines: WorkOrderJobLine[] = services.map(service => ({
+      id: service.id,
+      work_order_id: workOrderId,
+      name: service.name,
+      description: service.description || '',
+      category: service.category,
+      subcategory: service.subcategory,
+      estimated_hours: service.estimated_hours,
+      labor_rate: service.labor_rate,
+      total_amount: service.total_amount,
+      status: service.status,
+      notes: '',
+      display_order: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+    
+    setServiceJobLines(newJobLines);
+  };
+
+  // Combine service-generated job lines with manually added ones
+  const allJobLines = [...serviceJobLines, ...jobLines];
 
   // Create a wrapper function that matches the expected signature
   const handleJobLinesChange = async () => {
@@ -63,19 +94,18 @@ export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
   return (
     <div className="space-y-6">
       <CustomerFields form={form} prePopulatedCustomer={prePopulatedCustomer} />
-      <ServicesSection form={form} />
+      <ServicesSection form={form} onServicesChange={handleServicesChange} />
       
-      {/* Job Lines Section - Only show if description is provided */}
-      {description && onJobLinesChange && (
-        <JobLinesSection
-          workOrderId={workOrderId}
-          description={description}
-          jobLines={jobLines}
-          onJobLinesChange={handleJobLinesChange}
-          isEditMode={true}
-          shopId={shopId}
-        />
-      )}
+      {/* Job Lines Section - Show selected services as job lines */}
+      <JobLinesSection
+        workOrderId={workOrderId}
+        description={description}
+        jobLines={allJobLines}
+        onJobLinesChange={handleJobLinesChange}
+        isEditMode={true}
+        shopId={shopId}
+        selectedServicesCount={selectedServices.length}
+      />
       
       <StatusFields form={form} />
       <AssignmentFields 

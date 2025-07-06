@@ -15,6 +15,7 @@ interface JobLinesSectionProps {
   onJobLinesChange: () => Promise<void>;
   isEditMode: boolean;
   shopId?: string;
+  selectedServicesCount?: number;
 }
 
 export function JobLinesSection({
@@ -23,7 +24,8 @@ export function JobLinesSection({
   jobLines,
   onJobLinesChange,
   isEditMode,
-  shopId
+  shopId,
+  selectedServicesCount = 0
 }: JobLinesSectionProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
@@ -54,7 +56,14 @@ export function JobLinesSection({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="text-lg font-semibold">Labor & Services</CardTitle>
+        <CardTitle className="text-lg font-semibold">
+          Labor & Services
+          {selectedServicesCount > 0 && (
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              ({selectedServicesCount} from service selection + {jobLines.length - selectedServicesCount} manual)
+            </span>
+          )}
+        </CardTitle>
         {isEditMode && (
           <Button
             onClick={handleAddJobLine}
@@ -62,7 +71,7 @@ export function JobLinesSection({
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            Add Job Line
+            Add Manual Job Line
           </Button>
         )}
       </CardHeader>
@@ -78,7 +87,7 @@ export function JobLinesSection({
         ) : (
           <div className="text-center py-8 text-gray-500">
             {isEditMode ? 
-              "No job lines added yet. Click 'Add Job Line' to get started." :
+              "No services selected and no manual job lines added yet. Select services above or click 'Add Manual Job Line' to get started." :
               "No job lines configured for this work order."
             }
           </div>
