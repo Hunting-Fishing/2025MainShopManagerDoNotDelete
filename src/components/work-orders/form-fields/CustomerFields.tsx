@@ -9,6 +9,7 @@ import { User, Car, Plus } from "lucide-react";
 import { CustomerSelect } from "../customer-select/CustomerSelect";
 import { VehicleSelect } from "../customer-select/VehicleSelect";
 import { QuickAddVehicleDialog } from "../vehicle/QuickAddVehicleDialog";
+import { VehicleInfoDisplay } from "./VehicleInfoDisplay";
 import { Customer, CustomerVehicle } from "@/types/customer";
 import { useSearchParams } from "react-router-dom";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
@@ -295,6 +296,11 @@ export const CustomerFields: React.FC<CustomerFieldsProps> = ({
                 </span>
               </p>
             </div>
+          )}
+
+          {/* Display comprehensive vehicle information when a vehicle is selected */}
+          {selectedVehicle && !showManualVehicleEntry && (
+            <VehicleInfoDisplay vehicle={selectedVehicle} />
           )}
 
           {/* Manual Vehicle Entry or when no customer selected */}
