@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { Clock, AlertTriangle, User, Car, FileText, Tag, Phone, DollarSign, CheckCircle2 } from "lucide-react";
+import { InteractiveVehicleDamageSelector, DamageArea } from "../vehicle/InteractiveVehicleDamageSelector";
 
 interface ExpandedIntakeFormProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -76,6 +77,7 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
   const [selectedRequestedServices, setSelectedRequestedServices] = useState<string[]>(
     form.getValues("requestedServices") || []
   );
+  const [vehicleDamages, setVehicleDamages] = useState<DamageArea[]>([]);
 
   // Sync local state with form state changes
   useEffect(() => {
@@ -457,6 +459,18 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Interactive Vehicle Damage Selector */}
+          <InteractiveVehicleDamageSelector
+            bodyStyle="suv"
+            damages={vehicleDamages}
+            onDamagesChange={setVehicleDamages}
+            vehicleInfo={{
+              make: form.watch("vehicleMake") || "Unknown",
+              model: form.watch("vehicleModel") || "Vehicle", 
+              year: form.watch("vehicleYear") || "2023"
+            }}
+          />
+
           <FormField
             control={form.control}
             name="vehicleConditionNotes"
