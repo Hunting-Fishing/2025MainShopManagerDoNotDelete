@@ -2,8 +2,8 @@
 import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { IntegratedServiceSelector } from "@/components/work-orders/fields/services/IntegratedServiceSelector";
+import { EnhancedComplaintForm } from "./EnhancedComplaintForm";
 import { ServiceSector, ServiceJob } from "@/types/service";
 import { SelectedService } from "@/types/selectedService";
 import { useServiceSectors } from "@/hooks/useServiceCategories";
@@ -40,24 +40,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form, onServic
         <h3 className="text-lg font-semibold text-slate-900">Services</h3>
       </div>
 
-      <FormField
-        control={form.control}
-        name="description"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Customer Complaint</FormLabel>
-            <FormControl>
-              <textarea
-                {...field}
-                placeholder="Enter the customer's complaint or issue description here..."
-                className="w-full p-3 border border-gray-300 rounded-md min-h-[100px]"
-                rows={4}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <EnhancedComplaintForm form={form} />
 
       {/* Integrated Service Selector */}
       {loading ? (
