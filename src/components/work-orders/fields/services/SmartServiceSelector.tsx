@@ -172,8 +172,8 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
       {/* Quick Search Results */}
       {isSearching && quickSearchResults.length > 0 && (
         <div className="border-t bg-white">
-          <div className="p-3 border-b bg-gray-50">
-            <h3 className="font-medium text-gray-700">Search Results</h3>
+          <div className="p-4 border-b bg-gradient-to-r from-emerald-50 to-teal-50">
+            <h3 className="font-semibold text-emerald-800">Search Results ({quickSearchResults.length})</h3>
           </div>
           <div className="max-h-96 overflow-y-auto">
             {quickSearchResults.map((result, index) => (
@@ -181,40 +181,53 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
                 key={`${result.service.id}-${index}`}
                 onClick={() => handleServiceClick(result.service, result.categoryName, result.subcategoryName)}
                 disabled={isServiceSelected(result.service.id)}
-                className={`w-full text-left p-4 border-b hover:bg-gray-50 transition-colors ${
+                className={`group w-full text-left p-4 border-b transition-all duration-300 relative overflow-hidden ${
                   isServiceSelected(result.service.id) 
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                    : 'text-gray-800'
+                    ? 'bg-gradient-to-r from-emerald-100 via-emerald-50 to-teal-50 border-l-4 border-l-emerald-500 cursor-not-allowed shadow-lg' 
+                    : 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:shadow-md hover:scale-102 hover:border-l-4 hover:border-l-blue-400 text-gray-800'
                 }`}
               >
+                {isServiceSelected(result.service.id) && (
+                  <>
+                    <div className="absolute top-2 right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white animate-scale-in">
+                      ✓
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 to-teal-400/10 animate-pulse-glow"></div>
+                  </>
+                )}
+                
                 <div className="flex items-center justify-between mb-2">
-                  <div className="font-medium text-lg">{result.service.name}</div>
+                  <div className={`font-semibold text-lg ${isServiceSelected(result.service.id) ? 'text-emerald-800' : 'text-gray-900 group-hover:text-blue-800'}`}>
+                    {result.service.name}
+                  </div>
                   {isServiceSelected(result.service.id) && (
-                    <Badge variant="secondary" className="text-xs">Selected</Badge>
+                    <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-fade-in">
+                      SELECTED
+                    </div>
                   )}
                 </div>
                 
-                <div className="text-sm text-gray-600 mb-2">
-                  {result.sectorName} → {result.categoryName} → {result.subcategoryName}
+                <div className={`text-sm mb-2 font-medium ${isServiceSelected(result.service.id) ? 'text-emerald-700' : 'text-gray-600 group-hover:text-blue-600'}`}>
+                  🏢 {result.sectorName} → 📂 {result.categoryName} → 🔧 {result.subcategoryName}
                 </div>
                 
                 {result.service.description && (
-                  <div className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  <div className={`text-sm mb-3 line-clamp-2 ${isServiceSelected(result.service.id) ? 'text-emerald-600' : 'text-gray-600'}`}>
                     {result.service.description}
                   </div>
                 )}
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   {result.service.estimatedTime && (
-                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${isServiceSelected(result.service.id) ? 'bg-emerald-200 text-emerald-800' : 'bg-blue-100 text-blue-700'}`}>
                       <Clock className="h-3 w-3" />
                       {result.service.estimatedTime} min
                     </div>
                   )}
                   {result.service.price && (
-                    <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold ${isServiceSelected(result.service.id) ? 'bg-emerald-500 text-white' : 'bg-green-500 text-white'}`}>
                       <DollarSign className="h-3 w-3" />
-                      {result.service.price}
+                      ${result.service.price}
                     </div>
                   )}
                 </div>
@@ -356,35 +369,51 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
                 key={service.id}
                 onClick={() => handleServiceClick(service)}
                 disabled={isServiceSelected(service.id)}
-                className={`w-full text-left p-3 transition-colors border-b border-purple-200 ${
+                className={`group w-full text-left p-4 transition-all duration-300 border-b border-purple-200 relative overflow-hidden ${
                   isServiceSelected(service.id)
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'hover:bg-purple-200 text-purple-800'
+                    ? 'bg-gradient-to-r from-purple-200 via-violet-150 to-purple-100 border-l-4 border-l-purple-600 cursor-not-allowed shadow-xl transform scale-105'
+                    : 'hover:bg-gradient-to-r hover:from-purple-100 hover:to-violet-100 hover:shadow-lg hover:scale-102 hover:border-l-4 hover:border-l-purple-400 text-purple-800'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">{service.name}</div>
+                {isServiceSelected(service.id) && (
+                  <>
+                    <div className="absolute top-2 right-2 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg animate-scale-in shadow-lg">
+                      ✓
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-violet-400/20 animate-pulse-glow"></div>
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full animate-ping"></div>
+                  </>
+                )}
+                
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`font-bold text-lg ${isServiceSelected(service.id) ? 'text-purple-900' : 'text-purple-800 group-hover:text-purple-900'}`}>
+                    {service.name}
+                  </div>
                   {isServiceSelected(service.id) && (
-                    <Badge variant="secondary" className="text-xs">
-                      Selected
-                    </Badge>
+                    <div className="bg-gradient-to-r from-purple-600 to-violet-600 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg animate-fade-in">
+                      SELECTED
+                    </div>
                   )}
                 </div>
+                
                 {service.description && (
-                  <div className="text-xs text-purple-600 mt-1 line-clamp-2">
+                  <div className={`text-sm mt-2 mb-3 line-clamp-2 font-medium ${isServiceSelected(service.id) ? 'text-purple-700' : 'text-purple-600'}`}>
                     {service.description}
                   </div>
                 )}
-                <div className="flex items-center gap-2 mt-2">
+                
+                <div className="flex items-center gap-3 mt-3">
                   {service.estimatedTime && (
-                    <Badge variant="outline" className="text-xs text-purple-600 border-purple-300">
+                    <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold ${isServiceSelected(service.id) ? 'bg-purple-600 text-white shadow-md' : 'bg-purple-200 text-purple-800'}`}>
+                      <Clock className="h-3 w-3" />
                       {service.estimatedTime} min
-                    </Badge>
+                    </div>
                   )}
                   {service.price && (
-                    <Badge variant="success" className="text-xs">
+                    <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold ${isServiceSelected(service.id) ? 'bg-green-600 text-white shadow-md' : 'bg-green-500 text-white'}`}>
+                      <DollarSign className="h-3 w-3" />
                       ${service.price}
-                    </Badge>
+                    </div>
                   )}
                 </div>
               </button>

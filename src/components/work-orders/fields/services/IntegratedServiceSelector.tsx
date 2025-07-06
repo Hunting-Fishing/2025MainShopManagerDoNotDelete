@@ -71,28 +71,36 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
       />
 
       {/* Selected Services Summary */}
-      {selectedServices.length > 0 && <Card className="border shadow-sm bg-card rounded">
-          <CardHeader className="bg-card border-b">
-            <CardTitle className="text-sm">Selected Services ({selectedServices.length})</CardTitle>
+      {selectedServices.length > 0 && <Card className="border-2 border-emerald-200 shadow-xl bg-gradient-to-br from-emerald-50 to-teal-50">
+          <CardHeader className="bg-gradient-to-r from-emerald-100 to-teal-100 border-b-2 border-emerald-200">
+            <CardTitle className="text-lg font-bold text-emerald-800 flex items-center gap-2">
+              <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                {selectedServices.length}
+              </div>
+              Selected Services ({selectedServices.length})
+            </CardTitle>
           </CardHeader>
-          <CardContent className="bg-card">
-            <div className="space-y-2">
-              {selectedServices.map(service => <div key={service.id} className="flex items-center justify-between p-2 border rounded-md bg-muted/50">
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{service.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {service.category} › {service.subcategory}
+          <CardContent className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
+            <div className="space-y-3">
+              {selectedServices.map(service => <div key={service.id} className="group flex items-center justify-between p-4 border-2 border-emerald-200 rounded-xl bg-gradient-to-r from-white to-emerald-50 hover:from-emerald-100 hover:to-teal-100 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-102 relative overflow-hidden">
+                  <div className="absolute top-2 right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-sm animate-scale-in">
+                    ✓
+                  </div>
+                  <div className="flex-1 pr-8">
+                    <div className="font-bold text-lg text-emerald-900">{service.name}</div>
+                    <div className="text-sm text-emerald-700 font-medium mt-1">
+                      🏢 {service.category} › 🔧 {service.subcategory}
                     </div>
-                    <div className="flex items-center gap-4 mt-1">
-                      {service.estimatedTime && <span className="text-xs text-muted-foreground">
-                          {service.estimatedTime} min
+                    <div className="flex items-center gap-4 mt-2">
+                      {service.estimatedTime && <span className="bg-emerald-200 text-emerald-800 px-2 py-1 rounded-md text-xs font-bold">
+                          ⏱️ {service.estimatedTime} min
                         </span>}
-                      {service.price && <span className="text-xs font-medium text-green-600">
-                          ${service.price}
+                      {service.price && <span className="bg-green-500 text-white px-2 py-1 rounded-md text-xs font-bold">
+                          💰 ${service.price}
                         </span>}
                     </div>
                   </div>
-                  <button onClick={() => handleRemoveService(service.id)} className="text-destructive hover:text-destructive/80 px-2 py-1 text-lg bg-amber-400 hover:bg-amber-300">
+                  <button onClick={() => handleRemoveService(service.id)} className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                     Remove
                   </button>
                 </div>)}
