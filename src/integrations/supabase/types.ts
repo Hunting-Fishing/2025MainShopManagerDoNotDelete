@@ -9557,6 +9557,7 @@ export type Database = {
           updated_at: string
           urgency_level: string | null
           vehicle_condition_notes: string | null
+          vehicle_damages: Json | null
           vehicle_id: string | null
           work_order_number: string | null
           write_up_by: string | null
@@ -9598,6 +9599,7 @@ export type Database = {
           updated_at?: string
           urgency_level?: string | null
           vehicle_condition_notes?: string | null
+          vehicle_damages?: Json | null
           vehicle_id?: string | null
           work_order_number?: string | null
           write_up_by?: string | null
@@ -9639,6 +9641,7 @@ export type Database = {
           updated_at?: string
           urgency_level?: string | null
           vehicle_condition_notes?: string | null
+          vehicle_damages?: Json | null
           vehicle_id?: string | null
           work_order_number?: string | null
           write_up_by?: string | null
