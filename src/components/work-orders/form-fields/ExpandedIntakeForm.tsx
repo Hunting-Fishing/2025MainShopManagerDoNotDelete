@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { Clock, AlertTriangle, User, Car, FileText, Tag, Phone, DollarSign, CheckCircle2 } from "lucide-react";
-import { InteractiveVehicleDamageSelector, DamageArea } from "../vehicle/InteractiveVehicleDamageSelector";
+import { EnhancedVehicleDamageSelector } from "../vehicle/EnhancedVehicleDamageSelector";
+import { DamageArea } from "../vehicle/InteractiveVehicleDamageSelector";
 
 interface ExpandedIntakeFormProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
