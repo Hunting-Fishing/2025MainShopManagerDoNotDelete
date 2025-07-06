@@ -463,6 +463,8 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
           <EnhancedVehicleDamageAssessment
             damages={vehicleDamages}
             onDamagesChange={setVehicleDamages}
+            vehicleMake={form.watch('vehicleMake') || ''}
+            vehicleModel={form.watch('vehicleModel') || ''}
           />
 
           <FormField

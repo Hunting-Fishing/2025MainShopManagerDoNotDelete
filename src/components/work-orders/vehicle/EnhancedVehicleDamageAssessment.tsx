@@ -25,6 +25,15 @@ import vehicleFrontView from '@/assets/vehicle-front-view.jpg';
 import vehicleBackView from '@/assets/vehicle-back-view.jpg';
 import vehicleTopView from '@/assets/vehicle-top-view.jpg';
 import vehicleSideView from '@/assets/vehicle-side-view.jpg';
+import vehicleSuvFrontView from '@/assets/vehicle-suv-front-view.jpg';
+import vehicleSuvBackView from '@/assets/vehicle-suv-back-view.jpg';
+import vehicleSuvTopView from '@/assets/vehicle-suv-top-view.jpg';
+import vehicleSuvSideView from '@/assets/vehicle-suv-side-view.jpg';
+import vehiclePickupFrontView from '@/assets/vehicle-pickup-front-view.jpg';
+import vehiclePickupBackView from '@/assets/vehicle-pickup-back-view.jpg';
+import vehiclePickupTopView from '@/assets/vehicle-pickup-top-view.jpg';
+import vehiclePickupSideView from '@/assets/vehicle-pickup-side-view.jpg';
+import { getVehicleBodyStyle, getVehicleImages, type VehicleBodyStyle } from '@/utils/vehicle/bodyStyleMapping';
 import { DamageTypeFloatingToolbar } from './DamageTypeSelector';
 import { DamageContextMenu } from './DamageContextMenu';
 import { DamageDetailsPanel } from './DamageDetailsPanel';
@@ -71,13 +80,16 @@ const SEVERITY_STYLES = {
 interface EnhancedVehicleDamageAssessmentProps {
   damages: DamageArea[];
   onDamagesChange: (damages: DamageArea[]) => void;
-  bodyStyle?: string;
+  vehicleMake?: string;
+  vehicleModel?: string;
   readOnly?: boolean;
 }
 
 export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAssessmentProps> = ({
   damages,
   onDamagesChange,
+  vehicleMake = '',
+  vehicleModel = '',
   readOnly = false
 }) => {
   const [activeView, setActiveView] = useState<'front' | 'back' | 'top' | 'side'>('front');
@@ -108,15 +120,64 @@ export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAsse
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Get the correct image based on active view
+  // Get the correct image based on vehicle type and active view
   const getVehicleImage = () => {
-    switch (activeView) {
-      case 'front': return vehicleFrontView;
-      case 'back': return vehicleBackView;
-      case 'top': return vehicleTopView;
-      case 'side': return vehicleSideView;
-      default: return vehicleFrontView;
-    }
+    const bodyStyle = getVehicleBodyStyle(vehicleMake, vehicleModel);
+    
+    // Create image mapping based on body style
+    const imageMap = {
+      sedan: {
+        front: vehicleFrontView,
+        back: vehicleBackView,
+        top: vehicleTopView,
+        side: vehicleSideView,
+      },
+      suv: {
+        front: vehicleSuvFrontView,
+        back: vehicleSuvBackView,
+        top: vehicleSuvTopView,
+        side: vehicleSuvSideView,
+      },
+      pickup: {
+        front: vehiclePickupFrontView,
+        back: vehiclePickupBackView,
+        top: vehiclePickupTopView,
+        side: vehiclePickupSideView,
+      },
+      // Fallback to sedan images for other body styles
+      coupe: {
+        front: vehicleFrontView,
+        back: vehicleBackView,
+        top: vehicleTopView,
+        side: vehicleSideView,
+      },
+      hatchback: {
+        front: vehicleFrontView,
+        back: vehicleBackView,
+        top: vehicleTopView,
+        side: vehicleSideView,
+      },
+      wagon: {
+        front: vehicleFrontView,
+        back: vehicleBackView,
+        top: vehicleTopView,
+        side: vehicleSideView,
+      },
+      convertible: {
+        front: vehicleFrontView,
+        back: vehicleBackView,
+        top: vehicleTopView,
+        side: vehicleSideView,
+      },
+      van: {
+        front: vehicleFrontView,
+        back: vehicleBackView,
+        top: vehicleTopView,
+        side: vehicleSideView,
+      }
+    };
+
+    return imageMap[bodyStyle]?.[activeView] || vehicleFrontView;
   };
 
   // Add damage to history
