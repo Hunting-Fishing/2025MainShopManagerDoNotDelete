@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { Clock, AlertTriangle, User, Car, FileText, Tag, Phone, DollarSign } from "lucide-react";
+import { Clock, AlertTriangle, User, Car, FileText, Tag, Phone, DollarSign, CheckCircle2 } from "lucide-react";
 
 interface ExpandedIntakeFormProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -19,10 +19,42 @@ interface ExpandedIntakeFormProps {
 const complaintSources = ["Customer", "Fleet Manager", "Warranty Claim", "Insurance", "Other"];
 const contactMethods = ["Phone", "Email", "Text", "In-Person"];
 const urgencyLevels = [
-  { value: "Low", label: "Low Priority", color: "bg-green-100 text-green-800", icon: "🟢" },
-  { value: "Normal", label: "Normal Priority", color: "bg-blue-100 text-blue-800", icon: "🔵" },
-  { value: "Urgent", label: "Urgent", color: "bg-orange-100 text-orange-800", icon: "🟠" },
-  { value: "Emergency", label: "Emergency", color: "bg-red-100 text-red-800", icon: "🔴" }
+  { 
+    value: "Low", 
+    label: "Low Priority", 
+    color: "bg-success/20 text-success border-success/30", 
+    icon: "🟢",
+    bgClass: "bg-success/10",
+    textClass: "text-success",
+    borderClass: "border-success/20"
+  },
+  { 
+    value: "Normal", 
+    label: "Normal Priority", 
+    color: "bg-info/20 text-info border-info/30", 
+    icon: "🔵",
+    bgClass: "bg-info/10", 
+    textClass: "text-info",
+    borderClass: "border-info/20"
+  },
+  { 
+    value: "Urgent", 
+    label: "Urgent", 
+    color: "bg-warning/20 text-warning border-warning/30", 
+    icon: "🟠",
+    bgClass: "bg-warning/10",
+    textClass: "text-warning", 
+    borderClass: "border-warning/20"
+  },
+  { 
+    value: "Emergency", 
+    label: "Emergency", 
+    color: "bg-error/20 text-error border-error/30", 
+    icon: "🔴",
+    bgClass: "bg-error/10",
+    textClass: "text-error",
+    borderClass: "border-error/20"
+  }
 ];
 const dropOffTypes = ["Walk-in", "Appointment", "Tow-in", "Night Drop"];
 
@@ -45,6 +77,10 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
     form.getValues("requestedServices") || []
   );
 
+  // Get current urgency level for dynamic styling
+  const currentUrgency = form.watch("urgencyLevel");
+  const urgencyStyle = urgencyLevels.find(level => level.value === currentUrgency);
+
   const handleServiceTagToggle = (tag: string) => {
     const newTags = selectedServiceTags.includes(tag)
       ? selectedServiceTags.filter(t => t !== tag)
@@ -66,11 +102,13 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
   return (
     <div className="space-y-6">
       {/* Basic Intake Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Intake Information
+      <Card className="modern-card hover:shadow-lg transition-all duration-300">
+        <CardHeader className="bg-gradient-subtle rounded-t-xl">
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <span className="font-heading">Intake Information</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -130,24 +168,33 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
               name="urgencyLevel"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Urgency Level</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Urgency Level
+                  </FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className={`${urgencyStyle ? urgencyStyle.color + ' border-2' : ''} transition-all duration-300`}>
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {urgencyLevels.map((level) => (
                         <SelectItem key={level.value} value={level.value}>
-                          <div className="flex items-center gap-2">
-                            <span>{level.icon}</span>
-                            <span>{level.label}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg">{level.icon}</span>
+                            <span className="font-medium">{level.label}</span>
                           </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {urgencyStyle && (
+                    <div className={`flex items-center gap-2 mt-2 px-3 py-2 rounded-lg border ${urgencyStyle.color} transition-all duration-300`}>
+                      <span className="text-sm">{urgencyStyle.icon}</span>
+                      <span className="text-sm font-medium">Current: {urgencyStyle.label}</span>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -201,11 +248,13 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
       </Card>
 
       {/* Customer Communication Preferences */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Phone className="h-5 w-5" />
-            Communication Preferences
+      <Card className="modern-card hover:shadow-lg transition-all duration-300">
+        <CardHeader className="bg-gradient-subtle rounded-t-xl">
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <div className="p-2 rounded-lg bg-info/10">
+              <Phone className="h-5 w-5 text-info" />
+            </div>
+            <span className="font-heading">Communication Preferences</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -255,66 +304,113 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
       </Card>
 
       {/* Requested Services */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Requested Services</CardTitle>
+      <Card className="modern-card hover:shadow-lg transition-all duration-300">
+        <CardHeader className="bg-gradient-subtle rounded-t-xl">
+          <CardTitle className="flex items-center justify-between text-foreground">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+              </div>
+              <span className="font-heading">Requested Services</span>
+            </div>
+            {selectedRequestedServices.length > 0 && (
+              <Badge className="bg-primary/20 text-primary border-primary/30">
+                {selectedRequestedServices.length} selected
+              </Badge>
+            )}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
             <p className="text-sm text-muted-foreground">Select services requested by the customer:</p>
-            <div className="flex flex-wrap gap-2">
-              {commonRequestedServices.map((service) => (
-                <Button
-                  key={service}
-                  type="button"
-                  variant={selectedRequestedServices.includes(service) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleRequestedServiceToggle(service)}
-                  className="text-xs"
-                >
-                  {service}
-                </Button>
-              ))}
+            <div className="flex flex-wrap gap-3">
+              {commonRequestedServices.map((service) => {
+                const isSelected = selectedRequestedServices.includes(service);
+                return (
+                  <Button
+                    key={service}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRequestedServiceToggle(service)}
+                    className={`
+                      relative text-sm font-medium transition-all duration-300 hover:scale-105
+                      ${isSelected 
+                        ? 'bg-primary text-primary-foreground border-primary shadow-lg hover:bg-primary/90' 
+                        : 'bg-background hover:bg-primary/10 hover:border-primary/50 hover:text-primary'
+                      }
+                    `}
+                  >
+                    {isSelected && (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    {service}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Service Tags & Classification */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Tag className="h-5 w-5" />
-            Service Classification
+      <Card className="modern-card hover:shadow-lg transition-all duration-300">
+        <CardHeader className="bg-gradient-subtle rounded-t-xl">
+          <CardTitle className="flex items-center justify-between text-foreground">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-warning/10">
+                <Tag className="h-5 w-5 text-warning" />
+              </div>
+              <span className="font-heading">Service Classification</span>
+            </div>
+            {selectedServiceTags.length > 0 && (
+              <Badge className="bg-warning/20 text-warning border-warning/30">
+                {selectedServiceTags.length} tags
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
             <p className="text-sm text-muted-foreground">Tag this work order by service areas:</p>
-            <div className="flex flex-wrap gap-2">
-              {commonServiceTags.map((tag) => (
-                <Button
-                  key={tag}
-                  type="button"
-                  variant={selectedServiceTags.includes(tag) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleServiceTagToggle(tag)}
-                  className="text-xs"
-                >
-                  {tag}
-                </Button>
-              ))}
+            <div className="flex flex-wrap gap-3">
+              {commonServiceTags.map((tag) => {
+                const isSelected = selectedServiceTags.includes(tag);
+                return (
+                  <Button
+                    key={tag}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleServiceTagToggle(tag)}
+                    className={`
+                      relative text-sm font-medium transition-all duration-300 hover:scale-105
+                      ${isSelected 
+                        ? 'bg-warning text-warning-foreground border-warning shadow-lg hover:bg-warning/90' 
+                        : 'bg-background hover:bg-warning/10 hover:border-warning/50 hover:text-warning'
+                      }
+                    `}
+                  >
+                    {isSelected && (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    {tag}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Vehicle Condition & Additional Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Car className="h-5 w-5" />
-            Vehicle Condition & Notes
+      <Card className="modern-card hover:shadow-lg transition-all duration-300">
+        <CardHeader className="bg-gradient-subtle rounded-t-xl">
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <div className="p-2 rounded-lg bg-success/10">
+              <Car className="h-5 w-5 text-success" />
+            </div>
+            <span className="font-heading">Vehicle Condition & Notes</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -357,11 +453,13 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
       </Card>
 
       {/* Technical Notes & Flags */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Technical Notes & Flags
+      <Card className="modern-card hover:shadow-lg transition-all duration-300">
+        <CardHeader className="bg-gradient-subtle rounded-t-xl">
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <div className="p-2 rounded-lg bg-info/10">
+              <User className="h-5 w-5 text-info" />
+            </div>
+            <span className="font-heading">Technical Notes & Flags</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -388,9 +486,15 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
               control={form.control}
               name="customerWaiting"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <FormItem className={`
+                  flex flex-row items-center justify-between rounded-lg border-2 p-4 transition-all duration-300
+                  ${field.value ? 'bg-warning/10 border-warning/30' : 'border-border hover:border-primary/30'}
+                `}>
                   <div className="space-y-0.5">
-                    <FormLabel>Customer Waiting</FormLabel>
+                    <FormLabel className="flex items-center gap-2 font-medium">
+                      <Clock className="h-4 w-4" />
+                      Customer Waiting
+                    </FormLabel>
                     <div className="text-xs text-muted-foreground">
                       Customer is waiting onsite
                     </div>
@@ -409,9 +513,15 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
               control={form.control}
               name="isWarranty"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <FormItem className={`
+                  flex flex-row items-center justify-between rounded-lg border-2 p-4 transition-all duration-300
+                  ${field.value ? 'bg-info/10 border-info/30' : 'border-border hover:border-primary/30'}
+                `}>
                   <div className="space-y-0.5">
-                    <FormLabel>Warranty Work</FormLabel>
+                    <FormLabel className="flex items-center gap-2 font-medium">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Warranty Work
+                    </FormLabel>
                     <div className="text-xs text-muted-foreground">
                       This is warranty-related
                     </div>
@@ -430,9 +540,15 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
               control={form.control}
               name="isRepeatIssue"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <FormItem className={`
+                  flex flex-row items-center justify-between rounded-lg border-2 p-4 transition-all duration-300
+                  ${field.value ? 'bg-error/10 border-error/30' : 'border-border hover:border-primary/30'}
+                `}>
                   <div className="space-y-0.5">
-                    <FormLabel>Repeat Issue</FormLabel>
+                    <FormLabel className="flex items-center gap-2 font-medium">
+                      <AlertTriangle className="h-4 w-4" />
+                      Repeat Issue
+                    </FormLabel>
                     <div className="text-xs text-muted-foreground">
                       This issue occurred before
                     </div>
