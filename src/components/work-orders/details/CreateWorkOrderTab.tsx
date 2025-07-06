@@ -7,6 +7,7 @@ import { Form } from '@/components/ui/form';
 import { WorkOrderFormFields } from '../WorkOrderFormFields';
 import { WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { useToast } from '@/hooks/use-toast';
 
 interface Technician {
   id: string;
@@ -54,9 +55,36 @@ export function CreateWorkOrderTab({
   isEditMode = false
 }: CreateWorkOrderTabProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const onSubmit = async (data: WorkOrderFormSchemaValues) => {
-    if (!onCreateWorkOrder) return;
+    // Check if handler is provided
+    if (!onCreateWorkOrder) {
+      toast({
+        title: "Configuration Error",
+        description: "Work order creation handler is not configured. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate required fields
+    const errors = [];
+    if (!data.customer || data.customer.trim() === '') {
+      errors.push("Customer name is required");
+    }
+    if (!data.description || data.description.trim() === '') {
+      errors.push("Description is required");
+    }
+
+    if (errors.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: errors.join(", "),
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     try {
@@ -68,8 +96,19 @@ export function CreateWorkOrderTab({
       
       console.log('Submitting work order data:', formData);
       await onCreateWorkOrder(formData);
+      
+      toast({
+        title: "Success",
+        description: `Work order ${isEditMode ? 'updated' : 'created'} successfully`,
+        variant: "default",
+      });
     } catch (error) {
       console.error('Error creating work order:', error);
+      toast({
+        title: "Error",
+        description: `Failed to ${isEditMode ? 'update' : 'create'} work order. Please try again.`,
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
