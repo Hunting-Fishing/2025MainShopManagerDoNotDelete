@@ -62,7 +62,7 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
     
     const params = new URLSearchParams({
       customerId: customer.id,
-      customer: customerName,
+      customerName: customerName,
       customerEmail: customer.email || '',
       customerPhone: customer.phone || '',
       customerAddress: customer.address || '',
