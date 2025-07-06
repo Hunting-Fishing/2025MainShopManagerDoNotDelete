@@ -5,6 +5,7 @@ import { SelectedService } from '@/types/selectedService';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useServiceSearch } from '@/hooks/useServiceSearch';
+import { AddSectorDialog } from './AddSectorDialog';
 import { AddCategoryDialog } from './AddCategoryDialog';
 import { AddSubcategoryDialog } from './AddSubcategoryDialog';
 import { AddServiceDialog } from './AddServiceDialog';
@@ -31,6 +32,7 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
   const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
   
   // Dialog states
+  const [showAddSectorDialog, setShowAddSectorDialog] = useState(false);
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
   const [showAddSubcategoryDialog, setShowAddSubcategoryDialog] = useState(false);
   const [showAddServiceDialog, setShowAddServiceDialog] = useState(false);
@@ -249,20 +251,18 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
             ))}
           </div>
           
-          {/* Add Category Button */}
-          {selectedSector && (
-            <div className="p-2 border-t border-slate-200">
-              <Button
-                onClick={() => setShowAddCategoryDialog(true)}
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-slate-600 hover:text-slate-800 hover:bg-slate-100"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Category
-              </Button>
-            </div>
-          )}
+          {/* Add Sector Button */}
+          <div className="p-2 border-t border-slate-200">
+            <Button
+              onClick={() => setShowAddSectorDialog(true)}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Sector
+            </Button>
+          </div>
         </div>
 
         {/* Categories Column */}
@@ -289,17 +289,17 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
             ))}
           </div>
           
-          {/* Add Subcategory Button */}
-          {selectedCategory && (
+          {/* Add Category Button */}
+          {selectedSector && (
             <div className="p-2 border-t border-emerald-200">
               <Button
-                onClick={() => setShowAddSubcategoryDialog(true)}
+                onClick={() => setShowAddCategoryDialog(true)}
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start text-emerald-600 hover:text-emerald-800 hover:bg-emerald-100"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add New Subcategory
+                Add New Category
               </Button>
             </div>
           )}
@@ -329,17 +329,17 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
             ))}
           </div>
           
-          {/* Add Service Button for Subcategory */}
-          {selectedSubcategory && (
+          {/* Add Subcategory Button */}
+          {selectedCategory && (
             <div className="p-2 border-t border-amber-200">
               <Button
-                onClick={() => setShowAddServiceDialog(true)}
+                onClick={() => setShowAddSubcategoryDialog(true)}
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start text-amber-600 hover:text-amber-800 hover:bg-amber-100"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add New Service
+                Add New Subcategory
               </Button>
             </div>
           )}
@@ -390,11 +390,32 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
               </button>
             ))}
           </div>
+          
+          {/* Add Service Button */}
+          {selectedSubcategory && (
+            <div className="p-2 border-t border-purple-200">
+              <Button
+                onClick={() => setShowAddServiceDialog(true)}
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-purple-600 hover:text-purple-800 hover:bg-purple-100"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Service
+              </Button>
+            </div>
+          )}
         </div>
       </div>
       )}
 
       {/* Dialog Components */}
+      <AddSectorDialog
+        open={showAddSectorDialog}
+        onOpenChange={setShowAddSectorDialog}
+        onSuccess={handleDataRefresh}
+      />
+      
       {selectedSector && (
         <AddCategoryDialog
           open={showAddCategoryDialog}
