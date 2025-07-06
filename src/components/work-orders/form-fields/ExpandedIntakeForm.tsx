@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { Clock, AlertTriangle, User, Car, FileText, Tag, Phone, DollarSign, CheckCircle2 } from "lucide-react";
-import { ProfessionalVehicleInspectionDiagram, DamageArea } from "../vehicle/ProfessionalVehicleInspectionDiagram";
+import { EnhancedVehicleDamageAssessment, DamageArea } from "../vehicle/EnhancedVehicleDamageAssessment";
 
 interface ExpandedIntakeFormProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -460,7 +460,7 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Interactive Vehicle Damage Selector */}
-          <ProfessionalVehicleInspectionDiagram
+          <EnhancedVehicleDamageAssessment
             damages={vehicleDamages}
             onDamagesChange={setVehicleDamages}
           />
