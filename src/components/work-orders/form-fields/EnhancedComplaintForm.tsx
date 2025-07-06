@@ -87,12 +87,12 @@ export const EnhancedComplaintForm: React.FC<EnhancedComplaintFormProps> = ({ fo
     suspectedCause: ""
   });
 
-  // Parse existing description field on mount
+  // Parse existing customerComplaint field on mount
   useEffect(() => {
-    const currentDescription = form.getValues("description") || "";
+    const currentComplaint = form.getValues("customerComplaint") || "";
     try {
       // Try to parse as JSON first
-      const parsed = JSON.parse(currentDescription);
+      const parsed = JSON.parse(currentComplaint);
       if (parsed && typeof parsed === 'object' && parsed.description !== undefined) {
         setComplaintData(parsed);
         setSelectedSymptomCategory(parsed.symptomCategory || "");
@@ -101,11 +101,11 @@ export const EnhancedComplaintForm: React.FC<EnhancedComplaintFormProps> = ({ fo
         }
       } else {
         // If not JSON, treat as simple description
-        setComplaintData({ ...complaintData, description: currentDescription });
+        setComplaintData({ ...complaintData, description: currentComplaint });
       }
     } catch {
       // If parsing fails, treat as simple description
-      setComplaintData({ ...complaintData, description: currentDescription });
+      setComplaintData({ ...complaintData, description: currentComplaint });
     }
   }, []);
 
@@ -117,10 +117,10 @@ export const EnhancedComplaintForm: React.FC<EnhancedComplaintFormProps> = ({ fo
     
     if (hasStructuredData || isExpanded) {
       // Store as JSON when we have structured data
-      form.setValue("description", JSON.stringify(complaintData));
+      form.setValue("customerComplaint", JSON.stringify(complaintData));
     } else {
       // Store as plain text when only basic description
-      form.setValue("description", complaintData.description);
+      form.setValue("customerComplaint", complaintData.description);
     }
   }, [complaintData, isExpanded, form]);
 

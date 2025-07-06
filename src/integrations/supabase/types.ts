@@ -9522,69 +9522,136 @@ export type Database = {
       }
       work_orders: {
         Row: {
+          additional_info: string | null
           advisor_id: string | null
+          attachments: Json | null
+          authorization_limit: number | null
+          complaint_source: string | null
           created_at: string
           created_by: string | null
+          customer_complaint: string | null
           customer_id: string | null
+          customer_instructions: string | null
+          customer_waiting: boolean | null
           description: string | null
+          diagnostic_notes: string | null
+          drop_off_type: string | null
           end_time: string | null
           estimated_hours: number | null
           id: string
+          initial_mileage: number | null
           invoice_id: string | null
           invoiced_at: string | null
+          is_repeat_issue: boolean | null
+          is_warranty: boolean | null
+          linked_prior_work_order_id: string | null
+          preferred_contact_method: string | null
+          requested_services: Json | null
           service_category_id: string | null
+          service_tags: string[] | null
           service_type: string | null
           start_time: string | null
           status: string
           technician_id: string | null
           total_cost: number | null
           updated_at: string
+          urgency_level: string | null
+          vehicle_condition_notes: string | null
           vehicle_id: string | null
           work_order_number: string | null
+          write_up_by: string | null
+          write_up_time: string | null
         }
         Insert: {
+          additional_info?: string | null
           advisor_id?: string | null
+          attachments?: Json | null
+          authorization_limit?: number | null
+          complaint_source?: string | null
           created_at?: string
           created_by?: string | null
+          customer_complaint?: string | null
           customer_id?: string | null
+          customer_instructions?: string | null
+          customer_waiting?: boolean | null
           description?: string | null
+          diagnostic_notes?: string | null
+          drop_off_type?: string | null
           end_time?: string | null
           estimated_hours?: number | null
           id?: string
+          initial_mileage?: number | null
           invoice_id?: string | null
           invoiced_at?: string | null
+          is_repeat_issue?: boolean | null
+          is_warranty?: boolean | null
+          linked_prior_work_order_id?: string | null
+          preferred_contact_method?: string | null
+          requested_services?: Json | null
           service_category_id?: string | null
+          service_tags?: string[] | null
           service_type?: string | null
           start_time?: string | null
           status: string
           technician_id?: string | null
           total_cost?: number | null
           updated_at?: string
+          urgency_level?: string | null
+          vehicle_condition_notes?: string | null
           vehicle_id?: string | null
           work_order_number?: string | null
+          write_up_by?: string | null
+          write_up_time?: string | null
         }
         Update: {
+          additional_info?: string | null
           advisor_id?: string | null
+          attachments?: Json | null
+          authorization_limit?: number | null
+          complaint_source?: string | null
           created_at?: string
           created_by?: string | null
+          customer_complaint?: string | null
           customer_id?: string | null
+          customer_instructions?: string | null
+          customer_waiting?: boolean | null
           description?: string | null
+          diagnostic_notes?: string | null
+          drop_off_type?: string | null
           end_time?: string | null
           estimated_hours?: number | null
           id?: string
+          initial_mileage?: number | null
           invoice_id?: string | null
           invoiced_at?: string | null
+          is_repeat_issue?: boolean | null
+          is_warranty?: boolean | null
+          linked_prior_work_order_id?: string | null
+          preferred_contact_method?: string | null
+          requested_services?: Json | null
           service_category_id?: string | null
+          service_tags?: string[] | null
           service_type?: string | null
           start_time?: string | null
           status?: string
           technician_id?: string | null
           total_cost?: number | null
           updated_at?: string
+          urgency_level?: string | null
+          vehicle_condition_notes?: string | null
           vehicle_id?: string | null
           work_order_number?: string | null
+          write_up_by?: string | null
+          write_up_time?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_linked_prior_work_order"
+            columns: ["linked_prior_work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_work_orders_advisor"
             columns: ["advisor_id"]

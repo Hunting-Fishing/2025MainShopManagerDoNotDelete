@@ -54,6 +54,28 @@ export const workOrderFormSchema = z.object({
   // Additional information
   notes: z.string().optional(),
   
+  // Expanded intake fields
+  customerComplaint: z.string().optional(),
+  complaintSource: z.enum(["Customer", "Fleet Manager", "Warranty Claim", "Insurance", "Other"]).default("Customer"),
+  additionalInfo: z.string().optional(),
+  requestedServices: z.array(z.string()).default([]),
+  customerInstructions: z.string().optional(),
+  authorizationLimit: z.number().default(0),
+  preferredContactMethod: z.enum(["Phone", "Email", "Text", "In-Person"]).default("Phone"),
+  urgencyLevel: z.enum(["Low", "Normal", "Urgent", "Emergency"]).default("Normal"),
+  dropOffType: z.enum(["Walk-in", "Appointment", "Tow-in", "Night Drop"]).default("Walk-in"),
+  diagnosticNotes: z.string().optional(),
+  writeUpBy: z.string().optional(),
+  writeUpTime: z.string().optional(),
+  initialMileage: z.number().optional(),
+  vehicleConditionNotes: z.string().optional(),
+  attachments: z.array(z.string()).default([]),
+  serviceTags: z.array(z.string()).default([]),
+  customerWaiting: z.boolean().default(false),
+  isWarranty: z.boolean().default(false),
+  isRepeatIssue: z.boolean().default(false),
+  linkedPriorWorkOrderId: z.string().optional(),
+  
   // Inventory items - properly typed
   inventoryItems: z.array(z.object({
     id: z.string(),

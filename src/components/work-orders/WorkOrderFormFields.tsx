@@ -7,9 +7,11 @@ import { StatusFields } from "./form-fields/StatusFields";
 import { AssignmentFields } from "./form-fields/AssignmentFields";
 import { NotesField } from "./form-fields/NotesField";
 import { JobLinesSection } from "./form-fields/JobLinesSection";
+import { ExpandedIntakeForm } from "./form-fields/ExpandedIntakeForm";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { WorkOrderJobLine } from "@/types/jobLine";
 import { SelectedService } from "@/types/selectedService";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Technician {
   id: string;
@@ -92,29 +94,47 @@ export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <CustomerFields form={form} prePopulatedCustomer={prePopulatedCustomer} />
-      <ServicesSection form={form} onServicesChange={handleServicesChange} />
-      
-      {/* Job Lines Section - Show selected services as job lines */}
-      <JobLinesSection
-        workOrderId={workOrderId}
-        description={description}
-        jobLines={allJobLines}
-        onJobLinesChange={handleJobLinesChange}
-        isEditMode={true}
-        shopId={shopId}
-        selectedServicesCount={selectedServices.length}
-      />
-      
-      <StatusFields form={form} />
-      <AssignmentFields 
-        form={form} 
-        technicians={technicians}
-        technicianLoading={technicianLoading}
-        technicianError={technicianError}
-      />
-      <NotesField form={form} />
-    </div>
+    <Tabs defaultValue="intake" className="w-full">
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="intake">Intake & Details</TabsTrigger>
+        <TabsTrigger value="customer">Customer & Vehicle</TabsTrigger>
+        <TabsTrigger value="services">Services & Labor</TabsTrigger>
+        <TabsTrigger value="assignment">Assignment & Notes</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="intake" className="space-y-6">
+        <ExpandedIntakeForm form={form} />
+      </TabsContent>
+
+      <TabsContent value="customer" className="space-y-6">
+        <CustomerFields form={form} prePopulatedCustomer={prePopulatedCustomer} />
+      </TabsContent>
+
+      <TabsContent value="services" className="space-y-6">
+        <ServicesSection form={form} onServicesChange={handleServicesChange} />
+        
+        {/* Job Lines Section - Show selected services as job lines */}
+        <JobLinesSection
+          workOrderId={workOrderId}
+          description={description}
+          jobLines={allJobLines}
+          onJobLinesChange={handleJobLinesChange}
+          isEditMode={true}
+          shopId={shopId}
+          selectedServicesCount={selectedServices.length}
+        />
+      </TabsContent>
+
+      <TabsContent value="assignment" className="space-y-6">
+        <StatusFields form={form} />
+        <AssignmentFields 
+          form={form} 
+          technicians={technicians}
+          technicianLoading={technicianLoading}
+          technicianError={technicianError}
+        />
+        <NotesField form={form} />
+      </TabsContent>
+    </Tabs>
   );
 };
