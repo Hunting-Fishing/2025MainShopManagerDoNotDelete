@@ -9,13 +9,15 @@ interface IntegratedServiceSelectorProps {
   selectedServices?: SelectedService[];
   onRemoveService?: (serviceId: string) => void;
   onUpdateServices?: (services: SelectedService[]) => void;
+  onDataRefresh?: () => void;
 }
 export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps> = ({
   sectors,
   onServiceSelect,
   selectedServices = [],
   onRemoveService,
-  onUpdateServices
+  onUpdateServices,
+  onDataRefresh
 }) => {
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     // Check if service is already selected
@@ -59,7 +61,14 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
     }
   };
   return <div className="space-y-4 bg-background">
-      <SmartServiceSelector sectors={sectors} onServiceSelect={handleServiceSelect} selectedServices={selectedServices} onRemoveService={handleRemoveService} onUpdateServices={onUpdateServices} />
+      <SmartServiceSelector 
+        sectors={sectors} 
+        onServiceSelect={handleServiceSelect} 
+        selectedServices={selectedServices} 
+        onRemoveService={handleRemoveService} 
+        onUpdateServices={onUpdateServices}
+        onDataRefresh={onDataRefresh}
+      />
 
       {/* Selected Services Summary */}
       {selectedServices.length > 0 && <Card className="border shadow-sm bg-card rounded">

@@ -89,6 +89,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
           selectedServices={selectedServices}
           onRemoveService={handleRemoveService}
           onUpdateServices={handleUpdateServices}
+          onDataRefresh={() => window.location.reload()}
         />
       ) : (
         <div className="text-center py-8 border rounded-md bg-gray-50">

@@ -1,9 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X, Clock, DollarSign } from 'lucide-react';
+import { Search, X, Clock, DollarSign, Plus } from 'lucide-react';
 import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useServiceSearch } from '@/hooks/useServiceSearch';
+import { AddCategoryDialog } from './AddCategoryDialog';
+import { AddSubcategoryDialog } from './AddSubcategoryDialog';
+import { AddServiceDialog } from './AddServiceDialog';
 
 interface SmartServiceSelectorProps {
   sectors: ServiceSector[];
@@ -11,6 +15,7 @@ interface SmartServiceSelectorProps {
   selectedServices?: SelectedService[];
   onRemoveService?: (serviceId: string) => void;
   onUpdateServices?: (services: SelectedService[]) => void;
+  onDataRefresh?: () => void;
 }
 
 export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
@@ -18,11 +23,17 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
   onServiceSelect,
   selectedServices = [],
   onRemoveService,
-  onUpdateServices
+  onUpdateServices,
+  onDataRefresh
 }) => {
   const [selectedSector, setSelectedSector] = useState<ServiceSector | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
+  
+  // Dialog states
+  const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  const [showAddSubcategoryDialog, setShowAddSubcategoryDialog] = useState(false);
+  const [showAddServiceDialog, setShowAddServiceDialog] = useState(false);
 
   // Convert sectors to categories for the search hook
   const allCategories = useMemo(() => {
@@ -114,6 +125,12 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
 
   const isServiceSelected = (serviceId: string) => {
     return selectedServices.some(s => s.serviceId === serviceId || s.id === serviceId);
+  };
+
+  const handleDataRefresh = () => {
+    if (onDataRefresh) {
+      onDataRefresh();
+    }
   };
 
   return (
@@ -231,6 +248,21 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
               </button>
             ))}
           </div>
+          
+          {/* Add Category Button */}
+          {selectedSector && (
+            <div className="p-2 border-t border-slate-200">
+              <Button
+                onClick={() => setShowAddCategoryDialog(true)}
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Category
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Categories Column */}
@@ -256,6 +288,21 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
               </button>
             ))}
           </div>
+          
+          {/* Add Subcategory Button */}
+          {selectedCategory && (
+            <div className="p-2 border-t border-emerald-200">
+              <Button
+                onClick={() => setShowAddSubcategoryDialog(true)}
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-emerald-600 hover:text-emerald-800 hover:bg-emerald-100"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Subcategory
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Subcategories Column */}
@@ -281,6 +328,21 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
               </button>
             ))}
           </div>
+          
+          {/* Add Service Button for Subcategory */}
+          {selectedSubcategory && (
+            <div className="p-2 border-t border-amber-200">
+              <Button
+                onClick={() => setShowAddServiceDialog(true)}
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-amber-600 hover:text-amber-800 hover:bg-amber-100"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Service
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Services Column */}
@@ -330,6 +392,37 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
           </div>
         </div>
       </div>
+      )}
+
+      {/* Dialog Components */}
+      {selectedSector && (
+        <AddCategoryDialog
+          open={showAddCategoryDialog}
+          onOpenChange={setShowAddCategoryDialog}
+          sectorId={selectedSector.id}
+          onSuccess={handleDataRefresh}
+        />
+      )}
+      
+      {selectedCategory && (
+        <AddSubcategoryDialog
+          open={showAddSubcategoryDialog}
+          onOpenChange={setShowAddSubcategoryDialog}
+          categoryId={selectedCategory.id}
+          categoryName={selectedCategory.name}
+          onSuccess={handleDataRefresh}
+        />
+      )}
+      
+      {selectedSubcategory && selectedCategory && (
+        <AddServiceDialog
+          open={showAddServiceDialog}
+          onOpenChange={setShowAddServiceDialog}
+          subcategoryId={selectedSubcategory.id}
+          subcategoryName={selectedSubcategory.name}
+          categoryName={selectedCategory.name}
+          onSuccess={handleDataRefresh}
+        />
       )}
 
       {/* No Search Results Message */}
