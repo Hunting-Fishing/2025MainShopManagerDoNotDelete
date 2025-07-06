@@ -314,23 +314,23 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
       </Card>
 
       {/* Requested Services */}
-      <Card className={`modern-card hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${selectedRequestedServices.length > 0 ? 'ring-4 ring-primary/20 bg-gradient-to-br from-primary/5 to-blue-50 border-primary/30' : ''}`}>
-        <CardHeader className={`${selectedRequestedServices.length > 0 ? 'bg-gradient-to-r from-primary/20 to-blue-100' : 'bg-gradient-subtle'} rounded-t-xl`}>
+      <Card className={`modern-card hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${selectedRequestedServices.length > 0 ? 'ring-8 ring-info/50 bg-gradient-to-br from-info/10 to-success/10 border-info shadow-2xl animate-pulse' : 'hover:ring-4 hover:ring-info/20'}`}>
+        <CardHeader className={`${selectedRequestedServices.length > 0 ? 'bg-gradient-to-r from-info/30 to-success/30 shadow-inner animate-pulse' : 'bg-gradient-subtle'} rounded-t-xl transition-all duration-500`}>
           <CardTitle className="flex items-center justify-between text-foreground">
             <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl ${selectedRequestedServices.length > 0 ? 'bg-primary text-white shadow-lg animate-pulse' : 'bg-primary/10'} transition-all duration-500`}>
-                <CheckCircle2 className={`h-6 w-6 ${selectedRequestedServices.length > 0 ? 'text-white' : 'text-primary'}`} />
+              <div className={`p-4 rounded-xl ${selectedRequestedServices.length > 0 ? 'bg-gradient-to-r from-info to-success text-white shadow-2xl animate-bounce ring-4 ring-white/30' : 'bg-info/10'} transition-all duration-700 hover:scale-110`}>
+                <CheckCircle2 className={`h-8 w-8 ${selectedRequestedServices.length > 0 ? 'text-white animate-pulse' : 'text-info'} transition-all duration-500`} />
               </div>
               <div>
-                <span className="font-heading text-lg">Requested Services</span>
+                <span className="font-heading text-2xl font-black">Requested Services</span>
                 {selectedRequestedServices.length > 0 && (
-                  <p className="text-sm text-primary font-medium">Services have been selected ✓</p>
+                  <p className="text-lg text-success font-black animate-pulse">✓ SERVICES SELECTED!</p>
                 )}
               </div>
             </div>
             {selectedRequestedServices.length > 0 && (
-              <Badge className="bg-gradient-to-r from-primary to-blue-600 text-white border-none shadow-lg animate-bounce px-4 py-2 text-base font-bold">
-                {selectedRequestedServices.length} selected
+              <Badge className="bg-gradient-to-r from-info to-success text-white border-none shadow-2xl animate-bounce px-6 py-3 text-xl font-black ring-4 ring-white/50 hover:scale-110 transition-all duration-500">
+                🎯 {selectedRequestedServices.length} SERVICES
               </Badge>
             )}
           </CardTitle>
@@ -349,21 +349,25 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                     size="sm"
                     onClick={() => handleRequestedServiceToggle(service)}
                     className={`
-                      relative text-sm font-semibold transition-all duration-300 hover:scale-105 transform group border-2
+                      relative text-lg font-bold transition-all duration-500 hover:scale-110 transform group border-4 shadow-2xl
                       ${isSelected 
-                        ? 'bg-blue-600 text-white border-blue-700 shadow-xl ring-4 ring-blue-500/30 hover:bg-blue-700 animate-pulse' 
-                        : 'bg-white hover:bg-blue-50 hover:border-blue-500 hover:text-blue-700 border-gray-300 hover:shadow-lg'
+                        ? 'bg-info text-white border-info shadow-glow ring-8 ring-info/40 hover:shadow-2xl animate-pulse hover:animate-bounce hover:bg-info/90' 
+                        : 'bg-card hover:bg-info/10 hover:border-info hover:text-info border-border hover:shadow-xl hover:ring-4 hover:ring-info/20'
                       }
                     `}
                   >
                     {isSelected && (
-                      <CheckCircle2 className="h-4 w-4 mr-2 animate-bounce" />
+                      <CheckCircle2 className="h-6 w-6 mr-3 animate-bounce text-white drop-shadow-lg" />
                     )}
-                    <span className={`${isSelected ? 'font-bold' : ''} group-hover:font-semibold transition-all duration-300`}>
+                    <span className={`${isSelected ? 'font-black text-xl' : 'font-semibold'} group-hover:font-bold transition-all duration-500 uppercase tracking-wider`}>
                       {service}
                     </span>
                     {isSelected && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
+                      <>
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-success rounded-full animate-ping shadow-xl"></div>
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full animate-pulse shadow-lg"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-info/20 to-success/20 rounded-lg animate-pulse"></div>
+                      </>
                     )}
                   </Button>
                 );
@@ -374,23 +378,23 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
       </Card>
 
       {/* Service Tags & Classification */}
-      <Card className={`modern-card hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${selectedServiceTags.length > 0 ? 'ring-4 ring-orange-400/30 bg-gradient-to-br from-orange-50 to-yellow-50 border-orange-300' : ''}`}>
-        <CardHeader className={`${selectedServiceTags.length > 0 ? 'bg-gradient-to-r from-orange-200 to-yellow-200' : 'bg-gradient-subtle'} rounded-t-xl`}>
+      <Card className={`modern-card hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${selectedServiceTags.length > 0 ? 'ring-8 ring-warning/50 bg-gradient-to-br from-warning/10 to-success/10 border-warning shadow-2xl animate-pulse' : 'hover:ring-4 hover:ring-warning/20'}`}>
+        <CardHeader className={`${selectedServiceTags.length > 0 ? 'bg-gradient-to-r from-warning/30 to-success/30 shadow-inner animate-pulse' : 'bg-gradient-subtle'} rounded-t-xl transition-all duration-500`}>
           <CardTitle className="flex items-center justify-between text-foreground">
             <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl ${selectedServiceTags.length > 0 ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-lg animate-pulse' : 'bg-warning/10'} transition-all duration-500`}>
-                <Tag className={`h-6 w-6 ${selectedServiceTags.length > 0 ? 'text-white' : 'text-warning'}`} />
+              <div className={`p-4 rounded-xl ${selectedServiceTags.length > 0 ? 'bg-gradient-to-r from-warning to-success text-white shadow-2xl animate-bounce ring-4 ring-white/30' : 'bg-warning/10'} transition-all duration-700 hover:scale-110`}>
+                <Tag className={`h-8 w-8 ${selectedServiceTags.length > 0 ? 'text-white animate-pulse' : 'text-warning'} transition-all duration-500`} />
               </div>
               <div>
-                <span className="font-heading text-lg">Service Classification</span>
+                <span className="font-heading text-2xl font-black">Service Classification</span>
                 {selectedServiceTags.length > 0 && (
-                  <p className="text-sm text-orange-600 font-medium">Categories have been tagged ✓</p>
+                  <p className="text-lg text-success font-black animate-pulse">✓ CATEGORIES TAGGED!</p>
                 )}
               </div>
             </div>
             {selectedServiceTags.length > 0 && (
-              <Badge className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-none shadow-lg animate-bounce px-4 py-2 text-base font-bold">
-                {selectedServiceTags.length} tags
+              <Badge className="bg-gradient-to-r from-warning to-success text-white border-none shadow-2xl animate-bounce px-6 py-3 text-xl font-black ring-4 ring-white/50 hover:scale-110 transition-all duration-500">
+                🏷️ {selectedServiceTags.length} TAGS
               </Badge>
             )}
           </CardTitle>
@@ -409,21 +413,25 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
                     size="sm"
                     onClick={() => handleServiceTagToggle(tag)}
                     className={`
-                      relative text-sm font-semibold transition-all duration-300 hover:scale-105 transform group border-2
+                      relative text-lg font-bold transition-all duration-500 hover:scale-110 transform group border-4 shadow-2xl
                       ${isSelected 
-                        ? 'bg-orange-500 text-white border-orange-600 shadow-xl ring-4 ring-orange-400/30 hover:bg-orange-600 animate-pulse' 
-                        : 'bg-white hover:bg-orange-50 hover:border-orange-500 hover:text-orange-700 border-gray-300 hover:shadow-lg'
+                        ? 'bg-warning text-white border-warning shadow-glow ring-8 ring-warning/40 hover:shadow-2xl animate-pulse hover:animate-bounce hover:bg-warning/90' 
+                        : 'bg-card hover:bg-warning/10 hover:border-warning hover:text-warning border-border hover:shadow-xl hover:ring-4 hover:ring-warning/20'
                       }
                     `}
                   >
                     {isSelected && (
-                      <CheckCircle2 className="h-4 w-4 mr-2 animate-bounce" />
+                      <CheckCircle2 className="h-6 w-6 mr-3 animate-bounce text-white drop-shadow-lg" />
                     )}
-                    <span className={`${isSelected ? 'font-bold' : ''} group-hover:font-semibold transition-all duration-300`}>
+                    <span className={`${isSelected ? 'font-black text-xl' : 'font-semibold'} group-hover:font-bold transition-all duration-500 uppercase tracking-wider`}>
                       {tag}
                     </span>
                     {isSelected && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+                      <>
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-success rounded-full animate-ping shadow-xl"></div>
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full animate-pulse shadow-lg"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-warning/20 to-success/20 rounded-lg animate-pulse"></div>
+                      </>
                     )}
                   </Button>
                 );
