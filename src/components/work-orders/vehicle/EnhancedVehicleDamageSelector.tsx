@@ -27,6 +27,8 @@ import { DamageDetailsPanel } from "./DamageDetailsPanel";
 
 import { DamageArea } from "./InteractiveVehicleDamageSelector";
 
+export type { DamageArea };
+
 interface EnhancedVehicleDamageSelectorProps {
   bodyStyle: VehicleBodyStyle;
   damages: DamageArea[];
