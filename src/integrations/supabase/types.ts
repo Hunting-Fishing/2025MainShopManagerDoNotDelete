@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_streams: {
+        Row: {
+          account_code: string
+          account_name: string
+          account_type: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          parent_account_id: string | null
+          reporting_category: string | null
+          requires_segregation: boolean | null
+          shop_id: string
+          stream_type: string
+          tax_treatment: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_code: string
+          account_name: string
+          account_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          parent_account_id?: string | null
+          reporting_category?: string | null
+          requires_segregation?: boolean | null
+          shop_id: string
+          stream_type: string
+          tax_treatment?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_code?: string
+          account_name?: string
+          account_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          parent_account_id?: string | null
+          reporting_category?: string | null
+          requires_segregation?: boolean | null
+          shop_id?: string
+          stream_type?: string
+          tax_treatment?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_streams_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appearance_settings: {
         Row: {
           accent_color: string | null
@@ -777,6 +836,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      compliance_requirements: {
+        Row: {
+          applicable_to: string
+          attachments: Json | null
+          auto_renew: boolean | null
+          completion_status: string | null
+          cost_to_comply: number | null
+          created_at: string
+          created_by: string
+          description: string | null
+          documentation_required: string[] | null
+          due_date: string | null
+          frequency: string
+          id: string
+          last_compliance_date: string | null
+          next_due_date: string | null
+          notes: string | null
+          penalties_for_non_compliance: string | null
+          priority_level: string | null
+          requirement_name: string
+          requirement_type: string
+          responsible_person: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          applicable_to: string
+          attachments?: Json | null
+          auto_renew?: boolean | null
+          completion_status?: string | null
+          cost_to_comply?: number | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          documentation_required?: string[] | null
+          due_date?: string | null
+          frequency: string
+          id?: string
+          last_compliance_date?: string | null
+          next_due_date?: string | null
+          notes?: string | null
+          penalties_for_non_compliance?: string | null
+          priority_level?: string | null
+          requirement_name: string
+          requirement_type: string
+          responsible_person?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          applicable_to?: string
+          attachments?: Json | null
+          auto_renew?: boolean | null
+          completion_status?: string | null
+          cost_to_comply?: number | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          documentation_required?: string[] | null
+          due_date?: string | null
+          frequency?: string
+          id?: string
+          last_compliance_date?: string | null
+          next_due_date?: string | null
+          notes?: string | null
+          penalties_for_non_compliance?: string | null
+          priority_level?: string | null
+          requirement_name?: string
+          requirement_type?: string
+          responsible_person?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       conversion_audit: {
         Row: {
@@ -3912,6 +4046,161 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      hybrid_activities: {
+        Row: {
+          activity_name: string
+          activity_type: string
+          beneficiaries_count: number | null
+          compliance_notes: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string | null
+          expenses_for_profit: number | null
+          expenses_non_profit: number | null
+          for_profit_percentage: number | null
+          id: string
+          impact_metrics: Json | null
+          non_profit_percentage: number | null
+          participants_count: number | null
+          revenue_for_profit: number | null
+          revenue_non_profit: number | null
+          shop_id: string
+          start_date: string
+          status: string
+          updated_at: string
+          volunteer_hours: number | null
+        }
+        Insert: {
+          activity_name: string
+          activity_type: string
+          beneficiaries_count?: number | null
+          compliance_notes?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date?: string | null
+          expenses_for_profit?: number | null
+          expenses_non_profit?: number | null
+          for_profit_percentage?: number | null
+          id?: string
+          impact_metrics?: Json | null
+          non_profit_percentage?: number | null
+          participants_count?: number | null
+          revenue_for_profit?: number | null
+          revenue_non_profit?: number | null
+          shop_id: string
+          start_date: string
+          status?: string
+          updated_at?: string
+          volunteer_hours?: number | null
+        }
+        Update: {
+          activity_name?: string
+          activity_type?: string
+          beneficiaries_count?: number | null
+          compliance_notes?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string | null
+          expenses_for_profit?: number | null
+          expenses_non_profit?: number | null
+          for_profit_percentage?: number | null
+          id?: string
+          impact_metrics?: Json | null
+          non_profit_percentage?: number | null
+          participants_count?: number | null
+          revenue_for_profit?: number | null
+          revenue_non_profit?: number | null
+          shop_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          volunteer_hours?: number | null
+        }
+        Relationships: []
+      }
+      impact_measurements: {
+        Row: {
+          baseline_date: string | null
+          baseline_value: number | null
+          category: string
+          created_at: string
+          created_by: string
+          current_value: number | null
+          data_source: string | null
+          id: string
+          is_active: boolean | null
+          last_measured_date: string | null
+          measurement_name: string
+          measurement_period: string | null
+          measurement_type: string
+          next_measurement_date: string | null
+          notes: string | null
+          related_activity_id: string | null
+          shop_id: string
+          target_value: number | null
+          unit_of_measure: string | null
+          updated_at: string
+          verification_method: string | null
+        }
+        Insert: {
+          baseline_date?: string | null
+          baseline_value?: number | null
+          category: string
+          created_at?: string
+          created_by: string
+          current_value?: number | null
+          data_source?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_measured_date?: string | null
+          measurement_name: string
+          measurement_period?: string | null
+          measurement_type: string
+          next_measurement_date?: string | null
+          notes?: string | null
+          related_activity_id?: string | null
+          shop_id: string
+          target_value?: number | null
+          unit_of_measure?: string | null
+          updated_at?: string
+          verification_method?: string | null
+        }
+        Update: {
+          baseline_date?: string | null
+          baseline_value?: number | null
+          category?: string
+          created_at?: string
+          created_by?: string
+          current_value?: number | null
+          data_source?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_measured_date?: string | null
+          measurement_name?: string
+          measurement_period?: string | null
+          measurement_type?: string
+          next_measurement_date?: string | null
+          notes?: string | null
+          related_activity_id?: string | null
+          shop_id?: string
+          target_value?: number | null
+          unit_of_measure?: string | null
+          updated_at?: string
+          verification_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impact_measurements_related_activity_id_fkey"
+            columns: ["related_activity_id"]
+            isOneToOne: false
+            referencedRelation: "hybrid_activities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       integration_settings: {
         Row: {
@@ -8598,6 +8887,63 @@ export type Database = {
         }
         Relationships: []
       }
+      transaction_allocations: {
+        Row: {
+          allocated_by: string
+          allocation_basis: string | null
+          allocation_date: string | null
+          allocation_method: string
+          allocation_percentage_nonprofit: number | null
+          allocation_percentage_profit: number | null
+          created_at: string
+          for_profit_amount: number | null
+          id: string
+          is_final: boolean | null
+          non_profit_amount: number | null
+          notes: string | null
+          shop_id: string
+          transaction_id: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          allocated_by: string
+          allocation_basis?: string | null
+          allocation_date?: string | null
+          allocation_method: string
+          allocation_percentage_nonprofit?: number | null
+          allocation_percentage_profit?: number | null
+          created_at?: string
+          for_profit_amount?: number | null
+          id?: string
+          is_final?: boolean | null
+          non_profit_amount?: number | null
+          notes?: string | null
+          shop_id: string
+          transaction_id: string
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          allocated_by?: string
+          allocation_basis?: string | null
+          allocation_date?: string | null
+          allocation_method?: string
+          allocation_percentage_nonprofit?: number | null
+          allocation_percentage_profit?: number | null
+          created_at?: string
+          for_profit_amount?: number | null
+          id?: string
+          is_final?: boolean | null
+          non_profit_amount?: number | null
+          notes?: string | null
+          shop_id?: string
+          transaction_id?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -10217,6 +10563,13 @@ export type Database = {
       calculate_ab_test_winner: {
         Args: { campaign_id: string; criteria?: string }
         Returns: string
+      }
+      calculate_allocation_percentages: {
+        Args: { for_profit_amount: number; non_profit_amount: number }
+        Returns: {
+          for_profit_percentage: number
+          non_profit_percentage: number
+        }[]
       }
       calculate_job_line_total_with_discounts: {
         Args: { job_line_id_param: string }
