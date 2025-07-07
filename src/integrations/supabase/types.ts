@@ -73,6 +73,90 @@ export type Database = {
           },
         ]
       }
+      annual_filings: {
+        Row: {
+          actual_cost: number | null
+          auto_reminder: boolean | null
+          confirmation_number: string | null
+          cost_estimate: number | null
+          created_at: string
+          created_by: string
+          due_date: string
+          extended_due_date: string | null
+          filed_date: string | null
+          filing_authority: string
+          filing_name: string
+          filing_number: string | null
+          filing_type: string
+          filing_year: number
+          id: string
+          notes: string | null
+          penalties_for_late_filing: string | null
+          preparer_contact: string | null
+          preparer_name: string | null
+          priority_level: string | null
+          reminder_schedule: Json | null
+          shop_id: string
+          status: string | null
+          supporting_documents: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          auto_reminder?: boolean | null
+          confirmation_number?: string | null
+          cost_estimate?: number | null
+          created_at?: string
+          created_by: string
+          due_date: string
+          extended_due_date?: string | null
+          filed_date?: string | null
+          filing_authority: string
+          filing_name: string
+          filing_number?: string | null
+          filing_type: string
+          filing_year: number
+          id?: string
+          notes?: string | null
+          penalties_for_late_filing?: string | null
+          preparer_contact?: string | null
+          preparer_name?: string | null
+          priority_level?: string | null
+          reminder_schedule?: Json | null
+          shop_id: string
+          status?: string | null
+          supporting_documents?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          auto_reminder?: boolean | null
+          confirmation_number?: string | null
+          cost_estimate?: number | null
+          created_at?: string
+          created_by?: string
+          due_date?: string
+          extended_due_date?: string | null
+          filed_date?: string | null
+          filing_authority?: string
+          filing_name?: string
+          filing_number?: string | null
+          filing_type?: string
+          filing_year?: number
+          id?: string
+          notes?: string | null
+          penalties_for_late_filing?: string | null
+          preparer_contact?: string | null
+          preparer_name?: string | null
+          priority_level?: string | null
+          reminder_schedule?: Json | null
+          shop_id?: string
+          status?: string | null
+          supporting_documents?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       appearance_settings: {
         Row: {
           accent_color: string | null
@@ -188,6 +272,179 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      board_meetings: {
+        Row: {
+          absent_members: string[] | null
+          action_items: Json | null
+          agenda_items: Json | null
+          attendees: string[] | null
+          created_at: string
+          created_by: string
+          id: string
+          is_virtual: boolean | null
+          location: string | null
+          meeting_date: string
+          meeting_minutes: string | null
+          meeting_packet_sent: boolean | null
+          meeting_type: string
+          minutes_approved: boolean | null
+          minutes_approved_date: string | null
+          next_meeting_date: string | null
+          quorum_met: boolean | null
+          shop_id: string
+          updated_at: string
+          votes_taken: Json | null
+        }
+        Insert: {
+          absent_members?: string[] | null
+          action_items?: Json | null
+          agenda_items?: Json | null
+          attendees?: string[] | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_virtual?: boolean | null
+          location?: string | null
+          meeting_date: string
+          meeting_minutes?: string | null
+          meeting_packet_sent?: boolean | null
+          meeting_type: string
+          minutes_approved?: boolean | null
+          minutes_approved_date?: string | null
+          next_meeting_date?: string | null
+          quorum_met?: boolean | null
+          shop_id: string
+          updated_at?: string
+          votes_taken?: Json | null
+        }
+        Update: {
+          absent_members?: string[] | null
+          action_items?: Json | null
+          agenda_items?: Json | null
+          attendees?: string[] | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_virtual?: boolean | null
+          location?: string | null
+          meeting_date?: string
+          meeting_minutes?: string | null
+          meeting_packet_sent?: boolean | null
+          meeting_type?: string
+          minutes_approved?: boolean | null
+          minutes_approved_date?: string | null
+          next_meeting_date?: string | null
+          quorum_met?: boolean | null
+          shop_id?: string
+          updated_at?: string
+          votes_taken?: Json | null
+        }
+        Relationships: []
+      }
+      board_members: {
+        Row: {
+          background_check_date: string | null
+          background_summary: string | null
+          board_packet_preference: string | null
+          committee_memberships: string[] | null
+          compensation_amount: number | null
+          compensation_type: string | null
+          conflicts_of_interest: string | null
+          created_at: string
+          created_by: string
+          customer_id: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          end_date: string | null
+          expertise_areas: string[] | null
+          first_name: string
+          id: string
+          is_active: boolean | null
+          is_voting_member: boolean | null
+          last_name: string
+          orientation_completed: boolean | null
+          orientation_date: string | null
+          phone: string | null
+          position: string
+          position_type: string | null
+          shop_id: string
+          start_date: string
+          term_length: number | null
+          updated_at: string
+        }
+        Insert: {
+          background_check_date?: string | null
+          background_summary?: string | null
+          board_packet_preference?: string | null
+          committee_memberships?: string[] | null
+          compensation_amount?: number | null
+          compensation_type?: string | null
+          conflicts_of_interest?: string | null
+          created_at?: string
+          created_by: string
+          customer_id?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          end_date?: string | null
+          expertise_areas?: string[] | null
+          first_name: string
+          id?: string
+          is_active?: boolean | null
+          is_voting_member?: boolean | null
+          last_name: string
+          orientation_completed?: boolean | null
+          orientation_date?: string | null
+          phone?: string | null
+          position: string
+          position_type?: string | null
+          shop_id: string
+          start_date: string
+          term_length?: number | null
+          updated_at?: string
+        }
+        Update: {
+          background_check_date?: string | null
+          background_summary?: string | null
+          board_packet_preference?: string | null
+          committee_memberships?: string[] | null
+          compensation_amount?: number | null
+          compensation_type?: string | null
+          conflicts_of_interest?: string | null
+          created_at?: string
+          created_by?: string
+          customer_id?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          end_date?: string | null
+          expertise_areas?: string[] | null
+          first_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_voting_member?: boolean | null
+          last_name?: string
+          orientation_completed?: boolean | null
+          orientation_date?: string | null
+          phone?: string | null
+          position?: string
+          position_type?: string | null
+          shop_id?: string
+          start_date?: string
+          term_length?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_members_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       branding_settings: {
         Row: {
@@ -2320,6 +2577,96 @@ export type Database = {
           },
         ]
       }
+      donor_acknowledgments: {
+        Row: {
+          acknowledgment_date: string | null
+          acknowledgment_type: string
+          created_at: string
+          created_by: string
+          donation_id: string | null
+          donor_id: string | null
+          email_sent: boolean | null
+          email_sent_at: string | null
+          generated_content: string | null
+          goods_services_description: string | null
+          goods_services_value: number | null
+          id: string
+          mail_sent: boolean | null
+          mail_sent_at: string | null
+          pdf_file_path: string | null
+          personalization_data: Json | null
+          receipt_number: string
+          shop_id: string
+          tax_deductible_amount: number | null
+          tax_year: number | null
+          template_used: string | null
+          updated_at: string
+        }
+        Insert: {
+          acknowledgment_date?: string | null
+          acknowledgment_type: string
+          created_at?: string
+          created_by: string
+          donation_id?: string | null
+          donor_id?: string | null
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          generated_content?: string | null
+          goods_services_description?: string | null
+          goods_services_value?: number | null
+          id?: string
+          mail_sent?: boolean | null
+          mail_sent_at?: string | null
+          pdf_file_path?: string | null
+          personalization_data?: Json | null
+          receipt_number: string
+          shop_id: string
+          tax_deductible_amount?: number | null
+          tax_year?: number | null
+          template_used?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acknowledgment_date?: string | null
+          acknowledgment_type?: string
+          created_at?: string
+          created_by?: string
+          donation_id?: string | null
+          donor_id?: string | null
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          generated_content?: string | null
+          goods_services_description?: string | null
+          goods_services_value?: number | null
+          id?: string
+          mail_sent?: boolean | null
+          mail_sent_at?: string | null
+          pdf_file_path?: string | null
+          personalization_data?: Json | null
+          receipt_number?: string
+          shop_id?: string
+          tax_deductible_amount?: number | null
+          tax_year?: number | null
+          template_used?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_acknowledgments_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_acknowledgments_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_ab_test_results: {
         Row: {
           campaign_id: string
@@ -3978,6 +4325,66 @@ export type Database = {
           start_date?: string | null
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      governance_policies: {
+        Row: {
+          acknowledgment_tracking: Json | null
+          approval_date: string | null
+          approved_by: string | null
+          board_resolution_number: string | null
+          created_at: string
+          created_by: string
+          effective_date: string
+          id: string
+          is_current: boolean | null
+          policy_content: string | null
+          policy_name: string
+          policy_type: string
+          requires_annual_acknowledgment: boolean | null
+          review_due_date: string | null
+          shop_id: string
+          updated_at: string
+          version_number: string | null
+        }
+        Insert: {
+          acknowledgment_tracking?: Json | null
+          approval_date?: string | null
+          approved_by?: string | null
+          board_resolution_number?: string | null
+          created_at?: string
+          created_by: string
+          effective_date: string
+          id?: string
+          is_current?: boolean | null
+          policy_content?: string | null
+          policy_name: string
+          policy_type: string
+          requires_annual_acknowledgment?: boolean | null
+          review_due_date?: string | null
+          shop_id: string
+          updated_at?: string
+          version_number?: string | null
+        }
+        Update: {
+          acknowledgment_tracking?: Json | null
+          approval_date?: string | null
+          approved_by?: string | null
+          board_resolution_number?: string | null
+          created_at?: string
+          created_by?: string
+          effective_date?: string
+          id?: string
+          is_current?: boolean | null
+          policy_content?: string | null
+          policy_name?: string
+          policy_type?: string
+          requires_annual_acknowledgment?: boolean | null
+          review_due_date?: string | null
+          shop_id?: string
+          updated_at?: string
+          version_number?: string | null
         }
         Relationships: []
       }
@@ -5826,6 +6233,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nonprofit_report_templates: {
+        Row: {
+          auto_generate: boolean | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date_calculation: string | null
+          filing_authority: string | null
+          frequency: string | null
+          id: string
+          is_active: boolean | null
+          regulatory_requirement: boolean | null
+          required_fields: string[] | null
+          shop_id: string
+          template_content: Json
+          template_name: string
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          auto_generate?: boolean | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date_calculation?: string | null
+          filing_authority?: string | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          regulatory_requirement?: boolean | null
+          required_fields?: string[] | null
+          shop_id: string
+          template_content?: Json
+          template_name: string
+          template_type: string
+          updated_at?: string
+        }
+        Update: {
+          auto_generate?: boolean | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date_calculation?: string | null
+          filing_authority?: string | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          regulatory_requirement?: boolean | null
+          required_fields?: string[] | null
+          shop_id?: string
+          template_content?: Json
+          template_name?: string
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       notification_preferences: {
         Row: {
@@ -10653,6 +11117,10 @@ export type Database = {
         Args: { p_shop_id?: string }
         Returns: string
       }
+      generate_receipt_number: {
+        Args: { shop_id_param: string }
+        Returns: string
+      }
       generate_recurring_reminder: {
         Args: { parent_id: string }
         Returns: string
@@ -10714,6 +11182,17 @@ export type Database = {
           clicks: number
           saves: number
           shares: number
+        }[]
+      }
+      get_upcoming_filing_deadlines: {
+        Args: { days_ahead?: number }
+        Returns: {
+          filing_id: string
+          filing_name: string
+          due_date: string
+          days_until_due: number
+          priority_level: string
+          shop_id: string
         }[]
       }
       get_work_order_inventory_items: {

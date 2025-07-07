@@ -10,8 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { HandHeart, BadgeDollarSign, Users, BookUser, Book, BarChart3 } from "lucide-react";
+import { HandHeart, BadgeDollarSign, Users, BookUser, Book, BarChart3, FileText } from "lucide-react";
 import { HybridModelTab } from "./HybridModelTab";
+import { ReportingComplianceTab } from "./ReportingComplianceTab";
 
 interface TaxExemptStatus {
   is_tax_exempt: boolean;
@@ -105,7 +106,7 @@ export function NonProfitTab() {
       </div>
 
       <Tabs defaultValue="tax-status" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="tax-status" className="flex items-center gap-2">
             <BadgeDollarSign className="h-4 w-4" />
             Tax Status
@@ -129,6 +130,10 @@ export function NonProfitTab() {
           <TabsTrigger value="hybrid" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Hybrid Models
+          </TabsTrigger>
+          <TabsTrigger value="reporting" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Reporting
           </TabsTrigger>
         </TabsList>
 
@@ -313,6 +318,10 @@ export function NonProfitTab() {
 
         <TabsContent value="hybrid">
           <HybridModelTab />
+        </TabsContent>
+
+        <TabsContent value="reporting">
+          <ReportingComplianceTab />
         </TabsContent>
       </Tabs>
     </div>
