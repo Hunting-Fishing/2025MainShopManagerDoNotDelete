@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit2, Trash2 } from 'lucide-react';
 import { jobLineStatusMap } from '@/types/jobLine';
-import { UnifiedJobLineEditDialog } from './UnifiedJobLineEditDialog';
+import { SimpleJobLineEditDialog } from './SimpleJobLineEditDialog';
 
 interface CompactJobLinesTableProps {
   jobLines: WorkOrderJobLine[];
@@ -119,7 +119,7 @@ export function CompactJobLinesTable({
       </Table>
 
       {!onEdit && editingJobLine && (
-        <UnifiedJobLineEditDialog
+        <SimpleJobLineEditDialog
           jobLine={editingJobLine}
           workOrderId={editingJobLine.work_order_id}
           open={isEditDialogOpen}
