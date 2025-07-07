@@ -35,12 +35,10 @@ export function WorkOrderStatsCards({
   }, [jobLines, parts]);
 
   const totalLaborHours = React.useMemo(() => {
-    return timeEntries?.reduce((sum, entry) => {
-      // Duration is stored in minutes, convert to hours
-      const durationInMinutes = entry.duration || 0;
-      return sum + (durationInMinutes / 60);
+    return jobLines?.reduce((sum, line) => {
+      return sum + (line.estimated_hours || 0);
     }, 0) || 0;
-  }, [timeEntries]);
+  }, [jobLines]);
 
   const partsCount = parts?.length || 0;
   
@@ -73,7 +71,7 @@ export function WorkOrderStatsCards({
     {
       title: 'Labor Hours',
       value: totalLaborHours.toFixed(1),
-      subtitle: `${timeEntries.length} entries`,
+      subtitle: `${jobLines.length} job lines`,
       icon: Clock,
       gradient: 'from-blue-500 to-blue-600',
       bgGradient: 'from-blue-50 to-blue-100',
