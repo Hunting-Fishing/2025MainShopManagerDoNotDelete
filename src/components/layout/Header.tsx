@@ -14,7 +14,7 @@ export function Header() {
   const isMobile = useIsMobile();
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white dark:bg-slate-800 dark:border-slate-700 px-4">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-white dark:bg-slate-800 dark:border-slate-700 px-4">
       <div className="flex items-center gap-2">
         <HeaderSidebarToggle />
         

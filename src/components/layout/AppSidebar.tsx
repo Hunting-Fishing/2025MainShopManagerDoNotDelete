@@ -22,7 +22,7 @@ export function AppSidebar() {
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-[280px] bg-indigo-700 transition-transform duration-300',
+          'fixed top-0 left-0 z-30 h-full w-[280px] bg-indigo-700 transition-transform duration-300 shadow-lg',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >

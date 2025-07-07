@@ -19,17 +19,15 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   // Handle window resize to auto-close/open sidebar
   useEffect(() => {
     const handleResize = () => {
-      const isMobile = window.innerWidth < 1024;
-      if (isMobile && isOpen) {
+      const isMobile = window.innerWidth < 768; // Match the mobile breakpoint
+      if (isMobile) {
         setIsOpen(false);
-      } else if (!isMobile && !isOpen) {
-        setIsOpen(true);
       }
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [isOpen]);
+  }, []);
 
   const toggle = () => setIsOpen(!isOpen);
 
