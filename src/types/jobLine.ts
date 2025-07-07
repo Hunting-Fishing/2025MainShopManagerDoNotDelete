@@ -8,7 +8,7 @@ export interface WorkOrderJobLine {
   description?: string;
   estimated_hours?: number;
   labor_rate?: number;
-  labor_rate_type?: 'standard' | 'overtime' | 'premium' | 'flat_rate';
+  labor_rate_type?: 'standard' | 'diagnostic' | 'emergency' | 'warranty' | 'internal' | 'overtime' | 'premium' | 'flat_rate';
   total_amount?: number;
   status?: 'pending' | 'in-progress' | 'completed' | 'on-hold';
   display_order?: number;
@@ -25,7 +25,7 @@ export interface JobLineFormValues {
   description?: string;
   estimated_hours?: number;
   labor_rate?: number;
-  labor_rate_type?: 'standard' | 'overtime' | 'premium' | 'flat_rate';
+  labor_rate_type?: 'standard' | 'diagnostic' | 'emergency' | 'warranty' | 'internal' | 'overtime' | 'premium' | 'flat_rate';
   total_amount?: number;
   status?: 'pending' | 'in-progress' | 'completed' | 'on-hold';
   display_order?: number;
@@ -34,7 +34,7 @@ export interface JobLineFormValues {
 
 // Type aliases for better type safety
 export type JobLineStatus = 'pending' | 'in-progress' | 'completed' | 'on-hold';
-export type LaborRateType = 'standard' | 'overtime' | 'premium' | 'flat_rate';
+export type LaborRateType = 'standard' | 'diagnostic' | 'emergency' | 'warranty' | 'internal' | 'overtime' | 'premium' | 'flat_rate';
 export type PartStatus = 'pending' | 'ordered' | 'received' | 'installed' | 'returned';
 
 // Job Line Status constants
@@ -44,7 +44,7 @@ export const JOB_LINE_STATUSES = ['pending', 'in-progress', 'completed', 'on-hol
 export const WORK_ORDER_PART_STATUSES = ['pending', 'ordered', 'received', 'installed', 'returned'] as const;
 
 // Labor Rate Type constants
-export const LABOR_RATE_TYPES = ['standard', 'overtime', 'premium', 'flat_rate'] as const;
+export const LABOR_RATE_TYPES = ['standard', 'diagnostic', 'emergency', 'warranty', 'internal', 'overtime', 'premium', 'flat_rate'] as const;
 
 // Job Line Status mapping for UI display
 export const jobLineStatusMap: Record<JobLineStatus, { label: string; classes: string }> = {
