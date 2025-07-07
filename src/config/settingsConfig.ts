@@ -11,7 +11,11 @@ import {
   Target,
   Calculator,
   Ticket,
-  Globe
+  Globe,
+  FileText,
+  Shield,
+  Database,
+  Calendar
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -28,6 +32,10 @@ import { PublicPortalTab } from '@/components/settings/PublicPortalTab';
 import { SettingsTabConfig } from '@/types/settingsConfig';
 import { GrantManagementTab } from '@/components/settings/GrantManagementTab';
 import { ImpactMeasurementTab } from '@/components/settings/ImpactMeasurementTab';
+import { BoardMeetingTab } from '@/components/settings/BoardMeetingTab';
+import { ComplianceTab } from '@/components/settings/ComplianceTab';
+import { AssetTrackingTab } from '@/components/settings/AssetTrackingTab';
+import { BudgetManagementTab } from '@/components/settings/BudgetManagementTab';
 
 export const SETTINGS_TABS: SettingsTabConfig[] = [
   {
@@ -127,6 +135,34 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     icon: Target,
     component: ImpactMeasurementTab,
     description: 'Track and measure your nonprofit\'s community impact'
+  },
+  {
+    id: 'board-meetings',
+    label: 'Board Meetings',
+    icon: Calendar,
+    component: BoardMeetingTab,
+    description: 'Manage board meetings, agendas, and minutes'
+  },
+  {
+    id: 'compliance',
+    label: 'Compliance',
+    icon: Shield,
+    component: ComplianceTab,
+    description: 'Track regulatory compliance requirements and deadlines'
+  },
+  {
+    id: 'asset-tracking',
+    label: 'Asset Tracking',
+    icon: Database,
+    component: AssetTrackingTab,
+    description: 'Track and manage organizational assets and equipment'
+  },
+  {
+    id: 'budget-management',
+    label: 'Budget Management',
+    icon: Calculator,
+    component: BudgetManagementTab,
+    description: 'Track budgets, expenses, and financial performance'
   },
 ];
 

@@ -4679,6 +4679,155 @@ export type Database = {
         }
         Relationships: []
       }
+      grant_reports: {
+        Row: {
+          attachments: Json | null
+          created_at: string | null
+          due_date: string
+          financial_data: Json | null
+          grant_id: string | null
+          id: string
+          report_content: Json | null
+          report_type: string
+          reporting_period_end: string
+          reporting_period_start: string
+          reviewer_notes: string | null
+          status: string | null
+          submitted_by: string | null
+          submitted_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          created_at?: string | null
+          due_date: string
+          financial_data?: Json | null
+          grant_id?: string | null
+          id?: string
+          report_content?: Json | null
+          report_type: string
+          reporting_period_end: string
+          reporting_period_start: string
+          reviewer_notes?: string | null
+          status?: string | null
+          submitted_by?: string | null
+          submitted_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          created_at?: string | null
+          due_date?: string
+          financial_data?: Json | null
+          grant_id?: string | null
+          id?: string
+          report_content?: Json | null
+          report_type?: string
+          reporting_period_end?: string
+          reporting_period_start?: string
+          reviewer_notes?: string | null
+          status?: string | null
+          submitted_by?: string | null
+          submitted_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grant_reports_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grants: {
+        Row: {
+          amount_awarded: number | null
+          amount_requested: number | null
+          application_deadline: string | null
+          application_documents: Json | null
+          application_submitted_date: string | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          created_at: string | null
+          created_by: string
+          decision_date: string | null
+          funding_organization: string
+          grant_name: string
+          grant_type: string
+          id: string
+          match_amount: number | null
+          match_required: boolean | null
+          notes: string | null
+          program_area: string | null
+          project_end_date: string | null
+          project_start_date: string | null
+          reporting_frequency: string | null
+          restrictions: Json | null
+          shop_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_awarded?: number | null
+          amount_requested?: number | null
+          application_deadline?: string | null
+          application_documents?: Json | null
+          application_submitted_date?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          created_by: string
+          decision_date?: string | null
+          funding_organization: string
+          grant_name: string
+          grant_type: string
+          id?: string
+          match_amount?: number | null
+          match_required?: boolean | null
+          notes?: string | null
+          program_area?: string | null
+          project_end_date?: string | null
+          project_start_date?: string | null
+          reporting_frequency?: string | null
+          restrictions?: Json | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_awarded?: number | null
+          amount_requested?: number | null
+          application_deadline?: string | null
+          application_documents?: Json | null
+          application_submitted_date?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          created_by?: string
+          decision_date?: string | null
+          funding_organization?: string
+          grant_name?: string
+          grant_type?: string
+          id?: string
+          match_amount?: number | null
+          match_required?: boolean | null
+          notes?: string | null
+          program_area?: string | null
+          project_end_date?: string | null
+          project_start_date?: string | null
+          reporting_frequency?: string | null
+          restrictions?: Json | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       household_members: {
         Row: {
           created_at: string
@@ -4896,6 +5045,117 @@ export type Database = {
             columns: ["related_activity_id"]
             isOneToOne: false
             referencedRelation: "hybrid_activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      impact_metrics: {
+        Row: {
+          category: string
+          collection_method: string | null
+          created_at: string | null
+          created_by: string
+          current_value: number | null
+          data_source: string | null
+          id: string
+          is_active: boolean | null
+          measurement_unit: string | null
+          metric_name: string
+          metric_type: string
+          reporting_frequency: string | null
+          shop_id: string
+          target_value: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          collection_method?: string | null
+          created_at?: string | null
+          created_by: string
+          current_value?: number | null
+          data_source?: string | null
+          id?: string
+          is_active?: boolean | null
+          measurement_unit?: string | null
+          metric_name: string
+          metric_type: string
+          reporting_frequency?: string | null
+          shop_id: string
+          target_value?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          collection_method?: string | null
+          created_at?: string | null
+          created_by?: string
+          current_value?: number | null
+          data_source?: string | null
+          id?: string
+          is_active?: boolean | null
+          measurement_unit?: string | null
+          metric_name?: string
+          metric_type?: string
+          reporting_frequency?: string | null
+          shop_id?: string
+          target_value?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      impact_records: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          grant_id: string | null
+          id: string
+          metric_id: string | null
+          program_id: string | null
+          recorded_date: string
+          recorded_value: number
+          supporting_data: Json | null
+          work_order_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          grant_id?: string | null
+          id?: string
+          metric_id?: string | null
+          program_id?: string | null
+          recorded_date: string
+          recorded_value: number
+          supporting_data?: Json | null
+          work_order_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          grant_id?: string | null
+          id?: string
+          metric_id?: string | null
+          program_id?: string | null
+          recorded_date?: string
+          recorded_value?: number
+          supporting_data?: Json | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impact_records_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impact_records_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "impact_metrics"
             referencedColumns: ["id"]
           },
         ]
@@ -9562,6 +9822,63 @@ export type Database = {
         }
         Relationships: []
       }
+      success_stories: {
+        Row: {
+          consent_obtained: boolean | null
+          created_at: string | null
+          created_by: string
+          date_occurred: string | null
+          featured: boolean | null
+          id: string
+          metrics_achieved: Json | null
+          outcome_description: string | null
+          participant_name: string | null
+          photos: Json | null
+          program_type: string
+          publication_status: string | null
+          shop_id: string
+          story_content: string
+          story_title: string
+          updated_at: string | null
+        }
+        Insert: {
+          consent_obtained?: boolean | null
+          created_at?: string | null
+          created_by: string
+          date_occurred?: string | null
+          featured?: boolean | null
+          id?: string
+          metrics_achieved?: Json | null
+          outcome_description?: string | null
+          participant_name?: string | null
+          photos?: Json | null
+          program_type: string
+          publication_status?: string | null
+          shop_id: string
+          story_content: string
+          story_title: string
+          updated_at?: string | null
+        }
+        Update: {
+          consent_obtained?: boolean | null
+          created_at?: string | null
+          created_by?: string
+          date_occurred?: string | null
+          featured?: boolean | null
+          id?: string
+          metrics_achieved?: Json | null
+          outcome_description?: string | null
+          participant_name?: string | null
+          photos?: Json | null
+          program_type?: string
+          publication_status?: string | null
+          shop_id?: string
+          story_content?: string
+          story_title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tax_documents: {
         Row: {
           confirmation_number: string | null
@@ -11845,6 +12162,10 @@ export type Database = {
         }
         Returns: number
       }
+      calculate_grant_utilization: {
+        Args: { p_grant_id: string }
+        Returns: number
+      }
       calculate_job_line_total_with_discounts: {
         Args: { job_line_id_param: string }
         Returns: Json
@@ -11990,6 +12311,16 @@ export type Database = {
           warranty_duration: string | null
           warranty_expiry_date: string | null
           work_order_id: string
+        }[]
+      }
+      get_overdue_grant_reports: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          report_id: string
+          grant_name: string
+          report_type: string
+          due_date: string
+          days_overdue: number
         }[]
       }
       get_product_interactions_by_category: {
