@@ -92,40 +92,43 @@ export class WorkOrderService {
     console.log('Input form data:', formData);
     
     const mapped = {
-      // Map form fields to database fields
+      // Core work order fields that exist in database
       customer_id: (formData as any).customerId || null,
       vehicle_id: (formData as any).vehicleId || null,
       description: formData.description,
       status: formData.status || 'pending',
-      priority: formData.priority || 'medium',
-      technician: formData.technician || null,
       technician_id: (formData as any).technicianId || null,
-      location: formData.location || null,
-      due_date: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
-      notes: formData.notes || null,
       service_type: (formData as any).serviceType || null,
       estimated_hours: (formData as any).estimatedHours || null,
       
-      // Vehicle information (if creating inline)
-      vehicle_make: formData.vehicleMake || null,
-      vehicle_model: formData.vehicleModel || null,
-      vehicle_year: formData.vehicleYear || null,
-      vehicle_license_plate: formData.licensePlate || null,
-      vehicle_vin: formData.vin || null,
-      vehicle_odometer: formData.odometer || null,
+      // Map form fields to actual database columns
+      urgency_level: formData.priority || 'Normal',
+      customer_complaint: formData.description || null,
+      complaint_source: (formData as any).complaintSource || 'Customer',
+      additional_info: (formData as any).additionalInfo || null,
+      customer_instructions: (formData as any).customerInstructions || formData.notes || null,
+      authorization_limit: (formData as any).authorizationLimit || 0,
+      preferred_contact_method: (formData as any).preferredContactMethod || 'Phone',
+      drop_off_type: (formData as any).dropOffType || 'Walk-in',
+      diagnostic_notes: (formData as any).diagnosticNotes || null,
+      initial_mileage: (formData as any).initialMileage || null,
+      vehicle_condition_notes: (formData as any).vehicleConditionNotes || null,
+      customer_waiting: (formData as any).customerWaiting || false,
+      is_warranty: (formData as any).isWarranty || false,
+      is_repeat_issue: (formData as any).isRepeatIssue || false,
+      vehicle_damages: (formData as any).vehicleDamages || [],
+      service_tags: (formData as any).serviceTags || [],
       
-      // Customer information (if creating inline)
-      customer_name: formData.customer || null,
-      customer_email: (formData as any).customerEmail || null,
-      customer_phone: (formData as any).customerPhone || null,
-      customer_address: (formData as any).customerAddress || null,
-      
-      // Ensure created_at and updated_at are set
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      // Set timestamps (created_at and updated_at have defaults in DB)
+      write_up_time: new Date().toISOString(),
     };
     
-    console.log('Mapped database data:', mapped);
-    return mapped;
+    // Only include non-null values to avoid database errors
+    const cleanedMapped = Object.fromEntries(
+      Object.entries(mapped).filter(([_, value]) => value !== null && value !== undefined)
+    );
+    
+    console.log('Mapped database data:', cleanedMapped);
+    return cleanedMapped;
   }
 }
