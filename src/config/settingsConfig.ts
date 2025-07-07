@@ -6,7 +6,8 @@ import {
   Palette, 
   Package, 
   Wrench,
-  Hash
+  Hash,
+  HandHeart
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -15,6 +16,7 @@ import { BrandingTab } from '@/components/settings/BrandingTab';
 import { InventorySettingsTab } from '@/components/settings/InventorySettingsTab';
 import { DIYBayRatesTab } from '@/components/settings/DIYBayRatesTab';
 import { WorkOrderNumberingTab } from '@/components/settings/WorkOrderNumberingTab';
+import { NonProfitTab } from '@/components/settings/NonProfitTab';
 import { SettingsTabConfig } from '@/types/settingsConfig';
 
 export const SETTINGS_TABS: SettingsTabConfig[] = [
@@ -66,6 +68,13 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     icon: Bell,
     component: NotificationsTab,
     description: 'Configure notification preferences'
+  },
+  {
+    id: 'nonprofit',
+    label: 'Non-Profit',
+    icon: HandHeart,
+    component: NonProfitTab,
+    description: 'Manage non-profit specific features and settings'
   },
 ];
 

@@ -2097,6 +2097,95 @@ export type Database = {
           },
         ]
       }
+      donations: {
+        Row: {
+          acknowledgment_date: string | null
+          acknowledgment_sent: boolean | null
+          amount: number
+          campaign_id: string | null
+          campaign_name: string | null
+          created_at: string
+          created_by: string
+          designation: string | null
+          donation_type: string
+          donor_email: string | null
+          donor_id: string | null
+          donor_name: string
+          donor_phone: string | null
+          id: string
+          is_recurring: boolean | null
+          metadata: Json | null
+          notes: string | null
+          payment_method: string | null
+          receipt_number: string | null
+          recurrence_frequency: string | null
+          shop_id: string
+          tax_deductible: boolean | null
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          acknowledgment_date?: string | null
+          acknowledgment_sent?: boolean | null
+          amount: number
+          campaign_id?: string | null
+          campaign_name?: string | null
+          created_at?: string
+          created_by: string
+          designation?: string | null
+          donation_type?: string
+          donor_email?: string | null
+          donor_id?: string | null
+          donor_name: string
+          donor_phone?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          metadata?: Json | null
+          notes?: string | null
+          payment_method?: string | null
+          receipt_number?: string | null
+          recurrence_frequency?: string | null
+          shop_id: string
+          tax_deductible?: boolean | null
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acknowledgment_date?: string | null
+          acknowledgment_sent?: boolean | null
+          amount?: number
+          campaign_id?: string | null
+          campaign_name?: string | null
+          created_at?: string
+          created_by?: string
+          designation?: string | null
+          donation_type?: string
+          donor_email?: string | null
+          donor_id?: string | null
+          donor_name?: string
+          donor_phone?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          metadata?: Json | null
+          notes?: string | null
+          payment_method?: string | null
+          receipt_number?: string | null
+          recurrence_frequency?: string | null
+          shop_id?: string
+          tax_deductible?: boolean | null
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_ab_test_results: {
         Row: {
           campaign_id: string
@@ -3671,6 +3760,90 @@ export type Database = {
           name?: string
           updated_at?: string | null
           version?: number | null
+        }
+        Relationships: []
+      }
+      funding_sources: {
+        Row: {
+          amount_awarded: number | null
+          amount_received: number | null
+          application_deadline: string | null
+          award_date: string | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string
+          documents_required: string[] | null
+          end_date: string | null
+          id: string
+          next_report_due: string | null
+          notes: string | null
+          program_area: string | null
+          purpose: string | null
+          reporting_deadline: string | null
+          reporting_requirements: string | null
+          restrictions: string | null
+          shop_id: string
+          source_name: string
+          source_type: string
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_awarded?: number | null
+          amount_received?: number | null
+          application_deadline?: string | null
+          award_date?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by: string
+          documents_required?: string[] | null
+          end_date?: string | null
+          id?: string
+          next_report_due?: string | null
+          notes?: string | null
+          program_area?: string | null
+          purpose?: string | null
+          reporting_deadline?: string | null
+          reporting_requirements?: string | null
+          restrictions?: string | null
+          shop_id: string
+          source_name: string
+          source_type: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_awarded?: number | null
+          amount_received?: number | null
+          application_deadline?: string | null
+          award_date?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string
+          documents_required?: string[] | null
+          end_date?: string | null
+          id?: string
+          next_report_due?: string | null
+          notes?: string | null
+          program_area?: string | null
+          purpose?: string | null
+          reporting_deadline?: string | null
+          reporting_requirements?: string | null
+          restrictions?: string | null
+          shop_id?: string
+          source_name?: string
+          source_type?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -5287,6 +5460,83 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      members: {
+        Row: {
+          committee_memberships: string[] | null
+          created_at: string
+          customer_id: string | null
+          dues_amount: number | null
+          dues_frequency: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          expiry_date: string | null
+          id: string
+          join_date: string
+          membership_benefits: Json | null
+          membership_level: string | null
+          membership_number: string | null
+          membership_type: string
+          renewal_date: string | null
+          skills_offered: string[] | null
+          status: string
+          updated_at: string
+          volunteer_interests: string[] | null
+          voting_rights: boolean | null
+        }
+        Insert: {
+          committee_memberships?: string[] | null
+          created_at?: string
+          customer_id?: string | null
+          dues_amount?: number | null
+          dues_frequency?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          expiry_date?: string | null
+          id?: string
+          join_date?: string
+          membership_benefits?: Json | null
+          membership_level?: string | null
+          membership_number?: string | null
+          membership_type: string
+          renewal_date?: string | null
+          skills_offered?: string[] | null
+          status?: string
+          updated_at?: string
+          volunteer_interests?: string[] | null
+          voting_rights?: boolean | null
+        }
+        Update: {
+          committee_memberships?: string[] | null
+          created_at?: string
+          customer_id?: string | null
+          dues_amount?: number | null
+          dues_frequency?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          expiry_date?: string | null
+          id?: string
+          join_date?: string
+          membership_benefits?: Json | null
+          membership_level?: string | null
+          membership_number?: string | null
+          membership_type?: string
+          renewal_date?: string | null
+          skills_offered?: string[] | null
+          status?: string
+          updated_at?: string
+          volunteer_interests?: string[] | null
+          voting_rights?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_preferences: {
         Row: {
@@ -8585,6 +8835,83 @@ export type Database = {
           {
             foreignKeyName: "vehicles_customer_id_fkey"
             columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      volunteer_hours: {
+        Row: {
+          activity_description: string | null
+          activity_type: string
+          created_at: string
+          created_by: string
+          date_worked: string
+          hours_worked: number
+          id: string
+          impact_description: string | null
+          location: string | null
+          notes: string | null
+          program_area: string | null
+          shop_id: string
+          skills_used: string[] | null
+          supervisor_name: string | null
+          updated_at: string
+          verification_status: string | null
+          verified_at: string | null
+          verified_by: string | null
+          volunteer_id: string | null
+          volunteer_name: string
+        }
+        Insert: {
+          activity_description?: string | null
+          activity_type: string
+          created_at?: string
+          created_by: string
+          date_worked: string
+          hours_worked: number
+          id?: string
+          impact_description?: string | null
+          location?: string | null
+          notes?: string | null
+          program_area?: string | null
+          shop_id: string
+          skills_used?: string[] | null
+          supervisor_name?: string | null
+          updated_at?: string
+          verification_status?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          volunteer_id?: string | null
+          volunteer_name: string
+        }
+        Update: {
+          activity_description?: string | null
+          activity_type?: string
+          created_at?: string
+          created_by?: string
+          date_worked?: string
+          hours_worked?: number
+          id?: string
+          impact_description?: string | null
+          location?: string | null
+          notes?: string | null
+          program_area?: string | null
+          shop_id?: string
+          skills_used?: string[] | null
+          supervisor_name?: string | null
+          updated_at?: string
+          verification_status?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          volunteer_id?: string | null
+          volunteer_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_hours_volunteer_id_fkey"
+            columns: ["volunteer_id"]
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
