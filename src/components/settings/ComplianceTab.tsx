@@ -1,11 +1,67 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle, CheckCircle, Clock, FileText, Plus, Search, Calendar } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const ComplianceTab = () => {
+  const [requirements, setRequirements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadRequirements();
+  }, []);
+
+  const loadRequirements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('compliance_requirements')
+        .select('*')
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+      setRequirements(data || []);
+    } catch (error) {
+      toast({
+        title: "Error loading compliance data",
+        description: "Failed to load compliance requirements",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="p-6">Loading compliance data...</div>;
+  }
+
+  const now = new Date();
+  const compliant = requirements.filter(r => r.completion_status === 'completed').length;
+  const dueSoon = requirements.filter(r => {
+    const dueDate = new Date(r.due_date);
+    const daysDiff = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    return r.completion_status !== 'completed' && daysDiff <= 30 && daysDiff > 0;
+  }).length;
+  const overdue = requirements.filter(r => {
+    const dueDate = new Date(r.due_date);
+    return r.completion_status !== 'completed' && dueDate < now;
+  }).length;
+
+  const complianceRate = requirements.length > 0 ? Math.round((compliant / requirements.length) * 100) : 0;
+  const criticalRequirements = requirements.filter(r => 
+    r.completion_status !== 'completed' && 
+    (r.priority_level === 'high' || new Date(r.due_date) < now)
+  );
+
+  const upcomingDeadlines = requirements
+    .filter(r => r.completion_status !== 'completed' && new Date(r.due_date) > now)
+    .slice(0, 3);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -36,7 +92,7 @@ export const ComplianceTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Compliant</p>
-                <p className="text-2xl font-bold text-foreground">24</p>
+                <p className="text-2xl font-bold text-foreground">{compliant}</p>
               </div>
             </div>
           </CardContent>
@@ -50,7 +106,7 @@ export const ComplianceTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Due Soon</p>
-                <p className="text-2xl font-bold text-foreground">6</p>
+                <p className="text-2xl font-bold text-foreground">{dueSoon}</p>
               </div>
             </div>
           </CardContent>
@@ -64,7 +120,7 @@ export const ComplianceTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold text-foreground">2</p>
+                <p className="text-2xl font-bold text-foreground">{overdue}</p>
               </div>
             </div>
           </CardContent>
@@ -78,7 +134,7 @@ export const ComplianceTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Requirements</p>
-                <p className="text-2xl font-bold text-foreground">32</p>
+                <p className="text-2xl font-bold text-foreground">{requirements.length}</p>
               </div>
             </div>
           </CardContent>
@@ -97,11 +153,11 @@ export const ComplianceTab = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Overall Compliance Rate</span>
-              <span className="text-sm text-muted-foreground">75%</span>
+              <span className="text-sm text-muted-foreground">{complianceRate}%</span>
             </div>
-            <Progress value={75} className="h-2" />
+            <Progress value={complianceRate} className="h-2" />
             <p className="text-xs text-muted-foreground">
-              24 of 32 requirements are up to date. 6 require attention within the next 30 days.
+              {compliant} of {requirements.length} requirements are up to date. {dueSoon} require attention within the next 30 days.
             </p>
           </div>
         </CardContent>
@@ -120,107 +176,37 @@ export const ComplianceTab = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-red-200 bg-red-50 rounded-lg">
-              <div>
-                <h4 className="font-medium text-foreground">Annual Tax Filing - Form 990</h4>
-                <p className="text-sm text-muted-foreground">IRS requirement for nonprofit organizations</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge className="bg-red-500/10 text-red-700 hover:bg-red-500/20">Overdue</Badge>
-                  <span className="text-xs text-muted-foreground">Due: April 15, 2024</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="destructive">
-                  File Now
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
-              <div>
-                <h4 className="font-medium text-foreground">Workers' Compensation Insurance</h4>
-                <p className="text-sm text-muted-foreground">State-required insurance coverage</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge className="bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20">Due in 10 days</Badge>
-                  <span className="text-xs text-muted-foreground">Due: May 25, 2024</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline">
-                  Review Policy
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Compliance by Category */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Compliance by Category</CardTitle>
-          <CardDescription>
-            View compliance status across different regulatory areas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Tax Compliance */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-foreground">Tax Compliance</h4>
-                <span className="text-sm text-muted-foreground">5 of 6 requirements</span>
-              </div>
-              <Progress value={83} className="h-2" />
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-600" />
-                  <span>Quarterly payroll taxes</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-3 w-3 text-red-600" />
-                  <span>Annual Form 990</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Employment Law */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-foreground">Employment Law</h4>
-                <span className="text-sm text-muted-foreground">8 of 9 requirements</span>
-              </div>
-              <Progress value={89} className="h-2" />
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-600" />
-                  <span>I-9 forms updated</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3 w-3 text-yellow-600" />
-                  <span>Safety training due</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Insurance & Licensing */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-foreground">Insurance & Licensing</h4>
-                <span className="text-sm text-muted-foreground">4 of 5 requirements</span>
-              </div>
-              <Progress value={80} className="h-2" />
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-600" />
-                  <span>General liability</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3 w-3 text-yellow-600" />
-                  <span>Workers' comp renewal</span>
-                </div>
-              </div>
-            </div>
+            {criticalRequirements.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No critical requirements at this time</p>
+            ) : (
+              criticalRequirements.map((requirement) => {
+                const isOverdue = new Date(requirement.due_date) < now;
+                return (
+                  <div 
+                    key={requirement.id} 
+                    className={`flex items-center justify-between p-4 border rounded-lg ${
+                      isOverdue ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'
+                    }`}
+                  >
+                    <div>
+                      <h4 className="font-medium text-foreground">{requirement.requirement_name}</h4>
+                      <p className="text-sm text-muted-foreground">{requirement.description}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge className={isOverdue ? "bg-red-500/10 text-red-700 hover:bg-red-500/20" : "bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20"}>
+                          {isOverdue ? 'Overdue' : `Due ${Math.ceil((new Date(requirement.due_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} days`}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">Due: {new Date(requirement.due_date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant={isOverdue ? "destructive" : "outline"}>
+                        {isOverdue ? 'File Now' : 'Review'}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </CardContent>
       </Card>
@@ -238,44 +224,27 @@ export const ComplianceTab = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-              <div>
-                <h4 className="font-medium text-foreground">Safety Training Certification</h4>
-                <p className="text-sm text-muted-foreground">OSHA-required safety training for all employees</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Due in 15 days</span>
-                <Button size="sm" variant="outline">
-                  Schedule Training
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-              <div>
-                <h4 className="font-medium text-foreground">Monthly Financial Report</h4>
-                <p className="text-sm text-muted-foreground">Board-required monthly financial summary</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Due in 20 days</span>
-                <Button size="sm" variant="outline">
-                  Generate Report
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-              <div>
-                <h4 className="font-medium text-foreground">Charitable Solicitation Permit</h4>
-                <p className="text-sm text-muted-foreground">State permit for fundraising activities</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Due in 45 days</span>
-                <Button size="sm" variant="outline">
-                  Renew Permit
-                </Button>
-              </div>
-            </div>
+            {upcomingDeadlines.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No upcoming deadlines</p>
+            ) : (
+              upcomingDeadlines.map((requirement) => {
+                const daysUntilDue = Math.ceil((new Date(requirement.due_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                return (
+                  <div key={requirement.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div>
+                      <h4 className="font-medium text-foreground">{requirement.requirement_name}</h4>
+                      <p className="text-sm text-muted-foreground">{requirement.description}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground">Due in {daysUntilDue} days</span>
+                      <Button size="sm" variant="outline">
+                        Take Action
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </CardContent>
       </Card>

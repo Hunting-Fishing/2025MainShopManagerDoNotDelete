@@ -1,10 +1,68 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Package, MapPin, Wrench, AlertTriangle, TrendingUp, Plus, Search, Filter } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const AssetTrackingTab = () => {
+  const [assets, setAssets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadAssets();
+  }, []);
+
+  const loadAssets = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('asset_tracking')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAssets(data || []);
+    } catch (error) {
+      toast({
+        title: "Error loading assets",
+        description: "Failed to load asset tracking data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="p-6">Loading asset data...</div>;
+  }
+
+  const totalValue = assets.reduce((sum, asset) => sum + (asset.current_value || asset.purchase_price || 0), 0);
+  const needMaintenance = assets.filter(asset => 
+    asset.condition_status === 'poor' || asset.condition_status === 'needs_maintenance'
+  ).length;
+  const needsAttention = assets.filter(asset => 
+    asset.condition_status === 'poor' || !asset.purchase_date
+  ).length;
+
+  const assetsByType = assets.reduce((acc, asset) => {
+    acc[asset.asset_type] = (acc[asset.asset_type] || 0) + 1;
+    return acc;
+  }, {});
+
+  const highValueAssets = assets
+    .filter(asset => (asset.current_value || asset.purchase_price || 0) > 10000)
+    .sort((a, b) => (b.current_value || b.purchase_price || 0) - (a.current_value || a.purchase_price || 0))
+    .slice(0, 5);
+
+  const grantFundedAssets = assets.filter(asset => asset.grant_funded);
+
+  const originalCost = assets.reduce((sum, asset) => sum + (asset.purchase_price || 0), 0);
+  const currentValue = assets.reduce((sum, asset) => sum + (asset.current_value || asset.purchase_price || 0), 0);
+  const accumulatedDepreciation = originalCost - currentValue;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -39,7 +97,7 @@ export const AssetTrackingTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Assets</p>
-                <p className="text-2xl font-bold text-foreground">147</p>
+                <p className="text-2xl font-bold text-foreground">{assets.length}</p>
               </div>
             </div>
           </CardContent>
@@ -53,7 +111,7 @@ export const AssetTrackingTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold text-foreground">$485K</p>
+                <p className="text-2xl font-bold text-foreground">${(totalValue / 1000).toFixed(0)}K</p>
               </div>
             </div>
           </CardContent>
@@ -67,7 +125,7 @@ export const AssetTrackingTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Need Maintenance</p>
-                <p className="text-2xl font-bold text-foreground">8</p>
+                <p className="text-2xl font-bold text-foreground">{needMaintenance}</p>
               </div>
             </div>
           </CardContent>
@@ -81,7 +139,7 @@ export const AssetTrackingTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Needs Attention</p>
-                <p className="text-2xl font-bold text-foreground">3</p>
+                <p className="text-2xl font-bold text-foreground">{needsAttention}</p>
               </div>
             </div>
           </CardContent>
@@ -98,83 +156,23 @@ export const AssetTrackingTab = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border border-border rounded-lg">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
-                  <Wrench className="h-4 w-4 text-blue-600" />
+            {Object.entries(assetsByType).length === 0 ? (
+              <p className="text-muted-foreground text-center py-8 col-span-full">No assets found</p>
+            ) : (
+              Object.entries(assetsByType).map(([type, count]) => (
+                <div key={type} className="p-4 border border-border rounded-lg">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                      <Package className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground capitalize">{String(type).replace('_', ' ')}</h4>
+                      <p className="text-sm text-muted-foreground">{String(count)} items</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-foreground">Tools & Equipment</h4>
-                  <p className="text-sm text-muted-foreground">89 items • $187,500</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Automotive Tools</span>
-                  <span className="font-medium">42</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Shop Equipment</span>
-                  <span className="font-medium">31</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Safety Equipment</span>
-                  <span className="font-medium">16</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 border border-border rounded-lg">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-green-500/10 rounded-lg">
-                  <Package className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-foreground">Vehicles</h4>
-                  <p className="text-sm text-muted-foreground">23 items • $245,000</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Service Vehicles</span>
-                  <span className="font-medium">8</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Project Vehicles</span>
-                  <span className="font-medium">12</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Utility Vehicles</span>
-                  <span className="font-medium">3</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 border border-border rounded-lg">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-purple-500/10 rounded-lg">
-                  <MapPin className="h-4 w-4 text-purple-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-foreground">Facility & Property</h4>
-                  <p className="text-sm text-muted-foreground">35 items • $52,800</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Building Systems</span>
-                  <span className="font-medium">18</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Office Equipment</span>
-                  <span className="font-medium">12</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Security Systems</span>
-                  <span className="font-medium">5</span>
-                </div>
-              </div>
-            </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -189,71 +187,40 @@ export const AssetTrackingTab = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
-                  <Package className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-foreground">Professional Lift System - Bay 1</h4>
-                  <p className="text-sm text-muted-foreground">Asset Tag: AST-001 • Purchase Date: Jan 2022</p>
-                  <div className="flex items-center gap-4 mt-1">
-                    <span className="text-xs text-muted-foreground">Location: Main Workshop</span>
-                    <span className="text-xs text-muted-foreground">Value: $45,000</span>
+            {highValueAssets.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No high-value assets found</p>
+            ) : (
+              highValueAssets.map((asset) => (
+                <div key={asset.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                      <Package className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">{asset.asset_name}</h4>
+                      <p className="text-sm text-muted-foreground">Tag: {asset.asset_tag || 'N/A'} • Purchase Date: {asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : 'N/A'}</p>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-xs text-muted-foreground">Location: {asset.location || 'Not specified'}</span>
+                        <span className="text-xs text-muted-foreground">Value: ${(asset.current_value || asset.purchase_price || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge className={
+                      asset.condition_status === 'excellent' ? "bg-green-500/10 text-green-700 hover:bg-green-500/20" :
+                      asset.condition_status === 'good' ? "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20" :
+                      asset.condition_status === 'fair' ? "bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20" :
+                      "bg-red-500/10 text-red-700 hover:bg-red-500/20"
+                    }>
+                      {asset.condition_status || 'Unknown'}
+                    </Badge>
+                    <Button size="sm" variant="outline">
+                      View Details
+                    </Button>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20">Excellent</Badge>
-                <Button size="sm" variant="outline">
-                  View Details
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-green-500/10 rounded-lg">
-                  <Wrench className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-foreground">Diagnostic Computer System</h4>
-                  <p className="text-sm text-muted-foreground">Asset Tag: AST-024 • Purchase Date: Mar 2023</p>
-                  <div className="flex items-center gap-4 mt-1">
-                    <span className="text-xs text-muted-foreground">Location: Diagnostic Bay</span>
-                    <span className="text-xs text-muted-foreground">Value: $28,500</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20">Good</Badge>
-                <Button size="sm" variant="outline">
-                  View Details
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-yellow-500/10 rounded-lg">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-foreground">Welding Station - Professional</h4>
-                  <p className="text-sm text-muted-foreground">Asset Tag: AST-012 • Purchase Date: Aug 2021</p>
-                  <div className="flex items-center gap-4 mt-1">
-                    <span className="text-xs text-muted-foreground">Location: Fabrication Area</span>
-                    <span className="text-xs text-muted-foreground">Value: $18,200</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge className="bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20">Needs Calibration</Badge>
-                <Button size="sm" variant="outline">
-                  Schedule Maintenance
-                </Button>
-              </div>
-            </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -273,15 +240,15 @@ export const AssetTrackingTab = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Original Cost</span>
-                  <span className="font-medium">$485,000</span>
+                  <span className="font-medium">${originalCost.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Accumulated Depreciation</span>
-                  <span className="font-medium text-red-600">-$147,200</span>
+                  <span className="font-medium text-red-600">-${accumulatedDepreciation.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span className="text-sm font-medium">Current Book Value</span>
-                  <span className="font-bold text-green-600">$337,800</span>
+                  <span className="font-bold text-green-600">${currentValue.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -289,20 +256,19 @@ export const AssetTrackingTab = () => {
             <div className="space-y-4">
               <h4 className="font-medium text-foreground">Replacement Planning</h4>
               <div className="space-y-3">
-                <div className="p-3 border border-border rounded-lg">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium">Engine Hoist</span>
-                    <span className="text-xs text-muted-foreground">2025</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Expected replacement cost: $8,500</p>
-                </div>
-                <div className="p-3 border border-border rounded-lg">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium">Air Compressor System</span>
-                    <span className="text-xs text-muted-foreground">2026</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Expected replacement cost: $12,000</p>
-                </div>
+                {assets.filter(a => a.useful_life_years && a.purchase_date).slice(0, 3).map((asset) => {
+                  const purchaseYear = new Date(asset.purchase_date).getFullYear();
+                  const replacementYear = purchaseYear + (asset.useful_life_years || 5);
+                  return (
+                    <div key={asset.id} className="p-3 border border-border rounded-lg">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-medium">{asset.asset_name}</span>
+                        <span className="text-xs text-muted-foreground">{replacementYear}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Expected replacement cost: ${(asset.current_value || asset.purchase_price || 0).toLocaleString()}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -310,41 +276,33 @@ export const AssetTrackingTab = () => {
       </Card>
 
       {/* Grant-Funded Assets */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Grant-Funded Assets</CardTitle>
-          <CardDescription>
-            Assets purchased with grant funding and their compliance requirements
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-green-200 bg-green-50 rounded-lg">
-              <div>
-                <h4 className="font-medium text-foreground">Youth Training Tool Set (15 sets)</h4>
-                <p className="text-sm text-muted-foreground">Community Foundation Grant • Purchase Date: Sep 2023</p>
-                <div className="flex items-center gap-4 mt-1">
-                  <span className="text-xs text-muted-foreground">Grant Value: $25,000</span>
-                  <span className="text-xs text-muted-foreground">Restricted Use: Educational Programs</span>
+      {grantFundedAssets.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Grant-Funded Assets</CardTitle>
+            <CardDescription>
+              Assets purchased with grant funding and their compliance requirements
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {grantFundedAssets.map((asset) => (
+                <div key={asset.id} className="flex items-center justify-between p-4 border border-green-200 bg-green-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-foreground">{asset.asset_name}</h4>
+                    <p className="text-sm text-muted-foreground">Purchase Date: {asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : 'N/A'}</p>
+                    <div className="flex items-center gap-4 mt-1">
+                      <span className="text-xs text-muted-foreground">Value: ${(asset.purchase_price || 0).toLocaleString()}</span>
+                      <span className="text-xs text-muted-foreground">Grant-funded asset</span>
+                    </div>
+                  </div>
+                  <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20">Grant Funded</Badge>
                 </div>
-              </div>
-              <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20">Compliant</Badge>
+              ))}
             </div>
-
-            <div className="flex items-center justify-between p-4 border border-blue-200 bg-blue-50 rounded-lg">
-              <div>
-                <h4 className="font-medium text-foreground">Environmental Restoration Equipment</h4>
-                <p className="text-sm text-muted-foreground">State Environmental Grant • Purchase Date: Nov 2023</p>
-                <div className="flex items-center gap-4 mt-1">
-                  <span className="text-xs text-muted-foreground">Grant Value: $18,500</span>
-                  <span className="text-xs text-muted-foreground">Restricted Use: Environmental Projects</span>
-                </div>
-              </div>
-              <Badge className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20">Active</Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

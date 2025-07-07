@@ -1,11 +1,73 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Calendar, Target, Plus, Download } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const BudgetManagementTab = () => {
+  const [budgetEntries, setBudgetEntries] = useState([]);
+  const [budgetCategories, setBudgetCategories] = useState([]);
+  const [grants, setGrants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadBudgetData();
+  }, []);
+
+  const loadBudgetData = async () => {
+    try {
+      const [entriesData, categoriesData, grantsData] = await Promise.all([
+        supabase.from('budget_entries').select('*'),
+        supabase.from('budget_categories').select('*').eq('is_active', true),
+        supabase.from('grants').select('*')
+      ]);
+
+      setBudgetEntries(entriesData.data || []);
+      setBudgetCategories(categoriesData.data || []);
+      setGrants(grantsData.data || []);
+    } catch (error) {
+      toast({
+        title: "Error loading budget data",
+        description: "Failed to load budget information",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="p-6">Loading budget data...</div>;
+  }
+
+  const currentYear = new Date().getFullYear();
+  const currentYearEntries = budgetEntries.filter(entry => entry.fiscal_year === currentYear);
+  
+  const totalBudget = currentYearEntries.reduce((sum, entry) => sum + entry.planned_amount, 0);
+  const totalSpent = currentYearEntries.reduce((sum, entry) => sum + entry.actual_amount, 0);
+  const remaining = totalBudget - totalSpent;
+  const utilizationRate = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+
+  const categoriesWithBudget = budgetCategories.map(category => {
+    const categoryEntries = currentYearEntries.filter(entry => entry.category_id === category.id);
+    const planned = categoryEntries.reduce((sum, entry) => sum + entry.planned_amount, 0);
+    const actual = categoryEntries.reduce((sum, entry) => sum + entry.actual_amount, 0);
+    const utilization = planned > 0 ? (actual / planned) * 100 : 0;
+    return {
+      ...category,
+      planned,
+      actual,
+      utilization
+    };
+  });
+
+  const overBudgetCategories = categoriesWithBudget.filter(cat => cat.utilization > 100).length;
+  const activeGrants = grants.filter(grant => grant.status === 'active');
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -36,7 +98,7 @@ export const BudgetManagementTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Budget</p>
-                <p className="text-2xl font-bold text-foreground">$485K</p>
+                <p className="text-2xl font-bold text-foreground">${(totalBudget / 1000).toFixed(0)}K</p>
               </div>
             </div>
           </CardContent>
@@ -50,8 +112,8 @@ export const BudgetManagementTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Spent</p>
-                <p className="text-2xl font-bold text-foreground">$342K</p>
-                <p className="text-xs text-green-600">70% utilized</p>
+                <p className="text-2xl font-bold text-foreground">${(totalSpent / 1000).toFixed(0)}K</p>
+                <p className="text-xs text-green-600">{utilizationRate}% utilized</p>
               </div>
             </div>
           </CardContent>
@@ -65,8 +127,8 @@ export const BudgetManagementTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Remaining</p>
-                <p className="text-2xl font-bold text-foreground">$143K</p>
-                <p className="text-xs text-yellow-600">30% available</p>
+                <p className="text-2xl font-bold text-foreground">${(remaining / 1000).toFixed(0)}K</p>
+                <p className="text-xs text-yellow-600">{Math.round((remaining / totalBudget) * 100)}% available</p>
               </div>
             </div>
           </CardContent>
@@ -80,7 +142,7 @@ export const BudgetManagementTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Over Budget</p>
-                <p className="text-2xl font-bold text-foreground">3</p>
+                <p className="text-2xl font-bold text-foreground">{overBudgetCategories}</p>
                 <p className="text-xs text-red-600">categories</p>
               </div>
             </div>
@@ -98,186 +160,76 @@ export const BudgetManagementTab = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {/* Program Operations */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-foreground">Program Operations</h4>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">$185K / $200K</span>
-                  <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20">On Track</Badge>
+            {categoriesWithBudget.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No budget categories found</p>
+            ) : (
+              categoriesWithBudget.map((category) => (
+                <div key={category.id} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-foreground">{category.name}</h4>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        ${(category.actual / 1000).toFixed(0)}K / ${(category.planned / 1000).toFixed(0)}K
+                      </span>
+                      <Badge className={
+                        category.utilization > 100 ? "bg-red-500/10 text-red-700 hover:bg-red-500/20" :
+                        category.utilization > 80 ? "bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20" :
+                        "bg-green-500/10 text-green-700 hover:bg-green-500/20"
+                      }>
+                        {category.utilization > 100 ? 'Over Budget' : 
+                         category.utilization > 80 ? 'Watch' : 'On Track'}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Progress value={Math.min(category.utilization, 100)} className="h-2" />
+                  <p className="text-sm text-muted-foreground">{category.description}</p>
                 </div>
-              </div>
-              <Progress value={92.5} className="h-2" />
-              <div className="grid grid-cols-3 gap-4 text-sm text-muted-foreground">
-                <span>Vehicle restoration: $95K</span>
-                <span>Youth programs: $65K</span>
-                <span>Community outreach: $25K</span>
-              </div>
-            </div>
-
-            {/* Personnel */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-foreground">Personnel</h4>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">$125K / $150K</span>
-                  <Badge className="bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20">Watch</Badge>
-                </div>
-              </div>
-              <Progress value={83.3} className="h-2" />
-              <div className="grid grid-cols-3 gap-4 text-sm text-muted-foreground">
-                <span>Salaries: $85K</span>
-                <span>Benefits: $25K</span>
-                <span>Training: $15K</span>
-              </div>
-            </div>
-
-            {/* Facilities & Equipment */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-foreground">Facilities & Equipment</h4>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">$82K / $75K</span>
-                  <Badge className="bg-red-500/10 text-red-700 hover:bg-red-500/20">Over Budget</Badge>
-                </div>
-              </div>
-              <Progress value={109.3} className="h-2" />
-              <div className="grid grid-cols-3 gap-4 text-sm text-muted-foreground">
-                <span>Rent: $36K</span>
-                <span>Equipment: $28K</span>
-                <span>Maintenance: $18K</span>
-              </div>
-            </div>
-
-            {/* Administrative */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-foreground">Administrative</h4>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">$28K / $40K</span>
-                  <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20">Under Budget</Badge>
-                </div>
-              </div>
-              <Progress value={70} className="h-2" />
-              <div className="grid grid-cols-3 gap-4 text-sm text-muted-foreground">
-                <span>Insurance: $12K</span>
-                <span>Legal/Professional: $8K</span>
-                <span>Office supplies: $8K</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quarterly Comparison */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quarterly Budget Performance</CardTitle>
-          <CardDescription>
-            Compare actual vs. planned spending by quarter
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-medium text-foreground">Q1 2024 Performance</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Budgeted</span>
-                  <span className="font-medium">$121,250</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Actual</span>
-                  <span className="font-medium">$118,450</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Variance</span>
-                  <span className="font-medium text-green-600">-$2,800 (2.3%)</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="font-medium text-foreground">Year-to-Date</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Budgeted</span>
-                  <span className="font-medium">$363,750</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Actual</span>
-                  <span className="font-medium">$342,180</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Variance</span>
-                  <span className="font-medium text-green-600">-$21,570 (5.9%)</span>
-                </div>
-              </div>
-            </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Grant-Specific Budgets */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Grant-Specific Budgets</CardTitle>
-          <CardDescription>
-            Track restricted funding and compliance with grant requirements
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-              <div>
-                <h4 className="font-medium text-foreground">Community Foundation Youth Grant</h4>
-                <p className="text-sm text-muted-foreground">Youth apprenticeship program funding</p>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-xs text-muted-foreground">Grant Period: Jan - Dec 2024</span>
-                  <span className="text-xs text-muted-foreground">Total Award: $75,000</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-foreground">$52,500 spent</div>
-                <div className="text-xs text-green-600">70% utilized</div>
-                <Progress value={70} className="h-1 w-20 mt-1" />
-              </div>
+      {activeGrants.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Grant-Specific Budgets</CardTitle>
+            <CardDescription>
+              Track restricted funding and compliance with grant requirements
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {activeGrants.map((grant) => {
+                const grantEntries = budgetEntries.filter(entry => entry.grant_id === grant.id);
+                const totalSpent = grantEntries.reduce((sum, entry) => sum + entry.actual_amount, 0);
+                const utilization = grant.award_amount > 0 ? (totalSpent / grant.award_amount) * 100 : 0;
+                
+                return (
+                  <div key={grant.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div>
+                      <h4 className="font-medium text-foreground">{grant.grant_title}</h4>
+                      <p className="text-sm text-muted-foreground">{grant.program_description}</p>
+                      <div className="flex items-center gap-4 mt-2">
+                        <span className="text-xs text-muted-foreground">
+                          Grant Period: {new Date(grant.start_date).toLocaleDateString()} - {new Date(grant.end_date).toLocaleDateString()}
+                        </span>
+                        <span className="text-xs text-muted-foreground">Total Award: ${grant.award_amount?.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-foreground">${totalSpent.toLocaleString()} spent</div>
+                      <div className="text-xs text-blue-600">{Math.round(utilization)}% utilized</div>
+                      <Progress value={utilization} className="h-1 w-20 mt-1" />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-
-            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-              <div>
-                <h4 className="font-medium text-foreground">State Environmental Restoration</h4>
-                <p className="text-sm text-muted-foreground">Vehicle restoration and environmental programs</p>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-xs text-muted-foreground">Grant Period: Mar 2024 - Feb 2025</span>
-                  <span className="text-xs text-muted-foreground">Total Award: $45,000</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-foreground">$18,900 spent</div>
-                <div className="text-xs text-blue-600">42% utilized</div>
-                <Progress value={42} className="h-1 w-20 mt-1" />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
-              <div>
-                <h4 className="font-medium text-foreground">Workforce Development Grant</h4>
-                <p className="text-sm text-muted-foreground">Skills training and job placement programs</p>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-xs text-muted-foreground">Grant Period: Jun 2024 - May 2025</span>
-                  <span className="text-xs text-muted-foreground">Total Award: $60,000</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-foreground">$58,200 spent</div>
-                <div className="text-xs text-yellow-600">97% utilized</div>
-                <Progress value={97} className="h-1 w-20 mt-1" />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Budget Alerts */}
       <Card>
@@ -292,41 +244,37 @@ export const BudgetManagementTab = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="font-medium text-foreground">Facilities Budget Exceeded</h4>
-                  <p className="text-sm text-muted-foreground">You're 9.3% over budget in the Facilities & Equipment category</p>
-                </div>
-                <Button size="sm" variant="outline">
-                  Review Expenses
-                </Button>
-              </div>
-            </div>
-
-            <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="font-medium text-foreground">Grant Deadline Approaching</h4>
-                  <p className="text-sm text-muted-foreground">Workforce Development Grant funds must be spent by May 31, 2025</p>
-                </div>
-                <Button size="sm" variant="outline">
-                  Plan Spending
-                </Button>
-              </div>
-            </div>
-
-            <div className="p-4 border border-green-200 bg-green-50 rounded-lg">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="font-medium text-foreground">Administrative Savings</h4>
-                  <p className="text-sm text-muted-foreground">You have $12K remaining in administrative budget - consider reallocating</p>
-                </div>
-                <Button size="sm" variant="outline">
-                  Reallocate Funds
-                </Button>
-              </div>
-            </div>
+            {overBudgetCategories === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No budget alerts at this time</p>
+            ) : (
+              categoriesWithBudget
+                .filter(cat => cat.utilization > 80)
+                .map((category) => (
+                  <div 
+                    key={category.id} 
+                    className={`p-4 border rounded-lg ${
+                      category.utilization > 100 ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-medium text-foreground">
+                          {category.utilization > 100 ? `${category.name} Budget Exceeded` : `${category.name} Budget Alert`}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {category.utilization > 100 
+                            ? `You're ${(category.utilization - 100).toFixed(1)}% over budget in this category`
+                            : `You've used ${category.utilization.toFixed(1)}% of your budget for this category`
+                          }
+                        </p>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        Review Expenses
+                      </Button>
+                    </div>
+                  </div>
+                ))
+            )}
           </div>
         </CardContent>
       </Card>
