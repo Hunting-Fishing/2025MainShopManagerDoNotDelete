@@ -240,6 +240,75 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_tracking: {
+        Row: {
+          asset_name: string
+          asset_tag: string | null
+          asset_type: string
+          condition_status: string | null
+          created_at: string | null
+          created_by: string
+          current_value: number | null
+          depreciation_method: string | null
+          disposal_date: string | null
+          disposal_method: string | null
+          grant_funded: boolean | null
+          grant_id: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          shop_id: string
+          updated_at: string | null
+          useful_life_years: number | null
+        }
+        Insert: {
+          asset_name: string
+          asset_tag?: string | null
+          asset_type: string
+          condition_status?: string | null
+          created_at?: string | null
+          created_by: string
+          current_value?: number | null
+          depreciation_method?: string | null
+          disposal_date?: string | null
+          disposal_method?: string | null
+          grant_funded?: boolean | null
+          grant_id?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          shop_id: string
+          updated_at?: string | null
+          useful_life_years?: number | null
+        }
+        Update: {
+          asset_name?: string
+          asset_tag?: string | null
+          asset_type?: string
+          condition_status?: string | null
+          created_at?: string | null
+          created_by?: string
+          current_value?: number | null
+          depreciation_method?: string | null
+          disposal_date?: string | null
+          disposal_method?: string | null
+          grant_funded?: boolean | null
+          grant_id?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          shop_id?: string
+          updated_at?: string | null
+          useful_life_years?: number | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -489,6 +558,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      budget_categories: {
+        Row: {
+          budget_limit: number | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_category_id: string | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget_limit?: number | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_category_id?: string | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget_limit?: number | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_category_id?: string | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      budget_entries: {
+        Row: {
+          actual_amount: number
+          budget_type: string
+          category_id: string | null
+          created_at: string | null
+          created_by: string
+          fiscal_year: number
+          grant_id: string | null
+          id: string
+          is_locked: boolean | null
+          month: number | null
+          notes: string | null
+          planned_amount: number
+          program_id: string | null
+          quarter: number | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_amount?: number
+          budget_type: string
+          category_id?: string | null
+          created_at?: string | null
+          created_by: string
+          fiscal_year: number
+          grant_id?: string | null
+          id?: string
+          is_locked?: boolean | null
+          month?: number | null
+          notes?: string | null
+          planned_amount?: number
+          program_id?: string | null
+          quarter?: number | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_amount?: number
+          budget_type?: string
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          fiscal_year?: number
+          grant_id?: string | null
+          id?: string
+          is_locked?: boolean | null
+          month?: number | null
+          notes?: string | null
+          planned_amount?: number
+          program_id?: string | null
+          quarter?: number | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       business_industries: {
         Row: {
@@ -3608,6 +3773,132 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financial_reports: {
+        Row: {
+          end_date: string | null
+          file_url: string | null
+          fiscal_year: number | null
+          generated_at: string | null
+          generated_by: string
+          id: string
+          is_published: boolean | null
+          notes: string | null
+          published_at: string | null
+          report_data: Json
+          report_name: string
+          report_type: string
+          shop_id: string
+          start_date: string | null
+        }
+        Insert: {
+          end_date?: string | null
+          file_url?: string | null
+          fiscal_year?: number | null
+          generated_at?: string | null
+          generated_by: string
+          id?: string
+          is_published?: boolean | null
+          notes?: string | null
+          published_at?: string | null
+          report_data?: Json
+          report_name: string
+          report_type: string
+          shop_id: string
+          start_date?: string | null
+        }
+        Update: {
+          end_date?: string | null
+          file_url?: string | null
+          fiscal_year?: number | null
+          generated_at?: string | null
+          generated_by?: string
+          id?: string
+          is_published?: boolean | null
+          notes?: string | null
+          published_at?: string | null
+          report_data?: Json
+          report_name?: string
+          report_type?: string
+          shop_id?: string
+          start_date?: string | null
+        }
+        Relationships: []
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          category_id: string | null
+          created_at: string | null
+          created_by: string
+          description: string
+          grant_id: string | null
+          id: string
+          is_recurring: boolean | null
+          payment_method: string | null
+          program_id: string | null
+          receipt_url: string | null
+          recurring_frequency: string | null
+          reference_number: string | null
+          shop_id: string
+          status: string | null
+          transaction_date: string
+          transaction_number: string
+          transaction_type: string
+          updated_at: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          created_by: string
+          description: string
+          grant_id?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          payment_method?: string | null
+          program_id?: string | null
+          receipt_url?: string | null
+          recurring_frequency?: string | null
+          reference_number?: string | null
+          shop_id: string
+          status?: string | null
+          transaction_date: string
+          transaction_number: string
+          transaction_type: string
+          updated_at?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string
+          grant_id?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          payment_method?: string | null
+          program_id?: string | null
+          receipt_url?: string | null
+          recurring_frequency?: string | null
+          reference_number?: string | null
+          shop_id?: string
+          status?: string | null
+          transaction_date?: string
+          transaction_number?: string
+          transaction_type?: string
+          updated_at?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: []
       }
       flagged_activities: {
         Row: {
@@ -8820,6 +9111,66 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_documents: {
+        Row: {
+          confirmation_number: string | null
+          created_at: string | null
+          created_by: string
+          document_type: string
+          document_url: string | null
+          due_date: string
+          extension_date: string | null
+          filed_date: string | null
+          filing_fees: number | null
+          filing_status: string | null
+          id: string
+          notes: string | null
+          preparer_contact: string | null
+          preparer_name: string | null
+          shop_id: string
+          tax_year: number
+          updated_at: string | null
+        }
+        Insert: {
+          confirmation_number?: string | null
+          created_at?: string | null
+          created_by: string
+          document_type: string
+          document_url?: string | null
+          due_date: string
+          extension_date?: string | null
+          filed_date?: string | null
+          filing_fees?: number | null
+          filing_status?: string | null
+          id?: string
+          notes?: string | null
+          preparer_contact?: string | null
+          preparer_name?: string | null
+          shop_id: string
+          tax_year: number
+          updated_at?: string | null
+        }
+        Update: {
+          confirmation_number?: string | null
+          created_at?: string | null
+          created_by?: string
+          document_type?: string
+          document_url?: string | null
+          due_date?: string
+          extension_date?: string | null
+          filed_date?: string | null
+          filing_fees?: number | null
+          filing_status?: string | null
+          id?: string
+          notes?: string | null
+          preparer_contact?: string | null
+          preparer_name?: string | null
+          shop_id?: string
+          tax_year?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       team_member_certifications: {
         Row: {
           certification_name: string
@@ -11034,6 +11385,14 @@ export type Database = {
           for_profit_percentage: number
           non_profit_percentage: number
         }[]
+      }
+      calculate_budget_variance: {
+        Args: {
+          p_shop_id: string
+          p_category_id: string
+          p_fiscal_year: number
+        }
+        Returns: number
       }
       calculate_job_line_total_with_discounts: {
         Args: { job_line_id_param: string }

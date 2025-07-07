@@ -8,7 +8,8 @@ import {
   Wrench,
   Hash,
   HandHeart,
-  Target
+  Target,
+  Calculator
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -19,6 +20,7 @@ import { DIYBayRatesTab } from '@/components/settings/DIYBayRatesTab';
 import { WorkOrderNumberingTab } from '@/components/settings/WorkOrderNumberingTab';
 import { NonProfitTab } from '@/components/settings/NonProfitTab';
 import { ProgramManagementTab } from '@/components/settings/ProgramManagementTab';
+import { FinancialManagementTab } from '@/components/settings/FinancialManagementTab';
 import { SettingsTabConfig } from '@/types/settingsConfig';
 
 export const SETTINGS_TABS: SettingsTabConfig[] = [
@@ -84,6 +86,13 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     icon: Target,
     component: ProgramManagementTab,
     description: 'Manage programs, volunteers, grants, and impact measurement'
+  },
+  {
+    id: 'financial',
+    label: 'Financial Management',
+    icon: Calculator,
+    component: FinancialManagementTab,
+    description: 'Budget tracking, financial reporting, and compliance management'
   },
 ];
 
