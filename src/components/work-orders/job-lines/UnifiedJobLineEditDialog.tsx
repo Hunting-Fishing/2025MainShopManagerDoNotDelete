@@ -68,7 +68,7 @@ export function UnifiedJobLineEditDialog({
   if (!jobLine) return null;
   const totalAmount = (formData.estimated_hours || 0) * (formData.labor_rate || 0);
   return <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-50">
         <DialogHeader>
           <DialogTitle>Edit Job Line</DialogTitle>
         </DialogHeader>
