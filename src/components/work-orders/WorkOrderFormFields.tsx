@@ -41,6 +41,8 @@ interface WorkOrderFormFieldsProps {
     vehicleLicensePlate?: string;
     vehicleVin?: string;
   };
+  onTabChange?: (tabValue: string) => void;
+  currentTab?: string;
 }
 
 export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
@@ -52,7 +54,9 @@ export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
   onJobLinesChange,
   workOrderId = `temp-${Date.now()}`,
   shopId,
-  prePopulatedCustomer
+  prePopulatedCustomer,
+  onTabChange,
+  currentTab = "intake"
 }) => {
   const description = form.watch('description');
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
@@ -94,7 +98,7 @@ export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
   };
 
   return (
-    <Tabs defaultValue="intake" className="w-full">
+    <Tabs value={currentTab} className="w-full" onValueChange={onTabChange}>
       <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="intake">Intake & Details</TabsTrigger>
         <TabsTrigger value="customer">Customer & Vehicle</TabsTrigger>

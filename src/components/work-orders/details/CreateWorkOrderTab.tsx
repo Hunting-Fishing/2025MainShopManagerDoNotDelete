@@ -10,6 +10,7 @@ import { WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle } from 'lucide-react';
+import { ClickableErrorItem } from '../shared/ClickableErrorItem';
 
 interface Technician {
   id: string;
@@ -41,6 +42,8 @@ interface CreateWorkOrderTabProps {
   };
   onCreateWorkOrder?: (data: WorkOrderFormSchemaValues) => void;
   isEditMode?: boolean;
+  onTabChange?: (tabValue: string) => void;
+  currentTab?: string;
 }
 
 export function CreateWorkOrderTab({
@@ -54,7 +57,9 @@ export function CreateWorkOrderTab({
   shopId,
   prePopulatedCustomer,
   onCreateWorkOrder,
-  isEditMode = false
+  isEditMode = false,
+  onTabChange,
+  currentTab = "intake"
 }: CreateWorkOrderTabProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -109,21 +114,65 @@ export function CreateWorkOrderTab({
     }
   };
 
-  // Get form validation errors for display
+  // Get form validation errors with navigation data
   const getFormErrors = () => {
-    const errors: string[] = [];
+    const errors: Array<{
+      field: string;
+      message: string;
+      tab: string;
+      tabValue: string;
+      fieldId: string;
+    }> = [];
+    
     if (form.formState.errors.customer) {
-      errors.push("Customer name is required");
+      errors.push({
+        field: "Customer Name",
+        message: "Customer name is required",
+        tab: "Customer & Vehicle",
+        tabValue: "customer",
+        fieldId: "customer"
+      });
     }
+    
     if (form.formState.errors.description) {
-      errors.push("Description is required");
+      errors.push({
+        field: "Description",
+        message: "Description is required",
+        tab: "Intake & Details", 
+        tabValue: "intake",
+        fieldId: "description"
+      });
     }
+    
     return errors;
   };
 
   const formErrors = getFormErrors();
   const hasFormErrors = formErrors.length > 0;
   const isFormValid = form.formState.isValid;
+
+  // Handle navigation to error field
+  const handleNavigateToError = (tabValue: string, fieldId: string) => {
+    // Switch to the correct tab
+    if (onTabChange) {
+      onTabChange(tabValue);
+    }
+    
+    // Focus the field after a brief delay to allow tab switching
+    setTimeout(() => {
+      form.setFocus(fieldId as any);
+      
+      // Add visual highlight to the field
+      const fieldElement = document.querySelector(`[name="${fieldId}"]`);
+      if (fieldElement) {
+        fieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        fieldElement.classList.add('animate-pulse', 'ring-2', 'ring-destructive');
+        setTimeout(() => {
+          fieldElement.classList.remove('animate-pulse', 'ring-2', 'ring-destructive');
+        }, 2000);
+      }
+    }, 150);
+  };
 
   // Debug logging for form state
   console.log('=== FORM STATE DEBUG ===');
@@ -154,6 +203,8 @@ export function CreateWorkOrderTab({
                 workOrderId={workOrderId}
                 shopId={shopId}
                 prePopulatedCustomer={prePopulatedCustomer}
+                onTabChange={onTabChange}
+                currentTab={currentTab}
               />
               
               {/* Form Validation Feedback */}
@@ -161,12 +212,16 @@ export function CreateWorkOrderTab({
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    <div className="font-medium mb-1">Please fix the following errors:</div>
-                    <ul className="list-disc list-inside space-y-1">
+                    <div className="font-medium mb-3">Please fix the following errors:</div>
+                    <div className="space-y-2">
                       {formErrors.map((error, index) => (
-                        <li key={index} className="text-sm">{error}</li>
+                        <ClickableErrorItem
+                          key={index}
+                          error={error}
+                          onNavigate={handleNavigateToError}
+                        />
                       ))}
-                    </ul>
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}

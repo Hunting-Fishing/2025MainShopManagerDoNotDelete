@@ -57,11 +57,16 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
 
   const { technicians, isLoading: technicianLoading, error: technicianError } = useTechnicians();
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
+  const [currentTab, setCurrentTab] = useState("intake");
   
   const handleCreateWorkOrder = async (data: WorkOrderFormSchemaValues) => {
     if (onSubmit) {
       await onSubmit(data);
     }
+  };
+
+  const handleTabChange = (tabValue: string) => {
+    setCurrentTab(tabValue);
   };
 
   return (
@@ -75,6 +80,8 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
       prePopulatedCustomer={prePopulatedCustomer}
       onCreateWorkOrder={handleCreateWorkOrder}
       isEditMode={false}
+      onTabChange={handleTabChange}
+      currentTab={currentTab}
     />
   );
 };
