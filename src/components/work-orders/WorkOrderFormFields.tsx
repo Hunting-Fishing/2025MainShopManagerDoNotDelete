@@ -64,30 +64,42 @@ export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
 
   // Convert selected services to job lines
   const handleServicesChange = (services: SelectedService[]) => {
+    console.log('=== SERVICES CHANGE ===');
+    console.log('Received services:', services);
+    
     setSelectedServices(services);
     
-    // Convert services to job lines format
-    const newJobLines: WorkOrderJobLine[] = services.map((service, index) => ({
-      id: `service-${service.id}`,
-      work_order_id: workOrderId,
-      name: service.name,
-      description: service.description || '',
-      category: service.category,
-      subcategory: service.subcategory,
-      estimated_hours: service.estimated_hours || 0,
-      labor_rate: service.labor_rate || 0,
-      total_amount: service.total_amount || 0,
-      status: service.status || 'pending',
-      notes: '',
-      display_order: index,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }));
+    // Convert services to job lines format with unique IDs
+    const newJobLines: WorkOrderJobLine[] = services.map((service, index) => {
+      // Use the service's unique ID which already includes timestamp
+      const jobLineId = `service-${service.id}`;
+      
+      console.log(`Converting service ${service.name} to job line with ID: ${jobLineId}`);
+      
+      return {
+        id: jobLineId,
+        work_order_id: workOrderId,
+        name: service.name,
+        description: service.description || '',
+        category: service.category,
+        subcategory: service.subcategory,
+        estimated_hours: service.estimated_hours || 0,
+        labor_rate: service.labor_rate || 0,
+        total_amount: service.total_amount || 0,
+        status: service.status || 'pending',
+        notes: '',
+        display_order: index,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    });
     
+    console.log('Generated job lines:', newJobLines);
     setServiceJobLines(newJobLines);
     
     // Notify parent about job lines change
     if (onJobLinesChange) {
+      console.log('Notifying parent about job lines change');
       onJobLinesChange(newJobLines);
     }
   };

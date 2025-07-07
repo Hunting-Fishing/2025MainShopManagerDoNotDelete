@@ -93,6 +93,9 @@ export function CreateWorkOrderTab({
       };
       
       console.log('6. Final form data being passed to handler:', formData);
+      console.log('6.1. Job lines in form data:', formData.jobLines);
+      console.log('6.2. Job lines length:', formData.jobLines?.length);
+      
       await onCreateWorkOrder(formData);
       
       console.log('7. Work order creation completed successfully');

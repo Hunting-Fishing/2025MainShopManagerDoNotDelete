@@ -68,8 +68,13 @@ export class WorkOrderService {
       console.log('Job Lines to save:', jobLines);
 
       for (const jobLine of jobLines) {
+        // For service-generated job lines with temp IDs, let DB generate new ID
+        const jobLineId = jobLine.id && jobLine.id.startsWith('service-') ? null : jobLine.id;
+        
+        console.log(`Processing job line: ${jobLine.name} with ID: ${jobLine.id} -> ${jobLineId}`);
+        
         const { data, error } = await supabase.rpc('upsert_work_order_job_line', {
-          p_id: jobLine.id || `temp-${Date.now()}-${Math.random()}`,
+          p_id: jobLineId,
           p_work_order_id: workOrderId,
           p_name: jobLine.name || '',
           p_category: jobLine.category || '',
@@ -88,8 +93,10 @@ export class WorkOrderService {
           throw new Error(`Failed to save job line: ${error.message}`);
         }
         
-        console.log('Job line saved:', data);
+        console.log(`Successfully saved job line: ${jobLine.name}`, data);
       }
+      
+      console.log('=== ALL JOB LINES SAVED SUCCESSFULLY ===');
     } catch (error) {
       console.error('Error in saveJobLines:', error);
       throw error;
