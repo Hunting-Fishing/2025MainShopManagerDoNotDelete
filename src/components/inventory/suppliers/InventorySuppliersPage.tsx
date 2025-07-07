@@ -31,6 +31,7 @@ export function InventorySuppliersPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<InventorySupplier | null>(null);
   const [viewingSupplier, setViewingSupplier] = useState<InventorySupplier | null>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<InventorySupplier | null>(null);
   const [deleteSupplier, setDeleteSupplier] = useState<InventorySupplier | null>(null);
 
   // Filter suppliers based on search query
@@ -195,27 +196,27 @@ export function InventorySuppliersPage() {
           {filteredSuppliers.map((supplier) => (
             <Card 
               key={supplier.id} 
-              className="hover:shadow-md transition-all duration-200 cursor-pointer group"
-              onClick={() => setViewingSupplier(supplier)}
+              className={`hover:shadow-md transition-all duration-200 cursor-pointer group ${
+                selectedSupplier?.id === supplier.id 
+                  ? 'bg-white border-primary ring-2 ring-primary/20 shadow-md' 
+                  : 'hover:bg-muted/50'
+              }`}
+              onClick={() => {
+                setSelectedSupplier(supplier);
+                setViewingSupplier(supplier);
+              }}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base font-semibold text-foreground truncate">
+                    <h3 className="font-medium text-foreground truncate mb-2">
                       {supplier.name}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant={supplier.is_active ? "default" : "secondary"} className="text-xs">
-                        {supplier.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                      {supplier.type && (
-                        <Badge variant="outline" className="text-xs">
-                          {supplier.type}
-                        </Badge>
-                      )}
-                    </div>
+                    </h3>
+                    <Badge variant={supplier.is_active ? "default" : "secondary"} className="text-xs">
+                      {supplier.is_active ? "Active" : "Inactive"}
+                    </Badge>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -223,7 +224,7 @@ export function InventorySuppliersPage() {
                         e.stopPropagation();
                         setEditingSupplier(supplier);
                       }}
-                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -234,48 +235,10 @@ export function InventorySuppliersPage() {
                         e.stopPropagation();
                         setDeleteSupplier(supplier);
                       }}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  {supplier.contact_name && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Building className="h-3 w-3" />
-                      <span className="truncate">{supplier.contact_name}</span>
-                    </div>
-                  )}
-                  
-                  {supplier.email && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Mail className="h-3 w-3" />
-                      <span className="truncate">{supplier.email}</span>
-                    </div>
-                  )}
-                  
-                  {supplier.phone && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="h-3 w-3" />
-                      <span>{supplier.phone}</span>
-                    </div>
-                  )}
-                  
-                  {!supplier.contact_name && !supplier.email && !supplier.phone && (
-                    <div className="text-sm text-muted-foreground italic">
-                      No contact information
-                    </div>
-                  )}
-                </div>
-                
-                <div className="mt-3 pt-3 border-t border-border">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <span>Added {new Date(supplier.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
               </CardContent>
@@ -301,9 +264,15 @@ export function InventorySuppliersPage() {
       <SupplierDetailsDialog
         supplier={viewingSupplier}
         open={!!viewingSupplier}
-        onOpenChange={(open) => !open && setViewingSupplier(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewingSupplier(null);
+            setSelectedSupplier(null);
+          }
+        }}
         onEdit={(supplier) => {
           setViewingSupplier(null);
+          setSelectedSupplier(null);
           setEditingSupplier(supplier);
         }}
       />
