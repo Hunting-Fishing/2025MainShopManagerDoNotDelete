@@ -94,8 +94,8 @@ export function UnifiedJobLineEditDialog({
 
               <div>
                 <Label htmlFor="status">Status</Label>
-                <Select value={formData.status || 'pending'} onValueChange={value => handleInputChange('status', value)} className="bg-slate-50">
-                  <SelectTrigger>
+                <Select value={formData.status || 'pending'} onValueChange={value => handleInputChange('status', value)}>
+                  <SelectTrigger className="bg-slate-50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
