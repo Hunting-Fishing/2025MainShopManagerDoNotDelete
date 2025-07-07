@@ -87,6 +87,20 @@ export class WorkOrderService {
     }
   }
 
+  /**
+   * Maps form priority values to database urgency_level values
+   */
+  private static mapPriorityToUrgencyLevel(priority: string): string {
+    const priorityMap: Record<string, string> = {
+      'low': 'Low',
+      'medium': 'Normal',
+      'high': 'Urgent',
+      'critical': 'Emergency'
+    };
+    
+    return priorityMap[priority?.toLowerCase()] || 'Normal';
+  }
+
   private mapFormToWorkOrder(formData: Partial<WorkOrderFormValues>): any {
     console.log('=== MAPPING FORM TO DATABASE ===');
     console.log('Input form data:', formData);
@@ -102,7 +116,7 @@ export class WorkOrderService {
       estimated_hours: (formData as any).estimatedHours || null,
       
       // Map form fields to actual database columns
-      urgency_level: formData.priority || 'Normal',
+      urgency_level: WorkOrderService.mapPriorityToUrgencyLevel(formData.priority || 'medium'),
       customer_complaint: formData.description || null,
       complaint_source: (formData as any).complaintSource || 'Customer',
       additional_info: (formData as any).additionalInfo || null,
