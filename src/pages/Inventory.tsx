@@ -6,7 +6,7 @@ import { InventoryContent } from '@/components/inventory/InventoryContent';
 import { useOptimizedInventoryItems } from '@/hooks/inventory/useOptimizedInventoryItems';
 import { InventoryLoadingState } from '@/components/inventory/InventoryLoadingState';
 import { InventoryErrorState } from '@/components/inventory/InventoryErrorState';
-import InventoryCreate from '@/pages/InventoryCreate';
+import InventoryAdd from '@/pages/InventoryAdd';
 import InventoryCategories from '@/pages/InventoryCategories';
 import InventorySuppliers from '@/pages/InventorySuppliers';
 import InventoryLocations from '@/pages/InventoryLocations';
@@ -35,7 +35,7 @@ export default function Inventory() {
           )}
         </div>
       } />
-      <Route path="/add" element={<InventoryCreate />} />
+      <Route path="/add" element={<InventoryAdd />} />
       <Route path="/categories" element={<InventoryCategories />} />
       <Route path="/suppliers" element={<InventorySuppliers />} />
       <Route path="/locations" element={<InventoryLocations />} />
