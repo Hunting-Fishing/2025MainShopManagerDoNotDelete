@@ -1,6 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
-import { InventoryForm } from "@/components/inventory/form/InventoryForm";
+import { ComprehensiveInventoryForm } from "@/components/inventory/form/ComprehensiveInventoryForm";
 import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
 import { InventoryItemExtended } from "@/types/inventory";
 import { toast } from "@/hooks/use-toast";
@@ -56,7 +56,7 @@ export default function InventoryAdd() {
         </div>
       </div>
 
-      <InventoryForm 
+      <ComprehensiveInventoryForm 
         onSubmit={handleSubmit}
         isLoading={isLoading}
         onCancel={handleCancel}
