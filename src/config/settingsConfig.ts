@@ -7,7 +7,8 @@ import {
   Package, 
   Wrench,
   Hash,
-  HandHeart
+  HandHeart,
+  Target
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -17,6 +18,7 @@ import { InventorySettingsTab } from '@/components/settings/InventorySettingsTab
 import { DIYBayRatesTab } from '@/components/settings/DIYBayRatesTab';
 import { WorkOrderNumberingTab } from '@/components/settings/WorkOrderNumberingTab';
 import { NonProfitTab } from '@/components/settings/NonProfitTab';
+import { ProgramManagementTab } from '@/components/settings/ProgramManagementTab';
 import { SettingsTabConfig } from '@/types/settingsConfig';
 
 export const SETTINGS_TABS: SettingsTabConfig[] = [
@@ -75,6 +77,13 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     icon: HandHeart,
     component: NonProfitTab,
     description: 'Manage non-profit specific features and settings'
+  },
+  {
+    id: 'programs',
+    label: 'Program Management',
+    icon: Target,
+    component: ProgramManagementTab,
+    description: 'Manage programs, volunteers, grants, and impact measurement'
   },
 ];
 
