@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AddSupplierDialog } from "./AddSupplierDialog";
 import { EditSupplierDialog } from "./EditSupplierDialog";
+import { SupplierDetailsDialog } from "./SupplierDetailsDialog";
 
 export function InventorySuppliersPage() {
   const { suppliers, loading, error, refreshSuppliers } = useSuppliers();
@@ -29,6 +30,7 @@ export function InventorySuppliersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<InventorySupplier | null>(null);
+  const [viewingSupplier, setViewingSupplier] = useState<InventorySupplier | null>(null);
   const [deleteSupplier, setDeleteSupplier] = useState<InventorySupplier | null>(null);
 
   // Filter suppliers based on search query
@@ -189,13 +191,19 @@ export function InventorySuppliersPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredSuppliers.map((supplier) => (
-            <Card key={supplier.id} className="hover:shadow-lg transition-all duration-200 border-0 shadow-md">
-              <CardHeader className="pb-4">
+            <Card 
+              key={supplier.id} 
+              className="hover:shadow-md transition-all duration-200 cursor-pointer group"
+              onClick={() => setViewingSupplier(supplier)}
+            >
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg font-semibold text-foreground">{supplier.name}</CardTitle>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-base font-semibold text-foreground truncate">
+                      {supplier.name}
+                    </CardTitle>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant={supplier.is_active ? "default" : "secondary"} className="text-xs">
                         {supplier.is_active ? "Active" : "Inactive"}
@@ -207,20 +215,26 @@ export function InventorySuppliersPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setEditingSupplier(supplier)}
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingSupplier(supplier);
+                      }}
+                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setDeleteSupplier(supplier)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteSupplier(supplier);
+                      }}
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -228,74 +242,41 @@ export function InventorySuppliersPage() {
                 </div>
               </CardHeader>
               
-              <CardContent className="pt-0 space-y-3">
-                {/* Contact Information */}
-                {supplier.contact_name && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Building className="h-4 w-4 text-blue-500" />
-                    <span>Contact: {supplier.contact_name}</span>
-                  </div>
-                )}
-                
-                {supplier.email && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4 text-green-500" />
-                    <span className="truncate">{supplier.email}</span>
-                  </div>
-                )}
-                
-                {supplier.phone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="h-4 w-4 text-purple-500" />
-                    <span>{supplier.phone}</span>
-                  </div>
-                )}
-                
-                {supplier.website && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Globe className="h-4 w-4 text-indigo-500" />
-                    <span className="truncate">{supplier.website}</span>
-                  </div>
-                )}
-                
-                {/* Business Terms */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-                  {supplier.payment_terms && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CreditCard className="h-3 w-3" />
-                      <span>{supplier.payment_terms}</span>
+              <CardContent className="pt-0">
+                <div className="space-y-2">
+                  {supplier.contact_name && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Building className="h-3 w-3" />
+                      <span className="truncate">{supplier.contact_name}</span>
                     </div>
                   )}
                   
-                  {supplier.lead_time_days && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>{supplier.lead_time_days}d lead</span>
+                  {supplier.email && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-3 w-3" />
+                      <span className="truncate">{supplier.email}</span>
                     </div>
                   )}
                   
-                  {supplier.region && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground col-span-2">
-                      <MapPin className="h-3 w-3" />
-                      <span>{supplier.region}</span>
+                  {supplier.phone && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="h-3 w-3" />
+                      <span>{supplier.phone}</span>
+                    </div>
+                  )}
+                  
+                  {!supplier.contact_name && !supplier.email && !supplier.phone && (
+                    <div className="text-sm text-muted-foreground italic">
+                      No contact information
                     </div>
                   )}
                 </div>
                 
-                {/* Notes Preview */}
-                {supplier.notes && (
-                  <div className="pt-2 border-t border-border">
-                    <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                      <FileText className="h-3 w-3 mt-0.5" />
-                      <span className="line-clamp-2">{supplier.notes}</span>
-                    </div>
+                <div className="mt-3 pt-3 border-t border-border">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>Added {new Date(supplier.created_at).toLocaleDateString()}</span>
                   </div>
-                )}
-                
-                {/* Date */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-border">
-                  <Calendar className="h-3 w-3" />
-                  <span>Added {new Date(supplier.created_at).toLocaleDateString()}</span>
                 </div>
               </CardContent>
             </Card>
@@ -315,6 +296,16 @@ export function InventorySuppliersPage() {
         open={!!editingSupplier}
         onOpenChange={(open) => !open && setEditingSupplier(null)}
         onSuccess={handleSupplierSuccess}
+      />
+      
+      <SupplierDetailsDialog
+        supplier={viewingSupplier}
+        open={!!viewingSupplier}
+        onOpenChange={(open) => !open && setViewingSupplier(null)}
+        onEdit={(supplier) => {
+          setViewingSupplier(null);
+          setEditingSupplier(supplier);
+        }}
       />
       
       {/* Delete Confirmation Dialog */}
