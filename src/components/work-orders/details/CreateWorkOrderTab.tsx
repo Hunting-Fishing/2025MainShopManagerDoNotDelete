@@ -4,10 +4,12 @@ import { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { WorkOrderFormFields } from '../WorkOrderFormFields';
 import { WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { useToast } from '@/hooks/use-toast';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 
 interface Technician {
   id: string;
@@ -60,6 +62,8 @@ export function CreateWorkOrderTab({
   const onSubmit = async (data: WorkOrderFormSchemaValues) => {
     console.log('=== CREATE WORK ORDER TAB SUBMIT ===');
     console.log('1. Form data received:', data);
+    console.log('2. Form errors state:', form.formState.errors);
+    console.log('3. Form is valid:', form.formState.isValid);
     
     // Check if handler is provided
     if (!onCreateWorkOrder) {
@@ -71,27 +75,8 @@ export function CreateWorkOrderTab({
       });
       return;
     }
-
-    // Validate required fields
-    const errors = [];
-    if (!data.customer || data.customer.trim() === '') {
-      errors.push("Customer name is required");
-    }
-    if (!data.description || data.description.trim() === '') {
-      errors.push("Description is required");
-    }
-
-    if (errors.length > 0) {
-      console.log('2. Validation errors found:', errors);
-      toast({
-        title: "Validation Error",
-        description: errors.join(", "),
-        variant: "destructive",
-      });
-      return;
-    }
     
-    console.log('2. Validation passed, starting submission...');
+    console.log('4. Validation passed, starting submission...');
     setIsSubmitting(true);
     try {
       // Ensure inventoryItems is properly typed
@@ -100,10 +85,10 @@ export function CreateWorkOrderTab({
         inventoryItems: Array.isArray(data.inventoryItems) ? data.inventoryItems : []
       };
       
-      console.log('3. Final form data being passed to handler:', formData);
+      console.log('5. Final form data being passed to handler:', formData);
       await onCreateWorkOrder(formData);
       
-      console.log('4. Work order creation completed successfully');
+      console.log('6. Work order creation completed successfully');
       toast({
         title: "Success",
         description: `Work order ${isEditMode ? 'updated' : 'created'} successfully`,
@@ -123,6 +108,30 @@ export function CreateWorkOrderTab({
       setIsSubmitting(false);
     }
   };
+
+  // Get form validation errors for display
+  const getFormErrors = () => {
+    const errors: string[] = [];
+    if (form.formState.errors.customer) {
+      errors.push("Customer name is required");
+    }
+    if (form.formState.errors.description) {
+      errors.push("Description is required");
+    }
+    return errors;
+  };
+
+  const formErrors = getFormErrors();
+  const hasFormErrors = formErrors.length > 0;
+  const isFormValid = form.formState.isValid;
+
+  // Debug logging for form state
+  console.log('=== FORM STATE DEBUG ===');
+  console.log('Form is valid:', isFormValid);
+  console.log('Form errors:', form.formState.errors);
+  console.log('Form values:', form.getValues());
+  console.log('Has form errors:', hasFormErrors);
+  console.log('Form errors list:', formErrors);
 
   return (
     <div className="space-y-6">
@@ -147,17 +156,45 @@ export function CreateWorkOrderTab({
                 prePopulatedCustomer={prePopulatedCustomer}
               />
               
+              {/* Form Validation Feedback */}
+              {hasFormErrors && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="font-medium mb-1">Please fix the following errors:</div>
+                    <ul className="list-disc list-inside space-y-1">
+                      {formErrors.map((error, index) => (
+                        <li key={index} className="text-sm">{error}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Form Success Indicator */}
+              {isFormValid && !hasFormErrors && (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    Form is ready to submit!
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <div className="flex justify-end space-x-4">
                 <Button type="button" variant="outline">
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || hasFormErrors}
+                  className={hasFormErrors ? "opacity-50 cursor-not-allowed" : ""}
                 >
                   {isSubmitting 
                     ? (isEditMode ? 'Updating...' : 'Creating...') 
-                    : (isEditMode ? 'Update Work Order' : 'Create Work Order')
+                    : hasFormErrors 
+                      ? 'Fix errors to continue'
+                      : (isEditMode ? 'Update Work Order' : 'Create Work Order')
                   }
                 </Button>
               </div>

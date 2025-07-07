@@ -227,7 +227,39 @@ export const ExpandedIntakeForm: React.FC<ExpandedIntakeFormProps> = ({ form }) 
         </CardContent>
       </Card>
 
-      {/* Customer Communication Preferences */}
+      {/* Work Order Description - REQUIRED FIELD */}
+      <Card className="modern-card hover:shadow-lg transition-all duration-300 border-primary/20">
+        <CardHeader className="bg-gradient-subtle rounded-t-xl">
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <span className="font-heading">Work Order Description</span>
+            <span className="text-sm font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">Required</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-medium">
+                  Description of Work to be Performed *
+                </FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Describe in detail what work needs to be performed on this vehicle. Include any specific customer requests, symptoms, or issues to be addressed..."
+                    className="min-h-[120px] resize-vertical"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </CardContent>
+      </Card>
       <Card className="modern-card hover:shadow-lg transition-all duration-300">
         <CardHeader className="bg-gradient-subtle rounded-t-xl">
           <CardTitle className="flex items-center gap-2 text-foreground">
