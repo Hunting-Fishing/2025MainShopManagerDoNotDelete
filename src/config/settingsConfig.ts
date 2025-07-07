@@ -9,7 +9,9 @@ import {
   Hash,
   HandHeart,
   Target,
-  Calculator
+  Calculator,
+  Ticket,
+  Globe
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -21,6 +23,8 @@ import { WorkOrderNumberingTab } from '@/components/settings/WorkOrderNumberingT
 import { NonProfitTab } from '@/components/settings/NonProfitTab';
 import { ProgramManagementTab } from '@/components/settings/ProgramManagementTab';
 import { FinancialManagementTab } from '@/components/settings/FinancialManagementTab';
+import { RaffleManagementTab } from '@/components/settings/RaffleManagementTab';
+import { PublicPortalTab } from '@/components/settings/PublicPortalTab';
 import { SettingsTabConfig } from '@/types/settingsConfig';
 
 export const SETTINGS_TABS: SettingsTabConfig[] = [
@@ -93,6 +97,20 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     icon: Calculator,
     component: FinancialManagementTab,
     description: 'Budget tracking, financial reporting, and compliance management'
+  },
+  {
+    id: 'raffles',
+    label: 'Raffle Management',
+    icon: Ticket,
+    component: RaffleManagementTab,
+    description: 'Create and manage vehicle raffles and ticket sales'
+  },
+  {
+    id: 'public-portal',
+    label: 'Public Portal',
+    icon: Globe,
+    component: PublicPortalTab,
+    description: 'Manage public-facing portal and application forms'
   },
 ];
 

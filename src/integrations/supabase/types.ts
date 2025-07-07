@@ -6525,6 +6525,152 @@ export type Database = {
           },
         ]
       }
+      nonprofit_donations: {
+        Row: {
+          acknowledgment_date: string | null
+          acknowledgment_sent: boolean | null
+          amount: number | null
+          created_at: string | null
+          created_by: string
+          description: string
+          donation_date: string
+          donation_type: string
+          donor_id: string | null
+          id: string
+          notes: string | null
+          program_id: string | null
+          receipt_issued: boolean | null
+          receipt_issued_date: string | null
+          receipt_number: string | null
+          received_date: string | null
+          shop_id: string
+          tax_receipt_value: number | null
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          acknowledgment_date?: string | null
+          acknowledgment_sent?: boolean | null
+          amount?: number | null
+          created_at?: string | null
+          created_by: string
+          description: string
+          donation_date: string
+          donation_type: string
+          donor_id?: string | null
+          id?: string
+          notes?: string | null
+          program_id?: string | null
+          receipt_issued?: boolean | null
+          receipt_issued_date?: string | null
+          receipt_number?: string | null
+          received_date?: string | null
+          shop_id: string
+          tax_receipt_value?: number | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          acknowledgment_date?: string | null
+          acknowledgment_sent?: boolean | null
+          amount?: number | null
+          created_at?: string | null
+          created_by?: string
+          description?: string
+          donation_date?: string
+          donation_type?: string
+          donor_id?: string | null
+          id?: string
+          notes?: string | null
+          program_id?: string | null
+          receipt_issued?: boolean | null
+          receipt_issued_date?: string | null
+          receipt_number?: string | null
+          received_date?: string | null
+          shop_id?: string
+          tax_receipt_value?: number | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nonprofit_donations_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "nonprofit_donors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nonprofit_donors: {
+        Row: {
+          address: Json | null
+          communication_preferences: Json | null
+          contact_person: string | null
+          created_at: string | null
+          created_by: string
+          donation_frequency: string | null
+          donor_type: string
+          email: string | null
+          first_donation_date: string | null
+          id: string
+          is_active: boolean | null
+          last_donation_date: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          preferred_contact_method: string | null
+          shop_id: string
+          tax_receipt_required: boolean | null
+          total_donated: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: Json | null
+          communication_preferences?: Json | null
+          contact_person?: string | null
+          created_at?: string | null
+          created_by: string
+          donation_frequency?: string | null
+          donor_type: string
+          email?: string | null
+          first_donation_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_donation_date?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          preferred_contact_method?: string | null
+          shop_id: string
+          tax_receipt_required?: boolean | null
+          total_donated?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: Json | null
+          communication_preferences?: Json | null
+          contact_person?: string | null
+          created_at?: string | null
+          created_by?: string
+          donation_frequency?: string | null
+          donor_type?: string
+          email?: string | null
+          first_donation_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_donation_date?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          preferred_contact_method?: string | null
+          shop_id?: string
+          tax_receipt_required?: boolean | null
+          total_donated?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       nonprofit_report_templates: {
         Row: {
           auto_generate: boolean | null
@@ -7258,6 +7404,69 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_settings: {
+        Row: {
+          application_forms_enabled: boolean | null
+          contact_info: Json | null
+          created_at: string | null
+          custom_sections: Json | null
+          description: string | null
+          gallery_enabled: boolean | null
+          hero_image_url: string | null
+          id: string
+          is_public: boolean | null
+          logo_url: string | null
+          organization_name: string
+          raffle_section_enabled: boolean | null
+          seo_settings: Json | null
+          shop_id: string
+          social_media: Json | null
+          success_stories_enabled: boolean | null
+          tagline: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          application_forms_enabled?: boolean | null
+          contact_info?: Json | null
+          created_at?: string | null
+          custom_sections?: Json | null
+          description?: string | null
+          gallery_enabled?: boolean | null
+          hero_image_url?: string | null
+          id?: string
+          is_public?: boolean | null
+          logo_url?: string | null
+          organization_name: string
+          raffle_section_enabled?: boolean | null
+          seo_settings?: Json | null
+          shop_id: string
+          social_media?: Json | null
+          success_stories_enabled?: boolean | null
+          tagline?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          application_forms_enabled?: boolean | null
+          contact_info?: Json | null
+          created_at?: string | null
+          custom_sections?: Json | null
+          description?: string | null
+          gallery_enabled?: boolean | null
+          hero_image_url?: string | null
+          id?: string
+          is_public?: boolean | null
+          logo_url?: string | null
+          organization_name?: string
+          raffle_section_enabled?: boolean | null
+          seo_settings?: Json | null
+          shop_id?: string
+          social_media?: Json | null
+          success_stories_enabled?: boolean | null
+          tagline?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       preferred_technician_history: {
         Row: {
           change_date: string
@@ -7737,6 +7946,66 @@ export type Database = {
           },
         ]
       }
+      public_applications: {
+        Row: {
+          applicant_address: Json | null
+          applicant_email: string
+          applicant_name: string
+          applicant_phone: string | null
+          application_data: Json
+          application_type: string
+          assigned_to: string | null
+          created_at: string | null
+          id: string
+          priority_level: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string
+          status: string | null
+          supporting_documents: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          applicant_address?: Json | null
+          applicant_email: string
+          applicant_name: string
+          applicant_phone?: string | null
+          application_data?: Json
+          application_type: string
+          assigned_to?: string | null
+          created_at?: string | null
+          id?: string
+          priority_level?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id: string
+          status?: string | null
+          supporting_documents?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          applicant_address?: Json | null
+          applicant_email?: string
+          applicant_name?: string
+          applicant_phone?: string | null
+          application_data?: Json
+          application_type?: string
+          assigned_to?: string | null
+          created_at?: string | null
+          id?: string
+          priority_level?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string
+          status?: string | null
+          supporting_documents?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       quote_items: {
         Row: {
           category: string | null
@@ -7880,6 +8149,125 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      raffle_tickets: {
+        Row: {
+          amount_paid: number
+          created_at: string | null
+          id: string
+          is_winner: boolean | null
+          payment_method: string | null
+          payment_reference: string | null
+          purchase_date: string | null
+          purchaser_email: string
+          purchaser_name: string
+          purchaser_phone: string | null
+          raffle_id: string | null
+          ticket_number: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string | null
+          id?: string
+          is_winner?: boolean | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          purchase_date?: string | null
+          purchaser_email: string
+          purchaser_name: string
+          purchaser_phone?: string | null
+          raffle_id?: string | null
+          ticket_number: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string | null
+          id?: string
+          is_winner?: boolean | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          purchase_date?: string | null
+          purchaser_email?: string
+          purchaser_name?: string
+          purchaser_phone?: string | null
+          raffle_id?: string | null
+          ticket_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_tickets_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raffles: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          draw_date: string | null
+          end_date: string
+          id: string
+          images: Json | null
+          max_tickets: number | null
+          shop_id: string
+          start_date: string
+          status: string | null
+          terms_conditions: string | null
+          ticket_price: number
+          tickets_sold: number | null
+          title: string
+          updated_at: string | null
+          vehicle_id: string | null
+          winner_contact_info: Json | null
+          winner_ticket_number: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          draw_date?: string | null
+          end_date: string
+          id?: string
+          images?: Json | null
+          max_tickets?: number | null
+          shop_id: string
+          start_date: string
+          status?: string | null
+          terms_conditions?: string | null
+          ticket_price?: number
+          tickets_sold?: number | null
+          title: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+          winner_contact_info?: Json | null
+          winner_ticket_number?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          draw_date?: string | null
+          end_date?: string
+          id?: string
+          images?: Json | null
+          max_tickets?: number | null
+          shop_id?: string
+          start_date?: string
+          status?: string | null
+          terms_conditions?: string | null
+          ticket_price?: number
+          tickets_sold?: number | null
+          title?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+          winner_contact_info?: Json | null
+          winner_ticket_number?: string | null
+        }
+        Relationships: []
       }
       recurring_events: {
         Row: {
@@ -9108,6 +9496,69 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      sponsors: {
+        Row: {
+          benefits_provided: Json | null
+          company_name: string
+          contact_person: string | null
+          created_at: string | null
+          created_by: string
+          email: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          phone: string | null
+          shop_id: string
+          sponsorship_level: string | null
+          sponsorship_value: number | null
+          start_date: string | null
+          updated_at: string | null
+          visibility_preferences: Json | null
+          website: string | null
+        }
+        Insert: {
+          benefits_provided?: Json | null
+          company_name: string
+          contact_person?: string | null
+          created_at?: string | null
+          created_by: string
+          email?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          phone?: string | null
+          shop_id: string
+          sponsorship_level?: string | null
+          sponsorship_value?: number | null
+          start_date?: string | null
+          updated_at?: string | null
+          visibility_preferences?: Json | null
+          website?: string | null
+        }
+        Update: {
+          benefits_provided?: Json | null
+          company_name?: string
+          contact_person?: string | null
+          created_at?: string | null
+          created_by?: string
+          email?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          phone?: string | null
+          shop_id?: string
+          sponsorship_level?: string | null
+          sponsorship_value?: number | null
+          start_date?: string | null
+          updated_at?: string | null
+          visibility_preferences?: Json | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -11402,6 +11853,10 @@ export type Database = {
         Args: { job_line_id_param: string }
         Returns: number
       }
+      calculate_raffle_revenue: {
+        Args: { p_raffle_id: string }
+        Returns: number
+      }
       calculate_work_order_totals_with_discounts: {
         Args: { work_order_id_param: string }
         Returns: Json
@@ -11474,6 +11929,10 @@ export type Database = {
       }
       generate_quote_number: {
         Args: { p_shop_id?: string }
+        Returns: string
+      }
+      generate_raffle_ticket_number: {
+        Args: { p_raffle_id: string }
         Returns: string
       }
       generate_receipt_number: {
