@@ -27,7 +27,7 @@ export function SuppliersManager() {
   const loadSuppliers = async () => {
     try {
       const loadedSuppliers = await getInventorySuppliers();
-      setSuppliers(loadedSuppliers);
+      setSuppliers(loadedSuppliers.map(supplier => supplier.name));
     } catch (error) {
       console.error("Error loading inventory suppliers:", error);
       toast({
@@ -53,7 +53,7 @@ export function SuppliersManager() {
 
     setIsLoading(true);
     try {
-      await addInventorySupplier(newSupplier.trim());
+      await addInventorySupplier({ name: newSupplier.trim() });
       setSuppliers([...suppliers, newSupplier.trim()].sort());
       setNewSupplier("");
       toast({

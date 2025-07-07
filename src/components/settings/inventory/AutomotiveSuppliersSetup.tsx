@@ -63,7 +63,7 @@ export function AutomotiveSuppliersSetup({ existingSuppliers, onSuppliersAdded }
     setIsLoading(true);
     try {
       const promises = Array.from(selectedSuppliers).map(supplierName => 
-        addInventorySupplier(supplierName)
+        addInventorySupplier({ name: supplierName })
       );
       
       await Promise.all(promises);
