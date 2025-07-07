@@ -67,24 +67,29 @@ export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
     setSelectedServices(services);
     
     // Convert services to job lines format
-    const newJobLines: WorkOrderJobLine[] = services.map(service => ({
-      id: service.id,
+    const newJobLines: WorkOrderJobLine[] = services.map((service, index) => ({
+      id: `service-${service.id}`,
       work_order_id: workOrderId,
       name: service.name,
       description: service.description || '',
       category: service.category,
       subcategory: service.subcategory,
-      estimated_hours: service.estimated_hours,
-      labor_rate: service.labor_rate,
-      total_amount: service.total_amount,
-      status: service.status,
+      estimated_hours: service.estimated_hours || 0,
+      labor_rate: service.labor_rate || 0,
+      total_amount: service.total_amount || 0,
+      status: service.status || 'pending',
       notes: '',
-      display_order: 0,
+      display_order: index,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
     
     setServiceJobLines(newJobLines);
+    
+    // Notify parent about job lines change
+    if (onJobLinesChange) {
+      onJobLinesChange(newJobLines);
+    }
   };
 
   // Combine service-generated job lines with manually added ones

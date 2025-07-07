@@ -1,6 +1,7 @@
 
 import { WorkOrderRepository } from './WorkOrderRepository';
 import { WorkOrder, WorkOrderFormValues } from '@/types/workOrder';
+import { supabase } from '@/lib/supabase';
 
 export class WorkOrderService {
   private repository: WorkOrderRepository;
@@ -31,7 +32,7 @@ export class WorkOrderService {
     }
   }
 
-  async createWorkOrder(formData: WorkOrderFormValues): Promise<WorkOrder> {
+  async createWorkOrder(formData: WorkOrderFormValues & { jobLines?: any[] }): Promise<WorkOrder> {
     try {
       console.log('=== WORK ORDER SERVICE DEBUG ===');
       console.log('1. Service received form data:', formData);
@@ -42,10 +43,55 @@ export class WorkOrderService {
       const result = await this.repository.create(workOrderData);
       console.log('3. Repository returned:', result);
       
+      // Save job lines if provided
+      if (formData.jobLines && formData.jobLines.length > 0) {
+        console.log('4. Saving job lines:', formData.jobLines.length);
+        await this.saveJobLines(result.id, formData.jobLines);
+        console.log('5. Job lines saved successfully');
+      }
+      
       return result;
     } catch (error) {
       console.error('WorkOrderService: Error creating work order:', error);
       console.error('Form data that caused error:', formData);
+      throw error;
+    }
+  }
+
+  /**
+   * Save job lines for a work order
+   */
+  private async saveJobLines(workOrderId: string, jobLines: any[]): Promise<void> {
+    try {
+      console.log('=== SAVING JOB LINES ===');
+      console.log('Work Order ID:', workOrderId);
+      console.log('Job Lines to save:', jobLines);
+
+      for (const jobLine of jobLines) {
+        const { data, error } = await supabase.rpc('upsert_work_order_job_line', {
+          p_id: jobLine.id || `temp-${Date.now()}-${Math.random()}`,
+          p_work_order_id: workOrderId,
+          p_name: jobLine.name || '',
+          p_category: jobLine.category || '',
+          p_subcategory: jobLine.subcategory || '',
+          p_description: jobLine.description || '',
+          p_estimated_hours: jobLine.estimated_hours || 0,
+          p_labor_rate: jobLine.labor_rate || 0,
+          p_total_amount: jobLine.total_amount || 0,
+          p_status: jobLine.status || 'pending',
+          p_notes: jobLine.notes || '',
+          p_display_order: jobLine.display_order || 0
+        });
+
+        if (error) {
+          console.error('Error saving job line:', error);
+          throw new Error(`Failed to save job line: ${error.message}`);
+        }
+        
+        console.log('Job line saved:', data);
+      }
+    } catch (error) {
+      console.error('Error in saveJobLines:', error);
       throw error;
     }
   }

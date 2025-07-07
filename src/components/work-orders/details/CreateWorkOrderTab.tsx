@@ -69,6 +69,7 @@ export function CreateWorkOrderTab({
     console.log('1. Form data received:', data);
     console.log('2. Form errors state:', form.formState.errors);
     console.log('3. Form is valid:', form.formState.isValid);
+    console.log('4. Current job lines:', jobLines);
     
     // Check if handler is provided
     if (!onCreateWorkOrder) {
@@ -81,19 +82,20 @@ export function CreateWorkOrderTab({
       return;
     }
     
-    console.log('4. Validation passed, starting submission...');
+    console.log('5. Validation passed, starting submission...');
     setIsSubmitting(true);
     try {
-      // Ensure inventoryItems is properly typed
-      const formData: WorkOrderFormSchemaValues = {
+      // Ensure inventoryItems is properly typed and include job lines
+      const formData: WorkOrderFormSchemaValues & { jobLines?: any[] } = {
         ...data,
-        inventoryItems: Array.isArray(data.inventoryItems) ? data.inventoryItems : []
+        inventoryItems: Array.isArray(data.inventoryItems) ? data.inventoryItems : [],
+        jobLines: jobLines || []
       };
       
-      console.log('5. Final form data being passed to handler:', formData);
+      console.log('6. Final form data being passed to handler:', formData);
       await onCreateWorkOrder(formData);
       
-      console.log('6. Work order creation completed successfully');
+      console.log('7. Work order creation completed successfully');
       toast({
         title: "Success",
         description: `Work order ${isEditMode ? 'updated' : 'created'} successfully`,

@@ -59,7 +59,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [currentTab, setCurrentTab] = useState("intake");
   
-  const handleCreateWorkOrder = async (data: WorkOrderFormSchemaValues) => {
+  const handleCreateWorkOrder = async (data: WorkOrderFormSchemaValues & { jobLines?: any[] }) => {
     if (onSubmit) {
       await onSubmit(data);
     }
@@ -69,6 +69,12 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     setCurrentTab(tabValue);
   };
 
+  const handleJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
+    console.log('=== WORK ORDER FORM JOB LINES UPDATE ===');
+    console.log('New job lines:', newJobLines);
+    setJobLines(newJobLines);
+  };
+
   return (
     <CreateWorkOrderTab
       form={form}
@@ -76,7 +82,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
       technicianLoading={technicianLoading}
       technicianError={technicianError}
       jobLines={jobLines}
-      onJobLinesChange={setJobLines}
+      onJobLinesChange={handleJobLinesChange}
       prePopulatedCustomer={prePopulatedCustomer}
       onCreateWorkOrder={handleCreateWorkOrder}
       isEditMode={false}
