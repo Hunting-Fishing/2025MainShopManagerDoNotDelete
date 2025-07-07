@@ -26,6 +26,8 @@ import { FinancialManagementTab } from '@/components/settings/FinancialManagemen
 import { RaffleManagementTab } from '@/components/settings/RaffleManagementTab';
 import { PublicPortalTab } from '@/components/settings/PublicPortalTab';
 import { SettingsTabConfig } from '@/types/settingsConfig';
+import { GrantManagementTab } from '@/components/settings/GrantManagementTab';
+import { ImpactMeasurementTab } from '@/components/settings/ImpactMeasurementTab';
 
 export const SETTINGS_TABS: SettingsTabConfig[] = [
   {
@@ -111,6 +113,20 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     icon: Globe,
     component: PublicPortalTab,
     description: 'Manage public-facing portal and application forms'
+  },
+  {
+    id: 'grants',
+    label: 'Grant Management',
+    icon: HandHeart,
+    component: GrantManagementTab,
+    description: 'Track grant applications, deadlines, and reporting requirements'
+  },
+  {
+    id: 'impact',
+    label: 'Impact Measurement',
+    icon: Target,
+    component: ImpactMeasurementTab,
+    description: 'Track and measure your nonprofit\'s community impact'
   },
 ];
 
