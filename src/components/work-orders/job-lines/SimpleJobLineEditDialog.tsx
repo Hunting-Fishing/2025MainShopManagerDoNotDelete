@@ -35,18 +35,6 @@ export function SimpleJobLineEditDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { rates, loading: ratesLoading } = useLabourRates();
 
-  useEffect(() => {
-    if (jobLine) {
-      setFormData({
-        estimated_hours: jobLine.estimated_hours || 0,
-        labor_rate: jobLine.labor_rate || 0,
-        labor_rate_type: jobLine.labor_rate_type || 'standard',
-        status: jobLine.status || 'pending',
-        use_custom_rate: false
-      });
-    }
-  }, [jobLine]);
-
   // Rate type options with actual prices
   const rateOptions = [
     { value: 'standard', label: `Standard Rate ($${Number(rates.standard_rate).toFixed(2)})`, rate: Number(rates.standard_rate) },
@@ -55,6 +43,32 @@ export function SimpleJobLineEditDialog({
     { value: 'warranty', label: `Warranty Rate ($${Number(rates.warranty_rate).toFixed(2)})`, rate: Number(rates.warranty_rate) },
     { value: 'internal', label: `Internal Rate ($${Number(rates.internal_rate).toFixed(2)})`, rate: Number(rates.internal_rate) }
   ];
+
+  useEffect(() => {
+    if (jobLine) {
+      setFormData({
+        estimated_hours: jobLine.estimated_hours || 0.25, // Default to 0.25 hours instead of 0
+        labor_rate: jobLine.labor_rate || 0,
+        labor_rate_type: jobLine.labor_rate_type || 'standard',
+        status: jobLine.status || 'pending',
+        use_custom_rate: false
+      });
+    }
+  }, [jobLine]);
+
+  // Auto-load rate from labor_rates table when rates load or jobLine changes
+  useEffect(() => {
+    if (jobLine && rates && !ratesLoading && formData.labor_rate === 0) {
+      const rateType = jobLine.labor_rate_type || 'standard';
+      const selectedRate = rateOptions.find(option => option.value === rateType);
+      if (selectedRate && selectedRate.rate > 0) {
+        setFormData(prev => ({
+          ...prev,
+          labor_rate: selectedRate.rate
+        }));
+      }
+    }
+  }, [jobLine, rates, ratesLoading, formData.labor_rate, rateOptions]);
 
   const handleRateTypeChange = (rateType: string) => {
     const selectedRate = rateOptions.find(option => option.value === rateType);
