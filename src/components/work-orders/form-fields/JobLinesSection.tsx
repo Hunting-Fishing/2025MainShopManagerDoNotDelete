@@ -38,9 +38,7 @@ export function JobLinesSection({
     setShowAddDialog(true);
   };
 
-  const handleEditJobLine = (jobLine: WorkOrderJobLine) => {
-    setEditingJobLine(jobLine);
-  };
+  // Removed custom edit handler to let CompactJobLinesTable use its focused edit dialog
 
   const handleJobLineAdd = async (jobLines: WorkOrderJobLine[]) => {
     await onJobLinesChange();
@@ -124,7 +122,7 @@ export function JobLinesSection({
         {jobLines.length > 0 ? (
           <CompactJobLinesTable
             jobLines={jobLines}
-            onEdit={isEditMode ? handleEditJobLine : undefined}
+            onUpdate={onJobLinesChange}
             onDelete={isEditMode ? handleDeleteJobLine : undefined}
             isEditMode={isEditMode}
           />
@@ -146,15 +144,7 @@ export function JobLinesSection({
         onOpenChange={setShowAddDialog}
       />
 
-      {/* Edit Job Line Dialog - Uses comprehensive form for editing */}
-      <UnifiedJobLineFormDialog
-        workOrderId={workOrderId}
-        mode="edit"
-        jobLine={editingJobLine}
-        open={!!editingJobLine}
-        onOpenChange={(open) => !open && setEditingJobLine(null)}
-        onSave={handleJobLineSave}
-      />
+      {/* Edit dialog is now handled by CompactJobLinesTable using UnifiedJobLineEditDialog */}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDeleteDialog

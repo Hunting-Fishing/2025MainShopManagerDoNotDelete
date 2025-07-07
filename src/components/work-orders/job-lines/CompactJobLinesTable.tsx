@@ -12,7 +12,7 @@ import { UnifiedJobLineEditDialog } from './UnifiedJobLineEditDialog';
 interface CompactJobLinesTableProps {
   jobLines: WorkOrderJobLine[];
   allParts?: WorkOrderPart[];
-  onUpdate?: (jobLine: WorkOrderJobLine) => void;
+  onUpdate?: ((jobLine: WorkOrderJobLine) => void) | (() => Promise<void>); // Support both patterns
   onDelete?: (jobLineId: string) => void;
   onEdit?: (jobLine: WorkOrderJobLine) => void;
   isEditMode: boolean;
@@ -40,7 +40,14 @@ export function CompactJobLinesTable({
 
   const handleSaveJobLine = async (updatedJobLine: WorkOrderJobLine) => {
     if (onUpdate) {
-      await onUpdate(updatedJobLine);
+      // Support both callback patterns
+      if (onUpdate.length === 0) {
+        // No parameters - refresh function
+        await (onUpdate as () => Promise<void>)();
+      } else {
+        // Has parameters - update function
+        (onUpdate as (jobLine: WorkOrderJobLine) => void)(updatedJobLine);
+      }
     }
     setIsEditDialogOpen(false);
     setEditingJobLine(null);
