@@ -115,11 +115,11 @@ export function useWorkOrderStats() {
         .from('work_orders')
         .select('id')
         .lt('created_at', today)
-        .in('status', ['pending', 'in_progress', 'assigned']);
+        .in('status', ['pending', 'in-progress', 'assigned']);
 
       const newStats: WorkOrderStats = {
         total: totalResult.count || 0,
-        inProgress: statusData.filter(wo => wo.status === 'in_progress').length,
+        inProgress: statusData.filter(wo => wo.status === 'in-progress').length,
         completed: statusData.filter(wo => wo.status === 'completed').length,
         overdue: overdueResult.data?.length || 0,
         pendingAssignment: statusData.filter(wo => wo.status === 'pending').length,

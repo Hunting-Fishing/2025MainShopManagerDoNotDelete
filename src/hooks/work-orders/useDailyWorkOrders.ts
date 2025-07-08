@@ -89,7 +89,7 @@ export function useDailyWorkOrders() {
           profiles!work_orders_technician_id_fkey(display_name)
         `)
         .lt('created_at', today)
-        .in('status', ['pending', 'in_progress', 'assigned'])
+        .in('status', ['pending', 'in-progress', 'assigned'])
         .order('created_at', { ascending: true });
 
       if (carryOverError) throw carryOverError;
