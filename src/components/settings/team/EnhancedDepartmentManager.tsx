@@ -12,8 +12,10 @@ import { Plus, Pencil, Trash2, Users, Search, Building2, Wrench, HeadphonesIcon,
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useDepartmentMembers } from '@/hooks/team/useDepartmentMembers';
 import { useDepartments } from '@/hooks/team/useDepartments';
 import { toast } from '@/hooks/use-toast';
+import { AssignUserDialog } from './AssignUserDialog';
 const predefinedDepartments = [{
   name: 'Service Operations',
   description: 'Field technicians and on-site service staff',
@@ -63,15 +65,12 @@ const departmentSchema = z.object({
 });
 type DepartmentFormData = z.infer<typeof departmentSchema>;
 export function EnhancedDepartmentManager() {
-  const {
-    departments,
-    isLoading,
-    addDepartment,
-    updateDepartment,
-    deleteDepartment
-  } = useDepartments();
-  const [editingDepartment, setEditingDepartment] = useState<typeof departments[0] | null>(null);
+  const { departmentsWithMembers, isLoading, refetch } = useDepartmentMembers();
+  const { addDepartment, updateDepartment, deleteDepartment } = useDepartments();
+  const [editingDepartment, setEditingDepartment] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPredefined, setShowPredefined] = useState(true);
   const form = useForm<DepartmentFormData>({
@@ -87,10 +86,10 @@ export function EnhancedDepartmentManager() {
   const isCustom = form.watch('isCustom');
 
   // Filter out already existing departments from predefined list
-  const availablePredefined = predefinedDepartments.filter(pred => !departments.some(dept => dept.name === pred.name));
+  const availablePredefined = predefinedDepartments.filter(pred => !departmentsWithMembers.some(dept => dept.name === pred.name));
 
   // Filter departments based on search
-  const filteredDepartments = departments.filter(dept => dept.name.toLowerCase().includes(searchQuery.toLowerCase()) || dept.description?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredDepartments = departmentsWithMembers.filter(dept => dept.name.toLowerCase().includes(searchQuery.toLowerCase()) || dept.description?.toLowerCase().includes(searchQuery.toLowerCase()));
   const onSubmit = async (data: DepartmentFormData) => {
     try {
       let departmentName = data.name;
@@ -112,6 +111,7 @@ export function EnhancedDepartmentManager() {
           setIsDialogOpen(false);
           setEditingDepartment(null);
           form.reset();
+          refetch();
         }
       } else {
         const result = await addDepartment(departmentName, departmentDescription, data.isCustom);
@@ -122,6 +122,7 @@ export function EnhancedDepartmentManager() {
           });
           setIsDialogOpen(false);
           form.reset();
+          refetch();
         }
       }
     } catch (error) {
@@ -132,7 +133,7 @@ export function EnhancedDepartmentManager() {
       });
     }
   };
-  const handleEdit = (department: typeof departments[0]) => {
+  const handleEdit = (department: any) => {
     setEditingDepartment(department);
     form.setValue('name', department.name);
     form.setValue('description', department.description || '');
@@ -147,6 +148,7 @@ export function EnhancedDepartmentManager() {
           title: "Success",
           description: "Department deleted successfully."
         });
+        refetch();
       }
     }
   };
@@ -323,7 +325,7 @@ export function EnhancedDepartmentManager() {
               <Building2 className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-sm font-medium">Total Departments</p>
-                <p className="text-2xl font-bold">{departments.length}</p>
+                <p className="text-2xl font-bold">{departmentsWithMembers.length}</p>
               </div>
             </div>
           </CardContent>
@@ -334,7 +336,7 @@ export function EnhancedDepartmentManager() {
               <Users className="h-5 w-5 text-success" />
               <div>
                 <p className="text-sm font-medium">Active Departments</p>
-                <p className="text-2xl font-bold">{departments.length}</p>
+                <p className="text-2xl font-bold">{departmentsWithMembers.length}</p>
               </div>
             </div>
           </CardContent>
@@ -379,9 +381,16 @@ export function EnhancedDepartmentManager() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge 
+                        variant="secondary" 
+                        className="text-xs cursor-pointer hover:bg-primary/10"
+                        onClick={() => {
+                          setSelectedDepartment(department);
+                          setAssignDialogOpen(true);
+                        }}
+                      >
                         <Users className="h-3 w-3 mr-1" />
-                        0 members
+                        {department.memberCount} members
                       </Badge>
                       <div className="flex space-x-1">
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(department)} className="hover:bg-primary/10">
@@ -397,5 +406,22 @@ export function EnhancedDepartmentManager() {
               </Card>;
       })}
       </div>
+
+      {/* Assignment Dialog */}
+      {selectedDepartment && (
+        <AssignUserDialog
+          departmentId={selectedDepartment.id}
+          departmentName={selectedDepartment.name}
+          isOpen={assignDialogOpen}
+          onClose={() => {
+            setAssignDialogOpen(false);
+            setSelectedDepartment(null);
+          }}
+          onAssignmentChange={() => {
+            refetch();
+          }}
+          currentMembers={selectedDepartment.members || []}
+        />
+      )}
     </div>;
 }
