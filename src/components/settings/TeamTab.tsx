@@ -1,8 +1,40 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DepartmentManager } from "./team/DepartmentManager";
+import { RolesContent } from "@/components/team/roles/RolesContent";
+import { RoleDialogs } from "@/components/team/roles/RoleDialogs";
+import { useTeamRolesPage } from "@/hooks/useTeamRolesPage";
 
 export function TeamTab() {
+  const {
+    filteredRoles,
+    searchQuery,
+    setSearchQuery,
+    typeFilter,
+    setTypeFilter,
+    isAddDialogOpen,
+    setIsAddDialogOpen,
+    isEditDialogOpen,
+    setIsEditDialogOpen,
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
+    newRoleName,
+    setNewRoleName,
+    newRoleDescription,
+    setNewRoleDescription,
+    currentRole,
+    setCurrentRole,
+    rolePermissions,
+    setRolePermissions,
+    onAddRole,
+    onEditRole,
+    onDeleteRole,
+    handleEditRoleClick,
+    handleDeleteRoleClick,
+    handleDuplicateRoleClick,
+    handleReorderRole
+  } = useTeamRolesPage();
+
   return (
     <Tabs defaultValue="departments">
       <TabsList className="mb-4">
@@ -15,12 +47,39 @@ export function TeamTab() {
       </TabsContent>
       
       <TabsContent value="roles" className="space-y-4">
-        <div className="bg-muted/50 p-4 rounded-lg">
-          <h4 className="font-medium mb-2">Role Management</h4>
-          <p className="text-sm text-muted-foreground">
-            Role management interface will be available in the next update. For now, you can manage roles in the Team section.
-          </p>
-        </div>
+        <RolesContent 
+          roles={filteredRoles}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          typeFilter={typeFilter}
+          onTypeFilterChange={setTypeFilter}
+          onEditRole={handleEditRoleClick}
+          onDeleteRole={handleDeleteRoleClick}
+          onDuplicateRole={handleDuplicateRoleClick}
+          onReorderRole={handleReorderRole}
+        />
+
+        <RoleDialogs 
+          addDialogOpen={isAddDialogOpen}
+          onAddDialogChange={setIsAddDialogOpen}
+          roleName={newRoleName}
+          onRoleNameChange={setNewRoleName}
+          roleDescription={newRoleDescription}
+          onRoleDescriptionChange={setNewRoleDescription}
+          onPermissionsChange={setRolePermissions}
+          onAddRole={onAddRole}
+          
+          editDialogOpen={isEditDialogOpen}
+          onEditDialogChange={setIsEditDialogOpen}
+          currentRole={currentRole}
+          onCurrentRoleChange={setCurrentRole}
+          rolePermissions={rolePermissions}
+          onEditRole={onEditRole}
+          
+          deleteDialogOpen={isDeleteDialogOpen}
+          onDeleteDialogChange={setIsDeleteDialogOpen}
+          onDeleteRole={onDeleteRole}
+        />
       </TabsContent>
     </Tabs>
   );
