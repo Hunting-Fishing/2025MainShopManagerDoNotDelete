@@ -17,6 +17,7 @@ import { WorkOrderManagement } from './enhanced-work-orders/WorkOrderManagement'
 import { WorkOrderTimeline } from './enhanced-work-orders/WorkOrderTimeline';
 import { WorkOrderQuickActions } from './enhanced-work-orders/WorkOrderQuickActions';
 import { WorkOrderAdvancedFilters } from './enhanced-work-orders/WorkOrderAdvancedFilters';
+import { DailyWorkOrdersDashboard } from './enhanced-work-orders/DailyWorkOrdersDashboard';
 
 export function EnhancedWorkOrdersDashboard() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -39,10 +40,14 @@ export function EnhancedWorkOrdersDashboard() {
 
       {/* Main Dashboard Tabs */}
       <Tabs value={activeView} onValueChange={setActiveView} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="daily" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Daily
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
@@ -92,6 +97,10 @@ export function EnhancedWorkOrdersDashboard() {
               </Card>
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="daily">
+          <DailyWorkOrdersDashboard />
         </TabsContent>
 
         <TabsContent value="analytics">

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Clock, 
   User, 
@@ -12,99 +13,79 @@ import {
   MessageSquare,
   Phone,
   FileText,
-  Filter
+  Filter,
+  RefreshCw
 } from 'lucide-react';
+import { useWorkOrderActivities } from '@/hooks/work-orders/useWorkOrderActivities';
 
-const activities = [
-  {
-    id: 1,
-    type: 'work_order_created',
-    icon: FileText,
-    title: 'Work Order Created',
-    description: 'WO-2024-001234 created for brake inspection',
-    user: 'Sarah Johnson',
-    timestamp: '10 minutes ago',
-    color: 'text-blue-600 bg-blue-50',
-    priority: 'high'
-  },
-  {
-    id: 2,
-    type: 'technician_assigned',
-    icon: User,
-    title: 'Technician Assigned',
-    description: 'Mike Wilson assigned to oil change service',
-    user: 'System',
-    timestamp: '15 minutes ago',
-    color: 'text-green-600 bg-green-50',
-    priority: 'normal'
-  },
-  {
-    id: 3,
-    type: 'status_updated',
-    icon: Settings,
-    title: 'Status Updated',
-    description: 'WO-2024-001230 status changed to "In Progress"',
-    user: 'Tom Anderson',
-    timestamp: '22 minutes ago',
-    color: 'text-orange-600 bg-orange-50',
-    priority: 'normal'
-  },
-  {
-    id: 4,
-    type: 'work_order_completed',
-    icon: CheckCircle,
-    title: 'Work Order Completed',
-    description: 'Transmission repair completed successfully',
-    user: 'Emily Davis',
-    timestamp: '35 minutes ago',
-    color: 'text-green-600 bg-green-50',
-    priority: 'normal'
-  },
-  {
-    id: 5,
-    type: 'customer_communication',
-    icon: MessageSquare,
-    title: 'Customer Communication',
-    description: 'SMS sent to customer about appointment reminder',
-    user: 'System',
-    timestamp: '1 hour ago',
-    color: 'text-purple-600 bg-purple-50',
-    priority: 'low'
-  },
-  {
-    id: 6,
-    type: 'overdue_alert',
-    icon: AlertTriangle,
-    title: 'Overdue Alert',
-    description: 'WO-2024-001225 is now 2 days overdue',
-    user: 'System',
-    timestamp: '1 hour ago',
-    color: 'text-red-600 bg-red-50',
-    priority: 'urgent'
-  },
-  {
-    id: 7,
-    type: 'phone_call',
-    icon: Phone,
-    title: 'Customer Call',
-    description: 'Outbound call made to discuss repair estimate',
-    user: 'John Smith',
-    timestamp: '2 hours ago',
-    color: 'text-blue-600 bg-blue-50',
-    priority: 'normal'
-  },
-  {
-    id: 8,
-    type: 'work_order_updated',
-    icon: Settings,
-    title: 'Work Order Updated',
-    description: 'Additional parts added to WO-2024-001228',
-    user: 'Mike Wilson',
-    timestamp: '3 hours ago',
-    color: 'text-yellow-600 bg-yellow-50',
-    priority: 'normal'
+const getActivityConfig = (action: string) => {
+  switch (action.toLowerCase()) {
+    case 'created':
+      return {
+        icon: FileText,
+        title: 'Work Order Created',
+        color: 'text-blue-600 bg-blue-50',
+        priority: 'normal'
+      };
+    case 'assigned':
+      return {
+        icon: User,
+        title: 'Technician Assigned',
+        color: 'text-green-600 bg-green-50',
+        priority: 'normal'
+      };
+    case 'status_updated':
+      return {
+        icon: Settings,
+        title: 'Status Updated',
+        color: 'text-orange-600 bg-orange-50',
+        priority: 'normal'
+      };
+    case 'completed':
+      return {
+        icon: CheckCircle,
+        title: 'Work Order Completed',
+        color: 'text-green-600 bg-green-50',
+        priority: 'normal'
+      };
+    case 'customer_communication':
+      return {
+        icon: MessageSquare,
+        title: 'Customer Communication',
+        color: 'text-purple-600 bg-purple-50',
+        priority: 'low'
+      };
+    case 'overdue_alert':
+      return {
+        icon: AlertTriangle,
+        title: 'Overdue Alert',
+        color: 'text-red-600 bg-red-50',
+        priority: 'urgent'
+      };
+    default:
+      return {
+        icon: Settings,
+        title: 'Work Order Updated',
+        color: 'text-yellow-600 bg-yellow-50',
+        priority: 'normal'
+      };
   }
-];
+};
+
+const formatTimeAgo = (timestamp: string) => {
+  const now = new Date();
+  const activityTime = new Date(timestamp);
+  const diffInMinutes = Math.floor((now.getTime() - activityTime.getTime()) / (1000 * 60));
+  
+  if (diffInMinutes < 1) return 'Just now';
+  if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} hours ago`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays} days ago`;
+};
 
 const priorityColors = {
   low: 'bg-green-100 text-green-800',
@@ -116,10 +97,33 @@ const priorityColors = {
 export function WorkOrderTimeline() {
   const [filter, setFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('today');
+  const { activities, loading, error, refetch } = useWorkOrderActivities(20);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center p-8">
+          <LoadingSpinner />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-red-600 bg-red-50 rounded-lg">
+        <AlertTriangle className="h-4 w-4" />
+        <span>Failed to load activities: {error}</span>
+        <button onClick={refetch} className="ml-auto">
+          <RefreshCw className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
 
   const filteredActivities = activities.filter(activity => {
     if (filter === 'all') return true;
-    return activity.type === filter;
+    return activity.action.toLowerCase().includes(filter);
   });
 
   return (
@@ -179,11 +183,17 @@ export function WorkOrderTimeline() {
             {/* Timeline items */}
             <div className="space-y-6">
               {filteredActivities.map((activity, index) => {
-                const Icon = activity.icon;
+                const config = getActivityConfig(activity.action);
+                const Icon = config.icon;
+                const workOrderNumber = activity.work_order?.work_order_number || `WO-${activity.work_order_id?.slice(0, 8)}`;
+                const customerName = activity.work_order?.customer 
+                  ? `${activity.work_order.customer.first_name} ${activity.work_order.customer.last_name}`.trim()
+                  : 'Unknown Customer';
+                
                 return (
                   <div key={activity.id} className="relative flex items-start gap-4">
                     {/* Timeline dot */}
-                    <div className={`flex-shrink-0 w-12 h-12 rounded-full border-4 border-background flex items-center justify-center ${activity.color}`}>
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-full border-4 border-background flex items-center justify-center ${config.color}`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     
@@ -192,22 +202,22 @@ export function WorkOrderTimeline() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="text-sm font-medium">{activity.title}</h4>
-                            <Badge className={priorityColors[activity.priority as keyof typeof priorityColors]}>
-                              {activity.priority}
+                            <h4 className="text-sm font-medium">{config.title}</h4>
+                            <Badge className={priorityColors[config.priority as keyof typeof priorityColors]}>
+                              {config.priority}
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">
-                            {activity.description}
+                            {activity.action} for {workOrderNumber} - {customerName}
                           </p>
                           <div className="flex items-center gap-4 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <User className="h-3 w-3" />
-                              {activity.user}
+                              {activity.user_name || 'System'}
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {activity.timestamp}
+                              {formatTimeAgo(activity.timestamp)}
                             </span>
                           </div>
                         </div>
