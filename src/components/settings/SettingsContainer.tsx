@@ -17,10 +17,14 @@ export const SettingsContainer: React.FC<SettingsContainerProps> = ({
   const { activeTab, setActiveTab, tabs } = useSettingsNavigation(initialTab);
 
   return (
-    <div className={`space-y-6 ${className || ''}`}>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <SettingsTabsList tabs={tabs} />
-        <SettingsTabContent tabs={tabs} />
+    <div className={`w-full ${className || ''}`}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
+        <div className="border-b border-border">
+          <SettingsTabsList tabs={tabs} />
+        </div>
+        <div className="py-6">
+          <SettingsTabContent tabs={tabs} />
+        </div>
       </Tabs>
     </div>
   );

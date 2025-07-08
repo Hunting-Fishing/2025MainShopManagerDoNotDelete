@@ -10,8 +10,19 @@ import { SettingsContainer } from '@/components/settings/SettingsContainer';
  */
 export default function Settings() {
   return (
-    <Routes>
-      <Route path="/*" element={<SettingsContainer />} />
-    </Routes>
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground">
+            Manage your organization settings and preferences
+          </p>
+        </div>
+        
+        <Routes>
+          <Route path="/*" element={<SettingsContainer />} />
+        </Routes>
+      </div>
+    </div>
   );
 }

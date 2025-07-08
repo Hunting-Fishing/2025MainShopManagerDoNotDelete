@@ -10,11 +10,8 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  // Initialize sidebar as open on desktop, closed on mobile
-  const [isOpen, setIsOpen] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth >= 1024; // lg breakpoint
-  });
+  // Initialize sidebar as closed by default to avoid layout issues
+  const [isOpen, setIsOpen] = useState(false);
 
   // Handle window resize to auto-close/open sidebar
   useEffect(() => {
