@@ -11,18 +11,21 @@ import {
   PieChart,
   Activity,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Calendar
 } from 'lucide-react';
 import { useWorkOrderStats } from '@/hooks/work-orders/useWorkOrderStats';
 import { useDailyWorkOrders } from '@/hooks/work-orders/useDailyWorkOrders';
+import { useWorkOrderAnalytics, TimePeriod } from '@/hooks/work-orders/useWorkOrderAnalytics';
 
 export function WorkOrderAnalytics() {
-  const [timeRange, setTimeRange] = useState('7d');
+  const [timeRange, setTimeRange] = useState<TimePeriod>('month');
   const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useWorkOrderStats();
   const { dailyData, loading: dailyLoading, error: dailyError, refetch: refetchDaily } = useDailyWorkOrders();
+  const { analytics, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useWorkOrderAnalytics(timeRange);
 
-  const loading = statsLoading || dailyLoading;
-  const error = statsError || dailyError;
+  const loading = statsLoading || dailyLoading || analyticsLoading;
+  const error = statsError || dailyError || analyticsError;
 
   if (loading) {
     return (
@@ -37,7 +40,7 @@ export function WorkOrderAnalytics() {
       <div className="flex items-center gap-2 p-4 text-red-600 bg-red-50 rounded-lg">
         <AlertTriangle className="h-4 w-4" />
         <span>Failed to load analytics: {error}</span>
-        <button onClick={() => { refetchStats(); refetchDaily(); }} className="ml-auto">
+        <button onClick={() => { refetchStats(); refetchDaily(); refetchAnalytics(); }} className="ml-auto">
           <RefreshCw className="h-4 w-4" />
         </button>
       </div>
@@ -73,11 +76,9 @@ export function WorkOrderAnalytics() {
     }
   ];
 
-  // Create daily chart data from live data
-  const dailyChartData = [
-    { day: 'Today', completed: dailyData.completedToday, created: dailyData.totalToday },
-    { day: 'Overdue', completed: 0, created: dailyData.totalOverdue },
-    { day: 'Carry', completed: 0, created: dailyData.totalCarryOvers }
+  // Use analytics data for charts
+  const chartData = analytics.data.length > 0 ? analytics.data : [
+    { period: 'No Data', completed: 0, created: 0, revenue: 0, avgCompletionTime: 0 }
   ];
 
   return (
@@ -88,15 +89,16 @@ export function WorkOrderAnalytics() {
           <BarChart3 className="h-5 w-5 text-muted-foreground" />
           <h3 className="text-lg font-semibold">Work Order Analytics</h3>
         </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
+        <Select value={timeRange} onValueChange={(value: TimePeriod) => setTimeRange(value)}>
           <SelectTrigger className="w-32">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7d">Last 7 days</SelectItem>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="90d">Last 90 days</SelectItem>
-            <SelectItem value="1y">Last year</SelectItem>
+            <SelectItem value="day">Daily</SelectItem>
+            <SelectItem value="week">Weekly</SelectItem>
+            <SelectItem value="month">Monthly</SelectItem>
+            <SelectItem value="quarter">Quarterly</SelectItem>
+            <SelectItem value="year">Yearly</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -112,31 +114,34 @@ export function WorkOrderAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {dailyChartData.map((day, index) => (
-                <div key={day.day} className="flex items-center gap-4">
-                  <span className="text-sm font-medium w-12">{day.day}</span>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
-                        <div 
-                          className="h-full bg-green-500 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min((day.completed / Math.max(stats.total, 1)) * 100, 100)}%` }}
-                        />
+              {chartData.slice(-10).map((item, index) => {
+                const maxValue = Math.max(...chartData.map(d => Math.max(d.completed, d.created)));
+                return (
+                  <div key={item.period} className="flex items-center gap-4">
+                    <span className="text-sm font-medium w-20 truncate">{item.period}</span>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
+                          <div 
+                            className="h-full bg-green-500 rounded-full transition-all duration-300"
+                            style={{ width: `${maxValue > 0 ? (item.completed / maxValue) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <span className="text-sm text-muted-foreground w-12">{item.completed}</span>
                       </div>
-                      <span className="text-sm text-muted-foreground w-12">{day.completed}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min((day.created / Math.max(stats.total, 1)) * 100, 100)}%` }}
-                        />
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                            style={{ width: `${maxValue > 0 ? (item.created / maxValue) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <span className="text-sm text-muted-foreground w-12">{item.created}</span>
                       </div>
-                      <span className="text-sm text-muted-foreground w-12">{day.created}</span>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div className="flex items-center gap-4 pt-2 border-t">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full" />
@@ -194,35 +199,45 @@ export function WorkOrderAnalytics() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 rounded-lg bg-muted/50">
-                <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-                <p className="text-sm text-muted-foreground">Total Work Orders</p>
+                <p className="text-2xl font-bold text-blue-600">{analytics.totalCreated}</p>
+                <p className="text-sm text-muted-foreground">Total Created</p>
+                <p className="text-xs text-muted-foreground">
+                  {analytics.periodComparison.created > 0 ? '+' : ''}{analytics.periodComparison.created.toFixed(1)}%
+                </p>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted/50">
-                <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+                <p className="text-2xl font-bold text-green-600">{analytics.totalCompleted}</p>
                 <p className="text-sm text-muted-foreground">Completed</p>
+                <p className="text-xs text-muted-foreground">
+                  {analytics.periodComparison.completed > 0 ? '+' : ''}{analytics.periodComparison.completed.toFixed(1)}%
+                </p>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted/50">
-                <p className="text-2xl font-bold text-orange-600">{stats.inProgress}</p>
-                <p className="text-sm text-muted-foreground">In Progress</p>
+                <p className="text-2xl font-bold text-purple-600">${analytics.totalRevenue.toFixed(0)}</p>
+                <p className="text-sm text-muted-foreground">Revenue</p>
+                <p className="text-xs text-muted-foreground">
+                  {analytics.periodComparison.revenue > 0 ? '+' : ''}{analytics.periodComparison.revenue.toFixed(1)}%
+                </p>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted/50">
-                <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
-                <p className="text-sm text-muted-foreground">Overdue</p>
+                <p className="text-2xl font-bold text-orange-600">${analytics.averageValue.toFixed(0)}</p>
+                <p className="text-sm text-muted-foreground">Avg Value</p>
+                <p className="text-xs text-muted-foreground">Per work order</p>
               </div>
             </div>
             <div className="mt-4 pt-4 border-t">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <div>
+                  <span className="text-muted-foreground">Current Period:</span>
+                  <span className="ml-2 font-medium capitalize">{timeRange}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Data Points:</span>
+                  <span className="ml-2 font-medium">{analytics.data.length}</span>
+                </div>
+                <div>
                   <span className="text-muted-foreground">Active Technicians:</span>
                   <span className="ml-2 font-medium">{stats.activeTechnicians}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Today's Completed:</span>
-                  <span className="ml-2 font-medium">{dailyData.completedToday}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Carry Overs:</span>
-                  <span className="ml-2 font-medium">{dailyData.totalCarryOvers}</span>
                 </div>
               </div>
             </div>

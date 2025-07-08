@@ -121,7 +121,7 @@ export function WorkOrderOverviewStats() {
                   <div className="flex items-center gap-1">
                     <TrendIcon className={`h-3 w-3 ${isPositive ? 'text-green-600' : 'text-red-600'}`} />
                     <span className={`text-xs font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                      {stat.change}
+                      {stat.change || '+0%'}
                     </span>
                     <span className="text-xs text-muted-foreground">vs last month</span>
                   </div>
