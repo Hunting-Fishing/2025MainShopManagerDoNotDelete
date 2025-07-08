@@ -1,19 +1,18 @@
 
 import React from "react";
-import { Role } from "@/types/team";
 import { Card } from "@/components/ui/card";
 import { RolesSearch } from "./RolesSearch";
 import { RolesGrid } from "./RolesGrid";
 
 interface RolesContentProps {
-  roles: Role[];
+  roles: any[];
   searchQuery: string;
   onSearchChange: (value: string) => void;
   typeFilter: string;
   onTypeFilterChange: (value: string) => void;
-  onEditRole: (role: Role) => void;
-  onDeleteRole: (role: Role) => void;
-  onDuplicateRole: (role: Role) => void;
+  onEditRole: (role: any) => void;
+  onDeleteRole: (role: any) => void;
+  onDuplicateRole: (role: any) => void;
   onReorderRole: (roleId: string, direction: 'up' | 'down') => boolean;
 }
 

@@ -1,68 +1,58 @@
-import { useState, useEffect } from "react";
-import { Role } from "@/types/team";
+import { useState, useEffect, useMemo } from "react";
 import { PermissionSet } from "@/types/permissions";
-import { permissionPresets } from "@/data/permissionPresets";
-import { useRoleManagement } from "@/hooks/useRoleManagement";
+import { useRoles, DatabaseRole } from "@/hooks/roles/useRoles";
+import { useRoleAssignments } from "@/hooks/roles/useRoleAssignments";
 import { toast } from "@/hooks/use-toast";
-import { exportRolesToJson } from "@/utils/roleImportExport";
 
-const initialRoles: Role[] = [
-  {
-    id: "role-1",
-    name: "Owner",
-    description: "Full access to all system features and settings",
-    isDefault: true,
-    permissions: permissionPresets.Owner,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    priority: 1
-  },
-  {
-    id: "role-2",
-    name: "Administrator",
-    description: "Administrative access to most system features",
-    isDefault: true,
-    permissions: permissionPresets.Administrator,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    priority: 2
-  },
-  {
-    id: "role-3",
-    name: "Technician",
-    description: "Access to work orders and relevant customer information",
-    isDefault: true,
-    permissions: permissionPresets.Technician,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    priority: 3
-  },
-  {
-    id: "role-4",
-    name: "Customer Service",
-    description: "Access to customer information and basic work order management",
-    isDefault: true,
-    permissions: permissionPresets["Customer Service"],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    priority: 4
-  }
-];
+// Transform database role to UI role format
+const transformDatabaseRoleToUIRole = (dbRole: DatabaseRole) => ({
+  id: dbRole.id,
+  name: dbRole.name,
+  description: dbRole.description || "",
+  isDefault: dbRole.is_default,
+  permissions: dbRole.permissions as PermissionSet,
+  createdAt: dbRole.created_at,
+  updatedAt: dbRole.updated_at,
+  priority: 1, // Default priority for sorting
+  memberCount: dbRole.member_count,
+  members: dbRole.members
+});
 
 export function useTeamRolesPage() {
-  const {
-    filteredRoles,
-    searchQuery,
-    setSearchQuery,
-    typeFilter,
-    setTypeFilter,
-    handleAddRole,
-    handleEditRole,
-    handleDeleteRole,
-    handleDuplicateRole,
-    handleImportRoles,
-    handleReorderRole
-  } = useRoleManagement(initialRoles);
+  const { roles: dbRoles, loading, createRole, updateRole, deleteRole } = useRoles();
+  const { assignRole, removeUserFromRole } = useRoleAssignments();
+
+  // Transform database roles to UI format
+  const roles = useMemo(() => 
+    dbRoles.map(transformDatabaseRoleToUIRole), 
+    [dbRoles]
+  );
+
+  // Filtering state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  // Filter roles based on search and type
+  const filteredRoles = useMemo(() => {
+    let filtered = roles;
+
+    if (searchQuery) {
+      filtered = filtered.filter(role =>
+        role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        role.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (typeFilter !== "all") {
+      filtered = filtered.filter(role => {
+        if (typeFilter === "default") return role.isDefault;
+        if (typeFilter === "custom") return !role.isDefault;
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [roles, searchQuery, typeFilter]);
 
   // Dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -72,80 +62,114 @@ export function useTeamRolesPage() {
   // Form state
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDescription, setNewRoleDescription] = useState("");
-  const [currentRole, setCurrentRole] = useState<Role | null>(null);
+  const [currentRole, setCurrentRole] = useState<any>(null);
   const [rolePermissions, setRolePermissions] = useState<PermissionSet | null>(null);
 
   const handleExportRoles = () => {
-    exportRolesToJson(initialRoles);
+    // Export database roles as JSON
+    const exportData = JSON.stringify(roles, null, 2);
+    const blob = new Blob([exportData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'roles-export.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
     toast({
       title: "Roles Exported",
       description: "Your roles have been exported to a JSON file",
     });
   };
 
-  const onAddRole = () => {
-    const success = handleAddRole(newRoleName, newRoleDescription, rolePermissions);
-    if (success) {
+  const onAddRole = async () => {
+    if (!rolePermissions) {
+      toast({
+        title: "Error",
+        description: "Please configure role permissions",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await createRole(newRoleName, newRoleDescription, rolePermissions);
       setIsAddDialogOpen(false);
       setNewRoleName("");
       setNewRoleDescription("");
       setRolePermissions(null);
-      toast({
-        title: "Role Added",
-        description: "The new role has been created successfully",
-        variant: "success",
-      });
+    } catch (error) {
+      // Error is handled in the createRole function
     }
   };
 
-  const onEditRole = () => {
-    if (!currentRole) return;
+  const onEditRole = async () => {
+    if (!currentRole || !rolePermissions) return;
     
-    const success = handleEditRole(currentRole, rolePermissions);
-    if (success) {
+    try {
+      await updateRole(currentRole.id, {
+        name: currentRole.name,
+        description: currentRole.description,
+        permissions: rolePermissions
+      });
       setIsEditDialogOpen(false);
       setCurrentRole(null);
       setRolePermissions(null);
-      toast({
-        title: "Role Updated",
-        description: "The role has been updated successfully",
-        variant: "success",
-      });
+    } catch (error) {
+      // Error is handled in the updateRole function
     }
   };
 
-  const onDeleteRole = () => {
+  const onDeleteRole = async () => {
     if (!currentRole) return;
     
-    const success = handleDeleteRole(currentRole);
-    if (success) {
+    try {
+      await deleteRole(currentRole.id);
       setIsDeleteDialogOpen(false);
       setCurrentRole(null);
-      toast({
-        title: "Role Deleted",
-        description: "The role has been deleted successfully",
-        variant: "success",
-      });
+    } catch (error) {
+      // Error is handled in the deleteRole function
     }
   };
 
-  const handleEditRoleClick = (role: Role) => {
+  const handleEditRoleClick = (role: any) => {
     setCurrentRole(role);
     setRolePermissions(role.permissions as PermissionSet);
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteRoleClick = (role: Role) => {
+  const handleDeleteRoleClick = (role: any) => {
     setCurrentRole(role);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDuplicateRoleClick = (role: Role) => {
-    handleDuplicateRole(role);
+  const handleDuplicateRoleClick = async (role: any) => {
+    try {
+      await createRole(
+        `${role.name} (Copy)`,
+        role.description,
+        role.permissions
+      );
+    } catch (error) {
+      // Error is handled in the createRole function
+    }
+  };
+
+  const handleReorderRole = (roleId: string, direction: 'up' | 'down') => {
+    // For now, return false as reordering would require additional database logic
     toast({
-      title: "Role Duplicated",
-      description: `A copy of "${role.name}" has been created`,
-      variant: "success",
+      title: "Info",
+      description: "Role reordering is not yet implemented",
+    });
+    return false;
+  };
+
+  const handleImportRoles = (importedRoles: any[]) => {
+    toast({
+      title: "Info", 
+      description: "Role importing is not yet implemented",
     });
   };
 
@@ -192,6 +216,9 @@ export function useTeamRolesPage() {
     handleDeleteRoleClick,
     handleDuplicateRoleClick,
     handleReorderRole,
-    handleImportRoles
+    handleImportRoles,
+    loading,
+    assignRole,
+    removeUserFromRole
   };
 }

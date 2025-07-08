@@ -3,13 +3,13 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { CardTitle } from "@/components/ui/card";
 import { Edit, Trash, Shield, Copy, ArrowUp, ArrowDown } from "lucide-react";
-import { Role } from "@/types/team";
+
 
 interface RoleCardHeaderProps {
-  role: Role;
-  onEdit: (role: Role) => void;
-  onDelete: (role: Role) => void;
-  onDuplicate: (role: Role) => void;
+  role: any;
+  onEdit: (role: any) => void;
+  onDelete: (role: any) => void;
+  onDuplicate: (role: any) => void;
   onReorder: (roleId: string, direction: 'up' | 'down') => boolean;
   isFirst: boolean;
   isLast: boolean;

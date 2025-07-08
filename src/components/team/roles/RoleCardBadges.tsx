@@ -1,10 +1,10 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { Role } from "@/types/team";
+
 
 interface RoleCardBadgesProps {
-  role: Role;
+  role: any;
   totalEnabledPermissions: number;
 }
 

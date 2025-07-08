@@ -2,18 +2,31 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Role } from "@/types/team";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronUp, Users } from "lucide-react";
 import { PermissionSet } from "@/types/permissions";
 import { RoleCardHeader } from "./RoleCardHeader";
 import { RoleCardBadges } from "./RoleCardBadges";
 import { RoleCardPermissions } from "./RoleCardPermissions";
 
 interface RoleCardProps {
-  role: Role;
-  onEdit: (role: Role) => void;
-  onDelete: (role: Role) => void;
-  onDuplicate: (role: Role) => void;
+  role: {
+    id: string;
+    name: string;
+    description: string;
+    isDefault: boolean;
+    permissions: PermissionSet;
+    memberCount?: number;
+    members?: Array<{
+      user_id: string;
+      first_name: string | null;
+      last_name: string | null;
+      email: string | null;
+    }>;
+  };
+  onEdit: (role: any) => void;
+  onDelete: (role: any) => void;
+  onDuplicate: (role: any) => void;
   onReorder: (roleId: string, direction: 'up' | 'down') => boolean;
   isFirst: boolean;
   isLast: boolean;
@@ -29,6 +42,7 @@ export function RoleCard({
   isLast
 }: RoleCardProps) {
   const [showPermissions, setShowPermissions] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
   const permissions = role.permissions as PermissionSet;
 
   // Count total enabled permissions
@@ -75,7 +89,42 @@ export function RoleCard({
         />
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-slate-500 mb-2">{role.description}</p>
+        <p className="text-sm text-slate-500 mb-3">{role.description}</p>
+        
+        {/* Member Count */}
+        <div className="flex items-center gap-2 mb-3">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            {role.memberCount || 0} {(role.memberCount || 0) === 1 ? 'member' : 'members'}
+          </Badge>
+          {(role.memberCount || 0) > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="p-0 h-auto text-xs text-slate-600 hover:text-slate-900"
+              onClick={() => setShowMembers(!showMembers)}
+            >
+              {showMembers ? 'Hide' : 'Show'} members
+            </Button>
+          )}
+        </div>
+
+        {/* Members List */}
+        {showMembers && role.members && role.members.length > 0 && (
+          <div className="mb-3 p-2 bg-slate-50 rounded-md">
+            <div className="text-xs font-medium text-slate-700 mb-1">Assigned Members:</div>
+            <div className="space-y-1">
+              {role.members.map((member) => (
+                <div key={member.user_id} className="text-xs text-slate-600">
+                  {[member.first_name, member.last_name].filter(Boolean).join(' ') || 'Unknown User'}
+                  {member.email && (
+                    <span className="text-slate-400 ml-1">({member.email})</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         
         <RoleCardBadges 
           role={role} 

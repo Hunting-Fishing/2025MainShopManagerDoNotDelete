@@ -1,13 +1,12 @@
 
 import React from "react";
 import { RoleCard } from "./RoleCard";
-import { Role } from "@/types/team";
 
 interface RolesGridProps {
-  roles: Role[];
-  onEditRole: (role: Role) => void;
-  onDeleteRole: (role: Role) => void;
-  onDuplicateRole: (role: Role) => void;
+  roles: any[];
+  onEditRole: (role: any) => void;
+  onDeleteRole: (role: any) => void;
+  onDuplicateRole: (role: any) => void;
   onReorderRole: (roleId: string, direction: 'up' | 'down') => boolean;
 }
 
@@ -21,7 +20,7 @@ export function RolesGrid({ roles, onEditRole, onDeleteRole, onDuplicateRole, on
   }
 
   // Sort roles by priority before rendering
-  const sortedRoles = [...roles].sort((a, b) => a.priority - b.priority);
+  const sortedRoles = [...roles].sort((a, b) => (a.priority || 1) - (b.priority || 1));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
@@ -33,8 +32,8 @@ export function RolesGrid({ roles, onEditRole, onDeleteRole, onDuplicateRole, on
           onDelete={onDeleteRole}
           onDuplicate={onDuplicateRole}
           onReorder={onReorderRole}
-          isFirst={role.priority === Math.min(...roles.map(r => r.priority))}
-          isLast={role.priority === Math.max(...roles.map(r => r.priority))}
+          isFirst={(role.priority || 1) === Math.min(...roles.map(r => r.priority || 1))}
+          isLast={(role.priority || 1) === Math.max(...roles.map(r => r.priority || 1))}
         />
       ))}
     </div>
