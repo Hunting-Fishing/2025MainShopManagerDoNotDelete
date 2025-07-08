@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { departmentSubmissionService } from '@/services/team/departmentSubmissionService';
 
 export interface Department {
   id: string;
@@ -85,7 +86,7 @@ export function useDepartments() {
     initializeData();
   }, []);
 
-  const addDepartment = async (name: string, description?: string) => {
+  const addDepartment = async (name: string, description?: string, isCustom: boolean = false) => {
     if (!shopId) {
       toast({
         title: "Error",
@@ -103,6 +104,20 @@ export function useDepartments() {
         .single();
         
       if (error) throw error;
+      
+      // If this is a custom department (not from predefined list), track it for review
+      if (isCustom) {
+        try {
+          await departmentSubmissionService.createSubmission({
+            department_name: name,
+            description,
+            shop_id: shopId
+          });
+        } catch (submissionError) {
+          console.warn('Failed to track custom department submission:', submissionError);
+          // Don't block the department creation if submission tracking fails
+        }
+      }
       
       setDepartments(prev => [...prev, data]);
       return data;

@@ -7,6 +7,7 @@ import { ArrowLeft, Building } from "lucide-react";
 import OrganizationDetails from '@/components/developer/organization/OrganizationDetails';
 import ShopsManagement from '@/components/developer/organization/ShopsManagement';
 import { BookingPermissionsManager } from '@/components/developer/organization/BookingPermissionsManager';
+import { DepartmentSubmissionsManager } from '@/components/developer/organization/DepartmentSubmissionsManager';
 
 export default function OrganizationManagement() {
   const [activeTab, setActiveTab] = useState("details");
@@ -48,6 +49,12 @@ export default function OrganizationManagement() {
           >
             Booking Permissions
           </TabsTrigger>
+          <TabsTrigger 
+            value="departments" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+          >
+            Department Submissions
+          </TabsTrigger>
         </TabsList>
 
         <div className="mt-6 space-y-6">
@@ -61,6 +68,10 @@ export default function OrganizationManagement() {
 
           <TabsContent value="permissions" className="space-y-6">
             <BookingPermissionsManager />
+          </TabsContent>
+
+          <TabsContent value="departments" className="space-y-6">
+            <DepartmentSubmissionsManager />
           </TabsContent>
         </div>
       </Tabs>

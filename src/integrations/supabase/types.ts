@@ -2177,6 +2177,62 @@ export type Database = {
           },
         ]
       }
+      department_submissions: {
+        Row: {
+          created_at: string
+          department_name: string
+          description: string | null
+          id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string
+          status: string
+          submitted_at: string
+          suggested_by: string
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          department_name: string
+          description?: string | null
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id: string
+          status?: string
+          submitted_at?: string
+          suggested_by: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          department_name?: string
+          description?: string | null
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string
+          status?: string
+          submitted_at?: string
+          suggested_by?: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_submissions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string | null

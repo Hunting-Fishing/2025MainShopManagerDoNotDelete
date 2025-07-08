@@ -114,7 +114,7 @@ export function EnhancedDepartmentManager() {
           form.reset();
         }
       } else {
-        const result = await addDepartment(departmentName, departmentDescription);
+        const result = await addDepartment(departmentName, departmentDescription, data.isCustom);
         if (result) {
           toast({
             title: "Success",
