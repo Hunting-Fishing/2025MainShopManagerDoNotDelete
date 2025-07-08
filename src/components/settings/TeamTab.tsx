@@ -1,6 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DepartmentManager } from "./team/DepartmentManager";
+import { EnhancedDepartmentManager } from "./team/EnhancedDepartmentManager";
 import { RolesContent } from "@/components/team/roles/RolesContent";
 import { RoleDialogs } from "@/components/team/roles/RoleDialogs";
 import { useTeamRolesPage } from "@/hooks/useTeamRolesPage";
@@ -43,7 +43,7 @@ export function TeamTab() {
       </TabsList>
       
       <TabsContent value="departments" className="space-y-4">
-        <DepartmentManager />
+        <EnhancedDepartmentManager />
       </TabsContent>
       
       <TabsContent value="roles" className="space-y-4">

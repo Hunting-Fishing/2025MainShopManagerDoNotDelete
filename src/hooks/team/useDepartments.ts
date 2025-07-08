@@ -75,12 +75,8 @@ export function useDepartments() {
           description: "Failed to load departments. Please try again.",
           variant: "destructive"
         });
-        // Provide some default departments so the form still works
-        setDepartments([
-          { id: '1', name: 'Field Service' },
-          { id: '2', name: 'Administration' },
-          { id: '3', name: 'Management' }
-        ]);
+        // Don't set fallback data that can cause UUID errors
+        setDepartments([]);
       } finally {
         setIsLoading(false);
       }
