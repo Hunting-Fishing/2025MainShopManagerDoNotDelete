@@ -2,42 +2,83 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   BarChart3, 
   TrendingUp, 
   Users, 
   Clock,
   PieChart,
-  Activity
+  Activity,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
-
-const chartData = {
-  dailyWorkOrders: [
-    { day: 'Mon', completed: 42, created: 38 },
-    { day: 'Tue', completed: 38, created: 45 },
-    { day: 'Wed', completed: 51, created: 42 },
-    { day: 'Thu', completed: 48, created: 52 },
-    { day: 'Fri', completed: 55, created: 48 },
-    { day: 'Sat', completed: 32, created: 28 },
-    { day: 'Sun', completed: 28, created: 24 }
-  ],
-  statusDistribution: [
-    { status: 'Completed', count: 423, percentage: 62, color: 'bg-green-500' },
-    { status: 'In Progress', count: 156, percentage: 23, color: 'bg-blue-500' },
-    { status: 'Pending', count: 89, percentage: 13, color: 'bg-yellow-500' },
-    { status: 'Overdue', count: 12, percentage: 2, color: 'bg-red-500' }
-  ],
-  technicianPerformance: [
-    { name: 'John Smith', completed: 45, efficiency: 92, rating: 4.8 },
-    { name: 'Sarah Johnson', completed: 38, efficiency: 89, rating: 4.7 },
-    { name: 'Mike Wilson', completed: 42, efficiency: 85, rating: 4.6 },
-    { name: 'Emily Davis', completed: 35, efficiency: 88, rating: 4.5 },
-    { name: 'Tom Anderson', completed: 29, efficiency: 82, rating: 4.4 }
-  ]
-};
+import { useWorkOrderStats } from '@/hooks/work-orders/useWorkOrderStats';
+import { useDailyWorkOrders } from '@/hooks/work-orders/useDailyWorkOrders';
 
 export function WorkOrderAnalytics() {
   const [timeRange, setTimeRange] = useState('7d');
+  const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useWorkOrderStats();
+  const { dailyData, loading: dailyLoading, error: dailyError, refetch: refetchDaily } = useDailyWorkOrders();
+
+  const loading = statsLoading || dailyLoading;
+  const error = statsError || dailyError;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-red-600 bg-red-50 rounded-lg">
+        <AlertTriangle className="h-4 w-4" />
+        <span>Failed to load analytics: {error}</span>
+        <button onClick={() => { refetchStats(); refetchDaily(); }} className="ml-auto">
+          <RefreshCw className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
+  // Create status distribution from live data
+  const total = stats.total || 1; // Prevent division by zero
+  const statusDistribution = [
+    { 
+      status: 'Completed', 
+      count: stats.completed, 
+      percentage: Math.round((stats.completed / total) * 100), 
+      color: 'bg-green-500' 
+    },
+    { 
+      status: 'In Progress', 
+      count: stats.inProgress, 
+      percentage: Math.round((stats.inProgress / total) * 100), 
+      color: 'bg-blue-500' 
+    },
+    { 
+      status: 'Pending', 
+      count: stats.pendingAssignment, 
+      percentage: Math.round((stats.pendingAssignment / total) * 100), 
+      color: 'bg-yellow-500' 
+    },
+    { 
+      status: 'Overdue', 
+      count: stats.overdue, 
+      percentage: Math.round((stats.overdue / total) * 100), 
+      color: 'bg-red-500' 
+    }
+  ];
+
+  // Create daily chart data from live data
+  const dailyChartData = [
+    { day: 'Today', completed: dailyData.completedToday, created: dailyData.totalToday },
+    { day: 'Overdue', completed: 0, created: dailyData.totalOverdue },
+    { day: 'Carry', completed: 0, created: dailyData.totalCarryOvers }
+  ];
 
   return (
     <div className="space-y-6">
@@ -71,27 +112,27 @@ export function WorkOrderAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {chartData.dailyWorkOrders.map((day, index) => (
+              {dailyChartData.map((day, index) => (
                 <div key={day.day} className="flex items-center gap-4">
-                  <span className="text-sm font-medium w-8">{day.day}</span>
+                  <span className="text-sm font-medium w-12">{day.day}</span>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                      <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
                         <div 
-                          className="h-full bg-green-500 rounded-full"
-                          style={{ width: `${(day.completed / 60) * 100}%` }}
+                          className="h-full bg-green-500 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min((day.completed / Math.max(stats.total, 1)) * 100, 100)}%` }}
                         />
                       </div>
-                      <span className="text-xs text-muted-foreground w-12">{day.completed}</span>
+                      <span className="text-sm text-muted-foreground w-12">{day.completed}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                      <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
                         <div 
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${(day.created / 60) * 100}%` }}
+                          className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min((day.created / Math.max(stats.total, 1)) * 100, 100)}%` }}
                         />
                       </div>
-                      <span className="text-xs text-muted-foreground w-12">{day.created}</span>
+                      <span className="text-sm text-muted-foreground w-12">{day.created}</span>
                     </div>
                   </div>
                 </div>
@@ -120,7 +161,7 @@ export function WorkOrderAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {chartData.statusDistribution.map((item) => (
+              {statusDistribution.map((item) => (
                 <div key={item.status} className="flex items-center gap-4">
                   <div className={`w-4 h-4 rounded-full ${item.color}`} />
                   <div className="flex-1">
@@ -142,46 +183,48 @@ export function WorkOrderAnalytics() {
           </CardContent>
         </Card>
 
-        {/* Technician Performance */}
+        {/* Live Statistics Summary */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Technician Performance
+              Live Work Order Summary
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {chartData.technicianPerformance.map((tech, index) => (
-                <div key={tech.name} className="flex items-center gap-4 p-3 rounded-lg border">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-medium">
-                      {tech.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{tech.name}</p>
-                      <p className="text-xs text-muted-foreground">#{index + 1} performer</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <p className="text-lg font-bold">{tech.completed}</p>
-                      <p className="text-xs text-muted-foreground">Completed</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold">{tech.efficiency}%</p>
-                      <p className="text-xs text-muted-foreground">Efficiency</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="flex items-center gap-1">
-                        <span className="text-lg font-bold">{tech.rating}</span>
-                        <span className="text-yellow-500">★</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Rating</p>
-                    </div>
-                  </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
+                <p className="text-sm text-muted-foreground">Total Work Orders</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+                <p className="text-sm text-muted-foreground">Completed</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <p className="text-2xl font-bold text-orange-600">{stats.inProgress}</p>
+                <p className="text-sm text-muted-foreground">In Progress</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
+                <p className="text-sm text-muted-foreground">Overdue</p>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Active Technicians:</span>
+                  <span className="ml-2 font-medium">{stats.activeTechnicians}</span>
                 </div>
-              ))}
+                <div>
+                  <span className="text-muted-foreground">Today's Completed:</span>
+                  <span className="ml-2 font-medium">{dailyData.completedToday}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Carry Overs:</span>
+                  <span className="ml-2 font-medium">{dailyData.totalCarryOvers}</span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
