@@ -23,7 +23,7 @@ import { NotificationsTab } from '@/components/settings/NotificationsTab';
 import { BrandingTab } from '@/components/settings/BrandingTab';
 import { InventorySettingsTab } from '@/components/settings/InventorySettingsTab';
 import { DIYBayRatesTab } from '@/components/settings/DIYBayRatesTab';
-import { WorkOrderNumberingTab } from '@/components/settings/WorkOrderNumberingTab';
+import { EnhancedWorkOrdersDashboard } from '@/components/settings/EnhancedWorkOrdersDashboard';
 import { NonProfitTab } from '@/components/settings/NonProfitTab';
 import { ProgramManagementTab } from '@/components/settings/ProgramManagementTab';
 import { FinancialManagementTab } from '@/components/settings/FinancialManagementTab';
@@ -56,8 +56,8 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     id: 'work-orders',
     label: 'Work Orders',
     icon: Hash,
-    component: WorkOrderNumberingTab,
-    description: 'Configure work order numbering and settings'
+    component: EnhancedWorkOrdersDashboard,
+    description: 'Comprehensive work order analytics and management'
   },
   {
     id: 'inventory',
