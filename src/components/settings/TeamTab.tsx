@@ -15,7 +15,12 @@ export function TeamTab() {
       </TabsContent>
       
       <TabsContent value="roles" className="space-y-4">
-        <p className="text-muted-foreground">Role management will be implemented in the future.</p>
+        <div className="bg-muted/50 p-4 rounded-lg">
+          <h4 className="font-medium mb-2">Role Management</h4>
+          <p className="text-sm text-muted-foreground">
+            Role management interface will be available in the next update. For now, you can manage roles in the Team section.
+          </p>
+        </div>
       </TabsContent>
     </Tabs>
   );
