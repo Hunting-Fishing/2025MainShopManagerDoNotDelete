@@ -8,95 +8,72 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  Users, 
-  Search,
-  Building2,
-  Wrench,
-  HeadphonesIcon,
-  ShieldCheck,
-  Calculator,
-  Truck,
-  Settings,
-  UserCheck,
-  ChevronDown
-} from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, Search, Building2, Wrench, HeadphonesIcon, ShieldCheck, Calculator, Truck, Settings, UserCheck, ChevronDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDepartments } from '@/hooks/team/useDepartments';
 import { toast } from '@/hooks/use-toast';
-
-const predefinedDepartments = [
-  {
-    name: 'Service Operations',
-    description: 'Field technicians and on-site service staff',
-    icon: Wrench,
-    color: 'bg-blue-500/10 text-blue-700 border-blue-200'
-  },
-  {
-    name: 'Customer Service',
-    description: 'Customer support and reception team',
-    icon: HeadphonesIcon,
-    color: 'bg-green-500/10 text-green-700 border-green-200'
-  },
-  {
-    name: 'Administration',
-    description: 'Office and administrative staff',
-    icon: Building2,
-    color: 'bg-purple-500/10 text-purple-700 border-purple-200'
-  },
-  {
-    name: 'Management',
-    description: 'Leadership and management team',
-    icon: UserCheck,
-    color: 'bg-orange-500/10 text-orange-700 border-orange-200'
-  },
-  {
-    name: 'Parts & Inventory',
-    description: 'Parts management and inventory control',
-    icon: Truck,
-    color: 'bg-teal-500/10 text-teal-700 border-teal-200'
-  },
-  {
-    name: 'Quality Control',
-    description: 'Quality assurance and inspection',
-    icon: ShieldCheck,
-    color: 'bg-red-500/10 text-red-700 border-red-200'
-  },
-  {
-    name: 'Finance & Accounting',
-    description: 'Financial operations and accounting',
-    icon: Calculator,
-    color: 'bg-indigo-500/10 text-indigo-700 border-indigo-200'
-  },
-  {
-    name: 'IT & Technical Support',
-    description: 'Information technology and technical support',
-    icon: Settings,
-    color: 'bg-gray-500/10 text-gray-700 border-gray-200'
-  }
-];
-
+const predefinedDepartments = [{
+  name: 'Service Operations',
+  description: 'Field technicians and on-site service staff',
+  icon: Wrench,
+  color: 'bg-blue-500/10 text-blue-700 border-blue-200'
+}, {
+  name: 'Customer Service',
+  description: 'Customer support and reception team',
+  icon: HeadphonesIcon,
+  color: 'bg-green-500/10 text-green-700 border-green-200'
+}, {
+  name: 'Administration',
+  description: 'Office and administrative staff',
+  icon: Building2,
+  color: 'bg-purple-500/10 text-purple-700 border-purple-200'
+}, {
+  name: 'Management',
+  description: 'Leadership and management team',
+  icon: UserCheck,
+  color: 'bg-orange-500/10 text-orange-700 border-orange-200'
+}, {
+  name: 'Parts & Inventory',
+  description: 'Parts management and inventory control',
+  icon: Truck,
+  color: 'bg-teal-500/10 text-teal-700 border-teal-200'
+}, {
+  name: 'Quality Control',
+  description: 'Quality assurance and inspection',
+  icon: ShieldCheck,
+  color: 'bg-red-500/10 text-red-700 border-red-200'
+}, {
+  name: 'Finance & Accounting',
+  description: 'Financial operations and accounting',
+  icon: Calculator,
+  color: 'bg-indigo-500/10 text-indigo-700 border-indigo-200'
+}, {
+  name: 'IT & Technical Support',
+  description: 'Information technology and technical support',
+  icon: Settings,
+  color: 'bg-gray-500/10 text-gray-700 border-gray-200'
+}];
 const departmentSchema = z.object({
   name: z.string().min(2, 'Department name must be at least 2 characters'),
   description: z.string().optional(),
   predefinedDepartment: z.string().optional(),
   isCustom: z.boolean().default(false)
 });
-
 type DepartmentFormData = z.infer<typeof departmentSchema>;
-
 export function EnhancedDepartmentManager() {
-  const { departments, isLoading, addDepartment, updateDepartment, deleteDepartment } = useDepartments();
+  const {
+    departments,
+    isLoading,
+    addDepartment,
+    updateDepartment,
+    deleteDepartment
+  } = useDepartments();
   const [editingDepartment, setEditingDepartment] = useState<typeof departments[0] | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPredefined, setShowPredefined] = useState(true);
-
   const form = useForm<DepartmentFormData>({
     resolver: zodResolver(departmentSchema),
     defaultValues: {
@@ -104,28 +81,20 @@ export function EnhancedDepartmentManager() {
       description: '',
       predefinedDepartment: '',
       isCustom: false
-    },
+    }
   });
-
   const watchedPredefined = form.watch('predefinedDepartment');
   const isCustom = form.watch('isCustom');
 
   // Filter out already existing departments from predefined list
-  const availablePredefined = predefinedDepartments.filter(pred => 
-    !departments.some(dept => dept.name === pred.name)
-  );
+  const availablePredefined = predefinedDepartments.filter(pred => !departments.some(dept => dept.name === pred.name));
 
   // Filter departments based on search
-  const filteredDepartments = departments.filter(dept =>
-    dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    dept.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
+  const filteredDepartments = departments.filter(dept => dept.name.toLowerCase().includes(searchQuery.toLowerCase()) || dept.description?.toLowerCase().includes(searchQuery.toLowerCase()));
   const onSubmit = async (data: DepartmentFormData) => {
     try {
       let departmentName = data.name;
       let departmentDescription = data.description;
-
       if (!data.isCustom && data.predefinedDepartment) {
         const predefined = predefinedDepartments.find(p => p.name === data.predefinedDepartment);
         if (predefined) {
@@ -133,13 +102,12 @@ export function EnhancedDepartmentManager() {
           departmentDescription = predefined.description;
         }
       }
-
       if (editingDepartment) {
         const success = await updateDepartment(editingDepartment.id, departmentName, departmentDescription);
         if (success) {
           toast({
             title: "Success",
-            description: "Department updated successfully.",
+            description: "Department updated successfully."
           });
           setIsDialogOpen(false);
           setEditingDepartment(null);
@@ -150,7 +118,7 @@ export function EnhancedDepartmentManager() {
         if (result) {
           toast({
             title: "Success",
-            description: "Department created successfully.",
+            description: "Department created successfully."
           });
           setIsDialogOpen(false);
           form.reset();
@@ -164,7 +132,6 @@ export function EnhancedDepartmentManager() {
       });
     }
   };
-
   const handleEdit = (department: typeof departments[0]) => {
     setEditingDepartment(department);
     form.setValue('name', department.name);
@@ -172,50 +139,39 @@ export function EnhancedDepartmentManager() {
     form.setValue('isCustom', true);
     setIsDialogOpen(true);
   };
-
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this department? This action cannot be undone.')) {
       const success = await deleteDepartment(id);
       if (success) {
         toast({
           title: "Success",
-          description: "Department deleted successfully.",
+          description: "Department deleted successfully."
         });
       }
     }
   };
-
   const resetForm = () => {
     setEditingDepartment(null);
     form.reset();
     setShowPredefined(true);
   };
-
   const getDepartmentIcon = (name: string) => {
     const predefined = predefinedDepartments.find(p => p.name === name);
     return predefined?.icon || Users;
   };
-
   const getDepartmentColor = (name: string) => {
     const predefined = predefinedDepartments.find(p => p.name === name);
     return predefined?.color || 'bg-gray-500/10 text-gray-700 border-gray-200';
   };
-
   if (isLoading) {
-    return (
-      <div className="space-y-4">
+    return <div className="space-y-4">
         <div className="h-8 bg-muted animate-pulse rounded" />
         <div className="grid gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-muted animate-pulse rounded" />
-          ))}
+          {[1, 2, 3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded" />)}
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-heading font-semibold">Department Management</h3>
@@ -223,17 +179,17 @@ export function EnhancedDepartmentManager() {
             Organize your team with predefined departments or create custom ones.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}>
+        <Dialog open={isDialogOpen} onOpenChange={open => {
+        setIsDialogOpen(open);
+        if (!open) resetForm();
+      }}>
           <DialogTrigger asChild>
             <Button className="btn-gradient-primary">
               <Plus className="h-4 w-4 mr-2" />
               Add Department
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl bg-gray-50">
             <DialogHeader>
               <DialogTitle className="font-heading">
                 {editingDepartment ? 'Edit Department' : 'Add Department'}
@@ -241,40 +197,26 @@ export function EnhancedDepartmentManager() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {!editingDepartment && (
-                  <div className="space-y-4">
+                {!editingDepartment && <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium">Choose Department Type</h4>
                       <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant={showPredefined ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setShowPredefined(true)}
-                        >
+                        <Button type="button" variant={showPredefined ? "default" : "outline"} size="sm" onClick={() => setShowPredefined(true)}>
                           Predefined
                         </Button>
-                        <Button
-                          type="button"
-                          variant={!showPredefined ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => {
-                            setShowPredefined(false);
-                            form.setValue('isCustom', true);
-                          }}
-                        >
+                        <Button type="button" variant={!showPredefined ? "default" : "outline"} size="sm" onClick={() => {
+                      setShowPredefined(false);
+                      form.setValue('isCustom', true);
+                    }}>
                           Custom
                         </Button>
                       </div>
                     </div>
 
-                    {showPredefined && availablePredefined.length > 0 && (
-                      <div className="space-y-3">
-                        <FormField
-                          control={form.control}
-                          name="predefinedDepartment"
-                          render={({ field }) => (
-                            <FormItem>
+                    {showPredefined && availablePredefined.length > 0 && <div className="space-y-3">
+                        <FormField control={form.control} name="predefinedDepartment" render={({
+                    field
+                  }) => <FormItem>
                               <FormLabel>Select Department</FormLabel>
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
@@ -283,10 +225,9 @@ export function EnhancedDepartmentManager() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {availablePredefined.map((dept) => {
-                                    const Icon = dept.icon;
-                                    return (
-                                      <SelectItem key={dept.name} value={dept.name}>
+                                  {availablePredefined.map(dept => {
+                          const Icon = dept.icon;
+                          return <SelectItem key={dept.name} value={dept.name}>
                                         <div className="flex items-center gap-2">
                                           <Icon className="h-4 w-4" />
                                           <div>
@@ -296,34 +237,28 @@ export function EnhancedDepartmentManager() {
                                             </div>
                                           </div>
                                         </div>
-                                      </SelectItem>
-                                    );
-                                  })}
+                                      </SelectItem>;
+                        })}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                            </FormItem>} />
                         
-                        {watchedPredefined && (
-                          <div className="p-4 bg-muted/50 rounded-lg">
+                        {watchedPredefined && <div className="p-4 bg-muted/50 rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
                               {(() => {
-                                const dept = predefinedDepartments.find(p => p.name === watchedPredefined);
-                                const Icon = dept?.icon || Users;
-                                return <Icon className="h-5 w-5" />;
-                              })()}
+                        const dept = predefinedDepartments.find(p => p.name === watchedPredefined);
+                        const Icon = dept?.icon || Users;
+                        return <Icon className="h-5 w-5" />;
+                      })()}
                               <h5 className="font-medium">{watchedPredefined}</h5>
                             </div>
                             <p className="text-sm text-muted-foreground">
                               {predefinedDepartments.find(p => p.name === watchedPredefined)?.description}
                             </p>
-                          </div>
-                        )}
+                          </div>}
 
-                        {availablePredefined.length > 0 && (
-                          <div className="text-center">
+                        {availablePredefined.length > 0 && <div className="text-center">
                             <Separator />
                             <div className="relative">
                               <div className="absolute inset-0 flex items-center">
@@ -335,53 +270,33 @@ export function EnhancedDepartmentManager() {
                                 </span>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                          </div>}
+                      </div>}
+                  </div>}
 
-                {(isCustom || !showPredefined || editingDepartment) && (
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
+                {(isCustom || !showPredefined || editingDepartment) && <div className="space-y-4">
+                    <FormField control={form.control} name="name" render={({
+                  field
+                }) => <FormItem>
                           <FormLabel>Department Name</FormLabel>
                           <FormControl>
                             <Input placeholder="e.g. Fleet Maintenance" {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
+                        </FormItem>} />
+                    <FormField control={form.control} name="description" render={({
+                  field
+                }) => <FormItem>
                           <FormLabel>Description (Optional)</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Brief description of the department..." 
-                              {...field} 
-                            />
+                            <Textarea placeholder="Brief description of the department..." {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
+                        </FormItem>} />
+                  </div>}
 
                 <div className="flex justify-end space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
-                  >
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancel
                   </Button>
                   <Button type="submit" className="btn-gradient-primary">
@@ -397,12 +312,7 @@ export function EnhancedDepartmentManager() {
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search departments..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+        <Input placeholder="Search departments..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
       </div>
 
       {/* Department Statistics */}
@@ -444,25 +354,17 @@ export function EnhancedDepartmentManager() {
 
       {/* Departments Grid */}
       <div className="grid gap-4">
-        {filteredDepartments.length === 0 ? (
-          <Card className="modern-card">
+        {filteredDepartments.length === 0 ? <Card className="modern-card">
             <CardContent className="pt-6">
               <div className="text-center text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                {searchQuery ? (
-                  <p>No departments found matching "{searchQuery}".</p>
-                ) : (
-                  <p>No departments found. Create your first department to get started.</p>
-                )}
+                {searchQuery ? <p>No departments found matching "{searchQuery}".</p> : <p>No departments found. Create your first department to get started.</p>}
               </div>
             </CardContent>
-          </Card>
-        ) : (
-          filteredDepartments.map((department) => {
-            const Icon = getDepartmentIcon(department.name);
-            const colorClass = getDepartmentColor(department.name);
-            return (
-              <Card key={department.id} className="modern-card hover-lift">
+          </Card> : filteredDepartments.map(department => {
+        const Icon = getDepartmentIcon(department.name);
+        const colorClass = getDepartmentColor(department.name);
+        return <Card key={department.id} className="modern-card hover-lift">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -471,11 +373,9 @@ export function EnhancedDepartmentManager() {
                       </div>
                       <div>
                         <CardTitle className="text-base font-heading">{department.name}</CardTitle>
-                        {department.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
+                        {department.description && <p className="text-sm text-muted-foreground mt-1">
                             {department.description}
-                          </p>
-                        )}
+                          </p>}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -484,31 +384,18 @@ export function EnhancedDepartmentManager() {
                         0 members
                       </Badge>
                       <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(department)}
-                          className="hover:bg-primary/10"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(department)} className="hover:bg-primary/10">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(department.id)}
-                          className="hover:bg-destructive/10 hover:text-destructive"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(department.id)} className="hover:bg-destructive/10 hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
-              </Card>
-            );
-          })
-        )}
+              </Card>;
+      })}
       </div>
-    </div>
-  );
+    </div>;
 }
