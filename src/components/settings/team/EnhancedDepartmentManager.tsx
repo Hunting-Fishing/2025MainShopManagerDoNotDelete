@@ -403,6 +403,60 @@ export function EnhancedDepartmentManager() {
                     </div>
                   </div>
                 </CardHeader>
+                <CardContent className="pt-0">
+                  {department.memberCount > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">Department Members</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-0 h-auto text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            setSelectedDepartment(department);
+                            setAssignDialogOpen(true);
+                          }}
+                        >
+                          Manage <ChevronDown className="h-3 w-3 ml-1" />
+                        </Button>
+                      </div>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {department.members.slice(0, 5).map((member: any) => (
+                          <div key={member.id} className="flex items-center justify-between p-2 bg-muted/50 rounded text-xs">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-medium">
+                                {[member.first_name, member.last_name].filter(Boolean).join(' ') || 'Unknown User'}
+                              </span>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                {member.job_title && <span>{member.job_title}</span>}
+                                {member.email && <span>• {member.email}</span>}
+                              </div>
+                            </div>
+                            {member.roles && member.roles.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {member.roles.slice(0, 2).map((role: any) => (
+                                  <Badge key={role.id} variant="secondary" className="text-xs">
+                                    {role.name}
+                                  </Badge>
+                                ))}
+                                {member.roles.length > 2 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{member.roles.length - 2}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {department.members.length > 5 && (
+                          <div className="text-xs text-muted-foreground text-center py-1">
+                            And {department.members.length - 5} more members...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
               </Card>;
       })}
       </div>

@@ -22,6 +22,8 @@ interface RoleCardProps {
       first_name: string | null;
       last_name: string | null;
       email: string | null;
+      job_title: string | null;
+      department_name: string | null;
     }>;
   };
   onEdit: (role: any) => void;
@@ -111,15 +113,29 @@ export function RoleCard({
 
         {/* Members List */}
         {showMembers && role.members && role.members.length > 0 && (
-          <div className="mb-3 p-2 bg-slate-50 rounded-md">
-            <div className="text-xs font-medium text-slate-700 mb-1">Assigned Members:</div>
-            <div className="space-y-1">
+          <div className="mb-3 p-3 bg-slate-50 rounded-md">
+            <div className="text-xs font-medium text-slate-700 mb-2">Assigned Members:</div>
+            <div className="space-y-2">
               {role.members.map((member) => (
-                <div key={member.user_id} className="text-xs text-slate-600">
-                  {[member.first_name, member.last_name].filter(Boolean).join(' ') || 'Unknown User'}
-                  {member.email && (
-                    <span className="text-slate-400 ml-1">({member.email})</span>
-                  )}
+                <div key={member.user_id} className="flex flex-col gap-1 p-2 bg-white rounded border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      {[member.first_name, member.last_name].filter(Boolean).join(' ') || 'Unknown User'}
+                    </span>
+                    {member.department_name && (
+                      <Badge variant="outline" className="text-xs">
+                        {member.department_name}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    {member.job_title && (
+                      <span>{member.job_title}</span>
+                    )}
+                    {member.email && (
+                      <span className="text-slate-400">• {member.email}</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

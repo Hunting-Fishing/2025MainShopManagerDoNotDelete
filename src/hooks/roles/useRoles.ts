@@ -16,6 +16,8 @@ export interface DatabaseRole {
     first_name: string | null;
     last_name: string | null;
     email: string | null;
+    job_title: string | null;
+    department_name: string | null;
   }[];
 }
 
@@ -29,7 +31,7 @@ export function useRoles() {
       setLoading(true);
       setError(null);
 
-      // Fetch roles with member count and member details
+      // Fetch roles with user role assignments
       const { data: rolesData, error: rolesError } = await supabase
         .from('roles')
         .select(`
@@ -50,16 +52,52 @@ export function useRoles() {
         throw rolesError;
       }
 
-      // Transform the data to include member count and member details
+      // Get all user IDs that have roles
+      const allUserIds = rolesData?.flatMap(role => 
+        role.user_roles?.map(ur => ur.user_id) || []
+      ) || [];
+
+      // Fetch profile data for all users
+      let profilesData: any[] = [];
+      if (allUserIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            email,
+            job_title,
+            department_id,
+            departments (
+              id,
+              name
+            )
+          `)
+          .in('id', allUserIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        } else {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Transform the data to include member count and complete member details
       const transformedRoles = rolesData?.map(role => ({
         ...role,
         member_count: role.user_roles?.length || 0,
-        members: role.user_roles?.map(ur => ({
-          user_id: ur.user_id,
-          first_name: null,
-          last_name: null,
-          email: null,
-        })) || []
+        members: role.user_roles?.map(ur => {
+          const profile = profilesData.find(p => p.id === ur.user_id);
+          return {
+            user_id: ur.user_id,
+            first_name: profile?.first_name || null,
+            last_name: profile?.last_name || null,
+            email: profile?.email || null,
+            job_title: profile?.job_title || null,
+            department_name: profile?.departments?.name || null,
+          };
+        }) || []
       })) || [];
 
       setRoles(transformedRoles);

@@ -7,6 +7,11 @@ export interface DepartmentMember {
   last_name: string;
   job_title?: string;
   department_id: string;
+  email?: string;
+  roles?: Array<{
+    id: string;
+    name: string;
+  }>;
 }
 
 export interface DepartmentWithMembers {
@@ -45,7 +50,8 @@ export function useDepartmentMembers() {
             id,
             first_name,
             last_name,
-            job_title
+            job_title,
+            email
           )
         `)
         .eq('shop_id', profile.shop_id)
@@ -67,21 +73,56 @@ export function useDepartmentMembers() {
         console.error('Error fetching all departments:', allDeptError);
         return;
       }
+
+      // Get all user IDs to fetch their roles
+      const allUserIds = departments?.flatMap(dept => 
+        dept.profiles?.map((profile: any) => profile.id) || []
+      ) || [];
+
+      // Fetch role assignments for all users
+      let userRoles: any[] = [];
+      if (allUserIds.length > 0) {
+        const { data: roleAssignments, error: rolesError } = await supabase
+          .from('user_roles')
+          .select(`
+            user_id,
+            roles (
+              id,
+              name
+            )
+          `)
+          .in('user_id', allUserIds);
+
+        if (rolesError) {
+          console.error('Error fetching user roles:', rolesError);
+        } else {
+          userRoles = roleAssignments || [];
+        }
+      }
       
-      // Transform data to include member counts
+      // Transform data to include member counts and role information
       const departmentsWithCounts = allDepartments?.map(dept => {
         const deptWithMembers = departments?.find(d => d.id === dept.id);
-        const members = (deptWithMembers?.profiles || []) as DepartmentMember[];
+        const members = (deptWithMembers?.profiles || []).map((member: any) => {
+          // Find roles for this user
+          const memberRoles = userRoles
+            .filter(ur => ur.user_id === member.id)
+            .map(ur => ur.roles)
+            .filter(Boolean);
+          
+          return {
+            ...member,
+            department_id: dept.id,
+            roles: memberRoles
+          };
+        });
         
         return {
           id: dept.id,
           name: dept.name,
           description: dept.description,
           memberCount: members.length,
-          members: members.map(member => ({
-            ...member,
-            department_id: dept.id
-          }))
+          members
         };
       }) || [];
       
