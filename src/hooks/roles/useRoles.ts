@@ -31,7 +31,7 @@ export function useRoles() {
       setLoading(true);
       setError(null);
 
-      // Fetch roles with user role assignments
+      // Fetch roles with user role assignments  
       const { data: rolesData, error: rolesError } = await supabase
         .from('roles')
         .select(`
@@ -52,13 +52,15 @@ export function useRoles() {
         throw rolesError;
       }
 
-      // Get all user IDs that have roles
-      const allUserIds = rolesData?.flatMap(role => 
-        role.user_roles?.map(ur => ur.user_id) || []
-      ) || [];
+      // Get all unique user IDs
+      const allUserIds = Array.from(new Set(
+        rolesData?.flatMap(role => 
+          role.user_roles?.map(ur => ur.user_id) || []
+        ) || []
+      ));
 
-      // Fetch profile data for all users
-      let profilesData: any[] = [];
+      // Fetch profile data for all users in one query
+      let profilesMap = new Map();
       if (allUserIds.length > 0) {
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
@@ -76,19 +78,19 @@ export function useRoles() {
           `)
           .in('id', allUserIds);
 
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-        } else {
-          profilesData = profiles || [];
+        if (!profilesError && profiles) {
+          profiles.forEach(profile => {
+            profilesMap.set(profile.id, profile);
+          });
         }
       }
 
-      // Transform the data to include member count and complete member details
+      // Transform the data with profile information
       const transformedRoles = rolesData?.map(role => ({
         ...role,
         member_count: role.user_roles?.length || 0,
         members: role.user_roles?.map(ur => {
-          const profile = profilesData.find(p => p.id === ur.user_id);
+          const profile = profilesMap.get(ur.user_id);
           return {
             user_id: ur.user_id,
             first_name: profile?.first_name || null,
@@ -222,6 +224,42 @@ export function useRoles() {
 
   useEffect(() => {
     fetchRoles();
+
+    // Set up real-time subscription for roles and user_roles changes
+    const rolesChannel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'roles'
+        },
+        () => fetchRoles()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_roles'
+        },
+        () => fetchRoles()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => fetchRoles()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(rolesChannel);
+    };
   }, []);
 
   return {

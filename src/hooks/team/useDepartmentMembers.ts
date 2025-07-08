@@ -172,6 +172,42 @@ export function useDepartmentMembers() {
   
   useEffect(() => {
     fetchDepartmentMembers();
+
+    // Set up real-time subscription for departments, profiles, and user_roles changes
+    const deptChannel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'departments'
+        },
+        () => fetchDepartmentMembers()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => fetchDepartmentMembers()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_roles'
+        },
+        () => fetchDepartmentMembers()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(deptChannel);
+    };
   }, []);
   
   return {
