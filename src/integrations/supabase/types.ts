@@ -2183,6 +2183,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          shop_id: string
           updated_at: string | null
         }
         Insert: {
@@ -2190,6 +2191,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          shop_id: string
           updated_at?: string | null
         }
         Update: {
@@ -2197,9 +2199,18 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          shop_id?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "departments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       discount_audit_log: {
         Row: {

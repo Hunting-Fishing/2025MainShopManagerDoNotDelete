@@ -7,22 +7,40 @@ export interface Department {
   id: string;
   name: string;
   description?: string;
+  shop_id?: string;
 }
 
 export function useDepartments() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shopId, setShopId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDepartments = async () => {
+    const initializeData = async () => {
       setIsLoading(true);
       setError(null);
       
       try {
+        // Get user's shop_id from their profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('shop_id')
+          .eq('id', (await supabase.auth.getUser()).data.user?.id)
+          .single();
+          
+        if (profileError) throw profileError;
+        
+        const userShopId = profile?.shop_id;
+        if (!userShopId) throw new Error('No shop associated with user');
+        
+        setShopId(userShopId);
+        
+        // Fetch departments for this shop
         const { data, error } = await supabase
           .from('departments')
           .select('*')
+          .eq('shop_id', userShopId)
           .order('name');
           
         if (error) throw error;
@@ -30,11 +48,11 @@ export function useDepartments() {
         // If no departments are found, create default ones
         if (!data || data.length === 0) {
           const defaultDepartments = [
-            { name: 'Management', description: 'Company leadership and management' },
-            { name: 'Field Service', description: 'On-site technicians and service staff' },
-            { name: 'Administration', description: 'Office and administrative staff' },
-            { name: 'Customer Support', description: 'Customer service and support team' },
-            { name: 'Operations', description: 'Day-to-day operations staff' }
+            { name: 'Management', description: 'Company leadership and management', shop_id: userShopId },
+            { name: 'Field Service', description: 'On-site technicians and service staff', shop_id: userShopId },
+            { name: 'Administration', description: 'Office and administrative staff', shop_id: userShopId },
+            { name: 'Customer Support', description: 'Customer service and support team', shop_id: userShopId },
+            { name: 'Operations', description: 'Day-to-day operations staff', shop_id: userShopId }
           ];
           
           // Insert default departments
@@ -68,14 +86,23 @@ export function useDepartments() {
       }
     };
     
-    fetchDepartments();
+    initializeData();
   }, []);
 
   const addDepartment = async (name: string, description?: string) => {
+    if (!shopId) {
+      toast({
+        title: "Error",
+        description: "Shop information not available.",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
     try {
       const { data, error } = await supabase
         .from('departments')
-        .insert({ name, description })
+        .insert({ name, description, shop_id: shopId })
         .select()
         .single();
         

@@ -1,133 +1,225 @@
-
 import { useState } from 'react';
-import { PlusCircle, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { useDepartments, Department } from '@/hooks/team/useDepartments';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Badge } from '@/components/ui/badge';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useDepartments } from '@/hooks/team/useDepartments';
+import { toast } from '@/hooks/use-toast';
+
+const departmentSchema = z.object({
+  name: z.string().min(2, 'Department name must be at least 2 characters'),
+  description: z.string().optional(),
+});
+
+type DepartmentFormData = z.infer<typeof departmentSchema>;
 
 export function DepartmentManager() {
-  const { departments, isLoading, addDepartment } = useDepartments();
-  const [newDepartment, setNewDepartment] = useState('');
-  const [newDescription, setNewDescription] = useState('');
+  const { departments, isLoading, addDepartment, updateDepartment, deleteDepartment } = useDepartments();
+  const [editingDepartment, setEditingDepartment] = useState<typeof departments[0] | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleCreateDepartment = async () => {
-    if (newDepartment.trim()) {
-      await addDepartment(newDepartment.trim(), newDescription.trim() || undefined);
-      setNewDepartment('');
-      setNewDescription('');
-      setIsDialogOpen(false);
+  const form = useForm<DepartmentFormData>({
+    resolver: zodResolver(departmentSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+    },
+  });
+
+  const onSubmit = async (data: DepartmentFormData) => {
+    try {
+      if (editingDepartment) {
+        const success = await updateDepartment(editingDepartment.id, data.name, data.description);
+        if (success) {
+          toast({
+            title: "Success",
+            description: "Department updated successfully.",
+          });
+          setIsDialogOpen(false);
+          setEditingDepartment(null);
+          form.reset();
+        }
+      } else {
+        const result = await addDepartment(data.name, data.description);
+        if (result) {
+          toast({
+            title: "Success",
+            description: "Department created successfully.",
+          });
+          setIsDialogOpen(false);
+          form.reset();
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
     }
+  };
+
+  const handleEdit = (department: typeof departments[0]) => {
+    setEditingDepartment(department);
+    form.setValue('name', department.name);
+    form.setValue('description', department.description || '');
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this department? This action cannot be undone.')) {
+      const success = await deleteDepartment(id);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Department deleted successfully.",
+        });
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setEditingDepartment(null);
+    form.reset();
   };
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Departments</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div className="h-8 bg-muted animate-pulse rounded" />
+        <div className="grid gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 bg-muted animate-pulse rounded" />
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Departments</CardTitle>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Department Management</h3>
+          <p className="text-sm text-muted-foreground">
+            Organize your team members into departments for better management.
+          </p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="ml-auto">
-              <PlusCircle className="mr-2 h-4 w-4" />
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
               Add Department
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Department</DialogTitle>
-              <DialogDescription>
-                Create a new department to organize team members.
-              </DialogDescription>
+              <DialogTitle>
+                {editingDepartment ? 'Edit Department' : 'Add Department'}
+              </DialogTitle>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">Department Name</label>
-                <Input
-                  id="name"
-                  value={newDepartment}
-                  onChange={(e) => setNewDepartment(e.target.value)}
-                  placeholder="Enter department name"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Department Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Field Service" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">Description (optional)</label>
-                <Input
-                  id="description"
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="Enter department description"
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Brief description of the department..." 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleCreateDepartment}>Create Department</Button>
-            </DialogFooter>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    {editingDepartment ? 'Update' : 'Create'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
-      </CardHeader>
-      <CardContent>
-        {departments.length > 0 ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 font-medium text-sm text-muted-foreground">
-              <div>Name</div>
-              <div>Description</div>
-              <div className="text-right">Actions</div>
-            </div>
-            <div className="border-t" />
-            {departments.map((dept) => (
-              <DepartmentRow key={dept.id} department={dept} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center p-4 text-muted-foreground">
-            No departments have been added yet.
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function DepartmentRow({ department }: { department: Department }) {
-  return (
-    <div className="grid grid-cols-3 items-center py-3">
-      <div className="font-medium">{department.name}</div>
-      <div className="text-sm text-muted-foreground">
-        {department.description || "—"}
       </div>
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" size="icon">
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-          <Trash2 className="h-4 w-4" />
-        </Button>
+
+      <div className="grid gap-4">
+        {departments.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center text-muted-foreground">
+                <p>No departments found. Create your first department to get started.</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          departments.map((department) => (
+            <Card key={department.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">{department.name}</CardTitle>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(department)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(department.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              {department.description && (
+                <CardContent className="pt-0">
+                  <p className="text-sm text-muted-foreground">
+                    {department.description}
+                  </p>
+                </CardContent>
+              )}
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
