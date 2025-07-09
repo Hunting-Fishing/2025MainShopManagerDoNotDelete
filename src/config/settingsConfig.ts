@@ -15,7 +15,8 @@ import {
   FileText,
   Shield,
   Database,
-  Calendar
+  Calendar,
+  Link
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -41,6 +42,7 @@ import { BoardMeetingTab } from '@/components/settings/BoardMeetingTab';
 import { ComplianceTab } from '@/components/settings/ComplianceTab';
 import { AssetTrackingTab } from '@/components/settings/AssetTrackingTab';
 import { BudgetManagementTab } from '@/components/settings/BudgetManagementTab';
+import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
 
 export const SETTINGS_TABS: SettingsTabConfig[] = [
   {
@@ -91,6 +93,13 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     icon: Bell,
     component: NotificationsTab,
     description: 'Configure notification preferences'
+  },
+  {
+    id: 'integrations',
+    label: 'Integrations',
+    icon: Link,
+    component: IntegrationsTab,
+    description: 'Connect external services and manage API integrations'
   },
   {
     id: 'nonprofit',
