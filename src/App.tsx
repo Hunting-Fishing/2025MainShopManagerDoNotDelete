@@ -30,6 +30,7 @@ import VehiclesPage from '@/pages/VehiclesPage';
 import StockControl from '@/pages/StockControl';
 import PurchaseOrders from '@/pages/PurchaseOrders';
 import ServiceReminders from '@/pages/ServiceReminders';
+import StaffMembers from '@/pages/StaffMembers';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuthUser();
@@ -86,6 +87,7 @@ function App() {
             <Route path="/stock-control" element={isAuthenticated ? <Layout><StockControl /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/purchase-orders" element={isAuthenticated ? <Layout><PurchaseOrders /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/service-reminders" element={isAuthenticated ? <Layout><ServiceReminders /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/staff-members" element={isAuthenticated ? <Layout><StaffMembers /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/service-editor" element={isAuthenticated ? <Navigate to="/services" replace /> : <Navigate to="/auth" replace />} />
             <Route path="/help" element={isAuthenticated ? <Navigate to="/settings" replace /> : <Navigate to="/auth" replace />} />
             <Route path="/security" element={isAuthenticated ? <Navigate to="/settings/security" replace /> : <Navigate to="/auth" replace />} />
