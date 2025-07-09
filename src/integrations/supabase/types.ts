@@ -3628,6 +3628,98 @@ export type Database = {
         }
         Relationships: []
       }
+      escalation_executions: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          current_step: number
+          escalation_rule_id: string | null
+          execution_data: Json | null
+          id: string
+          resolved_at: string | null
+          started_at: string
+          status: string
+          updated_at: string
+          work_order_id: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          current_step?: number
+          escalation_rule_id?: string | null
+          execution_data?: Json | null
+          id?: string
+          resolved_at?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          current_step?: number
+          escalation_rule_id?: string | null
+          execution_data?: Json | null
+          id?: string
+          resolved_at?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalation_executions_escalation_rule_id_fkey"
+            columns: ["escalation_rule_id"]
+            isOneToOne: false
+            referencedRelation: "escalation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escalation_rules: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          escalation_steps: Json
+          id: string
+          is_active: boolean
+          name: string
+          shop_id: string
+          trigger_condition: string
+          trigger_config: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          escalation_steps?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          shop_id: string
+          trigger_condition: string
+          trigger_config?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          escalation_steps?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          shop_id?: string
+          trigger_condition?: string
+          trigger_config?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_attendees: {
         Row: {
           created_at: string | null
@@ -7055,6 +7147,59 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_deliveries: {
+        Row: {
+          bounce_reason: string | null
+          bounced_at: string | null
+          channel: string
+          clicked_at: string | null
+          created_at: string
+          delivered_at: string | null
+          external_id: string | null
+          id: string
+          metadata: Json | null
+          opened_at: string | null
+          queue_id: string | null
+          status: string
+        }
+        Insert: {
+          bounce_reason?: string | null
+          bounced_at?: string | null
+          channel: string
+          clicked_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          external_id?: string | null
+          id?: string
+          metadata?: Json | null
+          opened_at?: string | null
+          queue_id?: string | null
+          status: string
+        }
+        Update: {
+          bounce_reason?: string | null
+          bounced_at?: string | null
+          channel?: string
+          clicked_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          external_id?: string | null
+          id?: string
+          metadata?: Json | null
+          opened_at?: string | null
+          queue_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "notification_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           email_enabled: boolean | null
@@ -7079,6 +7224,153 @@ export type Database = {
           push_enabled?: boolean | null
           sms_enabled?: boolean | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      notification_queue: {
+        Row: {
+          channel: string
+          content: string
+          created_at: string
+          failed_at: string | null
+          failure_reason: string | null
+          id: string
+          max_retries: number | null
+          metadata: Json | null
+          priority: number
+          recipient_email: string | null
+          recipient_id: string
+          recipient_phone: string | null
+          recipient_type: string
+          retry_count: number | null
+          rule_id: string | null
+          scheduled_for: string
+          sent_at: string | null
+          shop_id: string
+          status: string
+          subject: string | null
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel: string
+          content: string
+          created_at?: string
+          failed_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          max_retries?: number | null
+          metadata?: Json | null
+          priority?: number
+          recipient_email?: string | null
+          recipient_id: string
+          recipient_phone?: string | null
+          recipient_type: string
+          retry_count?: number | null
+          rule_id?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+          shop_id: string
+          status?: string
+          subject?: string | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          content?: string
+          created_at?: string
+          failed_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          max_retries?: number | null
+          metadata?: Json | null
+          priority?: number
+          recipient_email?: string | null
+          recipient_id?: string
+          recipient_phone?: string | null
+          recipient_type?: string
+          retry_count?: number | null
+          rule_id?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+          shop_id?: string
+          status?: string
+          subject?: string | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_queue_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "notification_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_queue_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "notification_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_rules: {
+        Row: {
+          channels: string[]
+          conditions: Json | null
+          created_at: string
+          created_by: string
+          delay_minutes: number | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          priority: number
+          shop_id: string
+          target_audience: string
+          template_id: string | null
+          trigger_config: Json
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          channels?: string[]
+          conditions?: Json | null
+          created_at?: string
+          created_by: string
+          delay_minutes?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          priority?: number
+          shop_id: string
+          target_audience: string
+          template_id?: string | null
+          trigger_config?: Json
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          channels?: string[]
+          conditions?: Json | null
+          created_at?: string
+          created_by?: string
+          delay_minutes?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          priority?: number
+          shop_id?: string
+          target_audience?: string
+          template_id?: string | null
+          trigger_config?: Json
+          trigger_type?: string
+          updated_at?: string
         }
         Relationships: []
       }

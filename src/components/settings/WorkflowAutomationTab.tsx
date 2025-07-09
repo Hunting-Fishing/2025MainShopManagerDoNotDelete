@@ -26,6 +26,7 @@ import { WorkflowExecutionLog } from './workflows/WorkflowExecutionLog';
 import { WorkflowTemplates } from './workflows/WorkflowTemplates';
 import { StatusAutomationRules } from './workflows/StatusAutomationRules';
 import { SmartSchedulingEngine } from './workflows/SmartSchedulingEngine';
+import { NotificationAutomation } from './workflows/NotificationAutomation';
 
 export function WorkflowAutomationTab() {
   const [activeTab, setActiveTab] = useState('triggers');
