@@ -157,6 +157,53 @@ export type Database = {
         }
         Relationships: []
       }
+      api_rate_limits: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          integration_id: string
+          last_request_at: string | null
+          limit_per_window: number
+          requests_count: number | null
+          updated_at: string | null
+          window_duration_minutes: number | null
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          integration_id: string
+          last_request_at?: string | null
+          limit_per_window: number
+          requests_count?: number | null
+          updated_at?: string | null
+          window_duration_minutes?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          integration_id?: string
+          last_request_at?: string | null
+          limit_per_window?: number
+          requests_count?: number | null
+          updated_at?: string | null
+          window_duration_minutes?: number | null
+          window_start?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_rate_limits_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "shop_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appearance_settings: {
         Row: {
           accent_color: string | null
@@ -5319,6 +5366,110 @@ export type Database = {
           },
         ]
       }
+      integration_field_mappings: {
+        Row: {
+          created_at: string | null
+          entity_type: string
+          external_field: string
+          id: string
+          integration_id: string
+          is_required: boolean | null
+          local_field: string
+          sync_direction: string | null
+          transformation_rule: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entity_type: string
+          external_field: string
+          id?: string
+          integration_id: string
+          is_required?: boolean | null
+          local_field: string
+          sync_direction?: string | null
+          transformation_rule?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entity_type?: string
+          external_field?: string
+          id?: string
+          integration_id?: string
+          is_required?: boolean | null
+          local_field?: string
+          sync_direction?: string | null
+          transformation_rule?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_field_mappings_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "shop_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_providers: {
+        Row: {
+          api_version: string | null
+          auth_config: Json | null
+          auth_type: string
+          category: string
+          created_at: string | null
+          description: string | null
+          documentation_url: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          rate_limits: Json | null
+          slug: string
+          updated_at: string | null
+          webhook_support: boolean | null
+          website_url: string | null
+        }
+        Insert: {
+          api_version?: string | null
+          auth_config?: Json | null
+          auth_type: string
+          category: string
+          created_at?: string | null
+          description?: string | null
+          documentation_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          rate_limits?: Json | null
+          slug: string
+          updated_at?: string | null
+          webhook_support?: boolean | null
+          website_url?: string | null
+        }
+        Update: {
+          api_version?: string | null
+          auth_config?: Json | null
+          auth_type?: string
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          documentation_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          rate_limits?: Json | null
+          slug?: string
+          updated_at?: string | null
+          webhook_support?: boolean | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       integration_settings: {
         Row: {
           config: Json | null
@@ -5353,6 +5504,65 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_sync_logs: {
+        Row: {
+          created_by: string | null
+          direction: string
+          end_time: string | null
+          entity_type: string | null
+          error_details: Json | null
+          id: string
+          integration_id: string
+          metadata: Json | null
+          records_failed: number | null
+          records_processed: number | null
+          records_successful: number | null
+          start_time: string | null
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          created_by?: string | null
+          direction: string
+          end_time?: string | null
+          entity_type?: string | null
+          error_details?: Json | null
+          id?: string
+          integration_id: string
+          metadata?: Json | null
+          records_failed?: number | null
+          records_processed?: number | null
+          records_successful?: number | null
+          start_time?: string | null
+          status?: string
+          sync_type: string
+        }
+        Update: {
+          created_by?: string | null
+          direction?: string
+          end_time?: string | null
+          entity_type?: string | null
+          error_details?: Json | null
+          id?: string
+          integration_id?: string
+          metadata?: Json | null
+          records_failed?: number | null
+          records_processed?: number | null
+          records_successful?: number | null
+          start_time?: string | null
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_sync_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "shop_integrations"
             referencedColumns: ["id"]
           },
         ]
@@ -9812,6 +10022,68 @@ export type Database = {
           },
         ]
       }
+      shop_integrations: {
+        Row: {
+          auth_credentials: Json | null
+          configuration: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          error_details: string | null
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          name: string
+          provider_id: string
+          shop_id: string
+          sync_settings: Json | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auth_credentials?: Json | null
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          error_details?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          name: string
+          provider_id: string
+          shop_id: string
+          sync_settings?: Json | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auth_credentials?: Json | null
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          error_details?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          name?: string
+          provider_id?: string
+          shop_id?: string
+          sync_settings?: Json | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_integrations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "integration_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_settings: {
         Row: {
           address: string | null
@@ -11232,6 +11504,121 @@ export type Database = {
           is_active?: boolean | null
         }
         Relationships: []
+      }
+      webhook_deliveries: {
+        Row: {
+          created_at: string | null
+          delivered_at: string | null
+          delivery_attempts: number | null
+          endpoint_id: string
+          event_id: string | null
+          event_type: string
+          id: string
+          next_retry_at: string | null
+          payload: Json
+          response_body: string | null
+          response_headers: Json | null
+          response_status: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivered_at?: string | null
+          delivery_attempts?: number | null
+          endpoint_id: string
+          event_id?: string | null
+          event_type: string
+          id?: string
+          next_retry_at?: string | null
+          payload: Json
+          response_body?: string | null
+          response_headers?: Json | null
+          response_status?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          delivered_at?: string | null
+          delivery_attempts?: number | null
+          endpoint_id?: string
+          event_id?: string | null
+          event_type?: string
+          id?: string
+          next_retry_at?: string | null
+          payload?: Json
+          response_body?: string | null
+          response_headers?: Json | null
+          response_status?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_endpoints: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          events: string[]
+          headers: Json | null
+          id: string
+          integration_id: string | null
+          is_active: boolean | null
+          last_triggered_at: string | null
+          name: string
+          retry_config: Json | null
+          secret_key: string | null
+          shop_id: string
+          timeout_seconds: number | null
+          updated_at: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          events: string[]
+          headers?: Json | null
+          id?: string
+          integration_id?: string | null
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          name: string
+          retry_config?: Json | null
+          secret_key?: string | null
+          shop_id: string
+          timeout_seconds?: number | null
+          updated_at?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          events?: string[]
+          headers?: Json | null
+          id?: string
+          integration_id?: string | null
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          name?: string
+          retry_config?: Json | null
+          secret_key?: string | null
+          shop_id?: string
+          timeout_seconds?: number | null
+          updated_at?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_endpoints_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "shop_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       work_order_activities: {
         Row: {
@@ -12713,6 +13100,15 @@ export type Database = {
         Args: { item_id: string; requested_quantity: number }
         Returns: boolean
       }
+      check_rate_limit: {
+        Args: {
+          p_integration_id: string
+          p_endpoint: string
+          p_limit: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
       clear_service_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -13023,6 +13419,15 @@ export type Database = {
       }
       increment_campaign_opens: {
         Args: { campaign_id: string }
+        Returns: undefined
+      }
+      increment_rate_limit: {
+        Args: {
+          p_integration_id: string
+          p_endpoint: string
+          p_limit: number
+          p_window_minutes?: number
+        }
         Returns: undefined
       }
       increment_template_usage: {
