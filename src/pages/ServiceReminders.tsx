@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,16 +5,12 @@ import { Bell, Plus, Calendar, Users, Clock, AlertTriangle } from 'lucide-react'
 import { RemindersList } from '@/components/reminders/list/RemindersList';
 import { AddReminderForm } from '@/components/reminders/AddReminderForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-
 export default function ServiceReminders() {
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
-  
   const handleReminderCreated = () => {
     setReminderDialogOpen(false);
   };
-
-  return (
-    <div className="container mx-auto p-6 space-y-6">
+  return <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center">
@@ -33,7 +28,7 @@ export default function ServiceReminders() {
               Add Reminder
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] bg-gray-50">
             <DialogHeader>
               <DialogTitle>Create Service Reminder</DialogTitle>
             </DialogHeader>
@@ -107,6 +102,5 @@ export default function ServiceReminders() {
           <RemindersList limit={10} />
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }
