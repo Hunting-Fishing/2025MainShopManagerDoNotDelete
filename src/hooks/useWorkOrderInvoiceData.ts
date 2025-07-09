@@ -67,7 +67,7 @@ export const useWorkOrderInvoiceData = (workOrder: WorkOrder): InvoiceData => {
           if (vehicleError) {
             console.error('Error fetching vehicle:', vehicleError);
           } else {
-            setVehicle(vehicleData);
+            setVehicle(vehicleData as any); // Type assertion for vehicle data from Supabase
           }
         }
 

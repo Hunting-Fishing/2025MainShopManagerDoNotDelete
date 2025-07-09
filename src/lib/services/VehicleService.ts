@@ -19,9 +19,13 @@ export class VehicleService {
 
   async createVehicle(vehicleData: CreateVehicleInput): Promise<Vehicle> {
     try {
-      // Validate required fields
-      if (!vehicleData.customer_id) {
-        throw new Error('Customer ID is required');
+      // Validate required fields based on owner type
+      if (vehicleData.owner_type === 'customer' && !vehicleData.customer_id) {
+        throw new Error('Customer ID is required for customer vehicles');
+      }
+
+      if (vehicleData.owner_type === 'company' && !vehicleData.asset_category) {
+        throw new Error('Asset category is required for company assets');
       }
 
       // Check for duplicate VIN if provided
@@ -39,6 +43,15 @@ export class VehicleService {
         throw error;
       }
       throw new Error('Failed to create vehicle');
+    }
+  }
+
+  async getCompanyAssets(): Promise<Vehicle[]> {
+    try {
+      return await this.repository.findCompanyAssets();
+    } catch (error) {
+      console.error('Error fetching company assets:', error);
+      throw new Error('Failed to fetch company assets');
     }
   }
 

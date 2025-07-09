@@ -4,7 +4,14 @@ import { PostgrestError } from '@supabase/supabase-js';
 
 export interface Vehicle {
   id: string;
-  customer_id: string;
+  customer_id?: string; // Now optional for company assets
+  owner_type: 'customer' | 'company';
+  asset_category?: 'courtesy' | 'rental' | 'fleet' | 'service' | 'equipment' | 'other';
+  asset_status?: 'available' | 'in_use' | 'maintenance' | 'out_of_service' | 'retired';
+  checked_out_to?: string;
+  checked_out_at?: string;
+  expected_return_date?: string;
+  current_location?: string;
   year?: number;
   make?: string;
   model?: string;
@@ -21,7 +28,14 @@ export interface Vehicle {
 }
 
 export interface CreateVehicleInput {
-  customer_id: string;
+  customer_id?: string; // Optional for company assets
+  owner_type: 'customer' | 'company';
+  asset_category?: 'courtesy' | 'rental' | 'fleet' | 'service' | 'equipment' | 'other';
+  asset_status?: 'available' | 'in_use' | 'maintenance' | 'out_of_service' | 'retired';
+  checked_out_to?: string;
+  checked_out_at?: string;
+  expected_return_date?: string;
+  current_location?: string;
   year?: number;
   make?: string;
   model?: string;
@@ -36,6 +50,14 @@ export interface CreateVehicleInput {
 }
 
 export interface UpdateVehicleInput {
+  customer_id?: string;
+  owner_type?: 'customer' | 'company';
+  asset_category?: 'courtesy' | 'rental' | 'fleet' | 'service' | 'equipment' | 'other';
+  asset_status?: 'available' | 'in_use' | 'maintenance' | 'out_of_service' | 'retired';
+  checked_out_to?: string;
+  checked_out_at?: string;
+  expected_return_date?: string;
+  current_location?: string;
   year?: number;
   make?: string;
   model?: string;
@@ -57,7 +79,7 @@ export class VehicleRepository {
       .order('created_at', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return data || [];
+    return (data || []) as Vehicle[];
   }
 
   async findById(id: string): Promise<Vehicle | null> {
@@ -68,7 +90,7 @@ export class VehicleRepository {
       .single();
     
     if (error && error.code !== 'PGRST116') throw this.handleError(error);
-    return data || null;
+    return data as Vehicle | null;
   }
 
   async findByCustomer(customerId: string): Promise<Vehicle[]> {
@@ -79,7 +101,7 @@ export class VehicleRepository {
       .order('created_at', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return data || [];
+    return (data || []) as Vehicle[];
   }
 
   async findByVin(vin: string): Promise<Vehicle | null> {
@@ -90,7 +112,7 @@ export class VehicleRepository {
       .single();
     
     if (error && error.code !== 'PGRST116') throw this.handleError(error);
-    return data || null;
+    return data as Vehicle | null;
   }
 
   async findByLicensePlate(licensePlate: string): Promise<Vehicle | null> {
@@ -101,13 +123,20 @@ export class VehicleRepository {
       .single();
     
     if (error && error.code !== 'PGRST116') throw this.handleError(error);
-    return data || null;
+    return data as Vehicle | null;
   }
 
   async create(entity: CreateVehicleInput): Promise<Vehicle> {
     // Ensure all required fields are present for Supabase
     const insertData = {
-      customer_id: entity.customer_id,
+      customer_id: entity.customer_id || null,
+      owner_type: entity.owner_type,
+      asset_category: entity.asset_category || null,
+      asset_status: entity.asset_status || null,
+      checked_out_to: entity.checked_out_to || null,
+      checked_out_at: entity.checked_out_at || null,
+      expected_return_date: entity.expected_return_date || null,
+      current_location: entity.current_location || null,
       year: entity.year || null,
       make: entity.make || null,
       model: entity.model || null,
@@ -128,7 +157,7 @@ export class VehicleRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data;
+    return data as Vehicle;
   }
 
   async update(id: string, updates: UpdateVehicleInput): Promise<Vehicle> {
@@ -140,7 +169,7 @@ export class VehicleRepository {
       .single();
     
     if (error) throw this.handleError(error);
-    return data;
+    return data as Vehicle;
   }
 
   async delete(id: string): Promise<void> {
@@ -160,7 +189,19 @@ export class VehicleRepository {
       .order('created_at', { ascending: false });
     
     if (error) throw this.handleError(error);
-    return data || [];
+    return (data || []) as Vehicle[];
+  }
+
+  // Add method to find company assets only
+  async findCompanyAssets(): Promise<Vehicle[]> {
+    const { data, error } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('owner_type', 'company')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw this.handleError(error);
+    return (data || []) as Vehicle[];
   }
 
   private handleError(error: PostgrestError): Error {

@@ -39,7 +39,14 @@ export interface Vehicle {
   year: number;
   vin?: string;
   license_plate?: string;
-  customer_id: string;
+  customer_id?: string; // Now optional for company assets
+  owner_type: 'customer' | 'company';
+  asset_category?: 'courtesy' | 'rental' | 'fleet' | 'service' | 'equipment' | 'other';
+  asset_status?: 'available' | 'in_use' | 'maintenance' | 'out_of_service' | 'retired';
+  checked_out_to?: string;
+  checked_out_at?: string;
+  expected_return_date?: string;
+  current_location?: string;
   created_at: string;
   updated_at: string;
   notes?: string;
@@ -54,6 +61,12 @@ export interface Vehicle {
   trim?: string;
   last_service_date?: string;
   color?: string;
+}
+
+export interface CompanyAsset extends Vehicle {
+  owner_type: 'company';
+  asset_category: 'courtesy' | 'rental' | 'fleet' | 'service' | 'equipment' | 'other';
+  asset_status: 'available' | 'in_use' | 'maintenance' | 'out_of_service' | 'retired';
 }
 
 export interface CarMake {

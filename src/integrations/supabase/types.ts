@@ -11550,13 +11550,19 @@ export type Database = {
       }
       vehicles: {
         Row: {
+          asset_category: string | null
+          asset_status: string | null
           body_style: string | null
+          checked_out_at: string | null
+          checked_out_to: string | null
           color: string | null
           country: string | null
           created_at: string
-          customer_id: string
+          current_location: string | null
+          customer_id: string | null
           drive_type: string | null
           engine: string | null
+          expected_return_date: string | null
           fuel_type: string | null
           gvwr: string | null
           id: string
@@ -11565,6 +11571,7 @@ export type Database = {
           make: string
           model: string
           notes: string | null
+          owner_type: string
           transmission: string | null
           transmission_type: string | null
           trim: string | null
@@ -11573,13 +11580,19 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          asset_category?: string | null
+          asset_status?: string | null
           body_style?: string | null
+          checked_out_at?: string | null
+          checked_out_to?: string | null
           color?: string | null
           country?: string | null
           created_at?: string
-          customer_id: string
+          current_location?: string | null
+          customer_id?: string | null
           drive_type?: string | null
           engine?: string | null
+          expected_return_date?: string | null
           fuel_type?: string | null
           gvwr?: string | null
           id?: string
@@ -11588,6 +11601,7 @@ export type Database = {
           make: string
           model: string
           notes?: string | null
+          owner_type?: string
           transmission?: string | null
           transmission_type?: string | null
           trim?: string | null
@@ -11596,13 +11610,19 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          asset_category?: string | null
+          asset_status?: string | null
           body_style?: string | null
+          checked_out_at?: string | null
+          checked_out_to?: string | null
           color?: string | null
           country?: string | null
           created_at?: string
-          customer_id?: string
+          current_location?: string | null
+          customer_id?: string | null
           drive_type?: string | null
           engine?: string | null
+          expected_return_date?: string | null
           fuel_type?: string | null
           gvwr?: string | null
           id?: string
@@ -11611,6 +11631,7 @@ export type Database = {
           make?: string
           model?: string
           notes?: string | null
+          owner_type?: string
           transmission?: string | null
           transmission_type?: string | null
           trim?: string | null
@@ -11619,6 +11640,13 @@ export type Database = {
           year?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "vehicles_checked_out_to_fkey"
+            columns: ["checked_out_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vehicles_customer_id_fkey"
             columns: ["customer_id"]
