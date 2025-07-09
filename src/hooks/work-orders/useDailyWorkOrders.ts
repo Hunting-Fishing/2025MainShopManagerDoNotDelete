@@ -58,7 +58,7 @@ export function useDailyWorkOrders() {
         .select(`
           *,
           customers(first_name, last_name),
-          profiles(display_name)
+          profiles!fk_work_orders_technician(display_name)
         `)
         .gte('start_time', today)
         .lt('start_time', `${today}T23:59:59`)
@@ -72,7 +72,7 @@ export function useDailyWorkOrders() {
         .select(`
           *,
           customers(first_name, last_name),
-          profiles(display_name)
+          profiles!fk_work_orders_technician(display_name)
         `)
         .lt('end_time', now)
         .neq('status', 'completed')
@@ -86,7 +86,7 @@ export function useDailyWorkOrders() {
         .select(`
           *,
           customers(first_name, last_name),
-          profiles(display_name)
+          profiles!fk_work_orders_technician(display_name)
         `)
         .lt('created_at', today)
         .in('status', ['pending', 'in_progress', 'assigned'])
