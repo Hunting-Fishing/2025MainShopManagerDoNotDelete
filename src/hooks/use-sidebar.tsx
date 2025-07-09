@@ -10,8 +10,13 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  // Initialize sidebar as closed by default to avoid layout issues
-  const [isOpen, setIsOpen] = useState(false);
+  // Initialize sidebar as open by default on desktop, closed on mobile
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768; // Open on desktop, closed on mobile
+    }
+    return true; // Default to open for SSR
+  });
 
   // Handle window resize to auto-close/open sidebar
   useEffect(() => {
