@@ -73,7 +73,14 @@ export default function Reports() {
               ))}
             </div>
           ) : (
-            <SummaryTabContent />
+            <SummaryTabContent 
+              showComparison={true}
+              comparisonRevenueData={[]}
+              comparisonServiceData={[]}
+              salesData={[]}
+              workOrderStatusData={[]}
+              topSellingItems={[]}
+            />
           )}
         </TabsContent>
 
@@ -93,7 +100,7 @@ export default function Reports() {
               ))}
             </div>
           ) : (
-            <FinancialsTabContent />
+            <FinancialsTabContent salesData={[]} />
           )}
         </TabsContent>
 
@@ -113,7 +120,7 @@ export default function Reports() {
               ))}
             </div>
           ) : (
-            <PerformanceTabContent />
+            <PerformanceTabContent servicePerformance={[]} />
           )}
         </TabsContent>
 
@@ -138,7 +145,7 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="customers" className="space-y-6">
-          <CustomerReportTab />
+          <CustomerReportTab reportData={{}} />
         </TabsContent>
 
         <TabsContent value="custom" className="space-y-6">
@@ -147,8 +154,6 @@ export default function Reports() {
             onGenerateReport={handleGenerateReport}
             isLoading={loading}
           />
-            </div>
-          </div>
         </TabsContent>
       </Tabs>
     </div>

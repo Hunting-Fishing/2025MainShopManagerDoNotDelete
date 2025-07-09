@@ -11,11 +11,13 @@ interface CLVData {
 }
 
 interface CustomerLifetimeValueCardProps {
-  data: CLVData[];
+  data?: CLVData[];
   isLoading?: boolean;
+  customerId?: string;
+  className?: string;
 }
 
-export function CustomerLifetimeValueCard({ data, isLoading = false }: CustomerLifetimeValueCardProps) {
+export function CustomerLifetimeValueCard({ data = [], isLoading = false, className }: CustomerLifetimeValueCardProps) {
   const totalCLV = data.reduce((sum, item) => sum + (item.averageClv * item.customerCount), 0);
   const totalCustomers = data.reduce((sum, item) => sum + item.customerCount, 0);
   const avgCLV = totalCustomers > 0 ? totalCLV / totalCustomers : 0;
@@ -45,7 +47,7 @@ export function CustomerLifetimeValueCard({ data, isLoading = false }: CustomerL
   }
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <DollarSign className="h-5 w-5" />
