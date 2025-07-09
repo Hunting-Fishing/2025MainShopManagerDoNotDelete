@@ -12,6 +12,7 @@ import InventorySuppliers from '@/pages/InventorySuppliers';
 import InventoryLocations from '@/pages/InventoryLocations';
 import InventoryOrders from '@/pages/InventoryOrders';
 import InventoryManager from '@/pages/InventoryManager';
+import InventoryItemDetailsPage from '@/pages/InventoryItemDetails';
 
 /**
  * IMPORTANT: This page uses optimized inventory functionality with centralized data management
@@ -41,6 +42,7 @@ export default function Inventory() {
       <Route path="/locations" element={<InventoryLocations />} />
       <Route path="/orders" element={<InventoryOrders />} />
       <Route path="/manager" element={<InventoryManager />} />
+      <Route path="/item/:id" element={<InventoryItemDetailsPage />} />
     </Routes>
   );
 }
