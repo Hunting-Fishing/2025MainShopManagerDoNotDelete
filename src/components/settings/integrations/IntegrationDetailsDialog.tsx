@@ -19,8 +19,10 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Loader2
+  Loader2,
+  Zap
 } from 'lucide-react';
+import { IntegrationWorkflowsTab } from './IntegrationWorkflowsTab';
 import { ShopIntegration } from '@/hooks/integrations/useShopIntegrations';
 import { useShopIntegrations } from '@/hooks/integrations/useShopIntegrations';
 import { useToast } from '@/hooks/use-toast';
@@ -141,8 +143,9 @@ export function IntegrationDetailsDialog({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="workflows">Workflows</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
@@ -268,6 +271,10 @@ export function IntegrationDetailsDialog({
                 Delete
               </Button>
             </div>
+          </TabsContent>
+
+          <TabsContent value="workflows" className="space-y-6">
+            <IntegrationWorkflowsTab integrationId={integration.id} />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

@@ -13876,6 +13876,10 @@ export type Database = {
           relevance_score: number
         }[]
       }
+      trigger_integration_workflow: {
+        Args: { p_workflow_id: string; p_trigger_data?: Json }
+        Returns: string
+      }
       update_email_processing_schedule: {
         Args: { new_settings: Json }
         Returns: Json
