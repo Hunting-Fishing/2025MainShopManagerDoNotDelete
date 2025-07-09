@@ -17,12 +17,15 @@ import {
   CheckCircle,
   AlertCircle,
   Filter,
-  ArrowRight
+  ArrowRight,
+  Brain
 } from 'lucide-react';
 import { useWorkflowTriggers } from '@/hooks/workflows/useWorkflowTriggers';
 import { WorkflowBuilder } from './workflows/WorkflowBuilder';
 import { WorkflowExecutionLog } from './workflows/WorkflowExecutionLog';
 import { WorkflowTemplates } from './workflows/WorkflowTemplates';
+import { StatusAutomationRules } from './workflows/StatusAutomationRules';
+import { SmartSchedulingEngine } from './workflows/SmartSchedulingEngine';
 
 export function WorkflowAutomationTab() {
   const [activeTab, setActiveTab] = useState('triggers');
@@ -84,10 +87,18 @@ export function WorkflowAutomationTab() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-6 w-full">
           <TabsTrigger value="triggers" className="gap-2">
             <Zap className="h-4 w-4" />
-            <span className="hidden sm:inline">Active Workflows</span>
+            <span className="hidden sm:inline">Workflows</span>
+          </TabsTrigger>
+          <TabsTrigger value="status" className="gap-2">
+            <ArrowRight className="h-4 w-4" />
+            <span className="hidden sm:inline">Status Rules</span>
+          </TabsTrigger>
+          <TabsTrigger value="scheduling" className="gap-2">
+            <Brain className="h-4 w-4" />
+            <span className="hidden sm:inline">Smart Scheduling</span>
           </TabsTrigger>
           <TabsTrigger value="templates" className="gap-2">
             <Settings className="h-4 w-4" />
@@ -197,6 +208,14 @@ export function WorkflowAutomationTab() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="status">
+          <StatusAutomationRules />
+        </TabsContent>
+
+        <TabsContent value="scheduling">
+          <SmartSchedulingEngine />
         </TabsContent>
 
         <TabsContent value="templates">
