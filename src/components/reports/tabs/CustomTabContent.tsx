@@ -93,7 +93,7 @@ export function CustomTabContent({ customReportConfig, onGenerateReport, isLoadi
         <div className="flex flex-col items-center justify-center p-10 border rounded-md bg-muted/10">
           <h3 className="text-xl font-medium mb-2">No Custom Report Generated</h3>
           <p className="text-muted-foreground mb-6">Use the Custom Report builder to create your own reports.</p>
-          <CustomReportBuilder onGenerateReport={onGenerateReport} />
+          <CustomReportBuilder />
         </div>
       )}
     </div>

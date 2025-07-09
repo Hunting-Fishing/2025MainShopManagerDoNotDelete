@@ -1,166 +1,233 @@
-
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, Filter, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+  Users, 
+  Filter, 
+  Search, 
+  X, 
+  RotateCcw,
+  UserCheck,
+  MapPin,
+  Briefcase
+} from 'lucide-react';
 
-interface TeamFiltersProps {
-  roles: string[];
+interface TeamFilter {
+  searchTerm: string;
   departments: string[];
-  statuses: string[];
-  roleFilter: string[];
-  departmentFilter: string[];
-  statusFilter: string[];
-  onRoleFilterChange: (roles: string[]) => void;
-  onDepartmentFilterChange: (departments: string[]) => void;
-  onStatusFilterChange: (statuses: string[]) => void;
-  onResetFilters: () => void;
+  roles: string[];
+  locations: string[];
+  conditions: {
+    isActive: boolean;
+    isRemote: boolean;
+    isContractor: boolean;
+  };
 }
 
-export function TeamFilters({ 
-  roles, 
-  departments,
-  statuses,
-  roleFilter,
-  departmentFilter,
-  statusFilter,
-  onRoleFilterChange,
-  onDepartmentFilterChange,
-  onStatusFilterChange,
-  onResetFilters
-}: TeamFiltersProps) {
-  const [isRoleOpen, setIsRoleOpen] = useState(false);
-  const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
-  const [isStatusOpen, setIsStatusOpen] = useState(false);
-  
-  const totalFilters = roleFilter.length + departmentFilter.length + statusFilter.length;
-  
-  const toggleRole = (role: string) => {
-    if (roleFilter.includes(role)) {
-      onRoleFilterChange(roleFilter.filter(r => r !== role));
-    } else {
-      onRoleFilterChange([...roleFilter, role]);
-    }
+const defaultFilter: TeamFilter = {
+  searchTerm: '',
+  departments: [],
+  roles: [],
+  locations: [],
+  conditions: {
+    isActive: false,
+    isRemote: false,
+    isContractor: false,
+  },
+};
+
+const mockData = {
+  departments: ['Service', 'Sales', 'Parts', 'Management', 'Administration'],
+  roles: ['Technician', 'Service Advisor', 'Manager', 'Reception', 'Owner'],
+  locations: ['Main Shop', 'Downtown', 'North Branch', 'Mobile Service', 'Remote'],
+};
+
+interface TeamFiltersProps {
+  onFilterChange: (filter: TeamFilter) => void;
+  className?: string;
+}
+
+export function TeamFilters({ onFilterChange, className }: TeamFiltersProps) {
+  const [filter, setFilter] = useState<TeamFilter>(defaultFilter);
+
+  const updateFilter = (updates: Partial<TeamFilter>) => {
+    const newFilter = { ...filter, ...updates };
+    setFilter(newFilter);
+    onFilterChange(newFilter);
   };
-  
-  const toggleDepartment = (department: string) => {
-    if (departmentFilter.includes(department)) {
-      onDepartmentFilterChange(departmentFilter.filter(d => d !== department));
-    } else {
-      onDepartmentFilterChange([...departmentFilter, department]);
-    }
+
+  const updateConditions = (conditionUpdates: Partial<TeamFilter['conditions']>) => {
+    updateFilter({
+      conditions: { ...filter.conditions, ...conditionUpdates }
+    });
   };
-  
-  const toggleStatus = (status: string) => {
-    if (statusFilter.includes(status)) {
-      onStatusFilterChange(statusFilter.filter(s => s !== status));
-    } else {
-      onStatusFilterChange([...statusFilter, status]);
-    }
+
+  const toggleArrayValue = (array: string[], value: string) => {
+    return array.includes(value)
+      ? array.filter(item => item !== value)
+      : [...array, value];
   };
-  
+
+  const resetFilters = () => {
+    setFilter(defaultFilter);
+    onFilterChange(defaultFilter);
+  };
+
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (filter.searchTerm) count++;
+    if (filter.departments.length) count++;
+    if (filter.roles.length) count++;
+    if (filter.locations.length) count++;
+    if (Object.values(filter.conditions).some(Boolean)) count++;
+    return count;
+  };
+
+  const activeCount = getActiveFilterCount();
+
   return (
-    <div className="flex items-center gap-2">
-      {/* Role filter */}
-      <DropdownMenu open={isRoleOpen} onOpenChange={setIsRoleOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 border-slate-200 text-slate-600">
-            Role
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48 p-2">
-          <div className="space-y-1">
-            {roles.map((role) => (
-              <div
-                key={role}
-                onClick={() => toggleRole(role)}
-                className="flex items-center rounded-md px-2 py-1.5 text-sm hover:bg-slate-100 cursor-pointer"
-              >
-                <div className="flex items-center justify-center w-5 h-5 mr-2 rounded border border-slate-200">
-                  {roleFilter.includes(role) && <Check className="h-3 w-3" />}
-                </div>
-                <span className="flex-grow">{role}</span>
-              </div>
-            ))}
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      
-      {/* Department filter */}
-      <DropdownMenu open={isDepartmentOpen} onOpenChange={setIsDepartmentOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 border-slate-200 text-slate-600">
-            Department
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48 p-2">
-          <div className="space-y-1">
-            {departments.map((department) => (
-              <div
-                key={department}
-                onClick={() => toggleDepartment(department)}
-                className="flex items-center rounded-md px-2 py-1.5 text-sm hover:bg-slate-100 cursor-pointer"
-              >
-                <div className="flex items-center justify-center w-5 h-5 mr-2 rounded border border-slate-200">
-                  {departmentFilter.includes(department) && <Check className="h-3 w-3" />}
-                </div>
-                <span className="flex-grow">{department}</span>
-              </div>
-            ))}
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      
-      {/* Status filter */}
-      <DropdownMenu open={isStatusOpen} onOpenChange={setIsStatusOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 border-slate-200 text-slate-600">
-            Status
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48 p-2">
-          <div className="space-y-1">
-            {statuses.map((status) => (
-              <div
-                key={status}
-                onClick={() => toggleStatus(status)}
-                className="flex items-center rounded-md px-2 py-1.5 text-sm hover:bg-slate-100 cursor-pointer"
-              >
-                <div className="flex items-center justify-center w-5 h-5 mr-2 rounded border border-slate-200">
-                  {statusFilter.includes(status) && <Check className="h-3 w-3" />}
-                </div>
-                <span className="flex-grow">{status}</span>
-              </div>
-            ))}
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      
-      {/* Active filters */}
-      {totalFilters > 0 && (
-        <div className="flex items-center gap-1.5">
-          <Badge className="bg-slate-200 text-slate-600 hover:bg-slate-300">
-            {totalFilters} {totalFilters === 1 ? "filter" : "filters"}
-          </Badge>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-9 px-2"
-            onClick={onResetFilters}
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Clear filters</span>
-          </Button>
+    <Card className={className}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Filter className="h-5 w-5" />
+            Team Filters
+            {activeCount > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {activeCount} active
+              </Badge>
+            )}
+          </CardTitle>
+          {activeCount > 0 && (
+            <Button variant="outline" size="sm" onClick={resetFilters}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset
+            </Button>
+          )}
         </div>
-      )}
-    </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {/* Quick Search */}
+        <div className="space-y-2">
+          <Label>Quick Search</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search by name, email, department..."
+              value={filter.searchTerm}
+              onChange={(e) => updateFilter({ searchTerm: e.target.value })}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {/* Quick Status Toggles */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div className="flex items-center justify-between p-2 border rounded-md">
+            <div className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4 text-green-500" />
+              <Label className="text-sm">Active Only</Label>
+            </div>
+            <Switch
+              checked={filter.conditions.isActive}
+              onCheckedChange={(checked) => updateConditions({ isActive: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-2 border rounded-md">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-blue-500" />
+              <Label className="text-sm">Remote</Label>
+            </div>
+            <Switch
+              checked={filter.conditions.isRemote}
+              onCheckedChange={(checked) => updateConditions({ isRemote: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-2 border rounded-md">
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-purple-500" />
+              <Label className="text-sm">Contractors</Label>
+            </div>
+            <Switch
+              checked={filter.conditions.isContractor}
+              onCheckedChange={(checked) => updateConditions({ isContractor: checked })}
+            />
+          </div>
+        </div>
+
+        {/* Departments */}
+        <div className="space-y-2">
+          <Label>Departments</Label>
+          <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[3rem]">
+            {mockData.departments.map(dept => (
+              <Badge
+                key={dept}
+                variant={filter.departments.includes(dept) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => updateFilter({
+                  departments: toggleArrayValue(filter.departments, dept)
+                })}
+              >
+                {dept}
+                {filter.departments.includes(dept) && (
+                  <X className="h-3 w-3 ml-1" />
+                )}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Roles */}
+        <div className="space-y-2">
+          <Label>Roles</Label>
+          <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[3rem]">
+            {mockData.roles.map(role => (
+              <Badge
+                key={role}
+                variant={filter.roles.includes(role) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => updateFilter({
+                  roles: toggleArrayValue(filter.roles, role)
+                })}
+              >
+                {role}
+                {filter.roles.includes(role) && (
+                  <X className="h-3 w-3 ml-1" />
+                )}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Locations */}
+        <div className="space-y-2">
+          <Label>Locations</Label>
+          <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[3rem]">
+            {mockData.locations.map(location => (
+              <Badge
+                key={location}
+                variant={filter.locations.includes(location) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => updateFilter({
+                  locations: toggleArrayValue(filter.locations, location)
+                })}
+              >
+                {location}
+                {filter.locations.includes(location) && (
+                  <X className="h-3 w-3 ml-1" />
+                )}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

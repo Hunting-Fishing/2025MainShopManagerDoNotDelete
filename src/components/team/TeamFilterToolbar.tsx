@@ -37,18 +37,12 @@ export function TeamFilterToolbar({
         searchQuery={searchQuery} 
         onSearchChange={onSearchChange} 
       />
-      <TeamFilters 
-        roles={roles}
-        departments={departments}
-        statuses={statuses}
-        roleFilter={roleFilter}
-        departmentFilter={departmentFilter}
-        statusFilter={statusFilter}
-        onRoleFilterChange={onRoleFilterChange}
-        onDepartmentFilterChange={onDepartmentFilterChange}
-        onStatusFilterChange={onStatusFilterChange}
-        onResetFilters={onResetFilters}
-      />
+        <TeamFilters
+          onFilterChange={(filter) => {
+            // Handle the new filter format
+            console.log('Filter changed:', filter);
+          }}
+        />
     </div>
   );
 }

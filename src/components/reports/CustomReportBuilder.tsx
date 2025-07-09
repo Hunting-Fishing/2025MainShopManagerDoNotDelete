@@ -1,311 +1,155 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Plus, X, Download, Eye, Save, BarChart3, TrendingUp } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 
-import { useState } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/components/ui/use-toast";
-
-interface DataField {
+interface ReportField {
   id: string;
   name: string;
+  type: 'text' | 'number' | 'date' | 'currency' | 'percentage';
   category: string;
 }
 
-interface CustomReportBuilderProps {
-  onGenerateReport: (config: ReportConfig) => void;
+interface ReportFilter {
+  field: string;
+  operator: string;
+  value: string;
 }
 
-interface ReportConfig {
-  title: string;
-  description: string;
-  fields: string[];
-  filters: Record<string, any>;
-  sorting: {
-    field: string;
-    direction: "asc" | "desc";
-  };
-  groupBy?: string;
-}
-
-const AVAILABLE_FIELDS: DataField[] = [
-  // Financial fields
-  { id: "revenue", name: "Revenue", category: "financial" },
-  { id: "expenses", name: "Expenses", category: "financial" },
-  { id: "profit", name: "Profit", category: "financial" },
-  { id: "profit_margin", name: "Profit Margin", category: "financial" },
-  { id: "average_ticket", name: "Average Ticket", category: "financial" },
-  
-  // Service fields
-  { id: "service_count", name: "Service Count", category: "service" },
-  { id: "labor_hours", name: "Labor Hours", category: "service" },
-  { id: "completion_time", name: "Avg. Completion Time", category: "service" },
-  { id: "on_time_percent", name: "On-Time Percentage", category: "service" },
-  { id: "comeback_rate", name: "Comeback Rate", category: "service" },
-  
-  // Customer fields
-  { id: "customer_count", name: "Customer Count", category: "customer" },
-  { id: "new_customers", name: "New Customers", category: "customer" },
-  { id: "repeat_rate", name: "Repeat Customer Rate", category: "customer" },
-  { id: "satisfaction", name: "Customer Satisfaction", category: "customer" },
-  
-  // Inventory fields
-  { id: "inventory_turnover", name: "Inventory Turnover", category: "inventory" },
-  { id: "parts_cost", name: "Parts Cost", category: "inventory" },
-  { id: "low_stock_count", name: "Low Stock Items", category: "inventory" },
-  { id: "out_of_stock_count", name: "Out of Stock Items", category: "inventory" }
+const availableFields: ReportField[] = [
+  { id: 'customer_name', name: 'Customer Name', type: 'text', category: 'Customer' },
+  { id: 'work_order_number', name: 'Work Order #', type: 'text', category: 'Work Order' },
+  { id: 'total_cost', name: 'Total Cost', type: 'currency', category: 'Financial' },
+  { id: 'created_date', name: 'Created Date', type: 'date', category: 'Dates' },
+  { id: 'technician_name', name: 'Technician', type: 'text', category: 'Staff' },
 ];
 
-export function CustomReportBuilder({ onGenerateReport }: CustomReportBuilderProps) {
-  const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("fields");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+export function CustomReportBuilder() {
+  const [reportName, setReportName] = useState('');
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
-  const [groupBy, setGroupBy] = useState("");
-  const [sortField, setSortField] = useState("");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  
-  const handleToggleField = (fieldId: string) => {
-    setSelectedFields((prev) => 
-      prev.includes(fieldId) 
-        ? prev.filter(id => id !== fieldId)
-        : [...prev, fieldId]
-    );
+  const [filters, setFilters] = useState<ReportFilter[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const addField = (fieldId: string) => {
+    if (!selectedFields.includes(fieldId)) {
+      setSelectedFields([...selectedFields, fieldId]);
+    }
   };
 
-  const handleGenerateReport = () => {
-    if (!title) {
-      toast({
-        title: "Report title required",
-        description: "Please provide a title for your report",
-        variant: "destructive"
-      });
-      return;
-    }
+  const removeField = (fieldId: string) => {
+    setSelectedFields(selectedFields.filter(id => id !== fieldId));
+  };
 
-    if (selectedFields.length === 0) {
-      toast({
-        title: "No fields selected",
-        description: "Please select at least one field for your report",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const reportConfig: ReportConfig = {
-      title,
-      description,
-      fields: selectedFields,
-      filters: {}, // Could be expanded with more filter options
-      sorting: {
-        field: sortField || selectedFields[0],
-        direction: sortDirection,
-      },
-      groupBy: groupBy || undefined
-    };
-
-    onGenerateReport(reportConfig);
-    setOpen(false);
-    
-    toast({
-      title: "Custom report generated",
-      description: "Your report has been created successfully"
-    });
+  const generateReport = async () => {
+    setIsGenerating(true);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsGenerating(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Custom Report</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Create Custom Report</DialogTitle>
-          <DialogDescription>
-            Build your own customized report by selecting fields and parameters.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Custom Report Builder
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="reportName">Report Name</Label>
+              <Input
+                id="reportName"
+                value={reportName}
+                onChange={(e) => setReportName(e.target.value)}
+                placeholder="Enter report name"
+              />
+            </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="fields">Fields</TabsTrigger>
-            <TabsTrigger value="organization">Organization</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="fields" className="space-y-4 pt-4">
-            <div className="grid gap-2">
-              <Label htmlFor="report-title">Report Title</Label>
-              <Input
-                id="report-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Monthly Performance Report"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="report-description">Description (Optional)</Label>
-              <Input
-                id="report-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Performance metrics for the current month"
-              />
-            </div>
-            
-            <div className="mt-4">
-              <Label>Select Fields</Label>
-              <div className="grid grid-cols-2 gap-3 mt-2 max-h-[300px] overflow-y-auto pr-2">
-                {Object.entries(
-                  AVAILABLE_FIELDS.reduce((acc, field) => {
-                    if (!acc[field.category]) {
-                      acc[field.category] = [];
-                    }
-                    acc[field.category].push(field);
-                    return acc;
-                  }, {} as Record<string, DataField[]>)
-                ).map(([category, fields]) => (
-                  <div key={category} className="border rounded-md p-3">
-                    <h3 className="font-medium capitalize mb-2">{category}</h3>
-                    <div className="space-y-2">
-                      {fields.map((field) => (
-                        <div key={field.id} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`field-${field.id}`}
-                            checked={selectedFields.includes(field.id)}
-                            onCheckedChange={() => handleToggleField(field.id)}
-                          />
-                          <Label htmlFor={`field-${field.id}`}>{field.name}</Label>
-                        </div>
-                      ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Available Fields</h3>
+                <div className="space-y-2">
+                  {availableFields.map((field) => (
+                    <div key={field.id} className="flex items-center justify-between">
+                      <Label className="flex-1">{field.name}</Label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => addField(field.id)}
+                        disabled={selectedFields.includes(field.id)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="organization" className="space-y-4 pt-4">
-            <div className="grid gap-2">
-              <Label htmlFor="group-by">Group By (Optional)</Label>
-              <select
-                id="group-by"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                value={groupBy}
-                onChange={(e) => setGroupBy(e.target.value)}
-              >
-                <option value="">No Grouping</option>
-                <option value="month">Month</option>
-                <option value="week">Week</option>
-                <option value="day">Day</option>
-                <option value="service_type">Service Type</option>
-                <option value="technician">Technician</option>
-                <option value="location">Location</option>
-              </select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="sort-by">Sort By</Label>
-                <select
-                  id="sort-by"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  value={sortField}
-                  onChange={(e) => setSortField(e.target.value)}
-                >
-                  <option value="">Select Field</option>
-                  {selectedFields.map((fieldId) => {
-                    const field = AVAILABLE_FIELDS.find(f => f.id === fieldId);
-                    return field ? (
-                      <option key={field.id} value={field.id}>{field.name}</option>
-                    ) : null;
-                  })}
-                </select>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="sort-direction">Sort Direction</Label>
-                <select
-                  id="sort-direction"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  value={sortDirection}
-                  onChange={(e) => setSortDirection(e.target.value as "asc" | "desc")}
-                >
-                  <option value="asc">Ascending</option>
-                  <option value="desc">Descending</option>
-                </select>
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="preview" className="pt-4">
-            <div className="border rounded-md p-4">
-              <h3 className="font-medium text-lg">{title || "Untitled Report"}</h3>
-              {description && <p className="text-sm text-muted-foreground mb-4">{description}</p>}
-              
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium">Selected Fields:</h4>
-                  {selectedFields.length > 0 ? (
-                    <ul className="list-disc pl-5 mt-1">
-                      {selectedFields.map((fieldId) => {
-                        const field = AVAILABLE_FIELDS.find(f => f.id === fieldId);
-                        return field ? (
-                          <li key={field.id}>{field.name}</li>
-                        ) : null;
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No fields selected</p>
-                  )}
+                  ))}
                 </div>
-                
-                {groupBy && (
-                  <div>
-                    <h4 className="font-medium">Grouping:</h4>
-                    <p className="text-sm">
-                      {groupBy === "month" ? "Monthly" : 
-                       groupBy === "week" ? "Weekly" : 
-                       groupBy === "day" ? "Daily" : 
-                       groupBy === "service_type" ? "By Service Type" : 
-                       groupBy === "technician" ? "By Technician" : 
-                       groupBy === "location" ? "By Location" : "None"}
-                    </p>
-                  </div>
-                )}
-                
-                {sortField && (
-                  <div>
-                    <h4 className="font-medium">Sorting:</h4>
-                    <p className="text-sm">
-                      {AVAILABLE_FIELDS.find(f => f.id === sortField)?.name} ({sortDirection === "asc" ? "Ascending" : "Descending"})
-                    </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Selected Fields</h3>
+                {selectedFields.length === 0 ? (
+                  <p className="text-muted-foreground">No fields selected</p>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedFields.map((fieldId) => {
+                      const field = availableFields.find(f => f.id === fieldId);
+                      return (
+                        <div key={fieldId} className="flex items-center justify-between p-2 border rounded">
+                          <span>{field?.name}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeField(fieldId)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleGenerateReport}>Generate Report</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <div className="flex gap-2 pt-6 border-t">
+              <Button
+                onClick={generateReport}
+                disabled={selectedFields.length === 0 || isGenerating}
+                className="flex items-center gap-2"
+              >
+                {isGenerating ? (
+                  <>
+                    <TrendingUp className="h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4" />
+                    Preview Report
+                  </>
+                )}
+              </Button>
+              
+              <Button
+                variant="outline"
+                disabled={!reportName || selectedFields.length === 0}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Save Report
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
