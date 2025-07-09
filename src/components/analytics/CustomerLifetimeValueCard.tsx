@@ -1,147 +1,105 @@
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TrendingUp, TrendingDown, DollarSign, Users } from 'lucide-react';
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { calculateCustomerLifetimeValue, getCustomerLifetimeValuePercentile } from '@/utils/analytics/customerLifetimeValue';
-
-interface CustomerLifetimeValueCardProps {
-  customerId: string;
-  className?: string;
+interface CLVData {
+  segment: string;
+  averageClv: number;
+  customerCount: number;
+  growth: number;
+  color: string;
 }
 
-export const CustomerLifetimeValueCard: React.FC<CustomerLifetimeValueCardProps> = ({ 
-  customerId,
-  className
-}) => {
-  const [clv, setClv] = useState<number | null>(null);
-  const [percentile, setPercentile] = useState<number | null>(null);
-  const [predictedClv, setPredictedClv] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('current');
+interface CustomerLifetimeValueCardProps {
+  data: CLVData[];
+  isLoading?: boolean;
+}
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const clvValue = await calculateCustomerLifetimeValue(customerId);
-        setClv(clvValue);
-        
-        if (clvValue !== null) {
-          const percentileValue = await getCustomerLifetimeValuePercentile(customerId);
-          setPercentile(percentileValue);
-          
-          // For demonstration, predict a future value 30% higher
-          // In a real implementation, this would use a predictive algorithm
-          setPredictedClv(clvValue * 1.3);
-        }
-      } catch (error) {
-        console.error("Error fetching CLV data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+export function CustomerLifetimeValueCard({ data, isLoading = false }: CustomerLifetimeValueCardProps) {
+  const totalCLV = data.reduce((sum, item) => sum + (item.averageClv * item.customerCount), 0);
+  const totalCustomers = data.reduce((sum, item) => sum + item.customerCount, 0);
+  const avgCLV = totalCustomers > 0 ? totalCLV / totalCustomers : 0;
 
-    fetchData();
-  }, [customerId]);
-
-  const getValueColor = () => {
-    if (percentile === null || clv === null) return "text-gray-500";
-    if (percentile >= 80) return "text-green-600";
-    if (percentile >= 50) return "text-blue-600";
-    if (percentile >= 30) return "text-amber-600";
-    return "text-gray-600";
-  };
-
-  const getPredictedColor = () => {
-    if (!clv || !predictedClv) return "text-gray-500";
-    const growthRate = ((predictedClv - clv) / clv) * 100;
-    if (growthRate >= 30) return "text-green-600";
-    if (growthRate >= 10) return "text-blue-600";
-    return "text-amber-600";
-  };
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Customer Lifetime Value
+          </CardTitle>
+          <CardDescription>Predicted value by customer segment</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {Array(3).fill(0).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-6 bg-muted rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold">Customer Lifetime Value</CardTitle>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <DollarSign className="h-5 w-5" />
+          Customer Lifetime Value
+        </CardTitle>
         <CardDescription>
-          Estimated total value over customer lifetime
+          Average CLV: ${avgCLV.toLocaleString()} across {totalCustomers} customers
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-24" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        ) : (
-          <>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-1">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="current">Current</TabsTrigger>
-                <TabsTrigger value="predicted">Predicted</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="current" className="pt-4">
-                <div className={`text-3xl font-bold ${getValueColor()}`}>
-                  {clv !== null ? `$${clv.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : "N/A"}
-                </div>
-                {percentile !== null && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Higher than {percentile}% of customers
-                  </p>
-                )}
-                {clv !== null && (
-                  <div className="mt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Average value per service:</span>
-                      <span className="font-medium">${(clv / 3.5).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Services per year:</span>
-                      <span className="font-medium">3.5</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Average retention:</span>
-                      <span className="font-medium">2.4 years</span>
-                    </div>
+        <div className="space-y-4">
+          {data.map((segment) => (
+            <div key={segment.segment} className="flex items-center justify-between p-3 rounded-lg border">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: segment.color }}
+                  />
+                  <span className="font-medium">{segment.segment}</span>
+                  <div className="flex items-center gap-1 text-sm">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    {segment.customerCount}
                   </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="predicted" className="pt-4">
-                <div className={`text-3xl font-bold ${getPredictedColor()}`}>
-                  {predictedClv !== null ? `$${predictedClv.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : "N/A"}
                 </div>
-                {predictedClv !== null && clv !== null && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    <span className={getPredictedColor()}>+{((predictedClv - clv) / clv * 100).toFixed(1)}%</span> growth potential
-                  </p>
-                )}
-                {predictedClv !== null && (
-                  <div className="mt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Opportunity value:</span>
-                      <span className="font-medium">
-                        ${clv && predictedClv ? (predictedClv - clv).toFixed(2) : 'N/A'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Suggested next service:</span>
-                      <span className="font-medium">Premium Maintenance</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Recommended contact:</span>
-                      <span className="font-medium">Mid-June</span>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold">
+                    ${segment.averageClv.toLocaleString()}
+                  </span>
+                  <div className={`flex items-center gap-1 text-sm ${
+                    segment.growth >= 0 ? 'text-emerald-600' : 'text-red-600'
+                  }`}>
+                    {segment.growth >= 0 ? (
+                      <TrendingUp className="h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4" />
+                    )}
+                    {Math.abs(segment.growth)}%
                   </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-6 p-4 bg-muted/30 rounded-lg">
+          <h4 className="font-medium mb-2">CLV Insights</h4>
+          <ul className="text-sm text-muted-foreground space-y-1">
+            <li>• Focus on high-value segments for retention campaigns</li>
+            <li>• Monitor declining segments for intervention opportunities</li>
+            <li>• Use CLV data for pricing and service tier decisions</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );
-};
+}

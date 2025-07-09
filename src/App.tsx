@@ -20,6 +20,7 @@ import Calendar from '@/pages/Calendar';
 import Quotes from '@/pages/Quotes';
 import Team from '@/pages/Team';
 import Documents from '@/pages/Documents';
+import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import CustomerCommunications from '@/pages/CustomerCommunications';
 import CallLogger from '@/pages/CallLogger';
@@ -68,6 +69,7 @@ function App() {
             <Route path="/quotes/*" element={isAuthenticated ? <Layout><Quotes /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/team/*" element={isAuthenticated ? <Layout><Team /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/documents" element={isAuthenticated ? <Layout><Documents /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/reports" element={isAuthenticated ? <Layout><Reports /></Layout> : <Navigate to="/auth" replace />} />
             
             {/* Settings - comprehensive functionality exists */}
             <Route path="/settings/*" element={isAuthenticated ? <Layout><Settings /></Layout> : <Navigate to="/auth" replace />} />

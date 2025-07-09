@@ -1,127 +1,120 @@
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, Calendar, TrendingUp } from 'lucide-react';
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-
-interface CustomerCohortAnalysisCardProps {
-  customerId: string;
-  className?: string;
+interface CohortData {
+  cohort: string;
+  initialSize: number;
+  retentionRates: number[];
+  revenueGrowth: number;
 }
 
-export const CustomerCohortAnalysisCard: React.FC<CustomerCohortAnalysisCardProps> = ({ 
-  customerId,
-  className
-}) => {
-  const [cohortMetric, setCohortMetric] = useState<string>('revenue');
-  
-  // Sample cohort data - in a real implementation, this would be fetched from an API
-  const cohortData = {
-    revenue: [
-      { name: 'Q1', customer: 380, cohort: 320, difference: 60 },
-      { name: 'Q2', customer: 420, cohort: 380, difference: 40 },
-      { name: 'Q3', customer: 450, cohort: 410, difference: 40 },
-      { name: 'Q4', customer: 520, cohort: 440, difference: 80 },
-    ],
-    frequency: [
-      { name: 'Q1', customer: 3, cohort: 2, difference: 1 },
-      { name: 'Q2', customer: 2, cohort: 2, difference: 0 },
-      { name: 'Q3', customer: 4, cohort: 3, difference: 1 },
-      { name: 'Q4', customer: 3, cohort: 2, difference: 1 },
-    ],
-    satisfaction: [
-      { name: 'Q1', customer: 4.5, cohort: 4.2, difference: 0.3 },
-      { name: 'Q2', customer: 4.7, cohort: 4.3, difference: 0.4 },
-      { name: 'Q3', customer: 4.2, cohort: 4.4, difference: -0.2 },
-      { name: 'Q4', customer: 4.8, cohort: 4.5, difference: 0.3 },
-    ]
+interface CustomerCohortAnalysisCardProps {
+  cohorts: CohortData[];
+  isLoading?: boolean;
+}
+
+export function CustomerCohortAnalysisCard({ cohorts, isLoading = false }: CustomerCohortAnalysisCardProps) {
+  const months = ['Month 1', 'Month 3', 'Month 6', 'Month 12'];
+
+  const getRetentionColor = (rate: number) => {
+    if (rate >= 80) return 'bg-emerald-500';
+    if (rate >= 60) return 'bg-yellow-500';
+    if (rate >= 40) return 'bg-orange-500';
+    return 'bg-red-500';
   };
-  
-  const metricLabel = {
-    revenue: 'Revenue ($)',
-    frequency: 'Visit Frequency',
-    satisfaction: 'Satisfaction Rating'
-  };
-  
-  const activeData = cohortData[cohortMetric as keyof typeof cohortData];
-  
-  // Calculate summary statistics
-  const customerAvg = activeData.reduce((sum, item) => sum + item.customer, 0) / activeData.length;
-  const cohortAvg = activeData.reduce((sum, item) => sum + item.cohort, 0) / activeData.length;
-  const percentDiff = ((customerAvg - cohortAvg) / cohortAvg) * 100;
-  
-  return (
-    <Card className={className}>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="text-lg font-semibold">Cohort Comparison</CardTitle>
-            <CardDescription>
-              Compare against similar customers
-            </CardDescription>
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Customer Cohort Analysis
+          </CardTitle>
+          <CardDescription>Retention patterns by customer acquisition period</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="animate-pulse">
+              <div className="h-32 bg-muted rounded"></div>
+            </div>
           </div>
-          <Select value={cohortMetric} onValueChange={setCohortMetric}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select metric" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="revenue">Revenue</SelectItem>
-              <SelectItem value="frequency">Visit Frequency</SelectItem>
-              <SelectItem value="satisfaction">Satisfaction</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Customer Cohort Analysis
+        </CardTitle>
+        <CardDescription>
+          Retention patterns by customer acquisition period
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 p-3 bg-gray-50 rounded-md">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-sm text-muted-foreground">Customer</div>
-              <div className="text-lg font-bold">
-                {cohortMetric === 'revenue' ? '$' : ''}{customerAvg.toFixed(cohortMetric === 'revenue' ? 0 : 1)}
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="grid grid-cols-6 gap-2 text-sm font-medium text-muted-foreground">
+            <div>Cohort</div>
+            <div>Size</div>
+            {months.map(month => (
+              <div key={month} className="text-center">{month}</div>
+            ))}
+          </div>
+
+          {/* Cohort Data */}
+          {cohorts.map((cohort) => (
+            <div key={cohort.cohort} className="grid grid-cols-6 gap-2 items-center">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">{cohort.cohort}</span>
               </div>
+              <div className="text-sm">{cohort.initialSize}</div>
+              {cohort.retentionRates.map((rate, index) => (
+                <div key={index} className="text-center">
+                  <div className={`inline-flex items-center justify-center w-12 h-8 rounded text-white text-xs font-medium ${getRetentionColor(rate)}`}>
+                    {rate}%
+                  </div>
+                </div>
+              ))}
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Cohort Avg</div>
-              <div className="text-lg font-bold">
-                {cohortMetric === 'revenue' ? '$' : ''}{cohortAvg.toFixed(cohortMetric === 'revenue' ? 0 : 1)}
+          ))}
+        </div>
+
+        {/* Revenue Growth Insights */}
+        <div className="mt-6 space-y-3">
+          <h4 className="font-medium flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Revenue Growth by Cohort
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            {cohorts.slice(0, 4).map((cohort) => (
+              <div key={cohort.cohort} className="flex items-center justify-between p-3 rounded-lg border">
+                <span className="text-sm font-medium">{cohort.cohort}</span>
+                <span className={`text-sm font-bold ${
+                  cohort.revenueGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'
+                }`}>
+                  {cohort.revenueGrowth >= 0 ? '+' : ''}{cohort.revenueGrowth}%
+                </span>
               </div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Difference</div>
-              <div className={`text-lg font-bold ${percentDiff >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {percentDiff >= 0 ? '+' : ''}{percentDiff.toFixed(1)}%
-              </div>
-            </div>
+            ))}
           </div>
         </div>
-        
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart
-            data={activeData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis label={{ value: metricLabel[cohortMetric as keyof typeof metricLabel], angle: -90, position: 'insideLeft' }} />
-            <Tooltip formatter={(value) => {
-              if (cohortMetric === 'revenue') return [`$${value}`, ''];
-              return [value, ''];
-            }} />
-            <Legend />
-            <Bar dataKey="customer" fill="#4f46e5" name="This Customer" />
-            <Bar dataKey="cohort" fill="#94a3b8" name="Cohort Average" />
-          </BarChart>
-        </ResponsiveContainer>
-        
-        <div className="mt-4 text-sm text-muted-foreground">
-          <p>
-            This customer is performing <span className={percentDiff >= 0 ? 'text-green-600' : 'text-red-600'}>
-              {percentDiff >= 0 ? 'above' : 'below'} average
-            </span> compared to similar customers in the same cohort.
-          </p>
+
+        <div className="mt-6 p-4 bg-muted/30 rounded-lg">
+          <h4 className="font-medium mb-2">Cohort Insights</h4>
+          <ul className="text-sm text-muted-foreground space-y-1">
+            <li>• Track retention patterns across different acquisition periods</li>
+            <li>• Identify successful onboarding strategies from high-retention cohorts</li>
+            <li>• Optimize marketing spend based on cohort performance</li>
+          </ul>
         </div>
       </CardContent>
     </Card>
   );
-};
+}
