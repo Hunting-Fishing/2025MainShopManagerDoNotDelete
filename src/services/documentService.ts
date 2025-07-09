@@ -2,6 +2,45 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentCategory, CreateDocumentData, DocumentSearchParams } from '@/types/document';
 
+// File validation constants
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'text/plain'
+];
+
+const validateFile = (file: File): { valid: boolean; error?: string } => {
+  if (file.size > MAX_FILE_SIZE) {
+    return { valid: false, error: `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB` };
+  }
+  
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return { valid: false, error: 'File type not supported' };
+  }
+  
+  return { valid: true };
+};
+
+const getShopId = async (): Promise<string> => {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('shop_id')
+    .eq('id', (await supabase.auth.getUser()).data.user?.id)
+    .single();
+  
+  if (!profile?.shop_id) {
+    throw new Error('Shop ID not found');
+  }
+  
+  return profile.shop_id;
+};
+
 export class DocumentService {
   static async getDocuments(searchParams: DocumentSearchParams = {}): Promise<Document[]> {
     let query = supabase
@@ -76,21 +115,42 @@ export class DocumentService {
     return this.createDocument(documentData);
   }
 
-  static async uploadFile(file: File, path: string): Promise<{ path: string; url: string }> {
+  static async uploadFile(file: File, path: string, bucketName: string = 'documents'): Promise<{ path: string; url: string }> {
+    // Validate file before upload
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
+    const shopId = await getShopId();
+    const filePath = `${shopId}/${path}`;
+    
     const { data, error } = await supabase.storage
-      .from('documents')
-      .upload(path, file);
+      .from(bucketName)
+      .upload(filePath, file);
 
     if (error) throw error;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('documents')
-      .getPublicUrl(data.path);
+    // For private buckets, create a signed URL instead of public URL
+    const { data: signedUrl, error: urlError } = await supabase.storage
+      .from(bucketName)
+      .createSignedUrl(data.path, 3600); // 1 hour expiry
+
+    if (urlError) throw urlError;
 
     return {
       path: data.path,
-      url: publicUrl
+      url: signedUrl.signedUrl
     };
+  }
+
+  static async getSignedUrl(filePath: string, bucketName: string = 'documents'): Promise<string> {
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+    if (error) throw error;
+    return data.signedUrl;
   }
 
   static async updateDocument(id: string, updates: Partial<CreateDocumentData>): Promise<Document> {
@@ -148,10 +208,39 @@ export class DocumentService {
   }
 
   static async uploadDocumentVersion(documentId: string, file: File, versionNotes?: string): Promise<any> {
-    // This is a placeholder implementation
-    // In a real implementation, you would upload the file and create a version record
-    console.log('Upload document version:', { documentId, file, versionNotes });
-    return { success: true };
+    // Validate file before upload
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
+    const shopId = await getShopId();
+    const timestamp = Date.now();
+    const fileExt = file.name.split('.').pop();
+    const fileName = `versions/${documentId}/${timestamp}.${fileExt}`;
+    const filePath = `${shopId}/${fileName}`;
+    
+    const { data, error } = await supabase.storage
+      .from('documents')
+      .upload(filePath, file);
+
+    if (error) throw error;
+
+    // Create version record in database (simplified for now)
+    // Note: document_versions table would need to be created for this to work
+    console.log('Document version uploaded:', {
+      documentId,
+      filePath: data.path,
+      fileSize: file.size,
+      versionNotes
+    });
+    
+    return {
+      success: true,
+      path: data.path,
+      size: file.size,
+      notes: versionNotes
+    };
   }
 }
 

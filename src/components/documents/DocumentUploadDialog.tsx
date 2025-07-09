@@ -34,6 +34,8 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<'pdf' | 'image' | 'weblink' | 'internal_link'>('pdf');
   const [categoryId, setCategoryId] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [fileError, setFileError] = useState('');
   const { toast } = useToast();
 
   const resetForm = () => {
@@ -42,6 +44,44 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
     setFile(null);
     setDocumentType('pdf');
     setCategoryId('');
+    setUploadProgress(0);
+    setFileError('');
+  };
+
+  const validateFile = (file: File): boolean => {
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'text/plain'
+    ];
+
+    if (file.size > maxSize) {
+      setFileError('File size must be less than 50MB');
+      return false;
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      setFileError('File type not supported. Please use PDF, Word, or image files.');
+      return false;
+    }
+
+    setFileError('');
+    return true;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null;
+    if (selectedFile && validateFile(selectedFile)) {
+      setFile(selectedFile);
+    } else if (selectedFile) {
+      setFile(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,22 +107,51 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
       let filePath = '';
 
       if (file) {
+        if (!validateFile(file)) {
+          return;
+        }
+
+        setUploadProgress(10);
+        
+        // Get user's shop ID for folder structure
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('shop_id')
+          .eq('id', user.id)
+          .single();
+
+        if (!profile?.shop_id) {
+          throw new Error('Shop ID not found');
+        }
+
+        setUploadProgress(30);
+
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
         const bucketName = workOrderId ? 'work-order-documents' : 'documents';
+        const fullFilePath = `${profile.shop_id}/${fileName}`;
         
+        setUploadProgress(50);
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from(bucketName)
-          .upload(fileName, file);
+          .upload(fullFilePath, file);
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from(bucketName)
-          .getPublicUrl(fileName);
+        setUploadProgress(70);
 
-        fileUrl = publicUrl;
+        // Create signed URL for private bucket access
+        const { data: signedUrl, error: urlError } = await supabase.storage
+          .from(bucketName)
+          .createSignedUrl(uploadData.path, 3600); // 1 hour expiry
+
+        if (urlError) throw urlError;
+
+        fileUrl = signedUrl.signedUrl;
         filePath = uploadData.path;
+        
+        setUploadProgress(90);
       }
 
       const documentData: CreateDocumentData = {
@@ -103,7 +172,9 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
         created_by_name: user.email || 'Unknown User'
       };
 
+      setUploadProgress(95);
       const newDocument = await DocumentService.uploadDocument(documentData);
+      setUploadProgress(100);
 
       toast({
         title: "Success",
@@ -118,13 +189,15 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
       onOpenChange(false);
     } catch (error) {
       console.error('Error uploading document:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload document. Please try again.';
       toast({
         title: "Error",
-        description: "Failed to upload document. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -196,9 +269,30 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
             <Input
               id="file"
               type="file"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+              onChange={handleFileChange}
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt"
             />
+            {fileError && (
+              <p className="text-sm text-destructive mt-1">{fileError}</p>
+            )}
+            {file && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+              </p>
+            )}
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="mt-2">
+                <div className="w-full bg-secondary rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Uploading... {uploadProgress}%
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 pt-4">
