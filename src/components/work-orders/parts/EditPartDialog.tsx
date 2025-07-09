@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 const editPartSchema = z.object({
   name: z.string().min(1, 'Part name is required'),
   part_number: z.string().min(1, 'Part number is required'),
-  part_type: z.enum(['inventory', 'non-inventory']),
+  part_type: z.string(), // Use string instead of enum to match interface
   description: z.string().optional(),
   quantity: z.number().min(1, 'Quantity must be at least 1').default(1),
   unit_price: z.number().min(0, 'Price cannot be negative').default(0),
@@ -56,7 +56,7 @@ export function EditPartDialog({
 }: EditPartDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<WorkOrderPartFormValues>({
+  const form = useForm({
     resolver: zodResolver(editPartSchema),
     defaultValues: {
       name: part.name || '',
@@ -82,7 +82,7 @@ export function EditPartDialog({
     },
   });
 
-  const handleSubmit = async (data: WorkOrderPartFormValues) => {
+  const handleSubmit = async (data: any) => {
     try {
       setIsSubmitting(true);
       
@@ -146,10 +146,10 @@ export function EditPartDialog({
             </div>
 
             {/* Part Type and Status */}
-            <PartTypeAndStatusFields form={form} />
+            <PartTypeAndStatusFields form={form as any} />
 
             {/* Advanced Fields */}
-            <AdvancedPartFields form={form} />
+            <AdvancedPartFields form={form as any} />
 
             {/* Description and Notes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

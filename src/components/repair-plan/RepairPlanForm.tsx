@@ -16,7 +16,7 @@ import { RepairPlanDetailsFields } from "./form/RepairPlanDetailsFields";
 import { RepairPlanTasksSection } from "./form/RepairPlanTasksSection";
 import { RepairPlanFormActions } from "./form/RepairPlanFormActions";
 
-// Form schema validation
+// Form schema validation (excluding tasks field as it's handled separately)
 const repairPlanSchema = z.object({
   equipmentId: z.string().min(1, "Equipment is required"),
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -29,6 +29,8 @@ const repairPlanSchema = z.object({
   costEstimate: z.number().optional(),
   customerApproved: z.boolean().default(false),
   notes: z.string().optional(),
+  tasks: z.array(z.any()).default([]), // Tasks handled separately
+  partsRequired: z.array(z.string()).optional(),
 });
 
 interface RepairPlanFormProps {
@@ -46,7 +48,7 @@ export function RepairPlanForm({
 }: RepairPlanFormProps) {
   const [tasks, setTasks] = useState<RepairTask[]>(initialValues?.tasks || []);
   
-  const form = useForm<RepairPlanFormValues>({
+  const form = useForm({
     resolver: zodResolver(repairPlanSchema),
     defaultValues: {
       equipmentId: initialValues?.equipmentId || "",
@@ -81,7 +83,7 @@ export function RepairPlanForm({
     setTasks(tasks.filter(task => task.id !== taskId));
   };
 
-  const handleFormSubmit = (values: RepairPlanFormValues) => {
+  const handleFormSubmit = (values: any) => {
     // Combine form values with tasks
     const formData = {
       ...values,
@@ -106,9 +108,9 @@ export function RepairPlanForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-            <RepairPlanBasicInfoFields form={form} equipmentList={equipmentList} />
-            <RepairPlanStatusFields form={form} />
-            <RepairPlanDetailsFields form={form} technicians={technicians} />
+            <RepairPlanBasicInfoFields form={form as any} equipmentList={equipmentList} />
+            <RepairPlanStatusFields form={form as any} />
+            <RepairPlanDetailsFields form={form as any} technicians={technicians} />
             <RepairPlanTasksSection 
               tasks={tasks}
               onAddTask={handleAddTask}

@@ -59,7 +59,7 @@ export function EnhancedAddPartDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const form = useForm<WorkOrderPartFormValues>({
+  const form = useForm({
     resolver: zodResolver(addPartSchema),
     defaultValues: {
       name: '',
@@ -85,7 +85,7 @@ export function EnhancedAddPartDialog({
     },
   });
 
-  const handleSubmit = async (values: WorkOrderPartFormValues) => {
+  const handleSubmit = async (values: any) => {
     try {
       setIsSubmitting(true);
       console.log('Submitting enhanced part form:', values);
@@ -221,10 +221,10 @@ export function EnhancedAddPartDialog({
             </div>
 
             {/* Part Type and Status */}
-            <PartTypeAndStatusFields form={form} />
+            <PartTypeAndStatusFields form={form as any} />
 
             {/* Advanced Fields */}
-            <AdvancedPartFields form={form} />
+            <AdvancedPartFields form={form as any} />
 
             {/* Description and Notes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

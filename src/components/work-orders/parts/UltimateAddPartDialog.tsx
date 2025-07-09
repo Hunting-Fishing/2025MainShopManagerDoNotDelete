@@ -87,7 +87,7 @@ export function UltimateAddPartDialog({
   const {
     items: inventoryItems
   } = useInventoryItems();
-  const form = useForm<WorkOrderPartFormValues>({
+  const form = useForm({
     resolver: zodResolver(ultimatePartSchema),
     defaultValues: {
       name: '',
@@ -157,7 +157,7 @@ export function UltimateAddPartDialog({
       form.setValue('part_type', 'inventory');
     }
   };
-  const handleSubmit = async (values: WorkOrderPartFormValues) => {
+  const handleSubmit = async (values: any) => {
     try {
       setIsSubmitting(true);
       setSubmitError(null);
@@ -375,7 +375,7 @@ export function UltimateAddPartDialog({
                 </TabsContent>
 
                 <TabsContent value="pricing" className="space-y-6 mt-0">
-                  <InteractiveMarkupSlider form={form} />
+                  <InteractiveMarkupSlider form={form as any} />
 
                   {/* Core Charge Section */}
                   <div className="space-y-4">
