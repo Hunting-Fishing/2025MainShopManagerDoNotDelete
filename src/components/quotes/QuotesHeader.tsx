@@ -3,16 +3,25 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { Quote } from '@/types/quote';
+import { CreateQuoteDialog } from './CreateQuoteDialog';
 
 interface QuotesHeaderProps {
   quotes: Quote[];
+  onQuoteCreated?: () => void;
 }
 
-export function QuotesHeader({ quotes }: QuotesHeaderProps) {
+export function QuotesHeader({ quotes, onQuoteCreated }: QuotesHeaderProps) {
   const statusCounts = quotes.reduce((acc, quote) => {
     acc[quote.status] = (acc[quote.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
+
+  const handleQuoteCreated = (quoteId: string) => {
+    // Refresh the quotes list
+    if (onQuoteCreated) {
+      onQuoteCreated();
+    }
+  };
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -34,10 +43,12 @@ export function QuotesHeader({ quotes }: QuotesHeaderProps) {
           <FileText className="h-4 w-4 mr-2" />
           Export
         </Button>
-        <Button size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Quote
-        </Button>
+        <CreateQuoteDialog onSuccess={handleQuoteCreated}>
+          <Button size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Quote
+          </Button>
+        </CreateQuoteDialog>
       </div>
     </div>
   );

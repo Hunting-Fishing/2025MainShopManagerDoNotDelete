@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Database, Loader2 } from 'lucide-react';
 
 export default function QuotesPage() {
-  const { quotes, loading, error } = useQuotes();
+  const { quotes, loading, error, refetch } = useQuotes();
 
   if (loading) {
     return (
@@ -37,7 +37,7 @@ export default function QuotesPage() {
 
   return (
     <div className="space-y-6">
-      <QuotesHeader quotes={quotes} />
+      <QuotesHeader quotes={quotes} onQuoteCreated={refetch} />
       
       <Alert>
         <Database className="h-4 w-4" />
