@@ -58,7 +58,7 @@ export function useDailyWorkOrders() {
         .select(`
           *,
           customers(first_name, last_name),
-          profiles!fk_work_orders_technician(display_name)
+          profiles!fk_work_orders_technician(first_name, last_name)
         `)
         .gte('start_time', today)
         .lt('start_time', `${today}T23:59:59`)
@@ -72,7 +72,7 @@ export function useDailyWorkOrders() {
         .select(`
           *,
           customers(first_name, last_name),
-          profiles!fk_work_orders_technician(display_name)
+          profiles!fk_work_orders_technician(first_name, last_name)
         `)
         .lt('end_time', now)
         .neq('status', 'completed')
@@ -86,7 +86,7 @@ export function useDailyWorkOrders() {
         .select(`
           *,
           customers(first_name, last_name),
-          profiles!fk_work_orders_technician(display_name)
+          profiles!fk_work_orders_technician(first_name, last_name)
         `)
         .lt('created_at', today)
         .in('status', ['pending', 'in_progress', 'assigned'])
@@ -100,7 +100,9 @@ export function useDailyWorkOrders() {
           ? `${wo.customers.first_name} ${wo.customers.last_name}`.trim()
           : 'Unknown Customer';
         
-        const technicianName = wo.profiles?.display_name || undefined;
+        const technicianName = wo.profiles 
+          ? `${wo.profiles.first_name} ${wo.profiles.last_name}`.trim()
+          : undefined;
         
         let daysOverdue = 0;
         if (wo.end_time && wo.status !== 'completed') {
