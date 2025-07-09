@@ -153,7 +153,7 @@ export function NotificationAnalyticsDashboard({ analytics, isLoading }: Notific
                 <div className="flex items-center justify-center mb-2">
                   {getChannelIcon(channel)}
                 </div>
-                <p className="text-2xl font-bold">{count}</p>
+                <p className="text-2xl font-bold">{String(count)}</p>
                 <p className="text-sm text-muted-foreground capitalize">
                   {channel.replace('_', ' ')}
                 </p>

@@ -39,7 +39,11 @@ export function NotificationRuleBuilder({ rule, onSave, onCancel }: Notification
       if (rule) {
         await updateNotificationRule(rule.id, formData);
       } else {
-        await createNotificationRule(formData);
+        await createNotificationRule({
+          ...formData,
+          template_id: null,
+          is_active: true
+        });
       }
       onSave();
     } catch (error) {

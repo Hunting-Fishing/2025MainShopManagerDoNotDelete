@@ -48,15 +48,25 @@ export function useNotificationRules() {
     }
   };
 
-  const createNotificationRule = async (ruleData: Partial<NotificationRule>) => {
+  const createNotificationRule = async (ruleData: Partial<Omit<NotificationRule, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'shop_id'>> & { name: string; trigger_type: string; target_audience: string; shop_id?: string }) => {
     try {
+      const user = await supabase.auth.getUser();
+      const profile = await supabase.from('profiles').select('shop_id').single();
+      
       const { data, error } = await supabase
         .from('notification_rules')
-        .insert([{
+        .insert({
           ...ruleData,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
-          shop_id: ruleData.shop_id || ((await supabase.from('profiles').select('shop_id').single()).data?.shop_id)
-        }])
+          template_id: ruleData.template_id ?? null,
+          is_active: ruleData.is_active ?? true,
+          priority: ruleData.priority ?? 1,
+          delay_minutes: ruleData.delay_minutes ?? 0,
+          channels: ruleData.channels ?? ['email'],
+          conditions: ruleData.conditions ?? {},
+          trigger_config: ruleData.trigger_config ?? {},
+          created_by: user.data.user?.id || '',
+          shop_id: ruleData.shop_id || profile.data?.shop_id || ''
+        })
         .select()
         .single();
 

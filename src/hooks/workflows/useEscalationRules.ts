@@ -43,15 +43,19 @@ export function useEscalationRules() {
     }
   };
 
-  const createEscalationRule = async (ruleData: Partial<EscalationRule>) => {
+  const createEscalationRule = async (ruleData: Partial<Omit<EscalationRule, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'shop_id'>> & { name: string; trigger_condition: string; shop_id?: string }) => {
     try {
+      const user = await supabase.auth.getUser();
+      const profile = await supabase.from('profiles').select('shop_id').single();
+      
       const { data, error } = await supabase
         .from('escalation_rules')
-        .insert([{
+        .insert({
           ...ruleData,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
-          shop_id: ruleData.shop_id || ((await supabase.from('profiles').select('shop_id').single()).data?.shop_id)
-        }])
+          is_active: ruleData.is_active ?? true,
+          created_by: user.data.user?.id || '',
+          shop_id: ruleData.shop_id || profile.data?.shop_id || ''
+        })
         .select()
         .single();
 

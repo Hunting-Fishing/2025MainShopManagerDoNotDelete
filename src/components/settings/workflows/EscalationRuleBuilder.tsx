@@ -44,7 +44,10 @@ export function EscalationRuleBuilder({ rule, onSave, onCancel }: EscalationRule
       if (rule) {
         await updateEscalationRule(rule.id, formData);
       } else {
-        await createEscalationRule(formData);
+        await createEscalationRule({
+          ...formData,
+          is_active: true
+        });
       }
       onSave();
     } catch (error) {
