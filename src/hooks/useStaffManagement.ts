@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useFetchUserRoles } from './team/useFetchUserRoles';
+import { useShopId } from './useShopId';
 
 export interface StaffMember {
   id: string;
@@ -37,13 +38,28 @@ export function useStaffManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { fetchUserRoles } = useFetchUserRoles();
+  const { shopId, loading: shopLoading } = useShopId();
 
   const fetchStaff = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Fetch all profiles (treating all as active since there's no is_active column)
+      // Only fetch staff if we have a shop_id
+      if (!shopId) {
+        console.warn('No shop ID available, cannot fetch staff');
+        setStaff([]);
+        setStats({
+          totalStaff: 0,
+          activeToday: 0,
+          onLeave: 0,
+          pendingReviews: 0
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch profiles filtered by shop_id
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -55,8 +71,10 @@ export function useStaffManagement() {
           job_title,
           department,
           created_at,
-          updated_at
-        `);
+          updated_at,
+          shop_id
+        `)
+        .eq('shop_id', shopId);
 
       if (profilesError) throw profilesError;
 
@@ -127,9 +145,13 @@ export function useStaffManagement() {
     department?: string;
   }) => {
     try {
+      if (!shopId) {
+        throw new Error('No shop ID available. Cannot add staff member.');
+      }
+
       const { data, error } = await supabase
         .from('profiles')
-        .insert([staffData])
+        .insert([{ ...staffData, shop_id: shopId }])
         .select()
         .single();
 
@@ -184,8 +206,11 @@ export function useStaffManagement() {
   };
 
   useEffect(() => {
-    fetchStaff();
-  }, []);
+    // Only fetch staff when we have a shop ID and it's not loading
+    if (!shopLoading && shopId) {
+      fetchStaff();
+    }
+  }, [shopId, shopLoading]);
 
   return {
     staff,
