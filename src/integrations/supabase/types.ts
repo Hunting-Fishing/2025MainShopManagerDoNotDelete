@@ -5366,6 +5366,47 @@ export type Database = {
           },
         ]
       }
+      integration_analytics: {
+        Row: {
+          created_at: string | null
+          id: string
+          integration_id: string | null
+          metric_metadata: Json | null
+          metric_type: string
+          metric_value: number | null
+          recorded_at: string | null
+          time_bucket: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          integration_id?: string | null
+          metric_metadata?: Json | null
+          metric_type: string
+          metric_value?: number | null
+          recorded_at?: string | null
+          time_bucket?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          integration_id?: string | null
+          metric_metadata?: Json | null
+          metric_type?: string
+          metric_value?: number | null
+          recorded_at?: string | null
+          time_bucket?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_analytics_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "shop_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_field_mappings: {
         Row: {
           created_at: string | null
@@ -5560,6 +5601,130 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "integration_sync_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "shop_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_templates: {
+        Row: {
+          category: string
+          config_template: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          field_mappings: Json | null
+          id: string
+          is_public: boolean | null
+          name: string
+          provider_id: string | null
+          updated_at: string | null
+          workflow_templates: Json | null
+        }
+        Insert: {
+          category: string
+          config_template?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          field_mappings?: Json | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          provider_id?: string | null
+          updated_at?: string | null
+          workflow_templates?: Json | null
+        }
+        Update: {
+          category?: string
+          config_template?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          field_mappings?: Json | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          provider_id?: string | null
+          updated_at?: string | null
+          workflow_templates?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_templates_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "integration_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_workflows: {
+        Row: {
+          actions: Json | null
+          conditions: Json | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          failure_count: number | null
+          id: string
+          integration_id: string | null
+          is_active: boolean | null
+          last_run_at: string | null
+          name: string
+          next_run_at: string | null
+          run_count: number | null
+          shop_id: string
+          success_count: number | null
+          trigger_config: Json | null
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          actions?: Json | null
+          conditions?: Json | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          failure_count?: number | null
+          id?: string
+          integration_id?: string | null
+          is_active?: boolean | null
+          last_run_at?: string | null
+          name: string
+          next_run_at?: string | null
+          run_count?: number | null
+          shop_id: string
+          success_count?: number | null
+          trigger_config?: Json | null
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          actions?: Json | null
+          conditions?: Json | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          failure_count?: number | null
+          id?: string
+          integration_id?: string | null
+          is_active?: boolean | null
+          last_run_at?: string | null
+          name?: string
+          next_run_at?: string | null
+          run_count?: number | null
+          shop_id?: string
+          success_count?: number | null
+          trigger_config?: Json | null
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_workflows_integration_id_fkey"
             columns: ["integration_id"]
             isOneToOne: false
             referencedRelation: "shop_integrations"
@@ -10509,6 +10674,68 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      sync_queue: {
+        Row: {
+          created_at: string | null
+          entity_data: Json | null
+          entity_id: string
+          entity_type: string
+          error_message: string | null
+          id: string
+          integration_id: string | null
+          max_retries: number | null
+          operation_type: string
+          priority: number | null
+          processed_at: string | null
+          retry_count: number | null
+          status: string | null
+          sync_direction: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entity_data?: Json | null
+          entity_id: string
+          entity_type: string
+          error_message?: string | null
+          id?: string
+          integration_id?: string | null
+          max_retries?: number | null
+          operation_type: string
+          priority?: number | null
+          processed_at?: string | null
+          retry_count?: number | null
+          status?: string | null
+          sync_direction: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entity_data?: Json | null
+          entity_id?: string
+          entity_type?: string
+          error_message?: string | null
+          id?: string
+          integration_id?: string | null
+          max_retries?: number | null
+          operation_type?: string
+          priority?: number | null
+          processed_at?: string | null
+          retry_count?: number | null
+          status?: string | null
+          sync_direction?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_queue_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "shop_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tax_documents: {
         Row: {
