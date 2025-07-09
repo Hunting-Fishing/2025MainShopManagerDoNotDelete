@@ -14,11 +14,52 @@ import { useServiceData } from '@/hooks/useServiceData';
 import { createQuote } from '@/services/quote/quoteService';
 import { createQuoteItems } from '@/services/quote/quoteItemService';
 import { QuoteItemFormValues, QuoteItemType } from '@/types/quote';
+
+// Enhanced part type to match work order parts
+interface ComprehensiveQuotePart {
+  id?: string;
+  name: string;
+  part_number: string;
+  description?: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  item_type?: QuoteItemType;
+  // Advanced pricing fields from work order parts
+  supplierCost?: number;
+  markupPercentage?: number;
+  customerPrice?: number;
+  supplierSuggestedRetail?: number;
+  // Classification and metadata
+  part_type?: string;
+  category?: string;
+  status?: string;
+  // Tax and charges
+  isTaxable?: boolean;
+  coreChargeAmount?: number;
+  coreChargeApplied?: boolean;
+  // Supplier and inventory
+  supplierName?: string;
+  supplierOrderRef?: string;
+  invoiceNumber?: string;
+  poLine?: string;
+  inventoryItemId?: string;
+  isStockItem?: boolean;
+  // Warranty and installation
+  warrantyDuration?: string;
+  warrantyExpiryDate?: string;
+  installDate?: string;
+  installedBy?: string;
+  estimatedArrivalDate?: string;
+  // Notes
+  notes?: string;
+  notesInternal?: string;
+}
 import { SelectedService } from '@/types/selectedService';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from '@/hooks/use-toast';
 import { IntegratedServiceSelector } from '@/components/work-orders/fields/services/IntegratedServiceSelector';
-import { QuotePartsSelector } from './QuotePartsSelector';
+import { ComprehensiveQuotePartsSelector } from './ComprehensiveQuotePartsSelector';
 
 interface EnhancedCreateQuoteDialogProps {
   children: React.ReactNode;
@@ -43,7 +84,7 @@ export function EnhancedCreateQuoteDialog({
   
   // Services and Parts state
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
-  const [selectedParts, setSelectedParts] = useState<QuoteItemFormValues[]>([]);
+  const [selectedParts, setSelectedParts] = useState<ComprehensiveQuotePart[]>([]);
 
   const { customers, loading: customersLoading } = useCustomers();
   const { vehicles, loading: vehiclesLoading } = useVehicles(selectedCustomerId);
@@ -51,7 +92,7 @@ export function EnhancedCreateQuoteDialog({
 
   // Calculate totals
   const serviceTotal = selectedServices.reduce((sum, service) => sum + (service.total_amount || 0), 0);
-  const partsTotal = selectedParts.reduce((sum, part) => sum + part.quantity * part.unit_price, 0);
+  const partsTotal = selectedParts.reduce((sum, part) => sum + (part.total_price || part.quantity * part.unit_price), 0);
   const subtotal = serviceTotal + partsTotal;
   const taxRate = 0.08; // 8% tax rate - configurable
   const taxAmount = subtotal * taxRate;
@@ -82,7 +123,7 @@ export function EnhancedCreateQuoteDialog({
     setSelectedServices(services);
   };
 
-  const handlePartsChange = (parts: QuoteItemFormValues[]) => {
+  const handlePartsChange = (parts: ComprehensiveQuotePart[]) => {
     setSelectedParts(parts);
   };
 
@@ -146,8 +187,15 @@ export function EnhancedCreateQuoteDialog({
           unit_price: service.total_amount || 0,
           item_type: 'service' as QuoteItemType
         })),
-        // Parts
-        ...selectedParts
+        // Parts - convert to QuoteItemFormValues
+        ...selectedParts.map(part => ({
+          name: part.name,
+          description: part.description || '',
+          category: part.category || '',
+          quantity: part.quantity,
+          unit_price: part.unit_price,
+          item_type: 'part' as QuoteItemType
+        }))
       ];
 
       // Create quote items
@@ -319,7 +367,7 @@ export function EnhancedCreateQuoteDialog({
             </TabsContent>
 
             <TabsContent value="parts" className="mt-6">
-              <QuotePartsSelector
+              <ComprehensiveQuotePartsSelector
                 selectedParts={selectedParts}
                 onPartsChange={handlePartsChange}
               />
@@ -379,13 +427,14 @@ export function EnhancedCreateQuoteDialog({
                               {part.description && (
                                 <div className="text-sm text-muted-foreground">{part.description}</div>
                               )}
-                              <div className="text-sm text-muted-foreground">
-                                Qty: {part.quantity} × {formatCurrency(part.unit_price)}
-                              </div>
+                               <div className="text-sm text-muted-foreground">
+                                 {part.part_number && `Part #: ${part.part_number} • `}
+                                 Qty: {part.quantity} × {formatCurrency(part.unit_price)}
+                               </div>
                             </div>
-                            <div className="font-bold">
-                              {formatCurrency(part.quantity * part.unit_price)}
-                            </div>
+                             <div className="font-bold">
+                               {formatCurrency(part.total_price || part.quantity * part.unit_price)}
+                             </div>
                           </div>
                         ))}
                       </div>
