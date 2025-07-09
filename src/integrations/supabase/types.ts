@@ -12041,6 +12041,135 @@ export type Database = {
           },
         ]
       }
+      workflow_actions: {
+        Row: {
+          action_config: Json
+          action_order: number | null
+          action_type: string
+          created_at: string | null
+          delay_minutes: number | null
+          id: string
+          is_active: boolean | null
+          trigger_id: string | null
+        }
+        Insert: {
+          action_config?: Json
+          action_order?: number | null
+          action_type: string
+          created_at?: string | null
+          delay_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          trigger_id?: string | null
+        }
+        Update: {
+          action_config?: Json
+          action_order?: number | null
+          action_type?: string
+          created_at?: string | null
+          delay_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          trigger_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_actions_trigger_id_fkey"
+            columns: ["trigger_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_triggers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_conditions: {
+        Row: {
+          condition_order: number | null
+          condition_type: string
+          condition_value: Json
+          created_at: string | null
+          field_name: string | null
+          id: string
+          logical_operator: string | null
+          operator: string
+          trigger_id: string | null
+        }
+        Insert: {
+          condition_order?: number | null
+          condition_type: string
+          condition_value: Json
+          created_at?: string | null
+          field_name?: string | null
+          id?: string
+          logical_operator?: string | null
+          operator: string
+          trigger_id?: string | null
+        }
+        Update: {
+          condition_order?: number | null
+          condition_type?: string
+          condition_value?: Json
+          created_at?: string | null
+          field_name?: string | null
+          id?: string
+          logical_operator?: string | null
+          operator?: string
+          trigger_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_conditions_trigger_id_fkey"
+            columns: ["trigger_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_triggers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_executions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          execution_log: Json | null
+          execution_status: string | null
+          id: string
+          trigger_id: string | null
+          triggered_at: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_log?: Json | null
+          execution_status?: string | null
+          id?: string
+          trigger_id?: string | null
+          triggered_at?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_log?: Json | null
+          execution_status?: string | null
+          id?: string
+          trigger_id?: string | null
+          triggered_at?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_executions_trigger_id_fkey"
+            columns: ["trigger_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_triggers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_rules: {
         Row: {
           actions: Json | null
@@ -12076,6 +12205,45 @@ export type Database = {
           name?: string
           next_status?: string
           trigger_status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      workflow_triggers: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          shop_id: string
+          trigger_config: Json
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          shop_id: string
+          trigger_config?: Json
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          shop_id?: string
+          trigger_config?: Json
+          trigger_type?: string
           updated_at?: string | null
         }
         Relationships: []

@@ -4,6 +4,7 @@ import { WorkOrderNumberingTab } from './WorkOrderNumberingTab';
 import { WorkOrderWorkflowTab } from './WorkOrderWorkflowTab';
 import { WorkOrderTemplateTab } from './WorkOrderTemplateTab';
 import { WorkOrderStatusTab } from './WorkOrderStatusTab';
+import { WorkflowAutomationTab } from './WorkflowAutomationTab';
 import { EnhancedWorkOrdersDashboard } from './EnhancedWorkOrdersDashboard';
 import { 
   Hash, 
@@ -11,7 +12,8 @@ import {
   FileText, 
   CircleDot, 
   BarChart3,
-  Settings
+  Settings,
+  Zap
 } from 'lucide-react';
 
 export function WorkOrderManagementTab() {
@@ -44,9 +46,15 @@ export function WorkOrderManagementTab() {
     },
     {
       id: 'workflow',
-      label: 'Workflow & Automation',
+      label: 'Basic Workflow',
       icon: Workflow,
       component: WorkOrderWorkflowTab
+    },
+    {
+      id: 'automation',
+      label: 'Advanced Automation',
+      icon: Zap,
+      component: WorkflowAutomationTab
     }
   ];
 
@@ -61,7 +69,7 @@ export function WorkOrderManagementTab() {
       </p>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-6 w-full">
           {tabs.map((tab) => {
             const IconComponent = tab.icon;
             return (
