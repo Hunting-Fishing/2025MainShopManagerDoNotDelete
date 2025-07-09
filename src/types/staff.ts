@@ -1,12 +1,18 @@
 
 export interface StaffMember {
   id: string;
-  name: string;
-  role?: string;
+  first_name: string;
+  last_name: string;
   email?: string;
   phone?: string;
+  job_title?: string;
   department?: string;
-  status?: 'active' | 'inactive' | 'on_leave';
+  created_at: string;
+  updated_at: string;
+  roles?: Array<{
+    id: string;
+    name: string;
+  }>;
 }
 
 export interface StaffRole {

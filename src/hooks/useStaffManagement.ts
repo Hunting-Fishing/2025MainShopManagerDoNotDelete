@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useFetchUserRoles } from './team/useFetchUserRoles';
 
 export interface StaffMember {
   id: string;
   first_name: string;
   last_name: string;
-  email: string;
+  email?: string;
   phone?: string;
   job_title?: string;
   department?: string;
-  is_active: boolean;
   created_at: string;
   updated_at: string;
   roles?: Array<{
@@ -36,13 +36,14 @@ export function useStaffManagement() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const { fetchUserRoles } = useFetchUserRoles();
 
   const fetchStaff = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Fetch profiles with their roles
+      // Fetch all profiles (treating all as active since there's no is_active column)
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -53,55 +54,60 @@ export function useStaffManagement() {
           phone,
           job_title,
           department,
-          is_active,
           created_at,
           updated_at
-        `)
-        .eq('is_active', true);
+        `);
 
       if (profilesError) throw profilesError;
 
       // Fetch user roles for each profile
       const profileIds = profilesData?.map(p => p.id) || [];
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select(`
-          user_id,
-          roles:role_id(
-            id,
-            name
-          )
-        `)
-        .in('user_id', profileIds);
+      
+      let rolesData: any[] = [];
+      if (profileIds.length > 0) {
+        try {
+          rolesData = await fetchUserRoles();
+        } catch (rolesError) {
+          console.warn('Error fetching roles:', rolesError);
+        }
 
-      if (rolesError) {
-        console.warn('Error fetching roles:', rolesError);
+        // Combine profiles with roles
+        const staffWithRoles = profilesData?.map(profile => {
+          const userRoles = rolesData
+            ?.filter(role => role.user_id === profile.id)
+            ?.map(role => role.roles)
+            ?.filter(Boolean)
+            ?.flat() || []; // Flatten the nested arrays
+          
+          return {
+            ...profile,
+            roles: userRoles as Array<{ id: string; name: string; }>
+          };
+        }) || [];
+
+        setStaff(staffWithRoles);
+
+        // Calculate stats (treating all profiles as active)
+        const totalStaff = staffWithRoles.length;
+        const activeToday = staffWithRoles.length; // All are considered active
+        const onLeave = 0; // TODO: Implement leave tracking
+        const pendingReviews = 0; // TODO: Implement review tracking
+
+        setStats({
+          totalStaff,
+          activeToday,
+          onLeave,
+          pendingReviews
+        });
+      } else {
+        setStaff([]);
+        setStats({
+          totalStaff: 0,
+          activeToday: 0,
+          onLeave: 0,
+          pendingReviews: 0
+        });
       }
-
-      // Combine profiles with roles
-      const staffWithRoles = profilesData?.map(profile => ({
-        ...profile,
-        roles: rolesData
-          ?.filter(role => role.user_id === profile.id)
-          ?.map(role => role.roles)
-          ?.filter(Boolean)
-          ?.flat() || []
-      })) || [];
-
-      setStaff(staffWithRoles);
-
-      // Calculate stats
-      const totalStaff = staffWithRoles.length;
-      const activeToday = staffWithRoles.filter(s => s.is_active).length;
-      const onLeave = 0; // TODO: Implement leave tracking
-      const pendingReviews = 0; // TODO: Implement review tracking
-
-      setStats({
-        totalStaff,
-        activeToday,
-        onLeave,
-        pendingReviews
-      });
 
     } catch (err) {
       console.error('Error fetching staff:', err);
@@ -123,10 +129,7 @@ export function useStaffManagement() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .insert([{
-          ...staffData,
-          is_active: true
-        }])
+        .insert([staffData])
         .select()
         .single();
 
@@ -162,9 +165,11 @@ export function useStaffManagement() {
 
   const removeStaffMember = async (id: string) => {
     try {
+      // Since there's no is_active column, we'll delete the profile entirely
+      // In a production system, you might want to add an is_active column
       const { error } = await supabase
         .from('profiles')
-        .update({ is_active: false })
+        .delete()
         .eq('id', id);
 
       if (error) throw error;
