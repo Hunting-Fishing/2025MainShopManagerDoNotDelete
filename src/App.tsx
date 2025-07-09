@@ -27,6 +27,9 @@ import CallLogger from '@/pages/CallLogger';
 import ServiceBoard from '@/pages/ServiceBoard';
 import CompanyProfile from '@/pages/CompanyProfile';
 import VehiclesPage from '@/pages/VehiclesPage';
+import StockControl from '@/pages/StockControl';
+import PurchaseOrders from '@/pages/PurchaseOrders';
+import ServiceReminders from '@/pages/ServiceReminders';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuthUser();
@@ -80,6 +83,9 @@ function App() {
             <Route path="/service-board" element={isAuthenticated ? <Layout><ServiceBoard /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/company-profile" element={isAuthenticated ? <Layout><CompanyProfile /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/vehicles" element={isAuthenticated ? <Layout><VehiclesPage /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/stock-control" element={isAuthenticated ? <Layout><StockControl /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/purchase-orders" element={isAuthenticated ? <Layout><PurchaseOrders /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/service-reminders" element={isAuthenticated ? <Layout><ServiceReminders /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/service-editor" element={isAuthenticated ? <Navigate to="/services" replace /> : <Navigate to="/auth" replace />} />
             <Route path="/help" element={isAuthenticated ? <Navigate to="/settings" replace /> : <Navigate to="/auth" replace />} />
             <Route path="/security" element={isAuthenticated ? <Navigate to="/settings/security" replace /> : <Navigate to="/auth" replace />} />
