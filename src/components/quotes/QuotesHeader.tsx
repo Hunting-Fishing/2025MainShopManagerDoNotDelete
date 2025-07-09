@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { Quote } from '@/types/quote';
-import { CreateQuoteDialog } from './CreateQuoteDialog';
+import { EnhancedCreateQuoteDialog } from './EnhancedCreateQuoteDialog';
 
 interface QuotesHeaderProps {
   quotes: Quote[];
@@ -43,12 +43,12 @@ export function QuotesHeader({ quotes, onQuoteCreated }: QuotesHeaderProps) {
           <FileText className="h-4 w-4 mr-2" />
           Export
         </Button>
-        <CreateQuoteDialog onSuccess={handleQuoteCreated}>
+        <EnhancedCreateQuoteDialog onSuccess={handleQuoteCreated}>
           <Button size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Create Quote
           </Button>
-        </CreateQuoteDialog>
+        </EnhancedCreateQuoteDialog>
       </div>
     </div>
   );
