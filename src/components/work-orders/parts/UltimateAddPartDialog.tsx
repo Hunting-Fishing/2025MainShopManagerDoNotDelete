@@ -424,7 +424,7 @@ export function UltimateAddPartDialog({
 
                 <TabsContent value="supplier" className="space-y-6 mt-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField control={form.control} name="supplier_id" render={({
+                     <FormField control={form.control} name="supplierName" render={({
                      field
                    }) => <FormItem>
                            <FormLabel>Supplier</FormLabel>
