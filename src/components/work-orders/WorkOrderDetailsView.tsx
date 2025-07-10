@@ -14,6 +14,7 @@ import { WorkOrderStatsCards } from './details/WorkOrderStatsCards';
 import { useWorkOrderEditMode } from '@/hooks/useWorkOrderEditMode';
 import { useWorkOrderStatus } from '@/hooks/useWorkOrderStatus';
 import { useToast } from '@/hooks/use-toast';
+import { WorkOrderPrintLayout } from './WorkOrderPrintLayout';
 
 interface WorkOrderDetailsViewProps {
   workOrderId?: string;
@@ -122,50 +123,64 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
   };
 
   return (
-    <div className="space-y-8 max-w-[1400px] mx-auto" id="work-order-printable-content">
-      {/* Navigation */}
-      <div className="flex items-center gap-2">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/work-orders')}
-          className="hover:bg-muted/60 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Work Orders
-        </Button>
+    <>
+      {/* Hidden Print Layout */}
+      <div className="hidden print:block">
+        <WorkOrderPrintLayout
+          workOrder={workOrder}
+          customer={customer}
+          jobLines={jobLines}
+          parts={allParts}
+          timeEntries={timeEntries}
+        />
       </div>
 
-      {/* Header */}
-      <WorkOrderDetailsHeader
-        workOrder={workOrder}
-        customer={customer}
-        currentStatus={currentStatus}
-        isUpdatingStatus={isUpdatingStatus}
-        onStatusChange={handleStatusChange}
-        isEditMode={isEditMode}
-      />
+      {/* Regular Screen Layout */}
+      <div className="space-y-8 max-w-[1400px] mx-auto print:hidden" id="work-order-printable-content">
+        {/* Navigation */}
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/work-orders')}
+            className="hover:bg-muted/60 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Work Orders
+          </Button>
+        </div>
 
-      {/* Statistics Cards */}
-      <WorkOrderStatsCards
-        workOrder={workOrder}
-        jobLines={jobLines}
-        parts={allParts}
-        timeEntries={timeEntries}
-      />
+        {/* Header */}
+        <WorkOrderDetailsHeader
+          workOrder={workOrder}
+          customer={customer}
+          currentStatus={currentStatus}
+          isUpdatingStatus={isUpdatingStatus}
+          onStatusChange={handleStatusChange}
+          isEditMode={isEditMode}
+        />
 
-      {/* Tabs */}
-      <WorkOrderDetailsTabs
-        workOrder={workOrder}
-        jobLines={jobLines}
-        allParts={allParts}
-        timeEntries={timeEntries}
-        customer={customer}
-        onWorkOrderUpdate={handleWorkOrderUpdate}
-        onPartsChange={handlePartsChange}
-        isEditMode={isEditMode}
-      />
-    </div>
+        {/* Statistics Cards */}
+        <WorkOrderStatsCards
+          workOrder={workOrder}
+          jobLines={jobLines}
+          parts={allParts}
+          timeEntries={timeEntries}
+        />
+
+        {/* Tabs */}
+        <WorkOrderDetailsTabs
+          workOrder={workOrder}
+          jobLines={jobLines}
+          allParts={allParts}
+          timeEntries={timeEntries}
+          customer={customer}
+          onWorkOrderUpdate={handleWorkOrderUpdate}
+          onPartsChange={handlePartsChange}
+          isEditMode={isEditMode}
+        />
+      </div>
+    </>
   );
 }
 

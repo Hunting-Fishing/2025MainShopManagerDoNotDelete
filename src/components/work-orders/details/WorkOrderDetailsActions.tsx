@@ -28,10 +28,8 @@ export function WorkOrderDetailsActions({
   };
 
   const handlePrint = () => {
-    printElement(
-      'work-order-printable-content',
-      `Work Order #${workOrder.work_order_number || workOrder.id}`
-    );
+    // Use browser's native print which will show our professional print layout
+    window.print();
   };
 
   const isCompleted = workOrder.status === 'completed';
