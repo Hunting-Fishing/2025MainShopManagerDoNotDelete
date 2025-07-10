@@ -11,6 +11,7 @@ import { TimeEntry } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
 import { Calculator } from 'lucide-react';
 import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
+import { useWorkOrderJobLineOperations } from '@/hooks/useWorkOrderJobLineOperations';
 
 interface WorkOrderDetailedFormProps {
   workOrder: WorkOrder;
@@ -38,6 +39,9 @@ export function WorkOrderDetailedForm({
   const [tax, setTax] = useState(0);
   const [total, setTotal] = useState(0);
 
+  // Enhanced job line operations
+  const jobLineOperations = useWorkOrderJobLineOperations(jobLines, onWorkOrderUpdate);
+
   // Calculate totals from job lines and parts
   useEffect(() => {
     const jobLinesTotal = jobLines.reduce((sum, jobLine) => sum + (jobLine.total_amount || 0), 0);
@@ -49,19 +53,13 @@ export function WorkOrderDetailedForm({
     setTotal(newSubtotal + newTax);
   }, [jobLines, allParts]);
 
-  const handleJobLineUpdate = async (jobLine: WorkOrderJobLine) => {
-    // Handle single job line update
-    await onWorkOrderUpdate();
-  };
-
-  const handleReorder = async (reorderedJobLines: WorkOrderJobLine[]) => {
-    // Handle reordering logic here
-    await onWorkOrderUpdate();
-  };
-
   const handleAddPart = async (partData: any) => {
-    // Handle adding a part to a job line
-    await onPartsChange();
+    try {
+      // Handle adding a part to a job line
+      await onPartsChange();
+    } catch (error) {
+      console.error('Error adding part:', error);
+    }
   };
 
   return (
@@ -228,17 +226,11 @@ export function WorkOrderDetailedForm({
           <CompactJobLinesTable
             jobLines={jobLines}
             allParts={allParts}
-            onUpdate={handleJobLineUpdate}
-            onDelete={async (id: string) => {
-              // Handle delete logic
-              await onWorkOrderUpdate();
-            }}
-            onAddJobLine={async (jobLineData) => {
-              // Handle add job line logic
-              await onWorkOrderUpdate();
-            }}
+            onUpdate={jobLineOperations.handleUpdateJobLine}
+            onDelete={jobLineOperations.handleDeleteJobLine}
+            onAddJobLine={jobLineOperations.handleAddJobLine}
             onAddPart={handleAddPart}
-            onReorder={handleReorder}
+            onReorder={jobLineOperations.handleReorderJobLines}
             workOrderId={workOrder.id}
             isEditMode={isEditMode}
           />

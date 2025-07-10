@@ -12,6 +12,7 @@ import { jobLineStatusMap } from '@/types/jobLine';
 import { SimpleJobLineEditDialog } from './SimpleJobLineEditDialog';
 import { DetailFormButton } from './DetailFormButton';
 import { generateTempJobLineId } from '@/services/jobLineParserEnhanced';
+import { useWorkOrderJobLineOperations } from '@/hooks/useWorkOrderJobLineOperations';
 import {
   DndContext,
   closestCenter,
@@ -43,6 +44,7 @@ interface CompactJobLinesTableProps {
   onReorder?: (reorderedJobLines: WorkOrderJobLine[]) => void;
   workOrderId?: string;
   isEditMode: boolean;
+  onRefresh?: () => Promise<void>; // For enhanced operations
 }
 
 interface SortableJobLineRowProps {
@@ -54,7 +56,7 @@ interface SortableJobLineRowProps {
   onAddPart?: (partData: WorkOrderPartFormValues) => Promise<void>;
   getIconForCategory: (category?: string) => React.ReactNode;
   handleEditClick: (jobLine: WorkOrderJobLine) => void;
-  handleCompletionToggle: (jobLine: WorkOrderJobLine, completed: boolean) => void;
+  handleCompletionToggle: (jobLine: WorkOrderJobLine, completed: boolean) => Promise<void>;
 }
 
 function SortableJobLineRow({
@@ -147,9 +149,9 @@ function SortableJobLineRow({
           <div className="flex items-center justify-center">
             <Checkbox
               checked={jobLine.is_work_completed || false}
-              onCheckedChange={(checked) => 
-                handleCompletionToggle(jobLine, checked as boolean)
-              }
+              onCheckedChange={async (checked) => {
+                await handleCompletionToggle(jobLine, checked as boolean);
+              }}
               title={jobLine.is_work_completed ? 
                 `Completed ${jobLine.completion_date ? new Date(jobLine.completion_date).toLocaleDateString() : ''}` : 
                 'Mark as completed'
@@ -166,7 +168,11 @@ function SortableJobLineRow({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleEditClick(jobLine)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleEditClick(jobLine);
+              }}
               title="Edit job line"
             >
               <Edit2 className="h-4 w-4" />
@@ -175,7 +181,11 @@ function SortableJobLineRow({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onDelete(jobLine.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete(jobLine.id);
+                }}
                 title="Delete job line"
               >
                 <Trash2 className="h-4 w-4" />
@@ -198,11 +208,22 @@ export function CompactJobLinesTable({
   onAddPart,
   onReorder,
   workOrderId,
-  isEditMode
+  isEditMode,
+  onRefresh
 }: CompactJobLinesTableProps) {
   const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [addItemType, setAddItemType] = useState<string>('add-item');
+
+  // Enhanced job line operations for completion toggle
+  const jobLineOperations = useWorkOrderJobLineOperations(
+    jobLines, 
+    onRefresh || (async () => {
+      if (onUpdate && typeof onUpdate === 'function' && onUpdate.length === 0) {
+        await (onUpdate as () => Promise<void>)();
+      }
+    })
+  );
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -237,27 +258,32 @@ export function CompactJobLinesTable({
   };
 
   const handleAddItemTypeSelect = (type: string) => {
+    // Prevent default behavior that might cause page refresh
     if (type === 'add-item' || !onAddJobLine || !workOrderId) return;
     
-    // Create default job line based on type
-    const defaultJobLine: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'> = {
-      work_order_id: workOrderId,
-      name: getDefaultNameForType(type as 'labor' | 'parts' | 'sublet' | 'note'),
-      category: type === 'labor' ? 'Labor' : type === 'parts' ? 'Parts' : type === 'sublet' ? 'Sublet' : 'Note',
-      description: '',
-      estimated_hours: type === 'labor' ? 1 : undefined,
-      labor_rate: type === 'labor' ? 85 : undefined,
-      total_amount: type === 'labor' ? 85 : type === 'note' ? 0 : undefined,
-      status: 'pending',
-      display_order: jobLines.length + 1,
-      notes: ''
-    };
+    try {
+      // Create default job line based on type
+      const defaultJobLine: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'> = {
+        work_order_id: workOrderId,
+        name: getDefaultNameForType(type as 'labor' | 'parts' | 'sublet' | 'note'),
+        category: type === 'labor' ? 'Labor' : type === 'parts' ? 'Parts' : type === 'sublet' ? 'Sublet' : 'Note',
+        description: '',
+        estimated_hours: type === 'labor' ? 1 : undefined,
+        labor_rate: type === 'labor' ? 85 : undefined,
+        total_amount: type === 'labor' ? 85 : type === 'note' ? 0 : undefined,
+        status: 'pending',
+        display_order: jobLines.length + 1,
+        notes: ''
+      };
 
-    // Add the job line
-    onAddJobLine(defaultJobLine);
-    
-    // Reset dropdown
-    setAddItemType('add-item');
+      // Add the job line
+      onAddJobLine(defaultJobLine);
+      
+      // Reset dropdown
+      setAddItemType('add-item');
+    } catch (error) {
+      console.error('Error adding job line:', error);
+    }
   };
 
   const getDefaultNameForType = (type: 'labor' | 'parts' | 'sublet' | 'note'): string => {
@@ -275,21 +301,26 @@ export function CompactJobLinesTable({
     }
   };
 
-  const handleCompletionToggle = (jobLine: WorkOrderJobLine, completed: boolean) => {
+  const handleCompletionToggle = async (jobLine: WorkOrderJobLine, completed: boolean) => {
     if (!onUpdate) return;
 
-    const updatedJobLine: WorkOrderJobLine = {
-      ...jobLine,
-      is_work_completed: completed,
-      completion_date: completed ? new Date().toISOString() : undefined,
-      completed_by: completed ? 'Current User' : undefined, // In real app, get from auth
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const updatedJobLine: WorkOrderJobLine = {
+        ...jobLine,
+        is_work_completed: completed,
+        completion_date: completed ? new Date().toISOString() : undefined,
+        completed_by: completed ? 'Current User' : undefined, // In real app, get from auth
+        status: completed ? 'completed' : 'pending',
+        updated_at: new Date().toISOString()
+      };
 
-    if (onUpdate.length === 0) {
-      (onUpdate as () => Promise<void>)();
-    } else {
-      (onUpdate as (jobLine: WorkOrderJobLine) => void)(updatedJobLine);
+      if (onUpdate.length === 0) {
+        await (onUpdate as () => Promise<void>)();
+      } else {
+        (onUpdate as (jobLine: WorkOrderJobLine) => void)(updatedJobLine);
+      }
+    } catch (error) {
+      console.error('Error updating completion status:', error);
     }
   };
 
@@ -309,21 +340,25 @@ export function CompactJobLinesTable({
   };
 
   // Handle drag end for reordering
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
-      const oldIndex = jobLines.findIndex((item) => item.id === active.id);
-      const newIndex = jobLines.findIndex((item) => item.id === over?.id);
-      
-      const reorderedJobLines = arrayMove(jobLines, oldIndex, newIndex).map((jobLine, index) => ({
-        ...jobLine,
-        display_order: index + 1
-      }));
-      
-      // Call the reorder callback if provided
-      if (onReorder) {
-        onReorder(reorderedJobLines);
+      try {
+        const oldIndex = jobLines.findIndex((item) => item.id === active.id);
+        const newIndex = jobLines.findIndex((item) => item.id === over?.id);
+        
+        const reorderedJobLines = arrayMove(jobLines, oldIndex, newIndex).map((jobLine, index) => ({
+          ...jobLine,
+          display_order: index + 1
+        }));
+        
+        // Call the reorder callback if provided
+        if (onReorder) {
+          await onReorder(reorderedJobLines);
+        }
+      } catch (error) {
+        console.error('Error reordering job lines:', error);
       }
     }
   };
@@ -373,7 +408,7 @@ export function CompactJobLinesTable({
                   onAddPart={onAddPart}
                   getIconForCategory={getIconForCategory}
                   handleEditClick={handleEditClick}
-                  handleCompletionToggle={handleCompletionToggle}
+                  handleCompletionToggle={jobLineOperations.handleToggleCompletion}
                 />
               ))}
             </SortableContext>
