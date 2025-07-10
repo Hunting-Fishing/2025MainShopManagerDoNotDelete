@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Edit2, Trash2, Wrench, Package, Settings, FileText, GripVertical } from 'lucide-react';
+import { Edit2, Trash2, Wrench, Package, Settings, FileText, GripVertical, Edit } from 'lucide-react';
 import { jobLineStatusMap } from '@/types/jobLine';
 import { SimpleJobLineEditDialog } from './SimpleJobLineEditDialog';
 import { DetailFormButton } from './DetailFormButton';
@@ -49,6 +49,8 @@ interface CompactJobLinesTableProps {
   workOrderId?: string;
   isEditMode: boolean;
   onRefresh?: () => Promise<void>; // For enhanced operations
+  onPartUpdate?: (part: WorkOrderPart) => void;
+  onPartDelete?: (partId: string) => void;
 }
 
 interface SortableJobLineRowProps {
@@ -229,7 +231,9 @@ export function CompactJobLinesTable({
   onReorder,
   workOrderId,
   isEditMode,
-  onRefresh
+  onRefresh,
+  onPartUpdate,
+  onPartDelete
 }: CompactJobLinesTableProps) {
   const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -450,54 +454,66 @@ export function CompactJobLinesTable({
               ))}
             </SortableContext>
             
-            {/* Work Order Level Parts Row - Show unassociated parts */}
-            {allParts.filter(part => !part.job_line_id).length > 0 && (
-              <TableRow className="bg-blue-50/30 border-l-4 border-l-blue-500">
-                {isEditMode && <TableCell className="w-8"></TableCell>}
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Package className="h-3 w-3" />
-                    <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
-                      Work Order Parts
+            {/* Individual Work Order Level Parts - Show each unassociated part as editable row */}
+            {allParts
+              .filter(part => !part.job_line_id)
+              .map((part) => (
+                <TableRow key={`part-${part.id}`} className="bg-blue-50/30 border-l-4 border-l-blue-500">
+                  {isEditMode && <TableCell className="w-8"></TableCell>}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Package className="h-3 w-3" />
+                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                        Part
+                      </Badge>
+                    </div>
+                  </TableCell>
+                  {isEditMode && <TableCell></TableCell>}
+                  <TableCell className="font-medium">{part.name}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {part.part_number && `Part #: ${part.part_number}`}
+                  </TableCell>
+                  <TableCell>{part.quantity || 1}</TableCell>
+                  <TableCell>${(part.unit_price || 0).toFixed(2)}</TableCell>
+                  <TableCell>
+                    <span className="font-medium">
+                      ${((part.customerPrice || part.unit_price || 0) * (part.quantity || 1)).toFixed(2)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs text-muted-foreground">No sub-parts</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-xs">
+                      {part.status || 'Active'}
                     </Badge>
-                  </div>
-                </TableCell>
-                {isEditMode && <TableCell></TableCell>}
-                <TableCell className="font-medium">Unassociated Parts</TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  Parts not linked to specific job lines
-                </TableCell>
-                <TableCell>-</TableCell>
-                <TableCell>-</TableCell>
-                <TableCell>
-                  <span className="font-medium">
-                    ${allParts
-                      .filter(part => !part.job_line_id)
-                      .reduce((sum, part) => sum + (part.customerPrice || part.unit_price || 0) * (part.quantity || 1), 0)
-                      .toFixed(2)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    {allParts
-                      .filter(part => !part.job_line_id)
-                      .map(part => (
-                        <div key={part.id} className="flex justify-between items-center text-xs bg-white/50 px-2 py-1 rounded">
-                          <span className="font-medium">{part.name}</span>
-                          <span>${((part.customerPrice || part.unit_price || 0) * (part.quantity || 1)).toFixed(2)}</span>
-                        </div>
-                      ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="text-xs">
-                    Active
-                  </Badge>
-                </TableCell>
-                {isEditMode && <TableCell></TableCell>}
-                {isEditMode && <TableCell></TableCell>}
-              </TableRow>
-            )}
+                  </TableCell>
+                  {isEditMode && (
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onPartUpdate && onPartUpdate(part)}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onPartDelete && onPartDelete(part.id)}
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
+                  {isEditMode && <TableCell></TableCell>}
+                </TableRow>
+              ))}
+            
             
             {/* Add Item Row - Only show when in edit mode and onAddJobLine is provided */}
             {isEditMode && onAddJobLine && (
