@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -15,6 +15,8 @@ import { useWorkOrderEditMode } from '@/hooks/useWorkOrderEditMode';
 import { useWorkOrderStatus } from '@/hooks/useWorkOrderStatus';
 import { useToast } from '@/hooks/use-toast';
 import { WorkOrderPrintLayout } from './WorkOrderPrintLayout';
+import { WorkOrderViewModeToggle, WorkOrderViewMode } from './details/WorkOrderViewModeToggle';
+import { WorkOrderDetailedForm } from './details/WorkOrderDetailedForm';
 
 interface WorkOrderDetailsViewProps {
   workOrderId?: string;
@@ -36,6 +38,17 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
 
   const { isEditMode, isReadOnly } = useWorkOrderEditMode(workOrder);
   const { toast } = useToast();
+  
+  // View mode state with localStorage persistence
+  const [viewMode, setViewMode] = useState<WorkOrderViewMode>(() => {
+    const saved = localStorage.getItem('workOrder-view-mode');
+    return (saved as WorkOrderViewMode) || 'tabbed';
+  });
+
+  // Save view mode preference
+  useEffect(() => {
+    localStorage.setItem('workOrder-view-mode', viewMode);
+  }, [viewMode]);
   
   // Use the actual work order status hook for updates
   const {
@@ -150,15 +163,22 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
           </Button>
         </div>
 
-        {/* Header */}
-        <WorkOrderDetailsHeader
-          workOrder={workOrder}
-          customer={customer}
-          currentStatus={currentStatus}
-          isUpdatingStatus={isUpdatingStatus}
-          onStatusChange={handleStatusChange}
-          isEditMode={isEditMode}
-        />
+        {/* Header with View Toggle */}
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+          <WorkOrderDetailsHeader
+            workOrder={workOrder}
+            customer={customer}
+            currentStatus={currentStatus}
+            isUpdatingStatus={isUpdatingStatus}
+            onStatusChange={handleStatusChange}
+            isEditMode={isEditMode}
+          />
+          <WorkOrderViewModeToggle
+            mode={viewMode}
+            onModeChange={setViewMode}
+            className="lg:mt-6"
+          />
+        </div>
 
         {/* Statistics Cards */}
         <WorkOrderStatsCards
@@ -168,17 +188,30 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
           timeEntries={timeEntries}
         />
 
-        {/* Tabs */}
-        <WorkOrderDetailsTabs
-          workOrder={workOrder}
-          jobLines={jobLines}
-          allParts={allParts}
-          timeEntries={timeEntries}
-          customer={customer}
-          onWorkOrderUpdate={handleWorkOrderUpdate}
-          onPartsChange={handlePartsChange}
-          isEditMode={isEditMode}
-        />
+        {/* Content based on view mode */}
+        {viewMode === 'tabbed' ? (
+          <WorkOrderDetailsTabs
+            workOrder={workOrder}
+            jobLines={jobLines}
+            allParts={allParts}
+            timeEntries={timeEntries}
+            customer={customer}
+            onWorkOrderUpdate={handleWorkOrderUpdate}
+            onPartsChange={handlePartsChange}
+            isEditMode={isEditMode}
+          />
+        ) : (
+          <WorkOrderDetailedForm
+            workOrder={workOrder}
+            jobLines={jobLines}
+            allParts={allParts}
+            timeEntries={timeEntries}
+            customer={customer}
+            onWorkOrderUpdate={handleWorkOrderUpdate}
+            onPartsChange={handlePartsChange}
+            isEditMode={isEditMode}
+          />
+        )}
       </div>
     </>
   );
