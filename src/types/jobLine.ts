@@ -16,6 +16,7 @@ export interface WorkOrderJobLine {
   created_at?: string;
   updated_at?: string;
   parts?: any[]; // For associated parts
+  is_from_service_selection?: boolean; // Indicates if this job line was created from service selection
 }
 
 export interface JobLineFormValues {
