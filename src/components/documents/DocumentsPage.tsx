@@ -58,12 +58,8 @@ export function DocumentsPage() {
   };
 
   const handleDocumentCreated = async (documentData: any) => {
-    try {
-      await createDocument(documentData);
-      refetch();
-    } catch (error) {
-      // Error is handled in the dialog
-    }
+    // Document is already created, just refresh the list
+    refetch();
   };
 
   if (loading) {
