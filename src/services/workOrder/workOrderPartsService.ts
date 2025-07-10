@@ -98,14 +98,13 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
       part_number: partData.part_number,
       quantity: partData.quantity || 1,
       customer_price: partData.unit_price || partData.customerPrice || 0, // Map unit_price to customer_price
-      total_price: partData.total_price || (partData.quantity || 1) * (partData.unit_price || partData.customerPrice || 0),
       status: partData.status || 'pending',
       part_type: partData.part_type || 'inventory',
       category: partData.category,
       notes: partData.notes,
       // Extended fields
       supplier_cost: partData.supplierCost,
-      retail_price: partData.supplierSuggestedRetail,
+      supplier_suggested_retail_price: partData.supplierSuggestedRetail, // Fixed column name
       markup_percentage: partData.markupPercentage,
       supplier_name: partData.supplierName,
       is_taxable: partData.isTaxable || false,
@@ -118,11 +117,7 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
       invoice_number: partData.invoiceNumber,
       po_line: partData.poLine,
       is_stock_item: partData.isStockItem || false,
-      supplier_order_ref: partData.supplierOrderRef,
-      notes_internal: partData.notesInternal,
-      inventory_item_id: partData.inventoryItemId,
-      estimated_arrival_date: partData.estimatedArrivalDate,
-      item_status: partData.itemStatus
+      inventory_item_id: partData.inventoryItemId
     };
 
     const { data, error } = await supabase
@@ -157,7 +152,6 @@ export async function updateWorkOrderPart(partId: string, updates: Partial<WorkO
     if (updates.part_number !== undefined) dbUpdates.part_number = updates.part_number;
     if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
     if (updates.unit_price !== undefined) dbUpdates.customer_price = updates.unit_price;
-    if (updates.total_price !== undefined) dbUpdates.total_price = updates.total_price;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.part_type !== undefined) dbUpdates.part_type = updates.part_type;
     if (updates.job_line_id !== undefined) dbUpdates.job_line_id = updates.job_line_id;
@@ -166,7 +160,7 @@ export async function updateWorkOrderPart(partId: string, updates: Partial<WorkO
 
     // Extended fields
     if (updates.supplierCost !== undefined) dbUpdates.supplier_cost = updates.supplierCost;
-    if (updates.supplierSuggestedRetail !== undefined) dbUpdates.retail_price = updates.supplierSuggestedRetail;
+    if (updates.supplierSuggestedRetail !== undefined) dbUpdates.supplier_suggested_retail_price = updates.supplierSuggestedRetail;
     if (updates.markupPercentage !== undefined) dbUpdates.markup_percentage = updates.markupPercentage;
     if (updates.supplierName !== undefined) dbUpdates.supplier_name = updates.supplierName;
     if (updates.isTaxable !== undefined) dbUpdates.is_taxable = updates.isTaxable;
