@@ -450,6 +450,55 @@ export function CompactJobLinesTable({
               ))}
             </SortableContext>
             
+            {/* Work Order Level Parts Row - Show unassociated parts */}
+            {allParts.filter(part => !part.job_line_id).length > 0 && (
+              <TableRow className="bg-blue-50/30 border-l-4 border-l-blue-500">
+                {isEditMode && <TableCell className="w-8"></TableCell>}
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Package className="h-3 w-3" />
+                    <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                      Work Order Parts
+                    </Badge>
+                  </div>
+                </TableCell>
+                {isEditMode && <TableCell></TableCell>}
+                <TableCell className="font-medium">Unassociated Parts</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  Parts not linked to specific job lines
+                </TableCell>
+                <TableCell>-</TableCell>
+                <TableCell>-</TableCell>
+                <TableCell>
+                  <span className="font-medium">
+                    ${allParts
+                      .filter(part => !part.job_line_id)
+                      .reduce((sum, part) => sum + (part.customerPrice || part.unit_price || 0) * (part.quantity || 1), 0)
+                      .toFixed(2)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    {allParts
+                      .filter(part => !part.job_line_id)
+                      .map(part => (
+                        <div key={part.id} className="flex justify-between items-center text-xs bg-white/50 px-2 py-1 rounded">
+                          <span className="font-medium">{part.name}</span>
+                          <span>${((part.customerPrice || part.unit_price || 0) * (part.quantity || 1)).toFixed(2)}</span>
+                        </div>
+                      ))}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className="text-xs">
+                    Active
+                  </Badge>
+                </TableCell>
+                {isEditMode && <TableCell></TableCell>}
+                {isEditMode && <TableCell></TableCell>}
+              </TableRow>
+            )}
+            
             {/* Add Item Row - Only show when in edit mode and onAddJobLine is provided */}
             {isEditMode && onAddJobLine && (
               <TableRow className="bg-muted/30 hover:bg-muted/50">
