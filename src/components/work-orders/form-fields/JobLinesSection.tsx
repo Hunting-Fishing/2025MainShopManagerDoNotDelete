@@ -14,7 +14,7 @@ interface JobLinesSectionProps {
   workOrderId: string;
   description?: string;
   jobLines: WorkOrderJobLine[];
-  onJobLinesChange: () => Promise<void>;
+  onJobLinesChange: (jobLines?: WorkOrderJobLine[]) => Promise<void>;
   isEditMode: boolean;
   shopId?: string;
   selectedServicesCount?: number;
@@ -146,12 +146,25 @@ export function JobLinesSection({
             jobLines={jobLines} 
             onUpdate={onJobLinesChange} 
             onDelete={isEditMode ? handleDeleteJobLine : undefined}
-            onAddJobLine={isEditMode ? (jobLine) => {
+            onAddJobLine={isEditMode ? async (jobLine) => {
               // Handle adding single job line
-              onJobLinesChange();
+              console.log('Adding job line:', jobLine);
+              // In real implementation, this would add the job line to the database
+              // For now, just refresh the job lines to get latest data
+              await onJobLinesChange();
             } : undefined}
             onAddPart={async (partData) => {
               // Handle adding parts to job lines
+              console.log('Adding part:', partData);
+              // In real implementation, this would add parts to the database
+              // For now, just refresh the job lines
+              await onJobLinesChange();
+            }}
+            onReorder={async (reorderedJobLines) => {
+              // Handle reordering job lines
+              console.log('Reordering job lines:', reorderedJobLines);
+              // In real implementation, this would update display_order in database
+              // For now, just refresh the job lines
               await onJobLinesChange();
             }}
             workOrderId={workOrderId}
