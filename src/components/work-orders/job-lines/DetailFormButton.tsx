@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, Wrench, Settings, FileText, Package } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { AddPartForm } from '../parts/AddPartForm';
-import { LaborDetailsForm } from './LaborDetailsForm';
+import { ServiceBasedJobLineForm } from './ServiceBasedJobLineForm';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 
 interface DetailFormButtonProps {
@@ -64,13 +64,30 @@ export function DetailFormButton({ jobLine, onUpdate, onAddPart }: DetailFormBut
     setIsOpen(false);
   };
 
+  const handleServiceSave = (jobLines: WorkOrderJobLine[]) => {
+    // For service selection, we typically get an array but we're editing a single line
+    if (jobLines.length > 0) {
+      const updatedJobLine = {
+        ...jobLine,
+        ...jobLines[0],
+        id: jobLine.id, // Keep the original ID
+        work_order_id: jobLine.work_order_id, // Keep the original work order ID
+        updated_at: new Date().toISOString()
+      };
+      onUpdate(updatedJobLine);
+    }
+    setIsOpen(false);
+  };
+
   const renderForm = () => {
     switch (jobLine.category?.toLowerCase()) {
       case 'labor':
         return (
-          <LaborDetailsForm
+          <ServiceBasedJobLineForm
+            workOrderId={jobLine.work_order_id}
             jobLine={jobLine}
-            onSubmit={handleFormSubmit}
+            mode="service"
+            onSave={handleServiceSave}
             onCancel={() => setIsOpen(false)}
           />
         );
