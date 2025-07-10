@@ -132,7 +132,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[160px] backdrop-blur-md bg-background/95 border shadow-lg">
+          <DropdownMenuContent align="end" className="w-[160px] bg-background border shadow-lg z-50">
             <DropdownMenuItem onClick={handleView} className="gap-2 cursor-pointer">
               <Eye className="h-4 w-4" />
               View Document
