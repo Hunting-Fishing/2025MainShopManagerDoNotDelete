@@ -11,6 +11,7 @@ import { TimeEntry } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
 import { Plus, Trash2, Calculator } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { QuickAddDropdown } from './QuickAddDropdown';
 import { cn } from '@/lib/utils';
 
 interface WorkOrderDetailedFormProps {
@@ -94,16 +95,26 @@ export function WorkOrderDetailedForm({
     setTotal(newSubtotal + newTax);
   }, [lineItems]);
 
-  const addLineItem = () => {
+  const addLineItem = (type: 'labor' | 'parts' | 'sublet' | 'note' = 'labor') => {
     const newItem: LineItem = {
       id: `new-${Date.now()}`,
-      type: 'labor',
+      type,
       description: '',
-      quantity: 1,
-      price: 0,
-      lineTotal: 0
+      quantity: type === 'note' ? 0 : 1,
+      price: type === 'note' ? 0 : (type === 'labor' ? 85 : 0), // Default labor rate
+      rate: type === 'labor' ? 85 : undefined, // Default labor rate
+      hours: type === 'labor' ? 1 : undefined, // Default 1 hour for labor
+      lineTotal: type === 'note' ? 0 : (type === 'labor' ? 85 : 0)
     };
     setLineItems([...lineItems, newItem]);
+    
+    // Focus on description field after adding
+    setTimeout(() => {
+      const lastRow = document.querySelector(`[data-line-item="${newItem.id}"] input`);
+      if (lastRow) {
+        (lastRow as HTMLInputElement).focus();
+      }
+    }, 100);
   };
 
   const updateLineItem = (id: string, updates: Partial<LineItem>) => {
@@ -287,10 +298,7 @@ export function WorkOrderDetailedForm({
           <CardTitle className="flex items-center justify-between">
             <span>Line Items</span>
             {isEditMode && (
-              <Button onClick={addLineItem} size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Item
-              </Button>
+              <QuickAddDropdown onAddItem={addLineItem} />
             )}
           </CardTitle>
         </CardHeader>
@@ -310,8 +318,8 @@ export function WorkOrderDetailedForm({
                 </tr>
               </thead>
               <tbody>
-                {lineItems.map((item) => (
-                  <tr key={item.id} className="border-b hover:bg-muted/50">
+                 {lineItems.map((item) => (
+                   <tr key={item.id} data-line-item={item.id} className="border-b hover:bg-muted/50">
                     <td className="p-2">
                       <Select
                         value={item.type}
