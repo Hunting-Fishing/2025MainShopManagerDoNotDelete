@@ -16,6 +16,7 @@ import { QuickAddDropdown } from '../details/QuickAddDropdown';
 import { ServiceBasedJobLineForm } from './ServiceBasedJobLineForm';
 import { UltimateAddPartDialog } from '../parts/UltimateAddPartDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { JobLinePartsDisplay } from '../parts/JobLinePartsDisplay';
 import {
   DndContext,
   closestCenter,
@@ -61,6 +62,7 @@ interface SortableJobLineRowProps {
   handleEditClick: (jobLine: WorkOrderJobLine) => void;
   handleCompletionToggle: (jobLine: WorkOrderJobLine, completed: boolean) => Promise<void>;
   allJobLines: WorkOrderJobLine[];
+  allParts: WorkOrderPart[];
 }
 
 function SortableJobLineRow({
@@ -72,7 +74,8 @@ function SortableJobLineRow({
   getIconForCategory,
   handleEditClick,
   handleCompletionToggle,
-  allJobLines
+  allJobLines,
+  allParts
 }: SortableJobLineRowProps) {
   const {
     attributes,
@@ -137,12 +140,21 @@ function SortableJobLineRow({
         </TableCell>
       )}
       
-      {/* Name, Description, Hours, Rate, Total, Status Columns */}
+      {/* Name, Description, Hours, Rate, Total, Parts, Status Columns */}
       <TableCell className="font-medium">{jobLine.name}</TableCell>
       <TableCell className="max-w-xs truncate">{jobLine.description}</TableCell>
       <TableCell>{jobLine.estimated_hours || 0}</TableCell>
       <TableCell>${jobLine.labor_rate || 0}</TableCell>
       <TableCell>${jobLine.total_amount || 0}</TableCell>
+      
+      {/* Parts Column */}
+      <TableCell className="max-w-xs">
+        <JobLinePartsDisplay
+          jobLineId={jobLine.id}
+          parts={allParts}
+        />
+      </TableCell>
+      
       <TableCell>
         <Badge className={statusInfo.classes}>
           {statusInfo.label}
@@ -393,7 +405,7 @@ export function CompactJobLinesTable({
     );
   }
 
-  const totalColumns = isEditMode ? 11 : 8; // Drag + Type + Details + Name + Desc + Hours + Rate + Total + Status + Complete + Actions
+  const totalColumns = isEditMode ? 12 : 9; // Drag + Type + Details + Name + Desc + Hours + Rate + Total + Parts + Status + Complete + Actions
 
   return (
     <>
@@ -413,6 +425,7 @@ export function CompactJobLinesTable({
               <TableHead>Hours</TableHead>
               <TableHead>Rate</TableHead>
               <TableHead>Total</TableHead>
+              <TableHead>Parts</TableHead>
               <TableHead>Status</TableHead>
               {isEditMode && <TableHead className="w-20">Complete</TableHead>}
               {isEditMode && <TableHead>Actions</TableHead>}
@@ -432,6 +445,7 @@ export function CompactJobLinesTable({
                   handleEditClick={handleEditClick}
                   handleCompletionToggle={jobLineOperations.handleToggleCompletion}
                   allJobLines={jobLines}
+                  allParts={allParts}
                 />
               ))}
             </SortableContext>
@@ -455,6 +469,8 @@ export function CompactJobLinesTable({
                 <TableCell className="text-muted-foreground"></TableCell>
                 <TableCell className="text-muted-foreground"></TableCell>
                 <TableCell className="text-muted-foreground"></TableCell>
+                <TableCell className="text-muted-foreground"></TableCell>
+                {/* Parts column for add item row */}
                 <TableCell className="text-muted-foreground"></TableCell>
                 <TableCell className="text-muted-foreground"></TableCell>
                 {/* Complete column for add item row */}
