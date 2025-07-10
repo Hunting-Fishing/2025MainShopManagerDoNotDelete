@@ -6,13 +6,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit2, Trash2, Wrench, Package, Settings, FileText, GripVertical } from 'lucide-react';
 import { jobLineStatusMap } from '@/types/jobLine';
 import { SimpleJobLineEditDialog } from './SimpleJobLineEditDialog';
 import { DetailFormButton } from './DetailFormButton';
 import { generateTempJobLineId } from '@/services/jobLineParserEnhanced';
 import { useWorkOrderJobLineOperations } from '@/hooks/useWorkOrderJobLineOperations';
+import { QuickAddDropdown } from '../details/QuickAddDropdown';
+import { ServiceBasedJobLineForm } from './ServiceBasedJobLineForm';
+import { UltimateAddPartDialog } from '../parts/UltimateAddPartDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   DndContext,
   closestCenter,
@@ -57,6 +60,7 @@ interface SortableJobLineRowProps {
   getIconForCategory: (category?: string) => React.ReactNode;
   handleEditClick: (jobLine: WorkOrderJobLine) => void;
   handleCompletionToggle: (jobLine: WorkOrderJobLine, completed: boolean) => Promise<void>;
+  allJobLines: WorkOrderJobLine[];
 }
 
 function SortableJobLineRow({
@@ -67,7 +71,8 @@ function SortableJobLineRow({
   onAddPart,
   getIconForCategory,
   handleEditClick,
-  handleCompletionToggle
+  handleCompletionToggle,
+  allJobLines
 }: SortableJobLineRowProps) {
   const {
     attributes,
@@ -127,6 +132,7 @@ function SortableJobLineRow({
               }
             }}
             onAddPart={onAddPart}
+            jobLines={allJobLines}
           />
         </TableCell>
       )}
@@ -213,7 +219,12 @@ export function CompactJobLinesTable({
 }: CompactJobLinesTableProps) {
   const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [addItemType, setAddItemType] = useState<string>('add-item');
+  
+  // State for auto-opening forms
+  const [showLaborForm, setShowLaborForm] = useState(false);
+  const [showPartsForm, setShowPartsForm] = useState(false);
+  const [showSubletForm, setShowSubletForm] = useState(false);
+  const [showNoteForm, setShowNoteForm] = useState(false);
 
   // Enhanced job line operations for completion toggle
   const jobLineOperations = useWorkOrderJobLineOperations(
@@ -257,49 +268,58 @@ export function CompactJobLinesTable({
     setEditingJobLine(null);
   };
 
-  const handleAddItemTypeSelect = (type: string) => {
-    // Prevent default behavior that might cause page refresh
-    if (type === 'add-item' || !onAddJobLine || !workOrderId) return;
+  // Handle auto-opening forms based on type selection
+  const handleAddItem = (type: 'labor' | 'parts' | 'sublet' | 'note') => {
+    if (!workOrderId) return;
     
-    try {
-      // Create default job line based on type
-      const defaultJobLine: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'> = {
-        work_order_id: workOrderId,
-        name: getDefaultNameForType(type as 'labor' | 'parts' | 'sublet' | 'note'),
-        category: type === 'labor' ? 'Labor' : type === 'parts' ? 'Parts' : type === 'sublet' ? 'Sublet' : 'Note',
-        description: '',
-        estimated_hours: type === 'labor' ? 1 : undefined,
-        labor_rate: type === 'labor' ? 85 : undefined,
-        total_amount: type === 'labor' ? 85 : type === 'note' ? 0 : undefined,
-        status: 'pending',
-        display_order: jobLines.length + 1,
-        notes: ''
-      };
-
-      // Add the job line
-      onAddJobLine(defaultJobLine);
-      
-      // Reset dropdown
-      setAddItemType('add-item');
-    } catch (error) {
-      console.error('Error adding job line:', error);
-    }
-  };
-
-  const getDefaultNameForType = (type: 'labor' | 'parts' | 'sublet' | 'note'): string => {
     switch (type) {
       case 'labor':
-        return 'Labor Service';
+        setShowLaborForm(true);
+        break;
       case 'parts':
-        return 'Part/Material';
+        setShowPartsForm(true);
+        break;
       case 'sublet':
-        return 'Subcontractor/Misc';
+        setShowSubletForm(true);
+        break;
       case 'note':
-        return 'Note';
-      default:
-        return 'Item';
+        setShowNoteForm(true);
+        break;
     }
   };
+
+  // Handle saving job lines from forms
+  const handleJobLineSave = (jobLines: WorkOrderJobLine[]) => {
+    if (onAddJobLine) {
+      jobLines.forEach(jobLine => {
+        const { id, created_at, updated_at, ...jobLineData } = jobLine;
+        onAddJobLine(jobLineData);
+      });
+    }
+    
+    // Close all forms
+    setShowLaborForm(false);
+    setShowPartsForm(false);
+    setShowSubletForm(false);
+    setShowNoteForm(false);
+  };
+
+  // Handle closing forms
+  const handleFormCancel = () => {
+    setShowLaborForm(false);
+    setShowPartsForm(false);
+    setShowSubletForm(false);
+    setShowNoteForm(false);
+  };
+
+  // Handle parts form save
+  const handlePartAdded = async () => {
+    if (onAddPart) {
+      await onAddPart({} as WorkOrderPartFormValues);
+    }
+    setShowPartsForm(false);
+  };
+
 
   const handleCompletionToggle = async (jobLine: WorkOrderJobLine, completed: boolean) => {
     if (!onUpdate) return;
@@ -409,6 +429,7 @@ export function CompactJobLinesTable({
                   getIconForCategory={getIconForCategory}
                   handleEditClick={handleEditClick}
                   handleCompletionToggle={jobLineOperations.handleToggleCompletion}
+                  allJobLines={jobLines}
                 />
               ))}
             </SortableContext>
@@ -419,26 +440,15 @@ export function CompactJobLinesTable({
                 {/* Drag Handle Column (empty for add row) */}
                 <TableCell className="w-8"></TableCell>
                 
-                {/* Type Column */}
+                {/* Type Column with QuickAddDropdown */}
                 <TableCell>
-                  <Select value={addItemType} onValueChange={handleAddItemTypeSelect}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="add-item">Add Item</SelectItem>
-                      <SelectItem value="labor">Labor</SelectItem>
-                      <SelectItem value="parts">Parts</SelectItem>
-                      <SelectItem value="sublet">Sublet/Misc</SelectItem>
-                      <SelectItem value="note">Note</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <QuickAddDropdown onAddItem={handleAddItem} />
                 </TableCell>
                 
                 {/* Details column for add item row */}
                 <TableCell className="text-muted-foreground"></TableCell>
                 <TableCell className="text-muted-foreground">
-                  {addItemType === 'add-item' ? 'Select type to add new item' : ''}
+                  Click "Add Item" to open comprehensive forms
                 </TableCell>
                 <TableCell className="text-muted-foreground"></TableCell>
                 <TableCell className="text-muted-foreground"></TableCell>
@@ -472,6 +482,68 @@ export function CompactJobLinesTable({
           onOpenChange={setIsEditDialogOpen}
           onSave={handleSaveJobLine}
         />
+      )}
+
+      {/* Labor Form Dialog */}
+      {showLaborForm && workOrderId && (
+        <Dialog open={showLaborForm} onOpenChange={setShowLaborForm}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add Labor Service</DialogTitle>
+            </DialogHeader>
+            <ServiceBasedJobLineForm
+              workOrderId={workOrderId}
+              mode="service"
+              onSave={handleJobLineSave}
+              onCancel={handleFormCancel}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Parts Form Dialog */}
+      {showPartsForm && workOrderId && (
+        <UltimateAddPartDialog
+          open={showPartsForm}
+          onOpenChange={setShowPartsForm}
+          workOrderId={workOrderId}
+          jobLines={jobLines}
+          onPartAdded={handlePartAdded}
+        />
+      )}
+
+      {/* Sublet Form Dialog */}
+      {showSubletForm && workOrderId && (
+        <Dialog open={showSubletForm} onOpenChange={setShowSubletForm}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add Subcontractor/Miscellaneous Item</DialogTitle>
+            </DialogHeader>
+            <ServiceBasedJobLineForm
+              workOrderId={workOrderId}
+              mode="manual"
+              onSave={handleJobLineSave}
+              onCancel={handleFormCancel}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Note Form Dialog */}
+      {showNoteForm && workOrderId && (
+        <Dialog open={showNoteForm} onOpenChange={setShowNoteForm}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add Note</DialogTitle>
+            </DialogHeader>
+            <ServiceBasedJobLineForm
+              workOrderId={workOrderId}
+              mode="manual"
+              onSave={handleJobLineSave}
+              onCancel={handleFormCancel}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );
