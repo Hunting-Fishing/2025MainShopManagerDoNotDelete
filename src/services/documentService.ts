@@ -115,7 +115,7 @@ export class DocumentService {
     return this.createDocument(documentData);
   }
 
-  static async uploadFile(file: File, path: string, bucketName: string = 'documents'): Promise<{ path: string; url: string }> {
+  static async uploadFile(file: File, path: string, bucketName: string = 'documents'): Promise<{ path: string }> {
     // Validate file before upload
     const validation = validateFile(file);
     if (!validation.valid) {
@@ -131,16 +131,9 @@ export class DocumentService {
 
     if (error) throw error;
 
-    // For private buckets, create a signed URL instead of public URL
-    const { data: signedUrl, error: urlError } = await supabase.storage
-      .from(bucketName)
-      .createSignedUrl(data.path, 3600); // 1 hour expiry
-
-    if (urlError) throw urlError;
-
+    // Only return the path - URLs should be generated on-demand
     return {
-      path: data.path,
-      url: signedUrl.signedUrl
+      path: data.path
     };
   }
 

@@ -27,10 +27,8 @@ export function DocumentsPage() {
   };
 
   const handleDocumentClick = (document: Document) => {
-    // Open document in new tab/window
-    if (document.file_url) {
-      window.open(document.file_url, '_blank');
-    }
+    // Document viewing is now handled within DocumentCard
+    // This can be used for additional tracking or navigation if needed
   };
 
   const handleEditDocument = (document: Document) => {

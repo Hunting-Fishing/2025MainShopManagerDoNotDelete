@@ -103,7 +103,6 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
         throw new Error('User not authenticated');
       }
 
-      let fileUrl = '';
       let filePath = '';
 
       if (file) {
@@ -141,14 +140,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
 
         setUploadProgress(70);
 
-        // Create signed URL for private bucket access
-        const { data: signedUrl, error: urlError } = await supabase.storage
-          .from(bucketName)
-          .createSignedUrl(uploadData.path, 3600); // 1 hour expiry
-
-        if (urlError) throw urlError;
-
-        fileUrl = signedUrl.signedUrl;
+        // Only store the file path - signed URLs will be generated on-demand
         filePath = uploadData.path;
         
         setUploadProgress(90);
@@ -158,7 +150,6 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
         title: title.trim(),
         description: description.trim() || undefined,
         document_type: documentType,
-        file_url: fileUrl || undefined,
         file_path: filePath || undefined,
         file_size: file?.size,
         mime_type: file?.type,

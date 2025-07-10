@@ -105,7 +105,6 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
         const uploadPath = `documents/${fileName}`;
         
         const uploadResult = await DocumentService.uploadFile(file, uploadPath);
-        fileUrl = uploadResult.url;
         filePath = uploadResult.path;
         fileSize = file.size;
         mimeType = file.type;

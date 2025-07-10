@@ -39,23 +39,62 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
     }
   };
 
-  const handleView = () => {
-    if (onView) {
-      onView(document);
+  const handleView = async () => {
+    try {
+      if (document.document_type === 'weblink') {
+        // For web links, open URL directly
+        if (document.file_url) {
+          window.open(document.file_url, '_blank');
+        }
+      } else if (document.file_path) {
+        // For uploaded files, get a fresh signed URL
+        const bucketName = document.work_order_id ? 'work-order-documents' : 'documents';
+        const signedUrl = await DocumentService.getSignedUrl(document.file_path, bucketName);
+        window.open(signedUrl, '_blank');
+      }
+      
+      if (onView) {
+        onView(document);
+      }
+      if (onClick) {
+        onClick(document);
+      }
+      // Log the access
+      DocumentService.logAccess(document.id, 'view');
+    } catch (error) {
+      console.error('Error viewing document:', error);
     }
-    if (onClick) {
-      onClick(document);
-    }
-    // Log the access with simplified parameters
-    DocumentService.logAccess(document.id, 'view');
   };
 
-  const handleDownload = () => {
-    if (onDownload) {
-      onDownload(document);
+  const handleDownload = async () => {
+    try {
+      if (document.document_type === 'weblink') {
+        // For web links, just open the URL
+        if (document.file_url) {
+          window.open(document.file_url, '_blank');
+        }
+      } else if (document.file_path) {
+        // For uploaded files, get a fresh signed URL for download
+        const bucketName = document.work_order_id ? 'work-order-documents' : 'documents';
+        const signedUrl = await DocumentService.getSignedUrl(document.file_path, bucketName);
+        
+        // Create download link
+        const link = window.document.createElement('a');
+        link.href = signedUrl;
+        link.download = document.title;
+        window.document.body.appendChild(link);
+        link.click();
+        window.document.body.removeChild(link);
+      }
+      
+      if (onDownload) {
+        onDownload(document);
+      }
+      // Log the access
+      DocumentService.logAccess(document.id, 'download');
+    } catch (error) {
+      console.error('Error downloading document:', error);
     }
-    // Log the access with simplified parameters  
-    DocumentService.logAccess(document.id, 'download');
   };
 
   const handleEdit = () => {
