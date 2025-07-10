@@ -5,6 +5,7 @@ import { WorkOrder } from '@/types/workOrder';
 import { ConvertToInvoiceButton } from '../ConvertToInvoiceButton';
 import { Printer, Share, RotateCcw } from 'lucide-react';
 import { useWorkOrderReopen } from '@/hooks/useWorkOrderReopen';
+import { printElement } from '@/utils/printUtils';
 
 interface WorkOrderDetailsActionsProps {
   workOrder: WorkOrder;
@@ -26,11 +27,18 @@ export function WorkOrderDetailsActions({
     }
   };
 
+  const handlePrint = () => {
+    printElement(
+      'work-order-printable-content',
+      `Work Order #${workOrder.work_order_number || workOrder.id}`
+    );
+  };
+
   const isCompleted = workOrder.status === 'completed';
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm">
+      <Button variant="outline" size="sm" onClick={handlePrint}>
         <Printer className="h-4 w-4 mr-2" />
         Print
       </Button>

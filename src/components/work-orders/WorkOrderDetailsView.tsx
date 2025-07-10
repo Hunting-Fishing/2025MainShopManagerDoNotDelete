@@ -12,6 +12,8 @@ import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 import { WorkOrderStatsCards } from './details/WorkOrderStatsCards';
 import { useWorkOrderEditMode } from '@/hooks/useWorkOrderEditMode';
+import { useWorkOrderStatus } from '@/hooks/useWorkOrderStatus';
+import { useToast } from '@/hooks/use-toast';
 
 interface WorkOrderDetailsViewProps {
   workOrderId?: string;
@@ -32,8 +34,16 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
   } = useWorkOrderData(workOrderId);
 
   const { isEditMode, isReadOnly } = useWorkOrderEditMode(workOrder);
-  const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
-  const currentStatus = workOrder?.status || 'draft';
+  const { toast } = useToast();
+  
+  // Use the actual work order status hook for updates
+  const {
+    status: currentStatus,
+    isUpdating: isUpdatingStatus,
+    error: statusError,
+    updateStatus,
+    clearError
+  } = useWorkOrderStatus(workOrderId, workOrder?.status || 'draft');
 
   if (isLoading) {
     return (
@@ -82,15 +92,24 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
   }
 
   const handleStatusChange = async (newStatus: string) => {
-    setIsUpdatingStatus(true);
-    try {
-      // Status update logic would go here
-      console.log('Updating status to:', newStatus);
-      await refreshData();
-    } catch (error) {
-      console.error('Error updating status:', error);
-    } finally {
-      setIsUpdatingStatus(false);
+    if (statusError) {
+      clearError();
+    }
+    
+    const result = await updateStatus(newStatus);
+    
+    if (result.success) {
+      toast({
+        title: "Status Updated",
+        description: `Work order status changed to ${newStatus}`,
+      });
+      await refreshData(); // Refresh to get latest data
+    } else {
+      toast({
+        title: "Update Failed",
+        description: result.error || "Failed to update work order status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -103,7 +122,7 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
   };
 
   return (
-    <div className="space-y-8 max-w-[1400px] mx-auto">
+    <div className="space-y-8 max-w-[1400px] mx-auto" id="work-order-printable-content">
       {/* Navigation */}
       <div className="flex items-center gap-2">
         <Button 
