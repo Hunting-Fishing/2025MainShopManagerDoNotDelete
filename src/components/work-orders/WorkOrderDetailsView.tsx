@@ -36,7 +36,7 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
     refreshData
   } = useWorkOrderData(workOrderId);
 
-  const { isEditMode, isReadOnly } = useWorkOrderEditMode(workOrder);
+  const { isEditMode, isReadOnly, canEdit, isCompleted, forceEditMode, setForceEditMode } = useWorkOrderEditMode(workOrder);
   const { toast } = useToast();
   
   // View mode state with localStorage persistence
@@ -163,7 +163,7 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
           </Button>
         </div>
 
-        {/* Header with View Toggle */}
+        {/* Header with View Toggle and Edit Controls */}
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
           <WorkOrderDetailsHeader
             workOrder={workOrder}
@@ -173,11 +173,30 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
             onStatusChange={handleStatusChange}
             isEditMode={isEditMode}
           />
-          <WorkOrderViewModeToggle
-            mode={viewMode}
-            onModeChange={setViewMode}
-            className="lg:mt-6"
-          />
+          <div className="flex flex-col gap-3 lg:mt-6">
+            {/* Edit Mode Toggle for Completed Work Orders */}
+            {canEdit && isCompleted && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={forceEditMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setForceEditMode(!forceEditMode)}
+                  className="whitespace-nowrap"
+                >
+                  {forceEditMode ? "Exit Edit Mode" : "Enable Editing"}
+                </Button>
+                {forceEditMode && (
+                  <span className="text-sm text-muted-foreground">
+                    Editing enabled for completed work order
+                  </span>
+                )}
+              </div>
+            )}
+            <WorkOrderViewModeToggle
+              mode={viewMode}
+              onModeChange={setViewMode}
+            />
+          </div>
         </div>
 
         {/* Statistics Cards */}
