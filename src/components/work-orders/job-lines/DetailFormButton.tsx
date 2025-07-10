@@ -99,11 +99,10 @@ export function DetailFormButton({ jobLine, onUpdate, onAddPart }: DetailFormBut
         variant="ghost"
         size="sm"
         onClick={() => setIsOpen(true)}
-        disabled={isDisabled}
-        className="h-8 w-8 p-0"
-        title={isDisabled ? 'No details form for notes' : `Open ${getFormTitle(jobLine.category)}`}
+        className="h-8 w-8 p-0 hover:bg-primary/10"
+        title={`Open ${getFormTitle(jobLine.category)} for ${jobLine.name}`}
       >
-        {getIconForCategory(jobLine.category)}
+        <Plus className="h-4 w-4 text-primary" />
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
