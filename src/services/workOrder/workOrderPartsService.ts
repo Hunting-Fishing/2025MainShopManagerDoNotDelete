@@ -96,7 +96,6 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
       job_line_id: partData.job_line_id || null,
       part_name: partData.name, // Map name to part_name
       part_number: partData.part_number,
-      description: partData.description,
       quantity: partData.quantity || 1,
       customer_price: partData.unit_price || partData.customerPrice || 0, // Map unit_price to customer_price
       total_price: partData.total_price || (partData.quantity || 1) * (partData.unit_price || partData.customerPrice || 0),
@@ -156,7 +155,6 @@ export async function updateWorkOrderPart(partId: string, updates: Partial<WorkO
     
     if (updates.name !== undefined) dbUpdates.part_name = updates.name;
     if (updates.part_number !== undefined) dbUpdates.part_number = updates.part_number;
-    if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
     if (updates.unit_price !== undefined) dbUpdates.customer_price = updates.unit_price;
     if (updates.total_price !== undefined) dbUpdates.total_price = updates.total_price;
