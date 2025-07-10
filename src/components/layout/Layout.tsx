@@ -25,10 +25,10 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     <div className="min-h-screen bg-background">
       <AppSidebar />
       <div className={`flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
-        !isMobile && isOpen ? 'ml-[280px]' : 'ml-0'
+        !isMobile && isOpen ? 'ml-[280px] print:ml-0' : 'ml-0'
       }`}>
         <Header />
-        <main className="flex-1 w-full overflow-x-hidden">
+        <main className="flex-1 w-full overflow-x-hidden print:w-full">
           {children}
         </main>
       </div>
