@@ -192,8 +192,8 @@ export function UltimateAddPartDialog({
   };
   const filteredInventoryItems = inventoryItems.filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.sku && item.sku.toLowerCase().includes(searchQuery.toLowerCase()));
   return <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-slate-50">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl max-h-[95vh] bg-slate-50 flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
             Add New Part
@@ -201,14 +201,14 @@ export function UltimateAddPartDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 overflow-hidden">
-            {submitError && <Alert variant="destructive" className="mb-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col h-full min-h-0">
+            {submitError && <Alert variant="destructive" className="mb-4 flex-shrink-0">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>{submitError}</AlertDescription>
               </Alert>}
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-5">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
+              <TabsList className="grid w-full grid-cols-5 flex-shrink-0">
                 <TabsTrigger value="basic" className="flex items-center gap-2">
                   <Package className="h-4 w-4" />
                   Basic
@@ -231,7 +231,7 @@ export function UltimateAddPartDialog({
                 </TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 overflow-y-auto mt-4">
+              <div className="flex-1 overflow-y-auto mt-4 min-h-0">
                 <TabsContent value="basic" className="space-y-6 mt-0">
                   {/* Inventory Search */}
                   <div className="space-y-4">
@@ -592,8 +592,8 @@ export function UltimateAddPartDialog({
               </div>
             </Tabs>
 
-            {/* Form Actions */}
-            <div className="flex justify-between items-center pt-4 border-t mt-6">
+            {/* Form Actions - Always Visible */}
+            <div className="flex justify-between items-center pt-4 border-t mt-6 bg-slate-50 flex-shrink-0">
               <div className="text-sm text-muted-foreground">
                 {form.watch('total_price') > 0 && <span>Total: ${form.watch('total_price')?.toFixed(2)}</span>}
               </div>
@@ -601,7 +601,7 @@ export function UltimateAddPartDialog({
                 <Button type="button" variant="outline" onClick={() => handleDialogClose(false)} disabled={isSubmitting}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/90">
                   {isSubmitting ? <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Adding Part...
