@@ -90,7 +90,23 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
   console.log('Creating work order part:', partData);
   
   try {
-    // Map application data to database format
+    // Helper function to handle date fields - convert empty strings to null
+    const formatDateField = (dateValue: any): string | null => {
+      if (!dateValue || dateValue === '' || dateValue === 'null' || dateValue === 'undefined') {
+        return null;
+      }
+      return dateValue;
+    };
+
+    // Helper function to handle numeric fields - ensure proper type conversion
+    const formatNumericField = (numValue: any): number | null => {
+      if (numValue === undefined || numValue === null || numValue === '' || isNaN(Number(numValue))) {
+        return null;
+      }
+      return Number(numValue);
+    };
+
+    // Map application data to database format with proper data validation
     const dbPartData = {
       work_order_id: partData.work_order_id,
       job_line_id: partData.job_line_id || null,
@@ -100,25 +116,27 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
       customer_price: partData.unit_price || partData.customerPrice || 0, // Map unit_price to customer_price
       status: partData.status || 'pending',
       part_type: partData.part_type || 'inventory',
-      category: partData.category,
-      notes: partData.notes,
-      // Extended fields
-      supplier_cost: partData.supplierCost,
-      retail_price: partData.supplierSuggestedRetail, // Use retail_price column
-      markup_percentage: partData.markupPercentage,
-      supplier_name: partData.supplierName,
-      is_taxable: partData.isTaxable || false,
-      core_charge_amount: partData.coreChargeAmount,
-      core_charge_applied: partData.coreChargeApplied || false,
-      warranty_duration: partData.warrantyDuration,
-      warranty_expiry_date: partData.warrantyExpiryDate,
-      install_date: partData.installDate,
-      installed_by: partData.installedBy,
-      invoice_number: partData.invoiceNumber,
-      po_line: partData.poLine,
-      is_stock_item: partData.isStockItem || false,
-      inventory_item_id: partData.inventoryItemId
+      category: partData.category || null,
+      notes: partData.notes || null,
+      // Extended fields with proper null handling
+      supplier_cost: formatNumericField(partData.supplierCost),
+      retail_price: formatNumericField(partData.supplierSuggestedRetail), // Use retail_price column
+      markup_percentage: formatNumericField(partData.markupPercentage),
+      supplier_name: partData.supplierName || null,
+      is_taxable: partData.isTaxable !== undefined ? partData.isTaxable : true,
+      core_charge_amount: formatNumericField(partData.coreChargeAmount),
+      core_charge_applied: partData.coreChargeApplied !== undefined ? partData.coreChargeApplied : false,
+      warranty_duration: partData.warrantyDuration || null,
+      warranty_expiry_date: formatDateField(partData.warrantyExpiryDate),
+      install_date: formatDateField(partData.installDate),
+      installed_by: partData.installedBy || null,
+      invoice_number: partData.invoiceNumber || null,
+      po_line: partData.poLine || null,
+      is_stock_item: partData.isStockItem !== undefined ? partData.isStockItem : true,
+      inventory_item_id: partData.inventoryItemId || null
     };
+
+    console.log('Mapped database part data:', dbPartData);
 
     const { data, error } = await supabase
       .from('work_order_parts')
@@ -145,7 +163,23 @@ export async function updateWorkOrderPart(partId: string, updates: Partial<WorkO
   console.log('Updating work order part:', partId, updates);
   
   try {
-    // Map application data to database format
+    // Helper function to handle date fields - convert empty strings to null
+    const formatDateField = (dateValue: any): string | null => {
+      if (!dateValue || dateValue === '' || dateValue === 'null' || dateValue === 'undefined') {
+        return null;
+      }
+      return dateValue;
+    };
+
+    // Helper function to handle numeric fields - ensure proper type conversion
+    const formatNumericField = (numValue: any): number | null => {
+      if (numValue === undefined || numValue === null || numValue === '' || isNaN(Number(numValue))) {
+        return null;
+      }
+      return Number(numValue);
+    };
+
+    // Map application data to database format with proper data validation
     const dbUpdates: any = {};
     
     if (updates.name !== undefined) dbUpdates.part_name = updates.name;
@@ -155,15 +189,27 @@ export async function updateWorkOrderPart(partId: string, updates: Partial<WorkO
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.part_type !== undefined) dbUpdates.part_type = updates.part_type;
     if (updates.job_line_id !== undefined) dbUpdates.job_line_id = updates.job_line_id;
-    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
-    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
+    if (updates.category !== undefined) dbUpdates.category = updates.category || null;
 
-    // Extended fields
-    if (updates.supplierCost !== undefined) dbUpdates.supplier_cost = updates.supplierCost;
-    if (updates.supplierSuggestedRetail !== undefined) dbUpdates.retail_price = updates.supplierSuggestedRetail;
-    if (updates.markupPercentage !== undefined) dbUpdates.markup_percentage = updates.markupPercentage;
-    if (updates.supplierName !== undefined) dbUpdates.supplier_name = updates.supplierName;
+    // Extended fields with proper null handling
+    if (updates.supplierCost !== undefined) dbUpdates.supplier_cost = formatNumericField(updates.supplierCost);
+    if (updates.supplierSuggestedRetail !== undefined) dbUpdates.retail_price = formatNumericField(updates.supplierSuggestedRetail);
+    if (updates.markupPercentage !== undefined) dbUpdates.markup_percentage = formatNumericField(updates.markupPercentage);
+    if (updates.supplierName !== undefined) dbUpdates.supplier_name = updates.supplierName || null;
     if (updates.isTaxable !== undefined) dbUpdates.is_taxable = updates.isTaxable;
+    if (updates.warrantyDuration !== undefined) dbUpdates.warranty_duration = updates.warrantyDuration || null;
+    if (updates.warrantyExpiryDate !== undefined) dbUpdates.warranty_expiry_date = formatDateField(updates.warrantyExpiryDate);
+    if (updates.installDate !== undefined) dbUpdates.install_date = formatDateField(updates.installDate);
+    if (updates.installedBy !== undefined) dbUpdates.installed_by = updates.installedBy || null;
+    if (updates.invoiceNumber !== undefined) dbUpdates.invoice_number = updates.invoiceNumber || null;
+    if (updates.poLine !== undefined) dbUpdates.po_line = updates.poLine || null;
+    if (updates.coreChargeAmount !== undefined) dbUpdates.core_charge_amount = formatNumericField(updates.coreChargeAmount);
+    if (updates.coreChargeApplied !== undefined) dbUpdates.core_charge_applied = updates.coreChargeApplied;
+    if (updates.isStockItem !== undefined) dbUpdates.is_stock_item = updates.isStockItem;
+    if (updates.inventoryItemId !== undefined) dbUpdates.inventory_item_id = updates.inventoryItemId || null;
+
+    console.log('Update data being sent to database:', dbUpdates);
 
     const { data, error } = await supabase
       .from('work_order_parts')
