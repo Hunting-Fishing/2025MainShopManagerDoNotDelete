@@ -12253,12 +12253,15 @@ export type Database = {
       work_order_job_lines: {
         Row: {
           category: string | null
+          completed_by: string | null
+          completion_date: string | null
           created_at: string
           description: string | null
           display_order: number | null
           estimated_hours: number | null
           id: string
           is_from_service_selection: boolean | null
+          is_work_completed: boolean | null
           labor_rate: number | null
           labor_rate_type: string | null
           name: string
@@ -12271,12 +12274,15 @@ export type Database = {
         }
         Insert: {
           category?: string | null
+          completed_by?: string | null
+          completion_date?: string | null
           created_at?: string
           description?: string | null
           display_order?: number | null
           estimated_hours?: number | null
           id?: string
           is_from_service_selection?: boolean | null
+          is_work_completed?: boolean | null
           labor_rate?: number | null
           labor_rate_type?: string | null
           name: string
@@ -12289,12 +12295,15 @@ export type Database = {
         }
         Update: {
           category?: string | null
+          completed_by?: string | null
+          completion_date?: string | null
           created_at?: string
           description?: string | null
           display_order?: number | null
           estimated_hours?: number | null
           id?: string
           is_from_service_selection?: boolean | null
+          is_work_completed?: boolean | null
           labor_rate?: number | null
           labor_rate_type?: string | null
           name?: string
@@ -13542,12 +13551,15 @@ export type Database = {
         Args: { work_order_id_param: string }
         Returns: {
           category: string | null
+          completed_by: string | null
+          completion_date: string | null
           created_at: string
           description: string | null
           display_order: number | null
           estimated_hours: number | null
           id: string
           is_from_service_selection: boolean | null
+          is_work_completed: boolean | null
           labor_rate: number | null
           labor_rate_type: string | null
           name: string

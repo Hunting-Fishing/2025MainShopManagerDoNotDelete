@@ -17,6 +17,9 @@ export interface WorkOrderJobLine {
   updated_at?: string;
   parts?: any[]; // For associated parts
   is_from_service_selection?: boolean; // Indicates if this job line was created from service selection
+  is_work_completed?: boolean; // Completion status independent of workflow status
+  completion_date?: string;
+  completed_by?: string;
 }
 
 export interface JobLineFormValues {

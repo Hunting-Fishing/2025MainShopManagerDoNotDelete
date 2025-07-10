@@ -11,12 +11,14 @@ interface EditableJobLinesGridProps {
   workOrderId: string;
   jobLines: WorkOrderJobLine[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
+  onAddPart?: (partData: any) => Promise<void>;
 }
 
 export function EditableJobLinesGrid({
   workOrderId,
   jobLines,
-  onJobLinesChange
+  onJobLinesChange,
+  onAddPart
 }: EditableJobLinesGridProps) {
   const [localJobLines, setLocalJobLines] = useState<WorkOrderJobLine[]>(jobLines);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -81,6 +83,7 @@ export function EditableJobLinesGrid({
         onUpdate={handleUpdateJobLine}
         onDelete={handleDeleteJobLine}
         onAddJobLine={handleAddSingleJobLine}
+        onAddPart={onAddPart}
         workOrderId={workOrderId}
         isEditMode={true}
       />

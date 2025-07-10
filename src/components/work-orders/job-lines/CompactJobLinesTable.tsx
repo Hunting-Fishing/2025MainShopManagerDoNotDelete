@@ -1,14 +1,16 @@
 
 import React, { useState } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
+import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Wrench, Package, Settings, FileText } from 'lucide-react';
 import { jobLineStatusMap } from '@/types/jobLine';
 import { SimpleJobLineEditDialog } from './SimpleJobLineEditDialog';
+import { DetailFormButton } from './DetailFormButton';
 import { generateTempJobLineId } from '@/services/jobLineParserEnhanced';
 
 interface CompactJobLinesTableProps {
@@ -18,6 +20,7 @@ interface CompactJobLinesTableProps {
   onDelete?: (jobLineId: string) => void;
   onEdit?: (jobLine: WorkOrderJobLine) => void;
   onAddJobLine?: (jobLine: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>) => void;
+  onAddPart?: (partData: WorkOrderPartFormValues) => Promise<void>;
   workOrderId?: string;
   isEditMode: boolean;
 }
@@ -29,6 +32,7 @@ export function CompactJobLinesTable({
   onDelete,
   onEdit,
   onAddJobLine,
+  onAddPart,
   workOrderId,
   isEditMode
 }: CompactJobLinesTableProps) {
@@ -99,6 +103,39 @@ export function CompactJobLinesTable({
     }
   };
 
+  const handleCompletionToggle = (jobLine: WorkOrderJobLine, completed: boolean) => {
+    if (!onUpdate) return;
+
+    const updatedJobLine: WorkOrderJobLine = {
+      ...jobLine,
+      is_work_completed: completed,
+      completion_date: completed ? new Date().toISOString() : undefined,
+      completed_by: completed ? 'Current User' : undefined, // In real app, get from auth
+      updated_at: new Date().toISOString()
+    };
+
+    if (onUpdate.length === 0) {
+      (onUpdate as () => Promise<void>)();
+    } else {
+      (onUpdate as (jobLine: WorkOrderJobLine) => void)(updatedJobLine);
+    }
+  };
+
+  const getIconForCategory = (category?: string) => {
+    switch (category?.toLowerCase()) {
+      case 'labor':
+        return <Wrench className="h-3 w-3" />;
+      case 'parts':
+        return <Package className="h-3 w-3" />;
+      case 'sublet':
+        return <Settings className="h-3 w-3" />;
+      case 'note':
+        return <FileText className="h-3 w-3" />;
+      default:
+        return null;
+    }
+  };
+
   if (jobLines.length === 0 && !isEditMode) {
     return (
       <div className="text-center py-4 text-muted-foreground">
@@ -113,12 +150,14 @@ export function CompactJobLinesTable({
         <TableHeader>
           <TableRow>
             <TableHead>Type</TableHead>
+            {isEditMode && <TableHead className="w-16">Details</TableHead>}
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Hours</TableHead>
             <TableHead>Rate</TableHead>
             <TableHead>Total</TableHead>
             <TableHead>Status</TableHead>
+            {isEditMode && <TableHead className="w-20">Complete</TableHead>}
             {isEditMode && <TableHead>Actions</TableHead>}
           </TableRow>
         </TableHeader>
@@ -128,10 +167,30 @@ export function CompactJobLinesTable({
             return (
               <TableRow key={jobLine.id}>
                 <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {jobLine.category || 'Labor'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {getIconForCategory(jobLine.category)}
+                    <Badge variant="outline" className="text-xs">
+                      {jobLine.category || 'Labor'}
+                    </Badge>
+                  </div>
                 </TableCell>
+                {isEditMode && (
+                  <TableCell>
+                    <DetailFormButton 
+                      jobLine={jobLine} 
+                      onUpdate={(updatedJobLine) => {
+                        if (onUpdate) {
+                          if (onUpdate.length === 0) {
+                            (onUpdate as () => Promise<void>)();
+                          } else {
+                            (onUpdate as (jobLine: WorkOrderJobLine) => void)(updatedJobLine);
+                          }
+                        }
+                      }}
+                      onAddPart={onAddPart}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="font-medium">{jobLine.name}</TableCell>
                 <TableCell className="max-w-xs truncate">{jobLine.description}</TableCell>
                 <TableCell>{jobLine.estimated_hours || 0}</TableCell>
@@ -142,6 +201,22 @@ export function CompactJobLinesTable({
                     {statusInfo.label}
                   </Badge>
                 </TableCell>
+                {isEditMode && (
+                  <TableCell>
+                    <div className="flex items-center justify-center">
+                      <Checkbox
+                        checked={jobLine.is_work_completed || false}
+                        onCheckedChange={(checked) => 
+                          handleCompletionToggle(jobLine, checked as boolean)
+                        }
+                        title={jobLine.is_work_completed ? 
+                          `Completed ${jobLine.completion_date ? new Date(jobLine.completion_date).toLocaleDateString() : ''}` : 
+                          'Mark as completed'
+                        }
+                      />
+                    </div>
+                  </TableCell>
+                )}
                 {isEditMode && (
                   <TableCell>
                     <div className="flex gap-1">
@@ -185,6 +260,8 @@ export function CompactJobLinesTable({
                   </SelectContent>
                 </Select>
               </TableCell>
+              {/* Details column for add item row */}
+              <TableCell className="text-muted-foreground"></TableCell>
               <TableCell className="text-muted-foreground">
                 {addItemType === 'add-item' ? 'Select type to add new item' : ''}
               </TableCell>
@@ -193,7 +270,10 @@ export function CompactJobLinesTable({
               <TableCell className="text-muted-foreground"></TableCell>
               <TableCell className="text-muted-foreground"></TableCell>
               <TableCell className="text-muted-foreground"></TableCell>
-              {isEditMode && <TableCell></TableCell>}
+              {/* Complete column for add item row */}
+              <TableCell className="text-muted-foreground"></TableCell>
+              {/* Actions column for add item row */}
+              <TableCell></TableCell>
             </TableRow>
           )}
           
