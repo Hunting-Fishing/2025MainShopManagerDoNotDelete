@@ -87,29 +87,33 @@ export function DocumentsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
-          <p className="text-muted-foreground">
+    <div className="container mx-auto p-4 sm:p-6 max-w-7xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Documents</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Manage your documents, files, and links in one place
           </p>
         </div>
-        <Button onClick={() => setUploadDialogOpen(true)}>
+        <Button 
+          onClick={() => setUploadDialogOpen(true)} 
+          className="w-full sm:w-auto whitespace-nowrap"
+          size="default"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Upload Document
         </Button>
       </div>
 
-      <div className="mb-6 space-y-4">
-        <div className="flex items-center space-x-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      <div className="mb-8 space-y-6">
+        <div className="w-full">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="Search documents..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-background"
             />
           </div>
         </div>
@@ -120,12 +124,14 @@ export function DocumentsPage() {
         />
       </div>
 
-      <DocumentGrid
-        documents={documents}
-        onDocumentClick={handleDocumentClick}
-        onEditDocument={handleEditDocument}
-        onDeleteDocument={handleDeleteDocument}
-      />
+      <div className="mb-6">
+        <DocumentGrid
+          documents={documents}
+          onDocumentClick={handleDocumentClick}
+          onEditDocument={handleEditDocument}
+          onDeleteDocument={handleDeleteDocument}
+        />
+      </div>
 
       <DocumentUploadDialog
         open={uploadDialogOpen}
