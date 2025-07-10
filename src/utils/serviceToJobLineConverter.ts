@@ -1,16 +1,15 @@
 import { SelectedService } from '@/types/selectedService';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Converts selected services to work order job lines
+ * Note: Does not generate IDs - these will be created by the database
  */
 export function convertServicesToJobLines(
   services: SelectedService[],
   workOrderId: string
-): Omit<WorkOrderJobLine, 'created_at' | 'updated_at'>[] {
+): Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[] {
   return services.map((service, index) => ({
-    id: uuidv4(),
     work_order_id: workOrderId,
     name: service.name,
     description: service.description || '',
@@ -33,16 +32,16 @@ export async function createJobLinesFromServices(
   services: SelectedService[],
   workOrderId: string
 ): Promise<WorkOrderJobLine[]> {
-  const { upsertWorkOrderJobLine } = await import('@/services/workOrder/jobLinesService');
+  const { createJobLine } = await import('@/services/workOrder/jobLinesService');
   
   const jobLinesToCreate = convertServicesToJobLines(services, workOrderId);
   
-  // Create job lines in the database
+  // Create job lines in the database using createJobLine for new records
   const createdJobLines: WorkOrderJobLine[] = [];
   
   for (const jobLineData of jobLinesToCreate) {
     try {
-      const createdJobLine = await upsertWorkOrderJobLine(jobLineData);
+      const createdJobLine = await createJobLine(jobLineData);
       createdJobLines.push(createdJobLine);
     } catch (error) {
       console.error('Failed to create job line from service:', error);
