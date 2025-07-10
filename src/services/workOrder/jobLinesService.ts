@@ -33,6 +33,7 @@ export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrd
       status: (line.status || 'pending') as 'pending' | 'in-progress' | 'completed' | 'on-hold',
       display_order: line.display_order || 0,
       notes: line.notes || '',
+      is_from_service_selection: line.is_from_service_selection || false,
       created_at: line.created_at,
       updated_at: line.updated_at
     }));
@@ -72,7 +73,8 @@ export async function createJobLine(jobLine: Omit<WorkOrderJobLine, 'id' | 'crea
         total_amount: jobLine.total_amount || 0,
         status: jobLine.status || 'pending',
         display_order: jobLine.display_order || 0,
-        notes: jobLine.notes || ''
+        notes: jobLine.notes || '',
+        is_from_service_selection: jobLine.is_from_service_selection || false
       }])
       .select()
       .single();
@@ -103,6 +105,7 @@ export async function createJobLine(jobLine: Omit<WorkOrderJobLine, 'id' | 'crea
       status: (data.status || 'pending') as 'pending' | 'in-progress' | 'completed' | 'on-hold',
       display_order: data.display_order || 0,
       notes: data.notes || '',
+      is_from_service_selection: data.is_from_service_selection || false,
       created_at: data.created_at,
       updated_at: data.updated_at
     };
@@ -137,7 +140,8 @@ export async function updateJobLine(jobLineId: string, updates: Partial<WorkOrde
         total_amount: updates.total_amount,
         status: updates.status,
         display_order: updates.display_order,
-        notes: updates.notes
+        notes: updates.notes,
+        is_from_service_selection: updates.is_from_service_selection
       })
       .eq('id', jobLineId)
       .select()
@@ -169,6 +173,7 @@ export async function updateJobLine(jobLineId: string, updates: Partial<WorkOrde
       status: (data.status || 'pending') as 'pending' | 'in-progress' | 'completed' | 'on-hold',
       display_order: data.display_order || 0,
       notes: data.notes || '',
+      is_from_service_selection: data.is_from_service_selection || false,
       created_at: data.created_at,
       updated_at: data.updated_at
     };

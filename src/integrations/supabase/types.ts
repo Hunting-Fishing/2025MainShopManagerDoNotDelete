@@ -12258,6 +12258,7 @@ export type Database = {
           display_order: number | null
           estimated_hours: number | null
           id: string
+          is_from_service_selection: boolean | null
           labor_rate: number | null
           labor_rate_type: string | null
           name: string
@@ -12275,6 +12276,7 @@ export type Database = {
           display_order?: number | null
           estimated_hours?: number | null
           id?: string
+          is_from_service_selection?: boolean | null
           labor_rate?: number | null
           labor_rate_type?: string | null
           name: string
@@ -12292,6 +12294,7 @@ export type Database = {
           display_order?: number | null
           estimated_hours?: number | null
           id?: string
+          is_from_service_selection?: boolean | null
           labor_rate?: number | null
           labor_rate_type?: string | null
           name?: string
@@ -13544,6 +13547,7 @@ export type Database = {
           display_order: number | null
           estimated_hours: number | null
           id: string
+          is_from_service_selection: boolean | null
           labor_rate: number | null
           labor_rate_type: string | null
           name: string

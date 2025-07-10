@@ -7,6 +7,8 @@ import { AddJobLineDialog } from '../job-lines/AddJobLineDialog';
 import { UnifiedJobLineFormDialog } from '../job-lines/UnifiedJobLineFormDialog';
 import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
 import { ConfirmDeleteDialog } from '../shared/ConfirmDeleteDialog';
+import { WorkOrderServiceSelector } from '../services/WorkOrderServiceSelector';
+import { useWorkOrderServiceSelection } from '@/hooks/useWorkOrderServiceSelection';
 import { toast } from '@/hooks/use-toast';
 interface JobLinesSectionProps {
   workOrderId: string;
@@ -30,6 +32,22 @@ export function JobLinesSection({
   const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
   const [deletingJobLine, setDeletingJobLine] = useState<WorkOrderJobLine | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Service selection hook
+  const {
+    selectedServices,
+    addService,
+    removeService,
+    updateServices,
+    convertServicesToJobLines,
+    isCreatingJobLines,
+    hasSelectedServices
+  } = useWorkOrderServiceSelection(workOrderId, onJobLinesChange);
+
+  const handleServiceSelect = (service: any, categoryName: string, subcategoryName: string) => {
+    console.log('Service selected:', service.name);
+    // The IntegratedServiceSelector handles adding the service internally
+  };
   const handleAddJobLine = () => {
     setShowAddDialog(true);
   };
@@ -84,32 +102,83 @@ export function JobLinesSection({
       setIsDeleting(false);
     }
   };
-  return <Card className="bg-green-300">
+  return (
+    <div className="space-y-6">
+      {/* Service Selection Section */}
+      {isEditMode && (
+        <WorkOrderServiceSelector
+          selectedServices={selectedServices}
+          onServiceSelect={handleServiceSelect}
+          onRemoveService={removeService}
+          onUpdateServices={updateServices}
+          onConvertToJobLines={convertServicesToJobLines}
+          isConverting={isCreatingJobLines}
+        />
+      )}
+
+      {/* Labor & Services Section */}
+      <Card className={hasSelectedServices ? "border-green-200 bg-green-50/30" : ""}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="text-lg font-semibold">
           Labor & Services
-          {selectedServicesCount > 0 && <span className="ml-2 text-sm font-normal text-muted-foreground">
+          {selectedServicesCount > 0 && (
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
               ({selectedServicesCount} from service selection + {jobLines.length - selectedServicesCount} manual)
-            </span>}
+            </span>
+          )}
+          {hasSelectedServices && (
+            <span className="ml-2 text-sm font-normal text-blue-600">
+              ({selectedServices.length} services ready to add)
+            </span>
+          )}
         </CardTitle>
-        {isEditMode && <Button onClick={handleAddJobLine} size="sm" className="flex items-center gap-2">
+        {isEditMode && (
+          <Button onClick={handleAddJobLine} size="sm" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Add Manual Job Line
-          </Button>}
+          </Button>
+        )}
       </CardHeader>
       
       <CardContent>
-        {jobLines.length > 0 ? <CompactJobLinesTable jobLines={jobLines} onUpdate={onJobLinesChange} onDelete={isEditMode ? handleDeleteJobLine : undefined} isEditMode={isEditMode} /> : <div className="text-center py-8 text-gray-500">
-            {isEditMode ? "No services selected and no manual job lines added yet. Select services above or click 'Add Manual Job Line' to get started." : "No job lines configured for this work order."}
-          </div>}
+        {jobLines.length > 0 ? (
+          <CompactJobLinesTable 
+            jobLines={jobLines} 
+            onUpdate={onJobLinesChange} 
+            onDelete={isEditMode ? handleDeleteJobLine : undefined} 
+            isEditMode={isEditMode} 
+          />
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            {isEditMode ? 
+              "No services selected and no manual job lines added yet. Select services above or click 'Add Manual Job Line' to get started." : 
+              "No job lines configured for this work order."
+            }
+          </div>
+        )}
       </CardContent>
 
       {/* Add Job Line Dialog - Uses comprehensive form with service/manual options */}
-      <AddJobLineDialog workOrderId={workOrderId} onJobLineAdd={handleJobLineAdd} open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <AddJobLineDialog 
+        workOrderId={workOrderId} 
+        onJobLineAdd={handleJobLineAdd} 
+        open={showAddDialog} 
+        onOpenChange={setShowAddDialog} 
+      />
 
       {/* Edit dialog is now handled by CompactJobLinesTable using UnifiedJobLineEditDialog */}
 
       {/* Delete Confirmation Dialog */}
-      <ConfirmDeleteDialog open={!!deletingJobLine} onOpenChange={open => !open && setDeletingJobLine(null)} onConfirm={confirmDeleteJobLine} title="Delete Job Line" description="Are you sure you want to delete this job line? This action cannot be undone and will also remove any associated parts." itemName={deletingJobLine?.name} isDeleting={isDeleting} />
-    </Card>;
+      <ConfirmDeleteDialog 
+        open={!!deletingJobLine} 
+        onOpenChange={open => !open && setDeletingJobLine(null)} 
+        onConfirm={confirmDeleteJobLine} 
+        title="Delete Job Line" 
+        description="Are you sure you want to delete this job line? This action cannot be undone and will also remove any associated parts." 
+        itemName={deletingJobLine?.name} 
+        isDeleting={isDeleting} 
+      />
+    </Card>
+    </div>
+  );
 }
