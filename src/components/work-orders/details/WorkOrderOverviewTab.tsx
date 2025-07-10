@@ -5,7 +5,7 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
-import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
+import { WorkOrderLineItems } from '../job-lines/WorkOrderLineItems';
 import { WorkOrderCustomerCard } from './WorkOrderCustomerCard';
 import { WorkOrderTimeCard } from './WorkOrderTimeCard';
 import { WorkOrderTotals } from '../shared/WorkOrderTotals';
@@ -44,12 +44,13 @@ export function WorkOrderOverviewTab({
         {/* Middle Column - Parts & Job Lines */}
         <div className="lg:col-span-5 slide-up">
           <div className="modern-card gradient-border">
-            <WorkOrderPartsSection
-              workOrderId={workOrder.id}
-              parts={allParts}
+            <WorkOrderLineItems
               jobLines={jobLines}
-              onPartsChange={onPartsChange}
+              allParts={allParts}
+              workOrderId={workOrder.id}
               isEditMode={isEditMode}
+              onJobLinesChange={() => {}}
+              onPartsChange={onPartsChange}
             />
           </div>
         </div>

@@ -1,174 +1,297 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2 } from 'lucide-react';
-import { JobLineEditDialog } from './JobLineEditDialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Edit2, Trash2, Wrench, FileText, GripVertical } from 'lucide-react';
+import { jobLineStatusMap } from '@/types/jobLine';
+import { DetailFormButton } from './DetailFormButton';
+import { JobLinePartsDisplay } from '../parts/JobLinePartsDisplay';
+import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface JobLinesTableProps {
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
-  onUpdate: (updatedJobLine: WorkOrderJobLine) => void;
-  onDelete: (jobLineId: string) => void;
-  onPartUpdate?: (updatedPart: WorkOrderPart) => void;
-  onPartDelete?: (partId: string) => void;
+  isEditMode: boolean;
+  onUpdate?: (jobLine: WorkOrderJobLine) => void;
+  onDelete?: (jobLineId: string) => void;
+  onReorder?: (reorderedJobLines: WorkOrderJobLine[]) => void;
+  onToggleCompletion?: (jobLine: WorkOrderJobLine, completed: boolean) => Promise<void>;
+  onAddPart?: (partData: WorkOrderPartFormValues) => Promise<void>;
+}
+
+interface SortableJobLineRowProps {
+  jobLine: WorkOrderJobLine;
+  isEditMode: boolean;
+  allJobLines: WorkOrderJobLine[];
+  allParts: WorkOrderPart[];
+  onUpdate?: (jobLine: WorkOrderJobLine) => void;
+  onDelete?: (jobLineId: string) => void;
+  onToggleCompletion?: (jobLine: WorkOrderJobLine, completed: boolean) => Promise<void>;
+  onAddPart?: (partData: WorkOrderPartFormValues) => Promise<void>;
+}
+
+function SortableJobLineRow({
+  jobLine,
+  isEditMode,
+  allJobLines,
+  allParts,
+  onUpdate,
+  onDelete,
+  onToggleCompletion,
+  onAddPart
+}: SortableJobLineRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: jobLine.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const statusInfo = jobLineStatusMap[jobLine.status || 'pending'];
+
+  const getIconForCategory = (category?: string) => {
+    switch (category?.toLowerCase()) {
+      case 'labor':
+        return <Wrench className="h-3 w-3" />;
+      case 'note':
+        return <FileText className="h-3 w-3" />;
+      default:
+        return null;
+    }
+  };
+
+  const handleEditClick = (jobLine: WorkOrderJobLine) => {
+    if (onUpdate) {
+      onUpdate(jobLine);
+    }
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style} className={isDragging ? 'relative z-50' : ''}>
+      {/* Drag Handle */}
+      {isEditMode && (
+        <TableCell className="w-8 p-2">
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+            title="Drag to reorder"
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </TableCell>
+      )}
+      
+      {/* Type */}
+      <TableCell>
+        <div className="flex items-center gap-2">
+          {getIconForCategory(jobLine.category)}
+          <Badge variant="outline" className="text-xs">
+            {jobLine.category || 'Labor'}
+          </Badge>
+        </div>
+      </TableCell>
+      
+      {/* Details */}
+      {isEditMode && (
+        <TableCell>
+          <DetailFormButton 
+            jobLine={jobLine} 
+            onUpdate={onUpdate}
+            onAddPart={onAddPart}
+            jobLines={allJobLines}
+          />
+        </TableCell>
+      )}
+      
+      {/* Name */}
+      <TableCell className="font-medium">{jobLine.name}</TableCell>
+      
+      {/* Description */}
+      <TableCell className="max-w-xs truncate">{jobLine.description}</TableCell>
+      
+      {/* Hours */}
+      <TableCell>{jobLine.estimated_hours || 0}</TableCell>
+      
+      {/* Rate */}
+      <TableCell>${jobLine.labor_rate || 0}</TableCell>
+      
+      {/* Total */}
+      <TableCell>${jobLine.total_amount || 0}</TableCell>
+      
+      {/* Parts */}
+      <TableCell className="max-w-xs">
+        <JobLinePartsDisplay
+          jobLineId={jobLine.id}
+          parts={allParts}
+        />
+      </TableCell>
+      
+      {/* Status */}
+      <TableCell>
+        <Badge className={statusInfo.classes}>
+          {statusInfo.label}
+        </Badge>
+      </TableCell>
+      
+      {/* Complete */}
+      {isEditMode && (
+        <TableCell>
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={jobLine.is_work_completed || false}
+              onCheckedChange={async (checked) => {
+                if (onToggleCompletion) {
+                  await onToggleCompletion(jobLine, checked as boolean);
+                }
+              }}
+              title={jobLine.is_work_completed ? 
+                `Completed ${jobLine.completion_date ? new Date(jobLine.completion_date).toLocaleDateString() : ''}` : 
+                'Mark as completed'
+              }
+            />
+          </div>
+        </TableCell>
+      )}
+      
+      {/* Actions */}
+      {isEditMode && (
+        <TableCell>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEditClick(jobLine)}
+              title="Edit job line"
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(jobLine.id)}
+                title="Delete job line"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </TableCell>
+      )}
+    </TableRow>
+  );
 }
 
 export function JobLinesTable({
   jobLines,
   allParts,
+  isEditMode,
   onUpdate,
   onDelete,
-  onPartUpdate,
-  onPartDelete
+  onReorder,
+  onToggleCompletion,
+  onAddPart
 }: JobLinesTableProps) {
-  const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
-  const handleEditClick = (jobLine: WorkOrderJobLine) => {
-    console.log('Edit job line clicked:', jobLine.id, jobLine.name);
-    setEditingJobLine(jobLine);
-    setIsEditDialogOpen(true);
-  };
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
 
-  const handleSaveJobLine = async (updatedJobLine: WorkOrderJobLine) => {
-    console.log('Saving job line:', updatedJobLine);
-    await onUpdate(updatedJobLine);
-    setIsEditDialogOpen(false);
-    setEditingJobLine(null);
-  };
-
-  const handleDeleteClick = (jobLineId: string) => {
-    if (confirm('Are you sure you want to delete this job line?')) {
-      onDelete(jobLineId);
-    }
-  };
-
-  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
-    if (onPartUpdate) {
-      onPartUpdate(updatedPart);
-    }
-  };
-
-  const handlePartDelete = (partId: string) => {
-    if (onPartDelete && confirm('Are you sure you want to delete this part?')) {
-      onPartDelete(partId);
+    if (active.id !== over?.id && onReorder) {
+      const oldIndex = jobLines.findIndex((item) => item.id === active.id);
+      const newIndex = jobLines.findIndex((item) => item.id === over?.id);
+      
+      const reorderedJobLines = arrayMove(jobLines, oldIndex, newIndex).map((jobLine, index) => ({
+        ...jobLine,
+        display_order: index + 1
+      }));
+      
+      await onReorder(reorderedJobLines);
     }
   };
 
   if (jobLines.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>No job lines found</p>
+        <p>No job lines added yet</p>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="space-y-4">
-        {jobLines.map((jobLine) => {
-          const jobLineParts = allParts.filter(part => part.job_line_id === jobLine.id);
-          
-          return (
-            <div key={jobLine.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium">{jobLine.name}</h4>
-                    <Badge variant="outline">{jobLine.status || 'pending'}</Badge>
-                  </div>
-                  {jobLine.description && (
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {jobLine.description}
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditClick(jobLine)}
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteClick(jobLine.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4 text-sm mb-3">
-                <div>
-                  <span className="text-muted-foreground">Hours: </span>
-                  {jobLine.estimated_hours || 0}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Rate: </span>
-                  ${jobLine.labor_rate || 0}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Total: </span>
-                  ${jobLine.total_amount || 0}
-                </div>
-              </div>
-
-              {jobLineParts.length > 0 && (
-                <div className="pt-3 border-t">
-                  <h5 className="text-sm font-medium mb-2">Associated Parts:</h5>
-                  <div className="space-y-2">
-                    {jobLineParts.map((part) => (
-                      <div key={part.id} className="flex justify-between items-center p-2 bg-muted rounded">
-                        <div className="flex-1">
-                          <div className="font-medium">{part.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Part #: {part.part_number} | Qty: {part.quantity}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">${part.unit_price}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Total: ${part.total_price}
-                          </div>
-                        </div>
-                        <div className="flex gap-1 ml-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handlePartUpdate(part)}
-                          >
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handlePartDelete(part.id)}
-                          >
-                            <Trash2 className="h-3 w-3 text-red-500" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <JobLineEditDialog
-        jobLine={editingJobLine}
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        onSave={handleSaveJobLine}
-      />
-    </>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {isEditMode && <TableHead className="w-8"></TableHead>}
+            <TableHead>Type</TableHead>
+            {isEditMode && <TableHead className="w-16">Details</TableHead>}
+            <TableHead>Name</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Hours</TableHead>
+            <TableHead>Rate</TableHead>
+            <TableHead>Total</TableHead>
+            <TableHead>Parts</TableHead>
+            <TableHead>Status</TableHead>
+            {isEditMode && <TableHead className="w-20">Complete</TableHead>}
+            {isEditMode && <TableHead>Actions</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <SortableContext items={jobLines.map(jl => jl.id)} strategy={verticalListSortingStrategy}>
+            {jobLines.map((jobLine) => (
+              <SortableJobLineRow
+                key={jobLine.id}
+                jobLine={jobLine}
+                isEditMode={isEditMode}
+                allJobLines={jobLines}
+                allParts={allParts}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+                onToggleCompletion={onToggleCompletion}
+                onAddPart={onAddPart}
+              />
+            ))}
+          </SortableContext>
+        </TableBody>
+      </Table>
+    </DndContext>
   );
 }

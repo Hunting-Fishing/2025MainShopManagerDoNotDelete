@@ -7,7 +7,7 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
 import { WorkOrderOverviewTab } from './WorkOrderOverviewTab';
-import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
+import { WorkOrderLineItems } from '../job-lines/WorkOrderLineItems';
 import { JobLinesSection } from '../form-fields/JobLinesSection';
 import { WorkOrderActivityTab } from './WorkOrderActivityTab';
 import { WorkOrderNotifications } from '../notifications/WorkOrderNotifications';
@@ -66,12 +66,13 @@ export function WorkOrderDetailsTabs({
       </TabsContent>
 
       <TabsContent value="parts" className="mt-6">
-        <WorkOrderPartsSection
-          workOrderId={workOrder.id}
-          parts={allParts}
+        <WorkOrderLineItems
           jobLines={jobLines}
-          onPartsChange={onPartsChange}
+          allParts={allParts}
+          workOrderId={workOrder.id}
           isEditMode={isEditMode}
+          onJobLinesChange={() => {}}
+          onPartsChange={onPartsChange}
         />
       </TabsContent>
 

@@ -1,56 +1,198 @@
-
-import React from 'react';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPartsManager } from './WorkOrderPartsManager';
-import { useWorkOrderPartsData } from '@/hooks/useWorkOrderPartsData';
+import React, { useState } from 'react';
+import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Edit, Trash2, Package, Plus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface WorkOrderPartsSectionProps {
-  workOrderId: string;
   parts: WorkOrderPart[];
-  jobLines: WorkOrderJobLine[];
-  onPartsChange: () => Promise<void>;
-  isEditMode?: boolean;
+  isEditMode: boolean;
+  onPartUpdate?: (part: WorkOrderPart) => void;
+  onPartDelete?: (partId: string) => void;
+  onAdd?: (partData: WorkOrderPartFormValues) => Promise<void>;
+  workOrderId?: string;
+}
+
+interface PartRowProps {
+  part: WorkOrderPart;
+  isEditMode: boolean;
+  onPartUpdate?: (part: WorkOrderPart) => void;
+  onPartDelete?: (partId: string) => void;
+}
+
+function PartRow({ part, isEditMode, onPartUpdate, onPartDelete }: PartRowProps) {
+  const totalPrice = (part.customerPrice || part.unit_price || 0) * (part.quantity || 1);
+
+  return (
+    <TableRow className="bg-blue-50/30 border-l-4 border-l-blue-500">
+      {/* Type */}
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <Package className="h-3 w-3" />
+          <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+            Part
+          </Badge>
+        </div>
+      </TableCell>
+      
+      {/* Name */}
+      <TableCell className="font-medium">{part.name}</TableCell>
+      
+      {/* Description/Part Number */}
+      <TableCell className="text-muted-foreground text-sm">
+        {part.part_number && `Part #: ${part.part_number}`}
+      </TableCell>
+      
+      {/* Quantity */}
+      <TableCell>{part.quantity || 1}</TableCell>
+      
+      {/* Unit Price */}
+      <TableCell>${(part.unit_price || 0).toFixed(2)}</TableCell>
+      
+      {/* Total */}
+      <TableCell>
+        <span className="font-medium">
+          ${totalPrice.toFixed(2)}
+        </span>
+      </TableCell>
+      
+      {/* Status */}
+      <TableCell>
+        <Badge variant="secondary" className="text-xs">
+          {part.status || 'Active'}
+        </Badge>
+      </TableCell>
+      
+      {/* Actions */}
+      {isEditMode && (
+        <TableCell>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onPartUpdate && onPartUpdate(part)}
+              className="h-7 w-7 p-0"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+            {onPartDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onPartDelete(part.id)}
+                className="h-7 w-7 p-0"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </TableCell>
+      )}
+    </TableRow>
+  );
 }
 
 export function WorkOrderPartsSection({
-  workOrderId,
-  parts: initialParts,
-  jobLines,
-  onPartsChange,
-  isEditMode = false
+  parts,
+  isEditMode,
+  onPartUpdate,
+  onPartDelete,
+  onAdd,
+  workOrderId
 }: WorkOrderPartsSectionProps) {
-  const { parts: liveParts, isLoading, error, refreshParts } = useWorkOrderPartsData(workOrderId);
-  
-  // Use live parts if available, otherwise fall back to initial parts
-  const displayParts = liveParts.length > 0 ? liveParts : initialParts;
+  const [showAddForm, setShowAddForm] = useState(false);
 
-  console.log('WorkOrderPartsSection render:', { 
-    workOrderId, 
-    isEditMode, 
-    partsCount: displayParts.length,
-    jobLinesCount: jobLines.length,
-    isLoading,
-    error
-  });
+  // Filter for work order level parts (not associated with job lines)
+  const workOrderLevelParts = parts.filter(part => !part.job_line_id);
 
-  const handlePartsChange = async () => {
-    console.log('Parts changed, refreshing both live and parent data...');
-    await Promise.all([
-      refreshParts(),
-      onPartsChange()
-    ]);
+  const handleAddPart = async () => {
+    if (onAdd) {
+      await onAdd({} as WorkOrderPartFormValues);
+    }
+    setShowAddForm(false);
   };
 
+  const totalPartsValue = workOrderLevelParts.reduce((sum, part) => {
+    return sum + ((part.customerPrice || part.unit_price || 0) * (part.quantity || 1));
+  }, 0);
+
+  if (workOrderLevelParts.length === 0 && !isEditMode) {
+    return null;
+  }
+
   return (
-    <WorkOrderPartsManager
-      workOrderId={workOrderId}
-      parts={displayParts}
-      jobLines={jobLines}
-      onPartsChange={handlePartsChange}
-      isEditMode={isEditMode}
-      isLoading={isLoading}
-      error={error}
-    />
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Work Order Level Parts
+            {workOrderLevelParts.length > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {workOrderLevelParts.length} parts
+              </Badge>
+            )}
+          </CardTitle>
+          {isEditMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Part
+            </Button>
+          )}
+        </div>
+        {workOrderLevelParts.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            Total Value: <span className="font-medium">${totalPartsValue.toFixed(2)}</span>
+          </p>
+        )}
+      </CardHeader>
+      
+      {workOrderLevelParts.length > 0 && (
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Type</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Qty</TableHead>
+                <TableHead>Unit Price</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Status</TableHead>
+                {isEditMode && <TableHead>Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {workOrderLevelParts.map((part) => (
+                <PartRow
+                  key={part.id}
+                  part={part}
+                  isEditMode={isEditMode}
+                  onPartUpdate={onPartUpdate}
+                  onPartDelete={onPartDelete}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      )}
+
+      {workOrderLevelParts.length === 0 && isEditMode && (
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No work order level parts added yet</p>
+            <p className="text-sm">Use the "Add Part" button to add parts directly to this work order</p>
+          </div>
+        </CardContent>
+      )}
+    </Card>
   );
 }
