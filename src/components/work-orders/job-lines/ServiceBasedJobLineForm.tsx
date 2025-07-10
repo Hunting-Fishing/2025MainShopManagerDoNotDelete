@@ -75,7 +75,7 @@ export function ServiceBasedJobLineForm({
           <p className="text-gray-500">Loading services...</p>
         </div> : error ? <div className="text-center py-8">
           <p className="text-red-500">{error}</p>
-          <Button onClick={() => window.location.reload()} variant="outline" className="mt-2">
+          <Button type="button" onClick={() => window.location.reload()} variant="outline" className="mt-2">
             Retry
           </Button>
         </div> : sectors.length > 0 ? <IntegratedServiceSelector sectors={sectors} onServiceSelect={handleServiceSelect} selectedServices={selectedServices} onRemoveService={handleRemoveService} onUpdateServices={handleUpdateServices} /> : <div className="text-center py-8 border rounded-md bg-gray-50">
@@ -85,10 +85,10 @@ export function ServiceBasedJobLineForm({
 
       {/* Form actions */}
       <div className="flex justify-end gap-3 pt-4 border-t">
-        <Button onClick={onCancel} variant="outline">
+        <Button type="button" onClick={onCancel} variant="outline">
           Cancel
         </Button>
-        <Button onClick={handleSaveServices} disabled={selectedServices.length === 0}>
+        <Button type="button" onClick={handleSaveServices} disabled={selectedServices.length === 0}>
           Add Selected Services ({selectedServices.length})
         </Button>
       </div>

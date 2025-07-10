@@ -172,6 +172,7 @@ function SortableJobLineRow({
         <TableCell>
           <div className="flex gap-1">
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={(e) => {
@@ -185,6 +186,7 @@ function SortableJobLineRow({
             </Button>
             {onDelete && (
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 onClick={(e) => {

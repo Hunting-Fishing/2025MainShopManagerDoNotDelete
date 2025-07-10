@@ -46,7 +46,7 @@ export function QuickAddDropdown({ onAddItem, disabled = false }: QuickAddDropdo
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button disabled={disabled} size="sm" className="gap-2">
+        <Button type="button" disabled={disabled} size="sm" className="gap-2">
           <Plus className="w-4 h-4" />
           Add Item
           <ChevronDown className="w-3 h-3" />
