@@ -145,7 +145,16 @@ export function JobLinesSection({
           <CompactJobLinesTable 
             jobLines={jobLines} 
             onUpdate={onJobLinesChange} 
-            onDelete={isEditMode ? handleDeleteJobLine : undefined} 
+            onDelete={isEditMode ? handleDeleteJobLine : undefined}
+            onAddJobLine={isEditMode ? (jobLine) => {
+              // Handle adding single job line
+              onJobLinesChange();
+            } : undefined}
+            onAddPart={async (partData) => {
+              // Handle adding parts to job lines
+              await onJobLinesChange();
+            }}
+            workOrderId={workOrderId}
             isEditMode={isEditMode} 
           />
         ) : (
