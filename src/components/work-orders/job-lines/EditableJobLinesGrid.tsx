@@ -56,18 +56,23 @@ export function EditableJobLinesGrid({
     onJobLinesChange(updatedJobLines);
   };
 
+  const handleAddSingleJobLine = (jobLineData: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>) => {
+    const newJobLine: WorkOrderJobLine = {
+      ...jobLineData,
+      id: generateTempJobLineId(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const updatedJobLines = [...localJobLines, newJobLine];
+    setLocalJobLines(updatedJobLines);
+    onJobLinesChange(updatedJobLines);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-base font-semibold">Job Lines</h3>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setShowAddDialog(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Job Line
-        </Button>
       </div>
 
       <CompactJobLinesTable
@@ -75,15 +80,10 @@ export function EditableJobLinesGrid({
         allParts={[]}
         onUpdate={handleUpdateJobLine}
         onDelete={handleDeleteJobLine}
+        onAddJobLine={handleAddSingleJobLine}
+        workOrderId={workOrderId}
         isEditMode={true}
       />
-
-      {localJobLines.length === 0 && (
-        <div className="text-center py-8 border border-dashed border-slate-200 rounded-lg">
-          <p className="text-slate-500 text-sm">No job lines added yet</p>
-          <p className="text-xs text-slate-400">Click "Add Job Line" to get started</p>
-        </div>
-      )}
 
       {showAddDialog && (
         <AddJobLineDialog 

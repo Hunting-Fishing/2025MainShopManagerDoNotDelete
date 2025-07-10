@@ -9,9 +9,8 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
-import { Plus, Trash2, Calculator } from 'lucide-react';
+import { Trash2, Calculator } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QuickAddDropdown } from './QuickAddDropdown';
 import { cn } from '@/lib/utils';
 
 interface WorkOrderDetailedFormProps {
@@ -295,12 +294,7 @@ export function WorkOrderDetailedForm({
       {/* Line Items */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Line Items</span>
-            {isEditMode && (
-              <QuickAddDropdown onAddItem={addLineItem} />
-            )}
-          </CardTitle>
+          <CardTitle>Line Items</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -414,9 +408,43 @@ export function WorkOrderDetailedForm({
                         </Button>
                       </td>
                     )}
-                  </tr>
-                ))}
-              </tbody>
+                   </tr>
+                 ))}
+                 
+                 {/* Add Item Row */}
+                 {isEditMode && (
+                   <tr className="border-b bg-muted/30 hover:bg-muted/50">
+                      <td className="p-2">
+                        <Select
+                          value="add-item"
+                          onValueChange={(value: string) => {
+                            if (value !== 'add-item' && (value === 'labor' || value === 'parts' || value === 'sublet' || value === 'note')) {
+                              addLineItem(value);
+                            }
+                          }}
+                        >
+                         <SelectTrigger className="w-32">
+                           <SelectValue placeholder="Add Item" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="add-item">Add Item</SelectItem>
+                           <SelectItem value="labor">Labor</SelectItem>
+                           <SelectItem value="parts">Parts</SelectItem>
+                           <SelectItem value="sublet">Sublet</SelectItem>
+                           <SelectItem value="note">Note</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </td>
+                     <td className="p-2 text-muted-foreground">Select type to add new item</td>
+                     <td className="p-2"></td>
+                     <td className="p-2"></td>
+                     <td className="p-2"></td>
+                     <td className="p-2"></td>
+                     <td className="p-2"></td>
+                     <td className="p-2"></td>
+                   </tr>
+                 )}
+               </tbody>
             </table>
           </div>
         </CardContent>
