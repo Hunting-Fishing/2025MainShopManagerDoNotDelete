@@ -96,8 +96,12 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
     }
 
     setIsUploading(true);
+    let uploadSuccessful = false;
+    let documentCreated = false;
 
     try {
+      // Phase 1: User Authentication
+      console.log('Phase 1: Checking user authentication...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('User not authenticated');
@@ -105,90 +109,130 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
 
       let filePath = '';
 
+      // Phase 2: File Upload (if file exists)
       if (file) {
-        if (!validateFile(file)) {
-          return;
+        try {
+          console.log('Phase 2: Starting file upload...');
+          if (!validateFile(file)) {
+            return;
+          }
+
+          setUploadProgress(10);
+          
+          // Get user's shop ID for folder structure
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('shop_id')
+            .eq('id', user.id)
+            .single();
+
+          if (!profile?.shop_id) {
+            throw new Error('Shop ID not found');
+          }
+
+          setUploadProgress(30);
+
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}.${fileExt}`;
+          const bucketName = workOrderId ? 'work-order-documents' : 'documents';
+          const fullFilePath = `${profile.shop_id}/${fileName}`;
+          
+          setUploadProgress(50);
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from(bucketName)
+            .upload(fullFilePath, file);
+
+          if (uploadError) throw uploadError;
+
+          setUploadProgress(70);
+          filePath = uploadData.path;
+          uploadSuccessful = true;
+          console.log('Phase 2: File upload successful');
+          
+          setUploadProgress(90);
+        } catch (uploadError) {
+          console.error('Phase 2: File upload failed:', uploadError);
+          throw new Error(`File upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
         }
-
-        setUploadProgress(10);
-        
-        // Get user's shop ID for folder structure
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('shop_id')
-          .eq('id', user.id)
-          .single();
-
-        if (!profile?.shop_id) {
-          throw new Error('Shop ID not found');
-        }
-
-        setUploadProgress(30);
-
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const bucketName = workOrderId ? 'work-order-documents' : 'documents';
-        const fullFilePath = `${profile.shop_id}/${fileName}`;
-        
-        setUploadProgress(50);
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(bucketName)
-          .upload(fullFilePath, file);
-
-        if (uploadError) throw uploadError;
-
-        setUploadProgress(70);
-
-        // Only store the file path - signed URLs will be generated on-demand
-        filePath = uploadData.path;
-        
-        setUploadProgress(90);
       }
 
-      const documentData: CreateDocumentData = {
-        title: title.trim(),
-        description: description.trim() || undefined,
-        document_type: documentType,
-        file_path: filePath || undefined,
-        file_size: file?.size,
-        mime_type: file?.type,
-        category_id: categoryId || undefined,
-        work_order_id: workOrderId || undefined,
-        customer_id: customerId || undefined,
-        is_public: false,
-        metadata: {},
-        tags: [],
-        created_by: user.id,
-        created_by_name: user.email || 'Unknown User'
-      };
+      // Phase 3: Database Document Creation
+      try {
+        console.log('Phase 3: Creating document record...');
+        const documentData: CreateDocumentData = {
+          title: title.trim(),
+          description: description.trim() || undefined,
+          document_type: documentType,
+          file_path: filePath || undefined,
+          file_size: file?.size,
+          mime_type: file?.type,
+          category_id: categoryId || undefined,
+          work_order_id: workOrderId || undefined,
+          customer_id: customerId || undefined,
+          is_public: false,
+          metadata: {},
+          tags: [],
+          created_by: user.id,
+          created_by_name: user.email || 'Unknown User'
+        };
 
-      setUploadProgress(95);
-      const newDocument = await DocumentService.uploadDocument(documentData);
-      setUploadProgress(100);
+        setUploadProgress(95);
+        const newDocument = await DocumentService.uploadDocument(documentData);
+        documentCreated = true;
+        console.log('Phase 3: Document record created successfully');
+        setUploadProgress(100);
 
-      toast({
-        title: "Success",
-        description: "Document uploaded successfully.",
-      });
+        // Phase 4: Success Notification (isolate from callback)
+        setTimeout(() => {
+          toast({
+            title: "Success",
+            description: "Document uploaded successfully.",
+          });
+        }, 100);
 
-      if (onDocumentCreated) {
-        onDocumentCreated(newDocument);
+        // Phase 5: Callback Execution (isolated to prevent affecting success state)
+        if (onDocumentCreated) {
+          try {
+            console.log('Phase 5: Executing callback...');
+            setTimeout(() => {
+              onDocumentCreated(newDocument);
+            }, 200);
+          } catch (callbackError) {
+            console.error('Phase 5: Callback failed, but upload was successful:', callbackError);
+            // Don't throw - upload was successful
+          }
+        }
+
+        // Phase 6: Cleanup
+        setTimeout(() => {
+          resetForm();
+          onOpenChange(false);
+        }, 300);
+
+      } catch (dbError) {
+        console.error('Phase 3: Document creation failed:', dbError);
+        throw new Error(`Document creation failed: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
       }
 
-      resetForm();
-      onOpenChange(false);
     } catch (error) {
-      console.error('Error uploading document:', error);
+      console.error('Upload process failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload document. Please try again.';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      
+      // Only show error toast if we haven't already shown success
+      if (!documentCreated) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
+      // Clear progress after a small delay to show completion
+      setTimeout(() => {
+        setUploadProgress(0);
+      }, 500);
     }
   };
 
