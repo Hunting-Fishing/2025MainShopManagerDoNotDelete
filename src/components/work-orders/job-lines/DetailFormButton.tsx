@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Wrench, Settings, FileText, Package } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { AddPartForm } from '../parts/AddPartForm';
+import { UltimateAddPartDialog } from '../parts/UltimateAddPartDialog';
 import { ServiceBasedJobLineForm } from './ServiceBasedJobLineForm';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 
@@ -11,9 +11,10 @@ interface DetailFormButtonProps {
   jobLine: WorkOrderJobLine;
   onUpdate: (updatedJobLine: WorkOrderJobLine) => void;
   onAddPart?: (partData: WorkOrderPartFormValues) => Promise<void>;
+  jobLines?: WorkOrderJobLine[];
 }
 
-export function DetailFormButton({ jobLine, onUpdate, onAddPart }: DetailFormButtonProps) {
+export function DetailFormButton({ jobLine, onUpdate, onAddPart, jobLines = [] }: DetailFormButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const getIconForCategory = (category?: string) => {
@@ -48,18 +49,11 @@ export function DetailFormButton({ jobLine, onUpdate, onAddPart }: DetailFormBut
 
   const isDisabled = jobLine.category?.toLowerCase() === 'note';
 
-  const handleFormSubmit = async (data: any) => {
-    if (jobLine.category?.toLowerCase() === 'parts' && onAddPart) {
-      // For parts, add a new part to the job line
-      await onAddPart(data);
-    } else {
-      // For labor and other types, update the job line itself
-      const updatedJobLine: WorkOrderJobLine = {
-        ...jobLine,
-        ...data,
-        updated_at: new Date().toISOString()
-      };
-      onUpdate(updatedJobLine);
+  const handlePartAdded = async () => {
+    // Refresh parts data after adding a new part
+    if (onAddPart) {
+      // This callback should trigger a refresh of the parts list
+      await onAddPart({} as WorkOrderPartFormValues);
     }
     setIsOpen(false);
   };
@@ -92,12 +86,7 @@ export function DetailFormButton({ jobLine, onUpdate, onAddPart }: DetailFormBut
           />
         );
       case 'parts':
-        return (
-          <AddPartForm
-            onSubmit={handleFormSubmit}
-            onCancel={() => setIsOpen(false)}
-          />
-        );
+        return null; // Parts dialog is rendered separately
       default:
         return (
           <div className="p-4 text-center text-muted-foreground">
@@ -122,17 +111,32 @@ export function DetailFormButton({ jobLine, onUpdate, onAddPart }: DetailFormBut
         <Plus className="h-4 w-4 text-primary" />
       </Button>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {getIconForCategory(jobLine.category)}
-              {getFormTitle(jobLine.category)} - {jobLine.name}
-            </DialogTitle>
-          </DialogHeader>
-          {renderForm()}
-        </DialogContent>
-      </Dialog>
+      {/* Regular Dialog for non-parts categories */}
+      {jobLine.category?.toLowerCase() !== 'parts' && (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {getIconForCategory(jobLine.category)}
+                {getFormTitle(jobLine.category)} - {jobLine.name}
+              </DialogTitle>
+            </DialogHeader>
+            {renderForm()}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Parts Dialog - manages its own state */}
+      {jobLine.category?.toLowerCase() === 'parts' && (
+        <UltimateAddPartDialog
+          open={isOpen}
+          onOpenChange={setIsOpen}
+          workOrderId={jobLine.work_order_id}
+          jobLines={jobLines}
+          onPartAdded={handlePartAdded}
+          preSelectedJobLineId={jobLine.id}
+        />
+      )}
     </>
   );
 }
