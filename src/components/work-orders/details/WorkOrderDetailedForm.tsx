@@ -9,9 +9,8 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
-import { Trash2, Calculator } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+import { Calculator } from 'lucide-react';
+import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
 
 interface WorkOrderDetailedFormProps {
   workOrder: WorkOrder;
@@ -24,17 +23,6 @@ interface WorkOrderDetailedFormProps {
   isEditMode: boolean;
 }
 
-interface LineItem {
-  id: string;
-  type: 'labor' | 'parts' | 'sublet' | 'note';
-  description: string;
-  partNumber?: string;
-  quantity: number;
-  price: number;
-  rate?: number;
-  hours?: number;
-  lineTotal: number;
-}
 
 export function WorkOrderDetailedForm({
   workOrder,
@@ -46,94 +34,34 @@ export function WorkOrderDetailedForm({
   onPartsChange,
   isEditMode
 }: WorkOrderDetailedFormProps) {
-  const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [subtotal, setSubtotal] = useState(0);
   const [tax, setTax] = useState(0);
   const [total, setTotal] = useState(0);
 
-  // Initialize line items from job lines and parts
+  // Calculate totals from job lines and parts
   useEffect(() => {
-    const items: LineItem[] = [];
-    
-    // Add job lines as labor items
-    jobLines.forEach(jobLine => {
-      items.push({
-        id: jobLine.id,
-        type: 'labor',
-        description: jobLine.name || '',
-        quantity: 1,
-        price: jobLine.labor_rate || 0,
-        rate: jobLine.labor_rate || 0,
-        hours: jobLine.estimated_hours || 0,
-        lineTotal: jobLine.total_amount || 0
-      });
-    });
-
-    // Add parts
-    allParts.forEach(part => {
-      items.push({
-        id: part.id || '',
-        type: 'parts',
-        description: part.name || '',
-        partNumber: part.part_number || '',
-        quantity: part.quantity || 1,
-        price: part.customerPrice || part.unit_price || 0,
-        lineTotal: (part.quantity || 1) * (part.customerPrice || part.unit_price || 0)
-      });
-    });
-
-    setLineItems(items);
-  }, [jobLines, allParts]);
-
-  // Calculate totals
-  useEffect(() => {
-    const newSubtotal = lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
+    const jobLinesTotal = jobLines.reduce((sum, jobLine) => sum + (jobLine.total_amount || 0), 0);
+    const partsTotal = allParts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.customerPrice || part.unit_price || 0)), 0);
+    const newSubtotal = jobLinesTotal + partsTotal;
     const newTax = newSubtotal * 0.08; // 8% tax rate - should be configurable
     setSubtotal(newSubtotal);
     setTax(newTax);
     setTotal(newSubtotal + newTax);
-  }, [lineItems]);
+  }, [jobLines, allParts]);
 
-  const addLineItem = (type: 'labor' | 'parts' | 'sublet' | 'note' = 'labor') => {
-    const newItem: LineItem = {
-      id: `new-${Date.now()}`,
-      type,
-      description: '',
-      quantity: type === 'note' ? 0 : 1,
-      price: type === 'note' ? 0 : (type === 'labor' ? 85 : 0), // Default labor rate
-      rate: type === 'labor' ? 85 : undefined, // Default labor rate
-      hours: type === 'labor' ? 1 : undefined, // Default 1 hour for labor
-      lineTotal: type === 'note' ? 0 : (type === 'labor' ? 85 : 0)
-    };
-    setLineItems([...lineItems, newItem]);
-    
-    // Focus on description field after adding
-    setTimeout(() => {
-      const lastRow = document.querySelector(`[data-line-item="${newItem.id}"] input`);
-      if (lastRow) {
-        (lastRow as HTMLInputElement).focus();
-      }
-    }, 100);
+  const handleJobLineUpdate = async (jobLine: WorkOrderJobLine) => {
+    // Handle single job line update
+    await onWorkOrderUpdate();
   };
 
-  const updateLineItem = (id: string, updates: Partial<LineItem>) => {
-    setLineItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const updated = { ...item, ...updates };
-        // Recalculate line total
-        if (updated.type === 'labor' && updated.hours && updated.rate) {
-          updated.lineTotal = updated.hours * updated.rate;
-        } else {
-          updated.lineTotal = updated.quantity * updated.price;
-        }
-        return updated;
-      }
-      return item;
-    }));
+  const handleReorder = async (reorderedJobLines: WorkOrderJobLine[]) => {
+    // Handle reordering logic here
+    await onWorkOrderUpdate();
   };
 
-  const removeLineItem = (id: string) => {
-    setLineItems(prev => prev.filter(item => item.id !== id));
+  const handleAddPart = async (partData: any) => {
+    // Handle adding a part to a job line
+    await onPartsChange();
   };
 
   return (
@@ -297,156 +225,23 @@ export function WorkOrderDetailedForm({
           <CardTitle>Line Items</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2 font-medium">Type</th>
-                  <th className="text-left p-2 font-medium">Description</th>
-                  <th className="text-left p-2 font-medium">Part #</th>
-                  <th className="text-left p-2 font-medium w-20">Qty</th>
-                  <th className="text-left p-2 font-medium w-24">Price</th>
-                  <th className="text-left p-2 font-medium w-20">Hours</th>
-                  <th className="text-left p-2 font-medium w-24">Line Total</th>
-                  {isEditMode && <th className="text-left p-2 font-medium w-12">Actions</th>}
-                </tr>
-              </thead>
-              <tbody>
-                 {lineItems.map((item) => (
-                   <tr key={item.id} data-line-item={item.id} className="border-b hover:bg-muted/50">
-                    <td className="p-2">
-                      <Select
-                        value={item.type}
-                        onValueChange={(value: 'labor' | 'parts' | 'sublet' | 'note') =>
-                          updateLineItem(item.id, { type: value })
-                        }
-                        disabled={!isEditMode}
-                      >
-                        <SelectTrigger className="w-24">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="labor">Labor</SelectItem>
-                          <SelectItem value="parts">Parts</SelectItem>
-                          <SelectItem value="sublet">Sublet</SelectItem>
-                          <SelectItem value="note">Note</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="p-2">
-                      <Input
-                        value={item.description}
-                        onChange={(e) =>
-                          updateLineItem(item.id, { description: e.target.value })
-                        }
-                        readOnly={!isEditMode}
-                        className="min-w-[200px]"
-                      />
-                    </td>
-                    <td className="p-2">
-                      <Input
-                        value={item.partNumber || ''}
-                        onChange={(e) =>
-                          updateLineItem(item.id, { partNumber: e.target.value })
-                        }
-                        readOnly={!isEditMode}
-                        className="w-24"
-                      />
-                    </td>
-                    <td className="p-2">
-                      <Input
-                        type="number"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateLineItem(item.id, { quantity: Number(e.target.value) })
-                        }
-                        readOnly={!isEditMode}
-                        className="w-20"
-                        min="0"
-                        step="1"
-                      />
-                    </td>
-                    <td className="p-2">
-                      <Input
-                        type="number"
-                        value={item.price}
-                        onChange={(e) =>
-                          updateLineItem(item.id, { price: Number(e.target.value) })
-                        }
-                        readOnly={!isEditMode}
-                        className="w-24"
-                        min="0"
-                        step="0.01"
-                      />
-                    </td>
-                    <td className="p-2">
-                      <Input
-                        type="number"
-                        value={item.hours || ''}
-                        onChange={(e) =>
-                          updateLineItem(item.id, { hours: Number(e.target.value) })
-                        }
-                        readOnly={!isEditMode}
-                        className="w-20"
-                        min="0"
-                        step="0.25"
-                        disabled={item.type !== 'labor'}
-                      />
-                    </td>
-                    <td className="p-2 font-medium">
-                      ${item.lineTotal.toFixed(2)}
-                    </td>
-                    {isEditMode && (
-                      <td className="p-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeLineItem(item.id)}
-                          className="w-8 h-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </td>
-                    )}
-                   </tr>
-                 ))}
-                 
-                 {/* Add Item Row */}
-                 {isEditMode && (
-                   <tr className="border-b bg-muted/30 hover:bg-muted/50">
-                      <td className="p-2">
-                        <Select
-                          value="add-item"
-                          onValueChange={(value: string) => {
-                            if (value !== 'add-item' && (value === 'labor' || value === 'parts' || value === 'sublet' || value === 'note')) {
-                              addLineItem(value);
-                            }
-                          }}
-                        >
-                         <SelectTrigger className="w-32">
-                           <SelectValue placeholder="Add Item" />
-                         </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="add-item">Add Item</SelectItem>
-                           <SelectItem value="labor">Labor</SelectItem>
-                           <SelectItem value="parts">Parts</SelectItem>
-                           <SelectItem value="sublet">Sublet</SelectItem>
-                           <SelectItem value="note">Note</SelectItem>
-                         </SelectContent>
-                       </Select>
-                     </td>
-                     <td className="p-2 text-muted-foreground">Select type to add new item</td>
-                     <td className="p-2"></td>
-                     <td className="p-2"></td>
-                     <td className="p-2"></td>
-                     <td className="p-2"></td>
-                     <td className="p-2"></td>
-                     <td className="p-2"></td>
-                   </tr>
-                 )}
-               </tbody>
-            </table>
-          </div>
+          <CompactJobLinesTable
+            jobLines={jobLines}
+            allParts={allParts}
+            onUpdate={handleJobLineUpdate}
+            onDelete={async (id: string) => {
+              // Handle delete logic
+              await onWorkOrderUpdate();
+            }}
+            onAddJobLine={async (jobLineData) => {
+              // Handle add job line logic
+              await onWorkOrderUpdate();
+            }}
+            onAddPart={handleAddPart}
+            onReorder={handleReorder}
+            workOrderId={workOrder.id}
+            isEditMode={isEditMode}
+          />
         </CardContent>
       </Card>
 
