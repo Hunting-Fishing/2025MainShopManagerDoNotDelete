@@ -188,13 +188,13 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
         </div>
         
         <div className="mt-4 pt-3 border-t border-border">
-          <div className="flex items-center justify-between">
-            <div className="text-xs text-muted-foreground">
-              <div className="font-medium text-foreground">{document.created_by_name}</div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-xs text-muted-foreground min-w-0">
+              <div className="font-medium text-foreground truncate">{document.created_by_name}</div>
               <div>{new Date(document.created_at).toLocaleDateString()}</div>
             </div>
             
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"

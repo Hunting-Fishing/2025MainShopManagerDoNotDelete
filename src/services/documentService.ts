@@ -185,12 +185,15 @@ export class DocumentService {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
+      // Get user's display name from profiles
+      const userName = await this.getUserDisplayName(user.id);
+      
       const { error } = await supabase
         .from('document_access_logs')
         .insert({
           document_id: documentId,
           accessed_by: user.id,
-          accessed_by_name: user.email || 'Unknown User',
+          accessed_by_name: userName,
           access_type: accessType
         });
 
@@ -198,6 +201,31 @@ export class DocumentService {
         console.error('Error logging document access:', error);
       }
     }
+  }
+
+  static async getUserDisplayName(userId: string): Promise<string> {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, email')
+        .eq('id', userId)
+        .single();
+
+      if (profile) {
+        if (profile.first_name && profile.last_name) {
+          return `${profile.first_name} ${profile.last_name}`.trim();
+        } else if (profile.first_name) {
+          return profile.first_name;
+        } else if (profile.last_name) {
+          return profile.last_name;
+        } else if (profile.email) {
+          return profile.email;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user display name:', error);
+    }
+    return 'Unknown User';
   }
 
   static async uploadDocumentVersion(documentId: string, file: File, versionNotes?: string): Promise<any> {

@@ -160,6 +160,9 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
       // Phase 3: Database Document Creation
       try {
         console.log('Phase 3: Creating document record...');
+        // Get user's display name from profiles
+        const userName = await DocumentService.getUserDisplayName(user.id);
+
         const documentData: CreateDocumentData = {
           title: title.trim(),
           description: description.trim() || undefined,
@@ -174,7 +177,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
           metadata: {},
           tags: [],
           created_by: user.id,
-          created_by_name: user.email || 'Unknown User'
+          created_by_name: userName
         };
 
         setUploadProgress(95);
