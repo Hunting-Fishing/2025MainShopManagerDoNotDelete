@@ -60,13 +60,15 @@ export function PartAssignmentControls({
       </Button>
 
       <EditPartDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
         part={selectedPart!}
-        jobLines={jobLines}
-        onSave={async (formData: WorkOrderPartFormValues) => {
+        isOpen={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedPart(null);
+        }}
+        onSave={async (partId: string, updates: Partial<WorkOrderPart>) => {
           try {
-            const updatedPart = await updateWorkOrderPart(selectedPart!.id, formData);
+            const updatedPart = await updateWorkOrderPart(partId, updates);
             await onSave(updatedPart);
             setEditDialogOpen(false);
             setSelectedPart(null);
