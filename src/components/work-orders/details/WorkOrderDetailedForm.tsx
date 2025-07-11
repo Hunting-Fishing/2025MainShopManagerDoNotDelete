@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
+import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
 import { Calculator } from 'lucide-react';
 import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
 import { useWorkOrderJobLineOperations } from '@/hooks/useWorkOrderJobLineOperations';
+import { useWorkOrderPartsData } from '@/hooks/useWorkOrderPartsData';
 
 interface WorkOrderDetailedFormProps {
   workOrder: WorkOrder;
@@ -41,6 +42,37 @@ export function WorkOrderDetailedForm({
 
   // Enhanced job line operations
   const jobLineOperations = useWorkOrderJobLineOperations(jobLines, onWorkOrderUpdate);
+  
+  // Parts data operations  
+  const { addPart, updatePart, deletePart } = useWorkOrderPartsData(workOrder.id);
+
+  // Handle part operations with proper error handling
+  const handlePartUpdate = async (part: WorkOrderPart) => {
+    try {
+      await updatePart(part.id, part);
+      await onPartsChange();
+    } catch (error) {
+      console.error('Error updating part:', error);
+    }
+  };
+
+  const handlePartDelete = async (partId: string) => {
+    try {
+      await deletePart(partId);
+      await onPartsChange();
+    } catch (error) {
+      console.error('Error deleting part:', error);
+    }
+  };
+
+  const handleAddPart = async (partData: WorkOrderPartFormValues) => {
+    try {
+      await addPart(partData);
+      await onPartsChange();
+    } catch (error) {
+      console.error('Error adding part:', error);
+    }
+  };
 
   // Calculate totals from job lines and parts
   useEffect(() => {
@@ -52,15 +84,6 @@ export function WorkOrderDetailedForm({
     setTax(newTax);
     setTotal(newSubtotal + newTax);
   }, [jobLines, allParts]);
-
-  const handleAddPart = async (partData: any) => {
-    try {
-      // Handle adding a part to a job line
-      await onPartsChange();
-    } catch (error) {
-      console.error('Error adding part:', error);
-    }
-  };
 
   return (
     <div className="space-y-6 max-w-[1200px] mx-auto">
@@ -230,9 +253,12 @@ export function WorkOrderDetailedForm({
             onDelete={jobLineOperations.handleDeleteJobLine}
             onAddJobLine={jobLineOperations.handleAddJobLine}
             onAddPart={handleAddPart}
+            onPartUpdate={handlePartUpdate}
+            onPartDelete={handlePartDelete}
             onReorder={jobLineOperations.handleReorderJobLines}
             workOrderId={workOrder.id}
             isEditMode={isEditMode}
+            onRefresh={onPartsChange}
           />
         </CardContent>
       </Card>
