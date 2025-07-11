@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { VinDecodeResult } from '@/types/vehicle';
 import { useVinDecoder } from './hooks/useVinDecoder';
 import { UseFormReturn } from 'react-hook-form';
+import { fetchMakes, fetchModels as fetchVehicleModels } from '@/services/vehicleDataService';
 
 interface UseVehicleFormProps {
   form: UseFormReturn<any>;
@@ -23,63 +24,29 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     retry: onVinRetry 
   } = useVinDecoder();
 
-  // Mock data for makes with correct structure
-  const mockMakes = [
-    { make_id: 'chevrolet', make_display: 'Chevrolet' },
-    { make_id: 'ford', make_display: 'Ford' },
-    { make_id: 'toyota', make_display: 'Toyota' },
-    { make_id: 'honda', make_display: 'Honda' },
-    { make_id: 'nissan', make_display: 'Nissan' },
-    { make_id: 'bmw', make_display: 'BMW' },
-    { make_id: 'mercedes-benz', make_display: 'Mercedes-Benz' },
-    { make_id: 'audi', make_display: 'Audi' },
-    { make_id: 'volkswagen', make_display: 'Volkswagen' },
-    { make_id: 'hyundai', make_display: 'Hyundai' },
-    { make_id: 'kia', make_display: 'Kia' },
-    { make_id: 'subaru', make_display: 'Subaru' },
-    { make_id: 'mazda', make_display: 'Mazda' },
-    { make_id: 'mitsubishi', make_display: 'Mitsubishi' },
-    { make_id: 'volvo', make_display: 'Volvo' },
-    { make_id: 'general-motors', make_display: 'General Motors' },
-    { make_id: 'jeep', make_display: 'Jeep' },
-    { make_id: 'chrysler', make_display: 'Chrysler' },
-    { make_id: 'dodge', make_display: 'Dodge' },
-    { make_id: 'ram', make_display: 'Ram' },
-  ];
-
-  // Mock data for models with correct structure
-  const mockModels = [
-    { model_name: 'Equinox', model_display: 'Equinox', make_id: 'chevrolet' },
-    { model_name: 'Silverado', model_display: 'Silverado', make_id: 'chevrolet' },
-    { model_name: 'Malibu', model_display: 'Malibu', make_id: 'chevrolet' },
-    { model_name: 'Tahoe', model_display: 'Tahoe', make_id: 'chevrolet' },
-    { model_name: 'F-150', model_display: 'F-150', make_id: 'ford' },
-    { model_name: 'Mustang', model_display: 'Mustang', make_id: 'ford' },
-    { model_name: 'Explorer', model_display: 'Explorer', make_id: 'ford' },
-    { model_name: 'Escape', model_display: 'Escape', make_id: 'ford' },
-    { model_name: 'Camry', model_display: 'Camry', make_id: 'toyota' },
-    { model_name: 'Corolla', model_display: 'Corolla', make_id: 'toyota' },
-    { model_name: 'RAV4', model_display: 'RAV4', make_id: 'toyota' },
-    { model_name: 'Prius', model_display: 'Prius', make_id: 'toyota' },
-    { model_name: 'Civic', model_display: 'Civic', make_id: 'honda' },
-    { model_name: 'Accord', model_display: 'Accord', make_id: 'honda' },
-    { model_name: 'CR-V', model_display: 'CR-V', make_id: 'honda' },
-    { model_name: 'Pilot', model_display: 'Pilot', make_id: 'honda' },
-    // Add models for other makes...
-    { model_name: 'Equinox', model_display: 'Equinox', make_id: 'general-motors' },
-    { model_name: 'Sierra', model_display: 'Sierra', make_id: 'general-motors' },
-  ];
-
   useEffect(() => {
-    setMakes(mockMakes);
+    const loadMakes = async () => {
+      try {
+        const makesData = await fetchMakes();
+        setMakes(makesData);
+      } catch (error) {
+        console.error('Error loading makes:', error);
+        setMakes([]);
+      }
+    };
+
+    loadMakes();
   }, []);
 
-  const fetchModels = (makeId: string) => {
+  const fetchModels = async (makeId: string) => {
     console.log('Fetching models for make:', makeId);
-    const filteredModels = mockModels.filter(model => 
-      model.make_id.toLowerCase() === makeId.toLowerCase()
-    );
-    setModels(filteredModels);
+    try {
+      const modelsData = await fetchVehicleModels(makeId);
+      setModels(modelsData);
+    } catch (error) {
+      console.error('Error loading models:', error);
+      setModels([]);
+    }
   };
 
   const handleVinDecode = async (vin: string) => {
@@ -105,7 +72,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           const normalizedMake = result.make.toLowerCase().replace(/[^a-z0-9]/g, '-');
           
           // Try to match with existing makes first
-          const matchedMake = mockMakes.find(make => 
+          const matchedMake = makes.find(make => 
             make.make_display.toLowerCase() === result.make?.toLowerCase() ||
             make.make_id === normalizedMake ||
             make.make_id.includes(normalizedMake) ||

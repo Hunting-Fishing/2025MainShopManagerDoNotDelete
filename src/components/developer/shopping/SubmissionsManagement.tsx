@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Check, X, Eye, MessageSquare } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Submission {
   id: string;
@@ -22,24 +23,25 @@ export function SubmissionsManagement() {
     const fetchSubmissions = async () => {
       try {
         setLoading(true);
-        // Since product_submissions table doesn't exist, use mock data
-        const mockSubmissions: Submission[] = [
-          {
-            id: '1',
-            product_name: 'Sample Product 1',
-            submitted_by: 'John Doe',
-            status: 'pending',
-            created_at: new Date().toISOString()
-          },
-          {
-            id: '2',
-            product_name: 'Sample Product 2',
-            submitted_by: 'Jane Smith',
-            status: 'approved',
-            created_at: new Date().toISOString()
-          }
-        ];
-        setSubmissions(mockSubmissions);
+        const { data, error } = await supabase
+          .from('product_submissions')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching submissions:', error);
+          setSubmissions([]);
+        } else {
+          // Transform data to match interface
+          const transformedData: Submission[] = (data || []).map(item => ({
+            id: item.id,
+            product_name: item.product_name,
+            submitted_by: item.contact_email || item.suggested_by || 'Anonymous',
+            status: item.status as 'pending' | 'approved' | 'rejected',
+            created_at: item.created_at || item.submitted_at
+          }));
+          setSubmissions(transformedData);
+        }
       } finally {
         setLoading(false);
       }
@@ -50,10 +52,22 @@ export function SubmissionsManagement() {
 
   const updateSubmissionStatus = async (id: string, status: 'pending' | 'approved' | 'rejected') => {
     try {
-      // Update local state since we don't have the actual table
-      setSubmissions(submissions.map(submission =>
-        submission.id === id ? { ...submission, status } : submission
-      ));
+      const { error } = await supabase
+        .from('product_submissions')
+        .update({ 
+          status,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating submission status:', error);
+      } else {
+        // Update local state
+        setSubmissions(submissions.map(submission =>
+          submission.id === id ? { ...submission, status } : submission
+        ));
+      }
     } catch (error) {
       console.error('Error updating submission status:', error);
     }

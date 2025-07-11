@@ -232,6 +232,65 @@ export type Database = {
         }
         Relationships: []
       }
+      api_endpoints: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          endpoint_url: string
+          headers: Json | null
+          id: string
+          integration_id: string
+          is_active: boolean | null
+          last_called_at: string | null
+          method: string
+          name: string
+          parameters: Json | null
+          response_time_ms: number | null
+          success_rate: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          endpoint_url: string
+          headers?: Json | null
+          id?: string
+          integration_id: string
+          is_active?: boolean | null
+          last_called_at?: string | null
+          method?: string
+          name: string
+          parameters?: Json | null
+          response_time_ms?: number | null
+          success_rate?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          endpoint_url?: string
+          headers?: Json | null
+          id?: string
+          integration_id?: string
+          is_active?: boolean | null
+          last_called_at?: string | null
+          method?: string
+          name?: string
+          parameters?: Json | null
+          response_time_ms?: number | null
+          success_rate?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_endpoints_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "shop_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_rate_limits: {
         Row: {
           created_at: string | null
