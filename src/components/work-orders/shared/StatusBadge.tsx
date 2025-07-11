@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { jobLineStatusMap, partStatusMap } from '@/types/jobLine';
+import { jobLineStatusMap } from '@/types/jobLine';
+import { partStatusMap } from '@/types/workOrderPart';
 
 interface StatusBadgeProps {
   status: string;

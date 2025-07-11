@@ -23,6 +23,7 @@ interface WorkOrderLineItemsProps {
   onJobLineToggleCompletion?: (jobLine: WorkOrderJobLine, completed: boolean) => Promise<void>;
   onPartUpdate?: (partId: string, updates: Partial<WorkOrderPart>) => Promise<void>;
   onPartDelete?: (partId: string) => void;
+  onPartReorder?: (partIds: string[]) => Promise<void>;
   onAddPart?: (partData: WorkOrderPartFormValues) => Promise<void>;
 }
 
@@ -39,6 +40,7 @@ export function WorkOrderLineItems({
   onJobLineToggleCompletion,
   onPartUpdate,
   onPartDelete,
+  onPartReorder,
   onAddPart
 }: WorkOrderLineItemsProps) {
   const [showLaborForm, setShowLaborForm] = useState(false);
@@ -166,6 +168,7 @@ export function WorkOrderLineItems({
           isEditMode={isEditMode}
           onPartUpdate={onPartUpdate}
           onPartDelete={onPartDelete}
+          onPartReorder={onPartReorder}
           onAdd={onAddPart}
           workOrderId={workOrderId}
         />

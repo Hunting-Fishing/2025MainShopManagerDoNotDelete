@@ -36,7 +36,7 @@ export function WorkOrderOverviewTab({
   setJobLines
 }: WorkOrderOverviewTabProps) {
   // Parts data operations
-  const { addPart, updatePart, deletePart } = useWorkOrderPartsData(workOrder.id);
+  const { addPart, updatePart, deletePart, reorderParts } = useWorkOrderPartsData(workOrder.id);
 
   // Wrapper functions to match expected signatures
   const handlePartUpdate = async (partId: string, updates: Partial<WorkOrderPart>) => {
@@ -83,6 +83,7 @@ export function WorkOrderOverviewTab({
               onJobLineToggleCompletion={jobLineOperations.handleToggleCompletion}
               onPartUpdate={handlePartUpdate}
               onPartDelete={handlePartDelete}
+              onPartReorder={reorderParts}
               onAddPart={handleAddPart}
             />
           </div>

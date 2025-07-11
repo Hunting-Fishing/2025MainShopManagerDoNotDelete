@@ -135,6 +135,28 @@ export function useWorkOrderPartsData(workOrderId: string) {
     }
   }, []);
 
+  // Reorder parts operation
+  const reorderParts = useCallback(async (partIds: string[]): Promise<void> => {
+    try {
+      console.log('Reordering parts:', partIds);
+      
+      // For now, just update local state since we don't have a backend reorder API
+      // In a real app, you'd send the new order to the backend
+      const reorderedParts = partIds.map(id => 
+        parts.find(part => part.id === id)
+      ).filter(Boolean) as WorkOrderPart[];
+      
+      setParts(reorderedParts);
+      console.log('Parts reordered successfully');
+    } catch (err) {
+      console.error('Error reordering parts:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reorder parts';
+      setError(errorMessage);
+      toast.error(`Failed to reorder parts: ${errorMessage}`);
+      throw err;
+    }
+  }, [parts]);
+
   useEffect(() => {
     if (workOrderId) {
       fetchParts();
@@ -152,6 +174,7 @@ export function useWorkOrderPartsData(workOrderId: string) {
     refreshParts,
     addPart,
     updatePart,
-    deletePart
+    deletePart,
+    reorderParts
   };
 }

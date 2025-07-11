@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { WorkOrderPart, WorkOrderPartFormValues, partStatusMap } from '@/types/workOrderPart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Package, Plus } from 'lucide-react';
+import { Edit, Trash2, Package, Plus, GripVertical } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditPartDialog } from './EditPartDialog';
+import { StatusBadge } from '../shared/StatusBadge';
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -16,28 +17,62 @@ import {
   AlertDialogHeader, 
   AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import {
+  CSS,
+} from '@dnd-kit/utilities';
 
 interface WorkOrderPartsSectionProps {
   parts: WorkOrderPart[];
   isEditMode: boolean;
   onPartUpdate?: (partId: string, updates: Partial<WorkOrderPart>) => Promise<void>;
   onPartDelete?: (partId: string) => void;
+  onPartReorder?: (partIds: string[]) => Promise<void>;
   onAdd?: (partData: WorkOrderPartFormValues) => Promise<void>;
   workOrderId?: string;
   isLoading?: boolean;
 }
 
-interface PartRowProps {
+interface SortablePartRowProps {
   part: WorkOrderPart;
   isEditMode: boolean;
   onPartUpdate?: (partId: string, updates: Partial<WorkOrderPart>) => Promise<void>;
   onPartDelete?: (partId: string) => void;
 }
 
-function PartRow({ part, isEditMode, onPartUpdate, onPartDelete }: PartRowProps) {
+function SortablePartRow({ part, isEditMode, onPartUpdate, onPartDelete }: SortablePartRowProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: part.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
   
   const totalPrice = (part.customerPrice || part.unit_price || 0) * (part.quantity || 1);
 
@@ -72,7 +107,24 @@ function PartRow({ part, isEditMode, onPartUpdate, onPartDelete }: PartRowProps)
 
   return (
     <>
-      <TableRow className="bg-blue-50/30 border-l-4 border-l-blue-500">
+      <TableRow 
+        ref={setNodeRef}
+        style={style}
+        className={`bg-blue-50/30 border-l-4 border-l-blue-500 ${isDragging ? 'opacity-50' : ''}`}
+      >
+        {/* Drag Handle */}
+        {isEditMode && (
+          <TableCell className="w-8">
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded"
+            >
+              <GripVertical className="h-4 w-4 text-gray-400" />
+            </div>
+          </TableCell>
+        )}
+        
         {/* Type */}
         <TableCell>
           <div className="flex items-center gap-2">
@@ -106,9 +158,7 @@ function PartRow({ part, isEditMode, onPartUpdate, onPartDelete }: PartRowProps)
         
         {/* Status */}
         <TableCell>
-          <Badge variant="secondary" className="text-xs">
-            {part.status || 'Active'}
-          </Badge>
+          <StatusBadge status={part.status || 'pending'} type="part" />
         </TableCell>
         
         {/* Actions */}
@@ -128,7 +178,7 @@ function PartRow({ part, isEditMode, onPartUpdate, onPartDelete }: PartRowProps)
                   variant="ghost"
                   size="sm"
                   onClick={handleDelete}
-                  className="h-7 w-7 p-0"
+                  className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
@@ -173,14 +223,52 @@ export function WorkOrderPartsSection({
   isEditMode,
   onPartUpdate,
   onPartDelete,
+  onPartReorder,
   onAdd,
   workOrderId,
   isLoading = false
 }: WorkOrderPartsSectionProps) {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [localParts, setLocalParts] = useState<WorkOrderPart[]>([]);
 
   // Filter for work order level parts (not associated with job lines)
   const workOrderLevelParts = parts.filter(part => !part.job_line_id);
+
+  // Initialize local parts state
+  React.useEffect(() => {
+    setLocalParts(workOrderLevelParts);
+  }, [workOrderLevelParts]);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = localParts.findIndex((part) => part.id === active.id);
+      const newIndex = localParts.findIndex((part) => part.id === over.id);
+
+      const newOrder = arrayMove(localParts, oldIndex, newIndex);
+      setLocalParts(newOrder);
+
+      // Call the reorder callback if provided
+      if (onPartReorder) {
+        try {
+          await onPartReorder(newOrder.map(part => part.id));
+        } catch (error) {
+          console.error('Failed to reorder parts:', error);
+          // Revert on error
+          setLocalParts(localParts);
+        }
+      }
+    }
+  };
 
   const handleAddPart = async () => {
     if (onAdd) {
@@ -190,11 +278,11 @@ export function WorkOrderPartsSection({
     setShowAddForm(false);
   };
 
-  const totalPartsValue = workOrderLevelParts.reduce((sum, part) => {
+  const totalPartsValue = localParts.reduce((sum, part) => {
     return sum + ((part.customerPrice || part.unit_price || 0) * (part.quantity || 1));
   }, 0);
 
-  if (workOrderLevelParts.length === 0 && !isEditMode) {
+  if (localParts.length === 0 && !isEditMode) {
     return null;
   }
 
@@ -205,9 +293,9 @@ export function WorkOrderPartsSection({
           <CardTitle className="text-lg flex items-center gap-2">
             <Package className="h-5 w-5" />
             Work Order Level Parts
-            {workOrderLevelParts.length > 0 && (
+            {localParts.length > 0 && (
               <Badge variant="secondary" className="ml-2">
-                {workOrderLevelParts.length} parts
+                {localParts.length} parts
               </Badge>
             )}
           </CardTitle>
@@ -223,44 +311,56 @@ export function WorkOrderPartsSection({
             </Button>
           )}
         </div>
-        {workOrderLevelParts.length > 0 && (
+        {localParts.length > 0 && (
           <p className="text-sm text-muted-foreground">
             Total Value: <span className="font-medium">${totalPartsValue.toFixed(2)}</span>
           </p>
         )}
       </CardHeader>
       
-      {workOrderLevelParts.length > 0 && (
+      {localParts.length > 0 && (
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Unit Price</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Status</TableHead>
-                {isEditMode && <TableHead>Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {workOrderLevelParts.map((part) => (
-                <PartRow
-                  key={part.id}
-                  part={part}
-                  isEditMode={isEditMode}
-                  onPartUpdate={onPartUpdate}
-                  onPartDelete={onPartDelete}
-                />
-              ))}
-            </TableBody>
-          </Table>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {isEditMode && <TableHead className="w-8"></TableHead>}
+                  <TableHead>Type</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Qty</TableHead>
+                  <TableHead>Unit Price</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Status</TableHead>
+                  {isEditMode && <TableHead>Actions</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <SortableContext
+                items={localParts.map(part => part.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <TableBody>
+                  {localParts.map((part) => (
+                    <SortablePartRow
+                      key={part.id}
+                      part={part}
+                      isEditMode={isEditMode}
+                      onPartUpdate={onPartUpdate}
+                      onPartDelete={onPartDelete}
+                    />
+                  ))}
+                </TableBody>
+              </SortableContext>
+            </Table>
+          </DndContext>
         </CardContent>
       )}
 
-      {workOrderLevelParts.length === 0 && isEditMode && (
+      {localParts.length === 0 && isEditMode && (
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />

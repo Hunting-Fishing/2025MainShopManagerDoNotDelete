@@ -14,6 +14,7 @@ interface EditableJobLinesGridProps {
   onAddPart?: (partData: WorkOrderPartFormValues) => Promise<void>;
   onPartUpdate?: (partId: string, updates: Partial<WorkOrderPart>) => Promise<void>;
   onPartDelete?: (partId: string) => void;
+  onPartReorder?: (partIds: string[]) => Promise<void>;
 }
 
 export function EditableJobLinesGrid({
@@ -24,7 +25,8 @@ export function EditableJobLinesGrid({
   onPartsChange,
   onAddPart,
   onPartUpdate,
-  onPartDelete
+  onPartDelete,
+  onPartReorder
 }: EditableJobLinesGridProps) {
   // Enhanced job line operations for completion toggle
   const jobLineOperations = useWorkOrderJobLineOperations(
@@ -43,6 +45,7 @@ export function EditableJobLinesGrid({
       onJobLineToggleCompletion={jobLineOperations.handleToggleCompletion}
       onPartUpdate={onPartUpdate}
       onPartDelete={onPartDelete}
+      onPartReorder={onPartReorder}
       onAddPart={onAddPart}
     />
   );
