@@ -8752,6 +8752,33 @@ export type Database = {
           },
         ]
       }
+      performance_logs: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_value: number
+          session_id: string | null
+          timestamp: string
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_value: number
+          session_id?: string | null
+          timestamp?: string
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_value?: number
+          session_id?: string | null
+          timestamp?: string
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           action: Database["public"]["Enums"]["permission_type"]
@@ -11380,6 +11407,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_metrics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_unit: string
+          metric_value: number
+          recorded_at: string
+          status: string
+          trend: string
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_unit: string
+          metric_value: number
+          recorded_at?: string
+          status: string
+          trend: string
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_unit?: string
+          metric_value?: number
+          recorded_at?: string
+          status?: string
+          trend?: string
+        }
+        Relationships: []
       }
       tax_documents: {
         Row: {
@@ -14476,6 +14536,18 @@ export type Database = {
           warranty_duration: string | null
           warranty_expiry_date: string | null
           work_order_id: string
+        }[]
+      }
+      get_latest_system_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          metric_name: string
+          metric_value: number
+          metric_unit: string
+          status: string
+          trend: string
+          recorded_at: string
+          metadata: Json
         }[]
       }
       get_overdue_grant_reports: {

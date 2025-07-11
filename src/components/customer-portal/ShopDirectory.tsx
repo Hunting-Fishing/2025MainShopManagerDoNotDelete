@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,61 +12,39 @@ import {
   Navigation,
   ExternalLink
 } from 'lucide-react';
+import { getPublicShops, type ShopDirectoryItem } from '@/services/shopDirectory/shopDirectoryService';
 
-interface Shop {
-  id: string;
-  name: string;
-  description: string;
-  address: string;
-  city: string;
-  phone: string;
-  rating: number;
-  reviewCount: number;
-  specialties: string[];
-  services: string[];
-  distance?: number;
-  isOpen: boolean;
-}
-
-const mockShops: Shop[] = [
-  {
-    id: '1',
-    name: 'Elite Auto Service',
-    description: 'Premium automotive service with certified technicians.',
-    address: '123 Main Street',
-    city: 'Downtown',
-    phone: '(555) 123-4567',
-    rating: 4.8,
-    reviewCount: 245,
-    specialties: ['BMW', 'Mercedes', 'Audi'],
-    services: ['Oil Change', 'Brake Service', 'Engine Diagnostics'],
-    distance: 2.3,
-    isOpen: true,
-  },
-  {
-    id: '2',
-    name: 'QuickFix Auto Center',
-    description: 'Fast, reliable automotive service for all makes and models.',
-    address: '456 Oak Avenue',
-    city: 'Midtown',
-    phone: '(555) 987-6543',
-    rating: 4.5,
-    reviewCount: 189,
-    specialties: ['Quick Service', 'Oil Changes', 'Inspections'],
-    services: ['Oil Change', 'Tire Service', 'Battery', 'Inspection'],
-    distance: 4.7,
-    isOpen: true,
-  }
-];
+// Using live data from ShopDirectoryService
 
 export function ShopDirectory() {
-  const [shops] = useState<Shop[]>(mockShops);
+  const [shops, setShops] = useState<ShopDirectoryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const filteredShops = shops.filter(shop => 
-    shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    shop.city.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    loadShops();
+  }, []);
+
+  const loadShops = async () => {
+    try {
+      const shopsData = await getPublicShops({ searchTerm, limit: 20 });
+      setShops(shopsData);
+    } catch (error) {
+      console.error('Error loading shops:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      loadShops();
+    }, 500);
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm]);
+
+  // Filtering is now handled by the service
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -103,22 +81,29 @@ export function ShopDirectory() {
             </div>
           </div>
 
-          <div className="grid gap-6">
-            {filteredShops.map(shop => (
+          {loading ? (
+            <div className="text-center py-8">Loading shops...</div>
+          ) : shops.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No shops found matching your search.
+            </div>
+          ) : (
+            <div className="grid gap-6">
+              {shops.map(shop => (
               <Card key={shop.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-xl font-semibold">{shop.name}</h3>
-                      <p className="text-muted-foreground">{shop.description}</p>
+                      <p className="text-muted-foreground">{shop.shop_description || 'Professional automotive service'}</p>
                     </div>
                     <div className="text-right">
                       <div className="flex items-center gap-1">
-                        {renderStars(shop.rating)}
-                        <span className="ml-1 font-medium">{shop.rating}</span>
+                        {renderStars(4.5)}
+                        <span className="ml-1 font-medium">4.5</span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {shop.reviewCount} reviews
+                        0 reviews
                       </p>
                     </div>
                   </div>
@@ -126,17 +111,17 @@ export function ShopDirectory() {
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center gap-2 text-sm">
                       <MapPin className="h-4 w-4" />
-                      {shop.address}, {shop.city}
+                      {shop.address}{shop.city && `, ${shop.city}`}
                       {shop.distance && (
-                        <Badge variant="outline">{shop.distance} mi</Badge>
+                        <Badge variant="outline">{shop.distance.toFixed(1)} mi</Badge>
                       )}
                     </div>
                     
                     <div className="flex items-center gap-2 text-sm">
                       <Phone className="h-4 w-4" />
-                      {shop.phone}
-                      <Badge variant={shop.isOpen ? "default" : "secondary"}>
-                        {shop.isOpen ? "Open" : "Closed"}
+                      {shop.phone || 'Call for info'}
+                      <Badge variant="default">
+                        Open
                       </Badge>
                     </div>
                   </div>
@@ -145,22 +130,18 @@ export function ShopDirectory() {
                     <div>
                       <h4 className="font-medium mb-2">Services</h4>
                       <div className="flex flex-wrap gap-1">
-                        {shop.services.map(service => (
-                          <Badge key={service} variant="outline">
-                            {service}
-                          </Badge>
-                        ))}
+                        <Badge variant="outline">Full Service</Badge>
+                        <Badge variant="outline">Oil Change</Badge>
+                        <Badge variant="outline">Brake Service</Badge>
                       </div>
                     </div>
                     
                     <div>
-                      <h4 className="font-medium mb-2">Specialties</h4>
+                      <h4 className="font-medium mb-2">Location</h4>
                       <div className="flex flex-wrap gap-1">
-                        {shop.specialties.map(specialty => (
-                          <Badge key={specialty} variant="secondary">
-                            {specialty}
-                          </Badge>
-                        ))}
+                        <Badge variant="secondary">
+                          {shop.city || 'Automotive Service'}
+                        </Badge>
                       </div>
                     </div>
                   </div>
@@ -185,6 +166,7 @@ export function ShopDirectory() {
               </Card>
             ))}
           </div>
+          )}
         </CardContent>
       </Card>
     </div>

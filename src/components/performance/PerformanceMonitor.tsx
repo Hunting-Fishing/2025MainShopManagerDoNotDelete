@@ -20,165 +20,50 @@ import {
   Download
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { getSystemMetrics, getSystemHealth, optimizationSuggestions, type PerformanceMetric, type SystemHealth } from '@/services/performance/performanceService';
 
-interface PerformanceMetric {
-  name: string;
-  value: number;
-  unit: string;
-  status: 'good' | 'warning' | 'critical';
-  trend: 'up' | 'down' | 'stable';
-  history: { time: string; value: number }[];
-}
-
-interface SystemHealth {
-  cpu: number;
-  memory: number;
-  disk: number;
-  network: number;
-  database: number;
-  uptime: number;
-}
-
-const mockMetrics: PerformanceMetric[] = [
-  {
-    name: 'Page Load Time',
-    value: 1.2,
-    unit: 's',
-    status: 'good',
-    trend: 'stable',
-    history: Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      value: 1.2 + Math.random() * 0.3
-    }))
-  },
-  {
-    name: 'API Response Time',
-    value: 245,
-    unit: 'ms',
-    status: 'good',
-    trend: 'down',
-    history: Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      value: 200 + Math.random() * 100
-    }))
-  },
-  {
-    name: 'Database Query Time',
-    value: 45,
-    unit: 'ms',
-    status: 'warning',
-    trend: 'up',
-    history: Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      value: 30 + Math.random() * 30
-    }))
-  },
-  {
-    name: 'Memory Usage',
-    value: 78,
-    unit: '%',
-    status: 'warning',
-    trend: 'up',
-    history: Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      value: 60 + Math.random() * 30
-    }))
-  },
-  {
-    name: 'Error Rate',
-    value: 0.02,
-    unit: '%',
-    status: 'good',
-    trend: 'stable',
-    history: Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      value: Math.random() * 0.1
-    }))
-  },
-  {
-    name: 'Active Users',
-    value: 127,
-    unit: 'users',
-    status: 'good',
-    trend: 'up',
-    history: Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      value: 100 + Math.random() * 50
-    }))
-  }
-];
-
-const mockSystemHealth: SystemHealth = {
-  cpu: 45,
-  memory: 78,
-  disk: 62,
-  network: 34,
-  database: 56,
-  uptime: 99.9
-};
-
-const optimizationSuggestions = [
-  {
-    type: 'critical',
-    title: 'Database Query Optimization',
-    description: 'Several slow queries detected. Consider adding indexes for customer lookup queries.',
-    impact: 'High',
-    effort: 'Medium'
-  },
-  {
-    type: 'warning',
-    title: 'Memory Usage Optimization',
-    description: 'Memory usage is consistently above 75%. Consider implementing caching strategies.',
-    impact: 'Medium',
-    effort: 'Low'
-  },
-  {
-    type: 'info',
-    title: 'CDN Implementation',
-    description: 'Static assets could benefit from CDN distribution to improve load times.',
-    impact: 'Medium',
-    effort: 'High'
-  }
-];
+// Removed mock data - now using live data from service
 
 export function PerformanceMonitor() {
-  const [metrics, setMetrics] = useState(mockMetrics);
-  const [systemHealth, setSystemHealth] = useState(mockSystemHealth);
+  const [metrics, setMetrics] = useState<PerformanceMetric[]>([]);
+  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   useEffect(() => {
     if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      // Simulate real-time data updates
-      setMetrics(prev => prev.map(metric => ({
-        ...metric,
-        value: metric.value + (Math.random() - 0.5) * 0.1,
-        history: [
-          ...metric.history.slice(1),
-          {
-            time: new Date().toLocaleTimeString(),
-            value: metric.value + (Math.random() - 0.5) * 0.1
-          }
-        ]
-      })));
-
-      setSystemHealth(prev => ({
-        ...prev,
-        cpu: Math.max(0, Math.min(100, prev.cpu + (Math.random() - 0.5) * 5)),
-        memory: Math.max(0, Math.min(100, prev.memory + (Math.random() - 0.5) * 3)),
-        network: Math.max(0, Math.min(100, prev.network + (Math.random() - 0.5) * 10))
-      }));
-    }, 5000);
+      loadData();
+    }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
+  const loadData = async () => {
+    try {
+      const [metricsData, healthData] = await Promise.all([
+        getSystemMetrics(),
+        getSystemHealth()
+      ]);
+      
+      setMetrics(metricsData);
+      setSystemHealth(healthData);
+    } catch (error) {
+      console.error('Error loading performance data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const refreshData = async () => {
     setIsRefreshing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await loadData();
     setIsRefreshing(false);
   };
 
@@ -352,12 +237,12 @@ export function PerformanceMonitor() {
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-2xl font-bold">{systemHealth.cpu}%</span>
-                    <Badge className={systemHealth.cpu > 80 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
-                      {systemHealth.cpu > 80 ? 'High' : 'Normal'}
+                    <span className="text-2xl font-bold">{systemHealth?.cpu || 0}%</span>
+                    <Badge className={(systemHealth?.cpu || 0) > 80 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
+                      {(systemHealth?.cpu || 0) > 80 ? 'High' : 'Normal'}
                     </Badge>
                   </div>
-                  <Progress value={systemHealth.cpu} className="h-2" />
+                  <Progress value={systemHealth?.cpu || 0} className="h-2" />
                 </div>
               </CardContent>
             </Card>
@@ -372,12 +257,12 @@ export function PerformanceMonitor() {
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-2xl font-bold">{systemHealth.memory}%</span>
-                    <Badge className={systemHealth.memory > 80 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
-                      {systemHealth.memory > 80 ? 'High' : 'Normal'}
+                    <span className="text-2xl font-bold">{systemHealth?.memory || 0}%</span>
+                    <Badge className={(systemHealth?.memory || 0) > 80 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
+                      {(systemHealth?.memory || 0) > 80 ? 'High' : 'Normal'}
                     </Badge>
                   </div>
-                  <Progress value={systemHealth.memory} className="h-2" />
+                  <Progress value={systemHealth?.memory || 0} className="h-2" />
                 </div>
               </CardContent>
             </Card>
@@ -392,12 +277,12 @@ export function PerformanceMonitor() {
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-2xl font-bold">{systemHealth.database}%</span>
+                    <span className="text-2xl font-bold">{systemHealth?.database || 0}%</span>
                     <Badge className="bg-green-100 text-green-800">
                       Active
                     </Badge>
                   </div>
-                  <Progress value={systemHealth.database} className="h-2" />
+                  <Progress value={systemHealth?.database || 0} className="h-2" />
                 </div>
               </CardContent>
             </Card>
@@ -412,12 +297,12 @@ export function PerformanceMonitor() {
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-2xl font-bold">{systemHealth.network}%</span>
+                    <span className="text-2xl font-bold">{systemHealth?.network || 0}%</span>
                     <Badge className="bg-green-100 text-green-800">
                       Normal
                     </Badge>
                   </div>
-                  <Progress value={systemHealth.network} className="h-2" />
+                  <Progress value={systemHealth?.network || 0} className="h-2" />
                 </div>
               </CardContent>
             </Card>
@@ -432,7 +317,7 @@ export function PerformanceMonitor() {
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-2xl font-bold">{systemHealth.uptime}%</span>
+                    <span className="text-2xl font-bold">{systemHealth?.uptime || 0}%</span>
                     <Badge className="bg-green-100 text-green-800">
                       Excellent
                     </Badge>
