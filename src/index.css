@@ -6,24 +6,45 @@
 
 @layer base {
   :root {
+    /* Enhanced Modern Foundation */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
+    
+    /* Modern Primary System - More vibrant and sophisticated */
     --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
+    --primary-dark: 221.2 83.2% 45%;
+    --primary-light: 221.2 83.2% 65%;
+    --primary-glow: 221.2 83.2% 75%;
+    
+    /* Enhanced Secondary System */
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --secondary-light: 210 40% 98%;
+    
+    /* Refined Neutrals with Better Contrast */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --muted-light: 220 14% 98%;
+    
+    /* Modern Interactive States */
     --accent: 210 40% 96%;
     --accent-foreground: 222.2 84% 4.9%;
+    --accent-hover: 210 40% 94%;
+    
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    
+    /* Enhanced Border System */
+    --border: 220 13% 91%;
+    --border-light: 220 13% 95%;
+    --border-strong: 220 13% 85%;
+    
+    --input: 220 13% 91%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.75rem;
     --chart-1: 12 76% 61%;
@@ -61,18 +82,23 @@
     --work-order-accent: 221.2 83.2% 53.3%;
     --work-order-section: 210 40% 96%;
 
-    /* Modern Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)/0.8) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--secondary)/0.9) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)/0.95) 100%);
-    --gradient-status: linear-gradient(135deg, hsl(var(--muted)/0.5) 0%, hsl(var(--muted)/0.2) 100%);
+    /* Enhanced Modern Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--secondary-light)) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card))/0.98 50%, hsl(var(--muted-light)) 100%);
+    --gradient-status: linear-gradient(135deg, hsl(var(--muted)/0.6) 0%, hsl(var(--muted)/0.3) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(var(--background))/0.8 0%, hsl(var(--background))/0.4 100%);
+    --gradient-surface: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--muted-light)) 100%);
     
-    /* Enhanced Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(var(--primary)/0.05);
-    --shadow: 0 1px 3px 0 hsl(var(--primary)/0.1), 0 1px 2px -1px hsl(var(--primary)/0.1);
-    --shadow-md: 0 4px 6px -1px hsl(var(--primary)/0.1), 0 2px 4px -2px hsl(var(--primary)/0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(var(--primary)/0.1), 0 4px 6px -4px hsl(var(--primary)/0.1);
-    --shadow-glow: 0 0 0 1px hsl(var(--primary)/0.2), 0 0 20px hsl(var(--primary)/0.3);
+    /* Modern Depth System */
+    --shadow-xs: 0 1px 2px 0 hsl(220 43% 11% / 0.03);
+    --shadow-sm: 0 1px 3px 0 hsl(220 43% 11% / 0.08);
+    --shadow: 0 4px 6px -1px hsl(220 43% 11% / 0.08);
+    --shadow-md: 0 10px 15px -3px hsl(220 43% 11% / 0.08);
+    --shadow-lg: 0 20px 25px -5px hsl(220 43% 11% / 0.08);
+    --shadow-xl: 0 25px 50px -12px hsl(220 43% 11% / 0.15);
+    --shadow-glow: 0 0 0 1px hsl(var(--primary)/0.15), 0 0 40px hsl(var(--primary)/0.2);
+    --shadow-inner: inset 0 2px 4px 0 hsl(220 43% 11% / 0.05);
   }
 
   .dark {
@@ -145,23 +171,44 @@
   }
 }
 
-/* Enhanced Card System */
+/* Modern Card System with Enhanced Depth */
 @layer components {
   .modern-card {
-    @apply relative bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm;
-    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card))/0.95 100%);
+    @apply relative bg-card border border-border/40 rounded-2xl;
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(8px);
+  }
+
+  .modern-card-elevated {
+    @apply modern-card;
+    box-shadow: var(--shadow-md);
+  }
+
+  .modern-card-floating {
+    @apply modern-card;
+    box-shadow: var(--shadow-lg);
   }
 
   .gradient-border {
-    @apply before:absolute before:inset-0 before:rounded-xl before:p-px before:bg-gradient-to-r before:from-primary/20 before:to-accent/20 before:-z-10;
+    @apply relative before:absolute before:inset-0 before:rounded-2xl before:p-px before:-z-10;
+    background: var(--gradient-surface);
+  }
+
+  .gradient-border::before {
+    background: linear-gradient(135deg, hsl(var(--border-strong)) 0%, hsl(var(--border-light)) 50%, hsl(var(--border)) 100%);
   }
 
   .bg-gradient-subtle {
-    background: linear-gradient(135deg, hsl(var(--muted))/0.3 0%, hsl(var(--muted))/0.1 100%);
+    background: var(--gradient-status);
   }
 
   .modern-summary-card {
-    @apply modern-card hover:shadow-md transition-all duration-300 group;
+    @apply modern-card-elevated hover:shadow-xl transition-all duration-500 group cursor-pointer;
+  }
+
+  .modern-summary-card:hover {
+    transform: translateY(-2px);
   }
 
   .summary-card-title {
@@ -260,22 +307,37 @@
   }
 }
 
-/* Modern Tabs System */
+/* Advanced Tabs System */
 @layer components {
   .modern-tabs-container {
-    @apply space-y-6;
+    @apply space-y-8;
   }
 
   .modern-tabs-list {
-    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-muted/60 to-muted/40 p-1.5 text-muted-foreground backdrop-blur-sm border border-border/30 shadow-sm;
+    @apply inline-flex items-center justify-center rounded-2xl p-1 text-muted-foreground backdrop-blur-md border border-border/20;
+    background: var(--gradient-glass);
+    box-shadow: var(--shadow-sm);
   }
 
   .modern-tab-trigger {
-    @apply inline-flex items-center justify-center whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:scale-105 font-body hover:bg-background/60;
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 font-body relative;
+  }
+
+  .modern-tab-trigger:hover {
+    @apply text-foreground;
+    background: hsl(var(--muted)/0.5);
   }
 
   .modern-tab-trigger[data-state=active] {
-    @apply bg-gradient-to-r from-background to-background/95 shadow-lg;
+    @apply bg-background text-foreground font-semibold;
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+
+  .modern-tab-trigger[data-state=active]::after {
+    content: '';
+    @apply absolute -bottom-1 left-1/2 w-2 h-2 rounded-full bg-primary;
+    transform: translateX(-50%);
   }
 }
 
@@ -380,10 +442,41 @@
   }
 }
 
-/* Work Order Header Styling */
+/* Modern Work Order Components */
 @layer components {
   .work-order-header {
-    @apply bg-gradient-to-br from-card via-card/95 to-muted/30 backdrop-blur-md;
+    @apply relative overflow-hidden;
+    background: var(--gradient-surface);
+    backdrop-filter: blur(12px);
+  }
+
+  .work-order-header::before {
+    content: '';
+    @apply absolute inset-0 opacity-30;
+    background: radial-gradient(circle at top right, hsl(var(--primary)/0.1) 0%, transparent 50%);
+  }
+
+  .work-order-stats-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6;
+  }
+
+  .work-order-stat-card {
+    @apply modern-card-elevated relative overflow-hidden;
+    background: var(--gradient-card);
+  }
+
+  .work-order-stat-card::before {
+    content: '';
+    @apply absolute inset-0 opacity-5;
+    background: linear-gradient(135deg, currentColor 0%, transparent 100%);
+  }
+
+  .work-order-content-section {
+    @apply modern-card p-8 space-y-6;
+  }
+
+  .work-order-info-grid {
+    @apply grid grid-cols-1 lg:grid-cols-3 gap-8;
   }
 }
 

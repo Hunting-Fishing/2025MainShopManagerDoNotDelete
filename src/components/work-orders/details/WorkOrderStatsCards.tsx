@@ -63,9 +63,7 @@ export function WorkOrderStatsCards({
       value: `$${totalCost.toFixed(2)}`,
       subtitle: 'Labor + Parts',
       icon: DollarSign,
-      gradient: 'from-emerald-500 to-emerald-600',
-      bgGradient: 'from-emerald-50 to-emerald-100',
-      iconBg: 'bg-emerald-500',
+      color: 'emerald' as const,
       trend: totalCost > 500 ? '+12%' : null
     },
     {
@@ -73,9 +71,7 @@ export function WorkOrderStatsCards({
       value: totalLaborHours.toFixed(1),
       subtitle: `${jobLines.length} job lines`,
       icon: Clock,
-      gradient: 'from-blue-500 to-blue-600',
-      bgGradient: 'from-blue-50 to-blue-100',
-      iconBg: 'bg-blue-500',
+      color: 'blue' as const,
       trend: totalLaborHours > 8 ? 'High' : null
     },
     {
@@ -83,9 +79,7 @@ export function WorkOrderStatsCards({
       value: partsCount.toString(),
       subtitle: `${parts.filter(p => p.status === 'installed').length} installed`,
       icon: Package,
-      gradient: 'from-purple-500 to-purple-600',
-      bgGradient: 'from-purple-50 to-purple-100',
-      iconBg: 'bg-purple-500',
+      color: 'purple' as const,
       trend: null
     },
     {
@@ -93,69 +87,93 @@ export function WorkOrderStatsCards({
       value: `${completionPercentage}%`,
       subtitle: workOrder.status.replace('_', ' '),
       icon: TrendingUp,
-      gradient: 'from-orange-500 to-orange-600',
-      bgGradient: 'from-orange-50 to-orange-100',
-      iconBg: 'bg-orange-500',
-      trend: completionPercentage > 50 ? 'On Track' : null
+      color: 'orange' as const,
+      trend: completionPercentage > 50 ? 'On Track' : null,
+      showProgress: true
     }
   ];
 
+  const colorVariants = {
+    emerald: {
+      bg: 'from-emerald-50/50 to-emerald-100/30',
+      icon: 'bg-emerald-500',
+      border: 'border-emerald-200/40'
+    },
+    blue: {
+      bg: 'from-blue-50/50 to-blue-100/30',
+      icon: 'bg-blue-500',
+      border: 'border-blue-200/40'
+    },
+    purple: {
+      bg: 'from-purple-50/50 to-purple-100/30',
+      icon: 'bg-purple-500',
+      border: 'border-purple-200/40'
+    },
+    orange: {
+      bg: 'from-orange-50/50 to-orange-100/30',
+      icon: 'bg-orange-500',
+      border: 'border-orange-200/40'
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="work-order-stats-grid mb-10">
       {stats.map((stat, index) => {
         const Icon = stat.icon;
+        const colors = colorVariants[stat.color];
+        
         return (
-          <Card 
+          <div 
             key={stat.title}
-            className={`modern-card gradient-border overflow-hidden hover:shadow-lg transition-all duration-300 animate-fade-in group`}
-            style={{ animationDelay: `${index * 100}ms` }}
+            className={`work-order-stat-card p-6 border ${colors.border} hover:shadow-lg transition-all duration-500 group bg-gradient-to-br ${colors.bg}`}
+            style={{ 
+              animationDelay: `${index * 150}ms`
+            }}
           >
-            <CardContent className="p-0">
-              <div className={`bg-gradient-to-br ${stat.bgGradient} p-6 relative`}>
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-                </div>
-                
-                {/* Icon */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`${stat.iconBg} p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="h-6 w-6 text-white" />
-                  </div>
-                  {stat.trend && (
-                    <span className="text-xs font-medium text-muted-foreground bg-white/70 px-2 py-1 rounded-full">
-                      {stat.trend}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Content */}
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground font-body">
-                    {stat.title}
-                  </p>
-                  <p className="text-3xl font-bold text-foreground font-heading gradient-text">
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-muted-foreground font-body">
-                    {stat.subtitle}
-                  </p>
-                </div>
-
-                {/* Progress bar for completion percentage */}
-                {stat.title === 'Progress' && (
-                  <div className="mt-4">
-                    <div className="w-full bg-white/30 rounded-full h-2">
-                      <div 
-                        className="bg-white h-2 rounded-full transition-all duration-700 ease-out"
-                        style={{ width: `${completionPercentage}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className={`${colors.icon} p-3 rounded-2xl shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-300`}>
+                <Icon className="h-5 w-5 text-white" />
               </div>
-            </CardContent>
-          </Card>
+              {stat.trend && (
+                <span className="text-xs font-semibold text-muted-foreground bg-background/80 px-3 py-1.5 rounded-full border border-border/50">
+                  {stat.trend}
+                </span>
+              )}
+            </div>
+            
+            {/* Content */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                {stat.title}
+              </p>
+              <p className="text-3xl font-bold text-foreground font-heading tracking-tight">
+                {stat.value}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {stat.subtitle}
+              </p>
+            </div>
+
+            {/* Progress bar for completion percentage */}
+            {stat.showProgress && (
+              <div className="mt-6 space-y-2">
+                <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className={`${colors.icon} h-2 rounded-full transition-all duration-1000 ease-out`}
+                    style={{ 
+                      width: `${completionPercentage}%`,
+                      transitionDelay: `${index * 200 + 300}ms`
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Started</span>
+                  <span>Complete</span>
+                </div>
+              </div>
+            )}
+          </div>
         );
       })}
     </div>

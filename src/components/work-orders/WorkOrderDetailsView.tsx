@@ -151,22 +151,22 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
       </div>
 
       {/* Regular Screen Layout */}
-      <div className="space-y-8 max-w-[1400px] mx-auto print:hidden" id="work-order-printable-content">
+      <div className="space-y-10 max-w-[1600px] mx-auto print:hidden px-4 sm:px-6 lg:px-8" id="work-order-printable-content">
         {/* Navigation */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 pt-4">
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => navigate('/work-orders')}
-            className="hover:bg-muted/60 transition-colors"
+            className="hover:bg-muted/60 transition-all duration-300 rounded-xl px-4 py-2 font-medium"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Work Orders
           </Button>
         </div>
 
-        {/* Header with View Toggle and Edit Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+        {/* Header with Enhanced Layout */}
+        <div className="space-y-8">
           <WorkOrderDetailsHeader
             workOrder={workOrder}
             customer={customer}
@@ -175,25 +175,28 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
             onStatusChange={handleStatusChange}
             isEditMode={isEditMode}
           />
-          <div className="flex flex-col gap-3 lg:mt-6">
+          
+          {/* Controls Section */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 modern-card border border-border/30">
             {/* Edit Mode Toggle for Completed Work Orders */}
             {canEdit && isCompleted && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Button
                   variant={forceEditMode ? "default" : "outline"}
                   size="sm"
                   onClick={() => setForceEditMode(!forceEditMode)}
-                  className="whitespace-nowrap"
+                  className="whitespace-nowrap rounded-xl px-4 py-2 font-medium transition-all duration-300"
                 >
                   {forceEditMode ? "Exit Edit Mode" : "Enable Editing"}
                 </Button>
                 {forceEditMode && (
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground font-medium">
                     Editing enabled for completed work order
                   </span>
                 )}
               </div>
             )}
+            
             <WorkOrderViewModeToggle
               mode={viewMode}
               onModeChange={setViewMode}
@@ -201,13 +204,15 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
           </div>
         </div>
 
-        {/* Statistics Cards */}
-        <WorkOrderStatsCards
-          workOrder={workOrder}
-          jobLines={jobLines}
-          parts={allParts}
-          timeEntries={timeEntries}
-        />
+        {/* Enhanced Statistics Cards */}
+        <div className="relative">
+          <WorkOrderStatsCards
+            workOrder={workOrder}
+            jobLines={jobLines}
+            parts={allParts}
+            timeEntries={timeEntries}
+          />
+        </div>
 
         {/* Content based on view mode */}
         {viewMode === 'tabbed' ? (

@@ -24,51 +24,92 @@ export function WorkOrderDetailsHeader({
   const handleStatusChange = async (newStatus: string) => {
     await onStatusChange(newStatus);
   };
-  return <div className="modern-card work-order-header gradient-border p-6 lg:p-8 bg-rose-50">
-      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
-        <div className="space-y-6 flex-1">
-          <div className="flex items-center gap-4 flex-wrap">
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground font-heading gradient-text">
-              Work Order #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
-            </h1>
-            <WorkOrderStatusBadge status={currentStatus} />
-            <EditModeIndicator workOrder={workOrder} isEditMode={isEditMode} onStatusChange={handleStatusChange} className="ml-2" />
+  return (
+    <div className="modern-card-floating work-order-header p-8 lg:p-10 relative">
+      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8">
+        <div className="space-y-8 flex-1 relative z-10">
+          {/* Main Header */}
+          <div className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="space-y-3">
+                <h1 className="text-3xl lg:text-4xl font-bold text-foreground font-heading tracking-tight">
+                  Work Order #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
+                </h1>
+                <div className="flex items-center gap-3">
+                  <WorkOrderStatusBadge status={currentStatus} />
+                  <EditModeIndicator 
+                    workOrder={workOrder} 
+                    isEditMode={isEditMode} 
+                    onStatusChange={handleStatusChange} 
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           
-          {customer && <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-subtle border border-border/50">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-muted-foreground font-body">Customer:</span>
-                  <span className="font-semibold text-foreground font-body">
-                    {customer.first_name} {customer.last_name}
+          {/* Customer Information */}
+          {customer && (
+            <div className="modern-card p-6 bg-gradient-subtle">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-lg font-semibold text-primary">
+                    {customer.first_name?.[0]}{customer.last_name?.[0]}
                   </span>
                 </div>
-                {customer.email && <div className="text-sm text-muted-foreground font-body truncate">
-                    {customer.email}
-                  </div>}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium text-muted-foreground">Customer</span>
+                    <span className="w-1 h-1 rounded-full bg-muted-foreground/40"></span>
+                    <span className="text-lg font-semibold text-foreground">
+                      {customer.first_name} {customer.last_name}
+                    </span>
+                  </div>
+                  {customer.email && (
+                    <div className="text-sm text-muted-foreground truncate">
+                      {customer.email}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>}
+            </div>
+          )}
           
           {/* Progress Timeline */}
-          <div className="py-4">
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Progress
+            </h3>
             <WorkOrderProgressTimeline currentStatus={currentStatus} className="max-w-4xl" />
           </div>
           
-          {workOrder.description && <div className="p-4 rounded-lg bg-gradient-subtle border-l-4 border-primary/40 border border-border/30">
-              <p className="text-foreground leading-relaxed font-medium font-body">
-                {workOrder.description}
-              </p>
-            </div>}
+          {/* Description */}
+          {workOrder.description && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Description
+              </h3>
+              <div className="modern-card p-6 border-l-4 border-primary/30">
+                <p className="text-foreground leading-relaxed font-medium">
+                  {workOrder.description}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="flex-shrink-0">
-          <WorkOrderDetailsActions workOrder={workOrder} onInvoiceCreated={invoiceId => {
-          console.log('Invoice created:', invoiceId);
-        }} onWorkOrderUpdated={() => {
-          // This will trigger a refresh of the work order data
-          window.location.reload();
-        }} />
+        {/* Actions */}
+        <div className="flex-shrink-0 lg:ml-8">
+          <WorkOrderDetailsActions 
+            workOrder={workOrder} 
+            onInvoiceCreated={(invoiceId) => {
+              console.log('Invoice created:', invoiceId);
+            }} 
+            onWorkOrderUpdated={() => {
+              window.location.reload();
+            }} 
+          />
         </div>
       </div>
-    </div>;
+    </div>
+  );
 }

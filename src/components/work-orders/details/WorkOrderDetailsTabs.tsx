@@ -45,63 +45,87 @@ export function WorkOrderDetailsTabs({
   return (
     <div className="modern-tabs-container">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="modern-tabs-list grid w-full grid-cols-6 max-w-5xl h-12 p-1.5 bg-muted/40 backdrop-blur-sm border">
-          <TabsTrigger value="overview" className="modern-tab-trigger">Overview</TabsTrigger>
-          <TabsTrigger value="parts" className="modern-tab-trigger">Parts</TabsTrigger>
-          <TabsTrigger value="labor" className="modern-tab-trigger">Labor</TabsTrigger>
-          <TabsTrigger value="activity" className="modern-tab-trigger">Activity</TabsTrigger>
-          <TabsTrigger value="notifications" className="modern-tab-trigger">Notifications</TabsTrigger>
-          <TabsTrigger value="documents" className="modern-tab-trigger">Documents</TabsTrigger>
+        <TabsList className="modern-tabs-list grid w-full grid-cols-6 max-w-6xl mx-auto">
+          <TabsTrigger value="overview" className="modern-tab-trigger">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="parts" className="modern-tab-trigger">
+            Parts
+          </TabsTrigger>
+          <TabsTrigger value="labor" className="modern-tab-trigger">
+            Labor
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="modern-tab-trigger">
+            Activity
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="modern-tab-trigger">
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="modern-tab-trigger">
+            Documents
+          </TabsTrigger>
         </TabsList>
 
-      <TabsContent value="overview" className="mt-6">
-        <WorkOrderOverviewTab
-          workOrder={workOrder}
-          jobLines={jobLines}
-          allParts={allParts}
-          timeEntries={timeEntries}
-          customer={customer}
-          onWorkOrderUpdate={onWorkOrderUpdate}
-          onPartsChange={onPartsChange}
-          isEditMode={isEditMode}
-          setJobLines={setJobLines}
-        />
-      </TabsContent>
+        <TabsContent value="overview" className="mt-8 fade-in">
+          <div className="work-order-content-section">
+            <WorkOrderOverviewTab
+              workOrder={workOrder}
+              jobLines={jobLines}
+              allParts={allParts}
+              timeEntries={timeEntries}
+              customer={customer}
+              onWorkOrderUpdate={onWorkOrderUpdate}
+              onPartsChange={onPartsChange}
+              isEditMode={isEditMode}
+              setJobLines={setJobLines}
+            />
+          </div>
+        </TabsContent>
 
-      <TabsContent value="parts" className="mt-6">
-        <WorkOrderLineItems
-          jobLines={jobLines}
-          allParts={allParts}
-          workOrderId={workOrder.id}
-          isEditMode={isEditMode}
-          onJobLinesChange={() => {}}
-          onPartsChange={onPartsChange}
-        />
-      </TabsContent>
+        <TabsContent value="parts" className="mt-8 fade-in">
+          <div className="work-order-content-section">
+            <WorkOrderLineItems
+              jobLines={jobLines}
+              allParts={allParts}
+              workOrderId={workOrder.id}
+              isEditMode={isEditMode}
+              onJobLinesChange={() => {}}
+              onPartsChange={onPartsChange}
+            />
+          </div>
+        </TabsContent>
 
-      <TabsContent value="labor" className="mt-6">
-        <JobLinesSection
-          workOrderId={workOrder.id}
-          jobLines={jobLines}
-          onJobLinesChange={handleJobLinesChange}
-          isEditMode={isEditMode}
-        />
-      </TabsContent>
+        <TabsContent value="labor" className="mt-8 fade-in">
+          <div className="work-order-content-section">
+            <JobLinesSection
+              workOrderId={workOrder.id}
+              jobLines={jobLines}
+              onJobLinesChange={handleJobLinesChange}
+              isEditMode={isEditMode}
+            />
+          </div>
+        </TabsContent>
 
-      <TabsContent value="activity" className="mt-6">
-        <WorkOrderActivityTab workOrderId={workOrder.id} />
-      </TabsContent>
+        <TabsContent value="activity" className="mt-8 fade-in">
+          <div className="work-order-content-section">
+            <WorkOrderActivityTab workOrderId={workOrder.id} />
+          </div>
+        </TabsContent>
 
-      <TabsContent value="notifications" className="mt-6">
-        <WorkOrderNotifications workOrderId={workOrder.id} />
-      </TabsContent>
+        <TabsContent value="notifications" className="mt-8 fade-in">
+          <div className="work-order-content-section">
+            <WorkOrderNotifications workOrderId={workOrder.id} />
+          </div>
+        </TabsContent>
 
-      <TabsContent value="documents" className="mt-6">
-        <WorkOrderDocuments 
-          workOrderId={workOrder.id} 
-          isEditMode={isEditMode} 
-        />
-      </TabsContent>
+        <TabsContent value="documents" className="mt-8 fade-in">
+          <div className="work-order-content-section">
+            <WorkOrderDocuments 
+              workOrderId={workOrder.id} 
+              isEditMode={isEditMode} 
+            />
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
