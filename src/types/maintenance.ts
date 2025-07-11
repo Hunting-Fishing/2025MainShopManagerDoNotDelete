@@ -14,6 +14,9 @@ export interface MaintenanceTask {
 
 export interface MaintenanceHistoryItem extends MaintenanceRecord {
   equipmentName: string;
+  status: 'scheduled' | 'overdue' | 'completed' | 'in-progress';
+  date: string;
+  type: string;
 }
 
 export interface MaintenanceStatistics {

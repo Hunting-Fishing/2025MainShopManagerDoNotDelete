@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Plus, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { getMaintenanceSchedules, getMaintenanceHistory } from '@/services/maintenanceService';
+import { getMaintenanceSchedules, getMaintenanceHistory, SimpleMaintenanceSchedule } from '@/services/maintenanceService';
 import type { MaintenanceSchedule, MaintenanceHistoryItem } from '@/types/maintenance';
 
 export default function Maintenance() {
-  const [schedules, setSchedules] = useState<MaintenanceSchedule[]>([]);
+  const [schedules, setSchedules] = useState<SimpleMaintenanceSchedule[]>([]);
   const [history, setHistory] = useState<MaintenanceHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
