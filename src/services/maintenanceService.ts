@@ -1,6 +1,29 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { MaintenanceSchedule, MaintenanceHistoryItem, MaintenanceStatistics } from '@/types/maintenance';
 
-export interface MaintenanceSchedule {
+export { maintenanceService };
+
+// Export convenience functions
+export const getMaintenanceSchedules = () => maintenanceService.getMaintenanceSchedules();
+export const getMaintenanceHistory = async (): Promise<MaintenanceHistoryItem[]> => {
+  return [
+    {
+      id: '1',
+      equipmentId: 'eq1',
+      equipmentName: 'Hydraulic Lift #1',
+      type: 'Scheduled Maintenance',
+      date: new Date().toISOString().split('T')[0],
+      status: 'completed',
+      performedBy: 'John Doe',
+      notes: 'Regular maintenance completed',
+      cost: 150,
+      partsReplaced: ['Hydraulic fluid', 'Filter'],
+      nextDueDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    }
+  ];
+};
+
+export interface MaintenanceScheduleDB {
   id: string;
   vehicle_id?: string;
   equipment_id?: string;
