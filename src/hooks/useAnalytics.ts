@@ -60,7 +60,7 @@ export function useAnalytics(timeRange: string) {
 
       const workOrderData = Object.entries(statusCounts).map(([status, count]) => ({
         status: status.charAt(0).toUpperCase() + status.slice(1),
-        count
+        count: count as number
       }));
 
       // Customer segments (simplified)

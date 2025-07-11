@@ -30,6 +30,38 @@ export interface PerformanceMetric {
   target: number;
 }
 
+export interface TopProductAnalytics {
+  id: string;
+  name: string;
+  category: string;
+  count: number;
+  percentage: number;
+  views?: number;
+  clicks?: number;
+  saves?: number;
+  shares?: number;
+}
+
+export interface CategoryAnalytics {
+  name: string;
+  count: number;
+}
+
+export interface ProductAnalyticsData {
+  totalViews: number;
+  totalClicks: number;
+  totalSaved: number;
+  conversionRate: number;
+  categoryData: CategoryAnalytics[];
+  interactionData: {
+    name: string;
+    views: number;
+    clicks: number;
+    saves: number;
+    shares: number;
+  }[];
+}
+
 export interface AnalyticsData {
   overview: AnalyticsOverview;
   revenue: RevenueDataPoint[];
