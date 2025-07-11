@@ -1,47 +1,56 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import { WorkOrderPart } from '@/types/workOrderPart';
+import { usePartsSearch } from '@/hooks/parts/usePartsSearch';
 
 export function PartsSearchAndFilter() {
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
 
-  // Sample data for demonstration
-  const sampleParts: WorkOrderPart[] = [
-    {
-      id: '1',
-      work_order_id: 'wo-1',
-      part_number: 'BR-001',
-      name: 'Brake Pads',
-      description: 'Front brake pads',
-      quantity: 2,
-      unit_price: 45.99,
-      total_price: 91.98,
-      status: 'installed',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      category: 'Brakes',
-      part_type: 'inventory',
-      supplierName: 'AutoParts Inc',
-      supplierCost: 35.00,
-      supplierSuggestedRetail: 50.99
-    }
-  ];
+  const [parts, setParts] = useState<WorkOrderPart[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
 
-  const filteredParts = sampleParts.filter(part => {
-    const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         part.part_number.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !category || category === 'all' || part.category === category;
-    const matchesStatus = !status || status === 'all' || part.status === status;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  // Use the real parts service
+  const { searchParts, getPartCategories } = usePartsSearch();
+
+  useEffect(() => {
+    loadCategories();
+    handleSearch();
+  }, []);
+
+  useEffect(() => {
+    handleSearch();
+  }, [searchTerm, category, status]);
+
+  const loadCategories = async () => {
+    const categoryList = await getPartCategories();
+    setCategories(categoryList);
+  };
+
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const filters = {
+        searchTerm: searchTerm || undefined,
+        category: category && category !== 'all' ? category : undefined,
+        status: status && status !== 'all' ? status : undefined
+      };
+      
+      const { parts: searchResults } = await searchParts(filters);
+      setParts(searchResults);
+    } catch (error) {
+      console.error('Error searching parts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -67,9 +76,9 @@ export function PartsSearchAndFilter() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="Brakes">Brakes</SelectItem>
-                <SelectItem value="Engine">Engine</SelectItem>
-                <SelectItem value="Transmission">Transmission</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             
@@ -102,11 +111,23 @@ export function PartsSearchAndFilter() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Search Results ({filteredParts.length})</CardTitle>
+          <CardTitle>Search Results ({parts.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {filteredParts.map((part) => (
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="animate-pulse p-3 border rounded">
+                  <div className="space-y-2">
+                    <div className="bg-gray-200 h-4 w-full rounded"></div>
+                    <div className="bg-gray-200 h-4 w-3/4 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {parts.map((part) => (
               <div key={part.id} className="p-3 border rounded flex justify-between items-center">
                 <div>
                   <div className="font-medium">{part.name}</div>
@@ -120,12 +141,13 @@ export function PartsSearchAndFilter() {
                 </div>
               </div>
             ))}
-            {filteredParts.length === 0 && (
+            {parts.length === 0 && !loading && (
               <div className="text-center py-8 text-muted-foreground">
                 No parts found matching your search criteria
               </div>
             )}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
