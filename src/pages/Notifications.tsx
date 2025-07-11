@@ -4,95 +4,139 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Bell, BellOff, AlertCircle, CheckCircle, Info, Settings } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Bell, BellOff, AlertCircle, CheckCircle, Info, Settings, Search, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import * as notificationsService from '@/services/notifications/notificationsService';
 import type { Notification, NotificationPreferences } from '@/types/notification';
 
-// Mock data - replace with real service calls
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    title: 'Maintenance Overdue',
-    message: 'Equipment XYZ-123 maintenance is 3 days overdue',
-    type: 'warning',
-    category: 'work-order',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    read: false,
-    priority: 'high',
-    actionUrl: '/maintenance'
-  },
-  {
-    id: '2',
-    title: 'New Work Order',
-    message: 'Work order #WO-2024-001 has been assigned to you',
-    type: 'info',
-    category: 'work-order',
-    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    priority: 'medium'
-  }
-];
-
-const mockPreferences: NotificationPreferences = {
-  emailNotifications: true,
-  pushNotifications: true,
-  smsNotifications: false,
-  email: true,
-  push: true,
-  inApp: true,
-  categories: {
-    system: true,
-    'work-order': true,
-    inventory: true,
-    customer: false,
-    team: true,
-    chat: true,
-    invoice: false
-  },
-  subscriptions: [],
-  frequency: 'immediate',
-  frequencies: {},
-  sound: 'default',
-  quietHours: {
-    enabled: false,
-    start: '22:00',
-    end: '08:00'
-  }
-};
-
 export default function Notifications() {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
-  const [preferences, setPreferences] = useState<NotificationPreferences>(mockPreferences);
-  const [loading, setLoading] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadNotifications();
+    loadPreferences();
+  }, []);
+
+  const loadNotifications = async () => {
+    try {
+      const userNotifications = await notificationsService.getNotifications('current-user');
+      setNotifications(userNotifications);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load notifications.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadPreferences = async () => {
+    try {
+      setLoading(true);
+      const userPreferences = await notificationsService.getNotificationPreferences('current-user');
+      setPreferences(userPreferences);
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to load notification preferences.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleMarkAsRead = async (notificationId: string) => {
-    setNotifications(prev =>
-      prev.map(n =>
-        n.id === notificationId ? { ...n, read: true } : n
-      )
-    );
+    try {
+      await notificationsService.markNotificationAsRead(notificationId);
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId ? { ...n, read: true } : n
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notification as read.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleMarkAllAsRead = async () => {
-    setNotifications(prev =>
-      prev.map(n => ({ ...n, read: true }))
-    );
-    toast({
-      title: "All notifications marked as read",
-      description: "All notifications have been marked as read.",
-    });
+    try {
+      await notificationsService.markAllNotificationsAsRead('current-user');
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, read: true }))
+      );
+      toast({
+        title: "All notifications marked as read",
+        description: "All notifications have been marked as read.",
+      });
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark all notifications as read.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId: string) => {
+    try {
+      await notificationsService.deleteNotification(notificationId);
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      toast({
+        title: "Notification deleted",
+        description: "The notification has been deleted.",
+      });
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete notification.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePreferenceChange = async (key: keyof NotificationPreferences, value: any) => {
-    setPreferences(prev => ({ ...prev, [key]: value }));
-    toast({
-      title: "Preferences updated",
-      description: "Your notification preferences have been saved.",
-    });
+    if (!preferences) return;
+    
+    try {
+      const updatedPreferences = { ...preferences, [key]: value };
+      await notificationsService.updateNotificationPreferences('current-user', updatedPreferences);
+      setPreferences(updatedPreferences);
+      toast({
+        title: "Preferences updated",
+        description: "Your notification preferences have been saved.",
+      });
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update preferences.",
+        variant: "destructive",
+      });
+    }
   };
+
+  const filteredNotifications = notifications.filter(notification =>
+    notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    notification.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    notification.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
@@ -113,6 +157,17 @@ export default function Notifications() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Bell className="mx-auto h-12 w-12 text-muted-foreground mb-4 animate-pulse" />
+          <p className="text-muted-foreground">Loading notifications...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -124,10 +179,26 @@ export default function Notifications() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary">{unreadCount} unread</Badge>
-          <Button variant="outline" onClick={handleMarkAllAsRead}>
+          <Button variant="outline" onClick={handleMarkAllAsRead} disabled={unreadCount === 0}>
             Mark All Read
           </Button>
         </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search notifications..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Badge variant="secondary">
+          {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
+        </Badge>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -141,14 +212,14 @@ export default function Notifications() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {notifications.length === 0 ? (
+              {filteredNotifications.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <BellOff className="mx-auto h-12 w-12 opacity-50 mb-4" />
                   <p>No notifications</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {notifications.map((notification) => (
+                  {filteredNotifications.map((notification) => (
                     <div
                       key={notification.id}
                       className={`p-4 rounded-lg border cursor-pointer transition-colors ${
@@ -177,9 +248,22 @@ export default function Notifications() {
                             <span className="text-xs text-muted-foreground">
                               {new Date(notification.timestamp).toLocaleString()}
                             </span>
-                            <Badge variant="outline" className="text-xs">
-                              {notification.category}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {notification.category}
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteNotification(notification.id);
+                                }}
+                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -208,7 +292,7 @@ export default function Notifications() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Email</span>
                     <Switch
-                      checked={preferences.email}
+                      checked={preferences?.email || false}
                       onCheckedChange={(checked) => 
                         handlePreferenceChange('email', checked)
                       }
@@ -217,7 +301,7 @@ export default function Notifications() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Push</span>
                     <Switch
-                      checked={preferences.push}
+                      checked={preferences?.push || false}
                       onCheckedChange={(checked) => 
                         handlePreferenceChange('push', checked)
                       }
@@ -226,7 +310,7 @@ export default function Notifications() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">In-App</span>
                     <Switch
-                      checked={preferences.inApp}
+                      checked={preferences?.inApp || false}
                       onCheckedChange={(checked) => 
                         handlePreferenceChange('inApp', checked)
                       }
@@ -239,7 +323,7 @@ export default function Notifications() {
               <div>
                 <h4 className="font-medium mb-3">Categories</h4>
                 <div className="space-y-3">
-                  {Object.entries(preferences.categories).map(([category, enabled]) => (
+                  {preferences?.categories && Object.entries(preferences.categories).map(([category, enabled]) => (
                     <div key={category} className="flex items-center justify-between">
                       <span className="text-sm capitalize">{category.replace('-', ' ')}</span>
                       <Switch
@@ -262,16 +346,16 @@ export default function Notifications() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm">Enable quiet hours</span>
                   <Switch
-                    checked={preferences.quietHours.enabled}
+                    checked={preferences?.quietHours?.enabled || false}
                     onCheckedChange={(checked) => 
                       handlePreferenceChange('quietHours', {
-                        ...preferences.quietHours,
+                        ...preferences?.quietHours,
                         enabled: checked
                       })
                     }
                   />
                 </div>
-                {preferences.quietHours.enabled && (
+                {preferences?.quietHours?.enabled && (
                   <div className="text-xs text-muted-foreground">
                     {preferences.quietHours.start} - {preferences.quietHours.end}
                   </div>

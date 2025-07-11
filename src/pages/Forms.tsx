@@ -2,48 +2,43 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, FileText, Edit, Trash2, Eye, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import * as formsService from '@/services/forms/formsService';
 import type { FormTemplate } from '@/types/form';
 
-// Mock data - replace with real service calls
-const mockForms: FormTemplate[] = [
-  {
-    id: '1',
-    name: 'Customer Service Request',
-    description: 'Standard form for customer service requests',
-    category: 'customer-service',
-    content: { sections: [] },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    version: 1,
-    is_published: true,
-    created_by: 'user1',
-    tags: ['service', 'customer']
-  },
-  {
-    id: '2',
-    name: 'Equipment Inspection',
-    description: 'Form for equipment safety inspections',
-    category: 'maintenance',
-    content: { sections: [] },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    version: 2,
-    is_published: false,
-    created_by: 'user2',
-    tags: ['equipment', 'inspection']
-  }
-];
-
 export default function Forms() {
-  const [forms, setForms] = useState<FormTemplate[]>(mockForms);
-  const [loading, setLoading] = useState(false);
+  const [forms, setForms] = useState<FormTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadForms();
+  }, []);
+
+  const loadForms = async () => {
+    try {
+      setLoading(true);
+      const formTemplates = await formsService.getFormTemplates();
+      setForms(formTemplates);
+    } catch (error) {
+      console.error('Error loading forms:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load forms.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDeleteForm = async (formId: string) => {
     try {
+      await formsService.deleteFormTemplate(formId);
       setForms(prev => prev.filter(f => f.id !== formId));
       toast({
         title: "Form deleted",
@@ -61,17 +56,21 @@ export default function Forms() {
 
   const handleTogglePublish = async (formId: string) => {
     try {
-      setForms(prev => 
-        prev.map(form => 
-          form.id === formId 
-            ? { ...form, is_published: !form.is_published }
-            : form
-        )
-      );
-      toast({
-        title: "Form updated",
-        description: "Form publication status has been updated.",
-      });
+      const form = forms.find(f => f.id === formId);
+      if (form) {
+        await formsService.publishFormTemplate(formId, !form.is_published);
+        setForms(prev => 
+          prev.map(form => 
+            form.id === formId 
+              ? { ...form, is_published: !form.is_published }
+              : form
+          )
+        );
+        toast({
+          title: "Form updated",
+          description: "Form publication status has been updated.",
+        });
+      }
     } catch (error) {
       console.error('Error updating form:', error);
       toast({
@@ -82,6 +81,48 @@ export default function Forms() {
     }
   };
 
+  const handleCreateForm = async () => {
+    try {
+      const newForm = await formsService.createFormTemplate({
+        name: 'New Form Template',
+        description: 'A new form template',
+        category: 'general',
+        version: 1,
+        is_published: false,
+        content: { sections: [] }
+      });
+      setForms(prev => [...prev, newForm]);
+      toast({
+        title: "Form created",
+        description: "New form template has been created.",
+      });
+    } catch (error) {
+      console.error('Error creating form:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create form. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredForms = forms.filter(form =>
+    form.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    form.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    form.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4 animate-pulse" />
+          <p className="text-muted-foreground">Loading forms...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -91,13 +132,29 @@ export default function Forms() {
             Create and manage custom forms for your business processes
           </p>
         </div>
-        <Button>
+        <Button onClick={handleCreateForm}>
           <Plus className="mr-2 h-4 w-4" />
           Create Form
         </Button>
       </div>
 
-      {forms.length === 0 ? (
+      {/* Search Bar */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search forms..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Badge variant="secondary">
+          {filteredForms.length} form{filteredForms.length !== 1 ? 's' : ''}
+        </Badge>
+      </div>
+
+      {filteredForms.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-12">
@@ -106,7 +163,7 @@ export default function Forms() {
               <p className="text-muted-foreground mb-6">
                 Start by creating your first custom form to streamline your business processes.
               </p>
-              <Button>
+              <Button onClick={handleCreateForm}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Your First Form
               </Button>
@@ -115,7 +172,7 @@ export default function Forms() {
         </Card>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {forms.map((form) => (
+          {filteredForms.map((form) => (
             <Card key={form.id} className="group hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
