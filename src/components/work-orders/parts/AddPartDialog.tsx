@@ -120,14 +120,37 @@ export function AddPartDialog({
       return;
     }
 
+    // Client-side validation for required fields
+    if (!data.name || data.name.trim() === '') {
+      toast.error('Part name is required');
+      form.setError('name', { message: 'Part name is required' });
+      return;
+    }
+
+    if (!data.part_number || data.part_number.trim() === '') {
+      toast.error('Part number is required');
+      form.setError('part_number', { message: 'Part number is required' });
+      return;
+    }
+
+    if (!data.quantity || data.quantity < 1) {
+      toast.error('Quantity must be at least 1');
+      form.setError('quantity', { message: 'Quantity must be at least 1' });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      console.log('Creating part with data:', data);
+      console.log('Creating part with validated data:', data);
 
       const partData = {
         ...data,
         work_order_id: workOrderId,
-        total_price: data.total_price || (data.quantity * data.unit_price)
+        name: data.name.trim(),
+        part_number: data.part_number.trim(),
+        quantity: Math.max(1, Number(data.quantity)),
+        unit_price: Math.max(0, Number(data.unit_price)),
+        total_price: data.total_price || (Math.max(1, Number(data.quantity)) * Math.max(0, Number(data.unit_price)))
       };
 
       await createWorkOrderPart(partData);
@@ -139,7 +162,8 @@ export function AddPartDialog({
       
     } catch (error) {
       console.error('Error creating part:', error);
-      toast.error('Failed to add part');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add part';
+      toast.error(`Failed to add part: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }

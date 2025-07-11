@@ -18,9 +18,14 @@ export function BasicPartFields({ form }: BasicPartFieldsProps) {
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Part Name</FormLabel>
+            <FormLabel>Part Name <span className="text-red-500">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Enter part name..." {...field} />
+              <Input 
+                placeholder="Enter part name..." 
+                {...field}
+                onChange={(e) => field.onChange(e.target.value.trim())}
+                className={!field.value || field.value.trim() === '' ? 'border-red-300' : ''}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -32,9 +37,14 @@ export function BasicPartFields({ form }: BasicPartFieldsProps) {
         name="part_number"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Part Number</FormLabel>
+            <FormLabel>Part Number <span className="text-red-500">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Enter part number..." {...field} />
+              <Input 
+                placeholder="Enter part number..." 
+                {...field}
+                onChange={(e) => field.onChange(e.target.value.trim())}
+                className={!field.value || field.value.trim() === '' ? 'border-red-300' : ''}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

@@ -23,12 +23,38 @@ export function useWorkOrderPartsOperations({
     try {
       setIsLoading(true);
       setError(null);
-      console.log('Adding new part:', partData);
+      
+      // Enhanced validation before API call
+      if (!workOrderId) {
+        throw new Error('Work Order ID is missing');
+      }
+      
+      if (!partData.name || partData.name.trim() === '') {
+        throw new Error('Part name is required');
+      }
+      
+      if (!partData.part_number || partData.part_number.trim() === '') {
+        throw new Error('Part number is required');
+      }
 
-      const newPart = await createWorkOrderPart({
+      if (!partData.quantity || partData.quantity < 1) {
+        throw new Error('Quantity must be at least 1');
+      }
+
+      console.log('Adding new part with validation:', partData);
+
+      const sanitizedPartData = {
         ...partData,
         work_order_id: workOrderId,
-      });
+        name: partData.name.trim(),
+        part_number: partData.part_number.trim(),
+        quantity: Math.max(1, Number(partData.quantity)),
+        unit_price: Math.max(0, Number(partData.unit_price || 0)),
+        part_type: partData.part_type || 'inventory',
+        status: partData.status || 'pending'
+      };
+
+      const newPart = await createWorkOrderPart(sanitizedPartData);
 
       console.log('Part added successfully:', newPart);
       

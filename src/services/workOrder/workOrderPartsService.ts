@@ -169,7 +169,25 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
 
     if (error) {
       console.error('Error creating work order part:', error);
-      throw error;
+      
+      // Enhanced error handling with specific error messages
+      if (error.message?.includes('part_name')) {
+        throw new Error('Part name is required and cannot be empty');
+      }
+      if (error.message?.includes('part_number')) {
+        throw new Error('Part number is required and cannot be empty');
+      }
+      if (error.message?.includes('work_order_id')) {
+        throw new Error('Work order ID is required');
+      }
+      if (error.message?.includes('violates not-null constraint')) {
+        throw new Error('Required field is missing. Please fill in all required fields.');
+      }
+      if (error.message?.includes('violates check constraint')) {
+        throw new Error('Invalid data format. Please check your input values.');
+      }
+      
+      throw new Error(`Database error: ${error.message}`);
     }
 
     console.log('Work order part created successfully:', data);
@@ -178,6 +196,12 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
     return mapDatabasePartToWorkOrderPart(data);
   } catch (error) {
     console.error('Error in createWorkOrderPart:', error);
+    
+    // Re-throw with enhanced context if it's not already our custom error
+    if (error instanceof Error && !error.message.startsWith('Part ') && !error.message.startsWith('Work order') && !error.message.startsWith('Required field')) {
+      throw new Error(`Failed to create work order part: ${error.message}`);
+    }
+    
     throw error;
   }
 }
