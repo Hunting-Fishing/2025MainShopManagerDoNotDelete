@@ -52,8 +52,8 @@ export function EquipmentMaintenanceHistory({ maintenanceHistory }: EquipmentMai
           <TableBody>
             {maintenanceHistory.map((record) => (
               <TableRow key={record.id}>
-                <TableCell className="font-medium">{formatDate(record.date)}</TableCell>
-                <TableCell>{record.technician}</TableCell>
+                <TableCell className="font-medium">{formatDate(record.performed_date)}</TableCell>
+                <TableCell>{record.performed_by || 'Unknown'}</TableCell>
                 <TableCell>
                   <div>
                     <div>{record.description}</div>

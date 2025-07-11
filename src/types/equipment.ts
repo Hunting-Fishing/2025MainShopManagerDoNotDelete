@@ -1,60 +1,58 @@
+export type EquipmentStatus = 'operational' | 'maintenance' | 'out_of_service' | 'down';
 
-// Define types for equipment maintenance
-export type MaintenanceFrequency = "monthly" | "quarterly" | "bi-annually" | "annually" | "as-needed";
-
-// Define types for equipment warranty status
-export type WarrantyStatus = "active" | "expired" | "not-applicable";
-
-// Define equipment status type to match database
-export type EquipmentStatus = "operational" | "maintenance-required" | "out-of-service" | "decommissioned";
-
-// Define maintenance history record interface
-export interface MaintenanceRecord {
-  id: string;
-  date: string;
-  technician: string;
-  description: string;
-  cost?: number;
-  notes?: string;
-  workOrderId?: string;
-}
-
-// Define a maintenance schedule interface
-export interface MaintenanceSchedule {
-  id: string;
-  frequencyType: MaintenanceFrequency;
-  nextDate: string;
-  description: string;
-  estimatedDuration: number; // in hours
-  technician?: string;
-  isRecurring: boolean;
-  notificationsEnabled: boolean;
-  reminderDays: number; // days before to send notification
-}
-
-// Define equipment/asset interface that matches the database structure
 export interface Equipment {
   id: string;
   name: string;
-  model: string | null;
-  serial_number: string | null;
-  manufacturer: string | null;
+  model: string;
+  manufacturer: string;
+  serial_number: string;
   category: string;
-  purchase_date: string | null;
-  install_date: string | null;
+  status: string; // Using string to match database schema
+  location: string;
   customer: string;
-  location: string | null;
-  status: EquipmentStatus;
-  next_maintenance_date: string | null;
+  purchase_date: string;
+  install_date: string;
+  warranty_expiry_date: string;
+  warranty_status: string;
+  last_maintenance_date: string;
+  next_maintenance_date: string;
   maintenance_frequency: string;
-  last_maintenance_date: string | null;
-  warranty_expiry_date: string | null;
-  warranty_status: string | null;
+  maintenance_history?: any;
+  maintenance_schedules?: any;
+  work_order_history?: any;
   notes?: string;
-  shop_id?: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface EquipmentStats {
+  total: number;
+  operational: number;
+  needsMaintenance: number;
+  outOfService: number;
+}
+
+export interface EquipmentMaintenance {
+  id: string;
+  equipment_id: string;
+  maintenance_type: string;
+  description: string;
+  performed_date: string;
+  performed_by?: string;
+  cost?: number;
+  notes?: string;
+  next_maintenance_date?: string;
+  attachments?: any[];
   created_at: string;
-  updated_at: string;
-  work_order_history?: any[];
-  maintenance_history?: MaintenanceRecord[];
-  maintenance_schedules?: MaintenanceSchedule[];
+}
+
+// Compatibility aliases for existing files
+export interface MaintenanceRecord extends EquipmentMaintenance {}
+export interface MaintenanceSchedule {
+  id: string;
+  equipment_id: string;
+  frequency: string;
+  next_due: string;
+  description: string;
+  assigned_to?: string;
 }

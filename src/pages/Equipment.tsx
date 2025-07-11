@@ -1,12 +1,7 @@
 
 import React from 'react';
-import { PlaceholderPage } from '@/components/common/PlaceholderPage';
+import { EquipmentPage } from '@/components/equipment/EquipmentPage';
 
 export default function Equipment() {
-  return (
-    <PlaceholderPage
-      title="Equipment"
-      description="Equipment management and tracking will be available here."
-    />
-  );
+  return <EquipmentPage />;
 }
