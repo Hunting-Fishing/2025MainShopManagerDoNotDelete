@@ -90,6 +90,19 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
   console.log('Creating work order part:', partData);
   
   try {
+    // Validate required fields before processing
+    if (!partData.work_order_id) {
+      throw new Error('work_order_id is required');
+    }
+    
+    if (!partData.name || partData.name.trim() === '') {
+      throw new Error('Part name is required');
+    }
+    
+    if (!partData.part_number || partData.part_number.trim() === '') {
+      throw new Error('Part number is required');
+    }
+
     // Helper function to handle date fields - convert empty strings to null
     const formatDateField = (dateValue: any): string | null => {
       if (!dateValue || dateValue === '' || dateValue === 'null' || dateValue === 'undefined') {
@@ -106,36 +119,44 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
       return Number(numValue);
     };
 
+    // Helper function to safely handle string fields
+    const formatStringField = (stringValue: any): string | null => {
+      if (!stringValue || stringValue.trim() === '') {
+        return null;
+      }
+      return stringValue.trim();
+    };
+
     // Map application data to database format with proper data validation
     const dbPartData = {
       work_order_id: partData.work_order_id,
-      job_line_id: partData.job_line_id || null,
-      part_name: partData.name, // Map name to part_name
-      part_number: partData.part_number,
-      quantity: partData.quantity || 1,
-      customer_price: partData.unit_price || partData.customerPrice || 0, // Map unit_price to customer_price
+      job_line_id: formatStringField(partData.job_line_id),
+      part_name: partData.name.trim(), // Required field - map name to part_name
+      part_number: partData.part_number.trim(), // Required field
+      quantity: Math.max(1, Number(partData.quantity) || 1),
+      customer_price: Math.max(0, Number(partData.unit_price) || Number(partData.customerPrice) || 0),
       status: partData.status || 'pending',
       part_type: partData.part_type || 'inventory',
-      category: partData.category || null,
-      notes: partData.notes || null,
+      category: formatStringField(partData.category),
+      notes: formatStringField(partData.notes),
       // Extended fields with proper null handling
       supplier_cost: formatNumericField(partData.supplierCost),
       retail_price: formatNumericField(partData.supplierSuggestedRetail), // Use retail_price column
       markup_percentage: formatNumericField(partData.markupPercentage),
-      supplier_name: partData.supplierName || null,
+      supplier_name: formatStringField(partData.supplierName),
       is_taxable: partData.isTaxable !== undefined ? partData.isTaxable : true,
       core_charge_amount: formatNumericField(partData.coreChargeAmount),
       core_charge_applied: partData.coreChargeApplied !== undefined ? partData.coreChargeApplied : false,
       eco_fee: formatNumericField(partData.ecoFee),
       eco_fee_applied: partData.ecoFeeApplied !== undefined ? partData.ecoFeeApplied : false,
-      warranty_duration: partData.warrantyDuration || null,
+      warranty_duration: formatStringField(partData.warrantyDuration),
       warranty_expiry_date: formatDateField(partData.warrantyExpiryDate),
       install_date: formatDateField(partData.installDate),
-      installed_by: partData.installedBy || null,
-      invoice_number: partData.invoiceNumber || null,
-      po_line: partData.poLine || null,
+      installed_by: formatStringField(partData.installedBy),
+      invoice_number: formatStringField(partData.invoiceNumber),
+      po_line: formatStringField(partData.poLine),
       is_stock_item: partData.isStockItem !== undefined ? partData.isStockItem : true,
-      inventory_item_id: partData.inventoryItemId || null
+      inventory_item_id: formatStringField(partData.inventoryItemId)
     };
 
     console.log('Mapped database part data:', dbPartData);
