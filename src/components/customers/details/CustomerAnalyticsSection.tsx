@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Customer } from "@/types/customer";
@@ -9,6 +9,8 @@ import { CustomerLifetimeValueCard } from "@/components/analytics/CustomerLifeti
 import { CustomerSegmentBadges } from "@/components/analytics/CustomerSegmentBadges";
 import { ChartContainer } from "@/components/analytics/ChartContainer";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { customerAnalyticsService, CustomerAnalytics } from "@/services/analytics/customerAnalyticsService";
+import { Loader2 } from "lucide-react";
 
 interface CustomerAnalyticsSectionProps {
   customer: Customer;
@@ -18,29 +20,33 @@ export const CustomerAnalyticsSection: React.FC<CustomerAnalyticsSectionProps> =
   customer 
 }) => {
   const [timeRange, setTimeRange] = useState<'6m' | '1y' | 'all'>('1y');
+  const [analytics, setAnalytics] = useState<CustomerAnalytics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Sample data for customer value over time
-  const clvHistoryData = [
-    { month: 'Jan', value: 145 },
-    { month: 'Feb', value: 210 },
-    { month: 'Mar', value: 320 },
-    { month: 'Apr', value: 340 },
-    { month: 'May', value: 450 },
-    { month: 'Jun', value: 480 },
-    { month: 'Jul', value: 520 },
-    { month: 'Aug', value: 590 },
-    { month: 'Sep', value: 620 },
-    { month: 'Oct', value: 700 },
-    { month: 'Nov', value: 820 },
-    { month: 'Dec', value: 900 },
-  ];
-  
-  // Sample service category data
-  const serviceCategoryData = [
-    { name: 'Repair', value: 65 },
-    { name: 'Maintenance', value: 25 },
-    { name: 'Upgrade', value: 10 },
-  ];
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      setIsLoading(true);
+      try {
+        const data = await customerAnalyticsService.getCustomerAnalytics(customer.id);
+        setAnalytics(data);
+      } catch (error) {
+        console.error('Error fetching customer analytics:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [customer.id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading analytics...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -82,7 +88,7 @@ export const CustomerAnalyticsSection: React.FC<CustomerAnalyticsSectionProps> =
           >
             <ResponsiveContainer width="100%" height={300}>
               <LineChart
-                data={clvHistoryData}
+                data={analytics?.clvHistory || []}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
@@ -101,11 +107,14 @@ export const CustomerAnalyticsSection: React.FC<CustomerAnalyticsSectionProps> =
               description="Services utilized by category"
             >
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={serviceCategoryData}>
+                <BarChart data={analytics?.serviceCategories || []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                  <Tooltip formatter={(value, name, props) => [
+                    `${value}% (${props.payload.count} services)`, 
+                    'Percentage'
+                  ]} />
                   <Bar dataKey="value" fill="#8884d8" />
                 </BarChart>
               </ResponsiveContainer>

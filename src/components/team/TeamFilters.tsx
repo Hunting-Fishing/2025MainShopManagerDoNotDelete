@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { useTeamFilterData } from '@/hooks/team/useTeamFilterData';
 import { 
   Users, 
   Filter, 
@@ -13,7 +14,8 @@ import {
   RotateCcw,
   UserCheck,
   MapPin,
-  Briefcase
+  Briefcase,
+  Loader2
 } from 'lucide-react';
 
 interface TeamFilter {
@@ -40,11 +42,6 @@ const defaultFilter: TeamFilter = {
   },
 };
 
-const mockData = {
-  departments: ['Service', 'Sales', 'Parts', 'Management', 'Administration'],
-  roles: ['Technician', 'Service Advisor', 'Manager', 'Reception', 'Owner'],
-  locations: ['Main Shop', 'Downtown', 'North Branch', 'Mobile Service', 'Remote'],
-};
 
 interface TeamFiltersProps {
   onFilterChange: (filter: TeamFilter) => void;
@@ -53,6 +50,7 @@ interface TeamFiltersProps {
 
 export function TeamFilters({ onFilterChange, className }: TeamFiltersProps) {
   const [filter, setFilter] = useState<TeamFilter>(defaultFilter);
+  const { filterData, isLoading, error } = useTeamFilterData();
 
   const updateFilter = (updates: Partial<TeamFilter>) => {
     const newFilter = { ...filter, ...updates };
@@ -166,7 +164,17 @@ export function TeamFilters({ onFilterChange, className }: TeamFiltersProps) {
         <div className="space-y-2">
           <Label>Departments</Label>
           <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[3rem]">
-            {mockData.departments.map(dept => (
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading departments...
+              </div>
+            ) : error ? (
+              <div className="text-sm text-destructive">Failed to load departments</div>
+            ) : filterData.departments.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No departments found</div>
+            ) : (
+              filterData.departments.map(dept => (
               <Badge
                 key={dept}
                 variant={filter.departments.includes(dept) ? "default" : "outline"}
@@ -180,7 +188,8 @@ export function TeamFilters({ onFilterChange, className }: TeamFiltersProps) {
                   <X className="h-3 w-3 ml-1" />
                 )}
               </Badge>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -188,7 +197,17 @@ export function TeamFilters({ onFilterChange, className }: TeamFiltersProps) {
         <div className="space-y-2">
           <Label>Roles</Label>
           <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[3rem]">
-            {mockData.roles.map(role => (
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading roles...
+              </div>
+            ) : error ? (
+              <div className="text-sm text-destructive">Failed to load roles</div>
+            ) : filterData.roles.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No roles found</div>
+            ) : (
+              filterData.roles.map(role => (
               <Badge
                 key={role}
                 variant={filter.roles.includes(role) ? "default" : "outline"}
@@ -202,7 +221,8 @@ export function TeamFilters({ onFilterChange, className }: TeamFiltersProps) {
                   <X className="h-3 w-3 ml-1" />
                 )}
               </Badge>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -210,7 +230,17 @@ export function TeamFilters({ onFilterChange, className }: TeamFiltersProps) {
         <div className="space-y-2">
           <Label>Locations</Label>
           <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[3rem]">
-            {mockData.locations.map(location => (
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading locations...
+              </div>
+            ) : error ? (
+              <div className="text-sm text-destructive">Failed to load locations</div>
+            ) : filterData.locations.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No locations found</div>
+            ) : (
+              filterData.locations.map(location => (
               <Badge
                 key={location}
                 variant={filter.locations.includes(location) ? "default" : "outline"}
@@ -224,7 +254,8 @@ export function TeamFilters({ onFilterChange, className }: TeamFiltersProps) {
                   <X className="h-3 w-3 ml-1" />
                 )}
               </Badge>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </CardContent>
