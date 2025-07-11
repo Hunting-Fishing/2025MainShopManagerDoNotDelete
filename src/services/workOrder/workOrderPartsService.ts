@@ -126,6 +126,8 @@ export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Pro
       is_taxable: partData.isTaxable !== undefined ? partData.isTaxable : true,
       core_charge_amount: formatNumericField(partData.coreChargeAmount),
       core_charge_applied: partData.coreChargeApplied !== undefined ? partData.coreChargeApplied : false,
+      eco_fee: formatNumericField(partData.ecoFee),
+      eco_fee_applied: partData.ecoFeeApplied !== undefined ? partData.ecoFeeApplied : false,
       warranty_duration: partData.warrantyDuration || null,
       warranty_expiry_date: formatDateField(partData.warrantyExpiryDate),
       install_date: formatDateField(partData.installDate),
@@ -206,6 +208,8 @@ export async function updateWorkOrderPart(partId: string, updates: Partial<WorkO
     if (updates.poLine !== undefined) dbUpdates.po_line = updates.poLine || null;
     if (updates.coreChargeAmount !== undefined) dbUpdates.core_charge_amount = formatNumericField(updates.coreChargeAmount);
     if (updates.coreChargeApplied !== undefined) dbUpdates.core_charge_applied = updates.coreChargeApplied;
+    if (updates.ecoFee !== undefined) dbUpdates.eco_fee = formatNumericField(updates.ecoFee);
+    if (updates.ecoFeeApplied !== undefined) dbUpdates.eco_fee_applied = updates.ecoFeeApplied;
     if (updates.isStockItem !== undefined) dbUpdates.is_stock_item = updates.isStockItem;
     if (updates.inventoryItemId !== undefined) dbUpdates.inventory_item_id = updates.inventoryItemId || null;
 

@@ -57,6 +57,8 @@ const ultimatePartSchema = z.object({
   isTaxable: z.boolean().optional(),
   coreChargeAmount: z.number().optional(),
   coreChargeApplied: z.boolean().optional(),
+  ecoFee: z.number().optional(),
+  ecoFeeApplied: z.boolean().optional(),
   // Status & Assignment
   status: z.string().optional().default('pending'),
   job_line_id: z.string().optional(),
@@ -116,6 +118,8 @@ export function UltimateAddPartDialog({
       isTaxable: true,
       coreChargeAmount: 0,
       coreChargeApplied: false,
+      ecoFee: 0,
+      ecoFeeApplied: false,
       status: 'pending',
       job_line_id: preSelectedJobLineId || '',
       notes: '',
@@ -320,8 +324,7 @@ export function UltimateAddPartDialog({
                         </FormItem>} />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="quantity" render={({
+                  <FormField control={form.control} name="quantity" render={({
                     field
                   }) => <FormItem>
                           <FormLabel>Quantity *</FormLabel>
@@ -330,17 +333,6 @@ export function UltimateAddPartDialog({
                           </FormControl>
                           <FormMessage />
                         </FormItem>} />
-
-                    <FormField control={form.control} name="unit_price" render={({
-                    field
-                  }) => <FormItem>
-                          <FormLabel>Unit Price *</FormLabel>
-                          <FormControl>
-                            <Input type="number" min="0" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
-                  </div>
 
                   <FormField control={form.control} name="description" render={({
                   field
@@ -399,6 +391,36 @@ export function UltimateAddPartDialog({
                       field
                     }) => <FormItem>
                               <FormLabel>Core Charge Amount</FormLabel>
+                              <FormControl>
+                                <Input type="number" min="0" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>} />}
+                    </div>
+                  </div>
+
+                  {/* ECO FEE Section */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">ECO FEE</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField control={form.control} name="ecoFeeApplied" render={({
+                      field
+                    }) => <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">Apply ECO FEE</FormLabel>
+                              <div className="text-sm text-muted-foreground">
+                                Environmental handling fee
+                              </div>
+                            </div>
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                          </FormItem>} />
+
+                      {form.watch('ecoFeeApplied') && <FormField control={form.control} name="ecoFee" render={({
+                      field
+                    }) => <FormItem>
+                              <FormLabel>ECO FEE Amount</FormLabel>
                               <FormControl>
                                 <Input type="number" min="0" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
                               </FormControl>

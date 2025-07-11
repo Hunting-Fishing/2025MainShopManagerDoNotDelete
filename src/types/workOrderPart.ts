@@ -28,6 +28,8 @@ export interface WorkOrderPart {
   isTaxable?: boolean;
   coreChargeAmount?: number;
   coreChargeApplied?: boolean;
+  ecoFee?: number;
+  ecoFeeApplied?: boolean;
   warrantyDuration?: string;
   warrantyExpiryDate?: string;
   installDate?: string;
@@ -65,6 +67,8 @@ export interface WorkOrderPartFormValues {
   isTaxable?: boolean;
   coreChargeAmount?: number;
   coreChargeApplied?: boolean;
+  ecoFee?: number;
+  ecoFeeApplied?: boolean;
   warrantyDuration?: string;
   warrantyExpiryDate?: string;
   installDate?: string;

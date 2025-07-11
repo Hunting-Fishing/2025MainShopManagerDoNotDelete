@@ -12440,6 +12440,8 @@ export type Database = {
           created_at: string | null
           customer_price: number
           date_added: string | null
+          eco_fee: number | null
+          eco_fee_applied: boolean | null
           id: string
           install_date: string | null
           installed_by: string | null
@@ -12474,6 +12476,8 @@ export type Database = {
           created_at?: string | null
           customer_price: number
           date_added?: string | null
+          eco_fee?: number | null
+          eco_fee_applied?: boolean | null
           id?: string
           install_date?: string | null
           installed_by?: string | null
@@ -12508,6 +12512,8 @@ export type Database = {
           created_at?: string | null
           customer_price?: number
           date_added?: string | null
+          eco_fee?: number | null
+          eco_fee_applied?: boolean | null
           id?: string
           install_date?: string | null
           installed_by?: string | null
@@ -13476,6 +13482,8 @@ export type Database = {
           created_at: string | null
           customer_price: number
           date_added: string | null
+          eco_fee: number | null
+          eco_fee_applied: boolean | null
           id: string
           install_date: string | null
           installed_by: string | null
@@ -13598,6 +13606,8 @@ export type Database = {
           created_at: string | null
           customer_price: number
           date_added: string | null
+          eco_fee: number | null
+          eco_fee_applied: boolean | null
           id: string
           install_date: string | null
           installed_by: string | null

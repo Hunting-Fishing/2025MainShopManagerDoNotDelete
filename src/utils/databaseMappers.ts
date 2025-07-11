@@ -44,6 +44,8 @@ export function mapDatabasePartToWorkOrderPart(dbPart: any): WorkOrderPart {
     isTaxable: Boolean(dbPart.is_taxable),
     coreChargeAmount: parseFloat(dbPart.core_charge_amount) || undefined,
     coreChargeApplied: Boolean(dbPart.core_charge_applied),
+    ecoFee: parseFloat(dbPart.eco_fee) || undefined,
+    ecoFeeApplied: Boolean(dbPart.eco_fee_applied),
     warrantyDuration: dbPart.warranty_duration || undefined,
     warrantyExpiryDate: dbPart.warranty_expiry_date || undefined,
     installDate: dbPart.install_date || undefined,
