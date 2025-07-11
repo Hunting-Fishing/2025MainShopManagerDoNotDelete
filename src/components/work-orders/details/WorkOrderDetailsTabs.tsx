@@ -22,6 +22,7 @@ interface WorkOrderDetailsTabsProps {
   onWorkOrderUpdate: () => Promise<void>;
   onPartsChange: () => Promise<void>;
   isEditMode: boolean;
+  setJobLines: (jobLines: WorkOrderJobLine[]) => void;
 }
 
 export function WorkOrderDetailsTabs({
@@ -32,7 +33,8 @@ export function WorkOrderDetailsTabs({
   customer,
   onWorkOrderUpdate,
   onPartsChange,
-  isEditMode
+  isEditMode,
+  setJobLines
 }: WorkOrderDetailsTabsProps) {
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -62,6 +64,7 @@ export function WorkOrderDetailsTabs({
           onWorkOrderUpdate={onWorkOrderUpdate}
           onPartsChange={onPartsChange}
           isEditMode={isEditMode}
+          setJobLines={setJobLines}
         />
       </TabsContent>
 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
@@ -9,6 +9,8 @@ import { WorkOrderLineItems } from '../job-lines/WorkOrderLineItems';
 import { WorkOrderCustomerCard } from './WorkOrderCustomerCard';
 import { WorkOrderTimeCard } from './WorkOrderTimeCard';
 import { WorkOrderTotals } from '../shared/WorkOrderTotals';
+import { useWorkOrderPartsData } from '@/hooks/useWorkOrderPartsData';
+import { useWorkOrderJobLineOperations } from '@/hooks/useWorkOrderJobLineOperations';
 
 interface WorkOrderOverviewTabProps {
   workOrder: WorkOrder;
@@ -19,6 +21,7 @@ interface WorkOrderOverviewTabProps {
   onWorkOrderUpdate: () => Promise<void>;
   onPartsChange: () => Promise<void>;
   isEditMode: boolean;
+  setJobLines: (jobLines: WorkOrderJobLine[]) => void;
 }
 
 export function WorkOrderOverviewTab({
@@ -29,8 +32,34 @@ export function WorkOrderOverviewTab({
   customer,
   onWorkOrderUpdate,
   onPartsChange,
-  isEditMode
+  isEditMode,
+  setJobLines
 }: WorkOrderOverviewTabProps) {
+  // Parts data operations
+  const { addPart, updatePart, deletePart } = useWorkOrderPartsData(workOrder.id);
+
+  // Wrapper functions to match expected signatures
+  const handlePartUpdate = async (partId: string, updates: Partial<WorkOrderPart>) => {
+    await updatePart(partId, updates);
+    await onPartsChange();
+  };
+
+  const handlePartDelete = async (partId: string) => {
+    await deletePart(partId);
+    await onPartsChange();
+  };
+
+  const handleAddPart = async (partData: any) => {
+    await addPart(partData);
+    await onPartsChange();
+  };
+
+  // Enhanced job line operations for completion toggle
+  const jobLineOperations = useWorkOrderJobLineOperations(
+    jobLines, 
+    onPartsChange
+  );
+
   return (
     <div className="space-y-6 fade-in">
       {/* Main Content Layout - Focused on detailed information */}
@@ -49,8 +78,12 @@ export function WorkOrderOverviewTab({
               allParts={allParts}
               workOrderId={workOrder.id}
               isEditMode={isEditMode}
-              onJobLinesChange={() => {}}
+              onJobLinesChange={setJobLines}
               onPartsChange={onPartsChange}
+              onJobLineToggleCompletion={jobLineOperations.handleToggleCompletion}
+              onPartUpdate={handlePartUpdate}
+              onPartDelete={handlePartDelete}
+              onAddPart={handleAddPart}
             />
           </div>
         </div>

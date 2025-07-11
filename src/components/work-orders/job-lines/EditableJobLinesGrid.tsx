@@ -12,7 +12,7 @@ interface EditableJobLinesGridProps {
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   onPartsChange?: () => Promise<void>;
   onAddPart?: (partData: WorkOrderPartFormValues) => Promise<void>;
-  onPartUpdate?: (part: WorkOrderPart) => void;
+  onPartUpdate?: (partId: string, updates: Partial<WorkOrderPart>) => Promise<void>;
   onPartDelete?: (partId: string) => void;
 }
 

@@ -5,92 +5,166 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Package, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EditPartDialog } from './EditPartDialog';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
 
 interface WorkOrderPartsSectionProps {
   parts: WorkOrderPart[];
   isEditMode: boolean;
-  onPartUpdate?: (part: WorkOrderPart) => void;
+  onPartUpdate?: (partId: string, updates: Partial<WorkOrderPart>) => Promise<void>;
   onPartDelete?: (partId: string) => void;
   onAdd?: (partData: WorkOrderPartFormValues) => Promise<void>;
   workOrderId?: string;
+  isLoading?: boolean;
 }
 
 interface PartRowProps {
   part: WorkOrderPart;
   isEditMode: boolean;
-  onPartUpdate?: (part: WorkOrderPart) => void;
+  onPartUpdate?: (partId: string, updates: Partial<WorkOrderPart>) => Promise<void>;
   onPartDelete?: (partId: string) => void;
 }
 
 function PartRow({ part, isEditMode, onPartUpdate, onPartDelete }: PartRowProps) {
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  
   const totalPrice = (part.customerPrice || part.unit_price || 0) * (part.quantity || 1);
 
+  const handleEdit = () => {
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async (partId: string, updates: Partial<WorkOrderPart>) => {
+    if (!onPartUpdate) return;
+    
+    try {
+      setIsUpdating(true);
+      await onPartUpdate(partId, updates);
+      setShowEditDialog(false);
+    } catch (error) {
+      console.error('Error updating part:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    if (onPartDelete) {
+      onPartDelete(part.id);
+    }
+    setShowDeleteDialog(false);
+  };
+
   return (
-    <TableRow className="bg-blue-50/30 border-l-4 border-l-blue-500">
-      {/* Type */}
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <Package className="h-3 w-3" />
-          <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
-            Part
-          </Badge>
-        </div>
-      </TableCell>
-      
-      {/* Name */}
-      <TableCell className="font-medium">{part.name}</TableCell>
-      
-      {/* Description/Part Number */}
-      <TableCell className="text-muted-foreground text-sm">
-        {part.part_number && `Part #: ${part.part_number}`}
-      </TableCell>
-      
-      {/* Quantity */}
-      <TableCell>{part.quantity || 1}</TableCell>
-      
-      {/* Unit Price */}
-      <TableCell>${(part.unit_price || 0).toFixed(2)}</TableCell>
-      
-      {/* Total */}
-      <TableCell>
-        <span className="font-medium">
-          ${totalPrice.toFixed(2)}
-        </span>
-      </TableCell>
-      
-      {/* Status */}
-      <TableCell>
-        <Badge variant="secondary" className="text-xs">
-          {part.status || 'Active'}
-        </Badge>
-      </TableCell>
-      
-      {/* Actions */}
-      {isEditMode && (
+    <>
+      <TableRow className="bg-blue-50/30 border-l-4 border-l-blue-500">
+        {/* Type */}
         <TableCell>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onPartUpdate && onPartUpdate(part)}
-              className="h-7 w-7 p-0"
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
-            {onPartDelete && (
+          <div className="flex items-center gap-2">
+            <Package className="h-3 w-3" />
+            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+              Part
+            </Badge>
+          </div>
+        </TableCell>
+        
+        {/* Name */}
+        <TableCell className="font-medium">{part.name}</TableCell>
+        
+        {/* Description/Part Number */}
+        <TableCell className="text-muted-foreground text-sm">
+          {part.part_number && `Part #: ${part.part_number}`}
+        </TableCell>
+        
+        {/* Quantity */}
+        <TableCell>{part.quantity || 1}</TableCell>
+        
+        {/* Unit Price */}
+        <TableCell>${(part.unit_price || 0).toFixed(2)}</TableCell>
+        
+        {/* Total */}
+        <TableCell>
+          <span className="font-medium">
+            ${totalPrice.toFixed(2)}
+          </span>
+        </TableCell>
+        
+        {/* Status */}
+        <TableCell>
+          <Badge variant="secondary" className="text-xs">
+            {part.status || 'Active'}
+          </Badge>
+        </TableCell>
+        
+        {/* Actions */}
+        {isEditMode && (
+          <TableCell>
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onPartDelete(part.id)}
+                onClick={handleEdit}
                 className="h-7 w-7 p-0"
               >
-                <Trash2 className="h-3 w-3" />
+                <Edit className="h-3 w-3" />
               </Button>
-            )}
-          </div>
-        </TableCell>
-      )}
-    </TableRow>
+              {onPartDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="h-7 w-7 p-0"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </TableCell>
+        )}
+      </TableRow>
+
+      {/* Edit Dialog */}
+      <EditPartDialog
+        part={part}
+        isOpen={showEditDialog}
+        onClose={() => setShowEditDialog(false)}
+        onSave={handleSaveEdit}
+        isLoading={isUpdating}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Part</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{part.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -100,7 +174,8 @@ export function WorkOrderPartsSection({
   onPartUpdate,
   onPartDelete,
   onAdd,
-  workOrderId
+  workOrderId,
+  isLoading = false
 }: WorkOrderPartsSectionProps) {
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -109,7 +184,8 @@ export function WorkOrderPartsSection({
 
   const handleAddPart = async () => {
     if (onAdd) {
-      await onAdd({} as WorkOrderPartFormValues);
+      // For now, just show a placeholder - we'll implement a proper add form later
+      console.log('Add part functionality will be implemented');
     }
     setShowAddForm(false);
   };

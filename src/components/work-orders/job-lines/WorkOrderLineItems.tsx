@@ -21,7 +21,7 @@ interface WorkOrderLineItemsProps {
   onJobLineDelete?: (jobLineId: string) => void;
   onJobLineReorder?: (reorderedJobLines: WorkOrderJobLine[]) => void;
   onJobLineToggleCompletion?: (jobLine: WorkOrderJobLine, completed: boolean) => Promise<void>;
-  onPartUpdate?: (part: WorkOrderPart) => void;
+  onPartUpdate?: (partId: string, updates: Partial<WorkOrderPart>) => Promise<void>;
   onPartDelete?: (partId: string) => void;
   onAddPart?: (partData: WorkOrderPartFormValues) => Promise<void>;
 }
@@ -161,14 +161,14 @@ export function WorkOrderLineItems({
       </Card>
 
       {/* Work Order Level Parts Section */}
-      <WorkOrderPartsSection
-        parts={allParts}
-        isEditMode={isEditMode}
-        onPartUpdate={onPartUpdate}
-        onPartDelete={onPartDelete}
-        onAdd={onAddPart}
-        workOrderId={workOrderId}
-      />
+        <WorkOrderPartsSection
+          parts={allParts}
+          isEditMode={isEditMode}
+          onPartUpdate={onPartUpdate}
+          onPartDelete={onPartDelete}
+          onAdd={onAddPart}
+          workOrderId={workOrderId}
+        />
 
       {/* Service-based forms */}
       {showLaborForm && (

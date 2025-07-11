@@ -1,7 +1,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { 
+  getWorkOrderParts, 
+  createWorkOrderPart, 
+  updateWorkOrderPart, 
+  deleteWorkOrderPart 
+} from '@/services/workOrder/workOrderPartsService';
 import { toast } from 'sonner';
 
 export function useWorkOrderPartsData(workOrderId: string) {
@@ -46,6 +51,90 @@ export function useWorkOrderPartsData(workOrderId: string) {
     await fetchParts();
   }, [fetchParts]);
 
+  // Add part operation
+  const addPart = useCallback(async (partData: WorkOrderPartFormValues): Promise<WorkOrderPart> => {
+    try {
+      setIsLoading(true);
+      console.log('Adding new part:', partData);
+
+      const newPart = await createWorkOrderPart({
+        ...partData,
+        work_order_id: workOrderId,
+      });
+
+      console.log('Part added successfully:', newPart);
+      
+      // Refresh parts list to get the latest data
+      await fetchParts();
+      
+      toast.success('Part added successfully');
+      return newPart;
+    } catch (err) {
+      console.error('Error adding part:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to add part';
+      setError(errorMessage);
+      toast.error(`Failed to add part: ${errorMessage}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [workOrderId, fetchParts]);
+
+  // Update part operation
+  const updatePart = useCallback(async (partId: string, updates: Partial<WorkOrderPart>): Promise<WorkOrderPart> => {
+    try {
+      setIsLoading(true);
+      console.log('Updating part:', partId, updates);
+
+      const updatedPart = await updateWorkOrderPart(partId, updates);
+
+      console.log('Part updated successfully:', updatedPart);
+      
+      // Update local state optimistically
+      setParts(prevParts => 
+        prevParts.map(part => 
+          part.id === partId ? updatedPart : part
+        )
+      );
+      
+      toast.success('Part updated successfully');
+      return updatedPart;
+    } catch (err) {
+      console.error('Error updating part:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update part';
+      setError(errorMessage);
+      toast.error(`Failed to update part: ${errorMessage}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Delete part operation
+  const deletePart = useCallback(async (partId: string): Promise<void> => {
+    try {
+      setIsLoading(true);
+      console.log('Deleting part:', partId);
+
+      await deleteWorkOrderPart(partId);
+
+      console.log('Part deleted successfully:', partId);
+      
+      // Remove from local state
+      setParts(prevParts => prevParts.filter(part => part.id !== partId));
+      
+      toast.success('Part deleted successfully');
+    } catch (err) {
+      console.error('Error deleting part:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete part';
+      setError(errorMessage);
+      toast.error(`Failed to delete part: ${errorMessage}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (workOrderId) {
       fetchParts();
@@ -60,6 +149,9 @@ export function useWorkOrderPartsData(workOrderId: string) {
     parts,
     isLoading,
     error,
-    refreshParts
+    refreshParts,
+    addPart,
+    updatePart,
+    deletePart
   };
 }

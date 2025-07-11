@@ -36,6 +36,8 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
     refreshData
   } = useWorkOrderData(workOrderId);
 
+  const [localJobLines, setLocalJobLines] = useState(jobLines);
+
   const { isEditMode, isReadOnly, canEdit, isCompleted, forceEditMode, setForceEditMode } = useWorkOrderEditMode(workOrder);
   const { toast } = useToast();
   
@@ -209,16 +211,17 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
 
         {/* Content based on view mode */}
         {viewMode === 'tabbed' ? (
-          <WorkOrderDetailsTabs
-            workOrder={workOrder}
-            jobLines={jobLines}
-            allParts={allParts}
-            timeEntries={timeEntries}
-            customer={customer}
-            onWorkOrderUpdate={handleWorkOrderUpdate}
-            onPartsChange={handlePartsChange}
-            isEditMode={isEditMode}
-          />
+        <WorkOrderDetailsTabs
+          workOrder={workOrder}
+          jobLines={jobLines}
+          allParts={allParts}
+          timeEntries={timeEntries}
+          customer={customer}
+          onWorkOrderUpdate={handleWorkOrderUpdate}
+          onPartsChange={handlePartsChange}
+          isEditMode={isEditMode}
+          setJobLines={setLocalJobLines}
+        />
         ) : (
           <WorkOrderDetailedForm
             workOrder={workOrder}
