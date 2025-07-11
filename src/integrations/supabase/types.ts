@@ -73,6 +73,81 @@ export type Database = {
           },
         ]
       }
+      alert_rules: {
+        Row: {
+          alert_severity: string
+          condition_field: string
+          condition_operator: string
+          condition_value: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          notification_channels: string[] | null
+          rule_name: string
+          rule_type: string
+          shop_id: string
+          target_table: string
+          trigger_count: number | null
+          updated_at: string
+        }
+        Insert: {
+          alert_severity?: string
+          condition_field: string
+          condition_operator: string
+          condition_value: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          notification_channels?: string[] | null
+          rule_name: string
+          rule_type: string
+          shop_id: string
+          target_table: string
+          trigger_count?: number | null
+          updated_at?: string
+        }
+        Update: {
+          alert_severity?: string
+          condition_field?: string
+          condition_operator?: string
+          condition_value?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          notification_channels?: string[] | null
+          rule_name?: string
+          rule_type?: string
+          shop_id?: string
+          target_table?: string
+          trigger_count?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_rules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_rules_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       annual_filings: {
         Row: {
           actual_cost: number | null
@@ -868,6 +943,84 @@ export type Database = {
         }
         Relationships: []
       }
+      call_logs: {
+        Row: {
+          call_direction: string
+          call_ended_at: string | null
+          call_started_at: string
+          call_status: string
+          call_type: string
+          caller_id: string
+          caller_name: string
+          created_at: string
+          customer_id: string | null
+          duration_seconds: number | null
+          id: string
+          notes: string | null
+          phone_number: string
+          recipient_id: string | null
+          recipient_name: string | null
+          recording_url: string | null
+          updated_at: string
+          work_order_id: string | null
+        }
+        Insert: {
+          call_direction: string
+          call_ended_at?: string | null
+          call_started_at?: string
+          call_status: string
+          call_type: string
+          caller_id: string
+          caller_name: string
+          created_at?: string
+          customer_id?: string | null
+          duration_seconds?: number | null
+          id?: string
+          notes?: string | null
+          phone_number: string
+          recipient_id?: string | null
+          recipient_name?: string | null
+          recording_url?: string | null
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Update: {
+          call_direction?: string
+          call_ended_at?: string | null
+          call_started_at?: string
+          call_status?: string
+          call_type?: string
+          caller_id?: string
+          caller_name?: string
+          created_at?: string
+          customer_id?: string | null
+          duration_seconds?: number | null
+          id?: string
+          notes?: string | null
+          phone_number?: string
+          recipient_id?: string | null
+          recipient_name?: string | null
+          recording_url?: string | null
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_segment_performance: {
         Row: {
           campaign_id: string
@@ -1220,6 +1373,75 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_items: {
+        Row: {
+          checklist_id: string
+          completed_at: string | null
+          completed_by: string | null
+          completion_notes: string | null
+          completion_value: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_completed: boolean
+          is_required: boolean
+          item_text: string
+          item_type: string
+          photo_urls: string[] | null
+          sequence_order: number
+          updated_at: string
+        }
+        Insert: {
+          checklist_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          completion_value?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          is_required?: boolean
+          item_text: string
+          item_type?: string
+          photo_urls?: string[] | null
+          sequence_order?: number
+          updated_at?: string
+        }
+        Update: {
+          checklist_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          completion_value?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          is_required?: boolean
+          item_text?: string
+          item_type?: string
+          photo_urls?: string[] | null
+          sequence_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_items_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_items_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3833,6 +4055,57 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_categories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_categories_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -7005,6 +7278,114 @@ export type Database = {
           },
         ]
       }
+      maintenance_schedules: {
+        Row: {
+          assigned_technician_id: string | null
+          created_at: string
+          created_by: string
+          current_mileage: number | null
+          customer_id: string | null
+          description: string | null
+          equipment_id: string | null
+          estimated_cost: number | null
+          frequency_interval: number
+          frequency_type: string
+          frequency_unit: string
+          id: string
+          last_maintenance_date: string | null
+          maintenance_type: string
+          mileage_interval: number | null
+          next_due_date: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          assigned_technician_id?: string | null
+          created_at?: string
+          created_by: string
+          current_mileage?: number | null
+          customer_id?: string | null
+          description?: string | null
+          equipment_id?: string | null
+          estimated_cost?: number | null
+          frequency_interval: number
+          frequency_type: string
+          frequency_unit: string
+          id?: string
+          last_maintenance_date?: string | null
+          maintenance_type: string
+          mileage_interval?: number | null
+          next_due_date: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          assigned_technician_id?: string | null
+          created_at?: string
+          created_by?: string
+          current_mileage?: number | null
+          customer_id?: string | null
+          description?: string | null
+          equipment_id?: string | null
+          estimated_cost?: number | null
+          frequency_interval?: number
+          frequency_type?: string
+          frequency_unit?: string
+          id?: string
+          last_maintenance_date?: string | null
+          maintenance_type?: string
+          mileage_interval?: number | null
+          next_due_date?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_schedules_assigned_technician_id_fkey"
+            columns: ["assigned_technician_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_schedules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_schedules_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_schedules_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_schedules_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manufacturers: {
         Row: {
           category: string
@@ -9524,6 +9905,190 @@ export type Database = {
           },
         ]
       }
+      repair_plan_tasks: {
+        Row: {
+          actual_duration_minutes: number | null
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          description: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          instructions: string | null
+          notes: string | null
+          repair_plan_id: string
+          required_parts: string[] | null
+          required_tools: string[] | null
+          sequence_order: number
+          started_at: string | null
+          status: string
+          task_name: string
+          updated_at: string
+        }
+        Insert: {
+          actual_duration_minutes?: number | null
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          instructions?: string | null
+          notes?: string | null
+          repair_plan_id: string
+          required_parts?: string[] | null
+          required_tools?: string[] | null
+          sequence_order?: number
+          started_at?: string | null
+          status?: string
+          task_name: string
+          updated_at?: string
+        }
+        Update: {
+          actual_duration_minutes?: number | null
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          instructions?: string | null
+          notes?: string | null
+          repair_plan_id?: string
+          required_parts?: string[] | null
+          required_tools?: string[] | null
+          sequence_order?: number
+          started_at?: string | null
+          status?: string
+          task_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_plan_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_plan_tasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_plan_tasks_repair_plan_id_fkey"
+            columns: ["repair_plan_id"]
+            isOneToOne: false
+            referencedRelation: "repair_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      repair_plans: {
+        Row: {
+          actual_cost: number | null
+          actual_duration_hours: number | null
+          assigned_technician_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          customer_id: string | null
+          description: string | null
+          estimated_cost: number | null
+          estimated_duration_hours: number | null
+          id: string
+          plan_name: string
+          priority: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          vehicle_id: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          actual_cost?: number | null
+          actual_duration_hours?: number | null
+          assigned_technician_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          customer_id?: string | null
+          description?: string | null
+          estimated_cost?: number | null
+          estimated_duration_hours?: number | null
+          id?: string
+          plan_name: string
+          priority?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          actual_cost?: number | null
+          actual_duration_hours?: number | null
+          assigned_technician_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          customer_id?: string | null
+          description?: string | null
+          estimated_cost?: number | null
+          estimated_duration_hours?: number | null
+          id?: string
+          plan_name?: string
+          priority?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_plans_assigned_technician_id_fkey"
+            columns: ["assigned_technician_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_plans_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_plans_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_plans_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_audit_log: {
         Row: {
           action: Database["public"]["Enums"]["role_action_type"]
@@ -10737,6 +11302,85 @@ export type Database = {
           },
         ]
       }
+      system_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string
+          id: string
+          message: string
+          metadata: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          shop_id: string
+          source_id: string | null
+          source_table: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          shop_id: string
+          source_id?: string | null
+          source_table?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          shop_id?: string
+          source_id?: string | null
+          source_table?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_alerts_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_alerts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_alerts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_documents: {
         Row: {
           confirmation_number: string | null
@@ -10796,6 +11440,216 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      team_certifications: {
+        Row: {
+          attachment_url: string | null
+          certification_authority: string
+          certification_name: string
+          certification_number: string | null
+          created_at: string
+          created_by: string
+          expiry_date: string | null
+          id: string
+          issue_date: string
+          notes: string | null
+          profile_id: string
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          certification_authority: string
+          certification_name: string
+          certification_number?: string | null
+          created_at?: string
+          created_by: string
+          expiry_date?: string | null
+          id?: string
+          issue_date: string
+          notes?: string | null
+          profile_id: string
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          certification_authority?: string
+          certification_name?: string
+          certification_number?: string | null
+          created_at?: string
+          created_by?: string
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          profile_id?: string
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_certifications_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_certifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_certifications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_departments: {
+        Row: {
+          budget_limit: number | null
+          created_at: string
+          created_by: string
+          department_head_id: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          parent_department_id: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          budget_limit?: number | null
+          created_at?: string
+          created_by: string
+          department_head_id?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_department_id?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          budget_limit?: number | null
+          created_at?: string
+          created_by?: string
+          department_head_id?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_department_id?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_departments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_departments_department_head_id_fkey"
+            columns: ["department_head_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_departments_parent_department_id_fkey"
+            columns: ["parent_department_id"]
+            isOneToOne: false
+            referencedRelation: "team_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_departments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_locations: {
+        Row: {
+          address: string | null
+          capacity: number | null
+          city: string | null
+          country: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          location_type: string
+          name: string
+          postal_code: string | null
+          shop_id: string
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          capacity?: number | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          location_type?: string
+          name: string
+          postal_code?: string | null
+          shop_id: string
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          capacity?: number | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          location_type?: string
+          name?: string
+          postal_code?: string | null
+          shop_id?: string
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_locations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_locations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_member_certifications: {
         Row: {
@@ -11325,6 +12179,39 @@ export type Database = {
           new_status?: string
           previous_status?: string
           technician_id?: string
+        }
+        Relationships: []
+      }
+      tool_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -11960,6 +12847,86 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "work_order_assignments_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_checklists: {
+        Row: {
+          assigned_to: string | null
+          checklist_name: string
+          checklist_type: string
+          completed_at: string | null
+          completed_by: string | null
+          completion_percentage: number | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          work_order_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          checklist_name: string
+          checklist_type?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_percentage?: number | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          work_order_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          checklist_name?: string
+          checklist_type?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_percentage?: number | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_checklists_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_checklists_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_checklists_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_checklists_work_order_id_fkey"
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "work_orders"
