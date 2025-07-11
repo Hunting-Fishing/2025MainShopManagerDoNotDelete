@@ -43,33 +43,26 @@ export interface Product {
 export interface ProductReview {
   id: string;
   product_id: string;
-  customer_id?: string;
+  user_id: string;
   rating: number;
-  title?: string;
-  content?: string;
+  review_title?: string;
+  review_text?: string;
   is_approved: boolean;
   is_verified_purchase: boolean;
-  helpful_count: number;
+  helpful_votes: number;
   created_at: string;
   updated_at: string;
 }
 
 export interface ProductSubmission {
   id: string;
-  customer_id?: string;
   product_name: string;
-  description?: string;
-  category?: string;
-  suggested_price?: number;
-  images: string[];
-  contact_email?: string;
-  contact_phone?: string;
+  product_url: string;
+  suggested_by?: string;
+  suggested_category: string;
+  notes?: string;
   status: 'pending' | 'reviewing' | 'approved' | 'rejected';
-  admin_notes?: string;
-  reviewed_at?: string;
-  reviewed_by?: string;
-  created_at: string;
-  updated_at: string;
+  submitted_at: string;
 }
 
 // Product Categories
@@ -186,9 +179,15 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
 
 export const createProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'category'>): Promise<Product | null> => {
   try {
+    // Transform the product data to match database schema
+    const productData = {
+      ...product,
+      product_type: product.product_type as 'affiliate' | 'suggested'
+    };
+    
     const { data, error } = await supabase
       .from('products')
-      .insert([product])
+      .insert([productData])
       .select()
       .single();
 
@@ -206,9 +205,15 @@ export const createProduct = async (product: Omit<Product, 'id' | 'created_at' |
 
 export const updateProduct = async (id: string, updates: Partial<Product>): Promise<Product | null> => {
   try {
+    // Transform updates to match database schema
+    const updateData = {
+      ...updates,
+      ...(updates.product_type && { product_type: updates.product_type as 'affiliate' | 'suggested' })
+    };
+    
     const { data, error } = await supabase
       .from('products')
-      .update(updates)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -273,14 +278,17 @@ export const fetchProductSubmissions = async (): Promise<ProductSubmission[]> =>
     const { data, error } = await supabase
       .from('product_submissions')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('submitted_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching product submissions:', error);
       return [];
     }
 
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      status: item.status as 'pending' | 'reviewing' | 'approved' | 'rejected'
+    }));
   } catch (error) {
     console.error('Error fetching product submissions:', error);
     return [];
@@ -294,12 +302,11 @@ export const updateProductSubmissionStatus = async (
 ): Promise<ProductSubmission | null> => {
   try {
     const updates: any = { 
-      status,
-      reviewed_at: new Date().toISOString()
+      status
     };
     
     if (adminNotes) {
-      updates.admin_notes = adminNotes;
+      updates.notes = adminNotes;
     }
 
     const { data, error } = await supabase
@@ -314,14 +321,17 @@ export const updateProductSubmissionStatus = async (
       return null;
     }
 
-    return data;
+    return {
+      ...data,
+      status: data.status as 'pending' | 'reviewing' | 'approved' | 'rejected'
+    };
   } catch (error) {
     console.error('Error updating product submission:', error);
     return null;
   }
 };
 
-export const createProductSubmission = async (submission: Omit<ProductSubmission, 'id' | 'created_at' | 'updated_at'>): Promise<ProductSubmission | null> => {
+export const createProductSubmission = async (submission: Omit<ProductSubmission, 'id' | 'submitted_at'>): Promise<ProductSubmission | null> => {
   try {
     const { data, error } = await supabase
       .from('product_submissions')
@@ -334,7 +344,10 @@ export const createProductSubmission = async (submission: Omit<ProductSubmission
       return null;
     }
 
-    return data;
+    return {
+      ...data,
+      status: data.status as 'pending' | 'reviewing' | 'approved' | 'rejected'
+    };
   } catch (error) {
     console.error('Error creating product submission:', error);
     return null;

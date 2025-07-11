@@ -26,7 +26,7 @@ export function SubmissionsManagement() {
         const { data, error } = await supabase
           .from('product_submissions')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('submitted_at', { ascending: false });
 
         if (error) {
           console.error('Error fetching submissions:', error);
@@ -36,9 +36,9 @@ export function SubmissionsManagement() {
           const transformedData: Submission[] = (data || []).map(item => ({
             id: item.id,
             product_name: item.product_name,
-            submitted_by: item.contact_email || item.suggested_by || 'Anonymous',
+            submitted_by: item.suggested_by || 'Anonymous',
             status: item.status as 'pending' | 'approved' | 'rejected',
-            created_at: item.created_at || item.submitted_at
+            created_at: item.submitted_at
           }));
           setSubmissions(transformedData);
         }
@@ -55,8 +55,7 @@ export function SubmissionsManagement() {
       const { error } = await supabase
         .from('product_submissions')
         .update({ 
-          status,
-          reviewed_at: new Date().toISOString()
+          status
         })
         .eq('id', id);
 
