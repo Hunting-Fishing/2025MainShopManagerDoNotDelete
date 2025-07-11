@@ -220,7 +220,7 @@ export default function InvoiceDetails() {
                       <div key={item.id} className="grid grid-cols-5 gap-4 text-sm">
                         <span className="col-span-2">{item.description}</span>
                         <span>{item.quantity}</span>
-                        <span>${item.unitPrice.toFixed(2)}</span>
+                        <span>${item.price.toFixed(2)}</span>
                         <span>${item.total.toFixed(2)}</span>
                       </div>
                     ))}
