@@ -25,7 +25,9 @@ import {
   Truck,
   UserCog,
   FileBarChart,
-  Building
+  Building,
+  Store,
+  Code
 } from 'lucide-react';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -89,6 +91,18 @@ const navigation = [
     items: [
       { name: 'Service Editor', href: '/service-editor', icon: Cog },
       { name: 'Service Library', href: '/service-library', icon: Star },
+    ],
+  },
+  {
+    title: 'E-Commerce',
+    items: [
+      { name: 'Shopping', href: '/shopping', icon: Store },
+    ],
+  },
+  {
+    title: 'Development',
+    items: [
+      { name: 'Developer Portal', href: '/developer', icon: Code },
     ],
   },
   {

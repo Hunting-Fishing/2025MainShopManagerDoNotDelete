@@ -42,6 +42,8 @@ import Forms from '@/pages/Forms';
 import Chat from '@/pages/Chat';
 import Notifications from '@/pages/Notifications';
 import Shopping from '@/pages/Shopping';
+import Help from '@/pages/Help';
+import Developer from '@/pages/Developer';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuthUser();
@@ -118,6 +120,9 @@ function App() {
             {/* Shopping/Store */}
             <Route path="/shopping" element={isAuthenticated ? <Layout><Shopping /></Layout> : <Navigate to="/auth" replace />} />
             
+            {/* Developer Portal */}
+            <Route path="/developer" element={isAuthenticated ? <Layout><Developer /></Layout> : <Navigate to="/auth" replace />} />
+            
             {/* Service Editor - actual route for editing */}
             <Route path="/service-editor" element={isAuthenticated ? <Layout><ServiceCatalog /></Layout> : <Navigate to="/auth" replace />} />
             
@@ -125,7 +130,7 @@ function App() {
             <Route path="/inventory/suppliers" element={isAuthenticated ? <Layout><Inventory /></Layout> : <Navigate to="/auth" replace />} />
             
             {/* Help and Security routes */}
-            <Route path="/help" element={isAuthenticated ? <Layout><div className="p-6"><h1 className="text-2xl font-bold">Help & Support</h1><p>Help documentation coming soon.</p></div></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/help" element={isAuthenticated ? <Layout><Help /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/security" element={isAuthenticated ? <Navigate to="/settings/security" replace /> : <Navigate to="/auth" replace />} />
             
             {/* Catch all route */}

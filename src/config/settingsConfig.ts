@@ -165,6 +165,13 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     description: 'Track regulatory compliance requirements and deadlines'
   },
   {
+    id: 'security',
+    label: 'Security',
+    icon: Shield,
+    component: ComplianceTab,
+    description: 'Security and compliance management'
+  },
+  {
     id: 'asset-tracking',
     label: 'Asset Tracking',
     icon: Database,
