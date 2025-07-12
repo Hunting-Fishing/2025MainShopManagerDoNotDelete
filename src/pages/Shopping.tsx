@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Container } from 'semantic-ui-react';
 import CategoryGrid from '@/components/affiliate/CategoryGrid';
 import HeroSection from '@/components/affiliate/HeroSection';
@@ -7,11 +7,27 @@ import SearchBar from '@/components/affiliate/SearchBar';
 import FeaturedTools from '@/components/affiliate/FeaturedTools';
 import BestSellingTools from '@/components/affiliate/BestSellingTools';
 import ManufacturersGrid from '@/components/affiliate/ManufacturersGrid';
+import ProductCard from '@/components/affiliate/ProductCard';
+import ShoppingCartComponent from '@/components/shopping/ShoppingCart';
+import ProductQuickView from '@/components/shopping/ProductQuickView';
+import ProductFilters, { FilterState } from '@/components/shopping/ProductFilters';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
+import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
 import { categories } from '@/data/toolCategories';
 import { manufacturers } from '@/data/manufacturers';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Database } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Database, 
+  Filter, 
+  Grid3X3, 
+  List, 
+  ShoppingCart, 
+  Eye,
+  Loader2 
+} from 'lucide-react';
 import { AffiliateTool, AffiliateProduct } from '@/types/affiliate';
 
 // Convert the categories dictionary to an array format for display
@@ -46,10 +62,98 @@ const transformToAffiliateProduct = (tool: AffiliateTool): AffiliateProduct => (
 
 export default function Shopping() {
   const [searchQuery, setSearchQuery] = useState("");
-  
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState('browse');
+  const [showFilters, setShowFilters] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState<AffiliateProduct | null>(null);
+  const [filters, setFilters] = useState<FilterState>({
+    categories: [],
+    manufacturers: [],
+    priceRange: [0, 1000],
+    minRating: 0,
+    sortBy: 'name',
+    showFeatured: false,
+    showBestSellers: false,
+    freeShipping: false
+  });
+
   // Use the real products manager hook instead of mock queries
   const { products, loading, error } = useProductsManager();
-  
+  const { itemCount, addToCart } = useShoppingCart();
+
+  // Transform and filter products
+  const allProducts = useMemo(() => 
+    products.map(transformToAffiliateProduct), 
+    [products]
+  );
+
+  // Filter and sort products based on current filters
+  const filteredProducts = useMemo(() => {
+    let filtered = allProducts.filter(product => {
+      // Search query filter
+      if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !product.manufacturer.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !product.category.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+
+      // Category filter
+      if (filters.categories.length > 0 && !filters.categories.includes(product.category)) {
+        return false;
+      }
+
+      // Manufacturer filter
+      if (filters.manufacturers.length > 0 && !filters.manufacturers.includes(product.manufacturer)) {
+        return false;
+      }
+
+      // Price range filter
+      if (product.retailPrice < filters.priceRange[0] || product.retailPrice > filters.priceRange[1]) {
+        return false;
+      }
+
+      // Rating filter
+      if (product.rating && product.rating < filters.minRating) {
+        return false;
+      }
+
+      // Special filters
+      if (filters.showFeatured && !product.isFeatured) {
+        return false;
+      }
+
+      if (filters.showBestSellers && !product.bestSeller) {
+        return false;
+      }
+
+      if (filters.freeShipping && !product.freeShipping) {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Sort products
+    switch (filters.sortBy) {
+      case 'price-low':
+        filtered.sort((a, b) => a.retailPrice - b.retailPrice);
+        break;
+      case 'price-high':
+        filtered.sort((a, b) => b.retailPrice - a.retailPrice);
+        break;
+      case 'rating':
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+      case 'popularity':
+        filtered.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
+        break;
+      default:
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return filtered;
+  }, [allProducts, searchQuery, filters]);
+
   // Filter products for featured and best selling sections and transform them
   const featuredTools = products
     .filter(product => product.featured)
@@ -58,6 +162,28 @@ export default function Shopping() {
   const bestSellingTools = products
     .filter(product => product.bestSeller)
     .map(transformToAffiliateProduct);
+
+  // Get unique categories and manufacturers for filters
+  const uniqueCategories = useMemo(() => 
+    [...new Set(allProducts.map(p => p.category))].sort(), 
+    [allProducts]
+  );
+  
+  const uniqueManufacturers = useMemo(() => 
+    [...new Set(allProducts.map(p => p.manufacturer))].sort(), 
+    [allProducts]
+  );
+
+  const handleAddToCart = async (product: AffiliateProduct) => {
+    await addToCart({
+      productId: product.id,
+      name: product.name,
+      price: product.retailPrice,
+      imageUrl: product.imageUrl,
+      category: product.category,
+      manufacturer: product.manufacturer
+    });
+  };
   
   // Show error state if there's an issue loading products
   if (error) {
@@ -83,23 +209,184 @@ export default function Shopping() {
       </Alert>
 
       <Container fluid>
-        {/* Hero Section */}
-        <HeroSection />
-        
-        {/* Search Bar */}
-        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        {/* Header with Cart */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Shop Tools & Equipment</h1>
+            <p className="text-muted-foreground">Professional automotive tools and equipment</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="relative"
+            onClick={() => setActiveTab('cart')}
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Cart
+            {itemCount > 0 && (
+              <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                {itemCount}
+              </Badge>
+            )}
+          </Button>
+        </div>
 
-        {/* Featured Products Section */}
-        <FeaturedTools tools={featuredTools} isLoading={loading} />
-        
-        {/* Categories Grid */}
-        <CategoryGrid categories={categoryList} />
-        
-        {/* Best Selling Tools */}
-        <BestSellingTools tools={bestSellingTools} isLoading={loading} />
-        
-        {/* Manufacturers Section */}
-        <ManufacturersGrid manufacturers={manufacturers} />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="browse">Browse</TabsTrigger>
+            <TabsTrigger value="featured">Featured</TabsTrigger>
+            <TabsTrigger value="bestsellers">Best Sellers</TabsTrigger>
+            <TabsTrigger value="cart" className="relative">
+              Cart
+              {itemCount > 0 && (
+                <Badge className="ml-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs">
+                  {itemCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="browse" className="space-y-6">
+            {/* Hero Section */}
+            <HeroSection />
+            
+            {/* Search and Filters */}
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="shrink-0"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+              <div className="flex border rounded-md">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="rounded-r-none"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="rounded-l-none"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex gap-6">
+              {/* Filters Sidebar */}
+              {showFilters && (
+                <div className="w-80 shrink-0">
+                  <ProductFilters
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    categories={uniqueCategories}
+                    manufacturers={uniqueManufacturers}
+                    isOpen={showFilters}
+                  />
+                </div>
+              )}
+
+              {/* Products Grid/List */}
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {filteredProducts.length} of {allProducts.length} products
+                  </p>
+                </div>
+
+                {loading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <span className="ml-2">Loading products...</span>
+                  </div>
+                ) : (
+                  <div className={
+                    viewMode === 'grid' 
+                      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                      : "space-y-4"
+                  }>
+                    {filteredProducts.map(product => (
+                      <div key={product.id} className="relative group">
+                        <ProductCard
+                          product={product}
+                          onProductClick={() => setQuickViewProduct(product)}
+                          onAddToCartClick={() => handleAddToCart(product)}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => setQuickViewProduct(product)}
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!loading && filteredProducts.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No products found matching your criteria.</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => setFilters({
+                        categories: [],
+                        manufacturers: [],
+                        priceRange: [0, 1000],
+                        minRating: 0,
+                        sortBy: 'name',
+                        showFeatured: false,
+                        showBestSellers: false,
+                        freeShipping: false
+                      })}
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Categories Grid */}
+            <CategoryGrid categories={categoryList} />
+            
+            {/* Manufacturers Section */}
+            <ManufacturersGrid manufacturers={manufacturers} />
+          </TabsContent>
+
+          <TabsContent value="featured">
+            <FeaturedTools tools={featuredTools} isLoading={loading} />
+          </TabsContent>
+
+          <TabsContent value="bestsellers">
+            <BestSellingTools tools={bestSellingTools} isLoading={loading} />
+          </TabsContent>
+
+          <TabsContent value="cart">
+            <div className="max-w-md mx-auto">
+              <ShoppingCartComponent />
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Quick View Modal */}
+        <ProductQuickView
+          product={quickViewProduct}
+          isOpen={!!quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+        />
       </Container>
     </div>
   );
