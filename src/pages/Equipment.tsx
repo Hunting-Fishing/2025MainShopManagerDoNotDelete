@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cog, Plus, Settings, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EquipmentList } from '@/components/equipment/EquipmentList';
 
 export default function Equipment() {
   return (
@@ -66,17 +67,7 @@ export default function Equipment() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Equipment List</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Equipment management features are being developed. 
-              This page will allow you to track, maintain, and manage all your shop equipment and tools.
-            </p>
-          </CardContent>
-        </Card>
+        <EquipmentList />
       </div>
     </>
   );

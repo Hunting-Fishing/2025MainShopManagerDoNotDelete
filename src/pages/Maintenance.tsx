@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserCheck, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import { MaintenanceScheduler } from '@/components/maintenance/MaintenanceScheduler';
 
 export default function Maintenance() {
   return (
@@ -72,17 +73,7 @@ export default function Maintenance() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Maintenance Dashboard</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Maintenance scheduling and tracking features are being developed. 
-              This page will help you manage preventive maintenance, track service history, and schedule upcoming maintenance tasks.
-            </p>
-          </CardContent>
-        </Card>
+        <MaintenanceScheduler />
       </div>
     </>
   );

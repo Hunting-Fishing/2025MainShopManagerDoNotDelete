@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, Star, ThumbsUp, Users } from 'lucide-react';
+import { FeedbackManager } from '@/components/feedback/FeedbackManager';
 
 export default function Feedback() {
   return (
@@ -72,17 +73,7 @@ export default function Feedback() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Feedback Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Customer feedback management features are being developed. 
-              This page will help you monitor reviews, respond to feedback, and track customer satisfaction metrics.
-            </p>
-          </CardContent>
-        </Card>
+        <FeedbackManager />
       </div>
     </>
   );

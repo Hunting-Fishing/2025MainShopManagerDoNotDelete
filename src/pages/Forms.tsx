@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileCheck, Plus, Download, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FormBuilder } from '@/components/forms/FormBuilder';
 
 export default function Forms() {
   return (
@@ -79,17 +80,7 @@ export default function Forms() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Form Builder</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Form creation and management features are being developed. 
-              This page will include a drag-and-drop form builder, template library, and submission tracking.
-            </p>
-          </CardContent>
-        </Card>
+        <FormBuilder />
       </div>
     </>
   );

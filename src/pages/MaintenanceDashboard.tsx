@@ -107,7 +107,7 @@ export default function MaintenanceDashboard() {
         </TabsContent>
         
         <TabsContent value="scheduler" className="space-y-4">
-          <MaintenanceScheduler equipmentList={equipment} />
+          <MaintenanceScheduler />
         </TabsContent>
         
         <TabsContent value="history" className="space-y-4">

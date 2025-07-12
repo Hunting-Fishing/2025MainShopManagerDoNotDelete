@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, Users, Clock, Send } from 'lucide-react';
+import { ChatInterface } from '@/components/chat/ChatInterface';
 
 export default function Chat() {
   return (
@@ -72,17 +73,7 @@ export default function Chat() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Chat Interface</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Real-time chat features are being developed. 
-              This page will include team messaging, customer chat support, file sharing, and chat history.
-            </p>
-          </CardContent>
-        </Card>
+        <ChatInterface />
       </div>
     </>
   );

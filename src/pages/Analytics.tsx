@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, DollarSign, Users, Package } from 'lucide-react';
+import { RevenueChart, ServiceDistributionChart, CustomerActivityChart } from '@/components/analytics/AnalyticsCharts';
 
 export default function Analytics() {
   return (
@@ -72,17 +73,11 @@ export default function Analytics() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Analytics Dashboard</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Advanced analytics features are being developed. 
-              This page will contain detailed charts, graphs, and insights about your business performance.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <RevenueChart />
+          <ServiceDistributionChart />
+          <CustomerActivityChart />
+        </div>
       </div>
     </>
   );
