@@ -392,10 +392,70 @@ export const EnhancedVehicleDamageAssessment: React.FC<EnhancedVehicleDamageAsse
       toast({ title: "Move mode", description: "Click and drag to reposition damage" });
     },
     onAddPhoto: () => {
-      toast({ title: "Photo upload", description: "Photo upload feature coming soon" });
+      if (!contextMenuDamage) return;
+      
+      // Create file input element
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.multiple = true;
+      input.onchange = async (e) => {
+        const files = (e.target as HTMLInputElement).files;
+        if (!files || files.length === 0) return;
+        
+        const photoUrls: string[] = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            photoUrls.push(event.target?.result as string);
+            if (photoUrls.length === files.length) {
+              // Update damage with photos
+              const updatedDamages = damages.map(d => 
+                d.id === contextMenuDamage.id 
+                  ? { ...d, photos: [...(d.photos || []), ...photoUrls], updatedAt: new Date() }
+                  : d
+              );
+              onDamagesChange(updatedDamages);
+              toast({ 
+                title: "Photos added", 
+                description: `${photoUrls.length} photo(s) uploaded successfully` 
+              });
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
     },
     onEstimateCost: () => {
-      toast({ title: "Cost estimator", description: "Cost estimation feature coming soon" });
+      if (!contextMenuDamage) return;
+      
+      // Simple cost estimation based on damage type and severity
+      const baseCosts = {
+        dent: { minor: 150, moderate: 300, severe: 600 },
+        scratch: { minor: 100, moderate: 250, severe: 500 },
+        rust: { minor: 200, moderate: 400, severe: 800 },
+        paint_damage: { minor: 180, moderate: 350, severe: 700 },
+        collision: { minor: 500, moderate: 1200, severe: 2500 },
+        wear: { minor: 80, moderate: 150, severe: 300 },
+        other: { minor: 100, moderate: 200, severe: 400 }
+      };
+      
+      const estimatedCost = baseCosts[contextMenuDamage.type]?.[contextMenuDamage.severity] || 100;
+      
+      // Update damage with cost estimate
+      const updatedDamages = damages.map(d => 
+        d.id === contextMenuDamage.id 
+          ? { ...d, estimatedCost, updatedAt: new Date() }
+          : d
+      );
+      
+      onDamagesChange(updatedDamages);
+      toast({ 
+        title: "Cost estimated", 
+        description: `Estimated repair cost: $${estimatedCost}` 
+      });
     },
     onViewDetails: () => {
       toast({ title: "Damage details", description: "Viewing detailed information" });

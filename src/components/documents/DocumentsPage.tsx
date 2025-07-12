@@ -4,6 +4,8 @@ import { useDocuments } from '@/hooks/useDocuments';
 import { DocumentGrid } from './DocumentGrid';
 import { DocumentUploadDialog } from './DocumentUploadDialog';
 import { DocumentSearchFilters } from './DocumentSearchFilters';
+// import { DocumentDetailDialog } from './DocumentDetailDialog';
+import { DocumentEditDialog } from './DocumentEditDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search } from 'lucide-react';
@@ -14,6 +16,9 @@ export function DocumentsPage() {
   const [searchParams, setSearchParams] = useState<DocumentSearchParams>({});
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const { documents, loading, error, refetch, createDocument, deleteDocument } = useDocuments(searchParams);
 
@@ -27,16 +32,13 @@ export function DocumentsPage() {
   };
 
   const handleDocumentClick = (document: Document) => {
-    // Document viewing is now handled within DocumentCard
-    // This can be used for additional tracking or navigation if needed
+    setSelectedDocument(document);
+    setIsDetailDialogOpen(true);
   };
 
   const handleEditDocument = (document: Document) => {
-    // TODO: Implement edit functionality
-    toast({
-      title: "Feature Coming Soon",
-      description: "Document editing will be available soon.",
-    });
+    setSelectedDocument(document);
+    setIsEditDialogOpen(true);
   };
 
   const handleDeleteDocument = async (id: string) => {
@@ -137,6 +139,23 @@ export function DocumentsPage() {
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         onDocumentCreated={handleDocumentCreated}
+      />
+
+      {/* DocumentDetailDialog temporarily disabled */}
+
+      <DocumentEditDialog
+        document={selectedDocument}
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setSelectedDocument(null);
+        }}
+        onUpdate={(updatedDoc) => {
+          // Update the documents list
+          refetch();
+          setIsEditDialogOpen(false);
+          setSelectedDocument(null);
+        }}
       />
     </div>
   );

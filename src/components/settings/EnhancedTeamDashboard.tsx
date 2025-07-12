@@ -28,6 +28,7 @@ import { TeamOverviewStats } from './enhanced-team/TeamOverviewStats';
 import { TeamMembersGrid } from './enhanced-team/TeamMembersGrid';
 import { DepartmentAnalytics } from './enhanced-team/DepartmentAnalytics';
 import { RoleAnalytics } from './enhanced-team/RoleAnalytics';
+import { TeamAnalytics } from './enhanced-team/TeamAnalytics';
 import { TeamActivityTimeline } from './enhanced-team/TeamActivityTimeline';
 import { QuickActions } from './enhanced-team/QuickActions';
 import { AdvancedFilters } from './enhanced-team/AdvancedFilters';
@@ -286,12 +287,7 @@ export function EnhancedTeamDashboard() {
                 <CardTitle>Team Growth</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Team growth analytics coming soon</p>
-                  </div>
-                </div>
+                <TeamAnalytics />
               </CardContent>
             </Card>
 
@@ -300,12 +296,7 @@ export function EnhancedTeamDashboard() {
                 <CardTitle>Performance Metrics</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Performance metrics coming soon</p>
-                  </div>
-                </div>
+                <TeamAnalytics />
               </CardContent>
             </Card>
           </div>
