@@ -43,6 +43,7 @@ import Chat from '@/pages/Chat';
 import Notifications from '@/pages/Notifications';
 import Shopping from '@/pages/Shopping';
 import Help from '@/pages/Help';
+import { ContextualHelpWidget } from '@/components/help/ContextualHelpWidget';
 import Developer from '@/pages/Developer';
 
 function App() {
@@ -137,6 +138,9 @@ function App() {
             <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/auth"} replace />} />
           </Routes>
           <Toaster />
+          
+          {/* Contextual Help Widget - only show when authenticated */}
+          {isAuthenticated && <ContextualHelpWidget />}
         </div>
       </AuthErrorBoundary>
     </DatabaseInitializer>
