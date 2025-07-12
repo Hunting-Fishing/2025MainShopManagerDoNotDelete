@@ -31,6 +31,16 @@ import StockControl from '@/pages/StockControl';
 import PurchaseOrders from '@/pages/PurchaseOrders';
 import ServiceReminders from '@/pages/ServiceReminders';
 import StaffMembers from '@/pages/StaffMembers';
+import DeveloperPortal from '@/pages/DeveloperPortal';
+import RepairPlans from '@/pages/RepairPlans';
+import ToolDetailPage from '@/pages/ToolDetailPage';
+import Analytics from '@/pages/Analytics';
+import Equipment from '@/pages/Equipment';
+import Maintenance from '@/pages/Maintenance';
+import Feedback from '@/pages/Feedback';
+import Forms from '@/pages/Forms';
+import Chat from '@/pages/Chat';
+import Notifications from '@/pages/Notifications';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuthUser();
@@ -88,6 +98,22 @@ function App() {
             <Route path="/purchase-orders" element={isAuthenticated ? <Layout><PurchaseOrders /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/service-reminders" element={isAuthenticated ? <Layout><ServiceReminders /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/staff-members" element={isAuthenticated ? <Layout><StaffMembers /></Layout> : <Navigate to="/auth" replace />} />
+            
+            {/* Developer Portal - Admin access required */}
+            <Route path="/developer/*" element={isAuthenticated ? <Layout><DeveloperPortal /></Layout> : <Navigate to="/auth" replace />} />
+            
+            {/* Additional pages */}
+            <Route path="/repair-plans" element={isAuthenticated ? <Layout><RepairPlans /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/tools/:category/:toolId" element={isAuthenticated ? <Layout><ToolDetailPage /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/analytics" element={isAuthenticated ? <Layout><Analytics /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/equipment" element={isAuthenticated ? <Layout><Equipment /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/maintenance" element={isAuthenticated ? <Layout><Maintenance /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/feedback" element={isAuthenticated ? <Layout><Feedback /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/forms" element={isAuthenticated ? <Layout><Forms /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/chat" element={isAuthenticated ? <Layout><Chat /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/notifications" element={isAuthenticated ? <Layout><Notifications /></Layout> : <Navigate to="/auth" replace />} />
+            
+            {/* Legacy redirects */}
             <Route path="/service-editor" element={isAuthenticated ? <Navigate to="/services" replace /> : <Navigate to="/auth" replace />} />
             <Route path="/help" element={isAuthenticated ? <Navigate to="/settings" replace /> : <Navigate to="/auth" replace />} />
             <Route path="/security" element={isAuthenticated ? <Navigate to="/settings/security" replace /> : <Navigate to="/auth" replace />} />

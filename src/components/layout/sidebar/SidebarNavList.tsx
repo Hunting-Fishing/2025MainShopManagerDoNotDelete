@@ -20,6 +20,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, title: "Dashboard" },
@@ -36,13 +37,40 @@ const navigation = [
   { name: "Forms", href: "/forms", icon: FileCheck, title: "Forms" },
   { name: "Chat", href: "/chat", icon: MessageSquare, title: "Chat" },
   { name: "Notifications", href: "/notifications", icon: Bell, title: "Notifications" },
+];
+
+const adminNavigation = [
+  { name: "Developer Portal", href: "/developer", icon: Code, title: "Developer Portal", requiresRole: ["admin", "owner"] },
+];
+
+const settingsNavigation = [
   { name: "Settings", href: "/settings", icon: Settings, title: "Settings" },
 ];
 
 export function SidebarNavList() {
+  const { userRole } = useUserRole();
+  
+  const isAdminOrOwner = userRole?.name === 'admin' || userRole?.name === 'owner';
+  
   return (
     <nav className="flex-1 space-y-1 px-2 py-4">
       {navigation.map((item) => (
+        <SidebarNavItem key={item.name} item={item} />
+      ))}
+      
+      {/* Admin-only section */}
+      {isAdminOrOwner && (
+        <>
+          <div className="border-t border-sidebar-border my-2"></div>
+          {adminNavigation.map((item) => (
+            <SidebarNavItem key={item.name} item={item} />
+          ))}
+        </>
+      )}
+      
+      {/* Settings at bottom */}
+      <div className="border-t border-sidebar-border my-2"></div>
+      {settingsNavigation.map((item) => (
         <SidebarNavItem key={item.name} item={item} />
       ))}
     </nav>

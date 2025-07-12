@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Container, Header, Segment, Grid, Icon } from 'semantic-ui-react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,58 +14,27 @@ import {
   BreadcrumbSeparator, 
   Breadcrumb 
 } from '@/components/ui/breadcrumb';
-import { Star, ShoppingCart, Heart, Settings, Check, X, Share2 } from 'lucide-react';
-
-interface ToolDetailParams {
-  category?: string;
-  toolId?: string;
-}
-
-const mockToolData = {
-  id: 'example-tool-1',
-  name: 'Professional OBD-II Scanner',
-  category: 'Diagnostics',
-  description: 'A high-quality OBD-II scanner for professional mechanics and DIY enthusiasts.',
-  imageUrl: 'https://via.placeholder.com/600x400?text=OBD-II+Scanner',
-  price: 189.99,
-  rating: 4.8,
-  reviewCount: 124,
-  isFeatured: true,
-  discount: 15,
-  specifications: [
-    { key: 'Connectivity', value: 'Bluetooth, Wi-Fi' },
-    { key: 'Display', value: '5-inch LCD' },
-    { key: 'Protocols', value: 'All OBD-II protocols' },
-  ],
-  reviews: [
-    {
-      id: 'review-1',
-      userName: 'John Doe',
-      rating: 5,
-      comment: 'This scanner is amazing! It provides accurate and fast diagnostics.',
-      createdAt: '2024-05-03',
-    },
-    {
-      id: 'review-2',
-      userName: 'Jane Smith',
-      rating: 4,
-      comment: 'Great tool, but the software could be more user-friendly.',
-      createdAt: '2024-05-01',
-    },
-  ],
-};
+import { Star, ShoppingCart, Heart, Settings, Check, X, Share2, Loader2 } from 'lucide-react';
+import { useTool } from '@/hooks/useTool';
 
 export default function ToolDetailPage() {
   const params = useParams<{ category?: string; toolId?: string }>();
   const { category, toolId } = params;
   const [isFavorite, setIsFavorite] = useState(false);
+  const { tool, reviews, isLoading, error } = useTool(toolId || '');
 
-  useEffect(() => {
-    // Mock: Fetch tool details based on category and toolId
-    console.log(`Fetching details for tool ${toolId} in category ${category}`);
-  }, [category, toolId]);
+  if (isLoading) {
+    return (
+      <Container>
+        <div className="flex items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading tool details...</span>
+        </div>
+      </Container>
+    );
+  }
 
-  if (!mockToolData) {
+  if (error || !tool) {
     return (
       <Container>
         <Segment placeholder>
@@ -101,11 +70,11 @@ export default function ToolDetailPage() {
               </>
             )}
             
-            {mockToolData.name && (
+            {tool.name && (
               <>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{mockToolData.name}</BreadcrumbPage>
+                  <BreadcrumbPage>{tool.name}</BreadcrumbPage>
                 </BreadcrumbItem>
               </>
             )}
@@ -116,23 +85,27 @@ export default function ToolDetailPage() {
       <Grid stackable columns={2}>
         <Grid.Column width={8}>
           <Segment>
-            <img src={mockToolData.imageUrl} alt={mockToolData.name} style={{ width: '100%' }} />
+            <img 
+              src={tool.image_url || 'https://via.placeholder.com/600x400?text=Tool+Image'} 
+              alt={tool.name} 
+              style={{ width: '100%' }} 
+            />
           </Segment>
         </Grid.Column>
         <Grid.Column width={8}>
           <Segment>
-            <Header as="h2">{mockToolData.name}</Header>
-            <p>{mockToolData.description}</p>
-            <Badge variant="outline">{mockToolData.category}</Badge>
+            <Header as="h2">{tool.name}</Header>
+            <p>{tool.description}</p>
+            <Badge variant="outline">{tool.category}</Badge>
             <div className="flex items-center mt-2">
               <Star className="text-yellow-500 mr-1" size={16} fill="yellow" />
-              <span>{mockToolData.rating} ({mockToolData.reviewCount} reviews)</span>
+              <span>{tool.rating} ({tool.review_count} reviews)</span>
             </div>
             <div className="mt-4">
-              <span className="text-2xl font-bold">${mockToolData.price}</span>
-              {mockToolData.discount && (
+              <span className="text-2xl font-bold">${tool.price}</span>
+              {tool.discount && tool.discount > 0 && (
                 <Badge className="ml-2 bg-red-100 text-red-800">
-                  {mockToolData.discount}% OFF
+                  {tool.discount}% OFF
                 </Badge>
               )}
             </div>
@@ -168,37 +141,46 @@ export default function ToolDetailPage() {
               Specifications
             </TabsTrigger>
             <TabsTrigger value="reviews">
-              Reviews ({mockToolData.reviews.length})
+              Reviews ({reviews.length})
             </TabsTrigger>
           </TabsList>
           <TabsContent value="specifications">
             <Grid columns={2} divided>
-              {mockToolData.specifications.map((spec, index) => (
+              {tool.specifications && Object.entries(tool.specifications).map(([key, value], index) => (
                 <Grid.Row key={index}>
                   <Grid.Column>
-                    <strong>{spec.key}</strong>
+                    <strong>{key}</strong>
                   </Grid.Column>
-                  <Grid.Column>{spec.value}</Grid.Column>
+                  <Grid.Column>{String(value)}</Grid.Column>
                 </Grid.Row>
               ))}
+              {(!tool.specifications || Object.keys(tool.specifications).length === 0) && (
+                <Grid.Row>
+                  <Grid.Column>
+                    <p className="text-gray-500">No specifications available for this tool.</p>
+                  </Grid.Column>
+                </Grid.Row>
+              )}
             </Grid>
           </TabsContent>
           <TabsContent value="reviews">
-            {mockToolData.reviews.map((review) => (
+            {reviews.length > 0 ? reviews.map((review) => (
               <Card key={review.id} className="mb-4">
                 <CardContent>
                   <div className="flex items-center mb-2">
                     <Star className="text-yellow-500 mr-1" size={14} fill="yellow" />
                     <span>{review.rating}</span>
-                    <span className="ml-2 text-gray-500">by {review.userName}</span>
+                    <span className="ml-2 text-gray-500">by {review.user_name}</span>
                   </div>
                   <p>{review.comment}</p>
                   <div className="text-gray-500 text-sm mt-2">
-                    Posted on {review.createdAt}
+                    Posted on {new Date(review.created_at).toLocaleDateString()}
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )) : (
+              <p className="text-gray-500">No reviews available for this tool.</p>
+            )}
           </TabsContent>
         </Tabs>
       </Segment>
