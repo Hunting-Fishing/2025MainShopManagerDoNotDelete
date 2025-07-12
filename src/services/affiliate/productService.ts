@@ -120,7 +120,7 @@ export async function createProduct(productData: Partial<ProductData>): Promise<
       affiliate_link: productData.affiliate_link || '',
       category_id: 'default', // Provide default category_id
       is_approved: true,
-      is_available: true
+      product_type: 'affiliate'
     })
     .select()
     .single();

@@ -7,6 +7,7 @@ import ProductCard from '@/components/affiliate/ProductCard';
 // Define interface that matches the actual database schema
 interface DatabaseProduct {
   id: string;
+  title: string;
   description: string;
   price: number;
   image_url: string;
@@ -17,11 +18,11 @@ interface DatabaseProduct {
   created_at: string;
   updated_at: string;
   is_approved: boolean;
-  is_available: boolean;
-  product_type?: string;
-  dimensions?: any;
-  weight?: number;
-  tags?: string[];
+  is_featured: boolean;
+  is_bestseller: boolean;
+  product_type: string;
+  stock_quantity: number;
+  sku: string;
 }
 
 export default function ManufacturerPage() {
@@ -46,8 +47,8 @@ export default function ManufacturerPage() {
         .from('products')
         .select('*')
         .eq('is_approved', true)
-        .eq('is_available', true)
-        .ilike('description', `%${manufacturer}%`);
+        .eq('product_type', 'affiliate')
+        .or(`title.ilike.%${manufacturer}%,description.ilike.%${manufacturer}%`);
 
       if (error) throw error;
 
@@ -90,17 +91,18 @@ export default function ManufacturerPage() {
             // Transform to AffiliateProduct for ProductCard
             const affiliateProduct = {
               id: product.id,
-              name: product.description || 'Product',
+              name: product.title || 'Product',
               description: product.description || '',
               imageUrl: product.image_url || '',
               retailPrice: product.price || 0,
               affiliateUrl: product.affiliate_link || '',
-              category: 'General',
-              tier: (product.product_type as any) || 'economy',
+              category: 'Tools',
+              tier: 'midgrade' as const,
               rating: product.average_rating || 0,
               reviewCount: product.review_count || 0,
-              manufacturer: manufacturer || 'Unknown',
-              isFeatured: false
+              manufacturer: manufacturer || 'Professional Tools',
+              isFeatured: product.is_featured || false,
+              bestSeller: product.is_bestseller || false
             };
             
             return (
