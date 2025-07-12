@@ -43,6 +43,8 @@ import Forms from '@/pages/Forms';
 import Chat from '@/pages/Chat';
 import Notifications from '@/pages/Notifications';
 import Shopping from '@/pages/Shopping';
+import ProductDetail from '@/pages/ProductDetail';
+import Checkout from '@/pages/Checkout';
 import Help from '@/pages/Help';
 import { ContextualHelpWidget } from '@/components/help/ContextualHelpWidget';
 import Developer from '@/pages/Developer';
@@ -121,6 +123,8 @@ function App() {
             
             {/* Shopping/Store */}
             <Route path="/shopping" element={isAuthenticated ? <Layout><Shopping /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/product/:productId" element={isAuthenticated ? <Layout><ProductDetail /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/checkout" element={isAuthenticated ? <Layout><Checkout /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/tools/:category" element={isAuthenticated ? <Layout><ToolCategoryPage /></Layout> : <Navigate to="/auth" replace />} />
             
             {/* Developer Portal */}

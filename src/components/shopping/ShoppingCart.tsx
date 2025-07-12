@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Plus, Minus, Trash2, Loader2 } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Trash2, Loader2, CreditCard } from 'lucide-react';
 import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
+import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '@/lib/utils';
 
 interface ShoppingCartProps {
@@ -16,6 +17,7 @@ interface ShoppingCartProps {
 const ShoppingCartComponent: React.FC<ShoppingCartProps> = ({ 
   showCheckout = true 
 }) => {
+  const navigate = useNavigate();
   const { 
     items, 
     itemCount, 
@@ -144,10 +146,19 @@ const ShoppingCartComponent: React.FC<ShoppingCartProps> = ({
 
         {showCheckout && (
           <div className="space-y-2">
-            <Button className="w-full" size="lg">
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={() => navigate('/checkout')}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
               Proceed to Checkout
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate('/shopping')}
+            >
               Continue Shopping
             </Button>
           </div>

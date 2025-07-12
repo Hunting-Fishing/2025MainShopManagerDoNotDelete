@@ -8,6 +8,7 @@ import ProductTierBadge from './ProductTierBadge';
 import { ProductRating } from './ProductRating';
 import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { 
   ProductViewTracker, 
   useProductAnalytics,
@@ -31,6 +32,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const { toast } = useToast();
   const { trackInteraction } = useProductAnalytics();
+  const navigate = useNavigate();
   
   const handleClick = () => {
     if (onProductClick) {
@@ -42,10 +44,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
         interactionType: ProductInteractionType.CLICK,
         category: product.category
       });
+      // Navigate to product detail page instead of opening affiliate link
+      navigate(`/product/${product.id}`);
     }
-    
-    // Open the affiliate link in a new tab
-    window.open(product.affiliateUrl, '_blank');
   };
   
   const handleSaveClick = () => {
@@ -163,6 +164,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
           >
             View Details
           </Button>
+          {onAddToCartClick && (
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={handleAddToCartClick}
+            >
+              <ShoppingCart className="h-4 w-4" />
+            </Button>
+          )}
           <Button 
             variant="outline" 
             size="icon"
