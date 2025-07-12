@@ -11,7 +11,7 @@ const transformTool = (tool: any): AffiliateTool => ({
   price: tool.price || 0,
   imageUrl: tool.image_url || '/assets/tools/default.jpg',
   category: 'Tools',
-  manufacturer: 'Unknown',
+  manufacturer: 'Professional Tools', // Generic manufacturer for now
   rating: tool.average_rating || 0,
   reviewCount: tool.review_count || 0,
   affiliateLink: tool.affiliate_link || '#',
