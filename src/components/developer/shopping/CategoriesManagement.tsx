@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +24,11 @@ const CategoriesManagement: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [productCounts, setProductCounts] = useState<Record<string, number>>({});
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -79,11 +87,83 @@ const CategoriesManagement: React.FC = () => {
   );
 
   const handleAddCategory = () => {
-    toast.info('Add Category functionality will be implemented');
+    setFormData({ name: '', description: '' });
+    setShowAddDialog(true);
   };
 
   const handleEditCategory = (categoryId: string) => {
-    toast.info(`Edit Category ${categoryId} functionality will be implemented`);
+    const category = categories.find(c => c.id === categoryId);
+    if (category) {
+      setEditingCategory(category);
+      setFormData({ name: category.name, description: category.description || '' });
+      setShowEditDialog(true);
+    }
+  };
+
+  const generateSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+  };
+
+  const handleSaveCategory = async () => {
+    if (!formData.name.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (showAddDialog) {
+        // Add new category
+        const slug = generateSlug(formData.name);
+        const { error } = await supabase
+          .from('product_categories')
+          .insert([{ 
+            name: formData.name.trim(), 
+            slug,
+            description: formData.description.trim() || null 
+          }]);
+
+        if (error) throw error;
+        toast.success('Category added successfully');
+      } else if (showEditDialog && editingCategory) {
+        // Update existing category
+        const slug = generateSlug(formData.name);
+        const { error } = await supabase
+          .from('product_categories')
+          .update({ 
+            name: formData.name.trim(), 
+            slug,
+            description: formData.description.trim() || null 
+          })
+          .eq('id', editingCategory.id);
+
+        if (error) throw error;
+        toast.success('Category updated successfully');
+      }
+
+      setShowAddDialog(false);
+      setShowEditDialog(false);
+      setEditingCategory(null);
+      setFormData({ name: '', description: '' });
+      fetchCategories();
+    } catch (error) {
+      console.error('Error saving category:', error);
+      toast.error('Failed to save category');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDialogClose = () => {
+    setShowAddDialog(false);
+    setShowEditDialog(false);
+    setEditingCategory(null);
+    setFormData({ name: '', description: '' });
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
@@ -227,6 +307,88 @@ const CategoriesManagement: React.FC = () => {
           </div>
         )}
       </CardContent>
+
+      {/* Add Category Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={handleDialogClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <Label htmlFor="name">Category Name *</Label>
+              <Input
+                id="name"
+                placeholder="Enter category name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Enter category description (optional)"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={handleDialogClose}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveCategory} 
+                disabled={isSubmitting || !formData.name.trim()}
+              >
+                {isSubmitting ? 'Adding...' : 'Add Category'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={handleDialogClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <Label htmlFor="edit-name">Category Name *</Label>
+              <Input
+                id="edit-name"
+                placeholder="Enter category name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                placeholder="Enter category description (optional)"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={handleDialogClose}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveCategory} 
+                disabled={isSubmitting || !formData.name.trim()}
+              >
+                {isSubmitting ? 'Updating...' : 'Update Category'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
