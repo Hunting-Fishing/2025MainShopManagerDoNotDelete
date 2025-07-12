@@ -7,7 +7,9 @@ import SearchBar from '@/components/affiliate/SearchBar';
 import FeaturedTools from '@/components/affiliate/FeaturedTools';
 import BestSellingTools from '@/components/affiliate/BestSellingTools';
 import ManufacturersGrid from '@/components/affiliate/ManufacturersGrid';
-import ProductCard from '@/components/affiliate/ProductCard';
+import EnhancedProductCard from '@/components/shopping/EnhancedProductCard';
+import PopularProducts from '@/components/shopping/PopularProducts';
+import RecentlyViewed from '@/components/shopping/RecentlyViewed';
 import ShoppingCartComponent from '@/components/shopping/ShoppingCart';
 import ProductQuickView from '@/components/shopping/ProductQuickView';
 import ProductFilters, { FilterState } from '@/components/shopping/ProductFilters';
@@ -317,21 +319,13 @@ export default function Shopping() {
                       : "space-y-4"
                   }>
                     {filteredProducts.map(product => (
-                      <div key={product.id} className="relative group">
-                        <ProductCard
-                          product={product}
-                          onProductClick={() => setQuickViewProduct(product)}
-                          onAddToCartClick={() => handleAddToCart(product)}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => setQuickViewProduct(product)}
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                      </div>
+                      <EnhancedProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToCartClick={() => handleAddToCart(product)}
+                        showQuickActions={true}
+                        showInventoryStatus={true}
+                      />
                     ))}
                   </div>
                 )}
@@ -360,6 +354,12 @@ export default function Shopping() {
               </div>
             </div>
 
+            {/* Popular Products */}
+            <PopularProducts limit={8} />
+            
+            {/* Recently Viewed */}
+            <RecentlyViewed limit={10} />
+            
             {/* Categories Grid */}
             <CategoryGrid categories={categoryList} />
             

@@ -9046,6 +9046,33 @@ export type Database = {
           },
         ]
       }
+      product_comparisons: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          product_ids: string[]
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          product_ids: string[]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          product_ids?: string[]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       product_inventory: {
         Row: {
           created_at: string
@@ -9275,10 +9302,12 @@ export type Database = {
           dimensions: Json | null
           id: string
           image_url: string | null
+          inventory_item_id: string | null
           is_approved: boolean | null
           is_available: boolean | null
           is_bestseller: boolean | null
           is_featured: boolean | null
+          low_stock_threshold: number | null
           price: number | null
           product_type: Database["public"]["Enums"]["product_type"]
           review_count: number | null
@@ -9290,6 +9319,7 @@ export type Database = {
           suggested_by: string | null
           suggestion_reason: string | null
           title: string
+          track_inventory: boolean | null
           tracking_params: string | null
           updated_at: string
           weight: number | null
@@ -9303,10 +9333,12 @@ export type Database = {
           dimensions?: Json | null
           id?: string
           image_url?: string | null
+          inventory_item_id?: string | null
           is_approved?: boolean | null
           is_available?: boolean | null
           is_bestseller?: boolean | null
           is_featured?: boolean | null
+          low_stock_threshold?: number | null
           price?: number | null
           product_type?: Database["public"]["Enums"]["product_type"]
           review_count?: number | null
@@ -9318,6 +9350,7 @@ export type Database = {
           suggested_by?: string | null
           suggestion_reason?: string | null
           title: string
+          track_inventory?: boolean | null
           tracking_params?: string | null
           updated_at?: string
           weight?: number | null
@@ -9331,10 +9364,12 @@ export type Database = {
           dimensions?: Json | null
           id?: string
           image_url?: string | null
+          inventory_item_id?: string | null
           is_approved?: boolean | null
           is_available?: boolean | null
           is_bestseller?: boolean | null
           is_featured?: boolean | null
+          low_stock_threshold?: number | null
           price?: number | null
           product_type?: Database["public"]["Enums"]["product_type"]
           review_count?: number | null
@@ -9346,6 +9381,7 @@ export type Database = {
           suggested_by?: string | null
           suggestion_reason?: string | null
           title?: string
+          track_inventory?: boolean | null
           tracking_params?: string | null
           updated_at?: string
           weight?: number | null
@@ -9356,6 +9392,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
             referencedColumns: ["id"]
           },
         ]
@@ -9772,6 +9815,36 @@ export type Database = {
           vehicle_id?: string | null
           winner_contact_info?: Json | null
           winner_ticket_number?: string | null
+        }
+        Relationships: []
+      }
+      recently_viewed_products: {
+        Row: {
+          category: string | null
+          id: string
+          product_id: string
+          product_image_url: string | null
+          product_name: string
+          user_id: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          id?: string
+          product_id: string
+          product_image_url?: string | null
+          product_name: string
+          user_id?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          id?: string
+          product_id?: string
+          product_image_url?: string | null
+          product_name?: string
+          user_id?: string | null
+          viewed_at?: string | null
         }
         Relationships: []
       }
@@ -10220,6 +10293,38 @@ export type Database = {
           },
         ]
       }
+      review_helpfulness: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_helpful: boolean
+          review_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_helpful: boolean
+          review_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_helpful?: boolean
+          review_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_helpfulness_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "product_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_audit_log: {
         Row: {
           action: Database["public"]["Enums"]["role_action_type"]
@@ -10338,6 +10443,36 @@ export type Database = {
           permissions?: Json | null
           priority?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      saved_searches: {
+        Row: {
+          created_at: string | null
+          filters: Json | null
+          id: string
+          name: string
+          search_query: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          filters?: Json | null
+          id?: string
+          name: string
+          search_query?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          filters?: Json | null
+          id?: string
+          name?: string
+          search_query?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -14485,6 +14620,15 @@ export type Database = {
       }
     }
     Functions: {
+      add_recently_viewed_product: {
+        Args: {
+          p_product_id: string
+          p_product_name: string
+          p_product_image_url?: string
+          p_category?: string
+        }
+        Returns: undefined
+      }
       addcustomindustry: {
         Args: { industry_name: string }
         Returns: string
@@ -14708,6 +14852,17 @@ export type Database = {
           clicks: number
           saves: number
           shares: number
+        }[]
+      }
+      get_product_stats: {
+        Args: { p_product_id: string }
+        Returns: {
+          total_views: number
+          total_clicks: number
+          total_cart_adds: number
+          total_saves: number
+          avg_rating: number
+          review_count: number
         }[]
       }
       get_upcoming_filing_deadlines: {
@@ -15108,6 +15263,18 @@ export type Database = {
           updated_at: string
           relevance_score: number
         }[]
+      }
+      track_product_interaction: {
+        Args: {
+          p_product_id: string
+          p_product_name: string
+          p_category: string
+          p_interaction_type: string
+          p_user_id?: string
+          p_session_id?: string
+          p_metadata?: Json
+        }
+        Returns: string
       }
       trigger_integration_workflow: {
         Args: { p_workflow_id: string; p_trigger_data?: Json }
