@@ -34,6 +34,7 @@ import StaffMembers from '@/pages/StaffMembers';
 import DeveloperPortal from '@/pages/DeveloperPortal';
 import RepairPlans from '@/pages/RepairPlans';
 import ToolDetailPage from '@/pages/ToolDetailPage';
+import ToolCategoryPage from '@/pages/ToolCategoryPage';
 import Analytics from '@/pages/Analytics';
 import Equipment from '@/pages/Equipment';
 import Maintenance from '@/pages/Maintenance';
@@ -120,6 +121,7 @@ function App() {
             
             {/* Shopping/Store */}
             <Route path="/shopping" element={isAuthenticated ? <Layout><Shopping /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/tools/:category" element={isAuthenticated ? <Layout><ToolCategoryPage /></Layout> : <Navigate to="/auth" replace />} />
             
             {/* Developer Portal */}
             <Route path="/developer" element={isAuthenticated ? <Layout><Developer /></Layout> : <Navigate to="/auth" replace />} />
