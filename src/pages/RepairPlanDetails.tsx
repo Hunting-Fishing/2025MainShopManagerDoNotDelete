@@ -2,43 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { repairPlansService, RepairPlan, RepairPlanTask } from '@/services/repairPlansService';
 
-interface RepairPlan {
-  id: string;
-  title: string;
-  description: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  priority: string;
-  estimated_cost: number;
-  actual_cost: number;
-  created_at: string;
-  updated_at: string;
-  equipmentId: string;
-  createdAt: string;
-  updatedAt: string;
-  estimatedDuration: number;
-  tasks: RepairTask[];
-}
-
-interface RepairTask {
-  id: string;
-  repair_plan_id: string;
-  title: string;
-  description: string;
-  status: string;
-  estimated_hours: number;
-  actual_hours: number;
-  assigned_to: string;
-  completed: boolean;
-  created_at: string;
-  updated_at: string;
+interface DisplayRepairPlan extends RepairPlan {
+  tasks: RepairPlanTask[];
 }
 
 export default function RepairPlanDetails() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const [repairPlan, setRepairPlan] = useState<RepairPlan | null>(null);
-  const [tasks, setTasks] = useState<RepairTask[]>([]);
+  const [tasks, setTasks] = useState<RepairPlanTask[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,55 +25,17 @@ export default function RepairPlanDetails() {
     try {
       setLoading(true);
       
-      // Mock data since repair_plans table doesn't exist in current schema
-      const mockRepairPlan: RepairPlan = {
-        id: id!,
-        title: 'Engine Repair Plan',
-        description: 'Complete engine overhaul and maintenance',
-        status: 'in_progress',
-        priority: 'high',
-        estimated_cost: 2500,
-        actual_cost: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        equipmentId: 'mock-equipment-id',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        estimatedDuration: 8,
-        tasks: []
-      };
+      // Fetch repair plan from database
+      const plan = await repairPlansService.getRepairPlan(id!);
+      if (!plan) {
+        throw new Error('Repair plan not found');
+      }
 
-      const mockTasks: RepairTask[] = [
-        {
-          id: '1',
-          repair_plan_id: id!,
-          title: 'Replace engine oil',
-          description: 'Change engine oil and filter',
-          status: 'completed',
-          estimated_hours: 2,
-          actual_hours: 1.5,
-          assigned_to: 'John Doe',
-          completed: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          repair_plan_id: id!,
-          title: 'Check spark plugs',
-          description: 'Inspect and replace spark plugs if needed',
-          status: 'in_progress',
-          estimated_hours: 1,
-          actual_hours: 0,
-          assigned_to: 'Jane Smith',
-          completed: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-
-      setRepairPlan(mockRepairPlan);
-      setTasks(mockTasks);
+      setRepairPlan(plan);
+      
+      // Fetch tasks for this repair plan
+      const planTasks = await repairPlansService.getRepairPlanTasks(id!);
+      setTasks(planTasks);
 
     } catch (error: any) {
       console.error('Error fetching repair plan data:', error);
@@ -113,9 +49,11 @@ export default function RepairPlanDetails() {
     }
   };
 
-  const handleTaskUpdate = async (taskId: string, updates: Partial<RepairTask>) => {
+  const handleTaskUpdate = async (taskId: string, updates: Partial<RepairPlanTask>) => {
     try {
-      // Mock update - in real implementation, this would update the database
+      await repairPlansService.updateTask(taskId, updates);
+      
+      // Update local state
       setTasks(prev => prev.map(task => 
         task.id === taskId ? { ...task, ...updates } : task
       ));
@@ -155,20 +93,20 @@ export default function RepairPlanDetails() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h1 className="text-2xl font-bold mb-4">{repairPlan.title}</h1>
+            <h1 className="text-2xl font-bold mb-4">{repairPlan.plan_name}</h1>
             <p className="text-gray-600 mb-4">{repairPlan.description}</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="font-medium">Status:</span> {repairPlan.status}
+                <span className="font-medium">Status:</span> <span className="capitalize">{repairPlan.status}</span>
               </div>
               <div>
-                <span className="font-medium">Priority:</span> {repairPlan.priority}
+                <span className="font-medium">Priority:</span> <span className="capitalize">{repairPlan.priority}</span>
               </div>
               <div>
-                <span className="font-medium">Estimated Cost:</span> ${repairPlan.estimated_cost}
+                <span className="font-medium">Estimated Cost:</span> ${repairPlan.estimated_cost?.toFixed(2) || '0.00'}
               </div>
               <div>
-                <span className="font-medium">Duration:</span> {repairPlan.estimatedDuration} hours
+                <span className="font-medium">Duration:</span> {repairPlan.estimated_duration_hours || 0} hours
               </div>
             </div>
           </div>
@@ -178,14 +116,20 @@ export default function RepairPlanDetails() {
             <div className="space-y-4">
               {tasks.map((task) => (
                 <div key={task.id} className="border rounded-lg p-4">
-                  <h3 className="font-medium">{task.title}</h3>
+                  <h3 className="font-medium">{task.task_name}</h3>
                   <p className="text-gray-600 text-sm">{task.description}</p>
                   <div className="mt-2 flex justify-between text-sm">
-                    <span>Status: {task.status}</span>
-                    <span>Assigned to: {task.assigned_to}</span>
+                    <span>Status: <span className="capitalize">{task.status}</span></span>
+                    <span>Assigned to: {task.assigned_to || 'Unassigned'}</span>
+                  </div>
+                  <div className="mt-2 text-sm text-gray-500">
+                    Estimated: {task.estimated_duration_minutes ? Math.round(task.estimated_duration_minutes / 60 * 10) / 10 : 0} hours
                   </div>
                 </div>
               ))}
+              {tasks.length === 0 && (
+                <p className="text-gray-500 text-center py-8">No tasks found for this repair plan.</p>
+              )}
             </div>
           </div>
           

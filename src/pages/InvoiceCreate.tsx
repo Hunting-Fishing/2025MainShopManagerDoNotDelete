@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { createInvoice } from '@/services/invoiceService';
 import { 
   FileText, 
   User, 
@@ -123,15 +124,37 @@ export default function InvoiceCreate() {
       return;
     }
 
-    toast.success('Invoice created successfully! (This is a demo - full database integration coming soon)');
-    console.log('Invoice data:', {
-      ...formData,
-      subtotal: calculateSubtotal(),
-      tax: calculateTax(),
-      total: calculateTotal()
-    });
-    
-    navigate('/invoices');
+    try {
+      const subtotal = calculateSubtotal();
+      const tax = calculateTax();
+      const total = calculateTotal();
+
+      const invoiceData = {
+        customer: formData.customerName,
+        customer_email: formData.customerEmail,
+        customer_id: '', // Could be linked to existing customer
+        customer_address: '',
+        date: formData.issueDate,
+        due_date: formData.dueDate,
+        status: 'pending' as const,
+        subtotal,
+        tax,
+        total,
+        notes: formData.notes,
+        description: `Invoice ${formData.invoiceNumber}`,
+        payment_method: null,
+        work_order_id: null,
+        created_by: 'current-user' // Should be from auth context
+      };
+
+      const newInvoice = await createInvoice(invoiceData);
+      
+      toast.success('Invoice created successfully!');
+      navigate(`/invoices/${newInvoice.id}`);
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      toast.error('Failed to create invoice. Please try again.');
+    }
   };
 
   return (

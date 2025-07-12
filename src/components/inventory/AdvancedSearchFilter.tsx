@@ -33,6 +33,14 @@ interface AdvancedFilter {
     hasReorderPoint: boolean;
     isDiscontinued: boolean;
   };
+  dateRange?: {
+    start?: string;
+    end?: string;
+  };
+  supplier?: string;
+  location?: string;
+  tags?: string[];
+  sortBy?: string;
 }
 
 const defaultFilter: AdvancedFilter = {
@@ -48,6 +56,14 @@ const defaultFilter: AdvancedFilter = {
     hasReorderPoint: false,
     isDiscontinued: false,
   },
+  dateRange: {
+    start: '',
+    end: ''
+  },
+  supplier: '',
+  location: '',
+  tags: [],
+  sortBy: 'name_asc',
 };
 
 const stockStatusOptions = [
@@ -261,8 +277,86 @@ export function AdvancedSearchFilter({
           </TabsContent>
 
           <TabsContent value="advanced" className="space-y-4">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Advanced filters coming soon...</p>
+            {/* Date Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Created After</Label>
+                <Input
+                  type="date"
+                  value={filter.dateRange?.start || ''}
+                  onChange={(e) => updateFilter({
+                    dateRange: { ...filter.dateRange, start: e.target.value }
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Created Before</Label>
+                <Input
+                  type="date"
+                  value={filter.dateRange?.end || ''}
+                  onChange={(e) => updateFilter({
+                    dateRange: { ...filter.dateRange, end: e.target.value }
+                  })}
+                />
+              </div>
+            </div>
+
+            {/* Supplier Filter */}
+            <div className="space-y-2">
+              <Label>Supplier</Label>
+              <Input
+                placeholder="Filter by supplier name..."
+                value={filter.supplier || ''}
+                onChange={(e) => updateFilter({ supplier: e.target.value })}
+              />
+            </div>
+
+            {/* Location Filter */}
+            <div className="space-y-2">
+              <Label>Storage Location</Label>
+              <Input
+                placeholder="Filter by storage location..."
+                value={filter.location || ''}
+                onChange={(e) => updateFilter({ location: e.target.value })}
+              />
+            </div>
+
+            {/* Tags Filter */}
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <Input
+                placeholder="Enter tags separated by commas..."
+                value={filter.tags?.join(', ') || ''}
+                onChange={(e) => updateFilter({ 
+                  tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)
+                })}
+              />
+            </div>
+
+            {/* Sorting Options */}
+            <div className="space-y-2">
+              <Label>Sort By</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'name_asc', label: 'Name (A-Z)' },
+                  { value: 'name_desc', label: 'Name (Z-A)' },
+                  { value: 'price_asc', label: 'Price (Low-High)' },
+                  { value: 'price_desc', label: 'Price (High-Low)' },
+                  { value: 'quantity_asc', label: 'Quantity (Low-High)' },
+                  { value: 'quantity_desc', label: 'Quantity (High-Low)' },
+                  { value: 'date_asc', label: 'Oldest First' },
+                  { value: 'date_desc', label: 'Newest First' }
+                ].map(option => (
+                  <Badge
+                    key={option.value}
+                    variant={filter.sortBy === option.value ? "default" : "outline"}
+                    className="cursor-pointer justify-center py-2"
+                    onClick={() => updateFilter({ sortBy: option.value })}
+                  >
+                    {option.label}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </TabsContent>
         </Tabs>

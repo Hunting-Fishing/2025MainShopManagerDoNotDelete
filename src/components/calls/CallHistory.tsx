@@ -13,10 +13,14 @@ interface CallRecord {
   customer_id: string;
   phone_number: string;
   call_type: string;
-  status: string;
-  duration: number;
+  call_status: string;
+  call_direction: string;
+  duration_seconds?: number;
   created_at: string;
   notes?: string;
+  caller_name: string;
+  call_started_at: string;
+  call_ended_at?: string;
 }
 
 export const CallHistory = ({ customerId }: CallHistoryProps) => {
@@ -84,8 +88,9 @@ export const CallHistory = ({ customerId }: CallHistoryProps) => {
               </div>
               <div className="text-sm">
                 <div>Phone: {call.phone_number}</div>
-                <div>Duration: {call.duration} seconds</div>
-                <div>Status: <span className="capitalize">{call.status}</span></div>
+                <div>Duration: {call.duration_seconds || 0} seconds</div>
+                <div>Status: <span className="capitalize">{call.call_status}</span></div>
+                <div>Direction: <span className="capitalize">{call.call_direction}</span></div>
                 {call.notes && <div className="mt-2">Notes: {call.notes}</div>}
               </div>
             </div>

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { fetchEquipment } from '@/services/equipmentService';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import type { EquipmentWithMaintenance } from '@/services/equipmentService';
 import type { RepairPlanFormValues } from '@/types/repairPlan';
 
@@ -15,24 +16,40 @@ export default function CreateRepairPlan() {
   const [equipmentList, setEquipmentList] = useState<EquipmentWithMaintenance[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock technicians data
-  const technicians = [
-    "John Smith",
-    "Jane Doe", 
-    "Mike Johnson",
-    "Sarah Wilson"
-  ];
+  const [technicians, setTechnicians] = useState<string[]>([]);
 
   useEffect(() => {
-    const loadEquipment = async () => {
+    const loadData = async () => {
       try {
+        // Load equipment
         const equipment = await fetchEquipment();
         setEquipmentList(equipment);
+
+        // Load technicians from profiles table
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, job_title')
+          .in('job_title', ['Technician', 'Lead Technician', 'Service Technician'])
+          .order('first_name');
+
+        if (profilesError) throw profilesError;
+
+        const techniciansList = profilesData?.map(profile => 
+          `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+        ).filter(name => name.length > 0) || [];
+
+        // If no technicians found, add some defaults
+        if (techniciansList.length === 0) {
+          setTechnicians(['Unassigned', 'John Smith', 'Jane Doe', 'Mike Johnson']);
+        } else {
+          setTechnicians(['Unassigned', ...techniciansList]);
+        }
+
       } catch (error) {
-        console.error("Error loading equipment:", error);
+        console.error("Error loading data:", error);
         toast({
           title: "Error",
-          description: "Failed to load equipment list",
+          description: "Failed to load data",
           variant: "destructive",
         });
       } finally {
@@ -40,7 +57,7 @@ export default function CreateRepairPlan() {
       }
     };
 
-    loadEquipment();
+    loadData();
   }, []);
 
   const handleSubmit = async (values: RepairPlanFormValues) => {
