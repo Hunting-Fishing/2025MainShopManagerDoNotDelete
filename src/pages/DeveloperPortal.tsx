@@ -10,6 +10,7 @@ import SystemSettings from './developer/SystemSettings';
 import SecuritySettings from './developer/SecuritySettings';
 import AnalyticsDashboard from './developer/AnalyticsDashboard';
 import ShoppingControls from './developer/ShoppingControls';
+import ProductFormPage from './developer/ProductFormPage';
 import { DeveloperNavigation } from '@/components/developer/DeveloperNavigation';
 
 export default function DeveloperPortal() {
@@ -37,6 +38,8 @@ export default function DeveloperPortal() {
           <Route path="/security" element={<SecuritySettings />} />
           <Route path="/analytics" element={<AnalyticsDashboard />} />
           <Route path="/shopping-controls" element={<ShoppingControls />} />
+          <Route path="/shopping-controls/products/new" element={<ProductFormPage />} />
+          <Route path="/shopping-controls/products/edit/:productId" element={<ProductFormPage />} />
         </Routes>
       </div>
     </>

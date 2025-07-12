@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Edit, Trash2, Plus, Search, ArrowUpDown } from "lucide-react";
+import { Edit, Trash2, Plus, Search, ArrowUpDown, Star, Trophy } from "lucide-react";
 import { toast } from 'sonner';
-import { deleteAffiliateTool, getAffiliateTools } from '@/services/tools/toolService';
+import { fetchAllProducts, deleteProductAdmin, toggleProductFeature, toggleProductBestseller } from '@/services/admin/productAdminService';
 import { useNavigate } from 'react-router-dom';
-import { AffiliateTool } from '@/types/affiliate';
+import { Product } from '@/services/products/productService';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 const ProductsManagement = () => {
-  const [products, setProducts] = useState<AffiliateTool[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ const ProductsManagement = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const data = await getAffiliateTools();
+      const data = await fetchAllProducts(true); // Include unapproved products for admin
       setProducts(data);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -44,9 +44,13 @@ const ProductsManagement = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await deleteAffiliateTool(id);
-        setProducts(products.filter(product => product.id !== id));
-        toast.success("Product deleted successfully");
+        const success = await deleteProductAdmin(id);
+        if (success) {
+          setProducts(products.filter(product => product.id !== id));
+          toast.success("Product deleted successfully");
+        } else {
+          toast.error("Failed to delete product");
+        }
       } catch (error) {
         console.error("Error deleting product:", error);
         toast.error("Failed to delete product");
@@ -54,25 +58,67 @@ const ProductsManagement = () => {
     }
   };
 
-  const renderTags = (product: AffiliateTool) => {
-    if (!product.tags || product.tags.length === 0) return null;
-    
+  const handleToggleFeature = async (id: string, featured: boolean) => {
+    try {
+      const success = await toggleProductFeature(id, !featured);
+      if (success) {
+        setProducts(products.map(product => 
+          product.id === id ? { ...product, is_featured: !featured } : product
+        ));
+        toast.success(`Product ${!featured ? 'featured' : 'unfeatured'} successfully`);
+      } else {
+        toast.error("Failed to update product feature status");
+      }
+    } catch (error) {
+      console.error("Error updating product feature status:", error);
+      toast.error("Failed to update product feature status");
+    }
+  };
+
+  const handleToggleBestseller = async (id: string, bestseller: boolean) => {
+    try {
+      const success = await toggleProductBestseller(id, !bestseller);
+      if (success) {
+        setProducts(products.map(product => 
+          product.id === id ? { ...product, is_bestseller: !bestseller } : product
+        ));
+        toast.success(`Product ${!bestseller ? 'marked as bestseller' : 'unmarked as bestseller'} successfully`);
+      } else {
+        toast.error("Failed to update product bestseller status");
+      }
+    } catch (error) {
+      console.error("Error updating product bestseller status:", error);
+      toast.error("Failed to update product bestseller status");
+    }
+  };
+
+  const renderBadges = (product: Product) => {
     return (
       <div className="flex flex-wrap gap-1 mt-1">
-        {product.tags.map((tag, index) => (
-          <Badge key={index} variant="secondary" className="text-xs">
-            {tag}
+        {product.is_featured && (
+          <Badge variant="default" className="text-xs bg-blue-100 text-blue-800">
+            Featured
           </Badge>
-        ))}
+        )}
+        {product.is_bestseller && (
+          <Badge variant="default" className="text-xs bg-orange-100 text-orange-800">
+            Bestseller
+          </Badge>
+        )}
+        {!product.is_approved && (
+          <Badge variant="destructive" className="text-xs">
+            Pending Approval
+          </Badge>
+        )}
       </div>
     );
   };
 
   const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.manufacturer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (product.tags && product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+    product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (product.category?.name && product.category.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -80,7 +126,7 @@ const ProductsManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Products</h2>
         <Button asChild>
-          <Link to="/developer/shopping/products/new">
+          <Link to="/developer/shopping-controls/products/new">
             <Plus className="h-4 w-4 mr-2" />
             Add Product
           </Link>
@@ -110,8 +156,8 @@ const ProductsManagement = () => {
               </TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Manufacturer</TableHead>
-              <TableHead className="w-[140px]">Actions</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-[180px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -130,29 +176,55 @@ const ProductsManagement = () => {
             ) : (
               filteredProducts.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.id}</TableCell>
+                  <TableCell className="font-medium text-xs">{product.id.slice(0, 8)}...</TableCell>
                   <TableCell>
                     <div>
-                      {product.name}
-                      {renderTags(product)}
+                      <div className="font-medium">{product.title}</div>
+                      {renderBadges(product)}
                     </div>
                   </TableCell>
                   <TableCell>{product.price ? `$${product.price.toFixed(2)}` : '-'}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>{product.manufacturer}</TableCell>
+                  <TableCell>{product.category?.name || 'Uncategorized'}</TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={product.is_approved ? "default" : "secondary"}>
+                        {product.is_approved ? "Approved" : "Pending"}
+                      </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => navigate(`/developer/shopping/products/edit/${product.id}`)}
+                        onClick={() => navigate(`/developer/shopping-controls/products/edit/${product.id}`)}
+                        title="Edit Product"
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleToggleFeature(product.id, product.is_featured || false)}
+                        title={product.is_featured ? "Remove from Featured" : "Mark as Featured"}
+                        className={product.is_featured ? "bg-blue-50 text-blue-600" : ""}
+                      >
+                        <Star className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleToggleBestseller(product.id, product.is_bestseller || false)}
+                        title={product.is_bestseller ? "Remove from Bestsellers" : "Mark as Bestseller"}
+                        className={product.is_bestseller ? "bg-orange-50 text-orange-600" : ""}
+                      >
+                        <Trophy className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="destructive"
                         size="icon"
                         onClick={() => handleDelete(product.id)}
+                        title="Delete Product"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
