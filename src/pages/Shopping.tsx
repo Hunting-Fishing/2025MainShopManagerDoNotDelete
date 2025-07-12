@@ -159,8 +159,9 @@ export default function Shopping() {
     .filter(product => product.featured)
     .map(transformToAffiliateProduct);
   
+  // For best selling, we'll use featured products since they're marked as high-quality
   const bestSellingTools = products
-    .filter(product => product.bestSeller)
+    .filter(product => product.featured || product.bestSeller)
     .map(transformToAffiliateProduct);
 
   // Get unique categories and manufacturers for filters

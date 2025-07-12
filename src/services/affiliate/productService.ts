@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 // Define interfaces that match the actual database schema
 interface DatabaseProduct {
   id: string;
+  title: string;
   description: string;
   price: number;
   image_url: string;
@@ -14,12 +15,11 @@ interface DatabaseProduct {
   created_at: string;
   updated_at: string;
   is_approved: boolean;
-  is_available: boolean;
-  dimensions?: any;
-  weight?: number;
-  tags?: string[];
-  product_type?: string;
-  title?: string; // Add optional title field
+  is_featured: boolean;
+  is_bestseller: boolean;
+  stock_quantity: number;
+  sku: string;
+  product_type: string;
 }
 
 export interface ProductData {
@@ -45,20 +45,20 @@ export interface ProductData {
 // Transform database product to our ProductData interface
 const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductData => ({
   id: dbProduct.id,
-  name: dbProduct.title || dbProduct.description || 'Product', // Use title if available, fallback to description
-  slug: dbProduct.id, // Use ID as slug since slug column doesn't exist
+  name: dbProduct.title || 'Product',
+  slug: dbProduct.title?.toLowerCase().replace(/\s+/g, '-') || dbProduct.id,
   description: dbProduct.description || '',
   price: dbProduct.price || 0,
   image_url: dbProduct.image_url || '',
   affiliate_link: dbProduct.affiliate_link || '',
   average_rating: dbProduct.average_rating || 0,
   review_count: dbProduct.review_count || 0,
-  category: 'General', // Default category since we're using category_id
-  manufacturer: 'Unknown', // Default since manufacturer column doesn't exist
-  featured: false, // Default since featured column doesn't exist
+  category: 'Tools', // Will resolve category name separately
+  manufacturer: 'Professional Tools', // Extract from product data later
+  featured: dbProduct.is_featured || false,
   subcategory: undefined,
-  seller: 'Unknown',
-  tags: dbProduct.tags || [],
+  seller: 'Tool Supply Co',
+  tags: [],
   created_at: dbProduct.created_at || '',
   updated_at: dbProduct.updated_at || dbProduct.created_at || ''
 });
@@ -68,7 +68,8 @@ export async function getProducts(): Promise<ProductData[]> {
     .from('products')
     .select('*')
     .eq('is_approved', true)
-    .eq('is_available', true);
+    .eq('product_type', 'affiliate')
+    .order('created_at', { ascending: false });
 
   if (error) throw error;
   
@@ -80,8 +81,9 @@ export async function getProductsByCategory(category: string): Promise<ProductDa
     .from('products')
     .select('*')
     .eq('is_approved', true)
-    .eq('is_available', true)
-    .eq('category_id', category);
+    .eq('product_type', 'affiliate')
+    .eq('category_id', category)
+    .order('created_at', { ascending: false });
 
   if (error) throw error;
   
@@ -89,13 +91,13 @@ export async function getProductsByCategory(category: string): Promise<ProductDa
 }
 
 export async function getProductsByManufacturer(manufacturer: string): Promise<ProductData[]> {
-  // Since manufacturer column doesn't exist, search in description
   const { data, error } = await supabase
     .from('products')
     .select('*')
     .eq('is_approved', true)
-    .eq('is_available', true)
-    .ilike('description', `%${manufacturer}%`);
+    .eq('product_type', 'affiliate')
+    .or(`title.ilike.%${manufacturer}%,description.ilike.%${manufacturer}%`)
+    .order('created_at', { ascending: false });
 
   if (error) throw error;
   

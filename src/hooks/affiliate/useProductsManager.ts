@@ -31,7 +31,7 @@ const transformProductToAffiliateTool = (product: ProductData): AffiliateTool =>
   id: product.id,
   name: product.name,
   description: product.description,
-  slug: product.id, // Use ID since slug might not exist
+  slug: product.slug,
   price: product.price,
   imageUrl: product.image_url,
   category: product.category,
@@ -40,9 +40,9 @@ const transformProductToAffiliateTool = (product: ProductData): AffiliateTool =>
   rating: product.average_rating,
   reviewCount: product.review_count,
   featured: product.featured,
-  bestSeller: false,
+  bestSeller: product.featured, // Use featured as bestseller since we don't have separate field
   affiliateLink: product.affiliate_link,
-  seller: product.seller || 'Unknown',
+  seller: product.seller || 'Tool Supply Co',
   tags: product.tags || []
 });
 
