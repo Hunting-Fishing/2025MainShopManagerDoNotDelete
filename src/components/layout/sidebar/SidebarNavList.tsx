@@ -28,6 +28,9 @@ const navigation = [
   { name: "Work Orders", href: "/work-orders", icon: Wrench, title: "Work Orders" },
   { name: "Inventory", href: "/inventory", icon: Package, title: "Inventory" },
   { name: "Invoices", href: "/invoices", icon: FileText, title: "Invoices" },
+  { name: "Quotes", href: "/quotes", icon: ShoppingCart, title: "Quotes" },
+  { name: "Team", href: "/team", icon: Users, title: "Team" },
+  { name: "Documents", href: "/documents", icon: FileText, title: "Documents" },
   { name: "Calendar", href: "/calendar", icon: Calendar, title: "Calendar" },
   { name: "Equipment", href: "/equipment", icon: Cog, title: "Equipment" },
   { name: "Maintenance", href: "/maintenance", icon: UserCheck, title: "Maintenance" },
@@ -35,7 +38,7 @@ const navigation = [
   { name: "Analytics", href: "/analytics", icon: TrendingUp, title: "Analytics" },
   { name: "Feedback", href: "/feedback", icon: MessageSquare, title: "Feedback" },
   { name: "Forms", href: "/forms", icon: FileCheck, title: "Forms" },
-  { name: "Chat", href: "/chat", icon: MessageSquare, title: "Chat" },
+  { name: "Chat", href: "/chat", icon: Clock, title: "Chat" },
   { name: "Notifications", href: "/notifications", icon: Bell, title: "Notifications" },
 ];
 

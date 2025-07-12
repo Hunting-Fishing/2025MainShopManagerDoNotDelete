@@ -94,9 +94,9 @@ export default function EmailCampaigns() {
           </p>
         </div>
         <Button asChild>
-          <a href="/email-templates">
+          <Link to="/email-templates">
             <Plus className="mr-2 h-4 w-4" /> Create Campaign
-          </a>
+          </Link>
         </Button>
       </div>
 
@@ -251,9 +251,9 @@ export default function EmailCampaigns() {
             <div className="text-center py-8">
               <p className="text-muted-foreground">No campaigns found</p>
               <Button asChild className="mt-4">
-                <a href="/email-templates">
+                <Link to="/email-templates">
                   <Plus className="mr-2 h-4 w-4" /> Create Campaign
-                </a>
+                </Link>
               </Button>
             </div>
           ) : (

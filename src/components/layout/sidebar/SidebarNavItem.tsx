@@ -22,8 +22,8 @@ export function SidebarNavItem({ item }: SidebarNavItemProps) {
       className={({ isActive }) =>
         `group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
           isActive
-            ? "bg-blue-100 text-blue-900"
-            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         }`
       }
       title={item.title}
