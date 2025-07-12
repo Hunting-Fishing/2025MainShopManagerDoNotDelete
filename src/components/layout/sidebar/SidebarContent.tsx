@@ -27,7 +27,8 @@ import {
   FileBarChart,
   Building,
   Store,
-  Code
+  Code,
+  Heart
 } from 'lucide-react';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -97,6 +98,8 @@ const navigation = [
     title: 'E-Commerce',
     items: [
       { name: 'Shopping', href: '/shopping', icon: Store },
+      { name: 'My Orders', href: '/orders', icon: Package },
+      { name: 'Wishlist', href: '/wishlist', icon: Heart },
     ],
   },
   {

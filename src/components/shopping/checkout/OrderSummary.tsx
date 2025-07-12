@@ -10,7 +10,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items }) => {
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const tax = subtotal * 0.08; // 8% tax
   const shipping = 0; // Free standard shipping
-  const total = subtotal + tax + shipping;
+  const total = Number(subtotal + tax + shipping);
 
   return (
     <Card>
@@ -45,7 +45,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items }) => {
           </div>
           <div className="flex justify-between">
             <span>Shipping</span>
-            <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+            <span>{shipping === 0 ? 'Free' : `$${Number(shipping).toFixed(2)}`}</span>
           </div>
           <div className="flex justify-between font-bold text-lg border-t pt-2">
             <span>Total</span>

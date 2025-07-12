@@ -74,7 +74,7 @@ export const getWishlistItems = async (): Promise<WishlistItem[]> => {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data as WishlistItem[];
+  return data as any;
 };
 
 /**

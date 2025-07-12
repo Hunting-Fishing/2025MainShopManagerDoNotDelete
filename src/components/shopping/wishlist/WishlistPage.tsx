@@ -68,8 +68,7 @@ export const WishlistPage = () => {
       id: item.product.id,
       name: item.product.name,
       price: item.product.price,
-      image: item.product.image_url,
-      quantity: 1
+      image: item.product.image_url
     });
 
     toast({

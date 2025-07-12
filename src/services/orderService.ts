@@ -46,7 +46,7 @@ export const createOrder = async (request: CreateOrderRequest): Promise<Order> =
 
   if (itemsError) throw itemsError;
 
-  return order;
+  return order as any;
 };
 
 /**
@@ -74,7 +74,7 @@ export const getUserOrders = async (): Promise<Order[]> => {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data as Order[];
+  return data as any;
 };
 
 /**
@@ -102,7 +102,7 @@ export const getOrderById = async (orderId: string): Promise<Order | null> => {
     if (error.code === 'PGRST116') return null;
     throw error;
   }
-  return data as Order;
+  return data as any;
 };
 
 /**
@@ -117,7 +117,7 @@ export const updateOrder = async (orderId: string, updates: UpdateOrderRequest):
     .single();
 
   if (error) throw error;
-  return data as Order;
+  return data as any;
 };
 
 /**
@@ -141,7 +141,7 @@ export const getAllOrders = async (): Promise<Order[]> => {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data as Order[];
+  return data as any;
 };
 
 /**

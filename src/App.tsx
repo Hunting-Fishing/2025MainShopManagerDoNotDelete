@@ -48,6 +48,9 @@ import Checkout from '@/pages/Checkout';
 import Help from '@/pages/Help';
 import { ContextualHelpWidget } from '@/components/help/ContextualHelpWidget';
 import Developer from '@/pages/Developer';
+import { OrdersPage } from '@/components/shopping/orders/OrdersPage';
+import { OrderDetailsPage } from '@/components/shopping/orders/OrderDetailsPage';
+import { WishlistPage } from '@/components/shopping/wishlist/WishlistPage';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuthUser();
@@ -125,6 +128,9 @@ function App() {
             <Route path="/shopping" element={isAuthenticated ? <Layout><Shopping /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/product/:productId" element={isAuthenticated ? <Layout><ProductDetail /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/checkout" element={isAuthenticated ? <Layout><Checkout /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/orders" element={isAuthenticated ? <Layout><OrdersPage /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/orders/:orderId" element={isAuthenticated ? <Layout><OrderDetailsPage /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/wishlist" element={isAuthenticated ? <Layout><WishlistPage /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/tools/:category" element={isAuthenticated ? <Layout><ToolCategoryPage /></Layout> : <Navigate to="/auth" replace />} />
             
             

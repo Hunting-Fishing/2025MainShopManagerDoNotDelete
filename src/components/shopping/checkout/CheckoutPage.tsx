@@ -52,7 +52,7 @@ export const CheckoutPage = () => {
         description: `Order #${order.id.slice(0, 8)} has been created.`
       });
 
-      // Navigate to order confirmation
+      // Navigate to order confirmation  
       navigate(`/orders/${order.id}`);
 
     } catch (error) {
