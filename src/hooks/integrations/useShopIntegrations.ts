@@ -163,6 +163,10 @@ export function useShopIntegrations() {
     }
   };
 
+  const toggleIntegration = async (id: string, isActive: boolean) => {
+    return updateIntegration(id, { is_active: isActive });
+  };
+
   const deleteIntegration = async (id: string) => {
     try {
       const { error } = await supabase
@@ -270,6 +274,7 @@ export function useShopIntegrations() {
     isLoading,
     createIntegration,
     updateIntegration,
+    toggleIntegration,
     deleteIntegration,
     testConnection,
     triggerSync,

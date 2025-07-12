@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,24 +23,15 @@ import {
   CreditCard,
   Truck,
   FileText,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useIntegrationProviders } from '@/hooks/integrations/useIntegrationProviders';
+import { useShopIntegrations } from '@/hooks/integrations/useShopIntegrations';
+import { fetchAPIEndpoints, testAPIEndpoint, updateAPIEndpoint } from '@/services/integrations/apiEndpointService';
 
-interface Integration {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  icon: React.ReactNode;
-  status: 'connected' | 'disconnected' | 'error' | 'configuring';
-  config: Record<string, any>;
-  features: string[];
-  pricing: string;
-  website: string;
-}
-
-interface APIEndpoint {
+interface APIEndpointUI {
   id: string;
   name: string;
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -53,133 +44,82 @@ interface APIEndpoint {
   status: 'success' | 'error' | 'pending';
 }
 
-const availableIntegrations: Integration[] = [
-  {
-    id: 'quickbooks',
-    name: 'QuickBooks',
-    description: 'Sync financial data and invoices',
-    category: 'Accounting',
-    icon: <Database className="h-5 w-5" />,
-    status: 'disconnected',
-    config: {},
-    features: ['Invoice Sync', 'Customer Data', 'Financial Reports'],
-    pricing: 'Free for basic features',
-    website: 'https://quickbooks.intuit.com'
-  },
-  {
-    id: 'mailchimp',
-    name: 'Mailchimp',
-    description: 'Email marketing and customer communications',
-    category: 'Marketing',
-    icon: <Mail className="h-5 w-5" />,
-    status: 'connected',
-    config: { apiKey: '***', listId: 'abc123' },
-    features: ['Email Campaigns', 'Customer Segments', 'Analytics'],
-    pricing: 'Starts at $10/month',
-    website: 'https://mailchimp.com'
-  },
-  {
-    id: 'twilio',
-    name: 'Twilio',
-    description: 'SMS notifications and voice calls',
-    category: 'Communications',
-    icon: <MessageSquare className="h-5 w-5" />,
-    status: 'configuring',
-    config: { accountSid: 'AC123', authToken: '***' },
-    features: ['SMS Alerts', 'Voice Calls', 'Two-way Messaging'],
-    pricing: 'Pay per use',
-    website: 'https://twilio.com'
-  },
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    description: 'Payment processing and billing',
-    category: 'Payments',
-    icon: <CreditCard className="h-5 w-5" />,
-    status: 'connected',
-    config: { publishableKey: 'pk_***', secretKey: '***' },
-    features: ['Credit Card Processing', 'Recurring Billing', 'Payment Analytics'],
-    pricing: '2.9% + 30¢ per transaction',
-    website: 'https://stripe.com'
-  },
-  {
-    id: 'fedex',
-    name: 'FedEx',
-    description: 'Shipping and tracking integration',
-    category: 'Logistics',
-    icon: <Truck className="h-5 w-5" />,
-    status: 'disconnected',
-    config: {},
-    features: ['Rate Calculation', 'Label Generation', 'Package Tracking'],
-    pricing: 'Based on shipping volume',
-    website: 'https://developer.fedex.com'
-  },
-  {
-    id: 'docusign',
-    name: 'DocuSign',
-    description: 'Digital document signing',
-    category: 'Documents',
-    icon: <FileText className="h-5 w-5" />,
-    status: 'disconnected',
-    config: {},
-    features: ['Digital Signatures', 'Document Templates', 'Audit Trail'],
-    pricing: 'Starts at $15/month',
-    website: 'https://docusign.com'
-  },
-  {
-    id: 'calendly',
-    name: 'Calendly',
-    description: 'Appointment scheduling integration',
-    category: 'Scheduling',
-    icon: <Calendar className="h-5 w-5" />,
-    status: 'disconnected',
-    config: {},
-    features: ['Online Booking', 'Calendar Sync', 'Automated Reminders'],
-    pricing: 'Free plan available',
-    website: 'https://calendly.com'
+const getCategoryIcon = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'accounting': case 'finance': return <Database className="h-5 w-5" />;
+    case 'marketing': case 'email': return <Mail className="h-5 w-5" />;
+    case 'communications': case 'sms': return <MessageSquare className="h-5 w-5" />;
+    case 'payments': case 'billing': return <CreditCard className="h-5 w-5" />;
+    case 'logistics': case 'shipping': return <Truck className="h-5 w-5" />;
+    case 'documents': case 'signature': return <FileText className="h-5 w-5" />;
+    case 'scheduling': case 'calendar': return <Calendar className="h-5 w-5" />;
+    default: return <Globe className="h-5 w-5" />;
   }
-];
-
-const mockEndpoints: APIEndpoint[] = [
-  {
-    id: '1',
-    name: 'Sync Customer Data',
-    method: 'POST',
-    url: 'https://api.external.com/customers/sync',
-    headers: { 'Authorization': 'Bearer ***', 'Content-Type': 'application/json' },
-    body: '{"customers": "{{customers}}"}',
-    enabled: true,
-    schedule: 'daily',
-    lastRun: '2024-01-15T10:30:00Z',
-    status: 'success'
-  },
-  {
-    id: '2',
-    name: 'Send Invoice Notifications',
-    method: 'POST',
-    url: 'https://api.notifications.com/send',
-    headers: { 'API-Key': '***' },
-    body: '{"message": "{{invoice_message}}", "recipient": "{{customer_email}}"}',
-    enabled: true,
-    schedule: 'on_event',
-    lastRun: '2024-01-15T09:15:00Z',
-    status: 'success'
-  }
-];
+};
 
 export function ExternalAPIConnector() {
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [integrations, setIntegrations] = useState(availableIntegrations);
-  const [endpoints, setEndpoints] = useState(mockEndpoints);
-  const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
+  const [endpoints, setEndpoints] = useState<APIEndpointUI[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
   const [isConfiguring, setIsConfiguring] = useState(false);
+  const [isLoadingEndpoints, setIsLoadingEndpoints] = useState(false);
 
-  const categories = ['all', ...Array.from(new Set(integrations.map(i => i.category)))];
+  // Use our live data hooks
+  const { providers, isLoading: isLoadingProviders, getProvidersByCategory } = useIntegrationProviders();
+  const { integrations: shopIntegrations, isLoading: isLoadingIntegrations, createIntegration, toggleIntegration, deleteIntegration } = useShopIntegrations();
+
+  // Create combined integration data
+  const combinedIntegrations = providers.map(provider => {
+    const shopIntegration = shopIntegrations.find(si => si.provider_id === provider.id);
+    return {
+      id: provider.id,
+      name: provider.name,
+      description: provider.description || '',
+      category: provider.category,
+      icon: getCategoryIcon(provider.category),
+      status: shopIntegration ? (shopIntegration.is_active ? 'connected' : 'disconnected') : 'disconnected',
+      config: shopIntegration?.configuration || {},
+      features: [], // Could be added to provider schema
+      pricing: '', // Could be added to provider schema
+      website: provider.website_url || '',
+      shopIntegrationId: shopIntegration?.id,
+      provider
+    };
+  });
+
+  const categories = ['all', ...Array.from(new Set(providers.map(p => p.category)))];
 
   const filteredIntegrations = selectedCategory === 'all' 
-    ? integrations 
-    : integrations.filter(i => i.category === selectedCategory);
+    ? combinedIntegrations 
+    : combinedIntegrations.filter(i => i.category === selectedCategory);
+
+  // Load API endpoints
+  useEffect(() => {
+    const loadEndpoints = async () => {
+      setIsLoadingEndpoints(true);
+      try {
+        const endpointsData = await fetchAPIEndpoints();
+        const uiEndpoints: APIEndpointUI[] = endpointsData.map(ep => ({
+          id: ep.id,
+          name: ep.name,
+          method: ep.method as 'GET' | 'POST' | 'PUT' | 'DELETE',
+          url: ep.endpoint_url,
+          headers: ep.headers || {},
+          body: ep.parameters ? JSON.stringify(ep.parameters) : undefined,
+          enabled: ep.is_active,
+          lastRun: ep.last_called_at,
+          status: ep.success_rate === 100 ? 'success' : ep.success_rate === 0 ? 'error' : 'pending'
+        }));
+        setEndpoints(uiEndpoints);
+      } catch (error) {
+        console.error('Error loading endpoints:', error);
+      } finally {
+        setIsLoadingEndpoints(false);
+      }
+    };
+    loadEndpoints();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -199,63 +139,80 @@ export function ExternalAPIConnector() {
     }
   };
 
-  const handleConnect = (integration: Integration) => {
-    setSelectedIntegration(integration);
+  const handleConnect = (integration: any) => {
+    setSelectedProvider(integration.provider);
     setIsConfiguring(true);
   };
 
-  const handleDisconnect = (integrationId: string) => {
-    setIntegrations(prev => prev.map(i => 
-      i.id === integrationId 
-        ? { ...i, status: 'disconnected' as const, config: {} }
-        : i
-    ));
-    
-    toast({
-      title: "Integration Disconnected",
-      description: "The integration has been successfully disconnected."
-    });
+  const handleDisconnect = async (integration: any) => {
+    if (integration.shopIntegrationId) {
+      await deleteIntegration(integration.shopIntegrationId);
+    }
   };
 
-  const handleSaveConfig = (config: Record<string, any>) => {
-    if (!selectedIntegration) return;
+  const handleSaveConfig = async (config: Record<string, any>) => {
+    if (!selectedProvider) return;
 
-    setIntegrations(prev => prev.map(i => 
-      i.id === selectedIntegration.id 
-        ? { ...i, status: 'connected' as const, config }
-        : i
-    ));
+    await createIntegration({
+      provider_id: selectedProvider.id,
+      name: selectedProvider.name,
+      description: selectedProvider.description,
+      auth_credentials: config,
+      configuration: config
+    });
 
     setIsConfiguring(false);
-    setSelectedIntegration(null);
-
-    toast({
-      title: "Integration Connected",
-      description: "The integration has been successfully configured and connected."
-    });
+    setSelectedProvider(null);
   };
 
-  const testEndpoint = async (endpoint: APIEndpoint) => {
+  const testEndpoint = async (endpoint: APIEndpointUI) => {
     toast({
       title: "Testing Endpoint",
       description: "Sending test request..."
     });
 
-    // Simulate API test
-    setTimeout(() => {
+    try {
+      // Find the actual API endpoint data
+      const endpointsData = await fetchAPIEndpoints();
+      const actualEndpoint = endpointsData.find(ep => ep.id === endpoint.id);
+      
+      if (actualEndpoint) {
+        const result = await testAPIEndpoint(actualEndpoint);
+        if (result.success) {
+          toast({
+            title: "Test Successful",
+            description: `Endpoint responded in ${result.responseTime}ms`
+          });
+        } else {
+          toast({
+            title: "Test Failed",
+            description: result.error || "The endpoint test failed",
+            variant: "destructive"
+          });
+        }
+      }
+    } catch (error) {
       toast({
-        title: "Test Successful",
-        description: "The endpoint responded successfully."
+        title: "Test Failed",
+        description: "Unable to test the endpoint",
+        variant: "destructive"
       });
-    }, 2000);
+    }
   };
 
-  const toggleEndpoint = (endpointId: string) => {
-    setEndpoints(prev => prev.map(e => 
-      e.id === endpointId 
-        ? { ...e, enabled: !e.enabled }
-        : e
-    ));
+  const toggleEndpoint = async (endpointId: string) => {
+    const endpoint = endpoints.find(e => e.id === endpointId);
+    if (endpoint) {
+      const newStatus = !endpoint.enabled;
+      setEndpoints(prev => prev.map(e => 
+        e.id === endpointId 
+          ? { ...e, enabled: newStatus }
+          : e
+      ));
+      
+      // Update in database
+      await updateAPIEndpoint(endpointId, { is_active: newStatus });
+    }
   };
 
   return (
@@ -282,25 +239,35 @@ export function ExternalAPIConnector() {
         </TabsList>
 
         <TabsContent value="integrations" className="space-y-6">
-          {/* Category Filter */}
-          <div className="flex gap-2 flex-wrap">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-                className="capitalize"
-              >
-                {category}
-              </Button>
-            ))}
-          </div>
+          {/* Loading State */}
+          {(isLoadingProviders || isLoadingIntegrations) && (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">Loading integrations...</span>
+            </div>
+          )}
 
-          {/* Integrations Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredIntegrations.map((integration) => (
-              <Card key={integration.id} className="relative">
+          {!isLoadingProviders && !isLoadingIntegrations && (
+            <>
+              {/* Category Filter */}
+              <div className="flex gap-2 flex-wrap">
+                {categories.map((category) => (
+                  <Button
+                    key={category}
+                    variant={selectedCategory === category ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category)}
+                    className="capitalize"
+                  >
+                    {category}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Integrations Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredIntegrations.map((integration) => (
+                  <Card key={integration.id} className="relative">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -351,7 +318,7 @@ export function ExternalAPIConnector() {
                         <Button 
                           size="sm" 
                           variant="destructive" 
-                          onClick={() => handleDisconnect(integration.id)}
+                          onClick={() => handleDisconnect(integration)}
                         >
                           Disconnect
                         </Button>
@@ -366,10 +333,12 @@ export function ExternalAPIConnector() {
                       </Button>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="endpoints" className="space-y-6">
@@ -381,9 +350,22 @@ export function ExternalAPIConnector() {
             </Button>
           </div>
 
-          <div className="space-y-4">
-            {endpoints.map((endpoint) => (
-              <Card key={endpoint.id}>
+          {isLoadingEndpoints && (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">Loading endpoints...</span>
+            </div>
+          )}
+
+          {!isLoadingEndpoints && (
+            <div className="space-y-4">
+              {endpoints.length === 0 ? (
+                <div className="text-center p-8 text-muted-foreground">
+                  No API endpoints configured yet. Click "Add Endpoint" to get started.
+                </div>
+               ) : (
+                endpoints.map((endpoint) => (
+                  <Card key={endpoint.id}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -429,10 +411,12 @@ export function ExternalAPIConnector() {
                       </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="webhooks" className="space-y-6">
@@ -512,12 +496,12 @@ export function ExternalAPIConnector() {
         </TabsContent>
       </Tabs>
 
-      {/* Configuration Modal would go here */}
-      {isConfiguring && selectedIntegration && (
+      {/* Configuration Modal */}
+      {isConfiguring && selectedProvider && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
-              <CardTitle>Configure {selectedIntegration.name}</CardTitle>
+              <CardTitle>Configure {selectedProvider.name}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -547,7 +531,7 @@ export function ExternalAPIConnector() {
                   variant="outline" 
                   onClick={() => {
                     setIsConfiguring(false);
-                    setSelectedIntegration(null);
+                    setSelectedProvider(null);
                   }}
                 >
                   Cancel
