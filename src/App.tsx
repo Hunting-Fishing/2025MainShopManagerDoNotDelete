@@ -71,6 +71,7 @@ function App() {
             
             {/* Services */}
             <Route path="/services" element={isAuthenticated ? <Layout><ServiceCatalog /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/service-library" element={isAuthenticated ? <Layout><ServiceCatalog /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/services/category/:categoryId" element={isAuthenticated ? <Layout><ServiceCategory /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/services/category/:categoryId/subcategory/:subcategoryId" element={isAuthenticated ? <Layout><ServiceSubcategory /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/services/job/:jobId" element={isAuthenticated ? <Layout><ServiceJob /></Layout> : <Navigate to="/auth" replace />} />
@@ -113,8 +114,13 @@ function App() {
             <Route path="/chat" element={isAuthenticated ? <Layout><Chat /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/notifications" element={isAuthenticated ? <Layout><Notifications /></Layout> : <Navigate to="/auth" replace />} />
             
-            {/* Legacy redirects */}
-            <Route path="/service-editor" element={isAuthenticated ? <Navigate to="/services" replace /> : <Navigate to="/auth" replace />} />
+            {/* Service Editor - actual route for editing */}
+            <Route path="/service-editor" element={isAuthenticated ? <Layout><ServiceCatalog /></Layout> : <Navigate to="/auth" replace />} />
+            
+            {/* Missing routes that are in SidebarContent */}
+            <Route path="/inventory/suppliers" element={isAuthenticated ? <Layout><Inventory /></Layout> : <Navigate to="/auth" replace />} />
+            
+            {/* Help and Security should be part of Settings, but for now direct to settings */}
             <Route path="/help" element={isAuthenticated ? <Navigate to="/settings" replace /> : <Navigate to="/auth" replace />} />
             <Route path="/security" element={isAuthenticated ? <Navigate to="/settings/security" replace /> : <Navigate to="/auth" replace />} />
             
