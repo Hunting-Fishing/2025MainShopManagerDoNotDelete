@@ -37,8 +37,11 @@ export default function DeveloperPortal() {
           <Route path="/system-settings" element={<SystemSettings />} />
           <Route path="/security" element={<SecuritySettings />} />
           <Route path="/analytics" element={<AnalyticsDashboard />} />
+          <Route path="/shopping" element={<ShoppingControls />} />
           <Route path="/shopping-controls" element={<ShoppingControls />} />
+          <Route path="/shopping/products/new" element={<ProductFormPage />} />
           <Route path="/shopping-controls/products/new" element={<ProductFormPage />} />
+          <Route path="/shopping/products/edit/:productId" element={<ProductFormPage />} />
           <Route path="/shopping-controls/products/edit/:productId" element={<ProductFormPage />} />
         </Routes>
       </div>

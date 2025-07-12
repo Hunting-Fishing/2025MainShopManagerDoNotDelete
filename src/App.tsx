@@ -127,9 +127,6 @@ function App() {
             <Route path="/checkout" element={isAuthenticated ? <Layout><Checkout /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/tools/:category" element={isAuthenticated ? <Layout><ToolCategoryPage /></Layout> : <Navigate to="/auth" replace />} />
             
-            {/* Developer Portal */}
-            <Route path="/developer" element={isAuthenticated ? <Layout><Developer /></Layout> : <Navigate to="/auth" replace />} />
-            <Route path="/developer/*" element={isAuthenticated ? <Layout><DeveloperPortal /></Layout> : <Navigate to="/auth" replace />} />
             
             {/* Service Editor - actual route for editing */}
             <Route path="/service-editor" element={isAuthenticated ? <Layout><ServiceCatalog /></Layout> : <Navigate to="/auth" replace />} />

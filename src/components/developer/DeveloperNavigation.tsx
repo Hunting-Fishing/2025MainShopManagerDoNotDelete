@@ -56,7 +56,7 @@ const navigationItems = [
     description: 'System analytics and insights'
   },
   {
-    href: '/developer/shopping-controls',
+    href: '/developer/shopping',
     label: 'Shopping Controls',
     icon: ShoppingBag,
     description: 'E-commerce configuration'
