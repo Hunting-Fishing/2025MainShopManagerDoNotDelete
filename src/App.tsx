@@ -41,6 +41,7 @@ import Feedback from '@/pages/Feedback';
 import Forms from '@/pages/Forms';
 import Chat from '@/pages/Chat';
 import Notifications from '@/pages/Notifications';
+import Shopping from '@/pages/Shopping';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuthUser();
@@ -114,14 +115,17 @@ function App() {
             <Route path="/chat" element={isAuthenticated ? <Layout><Chat /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/notifications" element={isAuthenticated ? <Layout><Notifications /></Layout> : <Navigate to="/auth" replace />} />
             
+            {/* Shopping/Store */}
+            <Route path="/shopping" element={isAuthenticated ? <Layout><Shopping /></Layout> : <Navigate to="/auth" replace />} />
+            
             {/* Service Editor - actual route for editing */}
             <Route path="/service-editor" element={isAuthenticated ? <Layout><ServiceCatalog /></Layout> : <Navigate to="/auth" replace />} />
             
             {/* Missing routes that are in SidebarContent */}
             <Route path="/inventory/suppliers" element={isAuthenticated ? <Layout><Inventory /></Layout> : <Navigate to="/auth" replace />} />
             
-            {/* Help and Security should be part of Settings, but for now direct to settings */}
-            <Route path="/help" element={isAuthenticated ? <Navigate to="/settings" replace /> : <Navigate to="/auth" replace />} />
+            {/* Help and Security routes */}
+            <Route path="/help" element={isAuthenticated ? <Layout><div className="p-6"><h1 className="text-2xl font-bold">Help & Support</h1><p>Help documentation coming soon.</p></div></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/security" element={isAuthenticated ? <Navigate to="/settings/security" replace /> : <Navigate to="/auth" replace />} />
             
             {/* Catch all route */}
