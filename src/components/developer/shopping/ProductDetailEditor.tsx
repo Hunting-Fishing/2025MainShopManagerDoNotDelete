@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Check, ExternalLink, AlertTriangle, History } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useProductPriceHistory } from "@/hooks/useProductPriceHistory";
 
 interface PriceHistoryEntry {
   date: string;
@@ -29,12 +30,8 @@ const ProductDetailEditor = ({ product, isOpen, onClose, onSave }: ProductDetail
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   
-  // Mock price history data - in a real app, this would come from your backend
-  const [priceHistory] = useState<PriceHistoryEntry[]>([
-    { date: "2025-04-01", price: (product as any).price || (product as any).retailPrice || 0, salePrice: (product as any).salePrice },
-    { date: "2025-03-01", price: ((product as any).price || (product as any).retailPrice || 0) * 1.05, salePrice: (product as any).salePrice ? (product as any).salePrice * 1.02 : undefined },
-    { date: "2025-02-01", price: ((product as any).price || (product as any).retailPrice || 0) * 1.1, salePrice: undefined },
-  ]);
+  // Use live price history data from the database
+  const { priceHistory, loading: priceHistoryLoading } = useProductPriceHistory((product as any).id || '');
   
   const isValidUrl = (url: string) => {
     try {
@@ -339,15 +336,25 @@ const ProductDetailEditor = ({ product, isOpen, onClose, onSave }: ProductDetail
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {priceHistory.map((entry, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{formatDate(entry.date)}</TableCell>
-                      <TableCell>${entry.price.toFixed(2)}</TableCell>
-                      <TableCell>
-                        {entry.salePrice ? `$${entry.salePrice.toFixed(2)}` : '-'}
-                      </TableCell>
+                  {priceHistoryLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center">Loading price history...</TableCell>
                     </TableRow>
-                  ))}
+                  ) : priceHistory.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground">No price history available</TableCell>
+                    </TableRow>
+                  ) : (
+                    priceHistory.map((entry, index) => (
+                      <TableRow key={entry.id || index}>
+                        <TableCell className="font-medium">{formatDate(entry.date)}</TableCell>
+                        <TableCell>${entry.price.toFixed(2)}</TableCell>
+                        <TableCell>
+                          {entry.salePrice ? `$${entry.salePrice.toFixed(2)}` : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
