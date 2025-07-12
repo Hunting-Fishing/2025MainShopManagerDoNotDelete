@@ -3,6 +3,14 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ServiceManagementPage } from './developer/ServiceManagementPage';
+import { ApiDocumentationPage } from './developer/ApiDocumentationPage';
+import { ApiToolsPage } from './developer/ApiToolsPage';
+import UserManagement from './developer/UserManagement';
+import SystemSettings from './developer/SystemSettings';
+import SecuritySettings from './developer/SecuritySettings';
+import AnalyticsDashboard from './developer/AnalyticsDashboard';
+import ShoppingControls from './developer/ShoppingControls';
+import { DeveloperNavigation } from '@/components/developer/DeveloperNavigation';
 
 export default function DeveloperPortal() {
   return (
@@ -20,8 +28,15 @@ export default function DeveloperPortal() {
         </div>
         
         <Routes>
-          <Route path="/" element={<Navigate to="service-management" replace />} />
+          <Route path="/" element={<DeveloperNavigation />} />
           <Route path="/service-management/*" element={<ServiceManagementPage />} />
+          <Route path="/api-docs" element={<ApiDocumentationPage />} />
+          <Route path="/api-tools" element={<ApiToolsPage />} />
+          <Route path="/user-management" element={<UserManagement />} />
+          <Route path="/system-settings" element={<SystemSettings />} />
+          <Route path="/security" element={<SecuritySettings />} />
+          <Route path="/analytics" element={<AnalyticsDashboard />} />
+          <Route path="/shopping-controls" element={<ShoppingControls />} />
         </Routes>
       </div>
     </>
