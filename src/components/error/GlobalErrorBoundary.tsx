@@ -4,7 +4,6 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface ErrorFallbackProps {
   error: Error;
@@ -12,11 +11,8 @@ interface ErrorFallbackProps {
 }
 
 function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
-  const navigate = useNavigate();
-
   const handleGoHome = () => {
-    navigate('/');
-    resetErrorBoundary();
+    window.location.href = '/';
   };
 
   return (
