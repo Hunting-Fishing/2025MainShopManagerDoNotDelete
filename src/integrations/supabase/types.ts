@@ -338,6 +338,45 @@ export type Database = {
           },
         ]
       }
+      api_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          name: string
+          permissions: Json | null
+          token_hash: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name: string
+          permissions?: Json | null
+          token_hash: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name?: string
+          permissions?: Json | null
+          token_hash?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       appearance_settings: {
         Row: {
           accent_color: string | null
@@ -520,6 +559,87 @@ export type Database = {
           resource?: string
           resource_id?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_trail: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          resource_id: string | null
+          resource_type: string
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      bi_reports: {
+        Row: {
+          chart_config: Json | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          query_config: Json
+          schedule: Json | null
+          updated_at: string
+        }
+        Insert: {
+          chart_config?: Json | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          query_config: Json
+          schedule?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          chart_config?: Json | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          query_config?: Json
+          schedule?: Json | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -9125,30 +9245,60 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_metrics: {
+        Row: {
+          context: Json | null
+          id: string
+          metric_name: string
+          metric_unit: string | null
+          metric_value: number
+          recorded_at: string
+        }
+        Insert: {
+          context?: Json | null
+          id?: string
+          metric_name: string
+          metric_unit?: string | null
+          metric_value: number
+          recorded_at?: string
+        }
+        Update: {
+          context?: Json | null
+          id?: string
+          metric_name?: string
+          metric_unit?: string | null
+          metric_value?: number
+          recorded_at?: string
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
-          action: Database["public"]["Enums"]["permission_type"]
+          action: string
           created_at: string
           description: string | null
           id: string
+          module: string
           name: string
-          resource: Database["public"]["Enums"]["resource_type"]
+          updated_at: string
         }
         Insert: {
-          action: Database["public"]["Enums"]["permission_type"]
+          action: string
           created_at?: string
           description?: string | null
           id?: string
+          module: string
           name: string
-          resource: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
         }
         Update: {
-          action?: Database["public"]["Enums"]["permission_type"]
+          action?: string
           created_at?: string
           description?: string | null
           id?: string
+          module?: string
           name?: string
-          resource?: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -10698,6 +10848,47 @@ export type Database = {
           },
         ]
       }
+      report_executions: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          executed_by: string | null
+          execution_time_ms: number | null
+          id: string
+          report_id: string
+          result_data: Json | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          executed_by?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          report_id: string
+          result_data?: Json | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          executed_by?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          report_id?: string
+          result_data?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_executions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "bi_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_helpfulness: {
         Row: {
           created_at: string | null
@@ -10800,13 +10991,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "role_permissions_permission_id_fkey"
-            columns: ["permission_id"]
-            isOneToOne: false
-            referencedRelation: "permissions"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "role_permissions_role_id_fkey"
             columns: ["role_id"]
             isOneToOne: false
@@ -10877,6 +11061,51 @@ export type Database = {
           name?: string
           search_query?: string | null
           updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_agent?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -12248,6 +12477,39 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       tax_documents: {
         Row: {
           confirmation_number: string | null
@@ -13136,6 +13398,36 @@ export type Database = {
           transaction_id?: string
           transaction_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_2fa: {
+        Row: {
+          backup_codes: string[] | null
+          created_at: string
+          enabled: boolean | null
+          id: string
+          secret: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          backup_codes?: string[] | null
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          secret: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          backup_codes?: string[] | null
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          secret?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
