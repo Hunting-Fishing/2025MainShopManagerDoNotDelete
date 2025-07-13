@@ -15905,6 +15905,15 @@ export type Database = {
         Args: { item_id: string; requested_quantity: number }
         Returns: boolean
       }
+      check_product_inventory: {
+        Args: { p_product_id: string }
+        Returns: {
+          in_stock: boolean
+          quantity: number
+          low_stock_threshold: number
+          is_low_stock: boolean
+        }[]
+      }
       check_rate_limit: {
         Args: {
           p_integration_id: string
@@ -16092,8 +16101,8 @@ export type Database = {
         Returns: {
           product_id: string
           product_name: string
-          category: string
-          interaction_count: number
+          total_interactions: number
+          score: number
         }[]
       }
       get_product_interactions_by_category: {

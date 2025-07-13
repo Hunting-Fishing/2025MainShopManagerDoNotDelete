@@ -11,7 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useProductAnalytics } from '@/hooks/shopping/useProductAnalytics';
 import { useWishlist } from '@/hooks/shopping/useWishlist';
+import { useProductComparison } from '@/hooks/shopping/useProductComparison';
 import InventoryIntegration, { StockInfo } from './InventoryIntegration';
+import ImageWithFallback from './ImageWithFallback';
 
 interface EnhancedProductCardProps {
   product: AffiliateProduct;
@@ -37,6 +39,7 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({
   const { trackInteraction } = useProductAnalytics();
   const navigate = useNavigate();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+  const { addToComparison, isInComparison, canAddMore } = useProductComparison();
 
   useEffect(() => {
     checkWishlistStatus();
@@ -141,10 +144,30 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({
   };
 
   const handleCompare = () => {
-    // TODO: Implement product comparison functionality
-    toast({
-      title: "Compare feature",
-      description: "Product comparison coming soon!",
+    if (isInComparison(product.id)) {
+      toast({
+        title: "Already in comparison",
+        description: "This product is already being compared.",
+      });
+      return;
+    }
+
+    if (!canAddMore) {
+      toast({
+        title: "Comparison full",
+        description: "You can only compare up to 4 products at once.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    addToComparison(product);
+    
+    trackInteraction({
+      productId: product.id,
+      productName: product.name,
+      interactionType: 'compare',
+      category: product.category
     });
   };
 
@@ -154,10 +177,11 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({
         className="relative aspect-square cursor-pointer overflow-hidden"
         onClick={handleClick}
       >
-        <img 
+        <ImageWithFallback 
           src={product.imageUrl} 
           alt={product.name} 
           className="h-full w-full object-cover transition-all group-hover:scale-105"
+          showPlaceholder={true}
         />
         
         {/* Product Badges */}

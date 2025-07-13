@@ -13,8 +13,13 @@ import RecentlyViewed from '@/components/shopping/RecentlyViewed';
 import ShoppingCartComponent from '@/components/shopping/ShoppingCart';
 import ProductQuickView from '@/components/shopping/ProductQuickView';
 import ProductFilters, { FilterState } from '@/components/shopping/ProductFilters';
+import ProductComparison from '@/components/shopping/ProductComparison';
+import ShoppingErrorBoundary from '@/components/error/ShoppingErrorBoundary';
+import LoadingSkeleton from '@/components/shopping/LoadingSkeleton';
+import OfflineIndicator from '@/components/shopping/OfflineIndicator';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
+import { useProductComparison } from '@/hooks/shopping/useProductComparison';
 import { categories } from '@/data/toolCategories';
 import { manufacturers } from '@/data/manufacturers';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -82,6 +87,12 @@ export default function Shopping() {
   // Use the real products manager hook instead of mock queries
   const { products, loading, error } = useProductsManager();
   const { itemCount, addToCart } = useShoppingCart();
+  const { 
+    comparisonProducts, 
+    removeFromComparison, 
+    clearComparison,
+    comparisonCount 
+  } = useProductComparison();
 
   // Transform and filter products
   const allProducts = useMemo(() => 
@@ -203,13 +214,16 @@ export default function Shopping() {
   }
   
   return (
-    <div className="space-y-6">
-      <Alert>
-        <Database className="h-4 w-4" />
-        <AlertDescription>
-          All shopping data is live from your Supabase database. Showing {products.length} real products.
-        </AlertDescription>
-      </Alert>
+    <ShoppingErrorBoundary>
+      <div className="space-y-6">
+        <OfflineIndicator />
+        
+        <Alert>
+          <Database className="h-4 w-4" />
+          <AlertDescription>
+            All shopping data is live from your Supabase database. Showing {products.length} real products.
+          </AlertDescription>
+        </Alert>
 
       <Container fluid>
         {/* Header with Cart */}
@@ -234,10 +248,18 @@ export default function Shopping() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="browse">Browse</TabsTrigger>
             <TabsTrigger value="featured">Featured</TabsTrigger>
             <TabsTrigger value="bestsellers">Best Sellers</TabsTrigger>
+            <TabsTrigger value="compare" className="relative">
+              Compare
+              {comparisonCount > 0 && (
+                <Badge className="ml-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs">
+                  {comparisonCount}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="cart" className="relative">
               Cart
               {itemCount > 0 && (
@@ -308,10 +330,10 @@ export default function Shopping() {
                 </div>
 
                 {loading ? (
-                  <div className="flex justify-center items-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                    <span className="ml-2">Loading products...</span>
-                  </div>
+                  <LoadingSkeleton 
+                    variant={viewMode} 
+                    count={viewMode === 'grid' ? 8 : 6} 
+                  />
                 ) : (
                   <div className={
                     viewMode === 'grid' 
@@ -375,6 +397,25 @@ export default function Shopping() {
             <BestSellingTools tools={bestSellingTools} isLoading={loading} />
           </TabsContent>
 
+          <TabsContent value="compare">
+            <ProductComparison
+              products={comparisonProducts}
+              onRemoveProduct={removeFromComparison}
+              onAddToCart={handleAddToCart}
+              onAddToWishlist={(product) => {
+                // TODO: Implement wishlist integration
+                console.log('Add to wishlist:', product);
+              }}
+            />
+            {comparisonCount > 0 && (
+              <div className="mt-4 text-center">
+                <Button variant="outline" onClick={clearComparison}>
+                  Clear All Comparisons
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
           <TabsContent value="cart">
             <div className="max-w-md mx-auto">
               <ShoppingCartComponent />
@@ -389,6 +430,7 @@ export default function Shopping() {
           onClose={() => setQuickViewProduct(null)}
         />
       </Container>
-    </div>
+      </div>
+    </ShoppingErrorBoundary>
   );
 }

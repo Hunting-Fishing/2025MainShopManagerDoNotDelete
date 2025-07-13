@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Loader2 } from 'lucide-react';
-import { getPopularProducts } from '@/services/productAnalyticsService';
+import { supabase } from '@/integrations/supabase/client';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { formatCurrency } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -9,8 +9,8 @@ import { useNavigate } from 'react-router-dom';
 interface PopularProduct {
   product_id: string;
   product_name: string;
-  category: string;
-  interaction_count: number;
+  total_interactions: number;
+  score: number;
 }
 
 interface PopularProductsProps {
@@ -35,10 +35,16 @@ const PopularProducts: React.FC<PopularProductsProps> = ({
 
   const fetchPopularProducts = async () => {
     try {
-      const data = await getPopularProducts(limit);
+      const { data, error } = await supabase.rpc('get_popular_products', {
+        days_back: 7,
+        result_limit: limit
+      });
+      
+      if (error) throw error;
       setPopularProducts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching popular products:', error);
+      setPopularProducts([]);
     } finally {
       setLoading(false);
     }
@@ -136,7 +142,7 @@ const PopularProducts: React.FC<PopularProductsProps> = ({
               </h4>
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">
-                  {popularProduct.category}
+                  {productDetails?.category || 'Tools'}
                 </p>
                 {productDetails?.price && (
                   <p className="text-xs font-medium">
@@ -145,7 +151,7 @@ const PopularProducts: React.FC<PopularProductsProps> = ({
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {popularProduct.interaction_count} views this week
+                {popularProduct.total_interactions} interactions (score: {Math.round(popularProduct.score)})
               </p>
             </div>
           </div>

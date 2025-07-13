@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type InteractionType = 'view' | 'click' | 'add_to_cart' | 'save' | 'share' | 'purchase';
+export type InteractionType = 'view' | 'click' | 'add_to_cart' | 'save' | 'share' | 'purchase' | 'compare';
 
 export interface ProductAnalytics {
   id?: string;
