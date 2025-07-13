@@ -19,6 +19,7 @@ import LoadingSkeleton from '@/components/shopping/LoadingSkeleton';
 import OfflineIndicator from '@/components/shopping/OfflineIndicator';
 import SearchAnalytics, { useSearchAnalytics } from '@/components/shopping/SearchAnalytics';
 import AnalyticsSeeder from '@/components/shopping/AnalyticsSeeder';
+import RecentlyViewedProducts from '@/components/shopping/RecentlyViewedProducts';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
 import { useProductComparison } from '@/hooks/shopping/useProductComparison';
@@ -350,9 +351,10 @@ export default function Shopping() {
             </div>
 
             <div className="flex gap-6">
-              {/* Filters Sidebar */}
-              {showFilters && (
-                <div className="w-80 shrink-0">
+              {/* Left Sidebar */}
+              <div className="w-80 shrink-0 space-y-6">
+                {/* Filters */}
+                {showFilters && (
                   <ProductFilters
                     filters={filters}
                     onFiltersChange={setFilters}
@@ -360,8 +362,14 @@ export default function Shopping() {
                     manufacturers={uniqueManufacturers}
                     isOpen={showFilters}
                   />
-                </div>
-              )}
+                )}
+                
+                {/* Recently Viewed Products */}
+                <RecentlyViewedProducts 
+                  sessionId="guest-session" 
+                  limit={5}
+                />
+              </div>
 
               {/* Products Grid/List */}
               <div className="flex-1">

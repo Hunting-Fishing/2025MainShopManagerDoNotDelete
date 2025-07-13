@@ -16108,11 +16108,11 @@ export type Database = {
       get_product_interactions_by_category: {
         Args: Record<PropertyKey, never>
         Returns: {
-          name: string
-          views: number
-          clicks: number
-          saves: number
-          shares: number
+          category: string
+          total_views: number
+          total_clicks: number
+          total_cart_adds: number
+          total_saves: number
         }[]
       }
       get_product_stats: {
@@ -16124,6 +16124,19 @@ export type Database = {
           total_saves: number
           avg_rating: number
           review_count: number
+        }[]
+      }
+      get_recently_viewed_products: {
+        Args: {
+          p_user_id?: string
+          p_session_id?: string
+          result_limit?: number
+        }
+        Returns: {
+          product_id: string
+          product_name: string
+          category: string
+          viewed_at: string
         }[]
       }
       get_upcoming_filing_deadlines: {

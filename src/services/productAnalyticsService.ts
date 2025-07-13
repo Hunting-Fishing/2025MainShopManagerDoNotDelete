@@ -90,3 +90,19 @@ export const getAnalyticsByCategory = async () => {
     return [];
   }
 };
+
+export const getRecentlyViewedProducts = async (userId?: string, sessionId?: string, limit: number = 10) => {
+  try {
+    const { data, error } = await supabase.rpc('get_recently_viewed_products', {
+      p_user_id: userId,
+      p_session_id: sessionId,
+      result_limit: limit
+    });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error getting recently viewed products:', error);
+    return [];
+  }
+};
