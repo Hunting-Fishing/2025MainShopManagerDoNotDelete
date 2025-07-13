@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getWishlistItems, removeFromWishlist, WishlistItem } from '@/services/wishlistService';
-import { useCartStore } from '@/stores/cartStore';
+import { useCart } from '@/hooks/shopping/useCart';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export const WishlistPage = () => {
@@ -13,7 +13,7 @@ export const WishlistPage = () => {
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
   
   const { toast } = useToast();
-  const { addItem } = useCartStore();
+  const { addToCart } = useCart();
 
   useEffect(() => {
     loadWishlistItems();
@@ -61,20 +61,29 @@ export const WishlistPage = () => {
     }
   };
 
-  const handleAddToCart = (item: WishlistItem) => {
+  const handleAddToCart = async (item: WishlistItem) => {
     if (!item.product) return;
     
-    addItem({
-      id: item.product.id,
-      name: item.product.name,
-      price: item.product.price,
-      image: item.product.image_url
-    });
-
-    toast({
-      title: "Added to cart",
-      description: `${item.product.name} has been added to your cart.`
-    });
+    try {
+      await addToCart({
+        productId: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        imageUrl: item.product.image_url || '',
+        category: 'General',
+        manufacturer: 'Unknown'
+      });
+      toast({
+        title: "Added to cart",
+        description: `${item.product.name} has been added to your cart.`
+      });
+    } catch (error) {
+      toast({
+        title: "Error adding to cart",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading) {
