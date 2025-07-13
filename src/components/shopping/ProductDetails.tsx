@@ -49,19 +49,19 @@ const ProductDetails: React.FC = () => {
       if (foundProduct) {
         const transformedProduct: AffiliateProduct = {
           id: foundProduct.id,
-          name: foundProduct.title,
+          name: foundProduct.name,
           description: foundProduct.description || '',
-          imageUrl: foundProduct.image_url || '',
+          imageUrl: foundProduct.imageUrl || '',
           retailPrice: foundProduct.price || 0,
-          affiliateUrl: foundProduct.affiliate_link || '#',
+          affiliateUrl: foundProduct.affiliateLink || '#',
           category: foundProduct.category || 'Tools',
           tier: 'midgrade',
-          rating: foundProduct.average_rating || 0,
-          reviewCount: foundProduct.review_count || 0,
+          rating: foundProduct.rating || 0,
+          reviewCount: foundProduct.reviewCount || 0,
           manufacturer: 'Professional Tools',
-          model: foundProduct.title,
-          isFeatured: foundProduct.is_featured || false,
-          bestSeller: foundProduct.is_bestseller || false,
+          model: foundProduct.name,
+          isFeatured: foundProduct.featured || false,
+          bestSeller: foundProduct.bestSeller || false,
           freeShipping: false,
           source: 'other'
         };
@@ -71,7 +71,7 @@ const ProductDetails: React.FC = () => {
         // Track product view
         trackInteraction({
           productId: foundProduct.id,
-          productName: foundProduct.title,
+          productName: foundProduct.name,
           category: foundProduct.category,
           interactionType: 'view'
         });

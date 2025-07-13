@@ -36,7 +36,7 @@ const PopularProducts: React.FC<PopularProductsProps> = ({
   const fetchPopularProducts = async () => {
     try {
       const data = await getPopularProducts(limit);
-      setPopularProducts(data);
+      setPopularProducts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching popular products:', error);
     } finally {
@@ -117,9 +117,9 @@ const PopularProducts: React.FC<PopularProductsProps> = ({
             </div>
             
             <div className="h-12 w-12 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-              {productDetails?.image_url ? (
+              {productDetails?.imageUrl ? (
                 <img
-                  src={productDetails.image_url}
+                  src={productDetails.imageUrl}
                   alt={popularProduct.product_name}
                   className="h-full w-full object-cover"
                 />

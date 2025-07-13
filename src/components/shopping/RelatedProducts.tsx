@@ -37,19 +37,19 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
       )
       .map(product => ({
         id: product.id,
-        name: product.title,
+        name: product.name,
         description: product.description || '',
-        imageUrl: product.image_url || '',
+        imageUrl: product.imageUrl || '',
         retailPrice: product.price || 0,
-        affiliateUrl: product.affiliate_link || '#',
+        affiliateUrl: product.affiliateLink || '#',
         category: product.category || 'Tools',
         tier: 'midgrade' as const,
-        rating: product.average_rating || 0,
-        reviewCount: product.review_count || 0,
+        rating: product.rating || 0,
+        reviewCount: product.reviewCount || 0,
         manufacturer: 'Professional Tools',
-        model: product.title,
-        isFeatured: product.is_featured || false,
-        bestSeller: product.is_bestseller || false,
+        model: product.name,
+        isFeatured: product.featured || false,
+        bestSeller: product.bestSeller || false,
         freeShipping: false,
         source: 'other' as const
       }))
@@ -64,19 +64,19 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
         )
         .map(product => ({
           id: product.id,
-          name: product.title,
+          name: product.name,
           description: product.description || '',
-          imageUrl: product.image_url || '',
+          imageUrl: product.imageUrl || '',
           retailPrice: product.price || 0,
-          affiliateUrl: product.affiliate_link || '#',
+          affiliateUrl: product.affiliateLink || '#',
           category: product.category || 'Tools',
           tier: 'midgrade' as const,
-          rating: product.average_rating || 0,
-          reviewCount: product.review_count || 0,
+          rating: product.rating || 0,
+          reviewCount: product.reviewCount || 0,
           manufacturer: 'Professional Tools',
-          model: product.title,
-          isFeatured: product.is_featured || false,
-          bestSeller: product.is_bestseller || false,
+          model: product.name,
+          isFeatured: product.featured || false,
+          bestSeller: product.bestSeller || false,
           freeShipping: false,
           source: 'other' as const
         }))
@@ -169,7 +169,6 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
                       <ProductRating 
                         rating={product.rating} 
                         reviewCount={product.reviewCount}
-                        size="sm"
                       />
                     )}
                   </div>

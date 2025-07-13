@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { 
   addToWishlist as addWishlistItem, 
   removeFromWishlist as removeWishlistItem,
-  isProductInWishlist 
+  isInWishlist as isProductInWishlist 
 } from '@/services/wishlistService';
 
 export interface WishlistItem {
@@ -17,7 +17,7 @@ export interface WishlistItem {
 export const useWishlist = () => {
   const addToWishlist = useCallback(async (item: WishlistItem) => {
     try {
-      await addWishlistItem(item);
+      await addWishlistItem(item.productId);
     } catch (error) {
       console.error('Error adding to wishlist:', error);
       throw error;

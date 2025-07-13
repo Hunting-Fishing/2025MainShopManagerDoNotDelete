@@ -51,7 +51,15 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId, onWriteRevie
   const fetchReviews = async () => {
     try {
       const data = await getProductReviews(productId);
-      setReviews(data);
+        // Map database fields to component interface
+        const mappedReviews = data.map(review => ({
+          ...review,
+          reviewer_name: 'Anonymous', // Default since field doesn't exist yet
+          title: review.review_title,
+          content: review.review_text,
+          helpful_count: review.helpful_votes || 0
+        }));
+        setReviews(mappedReviews);
       
       // Fetch helpfulness states for authenticated users
       if (user) {

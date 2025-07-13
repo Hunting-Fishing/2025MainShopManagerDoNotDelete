@@ -40,7 +40,7 @@ const InventoryIntegration: React.FC<InventoryIntegrationProps> = ({
       const newStockInfo: StockInfo = {
         inStock: matchingItem.quantity > 0,
         quantity: matchingItem.quantity,
-        lowStock: matchingItem.quantity <= (matchingItem.lowStockThreshold || 5),
+        lowStock: matchingItem.quantity <= (matchingItem.reorder_point || 5),
         inventoryItemId: matchingItem.id
       };
       

@@ -46,7 +46,16 @@ export const createProductReview = async (review: Omit<ProductReview, 'id' | 'cr
   try {
     const { data, error } = await supabase
       .from('product_reviews')
-      .insert([review])
+      .insert([{
+        product_id: review.product_id,
+        user_id: review.user_id || '',
+        reviewer_name: review.reviewer_name,
+        rating: review.rating,
+        review_title: review.title,
+        review_text: review.content,
+        is_verified_purchase: review.is_verified_purchase || false,
+        is_approved: review.is_approved || false
+      }])
       .select()
       .single();
 
