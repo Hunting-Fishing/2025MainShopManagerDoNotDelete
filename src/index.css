@@ -204,7 +204,7 @@
   }
 
   .modern-summary-card {
-    @apply modern-card-elevated hover:shadow-xl transition-all duration-500 group cursor-pointer;
+    @apply modern-card-elevated hover:shadow-xl transition-all duration-500 cursor-pointer;
   }
 
   .modern-summary-card:hover {
