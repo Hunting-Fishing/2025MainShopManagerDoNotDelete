@@ -17,6 +17,8 @@ import ProductComparison from '@/components/shopping/ProductComparison';
 import ShoppingErrorBoundary from '@/components/error/ShoppingErrorBoundary';
 import LoadingSkeleton from '@/components/shopping/LoadingSkeleton';
 import OfflineIndicator from '@/components/shopping/OfflineIndicator';
+import SearchAnalytics, { useSearchAnalytics } from '@/components/shopping/SearchAnalytics';
+import AnalyticsSeeder from '@/components/shopping/AnalyticsSeeder';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
 import { useProductComparison } from '@/hooks/shopping/useProductComparison';
@@ -73,6 +75,8 @@ export default function Shopping() {
   const [activeTab, setActiveTab] = useState('browse');
   const [showFilters, setShowFilters] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<AffiliateProduct | null>(null);
+  const [showAnalyticsSeeder, setShowAnalyticsSeeder] = useState(false);
+  const [currentSearchId, setCurrentSearchId] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     manufacturers: [],
@@ -93,6 +97,7 @@ export default function Shopping() {
     clearComparison,
     comparisonCount 
   } = useProductComparison();
+  const { trackSearchClick } = useSearchAnalytics();
 
   // Transform and filter products
   const allProducts = useMemo(() => 
@@ -197,6 +202,18 @@ export default function Shopping() {
       category: product.category,
       manufacturer: product.manufacturer
     });
+
+    // Track search click if this came from search results
+    if (currentSearchId && searchQuery.trim()) {
+      trackSearchClick(currentSearchId, product.id);
+    }
+  };
+
+  const handleProductClick = (product: AffiliateProduct) => {
+    // Track search click if this came from search results
+    if (currentSearchId && searchQuery.trim()) {
+      trackSearchClick(currentSearchId, product.id);
+    }
   };
   
   // Show error state if there's an issue loading products
@@ -220,10 +237,29 @@ export default function Shopping() {
         
         <Alert>
           <Database className="h-4 w-4" />
-          <AlertDescription>
-            All shopping data is live from your Supabase database. Showing {products.length} real products.
+          <AlertDescription className="flex items-center justify-between">
+            <span>All shopping data is live from your Supabase database. Showing {products.length} real products.</span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowAnalyticsSeeder(!showAnalyticsSeeder)}
+            >
+              {showAnalyticsSeeder ? 'Hide' : 'Show'} Analytics Seeder
+            </Button>
           </AlertDescription>
         </Alert>
+
+        {showAnalyticsSeeder && (
+          <div className="flex justify-center">
+            <AnalyticsSeeder 
+              products={products}
+              onSeedingComplete={() => {
+                // Could refresh popular products here if needed
+                console.log('Analytics seeding completed');
+              }}
+            />
+          </div>
+        )}
 
       <Container fluid>
         {/* Header with Cart */}
@@ -278,6 +314,12 @@ export default function Shopping() {
             <div className="flex gap-4">
               <div className="flex-1">
                 <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+                <SearchAnalytics
+                  query={searchQuery}
+                  resultsCount={filteredProducts.length}
+                  filters={filters}
+                  onSearchTracked={setCurrentSearchId}
+                />
               </div>
               <Button
                 variant="outline"
@@ -341,13 +383,17 @@ export default function Shopping() {
                       : "space-y-4"
                   }>
                     {filteredProducts.map(product => (
-                      <EnhancedProductCard
+                      <div 
                         key={product.id}
-                        product={product}
-                        onAddToCartClick={() => handleAddToCart(product)}
-                        showQuickActions={true}
-                        showInventoryStatus={true}
-                      />
+                        onClick={() => handleProductClick(product)}
+                      >
+                        <EnhancedProductCard
+                          product={product}
+                          onAddToCartClick={() => handleAddToCart(product)}
+                          showQuickActions={true}
+                          showInventoryStatus={true}
+                        />
+                      </div>
                     ))}
                   </div>
                 )}

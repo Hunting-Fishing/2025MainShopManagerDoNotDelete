@@ -14,6 +14,7 @@ import { useWishlist } from '@/hooks/shopping/useWishlist';
 import { useProductComparison } from '@/hooks/shopping/useProductComparison';
 import InventoryIntegration, { StockInfo } from './InventoryIntegration';
 import ImageWithFallback from './ImageWithFallback';
+import ProductViewTracker from './ProductViewTracker';
 
 interface EnhancedProductCardProps {
   product: AffiliateProduct;
@@ -172,11 +173,13 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({
   };
 
   return (
-    <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-md group">
-      <div 
-        className="relative aspect-square cursor-pointer overflow-hidden"
-        onClick={handleClick}
-      >
+    <>
+      <ProductViewTracker product={product} />
+      <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-md group">
+        <div 
+          className="relative aspect-square cursor-pointer overflow-hidden"
+          onClick={handleClick}
+        >
         <ImageWithFallback 
           src={product.imageUrl} 
           alt={product.name} 
@@ -324,6 +327,7 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({
         </Button>
       </CardFooter>
     </Card>
+    </>
   );
 };
 
