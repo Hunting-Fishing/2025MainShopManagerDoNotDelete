@@ -13,7 +13,8 @@ import { ConsoleErrorLogger } from '@/components/debug/ConsoleErrorLogger';
 import { GlobalErrorBoundary } from '@/components/error/GlobalErrorBoundary';
 import './i18n/config'; // Initialize i18n before rendering
 import App from './App';
-import './App.css';
+import './index.css';
+import './styles/mobile.css';
 
 // Optimized query client configuration for better performance
 const queryClient = new QueryClient({

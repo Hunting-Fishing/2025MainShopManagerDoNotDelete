@@ -3,6 +3,7 @@ import React from 'react';
 import { SidebarProvider, useSidebar } from '@/hooks/use-sidebar';
 import { AppSidebar } from './AppSidebar';
 import { Header } from './Header';
+import { MobileLayout } from '@/components/mobile/MobileLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LayoutProps {
@@ -10,6 +11,13 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const isMobile = useIsMobile();
+
+  // Use mobile layout for mobile devices
+  if (isMobile) {
+    return <MobileLayout>{children}</MobileLayout>;
+  }
+
   return (
     <SidebarProvider>
       <LayoutContent>{children}</LayoutContent>

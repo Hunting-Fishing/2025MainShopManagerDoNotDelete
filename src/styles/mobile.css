@@ -1,0 +1,88 @@
+/* Mobile-specific styles and utilities */
+
+/* Safe area handling for mobile devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Mobile app spacing */
+.mobile-container {
+  padding-bottom: 5rem; /* Space for bottom navigation */
+}
+
+/* Touch-friendly buttons */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Mobile keyboard handling */
+.keyboard-avoiding {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+}
+
+/* Prevent zoom on inputs */
+input, select, textarea {
+  font-size: 16px; /* Prevents zoom on iOS */
+}
+
+/* Mobile gestures */
+.swipe-container {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Pull to refresh */
+.pull-to-refresh {
+  overscroll-behavior-y: contain;
+}
+
+/* Mobile modal positioning */
+.mobile-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+}
+
+/* Mobile-first breakpoints */
+@media (max-width: 640px) {
+  .mobile-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .mobile-padding {
+    padding: 1rem;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem;
+  }
+}
+
+/* iOS specific styles */
+@supports (-webkit-touch-callout: none) {
+  .ios-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .ios-bounce-fix {
+    overflow: hidden;
+  }
+}
