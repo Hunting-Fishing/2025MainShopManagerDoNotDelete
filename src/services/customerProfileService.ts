@@ -1,46 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-
-export interface CustomerProfile {
-  id: string;
-  user_id: string;
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-  date_of_birth?: string;
-  preferences: any;
-  marketing_consent: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CustomerAddress {
-  id: string;
-  user_id: string;
-  address_line1: string;
-  address_line2?: string;
-  city: string;
-  state: string;
-  postal_code: string;
-  country: string;
-  is_default: boolean;
-  address_type: 'shipping' | 'billing' | 'both';
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CustomerPaymentMethod {
-  id: string;
-  user_id: string;
-  payment_type: 'card' | 'paypal' | 'bank';
-  provider: string;
-  last_four?: string;
-  expiry_month?: number;
-  expiry_year?: number;
-  is_default: boolean;
-  stripe_payment_method_id?: string;
-  created_at: string;
-  updated_at: string;
-}
+import { CustomerProfile, CustomerAddress, CustomerPaymentMethod } from "@/types/phase3";
 
 export const getCustomerProfile = async (userId: string): Promise<CustomerProfile | null> => {
   try {
@@ -85,7 +44,7 @@ export const getCustomerAddresses = async (userId: string): Promise<CustomerAddr
       .order('is_default', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as CustomerAddress[];
   } catch (error) {
     console.error('Error fetching customer addresses:', error);
     return [];
@@ -111,7 +70,7 @@ export const createCustomerAddress = async (
       .single();
 
     if (error) throw error;
-    return data;
+    return data as CustomerAddress;
   } catch (error) {
     console.error('Error creating customer address:', error);
     return null;
@@ -139,7 +98,7 @@ export const updateCustomerAddress = async (
       .single();
 
     if (error) throw error;
-    return data;
+    return data as CustomerAddress;
   } catch (error) {
     console.error('Error updating customer address:', error);
     return null;
@@ -170,7 +129,7 @@ export const getCustomerPaymentMethods = async (userId: string): Promise<Custome
       .order('is_default', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as CustomerPaymentMethod[];
   } catch (error) {
     console.error('Error fetching customer payment methods:', error);
     return [];
@@ -196,7 +155,7 @@ export const createCustomerPaymentMethod = async (
       .single();
 
     if (error) throw error;
-    return data;
+    return data as CustomerPaymentMethod;
   } catch (error) {
     console.error('Error creating customer payment method:', error);
     return null;

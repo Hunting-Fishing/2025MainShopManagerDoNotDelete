@@ -10,16 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from '@/hooks/use-toast';
 import { Plus, MessageSquare, Clock, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
-interface SupportTicket {
-  id: string;
-  subject: string;
-  description: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  created_at: string;
-  updated_at: string;
-}
+import { SupportTicket, SupportTicketStatus, SupportTicketPriority } from '@/types/phase3';
 
 interface SupportTabProps {
   userId: string;
@@ -34,7 +25,7 @@ export const SupportTab = ({ userId }: SupportTabProps) => {
   const [formData, setFormData] = useState({
     subject: '',
     description: '',
-    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent'
+    priority: 'medium' as SupportTicketPriority
   });
 
   useEffect(() => {
@@ -51,7 +42,7 @@ export const SupportTab = ({ userId }: SupportTabProps) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTickets(data || []);
+      setTickets((data || []) as SupportTicket[]);
     } catch (error) {
       console.error('Error loading support tickets:', error);
     } finally {
@@ -78,7 +69,7 @@ export const SupportTab = ({ userId }: SupportTabProps) => {
 
       if (error) throw error;
 
-      setTickets(prev => [data, ...prev]);
+      setTickets(prev => [data as SupportTicket, ...prev]);
       setFormData({ subject: '', description: '', priority: 'medium' });
       setIsDialogOpen(false);
 

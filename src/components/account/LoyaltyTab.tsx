@@ -5,11 +5,10 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Star, Gift, Truck, Calendar, Percent } from 'lucide-react';
 import { 
-  LoyaltyPoints, 
-  LoyaltyPointTransaction, 
   getLoyaltyPointTransactions, 
   getTierBenefits 
 } from '@/services/loyaltyService';
+import { LoyaltyPoints, LoyaltyPointTransaction } from '@/types/phase3';
 
 interface LoyaltyTabProps {
   loyaltyPoints: LoyaltyPoints | null;

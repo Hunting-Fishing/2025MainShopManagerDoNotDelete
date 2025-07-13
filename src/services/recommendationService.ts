@@ -1,13 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-
-export interface ProductRecommendation {
-  id: string;
-  user_id: string;
-  product_id: string;
-  recommendation_type: 'viewed_together' | 'bought_together' | 'similar' | 'trending';
-  score: number;
-  created_at: string;
-}
+import { ProductRecommendation, RecommendationType } from "@/types/phase3";
 
 export const getPersonalizedRecommendations = async (
   userId: string,
@@ -22,7 +14,7 @@ export const getPersonalizedRecommendations = async (
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as ProductRecommendation[];
   } catch (error) {
     console.error('Error fetching personalized recommendations:', error);
     return [];
@@ -31,7 +23,7 @@ export const getPersonalizedRecommendations = async (
 
 export const getRecommendationsByType = async (
   userId: string,
-  type: ProductRecommendation['recommendation_type'],
+  type: RecommendationType,
   limit: number = 5
 ): Promise<ProductRecommendation[]> => {
   try {
@@ -44,7 +36,7 @@ export const getRecommendationsByType = async (
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as ProductRecommendation[];
   } catch (error) {
     console.error('Error fetching recommendations by type:', error);
     return [];
@@ -64,7 +56,7 @@ export const createRecommendation = async (
       .single();
 
     if (error) throw error;
-    return data;
+    return data as ProductRecommendation;
   } catch (error) {
     console.error('Error creating recommendation:', error);
     return null;

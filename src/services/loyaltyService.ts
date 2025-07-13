@@ -1,25 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-
-export interface LoyaltyPoints {
-  id: string;
-  user_id: string;
-  points_earned: number;
-  points_spent: number;
-  points_balance: number;
-  tier: 'bronze' | 'silver' | 'gold' | 'platinum';
-  created_at: string;
-  updated_at: string;
-}
-
-export interface LoyaltyPointTransaction {
-  id: string;
-  user_id: string;
-  order_id?: string;
-  transaction_type: 'earned' | 'spent' | 'expired' | 'refunded';
-  points: number;
-  description?: string;
-  created_at: string;
-}
+import { LoyaltyPoints, LoyaltyPointTransaction } from "@/types/phase3";
 
 export const getLoyaltyPoints = async (userId: string): Promise<LoyaltyPoints | null> => {
   try {
@@ -46,10 +26,10 @@ export const getLoyaltyPoints = async (userId: string): Promise<LoyaltyPoints | 
         .single();
 
       if (createError) throw createError;
-      return newData;
+      return newData as LoyaltyPoints;
     }
 
-    return data;
+    return data as LoyaltyPoints;
   } catch (error) {
     console.error('Error fetching loyalty points:', error);
     return null;
@@ -69,7 +49,7 @@ export const getLoyaltyPointTransactions = async (
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as LoyaltyPointTransaction[];
   } catch (error) {
     console.error('Error fetching loyalty point transactions:', error);
     return [];

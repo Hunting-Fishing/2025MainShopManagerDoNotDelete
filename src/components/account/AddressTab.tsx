@@ -10,12 +10,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, MapPin } from 'lucide-react';
 import { 
-  CustomerAddress, 
   getCustomerAddresses, 
   createCustomerAddress, 
   updateCustomerAddress, 
   deleteCustomerAddress 
 } from '@/services/customerProfileService';
+import { CustomerAddress } from '@/types/phase3';
 
 interface AddressTabProps {
   userId: string;
@@ -29,12 +29,14 @@ export const AddressTab = ({ userId }: AddressTabProps) => {
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
+    full_name: '',
     address_line1: '',
     address_line2: '',
     city: '',
     state: '',
     postal_code: '',
     country: 'US',
+    phone: '',
     address_type: 'shipping' as 'shipping' | 'billing' | 'both',
     is_default: false
   });
@@ -57,12 +59,14 @@ export const AddressTab = ({ userId }: AddressTabProps) => {
 
   const resetForm = () => {
     setFormData({
+      full_name: '',
       address_line1: '',
       address_line2: '',
       city: '',
       state: '',
       postal_code: '',
       country: 'US',
+      phone: '',
       address_type: 'shipping',
       is_default: false
     });
@@ -72,13 +76,15 @@ export const AddressTab = ({ userId }: AddressTabProps) => {
   const handleAddressClick = (address: CustomerAddress) => {
     setEditingAddress(address);
     setFormData({
+      full_name: address.full_name,
       address_line1: address.address_line1,
       address_line2: address.address_line2 || '',
       city: address.city,
       state: address.state,
       postal_code: address.postal_code,
       country: address.country,
-      address_type: address.address_type,
+      phone: address.phone || '',
+      address_type: address.address_type as 'shipping' | 'billing' | 'both',
       is_default: address.is_default
     });
     setIsDialogOpen(true);
@@ -187,6 +193,17 @@ export const AddressTab = ({ userId }: AddressTabProps) => {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="full_name">Full Name</Label>
+                <Input
+                  id="full_name"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                  placeholder="Full name for delivery"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="address_line1">Address Line 1</Label>
                 <Input
                   id="address_line1"
@@ -251,6 +268,16 @@ export const AddressTab = ({ userId }: AddressTabProps) => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone (Optional)</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="Phone number for delivery"
+                />
               </div>
 
               <div className="space-y-2">

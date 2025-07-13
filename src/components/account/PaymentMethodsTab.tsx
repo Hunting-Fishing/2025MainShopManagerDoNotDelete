@@ -5,10 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, CreditCard, Trash2 } from 'lucide-react';
 import { 
-  CustomerPaymentMethod, 
   getCustomerPaymentMethods, 
   deleteCustomerPaymentMethod 
 } from '@/services/customerProfileService';
+import { CustomerPaymentMethod } from '@/types/phase3';
 
 interface PaymentMethodsTabProps {
   userId: string;

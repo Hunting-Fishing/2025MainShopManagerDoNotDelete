@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { CustomerProfile, createOrUpdateCustomerProfile } from '@/services/customerProfileService';
+import { createOrUpdateCustomerProfile } from '@/services/customerProfileService';
+import { CustomerProfile } from '@/types/phase3';
 
 interface ProfileTabProps {
   profile: CustomerProfile | null;
