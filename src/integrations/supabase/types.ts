@@ -73,6 +73,271 @@ export type Database = {
           },
         ]
       }
+      ai_analytics: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          created_by: string | null
+          data: Json
+          generated_at: string | null
+          id: string
+          metadata: Json | null
+          target_id: string | null
+          type: string
+          updated_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          data: Json
+          generated_at?: string | null
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          type: string
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          data?: Json
+          generated_at?: string | null
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          type?: string
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      ai_chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          role: string
+          session_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+          session_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ai_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_chat_sessions: {
+        Row: {
+          closed_at: string | null
+          created_at: string | null
+          customer_id: string | null
+          escalated_to: string | null
+          id: string
+          resolution_time: number | null
+          satisfaction_rating: number | null
+          sentiment_score: number | null
+          session_type: string
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          escalated_to?: string | null
+          id?: string
+          resolution_time?: number | null
+          satisfaction_rating?: number | null
+          sentiment_score?: number | null
+          session_type: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          escalated_to?: string | null
+          id?: string
+          resolution_time?: number | null
+          satisfaction_rating?: number | null
+          sentiment_score?: number | null
+          session_type?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_sessions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_insights: {
+        Row: {
+          acknowledged: boolean | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          actionable: boolean | null
+          confidence: number | null
+          created_at: string | null
+          data_sources: Json | null
+          description: string
+          id: string
+          impact_level: string
+          recommendations: Json | null
+          title: string
+          type: string
+          updated_at: string | null
+          viewed: boolean | null
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          actionable?: boolean | null
+          confidence?: number | null
+          created_at?: string | null
+          data_sources?: Json | null
+          description: string
+          id?: string
+          impact_level: string
+          recommendations?: Json | null
+          title: string
+          type: string
+          updated_at?: string | null
+          viewed?: boolean | null
+        }
+        Update: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          actionable?: boolean | null
+          confidence?: number | null
+          created_at?: string | null
+          data_sources?: Json | null
+          description?: string
+          id?: string
+          impact_level?: string
+          recommendations?: Json | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+          viewed?: boolean | null
+        }
+        Relationships: []
+      }
+      ai_recommendations: {
+        Row: {
+          confidence: number | null
+          conversion_rate: number | null
+          created_at: string | null
+          engagement_score: number | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          reason: string | null
+          recommended_items: Json
+          target_id: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          conversion_rate?: number | null
+          created_at?: string | null
+          engagement_score?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          reason?: string | null
+          recommended_items?: Json
+          target_id: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          conversion_rate?: number | null
+          created_at?: string | null
+          engagement_score?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          reason?: string | null
+          recommended_items?: Json
+          target_id?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ai_search_analytics: {
+        Row: {
+          click_through_rate: number | null
+          created_at: string | null
+          filters_used: Json | null
+          id: string
+          query: string
+          results_count: number
+          search_time_ms: number | null
+          success_rate: number | null
+          user_id: string | null
+        }
+        Insert: {
+          click_through_rate?: number | null
+          created_at?: string | null
+          filters_used?: Json | null
+          id?: string
+          query: string
+          results_count?: number
+          search_time_ms?: number | null
+          success_rate?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          click_through_rate?: number | null
+          created_at?: string | null
+          filters_used?: Json | null
+          id?: string
+          query?: string
+          results_count?: number
+          search_time_ms?: number | null
+          success_rate?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       alert_rules: {
         Row: {
           alert_severity: string
@@ -11939,6 +12204,54 @@ export type Database = {
         }
         Relationships: []
       }
+      smart_notifications: {
+        Row: {
+          action_url: string | null
+          ai_generated: boolean | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          priority: string
+          read: boolean | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          action_url?: string | null
+          ai_generated?: boolean | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          priority: string
+          read?: boolean | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          action_url?: string | null
+          ai_generated?: boolean | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          priority?: string
+          read?: boolean | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       sms_logs: {
         Row: {
           customer_id: string | null
@@ -15196,6 +15509,54 @@ export type Database = {
           },
         ]
       }
+      workflow_automations: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          last_run: string | null
+          name: string
+          run_count: number | null
+          success_rate: number | null
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_run?: string | null
+          name: string
+          run_count?: number | null
+          success_rate?: number | null
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_run?: string | null
+          name?: string
+          run_count?: number | null
+          success_rate?: number | null
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       workflow_conditions: {
         Row: {
           condition_order: number | null
@@ -15587,6 +15948,18 @@ export type Database = {
         Args: { role_name: string; role_description: string }
         Returns: string
       }
+      create_smart_notification: {
+        Args: {
+          p_user_id: string
+          p_title: string
+          p_message: string
+          p_priority?: string
+          p_type?: string
+          p_ai_generated?: boolean
+          p_metadata?: Json
+        }
+        Returns: string
+      }
       create_storage_folders: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -15614,6 +15987,16 @@ export type Database = {
       delete_work_order_time_entries: {
         Args: { work_order_id: string }
         Returns: undefined
+      }
+      generate_ai_recommendation: {
+        Args: {
+          p_type: string
+          p_target_id: string
+          p_recommended_items: Json
+          p_confidence: number
+          p_reason?: string
+        }
+        Returns: string
       }
       generate_quote_number: {
         Args: { p_shop_id?: string }
@@ -16152,6 +16535,10 @@ export type Database = {
       update_email_processing_schedule: {
         Args: { new_settings: Json }
         Returns: Json
+      }
+      update_recommendation_engagement: {
+        Args: { p_recommendation_id: string; p_engagement_type: string }
+        Returns: undefined
       }
       update_work_order_part: {
         Args:
