@@ -14844,6 +14844,15 @@ export type Database = {
           days_overdue: number
         }[]
       }
+      get_popular_products: {
+        Args: { days_back?: number; result_limit?: number }
+        Returns: {
+          product_id: string
+          product_name: string
+          category: string
+          interaction_count: number
+        }[]
+      }
       get_product_interactions_by_category: {
         Args: Record<PropertyKey, never>
         Returns: {

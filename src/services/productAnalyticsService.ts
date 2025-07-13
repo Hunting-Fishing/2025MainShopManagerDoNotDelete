@@ -66,23 +66,13 @@ export const getProductStats = async (productId: string): Promise<ProductStats> 
 
 export const getPopularProducts = async (limit: number = 10) => {
   try {
-    // Simulate popular products data since RPC function doesn't exist yet
-    const mockData = [
-      {
-        product_id: 'product-1',
-        product_name: 'Professional Wrench Set',
-        category: 'Hand Tools',
-        interaction_count: 45
-      },
-      {
-        product_id: 'product-2', 
-        product_name: 'Electric Drill Kit',
-        category: 'Power Tools',
-        interaction_count: 38
-      }
-    ];
-    
-    return mockData.slice(0, limit);
+    const { data, error } = await supabase.rpc('get_popular_products', {
+      days_back: 7,
+      result_limit: limit
+    });
+
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error('Error getting popular products:', error);
     return [];
@@ -91,14 +81,10 @@ export const getPopularProducts = async (limit: number = 10) => {
 
 export const getAnalyticsByCategory = async () => {
   try {
-    // Simulate analytics data since RPC function doesn't exist yet
-    const mockData = [
-      { name: 'Hand Tools', views: 156, clicks: 45, saves: 12, shares: 3 },
-      { name: 'Power Tools', views: 203, clicks: 67, saves: 18, shares: 5 },
-      { name: 'Automotive', views: 89, clicks: 23, saves: 7, shares: 2 }
-    ];
-    
-    return mockData;
+    const { data, error } = await supabase.rpc('get_product_interactions_by_category');
+
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error('Error getting analytics by category:', error);
     return [];
