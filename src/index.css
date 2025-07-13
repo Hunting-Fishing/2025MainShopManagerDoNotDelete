@@ -298,7 +298,7 @@
 
   /* Work Order Card Styles */
   .work-order-card {
-    @apply modern-card gradient-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer;
+    @apply modern-card gradient-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer;
     background: linear-gradient(135deg, hsl(var(--work-order-card)) 0%, hsl(var(--work-order-card-hover))/0.5 100%);
   }
 
