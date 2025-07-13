@@ -76,7 +76,7 @@ export default function Shopping() {
   const [activeTab, setActiveTab] = useState('browse');
   const [showFilters, setShowFilters] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<AffiliateProduct | null>(null);
-  const [showAnalyticsSeeder, setShowAnalyticsSeeder] = useState(false);
+  const [showAnalyticsSeeder, setShowAnalyticsSeeder] = useState(true);
   const [currentSearchId, setCurrentSearchId] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
@@ -239,7 +239,7 @@ export default function Shopping() {
         <Alert>
           <Database className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
-            <span>All shopping data is live from your Supabase database. Showing {products.length} real products.</span>
+            <span>🎯 Phase 8: Analytics Data Activation - Generate sample data to see popular products and analytics features in action!</span>
             <Button 
               variant="outline" 
               size="sm"
