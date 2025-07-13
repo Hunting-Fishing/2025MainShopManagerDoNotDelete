@@ -2,22 +2,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { Order, OrderItem, CreateOrderRequest, UpdateOrderRequest } from "@/types/order";
 
 /**
- * Create a new order from cart items
+ * Create a new order from cart items with enhanced calculations
  */
 export const createOrder = async (request: CreateOrderRequest): Promise<Order> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not authenticated");
 
-  // Calculate total amount
-  const totalAmount = request.items.reduce((sum, item) => 
+  // Check inventory availability before creating order
+  const inventoryCheck = await checkInventoryAvailability(request.items);
+  if (!inventoryCheck) {
+    throw new Error("Some items are out of stock");
+  }
+
+  // Calculate amounts
+  const subtotal = request.items.reduce((sum, item) => 
     sum + (item.unit_price * item.quantity), 0
   );
+  const taxAmount = subtotal * 0.08; // 8% tax rate
+  const shippingAmount = calculateShippingCost(request.shipping_method);
+  const totalAmount = subtotal + taxAmount + shippingAmount;
 
-  // Create order
+  // Create order with enhanced fields
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
       user_id: user.id,
+      subtotal_amount: subtotal,
+      tax_amount: taxAmount,
+      shipping_amount: shippingAmount,
+      discount_amount: 0,
       total_amount: totalAmount,
       shipping_address_id: request.shipping_address_id,
       billing_address_id: request.billing_address_id,
@@ -31,13 +44,25 @@ export const createOrder = async (request: CreateOrderRequest): Promise<Order> =
 
   if (orderError) throw orderError;
 
-  // Create order items
-  const orderItems = request.items.map(item => ({
-    order_id: order.id,
-    product_id: item.product_id,
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    total_price: item.unit_price * item.quantity
+  // Get product details and create order items
+  const orderItems = await Promise.all(request.items.map(async (item) => {
+    // Fetch product details (using available columns)
+    const { data: product } = await supabase
+      .from('products')
+      .select('title, image_url, id')
+      .eq('id', item.product_id)
+      .maybeSingle();
+
+    return {
+      order_id: order.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.unit_price * item.quantity,
+      product_name: product?.title || 'Unknown Product',
+      product_image_url: product?.image_url,
+      product_sku: product?.id || ''
+    };
   }));
 
   const { error: itemsError } = await supabase
@@ -47,6 +72,41 @@ export const createOrder = async (request: CreateOrderRequest): Promise<Order> =
   if (itemsError) throw itemsError;
 
   return order as any;
+};
+
+/**
+ * Calculate shipping cost based on method
+ */
+const calculateShippingCost = (method?: string): number => {
+  switch (method) {
+    case 'express': return 15.00;
+    case 'overnight': return 25.00;
+    case 'standard':
+    default: return 0.00;
+  }
+};
+
+/**
+ * Check inventory availability for order items
+ */
+export const checkInventoryAvailability = async (items: CreateOrderRequest['items']): Promise<boolean> => {
+  for (const item of items) {
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .select('quantity')
+      .eq('id', item.product_id)
+      .maybeSingle();
+
+    if (error) {
+      console.warn(`Could not check inventory for product ${item.product_id}:`, error);
+      continue; // Continue with order if inventory check fails
+    }
+    
+    if (data && data.quantity < item.quantity) {
+      return false;
+    }
+  }
+  return true;
 };
 
 /**
@@ -64,7 +124,7 @@ export const getUserOrders = async (): Promise<Order[]> => {
         *,
         product:products(
           id,
-          name,
+          title,
           image_url,
           sku
         )
@@ -89,7 +149,7 @@ export const getOrderById = async (orderId: string): Promise<Order | null> => {
         *,
         product:products(
           id,
-          name,
+          title,
           image_url,
           sku
         )
@@ -132,7 +192,7 @@ export const getAllOrders = async (): Promise<Order[]> => {
         *,
         product:products(
           id,
-          name,
+          title,
           image_url,
           sku
         )

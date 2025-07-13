@@ -19,7 +19,7 @@ import LoadingSkeleton from '@/components/shopping/LoadingSkeleton';
 import OfflineIndicator from '@/components/shopping/OfflineIndicator';
 import SearchAnalytics, { useSearchAnalytics } from '@/components/shopping/SearchAnalytics';
 import ProductCard from '@/components/shopping/ProductCard';
-import AnalyticsSeeder from '@/components/shopping/AnalyticsSeeder';
+
 import RecentlyViewedProducts from '@/components/shopping/RecentlyViewedProducts';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { useCart } from '@/hooks/shopping/useCart';
@@ -77,7 +77,7 @@ export default function Shopping() {
   const [activeTab, setActiveTab] = useState('browse');
   const [showFilters, setShowFilters] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<AffiliateProduct | null>(null);
-  const [showAnalyticsSeeder, setShowAnalyticsSeeder] = useState(true);
+  
   const [currentSearchId, setCurrentSearchId] = useState<string | null>(null);
   const { trackSearch } = useSearchAnalytics();
   const [filters, setFilters] = useState<FilterState>({
@@ -240,29 +240,10 @@ export default function Shopping() {
         
         <Alert>
           <Database className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>🚀 Phase 9: Real Analytics Active - All features now use live data from your database! {allProducts.length} products available.</span>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowAnalyticsSeeder(!showAnalyticsSeeder)}
-            >
-              {showAnalyticsSeeder ? 'Hide' : 'Show'} Analytics Seeder
-            </Button>
+          <AlertDescription>
+            🚀 Phase 11: Complete E-Commerce Foundation - Production-ready shopping system with real payment processing, address management, and inventory integration! {allProducts.length} products available.
           </AlertDescription>
         </Alert>
-
-        {showAnalyticsSeeder && (
-          <div className="flex justify-center">
-            <AnalyticsSeeder 
-              products={products}
-              onSeedingComplete={() => {
-                // Could refresh popular products here if needed
-                console.log('Analytics seeding completed');
-              }}
-            />
-          </div>
-        )}
 
       <Container fluid>
         {/* Header with Cart */}
