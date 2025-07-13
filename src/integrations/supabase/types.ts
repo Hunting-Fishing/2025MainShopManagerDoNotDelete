@@ -9126,9 +9126,12 @@ export type Database = {
           billing_address_id: string | null
           completed_at: string | null
           created_at: string
+          delivered_at: string | null
+          estimated_delivery: string | null
           estimated_delivery_date: string | null
           id: string
           notes: string | null
+          order_number: string | null
           payment_intent_id: string | null
           payment_method_id: string | null
           payment_status: string
@@ -9147,9 +9150,12 @@ export type Database = {
           billing_address_id?: string | null
           completed_at?: string | null
           created_at?: string
+          delivered_at?: string | null
+          estimated_delivery?: string | null
           estimated_delivery_date?: string | null
           id?: string
           notes?: string | null
+          order_number?: string | null
           payment_intent_id?: string | null
           payment_method_id?: string | null
           payment_status?: string
@@ -9168,9 +9174,12 @@ export type Database = {
           billing_address_id?: string | null
           completed_at?: string | null
           created_at?: string
+          delivered_at?: string | null
+          estimated_delivery?: string | null
           estimated_delivery_date?: string | null
           id?: string
           notes?: string | null
+          order_number?: string | null
           payment_intent_id?: string | null
           payment_method_id?: string | null
           payment_status?: string
