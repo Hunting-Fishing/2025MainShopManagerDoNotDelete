@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { StripeConfigNotice } from '@/components/admin/StripeConfigNotice';
 
 interface PaymentFormProps {
   orderId: string;
@@ -25,8 +26,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     setIsProcessing(true);
     
     try {
-      // Create payment intent
-      const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
+      // Create Stripe checkout session
+      const { data: sessionData, error: sessionError } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           orderId,
           amount,
@@ -34,57 +35,45 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         }
       });
 
-      if (paymentError) throw paymentError;
+      if (sessionError) throw sessionError;
 
-      // In a real implementation, you would integrate with Stripe Elements here
-      // For now, we'll simulate a successful payment
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Confirm payment
-      const { data: confirmData, error: confirmError } = await supabase.functions.invoke('confirm-payment', {
-        body: {
-          payment_intent_id: paymentData.payment_intent_id
-        }
-      });
-
-      if (confirmError) throw confirmError;
-
-      toast({
-        title: "Payment successful!",
-        description: "Your order has been processed.",
-      });
-
-      onPaymentSuccess(paymentData.payment_intent_id);
+      // Redirect to Stripe Checkout
+      if (sessionData.url) {
+        window.location.href = sessionData.url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
 
     } catch (error: any) {
-      const errorMessage = error.message || 'Payment failed';
+      const errorMessage = error.message || 'Payment setup failed';
       toast({
         title: "Payment failed",
         description: errorMessage,
         variant: "destructive"
       });
       onPaymentError(errorMessage);
-    } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Payment Information</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-4">
+      <StripeConfigNotice />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Payment Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
         <div className="bg-muted p-4 rounded-lg">
           <p className="text-sm text-muted-foreground mb-2">Order Total</p>
           <p className="text-2xl font-bold">${amount.toFixed(2)}</p>
         </div>
         
-        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-          <p className="text-sm text-blue-800 font-medium mb-1">Demo Payment</p>
-          <p className="text-xs text-blue-600">
-            This is a demo implementation. In production, this would integrate with Stripe Elements 
-            for secure card processing.
+        <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg">
+          <p className="text-sm text-primary font-medium mb-1">Secure Payment</p>
+          <p className="text-xs text-primary/70">
+            You'll be redirected to Stripe's secure checkout to complete your payment.
           </p>
         </div>
 
@@ -107,7 +96,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         <p className="text-xs text-muted-foreground text-center">
           By clicking "Pay", you agree to our terms of service and privacy policy.
         </p>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

@@ -14133,6 +14133,36 @@ export type Database = {
           },
         ]
       }
+      verification_service: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_verified: boolean | null
+          order_id: string
+          product_id: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          order_id: string
+          product_id: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          order_id?: string
+          product_id?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       volunteer_hours: {
         Row: {
           activity_description: string | null
@@ -16049,7 +16079,9 @@ export type Database = {
         Returns: boolean
       }
       check_verified_purchase: {
-        Args: { p_user_id: string; p_product_id: string }
+        Args:
+          | { p_user_id: string; p_product_id: string }
+          | { p_user_id: string; p_product_id: string }
         Returns: boolean
       }
       clear_service_data: {

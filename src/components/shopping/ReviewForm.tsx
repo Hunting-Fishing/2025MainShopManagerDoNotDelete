@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Star, Upload, X } from 'lucide-react';
 import { createProductReview } from '@/services/productReviewService';
 import { checkVerifiedPurchase } from '@/services/verificationService';
+import { uploadReviewImage } from '@/services/imageUploadService';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -94,12 +95,24 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    // In a real app, you would upload these files to storage and get URLs
-    // For now, we'll just use placeholder URLs
-    const newImages = files.map(file => URL.createObjectURL(file));
-    setImages(prev => [...prev, ...newImages].slice(0, 5)); // Max 5 images
+    
+    if (files.length === 0) return;
+    
+    try {
+      const uploadPromises = files.map(file => uploadReviewImage(file, user!.id));
+      const uploadedUrls = await Promise.all(uploadPromises);
+      
+      setImages(prev => [...prev, ...uploadedUrls].slice(0, 5)); // Max 5 images
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const removeImage = (index: number) => {
