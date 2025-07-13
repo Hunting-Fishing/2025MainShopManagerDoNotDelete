@@ -9082,14 +9082,55 @@ export type Database = {
           },
         ]
       }
+      order_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_status: string
+          notes: string | null
+          old_status: string | null
+          order_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status: string
+          notes?: string | null
+          old_status?: string | null
+          order_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status?: string
+          notes?: string | null
+          old_status?: string | null
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
+          actual_delivery_date: string | null
           billing_address_id: string | null
           completed_at: string | null
           created_at: string
+          estimated_delivery_date: string | null
           id: string
           notes: string | null
           payment_intent_id: string | null
+          payment_method_id: string | null
           payment_status: string
           shipping_address_id: string | null
           shipping_cost: number | null
@@ -9097,16 +9138,20 @@ export type Database = {
           status: string
           tax_amount: number | null
           total_amount: number
+          tracking_number: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          actual_delivery_date?: string | null
           billing_address_id?: string | null
           completed_at?: string | null
           created_at?: string
+          estimated_delivery_date?: string | null
           id?: string
           notes?: string | null
           payment_intent_id?: string | null
+          payment_method_id?: string | null
           payment_status?: string
           shipping_address_id?: string | null
           shipping_cost?: number | null
@@ -9114,16 +9159,20 @@ export type Database = {
           status?: string
           tax_amount?: number | null
           total_amount?: number
+          tracking_number?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          actual_delivery_date?: string | null
           billing_address_id?: string | null
           completed_at?: string | null
           created_at?: string
+          estimated_delivery_date?: string | null
           id?: string
           notes?: string | null
           payment_intent_id?: string | null
+          payment_method_id?: string | null
           payment_status?: string
           shipping_address_id?: string | null
           shipping_cost?: number | null
@@ -9131,10 +9180,19 @@ export type Database = {
           status?: string
           tax_amount?: number | null
           total_amount?: number
+          tracking_number?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organization_visibility: {
         Row: {
@@ -9906,6 +9964,7 @@ export type Database = {
           rating: number
           review_text: string | null
           review_title: string | null
+          reviewer_name: string | null
           updated_at: string
           user_id: string
         }
@@ -9919,6 +9978,7 @@ export type Database = {
           rating: number
           review_text?: string | null
           review_title?: string | null
+          reviewer_name?: string | null
           updated_at?: string
           user_id: string
         }
@@ -9932,6 +9992,7 @@ export type Database = {
           rating?: number
           review_text?: string | null
           review_title?: string | null
+          reviewer_name?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -10037,6 +10098,7 @@ export type Database = {
           is_bestseller: boolean | null
           is_featured: boolean | null
           low_stock_threshold: number | null
+          name: string | null
           price: number | null
           product_type: Database["public"]["Enums"]["product_type"]
           review_count: number | null
@@ -10068,6 +10130,7 @@ export type Database = {
           is_bestseller?: boolean | null
           is_featured?: boolean | null
           low_stock_threshold?: number | null
+          name?: string | null
           price?: number | null
           product_type?: Database["public"]["Enums"]["product_type"]
           review_count?: number | null
@@ -10099,6 +10162,7 @@ export type Database = {
           is_bestseller?: boolean | null
           is_featured?: boolean | null
           low_stock_threshold?: number | null
+          name?: string | null
           price?: number | null
           product_type?: Database["public"]["Enums"]["product_type"]
           review_count?: number | null
