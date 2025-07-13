@@ -15842,12 +15842,19 @@ export type Database = {
     }
     Functions: {
       add_recently_viewed_product: {
-        Args: {
-          p_product_id: string
-          p_product_name: string
-          p_product_image_url?: string
-          p_category?: string
-        }
+        Args:
+          | {
+              p_product_id: string
+              p_product_name: string
+              p_product_image_url?: string
+              p_category?: string
+            }
+          | {
+              p_product_id: string
+              p_product_name: string
+              p_product_image_url?: string
+              p_category?: string
+            }
         Returns: undefined
       }
       addcustomindustry: {
@@ -15921,6 +15928,10 @@ export type Database = {
           p_limit: number
           p_window_minutes?: number
         }
+        Returns: boolean
+      }
+      check_verified_purchase: {
+        Args: { p_user_id: string; p_product_id: string }
         Returns: boolean
       }
       clear_service_data: {
@@ -16101,8 +16112,10 @@ export type Database = {
         Returns: {
           product_id: string
           product_name: string
-          total_interactions: number
-          score: number
+          interaction_count: number
+          view_count: number
+          cart_add_count: number
+          purchase_count: number
         }[]
       }
       get_product_interactions_by_category: {
@@ -16116,7 +16129,7 @@ export type Database = {
         }[]
       }
       get_product_stats: {
-        Args: { p_product_id: string }
+        Args: { p_product_id: string } | { p_product_id: string }
         Returns: {
           total_views: number
           total_clicks: number
@@ -16539,14 +16552,33 @@ export type Database = {
         }[]
       }
       track_product_interaction: {
+        Args:
+          | {
+              p_product_id: string
+              p_product_name: string
+              p_category: string
+              p_interaction_type: string
+              p_user_id?: string
+              p_session_id?: string
+              p_metadata?: Json
+            }
+          | {
+              p_product_id: string
+              p_product_name: string
+              p_category?: string
+              p_interaction_type?: string
+              p_user_id?: string
+              p_session_id?: string
+              p_metadata?: Json
+            }
+        Returns: string
+      }
+      track_search_analytics: {
         Args: {
-          p_product_id: string
-          p_product_name: string
-          p_category: string
-          p_interaction_type: string
-          p_user_id?: string
-          p_session_id?: string
-          p_metadata?: Json
+          p_query: string
+          p_results_count: number
+          p_filters_used?: Json
+          p_search_time_ms?: number
         }
         Returns: string
       }

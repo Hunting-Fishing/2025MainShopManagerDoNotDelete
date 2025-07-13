@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Star, Upload, X } from 'lucide-react';
 import { createProductReview } from '@/services/productReviewService';
+import { checkVerifiedPurchase } from '@/services/verificationService';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -65,7 +66,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         title: title.trim() || undefined,
         content: content.trim() || undefined,
         review_images: images.length > 0 ? images : undefined,
-        is_verified_purchase: false // TODO: Check if user actually purchased the product
+        is_verified_purchase: await checkVerifiedPurchase(user.id, productId)
       });
 
       toast({

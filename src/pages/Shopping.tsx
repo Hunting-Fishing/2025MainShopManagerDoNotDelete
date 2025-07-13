@@ -18,6 +18,7 @@ import ShoppingErrorBoundary from '@/components/error/ShoppingErrorBoundary';
 import LoadingSkeleton from '@/components/shopping/LoadingSkeleton';
 import OfflineIndicator from '@/components/shopping/OfflineIndicator';
 import SearchAnalytics, { useSearchAnalytics } from '@/components/shopping/SearchAnalytics';
+import ProductCard from '@/components/shopping/ProductCard';
 import AnalyticsSeeder from '@/components/shopping/AnalyticsSeeder';
 import RecentlyViewedProducts from '@/components/shopping/RecentlyViewedProducts';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
@@ -78,6 +79,7 @@ export default function Shopping() {
   const [quickViewProduct, setQuickViewProduct] = useState<AffiliateProduct | null>(null);
   const [showAnalyticsSeeder, setShowAnalyticsSeeder] = useState(true);
   const [currentSearchId, setCurrentSearchId] = useState<string | null>(null);
+  const { trackSearch } = useSearchAnalytics();
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     manufacturers: [],
@@ -239,7 +241,7 @@ export default function Shopping() {
         <Alert>
           <Database className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
-            <span>🎯 Phase 8: Analytics Data Activation - Generate sample data to see popular products and analytics features in action!</span>
+            <span>🚀 Phase 9: Real Analytics Active - All features now use live data from your database! {allProducts.length} products available.</span>
             <Button 
               variant="outline" 
               size="sm"
@@ -395,11 +397,9 @@ export default function Shopping() {
                         key={product.id}
                         onClick={() => handleProductClick(product)}
                       >
-                        <EnhancedProductCard
+                        <ProductCard
                           product={product}
-                          onAddToCartClick={() => handleAddToCart(product)}
-                          showQuickActions={true}
-                          showInventoryStatus={true}
+                          onQuickView={() => setQuickViewProduct(product)}
                         />
                       </div>
                     ))}

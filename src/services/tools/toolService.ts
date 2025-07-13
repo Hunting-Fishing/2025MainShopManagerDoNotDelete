@@ -1,4 +1,5 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { getTools, getToolById, getToolsByCategory } from './liveToolService';
 import { AffiliateTool } from '@/types/affiliate';
 
@@ -50,25 +51,74 @@ export const getAffiliateToolById = async (id: string): Promise<AffiliateTool | 
 };
 
 /**
- * Create a new affiliate tool (placeholder)
+ * Create a new affiliate tool
  */
 export const createAffiliateTool = async (tool: Partial<AffiliateTool>): Promise<AffiliateTool> => {
-  // TODO: Implement database creation when admin functionality is added
-  throw new Error('Tool creation not yet implemented');
+  try {
+    // Note: tools table doesn't exist in current schema, using products instead
+    const { data, error } = await supabase
+      .from('products')
+      .insert({
+        title: tool.name, // Use title instead of name
+        description: tool.description,
+        price: tool.price,
+        image_url: tool.imageUrl,
+        category_id: 'tools-category', // Default category
+        sku: `TOOL-${Date.now()}`,
+        stock_quantity: 1
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformTool(data);
+  } catch (error) {
+    console.error('Error creating affiliate tool:', error);
+    throw error;
+  }
 };
 
 /**
- * Update an existing affiliate tool (placeholder)
+ * Update an existing affiliate tool
  */
 export const updateAffiliateTool = async (id: string, updates: Partial<AffiliateTool>): Promise<AffiliateTool> => {
-  // TODO: Implement database update when admin functionality is added
-  throw new Error('Tool update not yet implemented');
+  try {
+    // Note: tools table doesn't exist in current schema, using products instead
+    const { data, error } = await supabase
+      .from('products')
+      .update({
+        title: updates.name, // Use title instead of name
+        description: updates.description,
+        price: updates.price,
+        image_url: updates.imageUrl
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformTool(data);
+  } catch (error) {
+    console.error('Error updating affiliate tool:', error);
+    throw error;
+  }
 };
 
 /**
- * Delete an affiliate tool (placeholder)
+ * Delete an affiliate tool
  */
 export const deleteAffiliateTool = async (id: string): Promise<boolean> => {
-  // TODO: Implement database deletion when admin functionality is added
-  throw new Error('Tool deletion not yet implemented');
+  try {
+    // Note: tools table doesn't exist in current schema, using products instead
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error deleting affiliate tool:', error);
+    return false;
+  }
 };

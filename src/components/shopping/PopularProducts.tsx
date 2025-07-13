@@ -41,7 +41,18 @@ const PopularProducts: React.FC<PopularProductsProps> = ({
       });
       
       if (error) throw error;
-      setPopularProducts(Array.isArray(data) ? data : []);
+      // Transform data to match PopularProduct interface
+      const transformedData = Array.isArray(data) ? data.map((item: any) => ({
+        product_id: item.product_id,
+        product_name: item.product_name,
+        interaction_count: item.interaction_count,
+        view_count: item.view_count,
+        cart_add_count: item.cart_add_count,
+        purchase_count: item.purchase_count,
+        total_interactions: item.interaction_count, // Use interaction_count as total
+        score: item.interaction_count // Use interaction_count as score
+      })) : [];
+      setPopularProducts(transformedData);
     } catch (error) {
       console.error('Error fetching popular products:', error);
       setPopularProducts([]);
