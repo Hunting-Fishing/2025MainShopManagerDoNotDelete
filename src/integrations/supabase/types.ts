@@ -2092,6 +2092,87 @@ export type Database = {
           },
         ]
       }
+      customer_payment_methods: {
+        Row: {
+          created_at: string
+          expiry_month: number | null
+          expiry_year: number | null
+          id: string
+          is_default: boolean | null
+          last_four: string | null
+          payment_type: string
+          provider: string
+          stripe_payment_method_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expiry_month?: number | null
+          expiry_year?: number | null
+          id?: string
+          is_default?: boolean | null
+          last_four?: string | null
+          payment_type: string
+          provider: string
+          stripe_payment_method_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expiry_month?: number | null
+          expiry_year?: number | null
+          id?: string
+          is_default?: boolean | null
+          last_four?: string | null
+          payment_type?: string
+          provider?: string
+          stripe_payment_method_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      customer_profiles: {
+        Row: {
+          created_at: string
+          date_of_birth: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          marketing_consent: boolean | null
+          phone: string | null
+          preferences: Json | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_of_birth?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          marketing_consent?: boolean | null
+          phone?: string | null
+          preferences?: Json | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_of_birth?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          marketing_consent?: boolean | null
+          phone?: string | null
+          preferences?: Json | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       customer_provided_forms: {
         Row: {
           customer_id: string
@@ -2629,6 +2710,102 @@ export type Database = {
           performed_at?: string
           performed_by?: string
           reason?: string | null
+        }
+        Relationships: []
+      }
+      discount_code_usage: {
+        Row: {
+          discount_amount: number
+          discount_code_id: string | null
+          id: string
+          order_id: string | null
+          used_at: string
+          user_id: string | null
+        }
+        Insert: {
+          discount_amount: number
+          discount_code_id?: string | null
+          id?: string
+          order_id?: string | null
+          used_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          discount_amount?: number
+          discount_code_id?: string | null
+          id?: string
+          order_id?: string | null
+          used_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_code_usage_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_code_usage_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discount_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          maximum_discount_amount: number | null
+          minimum_order_amount: number | null
+          updated_at: string
+          usage_count: number | null
+          usage_limit: number | null
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          maximum_discount_amount?: number | null
+          minimum_order_amount?: number | null
+          updated_at?: string
+          usage_count?: number | null
+          usage_limit?: number | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          maximum_discount_amount?: number | null
+          minimum_order_amount?: number | null
+          updated_at?: string
+          usage_count?: number | null
+          usage_limit?: number | null
+          valid_from?: string
+          valid_until?: string | null
         }
         Relationships: []
       }
@@ -4477,6 +4654,45 @@ export type Database = {
           resolved_by?: string | null
           resolved_date?: string | null
           technician_id?: string
+        }
+        Relationships: []
+      }
+      flash_sales: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_percentage: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          name: string
+          product_ids: string[] | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_percentage: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          product_ids?: string[] | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_percentage?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          product_ids?: string[] | null
+          start_time?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -7106,6 +7322,77 @@ export type Database = {
           },
         ]
       }
+      loyalty_point_transactions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_id: string | null
+          points: number
+          transaction_type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          points: number
+          transaction_type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          points?: number
+          transaction_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_point_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_points: {
+        Row: {
+          created_at: string
+          id: string
+          points_balance: number | null
+          points_earned: number | null
+          points_spent: number | null
+          tier: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points_balance?: number | null
+          points_earned?: number | null
+          points_spent?: number | null
+          tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points_balance?: number | null
+          points_earned?: number | null
+          points_spent?: number | null
+          tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       loyalty_redemptions: {
         Row: {
           created_at: string
@@ -9166,6 +9453,33 @@ export type Database = {
           },
         ]
       }
+      product_recommendations: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          recommendation_type: string
+          score: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          recommendation_type: string
+          score?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          recommendation_type?: string
+          score?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       product_reviews: {
         Row: {
           created_at: string
@@ -9554,6 +9868,97 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      purchase_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          purchase_order_id: string | null
+          quantity: number
+          received_quantity: number | null
+          total_cost: number
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          purchase_order_id?: string | null
+          quantity: number
+          received_quantity?: number | null
+          total_cost: number
+          unit_cost: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          purchase_order_id?: string | null
+          quantity?: number
+          received_quantity?: number | null
+          total_cost?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expected_delivery_date: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          po_number: string
+          status: string | null
+          supplier_id: string | null
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number: string
+          status?: string | null
+          supplier_id?: string | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number?: string
+          status?: string | null
+          supplier_id?: string | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quote_items: {
         Row: {
@@ -11449,6 +11854,39 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          current_quantity: number
+          id: string
+          is_resolved: boolean | null
+          product_id: string
+          resolved_at: string | null
+          threshold_quantity: number
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          current_quantity: number
+          id?: string
+          is_resolved?: boolean | null
+          product_id: string
+          resolved_at?: string | null
+          threshold_quantity: number
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          current_quantity?: number
+          id?: string
+          is_resolved?: boolean | null
+          product_id?: string
+          resolved_at?: string | null
+          threshold_quantity?: number
+        }
+        Relationships: []
+      }
       success_stories: {
         Row: {
           consent_obtained: boolean | null
@@ -11505,6 +11943,136 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          lead_time_days: number | null
+          minimum_order_amount: number | null
+          name: string
+          payment_terms: string | null
+          phone: string | null
+          rating: number | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          lead_time_days?: number | null
+          minimum_order_amount?: number | null
+          name: string
+          payment_terms?: string | null
+          phone?: string | null
+          rating?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          lead_time_days?: number | null
+          minimum_order_amount?: number | null
+          name?: string
+          payment_terms?: string | null
+          phone?: string | null
+          rating?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      support_ticket_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_internal: boolean | null
+          message: string
+          ticket_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          message: string
+          ticket_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          message?: string
+          ticket_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          description: string
+          id: string
+          order_id: string | null
+          priority: string | null
+          status: string | null
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          order_id?: string | null
+          priority?: string | null
+          status?: string | null
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          order_id?: string | null
+          priority?: string | null
+          status?: string | null
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sync_queue: {
         Row: {
