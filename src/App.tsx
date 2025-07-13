@@ -51,6 +51,7 @@ import Developer from '@/pages/Developer';
 import { OrdersPage } from '@/components/shopping/orders/OrdersPage';
 import { OrderDetailsPage } from '@/components/shopping/orders/OrderDetailsPage';
 import { WishlistPage } from '@/components/shopping/wishlist/WishlistPage';
+import AIHub from '@/pages/AIHub';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuthUser();
@@ -139,6 +140,9 @@ function App() {
             
             {/* Missing routes that are in SidebarContent */}
             <Route path="/inventory/suppliers" element={isAuthenticated ? <Layout><Inventory /></Layout> : <Navigate to="/auth" replace />} />
+            
+            {/* AI & Automation */}
+            <Route path="/ai" element={isAuthenticated ? <Layout><AIHub /></Layout> : <Navigate to="/auth" replace />} />
             
             {/* Help and Security routes */}
             <Route path="/help" element={isAuthenticated ? <Layout><Help /></Layout> : <Navigate to="/auth" replace />} />
