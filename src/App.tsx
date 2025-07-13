@@ -45,6 +45,7 @@ import Notifications from '@/pages/Notifications';
 import Shopping from '@/pages/Shopping';
 import ProductDetail from '@/pages/ProductDetail';
 import Checkout from '@/pages/Checkout';
+import OrderConfirmation from '@/pages/OrderConfirmation';
 import Help from '@/pages/Help';
 import { ContextualHelpWidget } from '@/components/help/ContextualHelpWidget';
 import Developer from '@/pages/Developer';
@@ -131,6 +132,7 @@ function App() {
             <Route path="/checkout" element={isAuthenticated ? <Layout><Checkout /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/orders" element={isAuthenticated ? <Layout><OrdersPage /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/orders/:orderId" element={isAuthenticated ? <Layout><OrderDetailsPage /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/order-confirmation/:orderId" element={isAuthenticated ? <Layout><OrderConfirmation /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/wishlist" element={isAuthenticated ? <Layout><WishlistPage /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/tools/:category" element={isAuthenticated ? <Layout><ToolCategoryPage /></Layout> : <Navigate to="/auth" replace />} />
             

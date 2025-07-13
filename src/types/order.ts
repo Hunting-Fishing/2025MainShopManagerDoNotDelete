@@ -45,6 +45,7 @@ export interface CreateOrderRequest {
   }[];
   shipping_address_id?: string;
   billing_address_id?: string;
+  payment_intent_id?: string;
   shipping_method?: string;
   notes?: string;
 }
