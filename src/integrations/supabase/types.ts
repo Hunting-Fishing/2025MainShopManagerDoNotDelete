@@ -9033,6 +9033,8 @@ export type Database = {
           id: string
           order_id: string
           product_id: string
+          product_image_url: string | null
+          product_name: string | null
           quantity: number
           total_price: number
           unit_price: number
@@ -9043,6 +9045,8 @@ export type Database = {
           id?: string
           order_id: string
           product_id: string
+          product_image_url?: string | null
+          product_name?: string | null
           quantity?: number
           total_price: number
           unit_price: number
@@ -9053,6 +9057,8 @@ export type Database = {
           id?: string
           order_id?: string
           product_id?: string
+          product_image_url?: string | null
+          product_name?: string | null
           quantity?: number
           total_price?: number
           unit_price?: number
@@ -10107,7 +10113,7 @@ export type Database = {
           is_bestseller: boolean | null
           is_featured: boolean | null
           low_stock_threshold: number | null
-          name: string | null
+          name: string
           price: number | null
           product_type: Database["public"]["Enums"]["product_type"]
           review_count: number | null
@@ -10139,7 +10145,7 @@ export type Database = {
           is_bestseller?: boolean | null
           is_featured?: boolean | null
           low_stock_threshold?: number | null
-          name?: string | null
+          name: string
           price?: number | null
           product_type?: Database["public"]["Enums"]["product_type"]
           review_count?: number | null
@@ -10171,7 +10177,7 @@ export type Database = {
           is_bestseller?: boolean | null
           is_featured?: boolean | null
           low_stock_threshold?: number | null
-          name?: string | null
+          name?: string
           price?: number | null
           product_type?: Database["public"]["Enums"]["product_type"]
           review_count?: number | null
@@ -10710,6 +10716,45 @@ export type Database = {
           winner_ticket_number?: string | null
         }
         Relationships: []
+      }
+      recently_viewed: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recently_viewed_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recently_viewed_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recently_viewed_products: {
         Row: {
@@ -16170,6 +16215,23 @@ export type Database = {
           metadata: Json
         }[]
       }
+      get_order_with_items: {
+        Args: { order_id_param: string }
+        Returns: {
+          order_id: string
+          order_number: string
+          status: string
+          total_amount: number
+          user_id: string
+          created_at: string
+          item_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          unit_price: number
+          total_price: number
+        }[]
+      }
       get_overdue_grant_reports: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -16181,7 +16243,9 @@ export type Database = {
         }[]
       }
       get_popular_products: {
-        Args: { days_back?: number; result_limit?: number }
+        Args:
+          | { days_back?: number; result_limit?: number }
+          | { limit_count?: number }
         Returns: {
           product_id: string
           product_name: string
@@ -16213,11 +16277,9 @@ export type Database = {
         }[]
       }
       get_recently_viewed_products: {
-        Args: {
-          p_user_id?: string
-          p_session_id?: string
-          result_limit?: number
-        }
+        Args:
+          | { p_user_id?: string; p_session_id?: string; result_limit?: number }
+          | { user_id_param: string; limit_count?: number }
         Returns: {
           product_id: string
           product_name: string
@@ -16556,6 +16618,10 @@ export type Database = {
         Args: { order_id: string; quantity_to_receive: number }
         Returns: undefined
       }
+      record_product_view: {
+        Args: { product_id_param: string; user_id_param: string }
+        Returns: undefined
+      }
       record_status_change_activity: {
         Args: {
           p_work_order_id: string
@@ -16662,6 +16728,15 @@ export type Database = {
       update_email_processing_schedule: {
         Args: { new_settings: Json }
         Returns: Json
+      }
+      update_order_status: {
+        Args: {
+          order_id_param: string
+          new_status: string
+          notes_param?: string
+          updated_by_param?: string
+        }
+        Returns: undefined
       }
       update_recommendation_engagement: {
         Args: { p_recommendation_id: string; p_engagement_type: string }

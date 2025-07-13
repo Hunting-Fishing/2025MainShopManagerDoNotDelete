@@ -187,7 +187,10 @@ export const createProduct = async (product: Omit<Product, 'id' | 'created_at' |
     
     const { data, error } = await supabase
       .from('products')
-      .insert([productData])
+      .insert([{
+        ...productData,
+        name: productData.title
+      }])
       .select()
       .single();
 

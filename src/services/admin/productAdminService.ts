@@ -52,6 +52,7 @@ export const createProductAdmin = async (productData: ProductFormData): Promise<
       .from('products')
       .insert([{
         ...productData,
+        name: productData.title,
         is_approved: productData.is_approved ?? true,
         product_type: productData.product_type || 'affiliate'
       }])

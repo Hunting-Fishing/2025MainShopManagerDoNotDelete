@@ -59,7 +59,8 @@ export const createAffiliateTool = async (tool: Partial<AffiliateTool>): Promise
     const { data, error } = await supabase
       .from('products')
       .insert({
-        title: tool.name, // Use title instead of name
+        title: tool.name,
+        name: tool.name,
         description: tool.description,
         price: tool.price,
         image_url: tool.imageUrl,
