@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Plus, Minus, Trash2, Loader2, CreditCard } from 'lucide-react';
-import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
+import { useCart } from '@/hooks/shopping/useCart';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '@/lib/utils';
 
@@ -26,7 +26,7 @@ const ShoppingCartComponent: React.FC<ShoppingCartProps> = ({
     removeFromCart, 
     updateQuantity, 
     clearCart 
-  } = useShoppingCart();
+  } = useCart();
 
   if (loading) {
     return (

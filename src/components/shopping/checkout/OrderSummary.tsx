@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CartItem } from '@/stores/cartStore';
+import { CartItem } from '@/hooks/shopping/useCart';
 
 interface OrderSummaryProps {
   items: CartItem[];

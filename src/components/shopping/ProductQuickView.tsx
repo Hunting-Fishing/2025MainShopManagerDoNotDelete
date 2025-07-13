@@ -7,7 +7,7 @@ import { Heart, Share2, ShoppingCart, Star, ExternalLink } from 'lucide-react';
 import { AffiliateProduct } from '@/types/affiliate';
 import { ProductRating } from '@/components/affiliate/ProductRating';
 import ProductTierBadge from '@/components/affiliate/ProductTierBadge';
-import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
+import { useCart } from '@/hooks/shopping/useCart';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -22,7 +22,7 @@ const ProductQuickView: React.FC<ProductQuickViewProps> = ({
   isOpen,
   onClose
 }) => {
-  const { addToCart } = useShoppingCart();
+  const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
 
   if (!product) return null;

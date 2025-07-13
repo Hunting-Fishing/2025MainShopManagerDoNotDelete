@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, ShoppingCart, Heart, ExternalLink } from 'lucide-react';
 import { AffiliateProduct } from '@/types/affiliate';
-import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
+import { useCart } from '@/hooks/shopping/useCart';
 import { useToast } from '@/hooks/use-toast';
 
 interface QuickViewModalProps {
@@ -14,7 +14,7 @@ interface QuickViewModalProps {
 }
 
 const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClose }) => {
-  const { addToCart } = useShoppingCart();
+  const { addToCart } = useCart();
   const { toast } = useToast();
 
   if (!product) return null;

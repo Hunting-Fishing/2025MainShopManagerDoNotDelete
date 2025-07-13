@@ -6,7 +6,7 @@ import { Star, Heart, ShoppingCart, Eye, ExternalLink } from 'lucide-react';
 import { AffiliateProduct } from '@/types/affiliate';
 import { useProductAnalytics } from '@/hooks/shopping/useProductAnalytics';
 import { useWishlist } from '@/hooks/shopping/useWishlist';
-import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
+import { useCart } from '@/hooks/shopping/useCart';
 import { useToast } from '@/hooks/use-toast';
 import ProductViewTracker from './ProductViewTracker';
 
@@ -20,7 +20,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { trackInteraction } = useProductAnalytics();
   const { addToWishlist, removeFromWishlist } = useWishlist();
-  const { addToCart } = useShoppingCart();
+  const { addToCart } = useCart();
   const { toast } = useToast();
 
   const handleClick = async () => {

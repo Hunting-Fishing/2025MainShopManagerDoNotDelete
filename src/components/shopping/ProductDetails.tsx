@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { AffiliateProduct } from '@/types/affiliate';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
-import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
+import { useCart } from '@/hooks/shopping/useCart';
 import { useProductAnalytics } from '@/hooks/shopping/useProductAnalytics';
 import { formatCurrency } from '@/lib/utils';
 import { ProductRating } from '@/components/affiliate/ProductRating';
@@ -39,7 +39,7 @@ const ProductDetails: React.FC = () => {
   const [stockInfo, setStockInfo] = useState({ inStock: true, quantity: 0, lowStock: false });
   
   const { products, loading, error } = useProductsManager();
-  const { addToCart } = useShoppingCart();
+  const { addToCart } = useCart();
   const { trackInteraction } = useProductAnalytics();
   const { toast } = useToast();
 

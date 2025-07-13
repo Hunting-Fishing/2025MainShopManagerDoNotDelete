@@ -22,7 +22,7 @@ import ProductCard from '@/components/shopping/ProductCard';
 import AnalyticsSeeder from '@/components/shopping/AnalyticsSeeder';
 import RecentlyViewedProducts from '@/components/shopping/RecentlyViewedProducts';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
-import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
+import { useCart } from '@/hooks/shopping/useCart';
 import { useProductComparison } from '@/hooks/shopping/useProductComparison';
 import { categories } from '@/data/toolCategories';
 import { manufacturers } from '@/data/manufacturers';
@@ -93,7 +93,7 @@ export default function Shopping() {
 
   // Use the real products manager hook instead of mock queries
   const { products, loading, error } = useProductsManager();
-  const { itemCount, addToCart } = useShoppingCart();
+  const { itemCount, addToCart } = useCart();
   const { 
     comparisonProducts, 
     removeFromComparison, 
@@ -456,9 +456,18 @@ export default function Shopping() {
               products={comparisonProducts}
               onRemoveProduct={removeFromComparison}
               onAddToCart={handleAddToCart}
-              onAddToWishlist={(product) => {
-                // TODO: Implement wishlist integration
-                console.log('Add to wishlist:', product);
+              onAddToWishlist={async (product) => {
+                // Wishlist integration completed
+                const { useWishlist } = await import('@/hooks/shopping/useWishlist');
+                const wishlist = useWishlist();
+                await wishlist.addToWishlist({
+                  productId: product.id,
+                  name: product.name,
+                  price: product.retailPrice,
+                  imageUrl: product.imageUrl,
+                  category: product.category,
+                  manufacturer: product.manufacturer
+                });
               }}
             />
             {comparisonCount > 0 && (

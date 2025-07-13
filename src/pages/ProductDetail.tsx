@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useShoppingCart } from '@/hooks/shopping/useShoppingCart';
+import { useCart } from '@/hooks/shopping/useCart';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ShoppingCart, 
@@ -45,7 +45,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const { addToCart, loading: cartLoading } = useShoppingCart();
+  const { addToCart, loading: cartLoading } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {

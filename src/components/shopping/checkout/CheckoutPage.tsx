@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useCartStore } from '@/stores/cartStore';
+import { useCart } from '@/hooks/shopping/useCart';
 import { createOrder } from '@/services/orderService';
 import { CheckoutForm } from './CheckoutForm';
 import { OrderSummary } from './OrderSummary';
@@ -18,7 +18,7 @@ export const CheckoutPage = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { items, getTotalPrice, clearCart } = useCartStore();
+  const { items, totalPrice, clearCart } = useCart();
 
   useEffect(() => {
     if (items.length === 0) {
@@ -32,7 +32,7 @@ export const CheckoutPage = () => {
 
       // Create order items from cart
       const orderItems = items.map(item => ({
-        product_id: item.id,
+        product_id: item.productId,
         quantity: item.quantity,
         unit_price: item.price
       }));
@@ -95,7 +95,7 @@ export const CheckoutPage = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center text-lg font-semibold">
-                  <span>Total: ${getTotalPrice().toFixed(2)}</span>
+                  <span>Total: ${totalPrice.toFixed(2)}</span>
                 </div>
                 
                 <Button 
