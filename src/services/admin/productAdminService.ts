@@ -1,5 +1,45 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Product, ProductCategory } from '@/services/products/productService';
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  slug: string;
+  parent_id?: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Product {
+  id: string;
+  title: string;
+  name?: string;
+  description?: string;
+  image_url?: string;
+  price?: number;
+  affiliate_link?: string;
+  tracking_params?: string;
+  category_id: string;
+  product_type: string;
+  is_featured?: boolean;
+  is_bestseller?: boolean;
+  is_approved?: boolean;
+  suggested_by?: string;
+  suggestion_reason?: string;
+  stock_quantity?: number;
+  sku?: string;
+  weight?: number;
+  dimensions?: any;
+  is_available?: boolean;
+  average_rating?: number;
+  review_count?: number;
+  sale_price?: number;
+  sale_start_date?: string;
+  sale_end_date?: string;
+  created_at: string;
+  updated_at: string;
+  category?: ProductCategory;
+}
 
 export interface ProductFormData {
   title: string;

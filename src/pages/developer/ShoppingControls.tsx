@@ -7,6 +7,9 @@ import { ArrowLeft, Store } from "lucide-react";
 import ProductsManagement from '@/components/developer/shopping/ProductsManagement';
 import CategoriesManagement from '@/components/developer/shopping/CategoriesManagement';
 import AnalyticsTab from '@/components/developer/shopping/AnalyticsTab';
+import OrderManagement from '@/components/developer/shopping/OrderManagement';
+import CustomerManagement from '@/components/developer/shopping/CustomerManagement';
+import ShoppingSettings from '@/components/developer/shopping/ShoppingSettings';
 
 export default function ShoppingControls() {
   const [activeTab, setActiveTab] = useState("products");
@@ -37,6 +40,18 @@ export default function ShoppingControls() {
             Products
           </TabsTrigger>
           <TabsTrigger 
+            value="orders" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-orange-600 data-[state=active]:text-white"
+          >
+            Orders
+          </TabsTrigger>
+          <TabsTrigger 
+            value="customers" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-teal-600 data-[state=active]:text-white"
+          >
+            Customers
+          </TabsTrigger>
+          <TabsTrigger 
             value="categories" 
             className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
           >
@@ -48,11 +63,25 @@ export default function ShoppingControls() {
           >
             Analytics
           </TabsTrigger>
+          <TabsTrigger 
+            value="settings" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-slate-600 data-[state=active]:text-white"
+          >
+            Settings
+          </TabsTrigger>
         </TabsList>
 
         <div className="mt-6 space-y-6">
           <TabsContent value="products" className="space-y-6">
             <ProductsManagement />
+          </TabsContent>
+
+          <TabsContent value="orders" className="space-y-6">
+            <OrderManagement />
+          </TabsContent>
+
+          <TabsContent value="customers" className="space-y-6">
+            <CustomerManagement />
           </TabsContent>
 
           <TabsContent value="categories" className="space-y-6">
@@ -61,6 +90,10 @@ export default function ShoppingControls() {
 
           <TabsContent value="analytics" className="space-y-6">
             <AnalyticsTab />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <ShoppingSettings />
           </TabsContent>
         </div>
       </Tabs>

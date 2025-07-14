@@ -6,7 +6,7 @@ import { Edit, Trash2, Plus, Search, ArrowUpDown, Star, Trophy } from "lucide-re
 import { toast } from 'sonner';
 import { fetchAllProducts, deleteProductAdmin, toggleProductFeature, toggleProductBestseller } from '@/services/admin/productAdminService';
 import { useNavigate } from 'react-router-dom';
-import { Product } from '@/services/products/productService';
+import { Product } from '@/services/admin/productAdminService';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
