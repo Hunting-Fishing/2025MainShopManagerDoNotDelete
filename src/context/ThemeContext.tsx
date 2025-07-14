@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useEffect, useState, useMemo, ReactNode } from 'react';
+import * as React from 'react';
 
 type Theme = 'light' | 'dark' | 'auto';
 
@@ -9,10 +8,10 @@ interface ThemeContextType {
   resolvedTheme: 'light' | 'dark';
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = React.useState<Theme>(() => {
     try {
       // Try to get the theme from localStorage
       const savedTheme = localStorage.getItem('theme') as Theme;
@@ -23,10 +22,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   });
   
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [resolvedTheme, setResolvedTheme] = React.useState<'light' | 'dark'>('light');
 
   // Update the theme in localStorage and apply it to the document
-  useEffect(() => {
+  React.useEffect(() => {
     try {
       localStorage.setItem('theme', theme);
       
@@ -70,7 +69,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [theme]);
 
-  const value = useMemo(() => ({
+  const value = React.useMemo(() => ({
     theme,
     setTheme,
     resolvedTheme
@@ -84,7 +83,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
+  const context = React.useContext(ThemeContext);
   if (context === undefined) {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
