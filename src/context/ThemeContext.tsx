@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, ReactNode } from 'react';
 
 type Theme = 'light' | 'dark' | 'auto';
 
@@ -70,7 +70,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [theme]);
 
-  const value = React.useMemo(() => ({
+  const value = useMemo(() => ({
     theme,
     setTheme,
     resolvedTheme
