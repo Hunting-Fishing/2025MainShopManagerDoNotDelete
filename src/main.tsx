@@ -1,5 +1,5 @@
 
-// React app entry point - Cache bust v2.1 - All theme functionality removed
+// React app entry point - AGGRESSIVE CACHE BUST v3.0 - Force complete rebuild - Theme completely removed
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

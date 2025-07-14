@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    // Force cache clearing for development
+    fs: {
+      strict: false,
+    },
   },
   plugins: [
     react(),
@@ -17,6 +21,18 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  // Force rebuild dependencies to clear theme context cache
+  optimizeDeps: {
+    force: true,
+  },
+  build: {
+    // Force new build hashes
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
     },
   },
 }));
