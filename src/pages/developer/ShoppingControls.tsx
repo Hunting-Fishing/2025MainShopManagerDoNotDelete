@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Store } from "lucide-react";
-import ProductsManagement from '@/components/developer/shopping/ProductsManagement';
+import ProductsManagementAdvanced from '@/components/developer/shopping/ProductsManagementAdvanced';
 import CategoriesManagement from '@/components/developer/shopping/CategoriesManagement';
 import AnalyticsTab from '@/components/developer/shopping/AnalyticsTab';
 import OrderManagement from '@/components/developer/shopping/OrderManagement';
@@ -73,7 +73,7 @@ export default function ShoppingControls() {
 
         <div className="mt-6 space-y-6">
           <TabsContent value="products" className="space-y-6">
-            <ProductsManagement />
+            <ProductsManagementAdvanced />
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-6">

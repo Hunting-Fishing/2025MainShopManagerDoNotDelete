@@ -21,6 +21,8 @@ import SearchAnalytics, { useSearchAnalytics } from '@/components/shopping/Searc
 import ProductCard from '@/components/shopping/ProductCard';
 
 import RecentlyViewedProducts from '@/components/shopping/RecentlyViewedProducts';
+import ProductBundles from '@/components/shopping/product/ProductBundles';
+import InventoryAlerts from '@/components/shopping/product/InventoryAlerts';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { useCart } from '@/hooks/shopping/useCart';
 import { useProductComparison } from '@/hooks/shopping/useProductComparison';
@@ -268,10 +270,12 @@ export default function Shopping() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="browse">Browse</TabsTrigger>
+            <TabsTrigger value="bundles">Bundles</TabsTrigger>
             <TabsTrigger value="featured">Featured</TabsTrigger>
             <TabsTrigger value="bestsellers">Best Sellers</TabsTrigger>
+            <TabsTrigger value="alerts">Alerts</TabsTrigger>
             <TabsTrigger value="compare" className="relative">
               Compare
               {comparisonCount > 0 && (
@@ -424,12 +428,20 @@ export default function Shopping() {
             <ManufacturersGrid manufacturers={manufacturers} />
           </TabsContent>
 
+          <TabsContent value="bundles">
+            <ProductBundles featured={true} limit={12} />
+          </TabsContent>
+
           <TabsContent value="featured">
             <FeaturedTools tools={featuredTools} isLoading={loading} />
           </TabsContent>
 
           <TabsContent value="bestsellers">
             <BestSellingTools tools={bestSellingTools} isLoading={loading} />
+          </TabsContent>
+
+          <TabsContent value="alerts">
+            <InventoryAlerts showActions={false} compact={false} limit={20} />
           </TabsContent>
 
           <TabsContent value="compare">
