@@ -130,9 +130,9 @@ function App() {
             <Route path="/shopping" element={isAuthenticated ? <Layout><Shopping /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/product/:productId" element={isAuthenticated ? <Layout><ProductDetail /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/checkout" element={isAuthenticated ? <Layout><Checkout /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/order-confirmation/:orderId" element={isAuthenticated ? <Layout><OrderConfirmation /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/orders" element={isAuthenticated ? <Layout><OrdersPage /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/orders/:orderId" element={isAuthenticated ? <Layout><OrderDetailsPage /></Layout> : <Navigate to="/auth" replace />} />
-            <Route path="/order-confirmation/:orderId" element={isAuthenticated ? <Layout><OrderConfirmation /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/wishlist" element={isAuthenticated ? <Layout><WishlistPage /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/tools/:category" element={isAuthenticated ? <Layout><ToolCategoryPage /></Layout> : <Navigate to="/auth" replace />} />
             

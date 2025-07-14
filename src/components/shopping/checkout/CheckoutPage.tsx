@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/shopping/useCart';
 import { createOrder } from '@/services/orderService';
+import { createCheckoutSession } from '@/services/payment/stripeService';
 import { AddressForm } from '@/components/checkout/AddressForm';
 import { PaymentForm } from '@/components/checkout/PaymentForm';
 import { OrderSummary } from './OrderSummary';
@@ -15,6 +16,7 @@ export const CheckoutPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState<'address' | 'payment'>('address');
   const [shippingAddress, setShippingAddress] = useState(null);
+  const [tempOrderId, setTempOrderId] = useState<string | null>(null);
   const [orderData, setOrderData] = useState({
     shipping_method: 'standard',
     notes: ''
@@ -30,47 +32,62 @@ export const CheckoutPage = () => {
     }
   }, [items, navigate]);
 
-  const handleAddressSubmit = (address: any) => {
-    setShippingAddress(address);
-    setCurrentStep('payment');
-  };
-
-  const handlePaymentSuccess = async (paymentIntentId: string) => {
+  const handleAddressSubmit = async (address: any) => {
     try {
       setIsProcessing(true);
-
-      // Create order items from cart
+      setShippingAddress(address);
+      
+      // Create a temporary order to get order ID for Stripe
       const orderItems = items.map(item => ({
         product_id: item.productId,
         quantity: item.quantity,
         unit_price: item.price
       }));
 
-      // Create order with payment info
-      const order = await createOrder({
+      const tempOrder = await createOrder({
         items: orderItems,
-        shipping_address_id: shippingAddress?.id,
-        payment_intent_id: paymentIntentId,
+        shipping_address_id: address?.id,
         shipping_method: orderData.shipping_method,
         notes: orderData.notes
       });
 
-      // Clear cart
-      clearCart();
-
-      toast({
-        title: "Order placed successfully!",
-        description: `Your order has been confirmed and payment processed.`
-      });
-
-      // Navigate to order confirmation  
-      navigate(`/order-confirmation/${order.id}`);
-
+      setTempOrderId(tempOrder.id);
+      setCurrentStep('payment');
     } catch (error) {
       console.error('Error creating order:', error);
       toast({
-        title: "Error creating order",
-        description: "Payment succeeded but order creation failed. Please contact support.",
+        title: "Error",
+        description: "Failed to prepare order. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePaymentSuccess = async (sessionId: string) => {
+    try {
+      setIsProcessing(true);
+
+      // Verify payment and update order status
+      if (tempOrderId) {
+        // Order already exists, just clear cart and redirect
+        clearCart();
+
+        toast({
+          title: "Order placed successfully!",
+          description: `Your order has been confirmed and payment processed.`
+        });
+
+        // Navigate to order confirmation  
+        navigate(`/order-confirmation/${tempOrderId}?session_id=${sessionId}`);
+      }
+
+    } catch (error) {
+      console.error('Error processing payment success:', error);
+      toast({
+        title: "Payment processing error",
+        description: "There was an issue processing your payment. Please contact support.",
         variant: "destructive"
       });
     } finally {
@@ -157,7 +174,7 @@ export const CheckoutPage = () => {
                 </Card>
 
                 <PaymentForm
-                  orderId="temp-order-id"
+                  orderId={tempOrderId || "temp-order-id"}
                   amount={totalPrice}
                   onPaymentSuccess={handlePaymentSuccess}
                   onPaymentError={handlePaymentError}
