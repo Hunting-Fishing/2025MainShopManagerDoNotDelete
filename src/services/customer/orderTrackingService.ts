@@ -26,41 +26,80 @@ export const orderTrackingService = {
   // Get tracking information for an order
   async getOrderTracking(orderId: string): Promise<OrderTracking[]> {
     const { data, error } = await supabase
-      .from('order_tracking')
+      .from('order_status_history')
       .select('*')
       .eq('order_id', orderId)
-      .order('created_at', { ascending: false });
+      .order('changed_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return data?.map(item => ({
+      id: item.id,
+      order_id: item.order_id,
+      status: item.new_status,
+      location: item.notes,
+      estimated_delivery: null,
+      tracking_number: null,
+      carrier: null,
+      notes: item.notes,
+      created_at: item.changed_at,
+      updated_at: item.changed_at
+    })) || [];
   },
 
   // Add tracking update
   async addTrackingUpdate(orderId: string, update: OrderTrackingUpdate): Promise<OrderTracking> {
     const { data, error } = await supabase
-      .from('order_tracking')
+      .from('order_status_history')
       .insert({
         order_id: orderId,
-        ...update
+        new_status: update.status,
+        notes: update.notes || update.location,
+        changed_by: 'system'
       })
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      id: data.id,
+      order_id: data.order_id,
+      status: data.new_status,
+      location: data.notes,
+      estimated_delivery: null,
+      tracking_number: null,
+      carrier: null,
+      notes: data.notes,
+      created_at: data.changed_at,
+      updated_at: data.changed_at
+    };
   },
 
   // Update tracking information
   async updateTracking(trackingId: string, update: Partial<OrderTrackingUpdate>): Promise<OrderTracking> {
+    const updateData: any = {};
+    if (update.status) updateData.new_status = update.status;
+    if (update.notes || update.location) updateData.notes = update.notes || update.location;
+
     const { data, error } = await supabase
-      .from('order_tracking')
-      .update(update)
+      .from('order_status_history')
+      .update(updateData)
       .eq('id', trackingId)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      id: data.id,
+      order_id: data.order_id,
+      status: data.new_status,
+      location: data.notes,
+      estimated_delivery: null,
+      tracking_number: null,
+      carrier: null,
+      notes: data.notes,
+      created_at: data.changed_at,
+      updated_at: data.changed_at
+    };
   },
 
   // Subscribe to tracking updates
@@ -72,12 +111,25 @@ export const orderTrackingService = {
         {
           event: '*',
           schema: 'public',
-          table: 'order_tracking',
+          table: 'order_status_history',
           filter: `order_id=eq.${orderId}`
         },
         (payload) => {
-          if (payload.new) {
-            callback(payload.new as OrderTracking);
+          if (payload.new && typeof payload.new === 'object') {
+            const newData = payload.new as any;
+            const mapped = {
+              id: newData.id,
+              order_id: newData.order_id,
+              status: newData.new_status,
+              location: newData.notes,
+              estimated_delivery: null,
+              tracking_number: null,
+              carrier: null,
+              notes: newData.notes,
+              created_at: newData.changed_at,
+              updated_at: newData.changed_at
+            };
+            callback(mapped as OrderTracking);
           }
         }
       )

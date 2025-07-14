@@ -177,13 +177,15 @@ export const enhancedWishlistService = {
         description,
         average_rating,
         review_count,
-        stock_quantity,
-        specifications
+        stock_quantity
       `)
       .in('id', productIds);
 
     if (error) throw error;
-    return data || [];
+    return data?.map(item => ({
+      ...item,
+      specifications: item.description || 'No specifications available'
+    })) || [];
   },
 
   // Get wishlist analytics
@@ -201,8 +203,7 @@ export const enhancedWishlistService = {
         product:products(
           id,
           name,
-          price,
-          category
+          price
         )
       `)
       .eq('user_id', userId);
@@ -224,7 +225,7 @@ export const enhancedWishlistService = {
 
     items?.forEach(item => {
       const price = item.product?.price || 0;
-      const category = item.product?.category || 'Other';
+      const category = 'General'; // Simplified since category doesn't exist on products table
 
       categoryBreakdown[category] = (categoryBreakdown[category] || 0) + 1;
 
