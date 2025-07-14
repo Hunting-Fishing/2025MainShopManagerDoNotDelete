@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { ProfileForm } from "./profile/ProfileForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTheme } from "@/context/ThemeContext";
+// Theme functionality temporarily disabled
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, User, Palette, Building } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -10,7 +10,10 @@ import { BrandingTab } from "./BrandingTab";
 import { CompanyTab } from "./CompanyTab";
 
 export function AccountTab() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  // Theme functionality temporarily disabled
+  const theme = 'light';
+  const setTheme = () => {};
+  const resolvedTheme = 'light';
   const [activeTab, setActiveTab] = useState("profile");
   const { toast } = useToast();
   
@@ -54,7 +57,7 @@ export function AccountTab() {
     }
   }, []);
 
-  const isDarkModeEnabled = resolvedTheme === 'dark';
+  const isDarkModeEnabled = false; // Theme temporarily disabled
 
   // Form submission handler
   const handleSubmit = async (e: React.FormEvent) => {

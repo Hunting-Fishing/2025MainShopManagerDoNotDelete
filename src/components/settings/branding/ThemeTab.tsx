@@ -3,10 +3,12 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { ThemeSelector } from "./ThemeSelector";
 import { ThemePreview } from "./ThemePreview";
 import { Label } from "@/components/ui/label";
-import { useTheme } from "@/context/ThemeContext";
+// Theme functionality temporarily disabled
 
 export function ThemeTab() {
-  const { theme, setTheme } = useTheme();
+  // Theme functionality temporarily disabled
+  const theme = 'light';
+  const setTheme = () => {};
 
   return (
     <Card>
