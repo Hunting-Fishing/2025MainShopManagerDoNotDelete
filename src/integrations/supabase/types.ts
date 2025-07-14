@@ -16284,7 +16284,13 @@ export type Database = {
           interaction_count: number
           view_count: number
           cart_add_count: number
-          purchase_count: number
+          save_count: number
+          click_count: number
+          average_rating: number
+          review_count: number
+          image_url: string
+          price: number
+          category: string
         }[]
       }
       get_product_interactions_by_category: {
