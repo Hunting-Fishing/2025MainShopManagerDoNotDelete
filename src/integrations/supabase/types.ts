@@ -1221,6 +1221,135 @@ export type Database = {
         }
         Relationships: []
       }
+      bulk_pricing: {
+        Row: {
+          bundle_id: string | null
+          created_at: string
+          customer_tier: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          maximum_quantity: number | null
+          minimum_quantity: number
+          product_id: string | null
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          bundle_id?: string | null
+          created_at?: string
+          customer_tier?: string | null
+          discount_type?: string
+          discount_value: number
+          id?: string
+          is_active?: boolean
+          maximum_quantity?: number | null
+          minimum_quantity: number
+          product_id?: string | null
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          bundle_id?: string | null
+          created_at?: string
+          customer_tier?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          maximum_quantity?: number | null
+          minimum_quantity?: number
+          product_id?: string | null
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_pricing_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "product_bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulk_pricing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulk_pricing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulk_pricing_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bundle_items: {
+        Row: {
+          bundle_id: string
+          created_at: string
+          custom_price: number | null
+          display_order: number | null
+          id: string
+          is_required: boolean
+          product_id: string
+          quantity: number
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string
+          custom_price?: number | null
+          display_order?: number | null
+          id?: string
+          is_required?: boolean
+          product_id: string
+          quantity?: number
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string
+          custom_price?: number | null
+          display_order?: number | null
+          id?: string
+          is_required?: boolean
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "product_bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_industries: {
         Row: {
           created_at: string | null
@@ -6851,6 +6980,76 @@ export type Database = {
           },
         ]
       }
+      inventory_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string
+          current_value: number
+          id: string
+          message: string | null
+          notification_sent: boolean | null
+          product_id: string | null
+          resolved_at: string | null
+          status: string
+          threshold_value: number
+          variant_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string
+          current_value: number
+          id?: string
+          message?: string | null
+          notification_sent?: boolean | null
+          product_id?: string | null
+          resolved_at?: string | null
+          status?: string
+          threshold_value: number
+          variant_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string
+          current_value?: number
+          id?: string
+          message?: string | null
+          notification_sent?: boolean | null
+          product_id?: string | null
+          resolved_at?: string | null
+          status?: string
+          threshold_value?: number
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_alerts_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_auto_reorder: {
         Row: {
           created_at: string
@@ -9750,6 +9949,66 @@ export type Database = {
           },
         ]
       }
+      pricing_rules: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          name: string
+          priority: number | null
+          rule_type: string
+          start_date: string | null
+          target_id: string | null
+          target_type: string
+          updated_at: string
+          usage_count: number | null
+          usage_limit: number | null
+        }
+        Insert: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          priority?: number | null
+          rule_type: string
+          start_date?: string | null
+          target_id?: string | null
+          target_type: string
+          updated_at?: string
+          usage_count?: number | null
+          usage_limit?: number | null
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          priority?: number | null
+          rule_type?: string
+          start_date?: string | null
+          target_id?: string | null
+          target_type?: string
+          updated_at?: string
+          usage_count?: number | null
+          usage_limit?: number | null
+        }
+        Relationships: []
+      }
       product_analytics: {
         Row: {
           additional_data: Json | null
@@ -9780,6 +10039,72 @@ export type Database = {
           product_id?: string
           product_name?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      product_bundles: {
+        Row: {
+          base_price: number
+          bundle_type: string
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          discount_amount: number | null
+          discount_percentage: number | null
+          end_date: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_featured: boolean | null
+          maximum_quantity: number | null
+          minimum_quantity: number | null
+          name: string
+          start_date: string | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number
+          bundle_type?: string
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_amount?: number | null
+          discount_percentage?: number | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean | null
+          maximum_quantity?: number | null
+          minimum_quantity?: number | null
+          name: string
+          start_date?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          bundle_type?: string
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_amount?: number | null
+          discount_percentage?: number | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean | null
+          maximum_quantity?: number | null
+          minimum_quantity?: number | null
+          name?: string
+          start_date?: string | null
+          tags?: string[] | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -9847,6 +10172,86 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      product_interaction_analytics: {
+        Row: {
+          bundle_id: string | null
+          created_at: string
+          device_type: string | null
+          id: string
+          interaction_data: Json | null
+          interaction_type: string
+          location_data: Json | null
+          product_id: string
+          referrer_url: string | null
+          revenue_generated: number | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          bundle_id?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          interaction_data?: Json | null
+          interaction_type: string
+          location_data?: Json | null
+          product_id: string
+          referrer_url?: string | null
+          revenue_generated?: number | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          bundle_id?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          interaction_data?: Json | null
+          interaction_type?: string
+          location_data?: Json | null
+          product_id?: string
+          referrer_url?: string | null
+          revenue_generated?: number | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_interaction_analytics_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "product_bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_interaction_analytics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_interaction_analytics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_interaction_analytics_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_inventory: {
         Row: {
@@ -10060,6 +10465,75 @@ export type Database = {
           suggested_category?: string
         }
         Relationships: []
+      }
+      product_variants: {
+        Row: {
+          created_at: string
+          dimensions: Json | null
+          id: string
+          image_url: string | null
+          is_available: boolean | null
+          parent_product_id: string
+          price_adjustment: number | null
+          sku: string | null
+          sort_order: number | null
+          stock_quantity: number | null
+          updated_at: string
+          variant_name: string
+          variant_type: string
+          variant_value: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          dimensions?: Json | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          parent_product_id: string
+          price_adjustment?: number | null
+          sku?: string | null
+          sort_order?: number | null
+          stock_quantity?: number | null
+          updated_at?: string
+          variant_name: string
+          variant_type: string
+          variant_value: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          dimensions?: Json | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          parent_product_id?: string
+          price_adjustment?: number | null
+          sku?: string | null
+          sort_order?: number | null
+          stock_quantity?: number | null
+          updated_at?: string
+          variant_name?: string
+          variant_type?: string
+          variant_value?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_parent_product_id_fkey"
+            columns: ["parent_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variants_parent_product_id_fkey"
+            columns: ["parent_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_view_history: {
         Row: {
