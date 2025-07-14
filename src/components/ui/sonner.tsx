@@ -1,10 +1,10 @@
-import { useTheme } from "next-themes"
+// Temporarily disable theme for sonner to fix app crash
 import { Toaster as Sonner } from "sonner"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const theme = "system" // Fixed theme value
 
   return (
     <Sonner
