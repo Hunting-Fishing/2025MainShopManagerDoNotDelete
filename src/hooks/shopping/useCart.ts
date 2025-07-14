@@ -12,6 +12,12 @@ export interface CartItem {
   quantity: number;
   category: string;
   manufacturer: string;
+  variantId?: string;
+  variantName?: string;
+  bundleId?: string;
+  bundleName?: string;
+  originalPrice?: number;
+  appliedDiscounts?: string[];
 }
 
 interface UseCartReturn {

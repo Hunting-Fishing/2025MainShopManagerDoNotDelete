@@ -382,9 +382,8 @@ export default function Shopping() {
                         key={product.id}
                         onClick={() => handleProductClick(product)}
                       >
-                        <ProductCard
+                        <EnhancedProductCard
                           product={product}
-                          onQuickView={() => setQuickViewProduct(product)}
                         />
                       </div>
                     ))}
