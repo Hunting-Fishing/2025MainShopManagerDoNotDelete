@@ -50,7 +50,7 @@
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script>
-      // Force complete cache clear for theme context issue
+      // Force complete cache clear for theme context issue - v3.0
       if ('caches' in window) {
         caches.keys().then(names => {
           names.forEach(name => caches.delete(name));
@@ -62,7 +62,12 @@
           registrations.forEach(registration => registration.unregister());
         });
       }
+      // Force browser cache refresh
+      if (window.localStorage) {
+        window.localStorage.removeItem('theme');
+        window.localStorage.removeItem('themeContext');
+      }
     </script>
-    <script type="module" src="/src/main.tsx?cachebust=v3.0"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
