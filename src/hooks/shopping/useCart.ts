@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import * as cartService from '@/services/cartService';
+import { calculateDynamicPrice, getBulkPricingTier } from '@/services/shopping/cartVariantService';
 
 export interface CartItem {
   id: string;
@@ -126,28 +127,58 @@ export function useCart(): UseCartReturn {
     try {
       setLoading(true);
 
+      // Calculate dynamic pricing
+      const dynamicPrice = calculateDynamicPrice(product.price, {
+        quantity: 1,
+        customerTier: 'regular', // Default tier
+        appliedDiscounts: product.appliedDiscounts || []
+      });
+
+      const productWithPricing = {
+        ...product,
+        price: dynamicPrice.finalPrice,
+        originalPrice: product.originalPrice || product.price,
+        appliedDiscounts: dynamicPrice.appliedDiscounts
+      };
+
       if (isAuthenticated) {
         // Add to database
         await cartService.addToCart({
-          productId: product.productId,
-          name: product.name,
-          price: product.price,
-          imageUrl: product.imageUrl,
-          category: product.category,
-          manufacturer: product.manufacturer
+          productId: productWithPricing.productId,
+          name: productWithPricing.name,
+          price: productWithPricing.price,
+          imageUrl: productWithPricing.imageUrl,
+          category: productWithPricing.category,
+          manufacturer: productWithPricing.manufacturer
         });
         await refreshCart();
       } else {
-        // Add to localStorage
-        const existingItemIndex = items.findIndex(item => item.productId === product.productId);
+        // Add to localStorage - check for variant uniqueness
+        const existingItemIndex = items.findIndex(item => 
+          item.productId === productWithPricing.productId && 
+          item.variantId === productWithPricing.variantId &&
+          item.bundleId === productWithPricing.bundleId
+        );
         
         let updatedItems: CartItem[];
         if (existingItemIndex >= 0) {
           updatedItems = [...items];
           updatedItems[existingItemIndex].quantity += 1;
+          
+          // Recalculate bulk pricing for updated quantity
+          const bulkTier = getBulkPricingTier(updatedItems[existingItemIndex].quantity);
+          if (bulkTier) {
+            const newPrice = calculateDynamicPrice(productWithPricing.originalPrice || productWithPricing.price, {
+              quantity: updatedItems[existingItemIndex].quantity,
+              customerTier: 'regular',
+              appliedDiscounts: [...(productWithPricing.appliedDiscounts || []), bulkTier.name]
+            });
+            updatedItems[existingItemIndex].price = newPrice.finalPrice;
+            updatedItems[existingItemIndex].appliedDiscounts = newPrice.appliedDiscounts;
+          }
         } else {
           const newItem: CartItem = {
-            ...product,
+            ...productWithPricing,
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
             quantity: 1
           };
@@ -165,7 +196,13 @@ export function useCart(): UseCartReturn {
         })));
       }
 
-      toast.success(`${product.name} added to cart`);
+      const itemName = productWithPricing.variantName 
+        ? `${productWithPricing.name} (${productWithPricing.variantName})`
+        : productWithPricing.bundleName
+        ? `${productWithPricing.bundleName}`
+        : productWithPricing.name;
+      
+      toast.success(`${itemName} added to cart`);
     } catch (error: any) {
       console.error('Error adding to cart:', error);
       toast.error('Failed to add item to cart');
@@ -259,7 +296,11 @@ export function useCart(): UseCartReturn {
   };
 
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
-  const totalPrice = items.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const totalPrice = items.reduce((total, item) => {
+    // Apply any additional cart-level discounts
+    const itemTotal = item.price * item.quantity;
+    return total + itemTotal;
+  }, 0);
 
   return {
     items,

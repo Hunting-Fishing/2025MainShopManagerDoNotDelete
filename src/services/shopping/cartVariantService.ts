@@ -235,3 +235,41 @@ export class CartVariantService {
 }
 
 export const cartVariantService = new CartVariantService();
+
+// Utility functions for cart pricing
+export function calculateDynamicPrice(
+  basePrice: number, 
+  options: {
+    quantity: number;
+    customerTier: string;
+    appliedDiscounts: string[];
+  }
+): { finalPrice: number; appliedDiscounts: string[] } {
+  let finalPrice = basePrice;
+  const appliedDiscounts: string[] = [...options.appliedDiscounts];
+
+  // Apply customer tier discounts
+  if (options.customerTier === 'premium') {
+    finalPrice *= 0.95; // 5% discount for premium customers
+    appliedDiscounts.push('Premium Customer (5%)');
+  }
+
+  // Apply bulk discounts
+  const bulkTier = getBulkPricingTier(options.quantity);
+  if (bulkTier) {
+    finalPrice *= (1 - bulkTier.discountPercent / 100);
+    appliedDiscounts.push(bulkTier.name);
+  }
+
+  return { finalPrice: Math.round(finalPrice * 100) / 100, appliedDiscounts };
+}
+
+export function getBulkPricingTier(quantity: number): { name: string; discountPercent: number } | null {
+  if (quantity >= 10) {
+    return { name: 'Bulk Discount (10+ items): 10%', discountPercent: 10 };
+  }
+  if (quantity >= 5) {
+    return { name: 'Bulk Discount (5+ items): 5%', discountPercent: 5 };
+  }
+  return null;
+}

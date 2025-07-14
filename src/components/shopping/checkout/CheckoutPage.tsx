@@ -56,11 +56,13 @@ export const CheckoutPage = () => {
       if (items.length === 0) return;
       
       try {
-        const orderItems = items.map(item => ({
-          product_id: item.productId,
-          quantity: item.quantity,
-          unit_price: item.price
-        }));
+      const orderItems = items.map(item => ({
+        product_id: item.productId,
+        quantity: item.quantity,
+        unit_price: item.price,
+        variant_id: item.variantId,
+        bundle_id: item.bundleId
+      }));
         
         const isValid = await checkInventoryAvailability(orderItems);
         setInventoryValid(isValid);
@@ -90,7 +92,9 @@ export const CheckoutPage = () => {
       const orderItems = items.map(item => ({
         product_id: item.productId,
         quantity: item.quantity,
-        unit_price: item.price
+        unit_price: item.price,
+        variant_id: item.variantId,
+        bundle_id: item.bundleId
       }));
 
       const tempOrder = await createOrder({

@@ -7,7 +7,7 @@ import SearchBar from '@/components/affiliate/SearchBar';
 import FeaturedTools from '@/components/affiliate/FeaturedTools';
 import BestSellingTools from '@/components/affiliate/BestSellingTools';
 import ManufacturersGrid from '@/components/affiliate/ManufacturersGrid';
-import EnhancedProductCard from '@/components/shopping/EnhancedProductCard';
+import { VariantAwareProductCard } from '@/components/shopping/VariantAwareProductCard';
 import PopularProducts from '@/components/shopping/PopularProducts';
 import RecentlyViewed from '@/components/shopping/RecentlyViewed';
 import ShoppingCartComponent from '@/components/shopping/ShoppingCart';
@@ -382,7 +382,7 @@ export default function Shopping() {
                         key={product.id}
                         onClick={() => handleProductClick(product)}
                       >
-                        <EnhancedProductCard
+                        <VariantAwareProductCard
                           product={product}
                         />
                       </div>
