@@ -4,19 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/shopping/useCart';
-import { createOrder } from '@/services/orderService';
-import { createCheckoutSession } from '@/services/payment/stripeService';
+import { useAuth } from '@/hooks/useAuth';
+import { createOrder, checkInventoryAvailability } from '@/services/orderService';
+import { createCheckoutSession, verifyCheckoutSession } from '@/services/payment/stripeService';
 import { AddressForm } from '@/components/checkout/AddressForm';
 import { PaymentForm } from '@/components/checkout/PaymentForm';
 import { OrderSummary } from './OrderSummary';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
+import { AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const CheckoutPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState<'address' | 'payment'>('address');
   const [shippingAddress, setShippingAddress] = useState(null);
   const [tempOrderId, setTempOrderId] = useState<string | null>(null);
+  const [inventoryValid, setInventoryValid] = useState<boolean | null>(null);
   const [orderData, setOrderData] = useState({
     shipping_method: 'standard',
     notes: ''
@@ -25,12 +29,57 @@ export const CheckoutPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { items, totalPrice, clearCart } = useCart();
+  const { isAuthenticated, loading: authLoading } = useAuth();
 
+  // Authentication protection
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to proceed with checkout.",
+        variant: "destructive"
+      });
+      navigate('/auth?redirect=/checkout');
+    }
+  }, [isAuthenticated, authLoading, navigate, toast]);
+
+  // Cart validation
   useEffect(() => {
     if (items.length === 0) {
       navigate('/shopping');
     }
   }, [items, navigate]);
+
+  // Inventory validation
+  useEffect(() => {
+    const validateInventory = async () => {
+      if (items.length === 0) return;
+      
+      try {
+        const orderItems = items.map(item => ({
+          product_id: item.productId,
+          quantity: item.quantity,
+          unit_price: item.price
+        }));
+        
+        const isValid = await checkInventoryAvailability(orderItems);
+        setInventoryValid(isValid);
+        
+        if (!isValid) {
+          toast({
+            title: "Inventory Issue",
+            description: "Some items in your cart are out of stock. Please review your cart.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error('Error validating inventory:', error);
+        setInventoryValid(true); // Allow order if validation fails
+      }
+    };
+
+    validateInventory();
+  }, [items, toast]);
 
   const handleAddressSubmit = async (address: any) => {
     try {
@@ -103,6 +152,18 @@ export const CheckoutPage = () => {
     });
   };
 
+  // Show loading state while checking auth or inventory
+  if (authLoading || inventoryValid === null) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto flex items-center justify-center h-64">
+          <LoadingSpinner />
+          <span className="ml-2">Validating checkout requirements...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return null;
   }
@@ -111,6 +172,27 @@ export const CheckoutPage = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+        
+        {/* Security & Inventory Alerts */}
+        <div className="mb-6 space-y-4">
+          {isAuthenticated && (
+            <Alert>
+              <ShieldCheck className="h-4 w-4" />
+              <AlertDescription>
+                Secure checkout - You are logged in and your information is protected.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {inventoryValid === false && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Warning: Some items in your cart may be out of stock. Please review your order before proceeding.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
         
         {/* Progress Steps */}
         <div className="flex items-center mb-8">

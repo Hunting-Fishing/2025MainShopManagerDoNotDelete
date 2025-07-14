@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Package, Truck, CreditCard } from 'lucide-react';
-import { getOrderById } from '@/services/orderService';
+import { getOrderById, updateOrder } from '@/services/orderService';
 import { verifyCheckoutSession } from '@/services/payment/stripeService';
 import { Order } from '@/types/order';
 import LoadingSkeleton from '@/components/shopping/LoadingSkeleton';
@@ -34,8 +34,26 @@ const OrderConfirmation = () => {
           try {
             const verification = await verifyCheckoutSession(sessionId);
             setPaymentVerified(verification.status === 'paid');
+            
+            if (verification.status === 'paid') {
+              // Update order status to paid
+              await updateOrder(orderId, {
+                status: 'processing',
+                payment_status: 'paid'
+              });
+              
+              toast({
+                title: "Payment Confirmed",
+                description: "Your payment has been successfully processed.",
+              });
+            }
           } catch (error) {
             console.error('Payment verification failed:', error);
+            toast({
+              title: "Payment Verification",
+              description: "Could not verify payment status, but your order has been recorded.",
+              variant: "destructive"
+            });
           }
         }
       } catch (error) {
@@ -225,7 +243,7 @@ const OrderConfirmation = () => {
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
           <Button asChild>
-            <Link to="/orders">View All Orders</Link>
+            <Link to="/account/orders">View All Orders</Link>
           </Button>
           <Button variant="outline" asChild>
             <Link to="/shopping">Continue Shopping</Link>

@@ -7,6 +7,7 @@ import { Layout } from '@/components/layout/Layout';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import Dashboard from '@/pages/Dashboard';
 import AuthRoutes from '@/pages/AuthRoutes';
+import Auth from '@/pages/Auth';
 import Profile from '@/pages/Profile';
 import ServiceCatalog from '@/pages/ServiceCatalog';
 import ServiceCategory from '@/pages/ServiceCategory';
@@ -73,6 +74,12 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/auth/*" element={<AuthRoutes />} />
+            <Route path="/auth" element={<Auth />} />
+            
+            {/* Shopping routes - Public but some require auth */}
+            <Route path="/shopping" element={<Layout><Shopping /></Layout>} />
+            <Route path="/product/:productId" element={<Layout><ProductDetail /></Layout>} />
+            <Route path="/wishlist" element={<WishlistPage />} />
             
             {/* Protected routes - all wrapped with Layout */}
             <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth" replace />} />
@@ -127,14 +134,13 @@ function App() {
             <Route path="/chat" element={isAuthenticated ? <Layout><Chat /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/notifications" element={isAuthenticated ? <Layout><Notifications /></Layout> : <Navigate to="/auth" replace />} />
             
-            {/* Shopping/Store */}
-            <Route path="/shopping" element={isAuthenticated ? <Layout><Shopping /></Layout> : <Navigate to="/auth" replace />} />
-            <Route path="/product/:productId" element={isAuthenticated ? <Layout><ProductDetail /></Layout> : <Navigate to="/auth" replace />} />
-            <Route path="/checkout" element={isAuthenticated ? <Layout><Checkout /></Layout> : <Navigate to="/auth" replace />} />
+            {/* Shopping/Store - Auth protected checkout and orders */}
+            <Route path="/checkout" element={isAuthenticated ? <Layout><Checkout /></Layout> : <Navigate to="/auth?redirect=/checkout" replace />} />
             <Route path="/order-confirmation/:orderId" element={isAuthenticated ? <Layout><OrderConfirmation /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/orders" element={isAuthenticated ? <Layout><OrdersPage /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/orders/:orderId" element={isAuthenticated ? <Layout><OrderDetailsPage /></Layout> : <Navigate to="/auth" replace />} />
-            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/account/orders" element={isAuthenticated ? <Layout><OrdersPage /></Layout> : <Navigate to="/auth" replace />} />
+            <Route path="/account/orders/:orderId" element={isAuthenticated ? <Layout><OrderDetailsPage /></Layout> : <Navigate to="/auth" replace />} />
             <Route path="/tools/:category" element={isAuthenticated ? <Layout><ToolCategoryPage /></Layout> : <Navigate to="/auth" replace />} />
             
             
