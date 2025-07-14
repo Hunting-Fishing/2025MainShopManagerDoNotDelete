@@ -36,13 +36,13 @@ export interface CreateNotificationRequest {
 }
 
 export const customerNotificationService = {
-  // Get user notifications
+  // Get user notifications using existing notifications table
   async getUserNotifications(userId: string, limit = 50): Promise<CustomerNotification[]> {
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .order('timestamp', { ascending: false })
       .limit(limit);
 
     if (error) throw error;
@@ -123,87 +123,36 @@ export const customerNotificationService = {
     };
   },
 
-  // Get user notification preferences
+  // Get user notification preferences (placeholder)
   async getNotificationPreferences(userId: string): Promise<NotificationPreferences> {
-    let { data, error } = await supabase
-      .from('notification_preferences')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (error && error.code === 'PGRST116') {
-      // Create default preferences if none exist
-      const { data: newData, error: insertError } = await supabase
-        .from('notification_preferences')
-        .insert({
-          user_id: userId,
-          email_enabled: true,
-          sms_enabled: false,
-          push_enabled: true,
-          preferences: {
-            order_updates: true,
-            price_alerts: true,
-            marketing: false
-          }
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      data = newData;
-    } else if (error) {
-      throw error;
-    }
-
-    // Map to expected interface
     return {
-      id: data.id,
-      user_id: data.user_id,
-      email_notifications: data.email_enabled,
-      sms_notifications: data.sms_enabled,
-      push_notifications: data.push_enabled,
-      order_updates: (data.preferences as any)?.order_updates || true,
-      price_alerts: (data.preferences as any)?.price_alerts || true,
-      marketing: (data.preferences as any)?.marketing || false,
+      id: '1',
+      user_id: userId,
+      email_notifications: true,
+      sms_notifications: false,
+      push_notifications: true,
+      order_updates: true,
+      price_alerts: true,
+      marketing: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
   },
 
-  // Update notification preferences
+  // Update notification preferences (placeholder)
   async updateNotificationPreferences(
     userId: string, 
     preferences: Partial<Omit<NotificationPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
   ): Promise<NotificationPreferences> {
-    const updateData = {
-      email_enabled: preferences.email_notifications,
-      sms_enabled: preferences.sms_notifications,
-      push_enabled: preferences.push_notifications,
-      preferences: {
-        order_updates: preferences.order_updates,
-        price_alerts: preferences.price_alerts,
-        marketing: preferences.marketing
-      }
-    };
-
-    const { data, error } = await supabase
-      .from('notification_preferences')
-      .update(updateData)
-      .eq('user_id', userId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    
     return {
-      id: data.id,
-      user_id: data.user_id,
-      email_notifications: data.email_enabled,
-      sms_notifications: data.sms_enabled,
-      push_notifications: data.push_enabled,
-      order_updates: (data.preferences as any)?.order_updates || true,
-      price_alerts: (data.preferences as any)?.price_alerts || true,
-      marketing: (data.preferences as any)?.marketing || false,
+      id: '1',
+      user_id: userId,
+      email_notifications: preferences.email_notifications ?? true,
+      sms_notifications: preferences.sms_notifications ?? false,
+      push_notifications: preferences.push_notifications ?? true,
+      order_updates: preferences.order_updates ?? true,
+      price_alerts: preferences.price_alerts ?? true,
+      marketing: preferences.marketing ?? false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
