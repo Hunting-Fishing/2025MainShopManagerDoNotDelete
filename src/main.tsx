@@ -1,5 +1,5 @@
 
-// React app entry point - ThemeProvider completely removed
+// React app entry point - Cache bust v2.1 - All theme functionality removed
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

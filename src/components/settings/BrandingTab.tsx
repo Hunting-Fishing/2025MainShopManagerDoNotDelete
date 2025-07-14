@@ -23,8 +23,7 @@ export function BrandingTab() {
   const [colors, setColors] = useState(defaultColors);
   const [companyName, setCompanyName] = useState("Easy Shop Manager");
   
-  // Remove the theme state since ThemeTab now uses ThemeContext directly
-  // const [theme, setTheme] = useState("light");
+  // Theme functionality temporarily disabled
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
