@@ -7,7 +7,11 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const ProductForm: React.FC = () => {
+interface ProductFormProps {
+  mode?: 'create' | 'edit';
+}
+
+const ProductForm: React.FC<ProductFormProps> = ({ mode }) => {
   const navigate = useNavigate();
   const { productId } = useParams();
   const [formData, setFormData] = useState({

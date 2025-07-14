@@ -46,7 +46,7 @@ interface Order {
   estimated_delivery?: string;
   created_at: string;
   updated_at: string;
-  order_items: Array<{
+  order_items?: Array<{
     id: string;
     product_id: string;
     quantity: number;
@@ -58,7 +58,7 @@ interface Order {
       image_url: string;
     };
   }>;
-  customer_addresses: {
+  customer_addresses?: {
     full_name: string;
     address_line1: string;
     city: string;
@@ -109,13 +109,6 @@ const OrderManagement: React.FC = () => {
           order_items(
             *,
             product:products(id, title, image_url)
-          ),
-          customer_addresses!orders_shipping_address_id_fkey(
-            full_name,
-            address_line1,
-            city,
-            state,
-            postal_code
           )
         `)
         .order('created_at', { ascending: false });

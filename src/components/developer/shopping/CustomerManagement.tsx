@@ -47,12 +47,12 @@ interface Customer {
   loyalty_tier?: string;
   created_at: string;
   updated_at: string;
-  customer_loyalty: {
+  loyalty?: {
     current_points: number;
     lifetime_points: number;
     lifetime_value: number;
     tier: string;
-  }[];
+  };
   _count?: {
     orders: number;
     vehicles: number;
@@ -113,7 +113,17 @@ const CustomerManagement: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCustomers(data || []);
+      
+      // Transform the data to match Customer type (customer_loyalty is a single object, not array)
+      const transformedData = data?.map(customer => ({
+        ...customer,
+        loyalty: Array.isArray(customer.customer_loyalty) 
+          ? customer.customer_loyalty[0] 
+          : customer.customer_loyalty,
+        customer_loyalty: undefined // Remove to avoid type conflicts
+      })) || [];
+      
+      setCustomers(transformedData);
     } catch (error) {
       console.error('Error fetching customers:', error);
       toast.error('Failed to load customers');
@@ -221,7 +231,7 @@ const CustomerManagement: React.FC = () => {
       customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.phone?.includes(searchTerm);
     
-    const customerTier = customer.customer_loyalty?.[0]?.tier || 'bronze';
+    const customerTier = customer.loyalty?.tier || 'bronze';
     const matchesTier = tierFilter === 'all' || customerTier === tierFilter;
     
     return matchesSearch && matchesTier;
@@ -368,7 +378,7 @@ const CustomerManagement: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {filteredCustomers.map((customer) => {
-                  const loyalty = customer.customer_loyalty?.[0];
+                  const loyalty = customer.loyalty;
                   return (
                     <TableRow key={customer.id}>
                       <TableCell>
@@ -498,7 +508,7 @@ const CustomerManagement: React.FC = () => {
                 </Card>
 
                 {/* Loyalty Info */}
-                {selectedCustomer.customer_loyalty?.[0] && (
+                {selectedCustomer.loyalty && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">Loyalty Status</CardTitle>
@@ -507,22 +517,22 @@ const CustomerManagement: React.FC = () => {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <span>Current Tier:</span>
-                          <Badge variant={getTierBadgeVariant(selectedCustomer.customer_loyalty[0].tier)}>
+                          <Badge variant={getTierBadgeVariant(selectedCustomer.loyalty?.tier || 'bronze')}>
                             <Star className="h-3 w-3 mr-1" />
-                            {selectedCustomer.customer_loyalty[0].tier.charAt(0).toUpperCase() + selectedCustomer.customer_loyalty[0].tier.slice(1)}
+                            {(selectedCustomer.loyalty?.tier || 'bronze').charAt(0).toUpperCase() + (selectedCustomer.loyalty?.tier || 'bronze').slice(1)}
                           </Badge>
                         </div>
                         <div className="flex justify-between">
                           <span>Current Points:</span>
-                          <span className="font-medium">{selectedCustomer.customer_loyalty[0].current_points}</span>
+                          <span className="font-medium">{selectedCustomer.loyalty?.current_points || 0}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Lifetime Points:</span>
-                          <span className="font-medium">{selectedCustomer.customer_loyalty[0].lifetime_points}</span>
+                          <span className="font-medium">{selectedCustomer.loyalty?.lifetime_points || 0}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Lifetime Value:</span>
-                          <span className="font-medium text-green-600">${selectedCustomer.customer_loyalty[0].lifetime_value?.toFixed(2)}</span>
+                          <span className="font-medium text-green-600">${(selectedCustomer.loyalty?.lifetime_value || 0).toFixed(2)}</span>
                         </div>
                       </div>
                     </CardContent>
