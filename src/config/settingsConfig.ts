@@ -16,7 +16,8 @@ import {
   Shield,
   Database,
   Calendar,
-  Link
+  Link,
+  UserCheck
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -44,6 +45,7 @@ import { SecurityTab } from '@/components/settings/SecurityTab';
 import { AssetTrackingTab } from '@/components/settings/AssetTrackingTab';
 import { BudgetManagementTab } from '@/components/settings/BudgetManagementTab';
 import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
+import { VolunteerManagementTab } from '@/components/settings/VolunteerManagementTab';
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
@@ -141,6 +143,13 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         icon: Target,
         component: ProgramManagementTab,
         description: 'Manage programs, volunteers, grants, and impact measurement'
+      },
+      {
+        id: 'volunteers',
+        label: 'Volunteer Management',
+        icon: UserCheck,
+        component: VolunteerManagementTab,
+        description: 'Manage volunteers, skills tracking, and assignment workflows'
       },
       {
         id: 'grants',

@@ -382,3 +382,40 @@ export const impactMeasurementService = {
     return (data || []).map(transformImpactMeasurement);
   }
 };
+
+// Unified API object
+export const nonprofitApi = {
+  // Programs
+  getPrograms: programService.getAll,
+  getProgram: programService.getById,
+  createProgram: programService.create,
+  updateProgram: programService.update,
+  deleteProgram: programService.delete,
+  getProgramParticipants: programService.getParticipants,
+
+  // Volunteers
+  getVolunteers: volunteerService.getAll,
+  getVolunteer: volunteerService.getById,
+  createVolunteer: volunteerService.create,
+  updateVolunteer: volunteerService.update,
+  deleteVolunteer: volunteerService.delete,
+  getVolunteerAssignments: volunteerService.getAssignments,
+
+  // Participants
+  getParticipants: participantService.getAll,
+  getParticipant: participantService.getById,
+  createParticipant: participantService.create,
+  updateParticipant: participantService.update,
+  deleteParticipant: participantService.delete,
+
+  // Assignments
+  getAssignments: assignmentService.getAll,
+  createAssignment: assignmentService.create,
+  updateAssignment: assignmentService.update,
+  deleteAssignment: assignmentService.delete,
+
+  // Impact Measurements
+  getImpactMeasurements: impactMeasurementService.getAll,
+  createImpactMeasurement: impactMeasurementService.create,
+  getImpactMeasurementsByMetric: impactMeasurementService.getByMetric
+};
