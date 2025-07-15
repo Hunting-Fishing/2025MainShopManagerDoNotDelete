@@ -6237,6 +6237,70 @@ export type Database = {
         }
         Relationships: []
       }
+      impact_measurement_data: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          measured_value: number
+          measurement_date: string
+          metric_id: string
+          notes: string | null
+          shop_id: string
+          updated_at: string
+          verification_date: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          measured_value: number
+          measurement_date?: string
+          metric_id: string
+          notes?: string | null
+          shop_id: string
+          updated_at?: string
+          verification_date?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          measured_value?: number
+          measurement_date?: string
+          metric_id?: string
+          notes?: string | null
+          shop_id?: string
+          updated_at?: string
+          verification_date?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impact_measurement_data_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "impact_metrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impact_measurement_data_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impact_measurement_data_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       impact_measurements: {
         Row: {
           baseline_date: string | null
@@ -6330,6 +6394,7 @@ export type Database = {
           measurement_unit: string | null
           metric_name: string
           metric_type: string
+          program_id: string | null
           reporting_frequency: string | null
           shop_id: string
           target_value: number | null
@@ -6347,6 +6412,7 @@ export type Database = {
           measurement_unit?: string | null
           metric_name: string
           metric_type: string
+          program_id?: string | null
           reporting_frequency?: string | null
           shop_id: string
           target_value?: number | null
@@ -6364,12 +6430,21 @@ export type Database = {
           measurement_unit?: string | null
           metric_name?: string
           metric_type?: string
+          program_id?: string | null
           reporting_frequency?: string | null
           shop_id?: string
           target_value?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "impact_metrics_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       impact_records: {
         Row: {
@@ -10828,6 +10903,159 @@ export type Database = {
           },
         ]
       }
+      program_participants: {
+        Row: {
+          completion_date: string | null
+          created_at: string
+          created_by: string
+          demographics: Json | null
+          enrollment_date: string
+          id: string
+          outcome_data: Json | null
+          participant_email: string | null
+          participant_name: string
+          participant_phone: string | null
+          program_id: string
+          progress_notes: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          completion_date?: string | null
+          created_at?: string
+          created_by: string
+          demographics?: Json | null
+          enrollment_date?: string
+          id?: string
+          outcome_data?: Json | null
+          participant_email?: string | null
+          participant_name: string
+          participant_phone?: string | null
+          program_id: string
+          progress_notes?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          completion_date?: string | null
+          created_at?: string
+          created_by?: string
+          demographics?: Json | null
+          enrollment_date?: string
+          id?: string
+          outcome_data?: Json | null
+          participant_email?: string | null
+          participant_name?: string
+          participant_phone?: string | null
+          program_id?: string
+          progress_notes?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_participants_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_participants_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programs: {
+        Row: {
+          budget_allocated: number | null
+          budget_spent: number | null
+          coordinator_id: string | null
+          created_at: string
+          created_by: string
+          current_participants: number | null
+          description: string | null
+          end_date: string | null
+          funding_sources: Json | null
+          grant_funded: boolean | null
+          id: string
+          location: string | null
+          name: string
+          program_type: string
+          shop_id: string
+          start_date: string | null
+          status: string
+          success_metrics: Json | null
+          target_participants: number | null
+          updated_at: string
+        }
+        Insert: {
+          budget_allocated?: number | null
+          budget_spent?: number | null
+          coordinator_id?: string | null
+          created_at?: string
+          created_by: string
+          current_participants?: number | null
+          description?: string | null
+          end_date?: string | null
+          funding_sources?: Json | null
+          grant_funded?: boolean | null
+          id?: string
+          location?: string | null
+          name: string
+          program_type: string
+          shop_id: string
+          start_date?: string | null
+          status?: string
+          success_metrics?: Json | null
+          target_participants?: number | null
+          updated_at?: string
+        }
+        Update: {
+          budget_allocated?: number | null
+          budget_spent?: number | null
+          coordinator_id?: string | null
+          created_at?: string
+          created_by?: string
+          current_participants?: number | null
+          description?: string | null
+          end_date?: string | null
+          funding_sources?: Json | null
+          grant_funded?: boolean | null
+          id?: string
+          location?: string | null
+          name?: string
+          program_type?: string
+          shop_id?: string
+          start_date?: string | null
+          status?: string
+          success_metrics?: Json | null
+          target_participants?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programs_coordinator_id_fkey"
+            columns: ["coordinator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_applications: {
         Row: {
           applicant_address: Json | null
@@ -14739,6 +14967,79 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_assignments: {
+        Row: {
+          created_at: string
+          created_by: string
+          end_date: string | null
+          hours_committed: number | null
+          hours_completed: number | null
+          id: string
+          notes: string | null
+          program_id: string | null
+          role: string
+          shop_id: string
+          start_date: string
+          status: string | null
+          updated_at: string
+          volunteer_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          end_date?: string | null
+          hours_committed?: number | null
+          hours_completed?: number | null
+          id?: string
+          notes?: string | null
+          program_id?: string | null
+          role: string
+          shop_id: string
+          start_date: string
+          status?: string | null
+          updated_at?: string
+          volunteer_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          end_date?: string | null
+          hours_committed?: number | null
+          hours_completed?: number | null
+          id?: string
+          notes?: string | null
+          program_id?: string | null
+          role?: string
+          shop_id?: string
+          start_date?: string
+          status?: string | null
+          updated_at?: string
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_assignments_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_assignments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_assignments_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       volunteer_hours: {
         Row: {
           activity_description: string | null
@@ -14812,6 +15113,93 @@ export type Database = {
             columns: ["volunteer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      volunteers: {
+        Row: {
+          address: string | null
+          availability: Json | null
+          background_check_date: string | null
+          background_check_status: string | null
+          created_at: string
+          created_by: string
+          customer_id: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          first_name: string
+          id: string
+          last_name: string
+          notes: string | null
+          phone: string | null
+          shop_id: string
+          skills: Json | null
+          status: string | null
+          training_completed: Json | null
+          updated_at: string
+          volunteer_hours: number | null
+        }
+        Insert: {
+          address?: string | null
+          availability?: Json | null
+          background_check_date?: string | null
+          background_check_status?: string | null
+          created_at?: string
+          created_by: string
+          customer_id?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          notes?: string | null
+          phone?: string | null
+          shop_id: string
+          skills?: Json | null
+          status?: string | null
+          training_completed?: Json | null
+          updated_at?: string
+          volunteer_hours?: number | null
+        }
+        Update: {
+          address?: string | null
+          availability?: Json | null
+          background_check_date?: string | null
+          background_check_status?: string | null
+          created_at?: string
+          created_by?: string
+          customer_id?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          notes?: string | null
+          phone?: string | null
+          shop_id?: string
+          skills?: Json | null
+          status?: string | null
+          training_completed?: Json | null
+          updated_at?: string
+          volunteer_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteers_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
