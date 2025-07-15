@@ -4009,6 +4009,54 @@ export type Database = {
           },
         ]
       }
+      donor_analytics: {
+        Row: {
+          created_at: string | null
+          donation_frequency: string | null
+          donor_id: string | null
+          donor_segment: string
+          engagement_score: number | null
+          first_donation_date: string | null
+          id: string
+          last_donation_date: string | null
+          lifetime_value: number | null
+          retention_probability: number | null
+          shop_id: string
+          total_donations: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          donation_frequency?: string | null
+          donor_id?: string | null
+          donor_segment: string
+          engagement_score?: number | null
+          first_donation_date?: string | null
+          id?: string
+          last_donation_date?: string | null
+          lifetime_value?: number | null
+          retention_probability?: number | null
+          shop_id: string
+          total_donations?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          donation_frequency?: string | null
+          donor_id?: string | null
+          donor_segment?: string
+          engagement_score?: number | null
+          first_donation_date?: string | null
+          id?: string
+          last_donation_date?: string | null
+          lifetime_value?: number | null
+          retention_probability?: number | null
+          shop_id?: string
+          total_donations?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       email_ab_test_results: {
         Row: {
           campaign_id: string
@@ -5094,6 +5142,78 @@ export type Database = {
           },
         ]
       }
+      financial_health: {
+        Row: {
+          administrative_expenses: number | null
+          administrative_ratio: number | null
+          created_at: string | null
+          donation_revenue: number | null
+          financial_stability_score: number | null
+          fundraising_efficiency: number | null
+          fundraising_expenses: number | null
+          grant_revenue: number | null
+          id: string
+          other_revenue: number | null
+          period_end: string
+          period_start: string
+          program_expense_ratio: number | null
+          program_expenses: number | null
+          program_revenue: number | null
+          reporting_period: string
+          revenue_diversification_score: number | null
+          shop_id: string
+          total_expenses: number | null
+          total_revenue: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          administrative_expenses?: number | null
+          administrative_ratio?: number | null
+          created_at?: string | null
+          donation_revenue?: number | null
+          financial_stability_score?: number | null
+          fundraising_efficiency?: number | null
+          fundraising_expenses?: number | null
+          grant_revenue?: number | null
+          id?: string
+          other_revenue?: number | null
+          period_end: string
+          period_start: string
+          program_expense_ratio?: number | null
+          program_expenses?: number | null
+          program_revenue?: number | null
+          reporting_period: string
+          revenue_diversification_score?: number | null
+          shop_id: string
+          total_expenses?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          administrative_expenses?: number | null
+          administrative_ratio?: number | null
+          created_at?: string | null
+          donation_revenue?: number | null
+          financial_stability_score?: number | null
+          fundraising_efficiency?: number | null
+          fundraising_expenses?: number | null
+          grant_revenue?: number | null
+          id?: string
+          other_revenue?: number | null
+          period_end?: string
+          period_start?: string
+          program_expense_ratio?: number | null
+          program_expenses?: number | null
+          program_revenue?: number | null
+          reporting_period?: string
+          revenue_diversification_score?: number | null
+          shop_id?: string
+          total_expenses?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       financial_reports: {
         Row: {
           end_date: string | null
@@ -6035,6 +6155,66 @@ export type Database = {
           shop_id?: string
           updated_at?: string
           version_number?: string | null
+        }
+        Relationships: []
+      }
+      grant_analytics: {
+        Row: {
+          amount_awarded: number | null
+          amount_requested: number | null
+          amount_spent: number | null
+          application_date: string | null
+          award_date: string | null
+          compliance_score: number | null
+          created_at: string | null
+          end_date: string | null
+          funding_source: string
+          grant_id: string | null
+          grant_name: string
+          id: string
+          reporting_requirements: Json | null
+          shop_id: string
+          start_date: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_awarded?: number | null
+          amount_requested?: number | null
+          amount_spent?: number | null
+          application_date?: string | null
+          award_date?: string | null
+          compliance_score?: number | null
+          created_at?: string | null
+          end_date?: string | null
+          funding_source: string
+          grant_id?: string | null
+          grant_name: string
+          id?: string
+          reporting_requirements?: Json | null
+          shop_id: string
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_awarded?: number | null
+          amount_requested?: number | null
+          amount_spent?: number | null
+          application_date?: string | null
+          award_date?: string | null
+          compliance_score?: number | null
+          created_at?: string | null
+          end_date?: string | null
+          funding_source?: string
+          grant_id?: string | null
+          grant_name?: string
+          id?: string
+          reporting_requirements?: Json | null
+          shop_id?: string
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -8795,6 +8975,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nonprofit_analytics: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          period_end: string
+          period_start: string
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          period_end: string
+          period_start: string
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_type?: string
+          metric_value?: number
+          period_end?: string
+          period_start?: string
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       nonprofit_donations: {
         Row: {
