@@ -14416,6 +14416,57 @@ export type Database = {
           },
         ]
       }
+      user_sessions: {
+        Row: {
+          browser_name: string | null
+          created_at: string | null
+          device_name: string | null
+          expires_at: string | null
+          id: string
+          ip_address: unknown | null
+          is_current: boolean | null
+          last_active: string | null
+          location: string | null
+          operating_system: string | null
+          session_token: string
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          browser_name?: string | null
+          created_at?: string | null
+          device_name?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_current?: boolean | null
+          last_active?: string | null
+          location?: string | null
+          operating_system?: string | null
+          session_token: string
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          browser_name?: string | null
+          created_at?: string | null
+          device_name?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_current?: boolean | null
+          last_active?: string | null
+          location?: string | null
+          operating_system?: string | null
+          session_token?: string
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_wishlists: {
         Row: {
           created_at: string

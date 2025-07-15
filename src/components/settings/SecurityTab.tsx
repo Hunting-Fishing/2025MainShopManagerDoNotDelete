@@ -6,34 +6,193 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Shield, Key, Lock, LogOut, AlertTriangle, Smartphone } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { userSecurityService, UserSession, User2FA } from "@/services/user/userSecurityService";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export function SecurityTab() {
-  const [sessions] = useState([
-    { 
-      device: "MacBook Pro",
-      location: "San Francisco, CA",
-      lastActive: "Just now",
-      ip: "192.168.1.1", 
-      isCurrent: true 
-    },
-    { 
-      device: "iPhone 13",
-      location: "San Francisco, CA",
-      lastActive: "2 hours ago",
-      ip: "192.168.1.2", 
-      isCurrent: false 
-    },
-    { 
-      device: "Windows PC",
-      location: "New York, NY",
-      lastActive: "2 days ago",
-      ip: "192.168.1.3", 
-      isCurrent: false 
-    },
-  ]);
+  const { toast } = useToast();
+  const [sessions, setSessions] = useState<UserSession[]>([]);
+  const [twoFAStatus, setTwoFAStatus] = useState<User2FA | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  
+  // Password form state
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  useEffect(() => {
+    loadSecurityData();
+  }, []);
+
+  const loadSecurityData = async () => {
+    try {
+      setLoading(true);
+      
+      // Get current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) return;
+      
+      setUser(currentUser);
+      
+      // Load user sessions
+      const userSessions = await userSecurityService.getUserSessions(currentUser.id);
+      setSessions(userSessions);
+      
+      // Load 2FA status
+      const twoFA = await userSecurityService.get2FAStatus(currentUser.id);
+      setTwoFAStatus(twoFA);
+      
+    } catch (error) {
+      console.error('Error loading security data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load security settings",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      toast({
+        title: "Error", 
+        description: "Password must be at least 8 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const result = await userSecurityService.changePassword(
+        passwordForm.currentPassword,
+        passwordForm.newPassword
+      );
+
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Password updated successfully"
+        });
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to update password",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update password",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleToggle2FA = async () => {
+    if (!user) return;
+
+    try {
+      if (twoFAStatus?.enabled) {
+        const success = await userSecurityService.disable2FA(user.id);
+        if (success) {
+          setTwoFAStatus(prev => prev ? { ...prev, enabled: false } : null);
+          toast({
+            title: "Success",
+            description: "Two-factor authentication disabled"
+          });
+        }
+      } else {
+        // For simplicity, we'll generate a secret and enable 2FA
+        // In a real app, this would involve QR code generation and verification
+        const secret = Math.random().toString(36).substring(2, 15);
+        const result = await userSecurityService.enable2FA(user.id, secret);
+        if (result) {
+          setTwoFAStatus(result);
+          toast({
+            title: "Success",
+            description: "Two-factor authentication enabled"
+          });
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update two-factor authentication",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleTerminateSession = async (sessionId: string) => {
+    try {
+      const success = await userSecurityService.terminateSession(sessionId);
+      if (success) {
+        setSessions(prev => prev.filter(s => s.id !== sessionId));
+        toast({
+          title: "Success",
+          description: "Session terminated successfully"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to terminate session",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleTerminateAllOtherSessions = async () => {
+    if (!user) return;
+
+    try {
+      const currentSession = sessions.find(s => s.is_current);
+      const success = await userSecurityService.terminateAllOtherSessions(
+        user.id,
+        currentSession?.id
+      );
+      
+      if (success) {
+        setSessions(prev => prev.filter(s => s.is_current));
+        toast({
+          title: "Success",
+          description: "All other sessions terminated successfully"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to terminate sessions",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (loading) {
+    return <div className="p-6">Loading security settings...</div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -45,24 +204,46 @@ export function SecurityTab() {
           </CardTitle>
           <CardDescription>Update your password to keep your account secure</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="current-password">Current Password</Label>
-            <Input id="current-password" type="password" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="new-password">New Password</Label>
-            <Input id="new-password" type="password" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm New Password</Label>
-            <Input id="confirm-password" type="password" />
-          </div>
-          <div className="flex justify-end">
-            <Button className="bg-esm-blue-600 hover:bg-esm-blue-700">
-              Update Password
-            </Button>
-          </div>
+        <CardContent>
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Current Password</Label>
+              <Input 
+                id="current-password" 
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input 
+                id="new-password" 
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                required
+                minLength={8}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm New Password</Label>
+              <Input 
+                id="confirm-password" 
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                required
+                minLength={8}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" className="bg-primary hover:bg-primary/90">
+                Update Password
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
 
@@ -82,7 +263,11 @@ export function SecurityTab() {
                 Receive a verification code via SMS or authentication app each time you log in
               </p>
             </div>
-            <Switch id="two-factor" />
+            <Switch 
+              id="two-factor" 
+              checked={twoFAStatus?.enabled || false}
+              onCheckedChange={handleToggle2FA}
+            />
           </div>
 
           <div className="mt-6 space-y-4">
@@ -128,38 +313,63 @@ export function SecurityTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sessions.map((session, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{session.device}</span>
-                        {session.isCurrent && (
-                          <Badge variant="outline" className="mt-1 w-fit">Current</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{session.location}</span>
-                        <span className="text-xs text-muted-foreground">{session.ip}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{session.lastActive}</TableCell>
-                    <TableCell className="text-right">
-                      {!session.isCurrent && (
-                        <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700">
-                          <LogOut className="mr-1 h-3 w-3" />
-                          Sign Out
-                        </Button>
-                      )}
+                {sessions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      No active sessions found
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  sessions.map((session) => (
+                    <TableRow key={session.id}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>{session.device_name || 'Unknown Device'}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {session.browser_name} on {session.operating_system}
+                          </span>
+                          {session.is_current && (
+                            <Badge variant="outline" className="mt-1 w-fit">Current</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>{session.location || 'Unknown Location'}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {session.ip_address?.toString() || 'Unknown IP'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(session.last_active).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {!session.is_current && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleTerminateSession(session.id)}
+                          >
+                            <LogOut className="mr-1 h-3 w-3" />
+                            Sign Out
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
           <div className="mt-4 flex justify-end">
-            <Button variant="outline" className="text-red-600">
+            <Button 
+              variant="outline" 
+              className="text-destructive hover:text-destructive"
+              onClick={handleTerminateAllOtherSessions}
+              disabled={sessions.filter(s => !s.is_current).length === 0}
+            >
               Sign out of all other sessions
             </Button>
           </div>
