@@ -3830,6 +3830,92 @@ export type Database = {
           },
         ]
       }
+      donation_transactions: {
+        Row: {
+          amount: number
+          anonymous: boolean | null
+          created_at: string
+          created_by: string
+          designation: string | null
+          donation_date: string
+          donation_type: string
+          donor_address: string | null
+          donor_email: string | null
+          donor_name: string
+          donor_phone: string | null
+          id: string
+          is_recurring: boolean | null
+          notes: string | null
+          payment_method: string | null
+          program_id: string | null
+          receipt_number: string | null
+          receipt_sent: boolean | null
+          recurrence_frequency: string | null
+          shop_id: string
+          tax_deductible: boolean | null
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          anonymous?: boolean | null
+          created_at?: string
+          created_by: string
+          designation?: string | null
+          donation_date?: string
+          donation_type?: string
+          donor_address?: string | null
+          donor_email?: string | null
+          donor_name: string
+          donor_phone?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          payment_method?: string | null
+          program_id?: string | null
+          receipt_number?: string | null
+          receipt_sent?: boolean | null
+          recurrence_frequency?: string | null
+          shop_id: string
+          tax_deductible?: boolean | null
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          anonymous?: boolean | null
+          created_at?: string
+          created_by?: string
+          designation?: string | null
+          donation_date?: string
+          donation_type?: string
+          donor_address?: string | null
+          donor_email?: string | null
+          donor_name?: string
+          donor_phone?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          payment_method?: string | null
+          program_id?: string | null
+          receipt_number?: string | null
+          receipt_sent?: boolean | null
+          recurrence_frequency?: string | null
+          shop_id?: string
+          tax_deductible?: boolean | null
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donation_transactions_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "nonprofit_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       donations: {
         Row: {
           acknowledgment_date: string | null
@@ -9161,6 +9247,221 @@ export type Database = {
         }
         Relationships: []
       }
+      nonprofit_members: {
+        Row: {
+          address: string | null
+          annual_dues: number | null
+          committee_memberships: string[] | null
+          created_at: string
+          created_by: string
+          customer_id: string | null
+          dues_paid: boolean | null
+          email: string | null
+          first_name: string
+          id: string
+          join_date: string
+          last_name: string
+          membership_status: string
+          membership_type: string
+          notes: string | null
+          phone: string | null
+          renewal_date: string | null
+          shop_id: string
+          skills: string[] | null
+          updated_at: string
+          volunteer_interests: string[] | null
+        }
+        Insert: {
+          address?: string | null
+          annual_dues?: number | null
+          committee_memberships?: string[] | null
+          created_at?: string
+          created_by: string
+          customer_id?: string | null
+          dues_paid?: boolean | null
+          email?: string | null
+          first_name: string
+          id?: string
+          join_date?: string
+          last_name: string
+          membership_status?: string
+          membership_type?: string
+          notes?: string | null
+          phone?: string | null
+          renewal_date?: string | null
+          shop_id: string
+          skills?: string[] | null
+          updated_at?: string
+          volunteer_interests?: string[] | null
+        }
+        Update: {
+          address?: string | null
+          annual_dues?: number | null
+          committee_memberships?: string[] | null
+          created_at?: string
+          created_by?: string
+          customer_id?: string | null
+          dues_paid?: boolean | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          join_date?: string
+          last_name?: string
+          membership_status?: string
+          membership_type?: string
+          notes?: string | null
+          phone?: string | null
+          renewal_date?: string | null
+          shop_id?: string
+          skills?: string[] | null
+          updated_at?: string
+          volunteer_interests?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nonprofit_members_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nonprofit_program_volunteers: {
+        Row: {
+          created_at: string
+          created_by: string
+          end_date: string | null
+          hours_committed: number | null
+          hours_completed: number | null
+          id: string
+          notes: string | null
+          program_id: string
+          role: string
+          shop_id: string
+          start_date: string
+          status: string
+          updated_at: string
+          volunteer_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          end_date?: string | null
+          hours_committed?: number | null
+          hours_completed?: number | null
+          id?: string
+          notes?: string | null
+          program_id: string
+          role: string
+          shop_id: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          volunteer_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          end_date?: string | null
+          hours_committed?: number | null
+          hours_completed?: number | null
+          id?: string
+          notes?: string | null
+          program_id?: string
+          role?: string
+          shop_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nonprofit_program_volunteers_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "nonprofit_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonprofit_program_volunteers_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nonprofit_programs: {
+        Row: {
+          budget_allocated: number | null
+          budget_spent: number | null
+          coordinator_id: string | null
+          created_at: string
+          created_by: string
+          current_participants: number | null
+          description: string | null
+          end_date: string | null
+          funding_sources: string[] | null
+          grant_funded: boolean | null
+          id: string
+          location: string | null
+          name: string
+          program_type: string
+          shop_id: string
+          start_date: string | null
+          status: string
+          success_metrics: string[] | null
+          target_participants: number | null
+          updated_at: string
+        }
+        Insert: {
+          budget_allocated?: number | null
+          budget_spent?: number | null
+          coordinator_id?: string | null
+          created_at?: string
+          created_by: string
+          current_participants?: number | null
+          description?: string | null
+          end_date?: string | null
+          funding_sources?: string[] | null
+          grant_funded?: boolean | null
+          id?: string
+          location?: string | null
+          name: string
+          program_type: string
+          shop_id: string
+          start_date?: string | null
+          status?: string
+          success_metrics?: string[] | null
+          target_participants?: number | null
+          updated_at?: string
+        }
+        Update: {
+          budget_allocated?: number | null
+          budget_spent?: number | null
+          coordinator_id?: string | null
+          created_at?: string
+          created_by?: string
+          current_participants?: number | null
+          description?: string | null
+          end_date?: string | null
+          funding_sources?: string[] | null
+          grant_funded?: boolean | null
+          id?: string
+          location?: string | null
+          name?: string
+          program_type?: string
+          shop_id?: string
+          start_date?: string | null
+          status?: string
+          success_metrics?: string[] | null
+          target_participants?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nonprofit_report_templates: {
         Row: {
           auto_generate: boolean | null
@@ -11248,6 +11549,68 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      program_beneficiaries: {
+        Row: {
+          completion_date: string | null
+          created_at: string
+          created_by: string
+          demographics: Json | null
+          enrollment_date: string
+          id: string
+          outcome_data: Json | null
+          participant_email: string | null
+          participant_name: string
+          participant_phone: string | null
+          program_id: string
+          progress_notes: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completion_date?: string | null
+          created_at?: string
+          created_by: string
+          demographics?: Json | null
+          enrollment_date?: string
+          id?: string
+          outcome_data?: Json | null
+          participant_email?: string | null
+          participant_name: string
+          participant_phone?: string | null
+          program_id: string
+          progress_notes?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          completion_date?: string | null
+          created_at?: string
+          created_by?: string
+          demographics?: Json | null
+          enrollment_date?: string
+          id?: string
+          outcome_data?: Json | null
+          participant_email?: string | null
+          participant_name?: string
+          participant_phone?: string | null
+          program_id?: string
+          progress_notes?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_beneficiaries_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "nonprofit_programs"
             referencedColumns: ["id"]
           },
         ]
