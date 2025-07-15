@@ -27,25 +27,13 @@ interface InsightData {
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-const sampleChartData = [
-  { name: 'Jan', donations: 4000, volunteers: 240, programs: 8 },
-  { name: 'Feb', donations: 3000, volunteers: 280, programs: 10 },
-  { name: 'Mar', donations: 2000, volunteers: 320, programs: 12 },
-  { name: 'Apr', donations: 2780, volunteers: 350, programs: 14 },
-  { name: 'May', donations: 1890, volunteers: 380, programs: 16 },
-  { name: 'Jun', donations: 2390, volunteers: 420, programs: 18 },
-];
-
-const donorSegmentData = [
-  { name: 'Major Donors', value: 35, color: '#3b82f6' },
-  { name: 'Regular Donors', value: 45, color: '#10b981' },
-  { name: 'Recurring Donors', value: 15, color: '#f59e0b' },
-  { name: 'New Donors', value: 5, color: '#ef4444' },
-];
+// Removed mock data - will be replaced with real data from the service
 
 export const NonprofitAnalyticsDashboard = () => {
   const [dashboard, setDashboard] = useState<AnalyticsDashboard | null>(null);
   const [insights, setInsights] = useState<InsightData | null>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [donorSegmentData, setDonorSegmentData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -56,13 +44,17 @@ export const NonprofitAnalyticsDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [dashboardData, insightsData] = await Promise.all([
+      const [dashboardData, insightsData, monthlyTrends, donorSegments] = await Promise.all([
         nonprofitAnalyticsService.getDashboardOverview(),
-        nonprofitAnalyticsService.generateInsights()
+        nonprofitAnalyticsService.generateInsights(),
+        nonprofitAnalyticsService.getMonthlyTrends(),
+        nonprofitAnalyticsService.getDonorSegments()
       ]);
       
       setDashboard(dashboardData);
       setInsights(insightsData);
+      setChartData(monthlyTrends);
+      setDonorSegmentData(donorSegments);
     } catch (error) {
       console.error('Error loading dashboard:', error);
       toast.error('Failed to load analytics dashboard');
@@ -199,7 +191,7 @@ export const NonprofitAnalyticsDashboard = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={sampleChartData}>
+                  <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -300,7 +292,7 @@ export const NonprofitAnalyticsDashboard = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={sampleChartData}>
+                <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -319,7 +311,7 @@ export const NonprofitAnalyticsDashboard = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={sampleChartData}>
+                <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -338,7 +330,7 @@ export const NonprofitAnalyticsDashboard = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={sampleChartData}>
+                <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />

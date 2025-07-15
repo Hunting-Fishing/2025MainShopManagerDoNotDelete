@@ -11,6 +11,8 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart3, DollarSign, Target, CheckCircle, AlertTriangle, Plus } from "lucide-react";
+import { AccountingStreamsManagement } from "@/components/nonprofit/AccountingStreamsManagement";
+import { ImpactMeasurementManagement } from "@/components/nonprofit/ImpactMeasurementManagement";
 
 interface HybridActivity {
   id: string;
@@ -183,61 +185,11 @@ export function HybridModelTab() {
         </TabsContent>
 
         <TabsContent value="accounting">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary" />
-                Separate Accounting Streams
-              </CardTitle>
-              <CardDescription>
-                Manage segregated accounting for for-profit and non-profit activities
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Coming Soon</h4>
-                <p className="text-sm text-muted-foreground">
-                  Accounting stream management interface will be available in the next update. 
-                  The database structure is now in place for:
-                </p>
-                <ul className="list-disc list-inside text-sm text-muted-foreground mt-2 space-y-1">
-                  <li>Separate chart of accounts for each stream</li>
-                  <li>Transaction allocation tracking</li>
-                  <li>Automated percentage-based allocations</li>
-                  <li>Compliance reporting by stream</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
+          <AccountingStreamsManagement />
         </TabsContent>
 
         <TabsContent value="impact">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                Impact Measurement
-              </CardTitle>
-              <CardDescription>
-                Track and measure social, environmental, and economic impact
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Coming Soon</h4>
-                <p className="text-sm text-muted-foreground">
-                  Impact measurement interface will be available in the next update. 
-                  The database structure is now in place for:
-                </p>
-                <ul className="list-disc list-inside text-sm text-muted-foreground mt-2 space-y-1">
-                  <li>Quantitative and qualitative impact metrics</li>
-                  <li>Baseline and target tracking</li>
-                  <li>Progress monitoring and reporting</li>
-                  <li>Impact verification and validation</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
+          <ImpactMeasurementManagement />
         </TabsContent>
 
         <TabsContent value="compliance">

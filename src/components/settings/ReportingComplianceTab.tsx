@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Users, Calendar, AlertTriangle, CheckCircle, Mail, Download, Plus } from "lucide-react";
+import { ReportTemplateBuilder } from "@/components/nonprofit/ReportTemplateBuilder";
 
 interface BoardMember {
   id: string;
@@ -175,24 +176,7 @@ export function ReportingComplianceTab() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Available Report Types</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Badge variant="outline">Annual Report</Badge>
-                    <Badge variant="outline">Financial Statement</Badge>
-                    <Badge variant="outline">Impact Report</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <Badge variant="outline">Form 990</Badge>
-                    <Badge variant="outline">Grant Report</Badge>
-                    <Badge variant="outline">Board Report</Badge>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mt-4">
-                  Report template builder interface coming soon. The database structure is now in place.
-                </p>
-              </div>
+              <ReportTemplateBuilder />
             </CardContent>
           </Card>
         </TabsContent>
