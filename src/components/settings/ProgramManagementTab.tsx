@@ -2,20 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, DollarSign, Calendar, MapPin, Trash2, Edit, Target, TrendingUp } from 'lucide-react';
+import { Plus, Users, DollarSign, Calendar, MapPin, Trash2, Edit, Target, TrendingUp, UserCheck, Link2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { programService } from '@/lib/services/nonprofitApi';
-import type { Program, CreateProgramData } from '@/types/nonprofit';
+import { nonprofitApi } from '@/lib/services/nonprofitApi';
+import type { Program, CreateProgramData, Volunteer, VolunteerAssignment } from '@/types/nonprofit';
 
 export function ProgramManagementTab() {
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [assignments, setAssignments] = useState<VolunteerAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const { toast } = useToast();
 
@@ -36,17 +40,23 @@ export function ProgramManagementTab() {
   });
 
   useEffect(() => {
-    loadPrograms();
+    loadData();
   }, []);
 
-  const loadPrograms = async () => {
+  const loadData = async () => {
     try {
-      const data = await programService.getAll();
-      setPrograms(data);
+      const [programsData, volunteersData, assignmentsData] = await Promise.all([
+        nonprofitApi.getPrograms(),
+        nonprofitApi.getVolunteers(),
+        nonprofitApi.getAssignments()
+      ]);
+      setPrograms(programsData);
+      setVolunteers(volunteersData);
+      setAssignments(assignmentsData);
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to load programs",
+        description: "Failed to load data",
         variant: "destructive"
       });
     } finally {
@@ -54,17 +64,49 @@ export function ProgramManagementTab() {
     }
   };
 
+  const handleAssignVolunteer = async (programId: string, volunteerId: string, role: string) => {
+    try {
+      await nonprofitApi.createAssignment({
+        volunteer_id: volunteerId,
+        program_id: programId,
+        role,
+        start_date: new Date().toISOString().split('T')[0],
+        hours_committed: 10
+      });
+      toast({
+        title: "Success",
+        description: "Volunteer assigned successfully"
+      });
+      loadData();
+      setIsAssignmentDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to assign volunteer",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getAssignedVolunteers = (programId: string) => {
+    const programAssignments = assignments.filter(a => a.program_id === programId && a.status === 'active');
+    return programAssignments.map(assignment => {
+      const volunteer = volunteers.find(v => v.id === assignment.volunteer_id);
+      return { assignment, volunteer };
+    }).filter(item => item.volunteer);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingProgram) {
-        await programService.update(editingProgram.id, formData);
+        await nonprofitApi.updateProgram(editingProgram.id, formData);
         toast({
           title: "Success",
           description: "Program updated successfully"
         });
       } else {
-        await programService.create(formData);
+        await nonprofitApi.createProgram(formData);
         toast({
           title: "Success",
           description: "Program created successfully"
@@ -72,7 +114,7 @@ export function ProgramManagementTab() {
       }
       resetForm();
       setIsDialogOpen(false);
-      loadPrograms();
+      loadData();
     } catch (error) {
       toast({
         title: "Error",
@@ -86,12 +128,12 @@ export function ProgramManagementTab() {
     if (!confirm('Are you sure you want to delete this program?')) return;
     
     try {
-      await programService.delete(id);
+      await nonprofitApi.deleteProgram(id);
       toast({
         title: "Success",
         description: "Program deleted successfully"
       });
-      loadPrograms();
+      loadData();
     } catch (error) {
       toast({
         title: "Error",
