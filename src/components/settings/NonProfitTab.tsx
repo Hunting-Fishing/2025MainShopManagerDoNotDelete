@@ -13,6 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { HandHeart, BadgeDollarSign, Users, BookUser, Book, BarChart3, FileText } from "lucide-react";
 import { HybridModelTab } from "./HybridModelTab";
 import { ReportingComplianceTab } from "./ReportingComplianceTab";
+import { DonationManagement } from "@/components/nonprofit/DonationManagement";
+import { MemberManagement } from "@/components/nonprofit/MemberManagement";
+import { VolunteerHourTracking } from "@/components/nonprofit/VolunteerHourTracking";
+import { GrantFundingManagement } from "@/components/nonprofit/GrantFundingManagement";
 
 interface TaxExemptStatus {
   is_tax_exempt: boolean;
@@ -225,95 +229,19 @@ export function NonProfitTab() {
         </TabsContent>
 
         <TabsContent value="donations">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <HandHeart className="h-5 w-5 text-primary" />
-                Donation Management
-              </CardTitle>
-              <CardDescription>
-                Configure donation tracking and acknowledgment settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Coming Soon</h4>
-                <p className="text-sm text-muted-foreground">
-                  Donation tracking interface will be available in the next update. 
-                  The database structure is now in place.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <DonationManagement />
         </TabsContent>
 
         <TabsContent value="members">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Member Management
-              </CardTitle>
-              <CardDescription>
-                Manage organization members, dues, and membership levels
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Coming Soon</h4>
-                <p className="text-sm text-muted-foreground">
-                  Member management interface will be available in the next update. 
-                  The database structure is now in place.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <MemberManagement />
         </TabsContent>
 
         <TabsContent value="volunteers">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookUser className="h-5 w-5 text-primary" />
-                Volunteer Hour Tracking
-              </CardTitle>
-              <CardDescription>
-                Track volunteer hours, activities, and impact
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Coming Soon</h4>
-                <p className="text-sm text-muted-foreground">
-                  Volunteer hour tracking interface will be available in the next update. 
-                  The database structure is now in place.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <VolunteerHourTracking />
         </TabsContent>
 
         <TabsContent value="funding">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Book className="h-5 w-5 text-primary" />
-                Grant & Funding Management
-              </CardTitle>
-              <CardDescription>
-                Track grants, funding sources, and reporting requirements
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Coming Soon</h4>
-                <p className="text-sm text-muted-foreground">
-                  Grant and funding management interface will be available in the next update. 
-                  The database structure is now in place.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <GrantFundingManagement />
         </TabsContent>
 
         <TabsContent value="hybrid">
