@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNotifications } from "@/context/notifications";
 import { toast } from "@/hooks/use-toast";
 import { NotificationPreferences } from "@/types/notification";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConnectionStatusCard } from "./notifications/ConnectionStatusCard";
 import { NotificationChannelsCard } from "./notifications/NotificationChannelsCard";
 import { NotificationCategoriesCard } from "./notifications/NotificationCategoriesCard";
@@ -11,6 +12,7 @@ import { NotificationFrequencyCard } from "./notifications/NotificationFrequency
 import { NotificationPreviewCard } from "./notifications/NotificationPreviewCard";
 import { SaveButton } from "./notifications/SaveButton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Settings } from "lucide-react";
 
 export function NotificationsTab() {
   const { preferences, updatePreferences, triggerTestNotification, connectionStatus } = useNotifications();
@@ -96,6 +98,14 @@ export function NotificationsTab() {
 
   return (
     <div className="space-y-6">
+      <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+        <Settings className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <AlertDescription className="text-amber-800 dark:text-amber-200">
+          <strong>Configuration Required:</strong> To enable automated email notifications for grants, budgets, and volunteer management, 
+          please configure your Resend API key in the Supabase Edge Functions secrets.
+        </AlertDescription>
+      </Alert>
+
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "general" | "advanced")}>
         <TabsList className="mb-4">
           <TabsTrigger value="general">General</TabsTrigger>
