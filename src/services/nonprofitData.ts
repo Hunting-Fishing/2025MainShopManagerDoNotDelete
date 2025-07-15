@@ -408,13 +408,15 @@ export const useCreateImpactMeasurement = () => {
       const { data: measurement, error } = await supabase
         .from("impact_metrics")
         .insert({
-          metric_id: `${data.program_id}-${data.metric_name}`,
-          measured_value: data.metric_value,
-          measurement_date: data.measurement_date || new Date().toISOString().split('T')[0],
-          notes: data.notes,
-          verified_by: data.verified_by,
+          category: "program_outcome",
+          metric_name: data.metric_name,
+          metric_type: "quantitative",
+          current_value: data.metric_value,
+          measurement_unit: data.measurement_unit,
+          program_id: data.program_id,
           shop_id: profile?.shop_id,
           created_by: (await supabase.auth.getUser()).data.user?.id,
+          notes: data.notes,
         })
         .select()
         .single();

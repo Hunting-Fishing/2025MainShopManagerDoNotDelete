@@ -17,7 +17,7 @@ type DbProgram = Database['public']['Tables']['programs']['Row'];
 type DbVolunteer = Database['public']['Tables']['volunteers']['Row'];
 type DbProgramParticipant = Database['public']['Tables']['program_participants']['Row'];
 type DbVolunteerAssignment = Database['public']['Tables']['volunteer_assignments']['Row'];
-type DbImpactMeasurement = Database['public']['Tables']['impact_measurement_data']['Row'];
+type DbImpactMeasurement = Database['public']['Tables']['impact_measurements']['Row'];
 
 // Transform functions to handle type conversions
 const transformProgram = (dbProgram: DbProgram): Program => ({
@@ -50,7 +50,17 @@ const transformAssignment = (dbAssignment: DbVolunteerAssignment): VolunteerAssi
 });
 
 const transformImpactMeasurement = (dbMeasurement: DbImpactMeasurement): ImpactMeasurementData => ({
-  ...dbMeasurement
+  id: dbMeasurement.id,
+  metric_id: dbMeasurement.id, // Use id as metric_id for compatibility
+  measured_value: dbMeasurement.current_value || 0,
+  measurement_date: dbMeasurement.last_measured_date || '',
+  notes: dbMeasurement.notes || '',
+  shop_id: dbMeasurement.shop_id,
+  created_by: dbMeasurement.created_by,
+  created_at: dbMeasurement.created_at,
+  updated_at: dbMeasurement.updated_at,
+  verification_date: '',
+  verified_by: ''
 });
 
 // Program services
@@ -340,9 +350,9 @@ export const assignmentService = {
 export const impactMeasurementService = {
   async getAll(): Promise<ImpactMeasurementData[]> {
     const { data, error } = await supabase
-      .from('impact_measurement_data')
+      .from('impact_measurements')
       .select('*')
-      .order('measurement_date', { ascending: false });
+      .order('last_measured_date', { ascending: false });
     
     if (error) throw error;
     return (data || []).map(transformImpactMeasurement);
@@ -358,9 +368,16 @@ export const impactMeasurementService = {
     if (!profile?.shop_id) throw new Error('Shop not found');
 
     const { data, error } = await supabase
-      .from('impact_measurement_data')
+      .from('impact_measurements')
       .insert({
-        ...measurementData,
+        category: 'general',
+        measurement_name: measurementData.metric_name,
+        measurement_type: 'quantitative',
+        current_value: measurementData.metric_value,
+        unit_of_measure: measurementData.measurement_unit,
+        last_measured_date: measurementData.measurement_date || new Date().toISOString().split('T')[0],
+        measurement_period: measurementData.measurement_period,
+        notes: measurementData.notes,
         shop_id: profile.shop_id,
         created_by: (await supabase.auth.getUser()).data.user?.id
       })
@@ -371,12 +388,12 @@ export const impactMeasurementService = {
     return transformImpactMeasurement(data);
   },
 
-  async getByMetric(metricId: string): Promise<ImpactMeasurementData[]> {
+  async getByMetric(metricName: string): Promise<ImpactMeasurementData[]> {
     const { data, error } = await supabase
-      .from('impact_measurement_data')
+      .from('impact_measurements')
       .select('*')
-      .eq('metric_id', metricId)
-      .order('measurement_date', { ascending: false });
+      .eq('measurement_name', metricName)
+      .order('last_measured_date', { ascending: false });
     
     if (error) throw error;
     return (data || []).map(transformImpactMeasurement);
