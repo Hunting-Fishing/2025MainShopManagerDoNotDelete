@@ -7,33 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { VolunteerForm } from './forms/VolunteerForm';
+import type { Database } from '@/integrations/supabase/types';
 
-interface VolunteerHour {
-  id: string;
-  volunteer_id: string;
-  activity_type: string;
-  hours_worked: number;
-  date_worked: string;
-  location?: string;
-  supervisor?: string;
-  notes?: string;
-  verified: boolean;
-  verified_by?: string;
-  created_at: string;
-  // Join data
-  volunteer_name?: string;
-  volunteer_email?: string;
-}
-
-interface Volunteer {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  total_hours: number;
-  volunteer_type: string;
-  status: string;
-}
+type VolunteerHour = Database['public']['Tables']['volunteer_hours']['Row'];
+type Volunteer = Database['public']['Tables']['volunteers']['Row'];
 
 export function VolunteerHourTracking() {
   const [volunteerHours, setVolunteerHours] = useState<VolunteerHour[]>([]);
@@ -48,37 +25,40 @@ export function VolunteerHourTracking() {
 
   const loadData = async () => {
     try {
-      // Load volunteer hours with volunteer names
+      // Load volunteer hours
       const { data: hoursData, error: hoursError } = await supabase
         .from('volunteer_hours')
-        .select(`
-          *,
-          volunteers(first_name, last_name, email)
-        `)
+        .select('*')
         .order('date_worked', { ascending: false });
 
       if (hoursError) throw hoursError;
 
-      // Transform data to include volunteer names
-      const transformedHours = (hoursData || []).map(hour => ({
+      // Transform the data to match expected format
+      const transformedHours = hoursData?.map(hour => ({
         ...hour,
-        volunteer_name: hour.volunteers ? `${hour.volunteers.first_name} ${hour.volunteers.last_name}` : 'Unknown',
-        volunteer_email: hour.volunteers?.email || ''
-      }));
+        volunteer_email: hour.volunteer_name, // Use volunteer_name field as email temporarily
+      })) || [];
 
-      setVolunteerHours(transformedHours);
+      setVolunteerHours(transformedHours as any);
 
-      // Load volunteers summary
+      // Load volunteers
       const { data: volunteersData, error: volunteersError } = await supabase
         .from('volunteers')
         .select('*')
-        .eq('status', 'active');
+        .order('last_name', { ascending: true });
 
       if (volunteersError) throw volunteersError;
-      setVolunteers(volunteersData || []);
 
+      // Transform volunteers data to match expected format
+      const transformedVolunteers = volunteersData?.map(volunteer => ({
+        ...volunteer,
+        total_hours: volunteer.volunteer_hours || 0,
+        volunteer_type: volunteer.status || 'active',
+      })) || [];
+
+      setVolunteers(transformedVolunteers as any);
     } catch (error) {
-      console.error('Error loading volunteer data:', error);
+      console.error('Error loading data:', error);
       toast({
         title: 'Error',
         description: 'Failed to load volunteer data',
@@ -89,54 +69,23 @@ export function VolunteerHourTracking() {
     }
   };
 
-  const handleVolunteerSubmit = async () => {
-    await loadData();
-    setIsDialogOpen(false);
-    toast({
-      title: 'Success',
-      description: 'Volunteer data updated successfully'
-    });
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this hour entry?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('volunteer_hours')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      await loadData();
-      toast({
-        title: 'Success',
-        description: 'Hour entry deleted successfully'
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete hour entry',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const verifyHours = async (hourId: string) => {
+  const handleVerifyHours = async (hourId: string) => {
     try {
       const { error } = await supabase
         .from('volunteer_hours')
         .update({ 
-          verified: true,
+          verification_status: 'verified',
+          verified_at: new Date().toISOString(),
           verified_by: (await supabase.auth.getUser()).data.user?.id
         })
         .eq('id', hourId);
 
       if (error) throw error;
+      
       await loadData();
       toast({
         title: 'Success',
-        description: 'Hours verified successfully'
+        description: 'Volunteer hours verified'
       });
     } catch (error) {
       toast({
@@ -147,16 +96,42 @@ export function VolunteerHourTracking() {
     }
   };
 
+  const handleDeleteHour = async (hourId: string) => {
+    if (!confirm('Are you sure you want to delete this volunteer hour entry?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('volunteer_hours')
+        .delete()
+        .eq('id', hourId);
+
+      if (error) throw error;
+      
+      await loadData();
+      toast({
+        title: 'Success',
+        description: 'Volunteer hour entry deleted'
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete hour entry',
+        variant: 'destructive'
+      });
+    }
+  };
+
   // Calculate summary statistics
-  const totalHours = volunteerHours.reduce((sum, vh) => sum + vh.hours_worked, 0);
+  const totalHours = volunteerHours.reduce((sum, h) => sum + h.hours_worked, 0);
+  const activeVolunteers = volunteers.filter(v => v.status === 'active').length;
+  const pendingVerification = volunteerHours.filter(h => h.verification_status === 'pending').length;
   const thisMonthHours = volunteerHours
-    .filter(vh => {
-      const date = new Date(vh.date_worked);
+    .filter(h => {
+      const hourDate = new Date(h.date_worked);
       const now = new Date();
-      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+      return hourDate.getMonth() === now.getMonth() && hourDate.getFullYear() === now.getFullYear();
     })
-    .reduce((sum, vh) => sum + vh.hours_worked, 0);
-  const unverifiedHours = volunteerHours.filter(vh => !vh.verified).length;
+    .reduce((sum, h) => sum + h.hours_worked, 0);
 
   if (loading) {
     return <div className="p-6">Loading volunteer data...</div>;
@@ -173,7 +148,18 @@ export function VolunteerHourTracking() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">{totalHours.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">All time</p>
+            <p className="text-xs text-muted-foreground">All time volunteer hours</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Volunteers</CardTitle>
+            <Users className="h-4 w-4 ml-auto text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{activeVolunteers}</div>
+            <p className="text-xs text-muted-foreground">Currently active</p>
           </CardContent>
         </Card>
 
@@ -184,18 +170,7 @@ export function VolunteerHourTracking() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">{thisMonthHours}</div>
-            <p className="text-xs text-muted-foreground">Hours logged</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Volunteers</CardTitle>
-            <Users className="h-4 w-4 ml-auto text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{volunteers.length}</div>
-            <p className="text-xs text-muted-foreground">Registered volunteers</p>
+            <p className="text-xs text-muted-foreground">Hours this month</p>
           </CardContent>
         </Card>
 
@@ -205,8 +180,8 @@ export function VolunteerHourTracking() {
             <Clock className="h-4 w-4 ml-auto text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{unverifiedHours}</div>
-            <p className="text-xs text-muted-foreground">Hours to verify</p>
+            <div className="text-2xl font-bold text-primary">{pendingVerification}</div>
+            <p className="text-xs text-muted-foreground">Hours awaiting verification</p>
           </CardContent>
         </Card>
       </div>
@@ -215,142 +190,124 @@ export function VolunteerHourTracking() {
         <div>
           <h2 className="text-2xl font-bold">Volunteer Hour Tracking</h2>
           <p className="text-muted-foreground">
-            Track and manage volunteer hours and activities
+            Track and verify volunteer hours and activities
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Add Volunteer/Hours
+              Add Volunteer
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Add Volunteer & Log Hours</DialogTitle>
+              <DialogTitle>Add New Volunteer</DialogTitle>
             </DialogHeader>
-            <VolunteerForm onSubmit={handleVolunteerSubmit} />
+            <VolunteerForm onSuccess={() => {
+              setIsDialogOpen(false);
+              loadData();
+            }} />
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Top Volunteers */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Top Volunteers This Month</CardTitle>
-          <CardDescription>Volunteers with the most hours logged this month</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {volunteers
-              .sort((a, b) => {
-                const aMonthlyHours = volunteerHours
-                  .filter(vh => vh.volunteer_id === a.id && new Date(vh.date_worked).getMonth() === new Date().getMonth())
-                  .reduce((sum, vh) => sum + vh.hours_worked, 0);
-                const bMonthlyHours = volunteerHours
-                  .filter(vh => vh.volunteer_id === b.id && new Date(vh.date_worked).getMonth() === new Date().getMonth())
-                  .reduce((sum, vh) => sum + vh.hours_worked, 0);
-                return bMonthlyHours - aMonthlyHours;
-              })
-              .slice(0, 5)
-              .map((volunteer) => {
-                const monthlyHours = volunteerHours
-                  .filter(vh => vh.volunteer_id === volunteer.id && new Date(vh.date_worked).getMonth() === new Date().getMonth())
-                  .reduce((sum, vh) => sum + vh.hours_worked, 0);
-                
-                return (
-                  <div key={volunteer.id} className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">{volunteer.first_name} {volunteer.last_name}</p>
-                      <p className="text-sm text-muted-foreground">{volunteer.email}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{monthlyHours} hrs</p>
-                      <p className="text-sm text-muted-foreground">{volunteer.total_hours} total</p>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Hour Entries */}
-      <div className="grid gap-4">
-        {volunteerHours.map((hour) => (
-          <Card key={hour.id}>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold">{hour.volunteer_name}</h3>
-                    <Badge variant={hour.verified ? 'default' : 'secondary'}>
-                      {hour.verified ? 'Verified' : 'Pending'}
-                    </Badge>
-                    <Badge variant="outline">{hour.activity_type}</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{hour.volunteer_email}</p>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {hour.hours_worked} hours
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(hour.date_worked).toLocaleDateString()}
-                    </span>
-                    {hour.location && (
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Volunteer Hours */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Volunteer Hours</CardTitle>
+            <CardDescription>Latest volunteer activity entries</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {volunteerHours.slice(0, 5).map((hour) => (
+                <div key={hour.id} className="flex justify-between items-center p-3 border rounded-lg">
+                  <div className="space-y-1">
+                    <p className="font-medium">{hour.volunteer_name}</p>
+                    <p className="text-sm text-muted-foreground">{hour.activity_type}</p>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {hour.location}
+                        <Clock className="h-3 w-3" />
+                        {hour.hours_worked} hours
                       </span>
-                    )}
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {new Date(hour.date_worked).toLocaleDateString()}
+                      </span>
+                      {hour.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {hour.location}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {hour.supervisor && (
-                    <p className="text-sm">
-                      <span className="font-medium">Supervisor:</span> {hour.supervisor}
-                    </p>
-                  )}
-                  {hour.notes && (
-                    <p className="text-sm text-muted-foreground">{hour.notes}</p>
-                  )}
-                </div>
-                <div className="flex gap-1">
-                  {!hour.verified && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant={hour.verification_status === 'verified' ? 'default' : 'secondary'}>
+                      {hour.verification_status || 'pending'}
+                    </Badge>
+                    {hour.verification_status !== 'verified' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleVerifyHours(hour.id)}
+                      >
+                        Verify
+                      </Button>
+                    )}
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => verifyHours(hour.id)}
+                      variant="ghost"
+                      onClick={() => handleDeleteHour(hour.id)}
                     >
-                      Verify
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {/* Edit functionality */}}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(hour.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {volunteerHours.length === 0 && (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">No volunteer hours recorded yet. Add your first entry to get started.</p>
-            </CardContent>
-          </Card>
-        )}
+              ))}
+              {volunteerHours.length === 0 && (
+                <p className="text-muted-foreground text-center py-4">
+                  No volunteer hours recorded yet.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Active Volunteers */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Volunteers</CardTitle>
+            <CardDescription>Current volunteer roster</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {volunteers.filter(v => v.status === 'active').slice(0, 5).map((volunteer) => (
+                <div key={volunteer.id} className="flex justify-between items-center p-3 border rounded-lg">
+                  <div className="space-y-1">
+                    <p className="font-medium">{volunteer.first_name} {volunteer.last_name}</p>
+                    {volunteer.email && (
+                      <p className="text-sm text-muted-foreground">{volunteer.email}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {volunteer.volunteer_hours || 0} total hours
+                      </span>
+                      <Badge variant="outline">{volunteer.status}</Badge>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {volunteers.filter(v => v.status === 'active').length === 0 && (
+                <p className="text-muted-foreground text-center py-4">
+                  No active volunteers found.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

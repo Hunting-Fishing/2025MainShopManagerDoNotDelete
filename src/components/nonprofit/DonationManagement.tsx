@@ -14,16 +14,27 @@ import { DonationForm } from './forms/DonationForm';
 interface Donation {
   id: string;
   donor_name: string;
-  donor_email: string;
+  donor_email: string | null;
   amount: number;
-  donation_type: 'one_time' | 'recurring' | 'pledge';
-  campaign_id?: string;
+  donation_type: string;
   donation_date: string;
-  payment_method: string;
-  tax_deductible: boolean;
-  acknowledgment_sent: boolean;
-  notes?: string;
+  payment_method: string | null;
+  tax_deductible: boolean | null;
+  receipt_sent: boolean | null;
+  notes: string | null;
   created_at: string;
+  anonymous: boolean | null;
+  donor_address: string | null;
+  donor_phone: string | null;
+  designation: string | null;
+  is_recurring: boolean | null;
+  program_id: string | null;
+  receipt_number: string | null;
+  recurrence_frequency: string | null;
+  shop_id: string;
+  transaction_id: string | null;
+  updated_at: string;
+  created_by: string;
 }
 
 export function DonationManagement() {
@@ -97,7 +108,7 @@ export function DonationManagement() {
     try {
       const { error } = await supabase
         .from('donation_transactions')
-        .update({ acknowledgment_sent: true })
+        .update({ receipt_sent: true })
         .eq('id', donation.id);
 
       if (error) throw error;
@@ -150,7 +161,7 @@ export function DonationManagement() {
   const filteredDonations = getFilteredDonations();
   const totalAmount = filteredDonations.reduce((sum, d) => sum + d.amount, 0);
   const averageDonation = filteredDonations.length ? totalAmount / filteredDonations.length : 0;
-  const pendingAcknowledgments = filteredDonations.filter(d => !d.acknowledgment_sent).length;
+  const pendingAcknowledgments = filteredDonations.filter(d => !d.receipt_sent).length;
 
   if (loading) {
     return <div className="p-6">Loading donations...</div>;
@@ -230,7 +241,10 @@ export function DonationManagement() {
               <DialogHeader>
                 <DialogTitle>Record New Donation</DialogTitle>
               </DialogHeader>
-              <DonationForm onSubmit={handleDonationSubmit} />
+              <DonationForm onSuccess={() => {
+                setIsDialogOpen(false);
+                loadDonations();
+              }} />
             </DialogContent>
           </Dialog>
         </div>
@@ -289,8 +303,8 @@ export function DonationManagement() {
                     {donation.tax_deductible && (
                       <Badge variant="outline">Tax Deductible</Badge>
                     )}
-                    {!donation.acknowledgment_sent && (
-                      <Badge variant="destructive">Acknowledgment Pending</Badge>
+                    {!donation.receipt_sent && (
+                      <Badge variant="destructive">Receipt Pending</Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{donation.donor_email}</p>
@@ -310,7 +324,7 @@ export function DonationManagement() {
                   )}
                 </div>
                 <div className="flex gap-1">
-                  {!donation.acknowledgment_sent && (
+                  {!donation.receipt_sent && (
                     <Button
                       variant="outline"
                       size="sm"

@@ -10,35 +10,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Grant {
-  id: string;
-  grant_name: string;
-  funder_name: string;
-  grant_amount: number;
-  application_deadline: string;
-  project_start_date?: string;
-  project_end_date?: string;
-  status: 'prospect' | 'applied' | 'awarded' | 'rejected' | 'completed';
-  program_id?: string;
-  grant_type: string;
-  application_requirements?: string[];
-  reporting_requirements?: string[];
-  notes?: string;
-  submitted_by?: string;
-  submitted_date?: string;
-  award_notification_date?: string;
-  created_at: string;
-}
+type Grant = Database['public']['Tables']['grants']['Row'];
+type GrantInsert = Database['public']['Tables']['grants']['Insert'];
 
 interface GrantFormData {
   grant_name: string;
-  funder_name: string;
-  grant_amount: number;
+  funding_organization: string;
+  amount_requested: number;
   application_deadline: string;
   project_start_date: string;
   project_end_date: string;
-  status: Grant['status'];
+  status: string;
   grant_type: string;
   notes: string;
 }
@@ -52,8 +36,8 @@ export function GrantFundingManagement() {
 
   const [formData, setFormData] = useState<GrantFormData>({
     grant_name: '',
-    funder_name: '',
-    grant_amount: 0,
+    funding_organization: '',
+    amount_requested: 0,
     application_deadline: '',
     project_start_date: '',
     project_end_date: '',
@@ -93,10 +77,21 @@ export function GrantFundingManagement() {
       const profile = await supabase.from('profiles').select('shop_id').eq('id', (await supabase.auth.getUser()).data.user?.id).single();
       if (!profile.data?.shop_id) throw new Error('Shop not found');
 
-      const grantData = {
-        ...formData,
-        shop_id: profile.data.shop_id,
-        created_by: (await supabase.auth.getUser()).data.user?.id
+      const user = (await supabase.auth.getUser()).data.user;
+      const shopId = profile.data.shop_id;
+
+      const grantData: GrantInsert = {
+        shop_id: shopId,
+        created_by: user?.id || '',
+        grant_name: formData.grant_name,
+        funding_organization: formData.funding_organization,
+        amount_requested: formData.amount_requested,
+        application_deadline: formData.application_deadline,
+        project_start_date: formData.project_start_date,
+        project_end_date: formData.project_end_date,
+        status: formData.status,
+        grant_type: formData.grant_type,
+        notes: formData.notes,
       };
 
       if (editingGrant) {
@@ -160,12 +155,12 @@ export function GrantFundingManagement() {
     setEditingGrant(grant);
     setFormData({
       grant_name: grant.grant_name,
-      funder_name: grant.funder_name,
-      grant_amount: grant.grant_amount,
-      application_deadline: grant.application_deadline,
+      funding_organization: grant.funding_organization,
+      amount_requested: grant.amount_requested || 0,
+      application_deadline: grant.application_deadline || '',
       project_start_date: grant.project_start_date || '',
       project_end_date: grant.project_end_date || '',
-      status: grant.status,
+      status: grant.status || 'prospect',
       grant_type: grant.grant_type,
       notes: grant.notes || ''
     });
@@ -175,8 +170,8 @@ export function GrantFundingManagement() {
   const resetForm = () => {
     setFormData({
       grant_name: '',
-      funder_name: '',
-      grant_amount: 0,
+      funding_organization: '',
+      amount_requested: 0,
       application_deadline: '',
       project_start_date: '',
       project_end_date: '',
@@ -187,7 +182,7 @@ export function GrantFundingManagement() {
     setEditingGrant(null);
   };
 
-  const getStatusColor = (status: Grant['status']) => {
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'awarded': return 'bg-green-100 text-green-800';
       case 'applied': return 'bg-blue-100 text-blue-800';
@@ -198,7 +193,8 @@ export function GrantFundingManagement() {
     }
   };
 
-  const getDaysUntilDeadline = (deadline: string) => {
+  const getDaysUntilDeadline = (deadline: string | null) => {
+    if (!deadline) return null;
     const deadlineDate = new Date(deadline);
     const today = new Date();
     const diffTime = deadlineDate.getTime() - today.getTime();
@@ -208,13 +204,14 @@ export function GrantFundingManagement() {
 
   const getUrgentGrants = () => {
     return grants.filter(grant => {
+      if (!grant.application_deadline) return false;
       const days = getDaysUntilDeadline(grant.application_deadline);
-      return days <= 30 && days > 0 && grant.status === 'prospect';
+      return days !== null && days <= 30 && days > 0 && grant.status === 'prospect';
     });
   };
 
   // Calculate summary statistics
-  const totalAwarded = grants.filter(g => g.status === 'awarded').reduce((sum, g) => sum + g.grant_amount, 0);
+  const totalAwarded = grants.filter(g => g.status === 'awarded').reduce((sum, g) => sum + (g.amount_awarded || 0), 0);
   const pendingApplications = grants.filter(g => g.status === 'applied').length;
   const urgentDeadlines = getUrgentGrants().length;
 
@@ -327,11 +324,11 @@ export function GrantFundingManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="funder_name">Funder Name</Label>
+                  <Label htmlFor="funding_organization">Funding Organization</Label>
                   <Input
-                    id="funder_name"
-                    value={formData.funder_name}
-                    onChange={(e) => setFormData({ ...formData, funder_name: e.target.value })}
+                    id="funding_organization"
+                    value={formData.funding_organization}
+                    onChange={(e) => setFormData({ ...formData, funding_organization: e.target.value })}
                     required
                   />
                 </div>
@@ -339,12 +336,12 @@ export function GrantFundingManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="grant_amount">Grant Amount</Label>
+                  <Label htmlFor="amount_requested">Amount Requested</Label>
                   <Input
-                    id="grant_amount"
+                    id="amount_requested"
                     type="number"
-                    value={formData.grant_amount}
-                    onChange={(e) => setFormData({ ...formData, grant_amount: Number(e.target.value) })}
+                    value={formData.amount_requested}
+                    onChange={(e) => setFormData({ ...formData, amount_requested: Number(e.target.value) })}
                     min="0"
                     step="0.01"
                     required
@@ -450,7 +447,7 @@ export function GrantFundingManagement() {
       <div className="grid gap-4">
         {grants.map((grant) => {
           const daysUntilDeadline = getDaysUntilDeadline(grant.application_deadline);
-          const isUrgent = daysUntilDeadline <= 30 && daysUntilDeadline > 0 && grant.status === 'prospect';
+          const isUrgent = daysUntilDeadline !== null && daysUntilDeadline <= 30 && daysUntilDeadline > 0 && grant.status === 'prospect';
           
           return (
             <Card key={grant.id} className={isUrgent ? 'border-amber-200' : ''}>
@@ -470,27 +467,24 @@ export function GrantFundingManagement() {
                         </Badge>
                       )}
                     </div>
-                    <p className="font-medium text-muted-foreground">{grant.funder_name}</p>
+                    <p className="font-medium text-muted-foreground">{grant.funding_organization}</p>
                     <div className="flex items-center gap-4 text-sm">
                       <span className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
-                        ${grant.grant_amount.toLocaleString()}
+                        ${(grant.amount_requested || 0).toLocaleString()}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Due: {new Date(grant.application_deadline).toLocaleDateString()}
-                      </span>
-                      {daysUntilDeadline > 0 && grant.status === 'prospect' && (
+                      {grant.application_deadline && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          Due: {new Date(grant.application_deadline).toLocaleDateString()}
+                        </span>
+                      )}
+                      {daysUntilDeadline !== null && daysUntilDeadline > 0 && grant.status === 'prospect' && (
                         <span className={`text-sm ${isUrgent ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
                           ({daysUntilDeadline} days left)
                         </span>
                       )}
                     </div>
-                    {grant.project_start_date && grant.project_end_date && (
-                      <p className="text-sm text-muted-foreground">
-                        Project: {new Date(grant.project_start_date).toLocaleDateString()} - {new Date(grant.project_end_date).toLocaleDateString()}
-                      </p>
-                    )}
                     {grant.notes && (
                       <p className="text-sm text-muted-foreground">{grant.notes}</p>
                     )}

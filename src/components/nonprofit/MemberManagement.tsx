@@ -10,38 +10,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Member {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  membership_type: 'basic' | 'premium' | 'lifetime' | 'student' | 'family';
-  membership_status: 'active' | 'inactive' | 'pending' | 'expired';
-  join_date: string;
-  renewal_date?: string;
-  annual_dues: number;
-  dues_paid: boolean;
-  notes?: string;
-  emergency_contact_name?: string;
-  emergency_contact_phone?: string;
-  skills?: string[];
-  volunteer_interests?: string[];
-  created_at: string;
-}
+type Member = Database['public']['Tables']['nonprofit_members']['Row'];
+type MemberInsert = Database['public']['Tables']['nonprofit_members']['Insert'];
 
 interface MemberFormData {
   first_name: string;
   last_name: string;
   email: string;
   phone: string;
-  membership_type: Member['membership_type'];
-  membership_status: Member['membership_status'];
+  membership_type: string;
+  membership_status: string;
   annual_dues: number;
   notes: string;
-  emergency_contact_name: string;
-  emergency_contact_phone: string;
 }
 
 export function MemberManagement() {
@@ -57,11 +39,9 @@ export function MemberManagement() {
     email: '',
     phone: '',
     membership_type: 'basic',
-    membership_status: 'pending',
-    annual_dues: 50,
-    notes: '',
-    emergency_contact_name: '',
-    emergency_contact_phone: ''
+    membership_status: 'active',
+    annual_dues: 0,
+    notes: ''
   });
 
   useEffect(() => {
@@ -73,7 +53,7 @@ export function MemberManagement() {
       const { data, error } = await supabase
         .from('nonprofit_members')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('last_name', { ascending: true });
 
       if (error) throw error;
       setMembers(data || []);
@@ -95,12 +75,22 @@ export function MemberManagement() {
       const profile = await supabase.from('profiles').select('shop_id').eq('id', (await supabase.auth.getUser()).data.user?.id).single();
       if (!profile.data?.shop_id) throw new Error('Shop not found');
 
-      const memberData = {
-        ...formData,
-        shop_id: profile.data.shop_id,
-        join_date: editingMember ? editingMember.join_date : new Date().toISOString().split('T')[0],
+      const user = (await supabase.auth.getUser()).data.user;
+      const shopId = profile.data.shop_id;
+
+      const memberData: MemberInsert = {
+        shop_id: shopId,
+        created_by: user?.id || '',
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        membership_type: formData.membership_type,
+        membership_status: formData.membership_status,
+        annual_dues: formData.annual_dues,
+        notes: formData.notes || null,
+        join_date: new Date().toISOString().split('T')[0],
         dues_paid: false,
-        created_by: (await supabase.auth.getUser()).data.user?.id
       };
 
       if (editingMember) {
@@ -165,14 +155,12 @@ export function MemberManagement() {
     setFormData({
       first_name: member.first_name,
       last_name: member.last_name,
-      email: member.email,
+      email: member.email || '',
       phone: member.phone || '',
       membership_type: member.membership_type,
       membership_status: member.membership_status,
-      annual_dues: member.annual_dues,
-      notes: member.notes || '',
-      emergency_contact_name: member.emergency_contact_name || '',
-      emergency_contact_phone: member.emergency_contact_phone || ''
+      annual_dues: member.annual_dues || 0,
+      notes: member.notes || ''
     });
     setIsDialogOpen(true);
   };
@@ -184,40 +172,27 @@ export function MemberManagement() {
       email: '',
       phone: '',
       membership_type: 'basic',
-      membership_status: 'pending',
-      annual_dues: 50,
-      notes: '',
-      emergency_contact_name: '',
-      emergency_contact_phone: ''
+      membership_status: 'active',
+      annual_dues: 0,
+      notes: ''
     });
     setEditingMember(null);
   };
 
-  const getStatusColor = (status: Member['membership_status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
-      case 'expired': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'inactive': return 'bg-gray-100 text-gray-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'expired': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getMembershipTypeColor = (type: Member['membership_type']) => {
-    const colors = {
-      basic: 'bg-blue-100 text-blue-800',
-      premium: 'bg-purple-100 text-purple-800',
-      lifetime: 'bg-gold-100 text-gold-800',
-      student: 'bg-green-100 text-green-800',
-      family: 'bg-pink-100 text-pink-800'
-    };
-    return colors[type] || 'bg-gray-100 text-gray-800';
-  };
-
   // Calculate summary statistics
   const activeMembers = members.filter(m => m.membership_status === 'active').length;
-  const totalDuesCollected = members.filter(m => m.dues_paid).reduce((sum, m) => sum + m.annual_dues, 0);
-  const pendingDues = members.filter(m => !m.dues_paid && m.membership_status === 'active').length;
+  const totalRevenue = members.reduce((sum, m) => sum + (m.annual_dues || 0), 0);
+  const duesOwed = members.filter(m => !m.dues_paid && m.membership_status === 'active').length;
 
   if (loading) {
     return <div className="p-6">Loading members...</div>;
@@ -234,46 +209,40 @@ export function MemberManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">{activeMembers}</div>
-            <p className="text-xs text-muted-foreground">of {members.length} total</p>
+            <p className="text-xs text-muted-foreground">Current membership</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Dues Collected</CardTitle>
+            <CardTitle className="text-sm font-medium">Annual Revenue</CardTitle>
             <CreditCard className="h-4 w-4 ml-auto text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">${totalDuesCollected.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">This year</p>
+            <div className="text-2xl font-bold text-primary">${totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">From membership dues</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Dues</CardTitle>
+            <CardTitle className="text-sm font-medium">Dues Outstanding</CardTitle>
             <Calendar className="h-4 w-4 ml-auto text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{pendingDues}</div>
-            <p className="text-xs text-muted-foreground">Members need to pay</p>
+            <div className="text-2xl font-bold text-primary">{duesOwed}</div>
+            <p className="text-xs text-muted-foreground">Members with unpaid dues</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New This Month</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Members</CardTitle>
             <Users className="h-4 w-4 ml-auto text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              {members.filter(m => {
-                const joinDate = new Date(m.join_date);
-                const now = new Date();
-                return joinDate.getMonth() === now.getMonth() && joinDate.getFullYear() === now.getFullYear();
-              }).length}
-            </div>
-            <p className="text-xs text-muted-foreground">New members</p>
+            <div className="text-2xl font-bold text-primary">{members.length}</div>
+            <p className="text-xs text-muted-foreground">All time membership</p>
           </CardContent>
         </Card>
       </div>
@@ -282,7 +251,7 @@ export function MemberManagement() {
         <div>
           <h2 className="text-2xl font-bold">Member Management</h2>
           <p className="text-muted-foreground">
-            Manage your organization's members and track dues
+            Manage organization membership, dues, and member information
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -328,7 +297,6 @@ export function MemberManagement() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -341,12 +309,12 @@ export function MemberManagement() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="membership_type">Membership Type</Label>
                   <Select
                     value={formData.membership_type}
-                    onValueChange={(value) => setFormData({ ...formData, membership_type: value as any })}
+                    onValueChange={(value) => setFormData({ ...formData, membership_type: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -364,48 +332,28 @@ export function MemberManagement() {
                   <Label htmlFor="membership_status">Status</Label>
                   <Select
                     value={formData.membership_status}
-                    onValueChange={(value) => setFormData({ ...formData, membership_status: value as any })}
+                    onValueChange={(value) => setFormData({ ...formData, membership_status: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="expired">Expired</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="annual_dues">Annual Dues</Label>
-                <Input
-                  id="annual_dues"
-                  type="number"
-                  value={formData.annual_dues}
-                  onChange={(e) => setFormData({ ...formData, annual_dues: Number(e.target.value) })}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="emergency_contact_name">Emergency Contact Name</Label>
+                  <Label htmlFor="annual_dues">Annual Dues</Label>
                   <Input
-                    id="emergency_contact_name"
-                    value={formData.emergency_contact_name}
-                    onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="emergency_contact_phone">Emergency Contact Phone</Label>
-                  <Input
-                    id="emergency_contact_phone"
-                    value={formData.emergency_contact_phone}
-                    onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
+                    id="annual_dues"
+                    type="number"
+                    value={formData.annual_dues}
+                    onChange={(e) => setFormData({ ...formData, annual_dues: Number(e.target.value) })}
+                    min="0"
+                    step="0.01"
                   />
                 </div>
               </div>
@@ -444,32 +392,32 @@ export function MemberManagement() {
                     <Badge className={getStatusColor(member.membership_status)}>
                       {member.membership_status}
                     </Badge>
-                    <Badge className={getMembershipTypeColor(member.membership_type)}>
-                      {member.membership_type}
-                    </Badge>
+                    <Badge variant="outline">{member.membership_type}</Badge>
                     {!member.dues_paid && member.membership_status === 'active' && (
-                      <Badge variant="destructive">Dues Pending</Badge>
+                      <Badge variant="destructive">Dues Outstanding</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-4 w-4" />
-                      {member.email}
-                    </span>
+                    {member.email && (
+                      <span className="flex items-center gap-1">
+                        <Mail className="h-4 w-4" />
+                        {member.email}
+                      </span>
+                    )}
                     {member.phone && (
                       <span className="flex items-center gap-1">
                         <Phone className="h-4 w-4" />
                         {member.phone}
                       </span>
                     )}
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      Joined {new Date(member.join_date).toLocaleDateString()}
+                    <span>
+                      Joined: {new Date(member.join_date).toLocaleDateString()}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <CreditCard className="h-4 w-4" />
-                      ${member.annual_dues}/year
-                    </span>
+                    {member.annual_dues && (
+                      <span>
+                        Dues: ${member.annual_dues.toLocaleString()}
+                      </span>
+                    )}
                   </div>
                   {member.notes && (
                     <p className="text-sm text-muted-foreground">{member.notes}</p>
