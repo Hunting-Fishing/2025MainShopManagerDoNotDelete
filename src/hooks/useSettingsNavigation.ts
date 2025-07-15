@@ -1,12 +1,13 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { SETTINGS_TABS, DEFAULT_SETTINGS_TAB } from '@/config/settingsConfig';
+import { SETTINGS_TABS, SETTINGS_SECTIONS, DEFAULT_SETTINGS_TAB } from '@/config/settingsConfig';
 
 export interface UseSettingsNavigationResult {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   tabs: typeof SETTINGS_TABS;
+  sections: typeof SETTINGS_SECTIONS;
   currentTab: typeof SETTINGS_TABS[0] | undefined;
   isValidTab: (tab: string) => boolean;
 }
@@ -52,6 +53,7 @@ export const useSettingsNavigation = (initialTab?: string): UseSettingsNavigatio
     activeTab,
     setActiveTab,
     tabs: SETTINGS_TABS,
+    sections: SETTINGS_SECTIONS,
     currentTab,
     isValidTab
   };

@@ -35,7 +35,7 @@ import { ProgramManagementTab } from '@/components/settings/ProgramManagementTab
 import { FinancialManagementTab } from '@/components/settings/FinancialManagementTab';
 import { RaffleManagementTab } from '@/components/settings/RaffleManagementTab';
 import { PublicPortalTab } from '@/components/settings/PublicPortalTab';
-import { SettingsTabConfig } from '@/types/settingsConfig';
+import { SettingsTabConfig, SettingsSection } from '@/types/settingsConfig';
 import { GrantManagementTab } from '@/components/settings/GrantManagementTab';
 import { ImpactMeasurementTab } from '@/components/settings/ImpactMeasurementTab';
 import { BoardMeetingTab } from '@/components/settings/BoardMeetingTab';
@@ -45,147 +45,178 @@ import { AssetTrackingTab } from '@/components/settings/AssetTrackingTab';
 import { BudgetManagementTab } from '@/components/settings/BudgetManagementTab';
 import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
 
-export const SETTINGS_TABS: SettingsTabConfig[] = [
+export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
-    id: 'company',
-    label: 'Company',
-    icon: Building2,
-    component: CompanyTab,
-    description: 'Manage company information and business hours'
+    id: 'basic',
+    title: 'Basic Settings',
+    description: 'Core business and team configuration',
+    tabs: [
+      {
+        id: 'company',
+        label: 'Company',
+        icon: Building2,
+        component: CompanyTab,
+        description: 'Manage company information and business hours'
+      },
+      {
+        id: 'team',
+        label: 'Team',
+        icon: Users,
+        component: TeamTab,
+        description: 'Manage team members and permissions'
+      },
+      {
+        id: 'branding',
+        label: 'Branding',
+        icon: Palette,
+        component: BrandingTab,
+        description: 'Customize your brand appearance'
+      },
+      {
+        id: 'notifications',
+        label: 'Notifications',
+        icon: Bell,
+        component: NotificationsTab,
+        description: 'Configure notification preferences'
+      },
+      {
+        id: 'security',
+        label: 'Security',
+        icon: Shield,
+        component: SecurityTab,
+        description: 'Password and authentication settings'
+      }
+    ]
   },
   {
-    id: 'team',
-    label: 'Team',
-    icon: Users,
-    component: TeamTab,
-    description: 'Manage team members and permissions'
-  },
-  {
-    id: 'work-orders',
-    label: 'Work Orders',
-    icon: Hash,
-    component: WorkOrderManagementTab,
-    description: 'Comprehensive work order settings, workflows, and automation'
-  },
-  {
-    id: 'inventory',
-    label: 'Inventory',
-    icon: Package,
-    component: InventorySettingsTab,
-    description: 'Manage inventory settings and preferences'
-  },
-  {
-    id: 'diy-bays',
-    label: 'DIY Bay Rates',
-    icon: Wrench,
-    component: DIYBayRatesTab,
-    description: 'Set rates for DIY bay rentals'
-  },
-  {
-    id: 'branding',
-    label: 'Branding',
-    icon: Palette,
-    component: BrandingTab,
-    description: 'Customize your brand appearance'
-  },
-  {
-    id: 'notifications',
-    label: 'Notifications',
-    icon: Bell,
-    component: NotificationsTab,
-    description: 'Configure notification preferences'
-  },
-  {
-    id: 'integrations',
-    label: 'Integrations',
-    icon: Link,
-    component: IntegrationsTab,
-    description: 'Connect external services and manage API integrations'
+    id: 'operations',
+    title: 'Operations',
+    description: 'Day-to-day business operations and workflows',
+    tabs: [
+      {
+        id: 'work-orders',
+        label: 'Work Orders',
+        icon: Hash,
+        component: WorkOrderManagementTab,
+        description: 'Comprehensive work order settings, workflows, and automation'
+      },
+      {
+        id: 'inventory',
+        label: 'Inventory',
+        icon: Package,
+        component: InventorySettingsTab,
+        description: 'Manage inventory settings and preferences'
+      },
+      {
+        id: 'diy-bays',
+        label: 'DIY Bay Rates',
+        icon: Wrench,
+        component: DIYBayRatesTab,
+        description: 'Set rates for DIY bay rentals'
+      },
+      {
+        id: 'integrations',
+        label: 'Integrations',
+        icon: Link,
+        component: IntegrationsTab,
+        description: 'Connect external services and manage API integrations'
+      }
+    ]
   },
   {
     id: 'nonprofit',
-    label: 'Non-Profit',
-    icon: HandHeart,
-    component: NonProfitTab,
-    description: 'Manage non-profit specific features and settings'
+    title: 'Non-Profit Management',
+    description: 'Tools and features specifically for non-profit organizations',
+    tabs: [
+      {
+        id: 'nonprofit',
+        label: 'Non-Profit Settings',
+        icon: HandHeart,
+        component: NonProfitTab,
+        description: 'Manage non-profit specific features and settings'
+      },
+      {
+        id: 'programs',
+        label: 'Program Management',
+        icon: Target,
+        component: ProgramManagementTab,
+        description: 'Manage programs, volunteers, grants, and impact measurement'
+      },
+      {
+        id: 'grants',
+        label: 'Grant Management',
+        icon: FileText,
+        component: GrantManagementTab,
+        description: 'Track grant applications, deadlines, and reporting requirements'
+      },
+      {
+        id: 'financial',
+        label: 'Financial Management',
+        icon: Calculator,
+        component: FinancialManagementTab,
+        description: 'Budget tracking, financial reporting, and compliance management'
+      },
+      {
+        id: 'budget-management',
+        label: 'Budget Management',
+        icon: Calculator,
+        component: BudgetManagementTab,
+        description: 'Track budgets, expenses, and financial performance'
+      },
+      {
+        id: 'asset-tracking',
+        label: 'Asset Tracking',
+        icon: Database,
+        component: AssetTrackingTab,
+        description: 'Track and manage organizational assets and equipment'
+      },
+      {
+        id: 'board-meetings',
+        label: 'Board Meetings',
+        icon: Calendar,
+        component: BoardMeetingTab,
+        description: 'Manage board meetings, agendas, and minutes'
+      },
+      {
+        id: 'compliance',
+        label: 'Compliance',
+        icon: Shield,
+        component: ComplianceTab,
+        description: 'Track regulatory compliance requirements and deadlines'
+      },
+      {
+        id: 'impact',
+        label: 'Impact Measurement',
+        icon: Target,
+        component: ImpactMeasurementTab,
+        description: 'Track and measure your nonprofit\'s community impact'
+      },
+      {
+        id: 'raffles',
+        label: 'Raffle Management',
+        icon: Ticket,
+        component: RaffleManagementTab,
+        description: 'Create and manage vehicle raffles and ticket sales'
+      }
+    ]
   },
   {
-    id: 'programs',
-    label: 'Program Management',
-    icon: Target,
-    component: ProgramManagementTab,
-    description: 'Manage programs, volunteers, grants, and impact measurement'
-  },
-  {
-    id: 'financial',
-    label: 'Financial Management',
-    icon: Calculator,
-    component: FinancialManagementTab,
-    description: 'Budget tracking, financial reporting, and compliance management'
-  },
-  {
-    id: 'raffles',
-    label: 'Raffle Management',
-    icon: Ticket,
-    component: RaffleManagementTab,
-    description: 'Create and manage vehicle raffles and ticket sales'
-  },
-  {
-    id: 'public-portal',
-    label: 'Public Portal',
-    icon: Globe,
-    component: PublicPortalTab,
-    description: 'Manage public-facing portal and application forms'
-  },
-  {
-    id: 'grants',
-    label: 'Grant Management',
-    icon: HandHeart,
-    component: GrantManagementTab,
-    description: 'Track grant applications, deadlines, and reporting requirements'
-  },
-  {
-    id: 'impact',
-    label: 'Impact Measurement',
-    icon: Target,
-    component: ImpactMeasurementTab,
-    description: 'Track and measure your nonprofit\'s community impact'
-  },
-  {
-    id: 'board-meetings',
-    label: 'Board Meetings',
-    icon: Calendar,
-    component: BoardMeetingTab,
-    description: 'Manage board meetings, agendas, and minutes'
-  },
-  {
-    id: 'compliance',
-    label: 'Compliance',
-    icon: Shield,
-    component: ComplianceTab,
-    description: 'Track regulatory compliance requirements and deadlines'
-  },
-  {
-    id: 'security',
-    label: 'Security',
-    icon: Shield,
-    component: SecurityTab,
-    description: 'Password and authentication settings'
-  },
-  {
-    id: 'asset-tracking',
-    label: 'Asset Tracking',
-    icon: Database,
-    component: AssetTrackingTab,
-    description: 'Track and manage organizational assets and equipment'
-  },
-  {
-    id: 'budget-management',
-    label: 'Budget Management',
-    icon: Calculator,
-    component: BudgetManagementTab,
-    description: 'Track budgets, expenses, and financial performance'
-  },
+    id: 'public',
+    title: 'Public Interface',
+    description: 'Customer-facing features and portals',
+    tabs: [
+      {
+        id: 'public-portal',
+        label: 'Public Portal',
+        icon: Globe,
+        component: PublicPortalTab,
+        description: 'Manage public-facing portal and application forms'
+      }
+    ]
+  }
 ];
+
+// Flatten sections into a single array for compatibility
+export const SETTINGS_TABS: SettingsTabConfig[] = SETTINGS_SECTIONS.flatMap(section => section.tabs);
 
 export const DEFAULT_SETTINGS_TAB = 'company';

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs } from '@/components/ui/tabs';
-import { SettingsTabsList } from './SettingsTabsList';
+import { SettingsGroupedTabsList } from './SettingsGroupedTabsList';
 import { SettingsTabContent } from './SettingsTabContent';
 import { useSettingsNavigation } from '@/hooks/useSettingsNavigation';
 
@@ -14,13 +14,13 @@ export const SettingsContainer: React.FC<SettingsContainerProps> = ({
   initialTab,
   className 
 }) => {
-  const { activeTab, setActiveTab, tabs } = useSettingsNavigation(initialTab);
+  const { activeTab, setActiveTab, tabs, sections } = useSettingsNavigation(initialTab);
 
   return (
     <div className={`w-full ${className || ''}`}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-        <div className="border-b border-border">
-          <SettingsTabsList tabs={tabs} />
+        <div className="border-b border-border pb-6">
+          <SettingsGroupedTabsList sections={sections} />
         </div>
         <div className="py-6">
           <SettingsTabContent tabs={tabs} />
