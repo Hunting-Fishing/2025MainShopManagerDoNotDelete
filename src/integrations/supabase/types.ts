@@ -908,6 +908,97 @@ export type Database = {
         }
         Relationships: []
       }
+      board_meeting_actions: {
+        Row: {
+          assigned_to: string
+          completed_at: string | null
+          created_at: string | null
+          description: string
+          due_date: string
+          id: string
+          meeting_id: string
+          notes: string | null
+          priority: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to: string
+          completed_at?: string | null
+          created_at?: string | null
+          description: string
+          due_date: string
+          id?: string
+          meeting_id: string
+          notes?: string | null
+          priority?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string
+          due_date?: string
+          id?: string
+          meeting_id?: string
+          notes?: string | null
+          priority?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_meeting_actions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "board_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      board_meeting_reminders: {
+        Row: {
+          created_at: string | null
+          id: string
+          meeting_id: string
+          member_email: string
+          reminder_type: string
+          scheduled_for: string
+          sent: boolean | null
+          sent_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          meeting_id: string
+          member_email: string
+          reminder_type: string
+          scheduled_for: string
+          sent?: boolean | null
+          sent_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          meeting_id?: string
+          member_email?: string
+          reminder_type?: string
+          scheduled_for?: string
+          sent?: boolean | null
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_meeting_reminders_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "board_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_meetings: {
         Row: {
           absent_members: string[] | null
@@ -8905,6 +8996,45 @@ export type Database = {
           template_name?: string
           template_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      nonprofit_reports: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          data: Json
+          generated_at: string
+          id: string
+          period: string
+          shop_id: string
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          data?: Json
+          generated_at?: string
+          id?: string
+          period: string
+          shop_id: string
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          data?: Json
+          generated_at?: string
+          id?: string
+          period?: string
+          shop_id?: string
+          title?: string
+          type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
