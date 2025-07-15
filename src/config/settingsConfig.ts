@@ -40,6 +40,7 @@ import { GrantManagementTab } from '@/components/settings/GrantManagementTab';
 import { ImpactMeasurementTab } from '@/components/settings/ImpactMeasurementTab';
 import { BoardMeetingTab } from '@/components/settings/BoardMeetingTab';
 import { ComplianceTab } from '@/components/settings/ComplianceTab';
+import { SecurityTab } from '@/components/settings/SecurityTab';
 import { AssetTrackingTab } from '@/components/settings/AssetTrackingTab';
 import { BudgetManagementTab } from '@/components/settings/BudgetManagementTab';
 import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
@@ -168,8 +169,8 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     id: 'security',
     label: 'Security',
     icon: Shield,
-    component: ComplianceTab,
-    description: 'Security and compliance management'
+    component: SecurityTab,
+    description: 'Password and authentication settings'
   },
   {
     id: 'asset-tracking',

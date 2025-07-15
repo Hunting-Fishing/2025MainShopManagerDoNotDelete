@@ -1,5 +1,6 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { SETTINGS_TABS, DEFAULT_SETTINGS_TAB } from '@/config/settingsConfig';
 
 export interface UseSettingsNavigationResult {
@@ -11,9 +12,27 @@ export interface UseSettingsNavigationResult {
 }
 
 export const useSettingsNavigation = (initialTab?: string): UseSettingsNavigationResult => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Extract tab from URL path (e.g., "/settings/security" -> "security")
+  const getTabFromPath = useCallback(() => {
+    const pathParts = location.pathname.split('/');
+    const tabFromPath = pathParts[2]; // /settings/[tab]
+    return tabFromPath && SETTINGS_TABS.some(t => t.id === tabFromPath) ? tabFromPath : DEFAULT_SETTINGS_TAB;
+  }, [location.pathname]);
+
   const [activeTab, setActiveTabState] = useState(
-    initialTab || DEFAULT_SETTINGS_TAB
+    initialTab || getTabFromPath()
   );
+
+  // Sync tab with URL changes
+  useEffect(() => {
+    const tabFromPath = getTabFromPath();
+    if (tabFromPath !== activeTab) {
+      setActiveTabState(tabFromPath);
+    }
+  }, [location.pathname, activeTab, getTabFromPath]);
 
   const isValidTab = useCallback((tab: string): boolean => {
     return SETTINGS_TABS.some(t => t.id === tab);
@@ -22,8 +41,10 @@ export const useSettingsNavigation = (initialTab?: string): UseSettingsNavigatio
   const setActiveTab = useCallback((tab: string) => {
     if (isValidTab(tab)) {
       setActiveTabState(tab);
+      // Update URL to match selected tab
+      navigate(`/settings/${tab}`, { replace: true });
     }
-  }, [isValidTab]);
+  }, [isValidTab, navigate]);
 
   const currentTab = SETTINGS_TABS.find(tab => tab.id === activeTab);
 

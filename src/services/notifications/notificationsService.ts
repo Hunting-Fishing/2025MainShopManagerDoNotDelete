@@ -108,18 +108,26 @@ export async function getNotificationPreferences(userId: string): Promise<Notifi
   }
 
   return {
-    emailNotifications: data.email_enabled,
-    pushNotifications: data.push_enabled,
-    smsNotifications: data.sms_enabled,
-    email: data.email_enabled,
-    push: data.push_enabled,
+    emailNotifications: data.email_notifications,
+    pushNotifications: data.push_notifications,
+    smsNotifications: data.sms_notifications,
+    email: data.email_notifications,
+    push: data.push_notifications,
     inApp: true, // Default since we don't have this field
-    categories: (data.preferences as any)?.categories || {},
-    subscriptions: (data.preferences as any)?.subscriptions || [],
-    frequency: (data.preferences as any)?.frequency || 'immediate',
-    frequencies: (data.preferences as any)?.frequencies || {},
-    sound: (data.preferences as any)?.sound || 'default',
-    quietHours: (data.preferences as any)?.quietHours || {
+    categories: {
+      system: true,
+      'work-order': true,
+      inventory: true,
+      customer: false,
+      team: true,
+      chat: true,
+      invoice: false
+    },
+    subscriptions: [],
+    frequency: 'immediate',
+    frequencies: {},
+    sound: 'default',
+    quietHours: {
       enabled: false,
       start: '22:00',
       end: '08:00'
@@ -135,9 +143,9 @@ export async function updateNotificationPreferences(
     .from('notification_preferences')
     .upsert({
       user_id: userId,
-      email_enabled: preferences.email,
-      push_enabled: preferences.push,
-      sms_enabled: preferences.smsNotifications,
+      email_notifications: preferences.email,
+      push_notifications: preferences.push,
+      sms_notifications: preferences.smsNotifications,
       preferences: JSON.stringify({
         categories: preferences.categories || {},
         subscriptions: preferences.subscriptions || [],
