@@ -8888,27 +8888,39 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
-          email_enabled: boolean | null
+          created_at: string
+          email_notifications: boolean
           id: string
-          preferences: Json | null
-          push_enabled: boolean | null
-          sms_enabled: boolean | null
+          marketing: boolean
+          order_updates: boolean
+          price_alerts: boolean
+          push_notifications: boolean
+          sms_notifications: boolean
+          updated_at: string
           user_id: string
         }
         Insert: {
-          email_enabled?: boolean | null
+          created_at?: string
+          email_notifications?: boolean
           id?: string
-          preferences?: Json | null
-          push_enabled?: boolean | null
-          sms_enabled?: boolean | null
+          marketing?: boolean
+          order_updates?: boolean
+          price_alerts?: boolean
+          push_notifications?: boolean
+          sms_notifications?: boolean
+          updated_at?: string
           user_id: string
         }
         Update: {
-          email_enabled?: boolean | null
+          created_at?: string
+          email_notifications?: boolean
           id?: string
-          preferences?: Json | null
-          push_enabled?: boolean | null
-          sms_enabled?: boolean | null
+          marketing?: boolean
+          order_updates?: boolean
+          price_alerts?: boolean
+          push_notifications?: boolean
+          sms_notifications?: boolean
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -9324,6 +9336,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      order_tracking: {
+        Row: {
+          carrier: string | null
+          created_at: string
+          estimated_delivery: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          order_id: string
+          status: string
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          carrier?: string | null
+          created_at?: string
+          estimated_delivery?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          order_id: string
+          status: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          carrier?: string | null
+          created_at?: string
+          estimated_delivery?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          order_id?: string
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       orders: {
         Row: {
@@ -14891,6 +14942,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wishlist_shares: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          permissions: string
+          share_token: string
+          shared_with_email: string
+          updated_at: string
+          wishlist_owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          permissions?: string
+          share_token: string
+          shared_with_email: string
+          updated_at?: string
+          wishlist_owner_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          permissions?: string
+          share_token?: string
+          shared_with_email?: string
+          updated_at?: string
+          wishlist_owner_id?: string
+        }
+        Relationships: []
       }
       work_order_activities: {
         Row: {
