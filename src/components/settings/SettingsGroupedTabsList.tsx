@@ -1,5 +1,5 @@
 import React from 'react';
-import { TabsTrigger } from '@/components/ui/tabs';
+import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SettingsSection } from '@/types/settingsConfig';
 
 interface SettingsGroupedTabsListProps {
@@ -22,7 +22,7 @@ export const SettingsGroupedTabsList: React.FC<SettingsGroupedTabsListProps> = (
             )}
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+          <TabsList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 h-auto bg-transparent p-0">
             {section.tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -37,7 +37,7 @@ export const SettingsGroupedTabsList: React.FC<SettingsGroupedTabsListProps> = (
                 </TabsTrigger>
               );
             })}
-          </div>
+          </TabsList>
         </div>
       ))}
     </div>
