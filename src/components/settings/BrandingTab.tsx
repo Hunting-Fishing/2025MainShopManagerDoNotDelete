@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Palette, Upload, PaintBucket } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { BrandingActions } from "./branding/BrandingActions";
 import { ColorsTab } from "./branding/ColorsTab";
 import { LogoTab } from "./branding/LogoTab";
@@ -66,24 +67,70 @@ export function BrandingTab() {
     });
   };
 
-  const handleSave = () => {
-    // In a real app, this would save to local storage, a database, or generate CSS variables
-    console.log("Saving branding settings:", {
-      colors,
-      logoFile,
-      shopName,
-      // theme is no longer managed here
-    });
-    
-    // Apply colors to CSS variables (this is a simplified approach)
-    document.documentElement.style.setProperty('--primary', colors.primary);
-    document.documentElement.style.setProperty('--secondary', colors.secondary);
-    document.documentElement.style.setProperty('--accent', colors.accent);
-    
-    toast({
-      title: "Branding updated",
-      description: "Your branding settings have been saved and applied"
-    });
+  const handleSave = async () => {
+    try {
+      let logoUrl = null;
+      
+      // Upload logo if file is selected
+      if (logoFile) {
+        const fileName = `logo-${Date.now()}.${logoFile.name.split('.').pop()}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('logos')
+          .upload(fileName, logoFile);
+          
+        if (uploadError) {
+          toast({
+            title: "Upload failed",
+            description: uploadError.message,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('logos')
+          .getPublicUrl(uploadData.path);
+          
+        logoUrl = publicUrl;
+      }
+      
+      // Save branding settings to database
+      const { error } = await supabase
+        .from('branding_settings')
+        .upsert({
+          primary_color: colors.primary,
+          secondary_color: colors.secondary,
+          accent_color: colors.accent,
+          logo_url: logoUrl,
+          shop_id: 'default' // Replace with actual shop_id when available
+        });
+        
+      if (error) {
+        toast({
+          title: "Save failed",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Apply colors to CSS variables
+      document.documentElement.style.setProperty('--primary', colors.primary);
+      document.documentElement.style.setProperty('--secondary', colors.secondary);
+      document.documentElement.style.setProperty('--accent', colors.accent);
+      
+      toast({
+        title: "Branding updated",
+        description: "Your branding settings have been saved and applied"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save branding settings",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
