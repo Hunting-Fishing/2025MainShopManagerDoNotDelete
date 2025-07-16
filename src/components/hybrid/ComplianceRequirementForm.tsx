@@ -267,7 +267,7 @@ export function ComplianceRequirementForm({ open, onOpenChange, requirement, onS
                     <SelectValue placeholder="Select frequency" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">One-time</SelectItem>
+                    <SelectItem value="one-time">One-time</SelectItem>
                     <SelectItem value="monthly">Monthly</SelectItem>
                     <SelectItem value="quarterly">Quarterly</SelectItem>
                     <SelectItem value="annually">Annually</SelectItem>
