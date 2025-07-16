@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useDepartmentMembers } from '@/hooks/team/useDepartmentMembers';
 import { useTeamRolesPage } from '@/hooks/useTeamRolesPage';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { TeamOverviewStats } from './enhanced-team/TeamOverviewStats';
 import { TeamMembersGrid } from './enhanced-team/TeamMembersGrid';
 import { DepartmentAnalytics } from './enhanced-team/DepartmentAnalytics';
@@ -43,11 +44,14 @@ export function EnhancedTeamDashboard() {
   const { departmentsWithMembers, isLoading } = useDepartmentMembers();
   const { filteredRoles } = useTeamRolesPage();
 
-  // Calculate quick stats
-  const totalMembers = departmentsWithMembers.reduce((sum, dept) => sum + dept.memberCount, 0);
+  // Calculate real stats from live data
+  const { teamMembers } = useTeamMembers();
+  const totalMembers = teamMembers.length;
   const activeDepartments = departmentsWithMembers.filter(dept => dept.memberCount > 0).length;
   const totalRoles = filteredRoles.length;
-  const activeMembers = Math.floor(totalMembers * 0.85); // Simulated active members
+  const activeMembers = teamMembers.filter(member => member.status === 'Active').length;
+  const onLeaveMembers = teamMembers.filter(member => member.status === 'On Leave').length;
+  const totalWorkOrders = teamMembers.reduce((sum, member) => sum + member.workOrders.assigned, 0);
 
   if (isLoading) {
     return (
@@ -102,7 +106,7 @@ export function EnhancedTeamDashboard() {
                 <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{totalMembers}</p>
                 <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 mr-1" />
-                  +12% from last month
+                  {totalWorkOrders} work orders assigned
                 </p>
               </div>
               <div className="p-3 bg-blue-500/10 rounded-lg">
@@ -120,7 +124,7 @@ export function EnhancedTeamDashboard() {
                 <p className="text-3xl font-bold text-green-900 dark:text-green-100">{activeMembers}</p>
                 <p className="text-xs text-green-600 dark:text-green-400 flex items-center mt-1">
                   <Activity className="h-3 w-3 mr-1" />
-                  85% attendance rate
+                  {totalMembers > 0 ? Math.round((activeMembers / totalMembers) * 100) : 0}% active
                 </p>
               </div>
               <div className="p-3 bg-green-500/10 rounded-lg">
@@ -249,6 +253,7 @@ export function EnhancedTeamDashboard() {
                 activeMembers={activeMembers}
                 departments={departmentsWithMembers}
                 roles={filteredRoles}
+                onLeaveMembers={onLeaveMembers}
               />
               <QuickActions />
             </div>

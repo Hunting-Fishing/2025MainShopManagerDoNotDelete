@@ -17,13 +17,15 @@ interface TeamOverviewStatsProps {
   activeMembers: number;
   departments: any[];
   roles: any[];
+  onLeaveMembers?: number;
 }
 
 export function TeamOverviewStats({ 
   totalMembers, 
   activeMembers, 
   departments, 
-  roles 
+  roles,
+  onLeaveMembers = 0
 }: TeamOverviewStatsProps) {
   const attendanceRate = totalMembers > 0 ? Math.round((activeMembers / totalMembers) * 100) : 0;
 
@@ -71,7 +73,7 @@ export function TeamOverviewStats({
               <div className="text-xs text-muted-foreground">Away/Offline</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">2</div>
+              <div className="text-2xl font-bold text-orange-600">{onLeaveMembers}</div>
               <div className="text-xs text-muted-foreground">On Leave</div>
             </div>
           </div>
@@ -123,27 +125,21 @@ export function TeamOverviewStats({
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
-              <div className="space-y-1">
-                <p className="text-sm">John Smith was assigned to Service Operations</p>
-                <p className="text-xs text-muted-foreground">2 hours ago</p>
+            {departments.length > 0 ? (
+              departments.slice(0, 3).map((dept, index) => (
+                <div key={dept.id} className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                  <div className="space-y-1">
+                    <p className="text-sm">{dept.name} has {dept.memberCount} members</p>
+                    <p className="text-xs text-muted-foreground">Active department</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">No recent activity</p>
               </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
-              <div className="space-y-1">
-                <p className="text-sm">New role "Quality Inspector" created</p>
-                <p className="text-xs text-muted-foreground">5 hours ago</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 rounded-full bg-orange-500 mt-2"></div>
-              <div className="space-y-1">
-                <p className="text-sm">Sarah Johnson updated department structure</p>
-                <p className="text-xs text-muted-foreground">1 day ago</p>
-              </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>

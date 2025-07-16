@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Clock, 
   UserPlus, 
@@ -11,71 +10,91 @@ import {
   Trash2,
   UserMinus
 } from 'lucide-react';
+import { useTeamHistory } from '@/hooks/useTeamHistory';
 
-const activities = [
-  {
-    id: 1,
-    type: 'user_added',
-    icon: UserPlus,
-    title: 'New team member added',
-    description: 'John Smith joined Service Operations department',
-    user: 'Sarah Johnson',
-    timestamp: '2 hours ago',
-    color: 'text-green-600 bg-green-50'
-  },
-  {
-    id: 2,
-    type: 'role_updated',
-    icon: Shield,
-    title: 'Role permissions updated',
-    description: 'Technician role permissions were modified',
-    user: 'Mike Wilson',
-    timestamp: '4 hours ago',
-    color: 'text-blue-600 bg-blue-50'
-  },
-  {
-    id: 3,
-    type: 'department_created',
-    icon: Building2,
-    title: 'New department created',
-    description: 'Quality Control department was established',
-    user: 'Admin',
-    timestamp: '6 hours ago',
-    color: 'text-purple-600 bg-purple-50'
-  },
-  {
-    id: 4,
-    type: 'user_updated',
-    icon: Edit,
-    title: 'Profile updated',
-    description: 'Emma Davis updated her contact information',
-    user: 'Emma Davis',
-    timestamp: '8 hours ago',
-    color: 'text-orange-600 bg-orange-50'
-  },
-  {
-    id: 5,
-    type: 'user_removed',
-    icon: UserMinus,
-    title: 'Team member removed',
-    description: 'Former employee access was revoked',
-    user: 'HR System',
-    timestamp: '1 day ago',
-    color: 'text-red-600 bg-red-50'
-  },
-  {
-    id: 6,
-    type: 'role_assigned',
-    icon: Shield,
-    title: 'Role assignment',
-    description: 'Lisa Chen was assigned Manager role',
-    user: 'Sarah Johnson',
-    timestamp: '1 day ago',
-    color: 'text-indigo-600 bg-indigo-50'
+const getActivityIcon = (actionType: string) => {
+  switch (actionType) {
+    case 'profile_created':
+      return { icon: UserPlus, color: 'text-green-600 bg-green-50' };
+    case 'profile_updated':
+      return { icon: Edit, color: 'text-orange-600 bg-orange-50' };
+    case 'role_assigned':
+      return { icon: Shield, color: 'text-blue-600 bg-blue-50' };
+    case 'department_changed':
+      return { icon: Building2, color: 'text-purple-600 bg-purple-50' };
+    case 'status_change':
+      return { icon: UserMinus, color: 'text-red-600 bg-red-50' };
+    default:
+      return { icon: Clock, color: 'text-gray-600 bg-gray-50' };
   }
-];
+};
+
+const formatRelativeTime = (timestamp: string) => {
+  const now = new Date();
+  const activityTime = new Date(timestamp);
+  const diffInMs = now.getTime() - activityTime.getTime();
+  const diffInHours = diffInMs / (1000 * 60 * 60);
+  const diffInDays = diffInHours / 24;
+
+  if (diffInHours < 1) {
+    return 'Less than an hour ago';
+  } else if (diffInHours < 24) {
+    return `${Math.floor(diffInHours)} hours ago`;
+  } else if (diffInDays < 7) {
+    return `${Math.floor(diffInDays)} days ago`;
+  } else {
+    return activityTime.toLocaleDateString();
+  }
+};
 
 export function TeamActivityTimeline() {
+  const { filteredHistory, loading } = useTeamHistory();
+
+  if (loading) {
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-blue-600" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="animate-pulse flex items-start gap-4">
+                <div className="w-8 h-8 bg-muted rounded-full"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (filteredHistory.length === 0) {
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-blue-600" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-sm text-muted-foreground">No recent team activity</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader>
@@ -90,12 +109,13 @@ export function TeamActivityTimeline() {
           <div className="absolute left-4 top-0 bottom-0 w-px bg-border"></div>
           
           <div className="space-y-6">
-            {activities.map((activity, index) => {
-              const Icon = activity.icon;
+            {filteredHistory.slice(0, 6).map((activity, index) => {
+              const { icon: Icon, color } = getActivityIcon(activity.action);
+              
               return (
                 <div key={activity.id} className="relative flex items-start gap-4">
                   {/* Timeline dot */}
-                  <div className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ${activity.color} border-2 border-white shadow-sm`}>
+                  <div className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ${color} border-2 border-white shadow-sm`}>
                     <Icon className="h-3 w-3" />
                   </div>
                   
@@ -103,12 +123,14 @@ export function TeamActivityTimeline() {
                   <div className="flex-1 min-w-0 pb-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
-                        <h4 className="text-sm font-medium">{activity.title}</h4>
-                        <p className="text-sm text-muted-foreground">{activity.description}</p>
+                        <h4 className="text-sm font-medium">
+                          {activity.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{activity.details}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>by {activity.user}</span>
+                          <span>by {activity.userName}</span>
                           <span>•</span>
-                          <span>{activity.timestamp}</span>
+                          <span>{formatRelativeTime(activity.timestamp)}</span>
                         </div>
                       </div>
                       
