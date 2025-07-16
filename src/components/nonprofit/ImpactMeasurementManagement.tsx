@@ -72,7 +72,7 @@ export function ImpactMeasurementManagement({ onSubmit }: ImpactMeasurementManag
         .order("last_measured_date", { ascending: false });
 
       if (error) throw error;
-      setMeasurements(data || []);
+      setMeasurements((data || []) as unknown as ImpactMeasurement[]);
     } catch (error) {
       console.error("Error loading impact measurements:", error);
       toast({

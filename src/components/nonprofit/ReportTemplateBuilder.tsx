@@ -115,10 +115,11 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
     try {
       setLoading(true);
       
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: profile } = await supabase
         .from("profiles")
         .select("shop_id")
-        .eq("id", (await supabase.auth.getUser()).data.user?.id)
+        .eq("id", user?.id)
         .single();
 
       if (!profile?.shop_id) throw new Error("Shop not found");
@@ -126,7 +127,7 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
       const templatesWithShop = DEFAULT_TEMPLATES.map(template => ({
         ...template,
         shop_id: profile.shop_id,
-        created_by: (await supabase.auth.getUser()).data.user?.id,
+        created_by: user?.id || '',
         is_active: true
       }));
 
@@ -159,10 +160,11 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
     setLoading(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: profile } = await supabase
         .from("profiles")
         .select("shop_id")
-        .eq("id", (await supabase.auth.getUser()).data.user?.id)
+        .eq("id", user?.id)
         .single();
 
       if (!profile?.shop_id) throw new Error("Shop not found");
@@ -170,7 +172,7 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
       const templateData = {
         ...formData,
         shop_id: profile.shop_id,
-        created_by: (await supabase.auth.getUser()).data.user?.id
+        created_by: user?.id || ''
       };
 
       let result;
@@ -255,10 +257,11 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
 
   const duplicateTemplate = async (template: ReportTemplate) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: profile } = await supabase
         .from("profiles")
         .select("shop_id")
-        .eq("id", (await supabase.auth.getUser()).data.user?.id)
+        .eq("id", user?.id)
         .single();
 
       if (!profile?.shop_id) throw new Error("Shop not found");
@@ -270,7 +273,7 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
         template_content: template.template_content,
         is_active: true,
         shop_id: profile.shop_id,
-        created_by: (await supabase.auth.getUser()).data.user?.id
+        created_by: user?.id || ''
       };
 
       const { error } = await supabase

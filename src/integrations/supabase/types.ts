@@ -12737,6 +12737,45 @@ export type Database = {
           },
         ]
       }
+      report_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          shop_id: string
+          template_content: Json
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          shop_id: string
+          template_content?: Json
+          template_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          shop_id?: string
+          template_content?: Json
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       review_helpfulness: {
         Row: {
           created_at: string | null
