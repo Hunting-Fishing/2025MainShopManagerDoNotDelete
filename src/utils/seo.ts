@@ -1,11 +1,12 @@
 
 /**
- * SEO utility functions for Easy Shop Manager
+ * SEO utility functions for shop management
  */
 
-export const generatePageTitle = (pageTitle: string, includeAppName = true): string => {
-  if (includeAppName && !pageTitle.includes('Easy Shop Manager')) {
-    return `${pageTitle} | Easy Shop Manager`;
+export const generatePageTitle = (pageTitle: string, shopName?: string, includeAppName = true): string => {
+  const appName = shopName || 'Easy Shop Manager';
+  if (includeAppName && !pageTitle.includes(appName)) {
+    return `${pageTitle} | ${appName}`;
   }
   return pageTitle;
 };

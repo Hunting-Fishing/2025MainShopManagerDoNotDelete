@@ -8,13 +8,15 @@ interface LogoUploaderProps {
   companyName: string;
   onLogoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onCompanyNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  loading?: boolean;
 }
 
 export function LogoUploader({ 
   logoPreview, 
   companyName, 
   onLogoChange, 
-  onCompanyNameChange 
+  onCompanyNameChange,
+  loading = false
 }: LogoUploaderProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -25,6 +27,7 @@ export function LogoUploader({
           value={companyName}
           onChange={onCompanyNameChange}
           className="mt-1"
+          disabled={loading}
         />
       </div>
       

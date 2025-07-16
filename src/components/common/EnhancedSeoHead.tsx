@@ -25,7 +25,9 @@ export const EnhancedSeoHead: React.FC<EnhancedSeoHeadProps> = ({
   imageUrl,
   noIndex = false
 }) => {
-  const fullTitle = title.includes('Easy Shop Manager') ? title : `${title} | Easy Shop Manager`;
+  // For now, keep Easy Shop Manager as default - in the future this could use a shop context
+  const shopName = 'Easy Shop Manager';
+  const fullTitle = title.includes(shopName) ? title : `${title} | ${shopName}`;
   const defaultImageUrl = imageUrl || 'https://lovable.dev/opengraph-image-p98pqg.png';
   
   // Generate breadcrumb structured data
@@ -44,7 +46,7 @@ export const EnhancedSeoHead: React.FC<EnhancedSeoHeadProps> = ({
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Easy Shop Manager",
+    "name": shopName,
     "description": "Professional work order management system for automotive shops and service businesses",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web Browser",
@@ -55,7 +57,7 @@ export const EnhancedSeoHead: React.FC<EnhancedSeoHeadProps> = ({
     },
     "creator": {
       "@type": "Organization",
-      "name": "Easy Shop Manager"
+      "name": shopName
     }
   };
 
@@ -77,7 +79,7 @@ export const EnhancedSeoHead: React.FC<EnhancedSeoHeadProps> = ({
       <meta property="og:description" content={description} />
       <meta property="og:type" content={ogType} />
       <meta property="og:image" content={defaultImageUrl} />
-      <meta property="og:site_name" content="Easy Shop Manager" />
+      <meta property="og:site_name" content={shopName} />
       
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />

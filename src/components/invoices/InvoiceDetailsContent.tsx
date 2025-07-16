@@ -5,6 +5,7 @@ import { InvoiceDetailsCustomerInfo } from "./InvoiceDetailsCustomerInfo";
 import { InvoiceDetailsItemsTable } from "./InvoiceDetailsItemsTable";
 import { InvoiceDetailsNotes } from "./InvoiceDetailsNotes";
 import { InvoiceDetailsPaymentInfo } from "./InvoiceDetailsPaymentInfo";
+import { useShopName } from "@/hooks/useShopName";
 import { Invoice } from "@/types/invoice";
 
 interface InvoiceDetailsContentProps {
@@ -25,8 +26,10 @@ export function InvoiceDetailsContent({
   invoice,
   statusStyles,
 }: InvoiceDetailsContentProps) {
+  const { shopName } = useShopName();
+  
   const companyInfo = {
-    companyName: "Easy Shop Manager",
+    companyName: shopName || "Easy Shop Manager",
     companyDescription: "Work Order System",
     companyAddress: "123 Main Street, Anytown, CA 12345",
     companyPhone: "(555) 123-4567",

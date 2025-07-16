@@ -7,6 +7,7 @@ import { BrandingActions } from "./branding/BrandingActions";
 import { ColorsTab } from "./branding/ColorsTab";
 import { LogoTab } from "./branding/LogoTab";
 import { ThemeTab } from "./branding/ThemeTab";
+import { useShopName } from "@/hooks/useShopName";
 
 // Default branding colors
 const defaultColors = {
@@ -18,10 +19,10 @@ const defaultColors = {
 };
 
 export function BrandingTab() {
+  const { shopName, updateShopName, loading: shopNameLoading } = useShopName();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [colors, setColors] = useState(defaultColors);
-  const [companyName, setCompanyName] = useState("Easy Shop Manager");
   
   // Theme functionality temporarily disabled
 
@@ -47,7 +48,9 @@ export function BrandingTab() {
   };
 
   const handleCompanyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCompanyName(e.target.value);
+    const newName = e.target.value;
+    // Update immediately for better UX, save happens on blur or save action
+    updateShopName(newName);
   };
 
   const handleReset = () => {
@@ -68,7 +71,7 @@ export function BrandingTab() {
     console.log("Saving branding settings:", {
       colors,
       logoFile,
-      companyName,
+      shopName,
       // theme is no longer managed here
     });
     
@@ -110,9 +113,10 @@ export function BrandingTab() {
         <TabsContent value="logo" className="space-y-4">
           <LogoTab 
             logoPreview={logoPreview}
-            companyName={companyName}
+            companyName={shopName}
             onLogoChange={handleLogoChange}
             onCompanyNameChange={handleCompanyNameChange}
+            loading={shopNameLoading}
           />
         </TabsContent>
 

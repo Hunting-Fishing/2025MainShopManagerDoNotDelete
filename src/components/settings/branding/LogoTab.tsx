@@ -8,13 +8,15 @@ interface LogoTabProps {
   companyName: string;
   onLogoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onCompanyNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  loading?: boolean;
 }
 
 export function LogoTab({ 
   logoPreview, 
   companyName, 
   onLogoChange, 
-  onCompanyNameChange 
+  onCompanyNameChange,
+  loading = false
 }: LogoTabProps) {
   return (
     <Card>
@@ -27,6 +29,7 @@ export function LogoTab({
           companyName={companyName}
           onLogoChange={onLogoChange}
           onCompanyNameChange={onCompanyNameChange}
+          loading={loading}
         />
         <LogoPreview logoPreview={logoPreview} />
       </CardContent>
