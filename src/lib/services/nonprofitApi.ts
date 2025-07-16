@@ -358,7 +358,7 @@ export const impactMeasurementService = {
     return (data || []).map(transformImpactMeasurement);
   },
 
-  async create(measurementData: CreateImpactMeasurementData): Promise<ImpactMeasurementData> {
+  async create(measurementData: any): Promise<ImpactMeasurementData> {
     const { data: profile } = await supabase
       .from('profiles')
       .select('shop_id')
@@ -370,13 +370,19 @@ export const impactMeasurementService = {
     const { data, error } = await supabase
       .from('impact_measurements')
       .insert({
-        category: 'general',
-        measurement_name: measurementData.metric_name,
-        measurement_type: 'quantitative',
-        current_value: measurementData.metric_value,
-        unit_of_measure: measurementData.measurement_unit,
-        last_measured_date: measurementData.measurement_date || new Date().toISOString().split('T')[0],
-        measurement_period: measurementData.measurement_period,
+        measurement_name: measurementData.measurement_name,
+        category: measurementData.category || 'general',
+        measurement_type: measurementData.measurement_type || 'quantitative',
+        current_value: measurementData.current_value || 0,
+        target_value: measurementData.target_value,
+        unit_of_measure: measurementData.unit_of_measure,
+        measurement_period: measurementData.measurement_period || 'monthly',
+        data_source: measurementData.data_source,
+        verification_method: measurementData.verification_method,
+        last_measured_date: measurementData.last_measured_date || new Date().toISOString().split('T')[0],
+        next_measurement_date: measurementData.next_measurement_date,
+        baseline_value: measurementData.baseline_value,
+        baseline_date: measurementData.baseline_date,
         notes: measurementData.notes,
         shop_id: profile.shop_id,
         created_by: (await supabase.auth.getUser()).data.user?.id
@@ -388,6 +394,27 @@ export const impactMeasurementService = {
     return transformImpactMeasurement(data);
   },
 
+  async update(id: string, updates: any): Promise<ImpactMeasurementData> {
+    const { data, error } = await supabase
+      .from('impact_measurements')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return transformImpactMeasurement(data);
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('impact_measurements')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+
   async getByMetric(metricName: string): Promise<ImpactMeasurementData[]> {
     const { data, error } = await supabase
       .from('impact_measurements')
@@ -397,6 +424,74 @@ export const impactMeasurementService = {
     
     if (error) throw error;
     return (data || []).map(transformImpactMeasurement);
+  },
+
+  async getByCategory(category: string): Promise<ImpactMeasurementData[]> {
+    const { data, error } = await supabase
+      .from('impact_measurements')
+      .select('*')
+      .eq('category', category)
+      .order('last_measured_date', { ascending: false });
+    
+    if (error) throw error;
+    return (data || []).map(transformImpactMeasurement);
+  },
+
+  async getRealAnalytics(): Promise<{
+    totalPeopleHelped: number;
+    vehiclesRestored: number;
+    toolKitsDistributed: number;
+    co2Saved: number;
+    metalRecycled: number;
+    environmentalMetrics: any[];
+  }> {
+    const { data, error } = await supabase
+      .from('impact_measurements')
+      .select('*');
+    
+    if (error) throw error;
+
+    const measurements = (data || []);
+    
+    // Calculate real metrics based on actual measurements
+    const peopleHelped = measurements
+      .filter(m => m.measurement_name?.toLowerCase().includes('people') || 
+                   m.measurement_name?.toLowerCase().includes('participants') ||
+                   m.measurement_name?.toLowerCase().includes('individuals'))
+      .reduce((sum, m) => sum + (m.current_value || 0), 0);
+
+    const vehicles = measurements
+      .filter(m => m.measurement_name?.toLowerCase().includes('vehicle') ||
+                   m.measurement_name?.toLowerCase().includes('car'))
+      .reduce((sum, m) => sum + (m.current_value || 0), 0);
+
+    const toolkits = measurements
+      .filter(m => m.measurement_name?.toLowerCase().includes('tool') ||
+                   m.measurement_name?.toLowerCase().includes('kit') ||
+                   m.measurement_name?.toLowerCase().includes('equipment'))
+      .reduce((sum, m) => sum + (m.current_value || 0), 0);
+
+    const environmentalMeasurements = measurements.filter(m => m.category === 'environment');
+    
+    const co2 = environmentalMeasurements
+      .filter(m => m.measurement_name?.toLowerCase().includes('co2') ||
+                   m.measurement_name?.toLowerCase().includes('carbon') ||
+                   m.measurement_name?.toLowerCase().includes('emission'))
+      .reduce((sum, m) => sum + (m.current_value || 0), 0);
+
+    const metal = environmentalMeasurements
+      .filter(m => m.measurement_name?.toLowerCase().includes('metal') ||
+                   m.measurement_name?.toLowerCase().includes('recycl'))
+      .reduce((sum, m) => sum + (m.current_value || 0), 0);
+
+    return {
+      totalPeopleHelped: peopleHelped,
+      vehiclesRestored: vehicles,
+      toolKitsDistributed: toolkits,
+      co2Saved: co2,
+      metalRecycled: metal,
+      environmentalMetrics: environmentalMeasurements
+    };
   }
 };
 
@@ -434,5 +529,9 @@ export const nonprofitApi = {
   // Impact Measurements
   getImpactMeasurements: impactMeasurementService.getAll,
   createImpactMeasurement: impactMeasurementService.create,
-  getImpactMeasurementsByMetric: impactMeasurementService.getByMetric
+  updateImpactMeasurement: impactMeasurementService.update,
+  deleteImpactMeasurement: impactMeasurementService.delete,
+  getImpactMeasurementsByMetric: impactMeasurementService.getByMetric,
+  getImpactMeasurementsByCategory: impactMeasurementService.getByCategory,
+  getRealImpactAnalytics: impactMeasurementService.getRealAnalytics
 };

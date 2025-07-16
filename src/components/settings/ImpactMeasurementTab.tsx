@@ -14,6 +14,8 @@ import { nonprofitApi } from '@/lib/services/nonprofitApi';
 import { donationsApi } from '@/lib/services/donationsApi';
 import { successStoriesApi } from '@/lib/services/successStoriesApi';
 import { AddSuccessStoryDialog } from '@/components/forms/AddSuccessStoryDialog';
+import { ImpactMeasurementEntryDialog } from '@/components/forms/ImpactMeasurementEntryDialog';
+import { ImpactMeasurementList } from '@/components/forms/ImpactMeasurementList';
 import { Program, ImpactMeasurementData, CreateImpactMeasurementData } from '@/types/nonprofit';
 
 export const ImpactMeasurementTab = () => {
@@ -23,6 +25,14 @@ export const ImpactMeasurementTab = () => {
   const [impactMeasurements, setImpactMeasurements] = useState<ImpactMeasurementData[]>([]);
   const [successStories, setSuccessStories] = useState<any[]>([]);
   const [donationStats, setDonationStats] = useState({ totalDonations: 0, donationCount: 0, averageDonation: 0 });
+  const [realAnalytics, setRealAnalytics] = useState({
+    totalPeopleHelped: 0,
+    vehiclesRestored: 0,
+    toolKitsDistributed: 0,
+    co2Saved: 0,
+    metalRecycled: 0,
+    environmentalMetrics: []
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,12 +42,13 @@ export const ImpactMeasurementTab = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [programsData, volunteersData, measurementsData, storiesData, donationsData] = await Promise.all([
+      const [programsData, volunteersData, measurementsData, storiesData, donationsData, analyticsData] = await Promise.all([
         nonprofitApi.getPrograms(),
         nonprofitApi.getVolunteers(),
         nonprofitApi.getImpactMeasurements(),
         successStoriesApi.getAll(),
-        donationsApi.getStats()
+        donationsApi.getStats(),
+        nonprofitApi.getRealImpactAnalytics()
       ]);
 
       setPrograms(programsData);
@@ -45,6 +56,7 @@ export const ImpactMeasurementTab = () => {
       setImpactMeasurements(measurementsData);
       setSuccessStories(storiesData);
       setDonationStats(donationsData);
+      setRealAnalytics(analyticsData);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -57,13 +69,39 @@ export const ImpactMeasurementTab = () => {
     }
   };
 
-  // Calculate dynamic statistics
-  const totalPeopleHelped = impactMeasurements.length * 50; // Placeholder calculation
-  const vehiclesRestored = impactMeasurements.length * 2; // Placeholder calculation  
-  const toolKitsDistributed = impactMeasurements.length * 10; // Placeholder calculation
+  // Use real analytics data instead of placeholder calculations
+  const totalPeopleHelped = realAnalytics.totalPeopleHelped || 0;
+  const vehiclesRestored = realAnalytics.vehiclesRestored || 0;
+  const toolKitsDistributed = realAnalytics.toolKitsDistributed || 0;
   const totalVolunteerHours = volunteers.reduce((sum, v) => sum + (v.hours_logged || 0), 0);
-  const co2Saved = vehiclesRestored * 25; // Placeholder calculation
-  const metalRecycled = vehiclesRestored * 500; // Placeholder calculation
+  const co2Saved = realAnalytics.co2Saved || 0;
+  const metalRecycled = realAnalytics.metalRecycled || 0;
+
+  const handleEditMeasurement = (measurement: any) => {
+    // TODO: Implement edit functionality
+    toast({
+      title: "Edit Measurement",
+      description: "Edit functionality will be implemented in the next phase",
+    });
+  };
+
+  const handleDeleteMeasurement = async (id: string) => {
+    try {
+      await nonprofitApi.deleteImpactMeasurement(id);
+      await loadData(); // Refresh data
+      toast({
+        title: "Success",
+        description: "Impact measurement deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting measurement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete measurement",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -86,6 +124,7 @@ export const ImpactMeasurementTab = () => {
             <Download className="h-4 w-4" />
             Export Report
           </Button>
+          <ImpactMeasurementEntryDialog onMeasurementAdded={loadData} />
           <AddSuccessStoryDialog onStoryAdded={loadData} />
         </div>
       </div>
@@ -100,8 +139,10 @@ export const ImpactMeasurementTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">People Helped</p>
-                <p className="text-2xl font-bold text-foreground">{totalPeopleHelped.toLocaleString() || 0}</p>
-                <p className="text-xs text-muted-foreground">From impact measurements</p>
+                <p className="text-2xl font-bold text-foreground">{totalPeopleHelped.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">
+                  {totalPeopleHelped > 0 ? 'From actual measurements' : 'No measurements yet'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -115,8 +156,10 @@ export const ImpactMeasurementTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Vehicles Restored</p>
-                <p className="text-2xl font-bold text-foreground">{vehiclesRestored || 0}</p>
-                <p className="text-xs text-muted-foreground">Tracked in database</p>
+                <p className="text-2xl font-bold text-foreground">{vehiclesRestored}</p>
+                <p className="text-xs text-muted-foreground">
+                  {vehiclesRestored > 0 ? 'From actual measurements' : 'No measurements yet'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -130,8 +173,10 @@ export const ImpactMeasurementTab = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Tool Kits Distributed</p>
-                <p className="text-2xl font-bold text-foreground">{toolKitsDistributed || 0}</p>
-                <p className="text-xs text-muted-foreground">From measurements</p>
+                <p className="text-2xl font-bold text-foreground">{toolKitsDistributed}</p>
+                <p className="text-xs text-muted-foreground">
+                  {toolKitsDistributed > 0 ? 'From actual measurements' : 'No measurements yet'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -290,23 +335,55 @@ export const ImpactMeasurementTab = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4">
               <div className="text-2xl font-bold text-green-600 mb-1">
-                {co2Saved > 0 ? `${co2Saved.toLocaleString()} kg` : '0'}
+                {co2Saved > 0 ? `${co2Saved.toLocaleString()} kg` : '0 kg'}
               </div>
-              <p className="text-sm text-muted-foreground">CO2 Emissions Saved</p>
+              <p className="text-sm text-muted-foreground">
+                CO2 Emissions Saved {co2Saved > 0 ? '(Measured)' : '(No data)'}
+              </p>
             </div>
             <div className="text-center p-4">
               <div className="text-2xl font-bold text-blue-600 mb-1">{vehiclesRestored}</div>
-              <p className="text-sm text-muted-foreground">Vehicles Kept from Landfill</p>
+              <p className="text-sm text-muted-foreground">
+                Vehicles Kept from Landfill {vehiclesRestored > 0 ? '(Measured)' : '(No data)'}
+              </p>
             </div>
             <div className="text-center p-4">
               <div className="text-2xl font-bold text-purple-600 mb-1">
-                {metalRecycled > 0 ? `${metalRecycled.toLocaleString()} kg` : '0'}
+                {metalRecycled > 0 ? `${metalRecycled.toLocaleString()} kg` : '0 kg'}
               </div>
-              <p className="text-sm text-muted-foreground">Metal Recycled</p>
+              <p className="text-sm text-muted-foreground">
+                Metal Recycled {metalRecycled > 0 ? '(Measured)' : '(No data)'}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Impact Measurements Management */}
+      <ImpactMeasurementList 
+        measurements={impactMeasurements.map(m => ({
+          id: m.id,
+          measurement_name: m.metric_id, // Use metric_id as name for compatibility
+          category: 'general', // Default category since not in current data structure
+          measurement_type: 'quantitative', // Default type
+          current_value: m.measured_value,
+          target_value: undefined,
+          unit_of_measure: '',
+          measurement_period: 'monthly',
+          data_source: '',
+          verification_method: '',
+          last_measured_date: m.measurement_date,
+          next_measurement_date: undefined,
+          baseline_value: undefined,
+          baseline_date: undefined,
+          notes: m.notes,
+          created_at: m.created_at,
+          updated_at: m.updated_at
+        }))}
+        onEdit={handleEditMeasurement}
+        onDelete={handleDeleteMeasurement}
+        loading={loading}
+      />
     </div>
   );
 };
