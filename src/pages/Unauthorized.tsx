@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ShieldX } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import { useShopName } from "@/hooks/useShopName";
 
 export default function Unauthorized() {
+  const { shopName } = useShopName();
   return (
     <>
       <Helmet>
-        <title>Unauthorized | Easy Shop Manager</title>
+        <title>{`Unauthorized | ${shopName || "Easy Shop Manager"}`}</title>
       </Helmet>
       
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

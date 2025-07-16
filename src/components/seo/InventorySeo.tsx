@@ -1,8 +1,10 @@
 
 import React from 'react';
 import { EnhancedSeoHead } from '@/components/common/EnhancedSeoHead';
+import { useShopName } from '@/hooks/useShopName';
 
 export const InventorySeo: React.FC = () => {
+  const { shopName } = useShopName();
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -22,7 +24,7 @@ export const InventorySeo: React.FC = () => {
 
   return (
     <EnhancedSeoHead
-      title="Automotive Parts Inventory Management System - Easy Shop Manager"
+      title={`Automotive Parts Inventory Management System - ${shopName || "Easy Shop Manager"}`}
       description="Streamline your parts inventory with real-time tracking, automated reordering, and comprehensive stock management for automotive shops."
       keywords="automotive parts inventory, inventory management software, parts tracking system, auto parts management, inventory control system"
       structuredData={structuredData}

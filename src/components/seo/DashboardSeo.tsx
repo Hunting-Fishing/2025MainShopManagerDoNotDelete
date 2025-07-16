@@ -1,8 +1,10 @@
 
 import React from 'react';
 import { EnhancedSeoHead } from '@/components/common/EnhancedSeoHead';
+import { useShopName } from '@/hooks/useShopName';
 
 export const DashboardSeo: React.FC = () => {
+  const { shopName } = useShopName();
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -10,7 +12,7 @@ export const DashboardSeo: React.FC = () => {
     "description": "Professional dashboard for managing work orders, tracking equipment maintenance, and monitoring shop performance metrics",
     "mainEntity": {
       "@type": "SoftwareApplication",
-      "name": "Easy Shop Manager Dashboard",
+      "name": `${shopName || "Easy Shop Manager"} Dashboard`,
       "applicationCategory": "BusinessApplication"
     }
   };
@@ -22,7 +24,7 @@ export const DashboardSeo: React.FC = () => {
 
   return (
     <EnhancedSeoHead
-      title="Work Order Management Dashboard - Easy Shop Manager"
+      title={`Work Order Management Dashboard - ${shopName || "Easy Shop Manager"}`}
       description="Monitor your automotive shop's performance with our comprehensive dashboard. Track work orders, equipment maintenance, inventory levels, and team efficiency in real-time."
       keywords="work order dashboard, shop management dashboard, automotive service dashboard, equipment maintenance tracking, inventory management system"
       structuredData={structuredData}

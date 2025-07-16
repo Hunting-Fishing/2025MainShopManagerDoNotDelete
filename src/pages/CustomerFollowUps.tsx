@@ -12,6 +12,7 @@ import { CalendarIcon, Filter, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useFollowUps } from '@/hooks/useFollowUps';
+import { useShopName } from "@/hooks/useShopName";
 import { getInitials } from '@/utils/teamUtils';
 
 export default function CustomerFollowUps() {
@@ -52,10 +53,12 @@ export default function CustomerFollowUps() {
     date ? 1 : 0
   ].reduce((a, b) => a + b, 0);
 
+  const { shopName } = useShopName();
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <Helmet>
-        <title>Customer Follow-Ups | Easy Shop Manager</title>
+        <title>{`Customer Follow-Ups | ${shopName || "Easy Shop Manager"}`}</title>
         <meta name="description" content="Manage and track customer follow-ups, callbacks, and scheduled contacts." />
       </Helmet>
       
