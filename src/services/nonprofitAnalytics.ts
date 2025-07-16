@@ -111,11 +111,40 @@ class NonprofitAnalyticsService {
     const totalPrograms = programs.length;
     const totalBeneficiaries = impact.reduce((sum, i) => sum + i.metric_value, 0);
     
-    // Calculate growth (simplified)
-    const monthlyGrowth = 5.2; // This would be calculated from historical data
-    const donorRetentionRate = 75.5;
+    // Calculate real growth metrics
+    const previousMonth = subMonths(currentDate, 2);
+    const { data: previousMetrics } = await supabase
+      .from('nonprofit_analytics')
+      .select('*')
+      .gte('period_start', format(previousMonth, 'yyyy-MM-01'))
+      .lt('period_end', format(lastMonth, 'yyyy-MM-dd'));
+
+    const previousDonations = previousMetrics?.filter(m => m.metric_type === 'donation') || [];
+    const previousTotalDonations = previousDonations.reduce((sum, d) => sum + d.metric_value, 0);
+    
+    const monthlyGrowth = previousTotalDonations > 0 ? 
+      ((totalDonations - previousTotalDonations) / previousTotalDonations) * 100 : 0;
+    
+    // Calculate real donor retention and averages
+    const { data: allDonations } = await supabase
+      .from('donations')
+      .select('donor_email, amount, created_at');
+    
+    const uniqueDonors = new Set((allDonations || []).map(d => d.donor_email).filter(Boolean));
+    const donorRetentionRate = uniqueDonors.size > 0 ? 
+      (uniqueDonors.size / (allDonations?.length || 1)) * 100 : 0;
+    
     const averageDonationAmount = totalDonations / (donations.length || 1);
-    const programEfficiency = 92.3;
+    
+    // Calculate program efficiency from financial health data
+    const { data: latestFinancial } = await supabase
+      .from('financial_health')
+      .select('program_expense_ratio')
+      .order('period_start', { ascending: false })
+      .limit(1)
+      .single();
+    
+    const programEfficiency = latestFinancial?.program_expense_ratio || 0;
     
     return {
       totalDonations,
@@ -292,17 +321,33 @@ class NonprofitAnalyticsService {
     }));
   }
   
-  // Get donor segments data
+  // Get donor segments data from real donation data
   async getDonorSegments(): Promise<{ name: string; value: number }[]> {
-    // Use simplified mock data for segments since the database schema might not have all expected columns
-    const mockSegments = [
-      { name: 'Major Donors', value: 25 },
-      { name: 'Regular Donors', value: 45 },
-      { name: 'Small Donors', value: 120 },
-      { name: 'Anonymous', value: 15 }
+    const { data: donations } = await supabase
+      .from('donations')
+      .select('amount, donor_name');
+
+    if (!donations || donations.length === 0) {
+      return [
+        { name: 'Major Donors ($1000+)', value: 0 },
+        { name: 'Regular Donors ($100-$999)', value: 0 },
+        { name: 'Small Donors ($1-$99)', value: 0 },
+        { name: 'Anonymous', value: 0 }
+      ];
+    }
+
+    // Categorize donors by donation amount
+    const majorDonors = donations.filter(d => d.amount >= 1000).length;
+    const regularDonors = donations.filter(d => d.amount >= 100 && d.amount < 1000).length;
+    const smallDonors = donations.filter(d => d.amount < 100).length;
+    const anonymous = donations.filter(d => !d.donor_name || d.donor_name.toLowerCase().includes('anonymous')).length;
+
+    return [
+      { name: 'Major Donors ($1000+)', value: majorDonors },
+      { name: 'Regular Donors ($100-$999)', value: regularDonors },
+      { name: 'Small Donors ($1-$99)', value: smallDonors },
+      { name: 'Anonymous', value: anonymous }
     ];
-    
-    return mockSegments;
   }
 
   // Generate automated insights
