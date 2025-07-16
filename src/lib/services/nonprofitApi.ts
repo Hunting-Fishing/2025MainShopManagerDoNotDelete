@@ -346,6 +346,202 @@ export const assignmentService = {
   }
 };
 
+// Donation services
+export const donationService = {
+  async getAll(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('donations')
+      .select('*')
+      .order('donation_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async create(donationData: any): Promise<any> {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('shop_id')
+      .eq('id', (await supabase.auth.getUser()).data.user?.id)
+      .single();
+
+    if (!profile?.shop_id) throw new Error('Shop not found');
+
+    const { data, error } = await supabase
+      .from('donations')
+      .insert({
+        ...donationData,
+        shop_id: profile.shop_id,
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, updates: any): Promise<any> {
+    const { data, error } = await supabase
+      .from('donations')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('donations')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+};
+
+// Grant services
+export const grantService = {
+  async getAll(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('grants')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async create(grantData: any): Promise<any> {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('shop_id')
+      .eq('id', (await supabase.auth.getUser()).data.user?.id)
+      .single();
+
+    if (!profile?.shop_id) throw new Error('Shop not found');
+
+    const { data, error } = await supabase
+      .from('grants')
+      .insert({
+        ...grantData,
+        shop_id: profile.shop_id,
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, updates: any): Promise<any> {
+    const { data, error } = await supabase
+      .from('grants')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('grants')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+};
+
+// Financial health services
+export const financialHealthService = {
+  async getAll(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('financial_health')
+      .select('*')
+      .order('reporting_period', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async create(financialData: any): Promise<any> {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('shop_id')
+      .eq('id', (await supabase.auth.getUser()).data.user?.id)
+      .single();
+
+    if (!profile?.shop_id) throw new Error('Shop not found');
+
+    const { data, error } = await supabase
+      .from('financial_health')
+      .insert({
+        ...financialData,
+        shop_id: profile.shop_id,
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, updates: any): Promise<any> {
+    const { data, error } = await supabase
+      .from('financial_health')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('financial_health')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+};
+
+// Donor analytics services
+export const donorAnalyticsService = {
+  async getAnalytics(): Promise<any> {
+    const { data: donations, error } = await supabase
+      .from('donations')
+      .select('*');
+    
+    if (error) throw error;
+
+    const donationData = donations || [];
+    const totalDonations = donationData.reduce((sum, d) => sum + (d.amount || 0), 0);
+    const totalDonors = new Set(donationData.map(d => d.donor_email)).size;
+    const averageDonation = totalDonors > 0 ? totalDonations / totalDonors : 0;
+
+    return {
+      totalDonations,
+      totalDonors,
+      averageDonation,
+      monthlyTrend: [], // Could be calculated based on donation dates
+      donorRetentionRate: 0.75, // Placeholder - could be calculated
+      majorGifts: donationData.filter(d => (d.amount || 0) > 1000).length
+    };
+  }
+};
+
 // Impact measurement services
 export const impactMeasurementService = {
   async getAll(): Promise<ImpactMeasurementData[]> {
@@ -533,5 +729,26 @@ export const nonprofitApi = {
   deleteImpactMeasurement: impactMeasurementService.delete,
   getImpactMeasurementsByMetric: impactMeasurementService.getByMetric,
   getImpactMeasurementsByCategory: impactMeasurementService.getByCategory,
-  getRealImpactAnalytics: impactMeasurementService.getRealAnalytics
+  getRealImpactAnalytics: impactMeasurementService.getRealAnalytics,
+
+  // Donations
+  getDonations: donationService.getAll,
+  createDonation: donationService.create,
+  updateDonation: donationService.update,
+  deleteDonation: donationService.delete,
+
+  // Grants
+  getGrants: grantService.getAll,
+  createGrant: grantService.create,
+  updateGrant: grantService.update,
+  deleteGrant: grantService.delete,
+
+  // Financial Health
+  getFinancialHealth: financialHealthService.getAll,
+  createFinancialHealth: financialHealthService.create,
+  updateFinancialHealth: financialHealthService.update,
+  deleteFinancialHealth: financialHealthService.delete,
+
+  // Donor Analytics
+  getDonorAnalytics: donorAnalyticsService.getAnalytics
 };
