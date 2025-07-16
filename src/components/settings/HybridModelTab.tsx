@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { BarChart3, DollarSign, Target, CheckCircle, AlertTriangle, Plus } from "lucide-react";
 import { AccountingStreamsManagement } from "@/components/nonprofit/AccountingStreamsManagement";
 import { ImpactMeasurementManagement } from "@/components/nonprofit/ImpactMeasurementManagement";
+import { HybridActivitiesDashboard } from "@/components/hybrid/HybridActivitiesDashboard";
+import { ComplianceDashboard } from "@/components/hybrid/ComplianceDashboard";
 
 interface HybridActivity {
   id: string;
@@ -114,74 +116,7 @@ export function HybridModelTab() {
         </TabsList>
 
         <TabsContent value="activities">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-primary" />
-                    Hybrid Activities
-                  </CardTitle>
-                  <CardDescription>
-                    Track activities with both for-profit and non-profit components
-                  </CardDescription>
-                </div>
-                <Button size="sm" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Activity
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {activities.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No hybrid activities yet. Create your first activity to start tracking dual-purpose initiatives.
-                  </div>
-                ) : (
-                  activities.map((activity) => (
-                    <div key={activity.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">{activity.activity_name}</h4>
-                        <Badge className={getStatusColor(activity.status)}>
-                          {activity.status}
-                        </Badge>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-sm text-muted-foreground">For-Profit Allocation</Label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Progress value={activity.for_profit_percentage} className="flex-1" />
-                            <span className="text-sm font-medium">{activity.for_profit_percentage}%</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Revenue: ${activity.revenue_for_profit?.toLocaleString() || '0'}
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <Label className="text-sm text-muted-foreground">Non-Profit Allocation</Label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Progress value={activity.non_profit_percentage} className="flex-1" />
-                            <span className="text-sm font-medium">{activity.non_profit_percentage}%</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Revenue: ${activity.revenue_non_profit?.toLocaleString() || '0'}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm">Edit</Button>
-                        <Button variant="outline" size="sm">View Details</Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <HybridActivitiesDashboard />
         </TabsContent>
 
         <TabsContent value="accounting">
@@ -193,70 +128,7 @@ export function HybridModelTab() {
         </TabsContent>
 
         <TabsContent value="compliance">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-primary" />
-                    Compliance Tracking
-                  </CardTitle>
-                  <CardDescription>
-                    Monitor regulatory requirements for hybrid structures
-                  </CardDescription>
-                </div>
-                <Button size="sm" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Requirement
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {compliance.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No compliance requirements configured. Add requirements to track regulatory obligations.
-                  </div>
-                ) : (
-                  compliance.map((req) => (
-                    <div key={req.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getPriorityIcon(req.priority_level)}
-                          <h4 className="font-medium">{req.requirement_name}</h4>
-                        </div>
-                        <Badge variant="outline" className={getComplianceColor(req.completion_status)}>
-                          {req.completion_status}
-                        </Badge>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <Label className="text-muted-foreground">Applies To</Label>
-                          <div className="font-medium">{req.applicable_to}</div>
-                        </div>
-                        <div>
-                          <Label className="text-muted-foreground">Due Date</Label>
-                          <div className="font-medium">
-                            {req.due_date ? new Date(req.due_date).toLocaleDateString() : 'No due date'}
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-muted-foreground">Priority</Label>
-                          <div className="font-medium capitalize">{req.priority_level}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm">Edit</Button>
-                        <Button variant="outline" size="sm">Mark Complete</Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ComplianceDashboard />
         </TabsContent>
       </Tabs>
     </div>
