@@ -12,7 +12,7 @@ export function BrandingActions({ onReset, onSave }: BrandingActionsProps) {
       <h2 className="text-2xl font-bold">Custom Branding</h2>
       <div className="space-x-2">
         <Button variant="outline" onClick={onReset}>Reset to Default</Button>
-        <Button className="bg-esm-blue-600 hover:bg-esm-blue-700" onClick={onSave}>
+        <Button onClick={onSave}>
           Save Changes
         </Button>
       </div>
