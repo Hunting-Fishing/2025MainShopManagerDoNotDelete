@@ -62,8 +62,7 @@ export const donationsApi = {
   async getStats() {
     const { data, error } = await supabase
       .from('donations')
-      .select('amount, status')
-      .eq('status', 'completed');
+      .select('amount');
     
     if (error) {
       // Return default stats if table is empty or has errors
