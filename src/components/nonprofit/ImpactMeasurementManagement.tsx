@@ -11,7 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Target, Plus, Edit, Trash2, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Target, Plus, Edit, Trash2, TrendingUp, TrendingDown, Minus, BarChart3, Users, Heart, DollarSign } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { useNonprofitAnalytics } from "@/hooks/useNonprofitAnalytics";
 
 interface ImpactMeasurement {
   id: string;
@@ -43,6 +45,44 @@ export function ImpactMeasurementManagement({ onSubmit }: ImpactMeasurementManag
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMeasurement, setEditingMeasurement] = useState<ImpactMeasurement | null>(null);
+  
+  // Get real analytics data
+  const { dashboard, analytics, loading: analyticsLoading, recordMetric } = useNonprofitAnalytics();
+  
+  // Calculate real impact metrics from the measurements data
+  const impactMetrics = React.useMemo(() => {
+    const totalMeasurements = measurements.length;
+    const activeMeasurements = measurements.filter(m => m.current_value !== null).length;
+    const totalTargetsAchieved = measurements.filter(m => 
+      m.current_value !== null && m.target_value !== null && m.current_value >= m.target_value
+    ).length;
+    
+    const categoryBreakdown = measurements.reduce((acc, m) => {
+      acc[m.category] = (acc[m.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const overallProgress = measurements.length > 0 ? 
+      measurements.reduce((sum, m) => sum + getProgressValue(m), 0) / measurements.length : 0;
+    
+    const recentMeasurements = measurements.filter(m => {
+      if (!m.last_measured_date) return false;
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return new Date(m.last_measured_date) >= thirtyDaysAgo;
+    }).length;
+
+    return {
+      totalMeasurements,
+      activeMeasurements,
+      totalTargetsAchieved,
+      categoryBreakdown,
+      overallProgress,
+      recentMeasurements,
+      completionRate: totalMeasurements > 0 ? (activeMeasurements / totalMeasurements) * 100 : 0,
+      achievementRate: activeMeasurements > 0 ? (totalTargetsAchieved / activeMeasurements) * 100 : 0
+    };
+  }, [measurements]);
   const [formData, setFormData] = useState({
     measurement_name: "",
     measurement_type: "quantitative",
@@ -132,6 +172,26 @@ export function ImpactMeasurementManagement({ onSubmit }: ImpactMeasurementManag
       setEditingMeasurement(null);
       resetForm();
       loadMeasurements();
+
+      // Record metric in analytics when measurement is saved
+      if (measurementData.current_value && recordMetric) {
+        try {
+          await recordMetric(
+            'impact',
+            measurementData.measurement_name,
+            parseFloat(measurementData.current_value.toString()),
+            measurementData.last_measured_date ? new Date(measurementData.last_measured_date) : new Date(),
+            new Date(),
+            {
+              category: measurementData.category,
+              measurement_type: measurementData.measurement_type,
+              unit: measurementData.unit_of_measure
+            }
+          );
+        } catch (error) {
+          console.warn('Failed to record metric in analytics:', error);
+        }
+      }
 
       if (onSubmit) {
         await onSubmit();
@@ -245,19 +305,182 @@ export function ImpactMeasurementManagement({ onSubmit }: ImpactMeasurementManag
     }
   };
 
+  // Chart data for visualizations
+  const categoryChartData = Object.entries(impactMetrics.categoryBreakdown).map(([category, count]) => ({
+    name: category,
+    value: count,
+    color: getCategoryColor(category).replace('bg-', '#').replace('-500', '')
+  }));
+
+  const progressChartData = measurements
+    .filter(m => m.baseline_value !== null && m.current_value !== null && m.target_value !== null)
+    .map(m => ({
+      name: m.measurement_name.substring(0, 20) + (m.measurement_name.length > 20 ? '...' : ''),
+      progress: getProgressValue(m),
+      current: m.current_value,
+      target: m.target_value
+    }));
+
+  const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              Impact Measurements
-            </CardTitle>
-            <CardDescription>
-              Track and measure social, environmental, and economic impact metrics
-            </CardDescription>
-          </div>
+    <div className="space-y-6">
+      {/* Dashboard Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Measurements</p>
+                <p className="text-2xl font-bold">{impactMetrics.totalMeasurements}</p>
+              </div>
+              <Target className="h-8 w-8 text-primary" />
+            </div>
+            <div className="mt-2 flex items-center text-sm">
+              <span className="text-green-600 font-medium">
+                {impactMetrics.activeMeasurements} active
+              </span>
+              <span className="text-muted-foreground ml-2">
+                • {impactMetrics.recentMeasurements} updated recently
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Targets Achieved</p>
+                <p className="text-2xl font-bold">{impactMetrics.totalTargetsAchieved}</p>
+              </div>
+              <BarChart3 className="h-8 w-8 text-green-500" />
+            </div>
+            <div className="mt-2">
+              <div className="flex items-center text-sm">
+                <span className="font-medium">
+                  {impactMetrics.achievementRate.toFixed(1)}% success rate
+                </span>
+              </div>
+              <Progress value={impactMetrics.achievementRate} className="h-2 mt-1" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Overall Progress</p>
+                <p className="text-2xl font-bold">{impactMetrics.overallProgress.toFixed(1)}%</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-blue-500" />
+            </div>
+            <div className="mt-2">
+              <Progress value={impactMetrics.overallProgress} className="h-2" />
+              <p className="text-xs text-muted-foreground mt-1">Average across all metrics</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
+                <p className="text-2xl font-bold">{impactMetrics.completionRate.toFixed(1)}%</p>
+              </div>
+              <Heart className="h-8 w-8 text-red-500" />
+            </div>
+            <div className="mt-2">
+              <Progress value={impactMetrics.completionRate} className="h-2" />
+              <p className="text-xs text-muted-foreground mt-1">Measurements with data</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts and Analytics */}
+      {measurements.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Category Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Impact Categories</CardTitle>
+              <CardDescription>Distribution of measurements by category</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryChartData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {categoryChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Progress Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Measurement Progress</CardTitle>
+              <CardDescription>Progress towards targets for each measurement</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={progressChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fontSize: 10 }} 
+                      interval={0}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value, name) => [
+                        `${value}${name === 'progress' ? '%' : ''}`, 
+                        name === 'progress' ? 'Progress' : name === 'current' ? 'Current Value' : 'Target Value'
+                      ]}
+                    />
+                    <Bar dataKey="progress" fill="#3b82f6" name="progress" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Impact Measurements Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                Impact Measurements
+              </CardTitle>
+              <CardDescription>
+                Track and measure social, environmental, and economic impact metrics
+              </CardDescription>
+            </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="flex items-center gap-2">
@@ -559,6 +782,7 @@ export function ImpactMeasurementManagement({ onSubmit }: ImpactMeasurementManag
           </div>
         )}
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }
