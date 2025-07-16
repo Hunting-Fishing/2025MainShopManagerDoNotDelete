@@ -1,12 +1,94 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Ticket, Trophy, Users, DollarSign, Calendar, Clock, Eye, Gift } from "lucide-react";
+import React, { useState } from 'react';
+import { RaffleDashboard } from '@/components/raffle/RaffleDashboard';
+import { RaffleForm } from '@/components/raffle/RaffleForm';
+import { TicketSalesManager } from '@/components/raffle/TicketSalesManager';
+import { RaffleService } from '@/services/raffleService';
+import { Raffle, CreateRaffleData, UpdateRaffleData } from '@/types/raffle';
+import { useToast } from '@/hooks/use-toast';
 
 export function RaffleManagementTab() {
+  const { toast } = useToast();
+  const [view, setView] = useState<'dashboard' | 'form' | 'tickets'>('dashboard');
+  const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null);
+
+  const handleCreateRaffle = async (data: CreateRaffleData) => {
+    try {
+      await RaffleService.createRaffle(data);
+      toast({
+        title: 'Success',
+        description: 'Raffle created successfully',
+      });
+      setView('dashboard');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create raffle',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdateRaffle = async (data: UpdateRaffleData) => {
+    if (!selectedRaffle) return;
+    try {
+      await RaffleService.updateRaffle(selectedRaffle.id, data);
+      toast({
+        title: 'Success',
+        description: 'Raffle updated successfully',
+      });
+      setView('dashboard');
+      setSelectedRaffle(null);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update raffle',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (view === 'form') {
+    return (
+      <RaffleForm
+        raffle={selectedRaffle || undefined}
+        onSubmit={selectedRaffle ? handleUpdateRaffle : handleCreateRaffle}
+        onCancel={() => {
+          setView('dashboard');
+          setSelectedRaffle(null);
+        }}
+      />
+    );
+  }
+
+  if (view === 'tickets' && selectedRaffle) {
+    return (
+      <TicketSalesManager
+        raffle={selectedRaffle}
+        onClose={() => {
+          setView('dashboard');
+          setSelectedRaffle(null);
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Raffle Overview Cards */}
+    <RaffleDashboard
+      onCreateRaffle={() => {
+        setSelectedRaffle(null);
+        setView('form');
+      }}
+      onEditRaffle={(raffle) => {
+        setSelectedRaffle(raffle);
+        setView('form');
+      }}
+      onViewTickets={(raffle) => {
+        setSelectedRaffle(raffle);
+        setView('tickets');
+      }}
+    />
+  );
+}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center space-y-0 pb-2">
