@@ -13,16 +13,23 @@ import { NonprofitAnalyticsDashboard } from '@/components/analytics/NonprofitAna
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Heart } from 'lucide-react';
+import { RefreshButton } from '@/components/reports/RefreshButton';
+import { PerformanceMonitor } from '@/components/dashboard/PerformanceMonitor';
 
 export default function Dashboard() {
-  const { phaseProgressData, isLoading } = useDashboardData();
+  const { phaseProgressData, isLoading, lastUpdated, refreshData } = useDashboardData();
   const [activeView, setActiveView] = useState<'default' | 'nonprofit'>('default');
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <DashboardHeader />
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <RefreshButton 
+            onClick={refreshData}
+            lastUpdated={lastUpdated}
+            isLoading={isLoading}
+          />
           <Button
             variant={activeView === 'default' ? 'default' : 'outline'}
             onClick={() => setActiveView('default')}
@@ -70,6 +77,8 @@ export default function Dashboard() {
       ) : (
         <NonprofitAnalyticsDashboard />
       )}
+      
+      <PerformanceMonitor />
     </div>
   );
 }
