@@ -62,27 +62,37 @@ export function WorkOrderLineItems({
   };
 
   // Handle job line updates
-  const handleJobLineUpdate = (updatedJobLine: WorkOrderJobLine) => {
-    const updatedJobLines = jobLines.map(jobLine =>
-      jobLine.id === updatedJobLine.id ? {
-        ...updatedJobLine,
-        updated_at: new Date().toISOString()
-      } : jobLine
-    );
-    onJobLinesChange(updatedJobLines);
-    
-    if (onJobLineUpdate) {
-      onJobLineUpdate(updatedJobLine);
+  const handleJobLineUpdate = async (updatedJobLine: WorkOrderJobLine) => {
+    try {
+      if (onJobLineUpdate) {
+        await onJobLineUpdate(updatedJobLine);
+      } else {
+        // Fallback to local update if no handler provided
+        const updatedJobLines = jobLines.map(jobLine =>
+          jobLine.id === updatedJobLine.id ? {
+            ...updatedJobLine,
+            updated_at: new Date().toISOString()
+          } : jobLine
+        );
+        onJobLinesChange(updatedJobLines);
+      }
+    } catch (error) {
+      console.error('Error updating job line:', error);
     }
   };
 
   // Handle job line deletion
-  const handleJobLineDelete = (jobLineId: string) => {
-    const updatedJobLines = jobLines.filter(jobLine => jobLine.id !== jobLineId);
-    onJobLinesChange(updatedJobLines);
-    
-    if (onJobLineDelete) {
-      onJobLineDelete(jobLineId);
+  const handleJobLineDelete = async (jobLineId: string) => {
+    try {
+      if (onJobLineDelete) {
+        await onJobLineDelete(jobLineId);
+      } else {
+        // Fallback to local deletion if no handler provided
+        const updatedJobLines = jobLines.filter(jobLine => jobLine.id !== jobLineId);
+        onJobLinesChange(updatedJobLines);
+      }
+    } catch (error) {
+      console.error('Error deleting job line:', error);
     }
   };
 

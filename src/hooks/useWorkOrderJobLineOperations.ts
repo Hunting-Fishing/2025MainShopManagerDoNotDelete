@@ -39,6 +39,13 @@ export function useWorkOrderJobLineOperations(
   const handleUpdateJobLine = async (updatedJobLine: WorkOrderJobLine) => {
     if (isOperating) return;
     
+    // Check if this is a temporary ID (starts with 'temp-' or 'service-')
+    if (updatedJobLine.id.startsWith('temp-') || updatedJobLine.id.startsWith('service-')) {
+      console.log('Cannot update temporary job line:', updatedJobLine.id);
+      toast.error('Cannot update unsaved job line. Please save first.');
+      return;
+    }
+    
     try {
       setIsOperating(true);
       
@@ -56,6 +63,13 @@ export function useWorkOrderJobLineOperations(
 
   const handleDeleteJobLine = async (jobLineId: string) => {
     if (isOperating) return;
+    
+    // Check if this is a temporary ID (starts with 'temp-' or 'service-')
+    if (jobLineId.startsWith('temp-') || jobLineId.startsWith('service-')) {
+      console.log('Skipping delete for temporary job line:', jobLineId);
+      toast.error('Cannot delete unsaved job line. Please save first.');
+      return;
+    }
     
     try {
       setIsOperating(true);

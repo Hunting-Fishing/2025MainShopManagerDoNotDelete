@@ -57,7 +57,7 @@ export function WorkOrderOverviewTab({
   // Enhanced job line operations for completion toggle
   const jobLineOperations = useWorkOrderJobLineOperations(
     jobLines, 
-    onPartsChange
+    onWorkOrderUpdate
   );
 
   return (
@@ -80,6 +80,9 @@ export function WorkOrderOverviewTab({
               isEditMode={isEditMode}
               onJobLinesChange={setJobLines}
               onPartsChange={onPartsChange}
+              onJobLineUpdate={jobLineOperations.handleUpdateJobLine}
+              onJobLineDelete={jobLineOperations.handleDeleteJobLine}
+              onJobLineReorder={jobLineOperations.handleReorderJobLines}
               onJobLineToggleCompletion={jobLineOperations.handleToggleCompletion}
               onPartUpdate={handlePartUpdate}
               onPartDelete={handlePartDelete}
