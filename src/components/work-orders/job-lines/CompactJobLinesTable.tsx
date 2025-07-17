@@ -5,9 +5,9 @@ import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Edit2, Trash2, Wrench, Package, Settings, FileText, GripVertical, Edit } from 'lucide-react';
 import { jobLineStatusMap } from '@/types/jobLine';
+import { JobLineStatusSelector } from './JobLineStatusSelector';
 import { SimpleJobLineEditDialog } from './SimpleJobLineEditDialog';
 import { DetailFormButton } from './DetailFormButton';
 import { generateTempJobLineId } from '@/services/jobLineParserEnhanced';
@@ -63,6 +63,7 @@ interface SortableJobLineRowProps {
   getIconForCategory: (category?: string) => React.ReactNode;
   handleEditClick: (jobLine: WorkOrderJobLine) => void;
   handleCompletionToggle: (jobLine: WorkOrderJobLine, completed: boolean) => Promise<void>;
+  handleStatusChange: (jobLineId: string, newStatus: any) => Promise<void>;
   allJobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
 }
@@ -76,6 +77,7 @@ function SortableJobLineRow({
   getIconForCategory,
   handleEditClick,
   handleCompletionToggle,
+  handleStatusChange,
   allJobLines,
   allParts
 }: SortableJobLineRowProps) {
@@ -158,24 +160,23 @@ function SortableJobLineRow({
       </TableCell>
       
       <TableCell>
-        <Badge className={statusInfo.classes}>
-          {statusInfo.label}
-        </Badge>
+        <JobLineStatusSelector
+          jobLine={jobLine}
+          onStatusChange={handleStatusChange}
+          size="sm"
+          showQuickActions={false}
+        />
       </TableCell>
       
-      {/* Complete Column */}
+      {/* Complete Column - Now using status selector for better workflow */}
       {isEditMode && (
         <TableCell>
           <div className="flex items-center justify-center">
-            <Checkbox
-              checked={jobLine.is_work_completed || false}
-              onCheckedChange={async (checked) => {
-                await handleCompletionToggle(jobLine, checked as boolean);
-              }}
-              title={jobLine.is_work_completed ? 
-                `Completed ${jobLine.completion_date ? new Date(jobLine.completion_date).toLocaleDateString() : ''}` : 
-                'Mark as completed'
-              }
+            <JobLineStatusSelector
+              jobLine={jobLine}
+              onStatusChange={handleStatusChange}
+              size="sm"
+              showQuickActions={true}
             />
           </div>
         </TableCell>
@@ -431,7 +432,7 @@ export function CompactJobLinesTable({
               <TableHead>Total</TableHead>
               <TableHead>Parts</TableHead>
               <TableHead>Status</TableHead>
-              {isEditMode && <TableHead className="w-20">Complete</TableHead>}
+              {isEditMode && <TableHead className="w-32">Workflow</TableHead>}
               {isEditMode && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
@@ -448,6 +449,7 @@ export function CompactJobLinesTable({
                   getIconForCategory={getIconForCategory}
                   handleEditClick={handleEditClick}
                   handleCompletionToggle={jobLineOperations.handleToggleCompletion}
+                  handleStatusChange={jobLineOperations.handleStatusChange}
                   allJobLines={jobLines}
                   allParts={allParts}
                 />

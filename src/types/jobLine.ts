@@ -10,7 +10,7 @@ export interface WorkOrderJobLine {
   labor_rate?: number;
   labor_rate_type?: 'standard' | 'diagnostic' | 'emergency' | 'warranty' | 'internal' | 'overtime' | 'premium' | 'flat_rate';
   total_amount?: number;
-  status?: 'pending' | 'in-progress' | 'completed' | 'on-hold';
+  status?: JobLineStatus;
   display_order?: number;
   notes?: string;
   created_at?: string;
@@ -31,18 +31,29 @@ export interface JobLineFormValues {
   labor_rate?: number;
   labor_rate_type?: 'standard' | 'diagnostic' | 'emergency' | 'warranty' | 'internal' | 'overtime' | 'premium' | 'flat_rate';
   total_amount?: number;
-  status?: 'pending' | 'in-progress' | 'completed' | 'on-hold';
+  status?: JobLineStatus;
   display_order?: number;
   notes?: string;
 }
 
 // Type aliases for better type safety
-export type JobLineStatus = 'pending' | 'in-progress' | 'completed' | 'on-hold';
+export type JobLineStatus = 'pending' | 'signed-onto-task' | 'in-progress' | 'waiting-for-parts' | 'paused' | 'awaiting-approval' | 'quality-check' | 'completed' | 'on-hold' | 'ready-for-delivery';
 export type LaborRateType = 'standard' | 'diagnostic' | 'emergency' | 'warranty' | 'internal' | 'overtime' | 'premium' | 'flat_rate';
 export type PartStatus = 'pending' | 'ordered' | 'received' | 'installed' | 'returned';
 
-// Job Line Status constants
-export const JOB_LINE_STATUSES = ['pending', 'in-progress', 'completed', 'on-hold'] as const;
+// Job Line Status constants - Enhanced with more workflow states
+export const JOB_LINE_STATUSES = [
+  'pending', 
+  'signed-onto-task', 
+  'in-progress', 
+  'waiting-for-parts', 
+  'paused', 
+  'awaiting-approval', 
+  'quality-check', 
+  'completed', 
+  'on-hold',
+  'ready-for-delivery'
+] as const;
 
 // Work Order Part Status constants
 export const WORK_ORDER_PART_STATUSES = ['pending', 'ordered', 'received', 'installed', 'returned'] as const;
@@ -51,11 +62,67 @@ export const WORK_ORDER_PART_STATUSES = ['pending', 'ordered', 'received', 'inst
 export const LABOR_RATE_TYPES = ['standard', 'diagnostic', 'emergency', 'warranty', 'internal', 'overtime', 'premium', 'flat_rate'] as const;
 
 // Job Line Status mapping for UI display
-export const jobLineStatusMap: Record<JobLineStatus, { label: string; classes: string }> = {
-  'pending': { label: 'Pending', classes: 'bg-yellow-100 text-yellow-800' },
-  'in-progress': { label: 'In Progress', classes: 'bg-blue-100 text-blue-800' },
-  'completed': { label: 'Completed', classes: 'bg-green-100 text-green-800' },
-  'on-hold': { label: 'On Hold', classes: 'bg-red-100 text-red-800' }
+export const jobLineStatusMap: Record<JobLineStatus, { label: string; classes: string; icon?: string; canTransitionTo?: JobLineStatus[] }> = {
+  'pending': { 
+    label: 'Pending', 
+    classes: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
+    icon: 'Clock',
+    canTransitionTo: ['signed-onto-task', 'on-hold']
+  },
+  'signed-onto-task': { 
+    label: 'Signed Onto Task', 
+    classes: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    icon: 'UserCheck',
+    canTransitionTo: ['in-progress', 'waiting-for-parts', 'paused', 'on-hold']
+  },
+  'in-progress': { 
+    label: 'In Progress', 
+    classes: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+    icon: 'Wrench',
+    canTransitionTo: ['waiting-for-parts', 'paused', 'awaiting-approval', 'quality-check', 'completed', 'on-hold']
+  },
+  'waiting-for-parts': { 
+    label: 'Waiting for Parts', 
+    classes: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+    icon: 'Package',
+    canTransitionTo: ['in-progress', 'paused', 'on-hold']
+  },
+  'paused': { 
+    label: 'Paused', 
+    classes: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+    icon: 'Pause',
+    canTransitionTo: ['in-progress', 'signed-onto-task', 'on-hold', 'pending']
+  },
+  'awaiting-approval': { 
+    label: 'Awaiting Approval', 
+    classes: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+    icon: 'Clock',
+    canTransitionTo: ['in-progress', 'quality-check', 'completed', 'on-hold']
+  },
+  'quality-check': { 
+    label: 'Quality Check', 
+    classes: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
+    icon: 'CheckCircle',
+    canTransitionTo: ['in-progress', 'completed', 'awaiting-approval']
+  },
+  'completed': { 
+    label: 'Completed', 
+    classes: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    icon: 'CheckCircle2',
+    canTransitionTo: ['ready-for-delivery']
+  },
+  'on-hold': { 
+    label: 'On Hold', 
+    classes: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    icon: 'AlertCircle',
+    canTransitionTo: ['pending', 'signed-onto-task', 'in-progress', 'paused']
+  },
+  'ready-for-delivery': { 
+    label: 'Ready for Delivery', 
+    classes: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+    icon: 'Truck',
+    canTransitionTo: []
+  }
 };
 
 // Part Status mapping for UI display
