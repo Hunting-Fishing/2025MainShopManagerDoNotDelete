@@ -18252,10 +18252,20 @@ export type Database = {
         }[]
       }
       has_permission: {
+        Args:
+          | {
+              user_id: string
+              res: Database["public"]["Enums"]["resource_type"]
+              act: Database["public"]["Enums"]["permission_type"]
+            }
+          | { user_id_param: string; permission_module: string }
+        Returns: boolean
+      }
+      has_permission_for_action: {
         Args: {
-          user_id: string
-          res: Database["public"]["Enums"]["resource_type"]
-          act: Database["public"]["Enums"]["permission_type"]
+          user_id_param: string
+          permission_module: string
+          permission_action: string
         }
         Returns: boolean
       }
