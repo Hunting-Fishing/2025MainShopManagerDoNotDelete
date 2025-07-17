@@ -150,7 +150,7 @@ export function SimpleJobLineEditDialog({
             <Input
               id="hours"
               type="number"
-              step="0.25"
+              step="0.1"
               min="0"
               value={formData.estimated_hours || ''}
               onChange={(e) => setFormData(prev => ({
