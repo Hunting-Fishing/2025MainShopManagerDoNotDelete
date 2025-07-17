@@ -7,6 +7,7 @@ export interface DashboardWidget {
   name: string;
   enabled: boolean;
   position: number;
+  [key: string]: any;
 }
 
 export interface DashboardPreferences {
@@ -61,7 +62,10 @@ export function useDashboardPreferences() {
       }
 
       if (data?.preferences) {
-        setPreferences({ ...DEFAULT_PREFERENCES, ...data.preferences });
+        setPreferences({ 
+          ...DEFAULT_PREFERENCES, 
+          ...(data.preferences as unknown as DashboardPreferences)
+        });
       }
     } catch (error) {
       console.error('Error loading dashboard preferences:', error);
@@ -83,7 +87,7 @@ export function useDashboardPreferences() {
         .upsert({
           user_id: user.id,
           category: 'dashboard',
-          preferences: updatedPreferences,
+          preferences: updatedPreferences as any,
         });
 
       if (error) {

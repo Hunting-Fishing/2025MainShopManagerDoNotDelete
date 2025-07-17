@@ -17,7 +17,8 @@ import {
   Database,
   Calendar,
   Link,
-  UserCheck
+  UserCheck,
+  LayoutDashboard
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -46,6 +47,7 @@ import { AssetTrackingTab } from '@/components/settings/AssetTrackingTab';
 import { BudgetManagementTab } from '@/components/settings/BudgetManagementTab';
 import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
 import { VolunteerManagementTab } from '@/components/settings/VolunteerManagementTab';
+import { DashboardSettingsTab } from '@/components/settings/DashboardSettingsTab';
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
@@ -59,6 +61,13 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         icon: Building2,
         component: CompanyTab,
         description: 'Manage company information and business hours'
+      },
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        component: DashboardSettingsTab,
+        description: 'Customize dashboard layout and widgets'
       },
       {
         id: 'team',
