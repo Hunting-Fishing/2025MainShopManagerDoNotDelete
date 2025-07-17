@@ -37,7 +37,7 @@ export interface JobLineFormValues {
 }
 
 // Type aliases for better type safety
-export type JobLineStatus = 'pending' | 'signed-onto-task' | 'in-progress' | 'waiting-for-parts' | 'paused' | 'awaiting-approval' | 'quality-check' | 'completed' | 'on-hold' | 'ready-for-delivery';
+export type JobLineStatus = 'pending' | 'signed-onto-task' | 'in-progress' | 'waiting-for-parts' | 'paused' | 'awaiting-approval' | 'quality-check' | 'completed' | 'on-hold' | 'ready-for-delivery' | 'needs-road-test' | 'tech-support' | 'warranty' | 'sublet' | 'customer-auth-required' | 'parts-ordered' | 'parts-arrived' | 'rework-required';
 export type LaborRateType = 'standard' | 'diagnostic' | 'emergency' | 'warranty' | 'internal' | 'overtime' | 'premium' | 'flat_rate';
 export type PartStatus = 'pending' | 'ordered' | 'received' | 'installed' | 'returned';
 
@@ -52,7 +52,15 @@ export const JOB_LINE_STATUSES = [
   'quality-check', 
   'completed', 
   'on-hold',
-  'ready-for-delivery'
+  'ready-for-delivery',
+  'needs-road-test',
+  'tech-support',
+  'warranty',
+  'sublet',
+  'customer-auth-required',
+  'parts-ordered',
+  'parts-arrived',
+  'rework-required'
 ] as const;
 
 // Work Order Part Status constants
@@ -122,6 +130,54 @@ export const jobLineStatusMap: Record<JobLineStatus, { label: string; classes: s
     classes: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
     icon: 'Truck',
     canTransitionTo: []
+  },
+  'needs-road-test': { 
+    label: 'Needs Road Test', 
+    classes: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+    icon: 'Car',
+    canTransitionTo: ['in-progress', 'completed', 'rework-required']
+  },
+  'tech-support': { 
+    label: 'Tech Support', 
+    classes: 'bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200',
+    icon: 'HelpCircle',
+    canTransitionTo: ['in-progress', 'paused', 'on-hold']
+  },
+  'warranty': { 
+    label: 'Warranty', 
+    classes: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+    icon: 'Shield',
+    canTransitionTo: ['in-progress', 'completed', 'awaiting-approval']
+  },
+  'sublet': { 
+    label: 'Sublet', 
+    classes: 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200',
+    icon: 'ExternalLink',
+    canTransitionTo: ['in-progress', 'completed', 'on-hold']
+  },
+  'customer-auth-required': { 
+    label: 'Customer Authorization Required', 
+    classes: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+    icon: 'UserCheck',
+    canTransitionTo: ['in-progress', 'on-hold', 'paused']
+  },
+  'parts-ordered': { 
+    label: 'Parts Ordered', 
+    classes: 'bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200',
+    icon: 'ShoppingCart',
+    canTransitionTo: ['parts-arrived', 'waiting-for-parts', 'on-hold']
+  },
+  'parts-arrived': { 
+    label: 'Parts Arrived', 
+    classes: 'bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-200',
+    icon: 'PackageCheck',
+    canTransitionTo: ['in-progress', 'signed-onto-task']
+  },
+  'rework-required': { 
+    label: 'Rework Required', 
+    classes: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    icon: 'RotateCcw',
+    canTransitionTo: ['in-progress', 'signed-onto-task', 'tech-support']
   }
 };
 

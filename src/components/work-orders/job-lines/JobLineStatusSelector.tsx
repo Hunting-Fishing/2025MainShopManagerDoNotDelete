@@ -12,7 +12,14 @@ import {
   CheckCircle, 
   CheckCircle2, 
   AlertCircle, 
-  Truck 
+  Truck,
+  Car,
+  HelpCircle,
+  Shield,
+  ExternalLink,
+  ShoppingCart,
+  PackageCheck,
+  RotateCcw
 } from 'lucide-react';
 
 interface JobLineStatusSelectorProps {
@@ -32,7 +39,14 @@ const statusIcons = {
   'CheckCircle': CheckCircle,
   'CheckCircle2': CheckCircle2,
   'AlertCircle': AlertCircle,
-  'Truck': Truck
+  'Truck': Truck,
+  'Car': Car,
+  'HelpCircle': HelpCircle,
+  'Shield': Shield,
+  'ExternalLink': ExternalLink,
+  'ShoppingCart': ShoppingCart,
+  'PackageCheck': PackageCheck,
+  'RotateCcw': RotateCcw
 };
 
 export function JobLineStatusSelector({
@@ -79,6 +93,22 @@ export function JobLineStatusSelector({
     
     if (currentStatus === 'waiting-for-parts') {
       actions.push({ status: 'in-progress' as JobLineStatus, label: 'Resume', variant: 'default' as const });
+    }
+    
+    if (currentStatus === 'parts-ordered') {
+      actions.push({ status: 'parts-arrived' as JobLineStatus, label: 'Parts Arrived', variant: 'default' as const });
+    }
+    
+    if (currentStatus === 'parts-arrived') {
+      actions.push({ status: 'in-progress' as JobLineStatus, label: 'Start Work', variant: 'default' as const });
+    }
+    
+    if (currentStatus === 'customer-auth-required') {
+      actions.push({ status: 'in-progress' as JobLineStatus, label: 'Authorized', variant: 'default' as const });
+    }
+    
+    if (currentStatus === 'rework-required') {
+      actions.push({ status: 'in-progress' as JobLineStatus, label: 'Start Rework', variant: 'default' as const });
     }
     
     return actions;
