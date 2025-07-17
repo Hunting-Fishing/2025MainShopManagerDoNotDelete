@@ -47,6 +47,13 @@ export function WorkOrderDetailsActions({
   };
 
   const isCompleted = workOrder.status === 'completed';
+  
+  // Debug logging to understand button state
+  console.log('🔍 BUTTON DEBUG: Work Order Status:', workOrder.status);
+  console.log('🔍 BUTTON DEBUG: Is Completed:', isCompleted);
+  console.log('🔍 BUTTON DEBUG: Is Reopening:', isReopening);
+  console.log('🔍 BUTTON DEBUG: Button should be visible:', isCompleted);
+  console.log('🔍 BUTTON DEBUG: Button should be disabled:', isReopening);
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -66,11 +73,24 @@ export function WorkOrderDetailsActions({
           size="sm"
           onClick={handleReopenWorkOrder}
           disabled={isReopening}
+          className="bg-background border-border hover:bg-accent"
         >
           <RotateCcw className="h-4 w-4 mr-2" />
           {isReopening ? 'Reopening...' : 'Reopen Work Order'}
         </Button>
       )}
+
+      {/* Debug button - always visible for testing */}
+      <Button 
+        variant="secondary" 
+        size="sm"
+        onClick={handleReopenWorkOrder}
+        disabled={isReopening}
+        className="bg-yellow-100 border-yellow-300 hover:bg-yellow-200 text-yellow-800"
+      >
+        <RotateCcw className="h-4 w-4 mr-2" />
+        Force Reopen (Debug)
+      </Button>
 
       <ConvertToInvoiceButton
         workOrderId={workOrder.id}
