@@ -19,25 +19,7 @@ export async function getAllCustomers(): Promise<Customer[]> {
       return [];
     }
 
-    // Check if user is owner or admin
-    const { data: userRoles, error: roleError } = await supabase
-      .from('user_roles')
-      .select(`
-        role_id,
-        roles:role_id(name)
-      `)
-      .eq('user_id', user.id);
-
-    if (roleError) {
-      console.error('❌ Error checking user roles:', roleError);
-      // Continue with query even if role check fails
-    }
-
-    const isOwnerOrAdmin = userRoles?.some(ur => 
-      ur.roles?.name === 'owner' || ur.roles?.name === 'admin'
-    ) || false;
-
-    console.log('👑 User is owner/admin:', isOwnerOrAdmin);
+    console.log('🔄 User authenticated, proceeding with customer fetch...');
 
     // Fetch all customers with their vehicles data
     const { data, error } = await supabase
