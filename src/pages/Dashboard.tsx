@@ -1,24 +1,29 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { StatsCards } from '@/components/dashboard/StatsCards';
-import { RevenueChart } from '@/components/dashboard/RevenueChart';
-import { ServiceTypeDistributionChart } from '@/components/dashboard/ServiceTypeDistributionChart';
-import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
-import { WorkOrderPhaseProgress } from '@/components/dashboard/WorkOrderPhaseProgress';
-import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
-import { EquipmentRecommendations } from '@/components/dashboard/EquipmentRecommendations';
-import { DashboardAlerts } from '@/components/dashboard/DashboardAlerts';
 import { NonprofitAnalyticsDashboard } from '@/components/analytics/NonprofitAnalyticsDashboard';
+import { CustomizableDashboard } from '@/components/dashboard/CustomizableDashboard';
+import { DashboardCustomization } from '@/components/dashboard/DashboardCustomization';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
 import { Button } from '@/components/ui/button';
-import { BarChart3, Heart } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { BarChart3, Heart, Settings2 } from 'lucide-react';
 import { RefreshButton } from '@/components/reports/RefreshButton';
 import { PerformanceMonitor } from '@/components/dashboard/PerformanceMonitor';
 
 export default function Dashboard() {
-  const { phaseProgressData, isLoading, lastUpdated, refreshData } = useDashboardData();
+  const { isLoading, lastUpdated, refreshData } = useDashboardData();
+  const { preferences } = useDashboardPreferences();
   const [activeView, setActiveView] = useState<'default' | 'nonprofit'>('default');
+  const [showCustomization, setShowCustomization] = useState(false);
+
+  // Set initial view based on user preferences
+  useEffect(() => {
+    if (preferences.defaultView) {
+      setActiveView(preferences.defaultView);
+    }
+  }, [preferences.defaultView]);
 
   return (
     <div className="space-y-6">
@@ -30,6 +35,17 @@ export default function Dashboard() {
             lastUpdated={lastUpdated}
             isLoading={isLoading}
           />
+          <Dialog open={showCustomization} onOpenChange={setShowCustomization}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4" />
+                Customize
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DashboardCustomization onClose={() => setShowCustomization(false)} />
+            </DialogContent>
+          </Dialog>
           <Button
             variant={activeView === 'default' ? 'default' : 'outline'}
             onClick={() => setActiveView('default')}
@@ -50,30 +66,7 @@ export default function Dashboard() {
       </div>
 
       {activeView === 'default' ? (
-        <>
-          <StatsCards />
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <RevenueChart />
-            <ServiceTypeDistributionChart />
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <TechnicianPerformanceChart />
-            </div>
-            <div>
-              <WorkOrderPhaseProgress data={phaseProgressData} isLoading={isLoading} />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <TodaySchedule />
-            <EquipmentRecommendations />
-          </div>
-          
-          <DashboardAlerts />
-        </>
+        <CustomizableDashboard layout={preferences.layout} />
       ) : (
         <NonprofitAnalyticsDashboard />
       )}
