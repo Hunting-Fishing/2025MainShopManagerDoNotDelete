@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { jobLineStatusMap } from '@/types/jobLine';
 import { DetailFormButton } from './DetailFormButton';
 import { JobLinePartsDisplay } from '../parts/JobLinePartsDisplay';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { SimpleJobLineEditDialog } from './SimpleJobLineEditDialog';
 import {
   DndContext,
   closestCenter,
@@ -88,6 +89,7 @@ function SortableJobLineRow({
   };
 
   const handleEditClick = (jobLine: WorkOrderJobLine) => {
+    // This will be handled by the parent component's edit dialog
     if (onUpdate) {
       onUpdate(jobLine);
     }
@@ -220,6 +222,9 @@ export function JobLinesTable({
   onToggleCompletion,
   onAddPart
 }: JobLinesTableProps) {
+  const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -243,6 +248,19 @@ export function JobLinesTable({
     }
   };
 
+  const handleEditJobLine = (jobLine: WorkOrderJobLine) => {
+    setEditingJobLine(jobLine);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (updatedJobLine: WorkOrderJobLine) => {
+    if (onUpdate) {
+      await onUpdate(updatedJobLine);
+    }
+    setEditingJobLine(null);
+    setIsEditDialogOpen(false);
+  };
+
   if (jobLines.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -252,6 +270,7 @@ export function JobLinesTable({
   }
 
   return (
+    <>
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
@@ -283,7 +302,7 @@ export function JobLinesTable({
                 isEditMode={isEditMode}
                 allJobLines={jobLines}
                 allParts={allParts}
-                onUpdate={onUpdate}
+                onUpdate={handleEditJobLine}
                 onDelete={onDelete}
                 onToggleCompletion={onToggleCompletion}
                 onAddPart={onAddPart}
@@ -293,5 +312,17 @@ export function JobLinesTable({
         </TableBody>
       </Table>
     </DndContext>
+
+    {/* Edit Dialog */}
+    {editingJobLine && (
+      <SimpleJobLineEditDialog
+        jobLine={editingJobLine}
+        workOrderId={editingJobLine.work_order_id}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSave={handleSaveEdit}
+      />
+    )}
+    </>
   );
 }
