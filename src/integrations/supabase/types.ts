@@ -7404,6 +7404,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "inventory_adjustments_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "inventory_adjustments_work_order_id_fkey"
             columns: ["work_order_id"]
             isOneToOne: false
@@ -7516,6 +7523,13 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_auto_reorder_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
             referencedColumns: ["id"]
           },
         ]
@@ -7698,6 +7712,13 @@ export type Database = {
             referencedRelation: "inventory_items"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "inventory_orders_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       inventory_purchase_order_items: {
@@ -7740,6 +7761,13 @@ export type Database = {
             columns: ["inventory_item_id"]
             isOneToOne: false
             referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_purchase_order_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
             referencedColumns: ["id"]
           },
           {
@@ -7946,6 +7974,13 @@ export type Database = {
             columns: ["inventory_item_id"]
             isOneToOne: false
             referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
             referencedColumns: ["id"]
           },
         ]
@@ -11457,6 +11492,13 @@ export type Database = {
             columns: ["inventory_item_id"]
             isOneToOne: false
             referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
             referencedColumns: ["id"]
           },
         ]
@@ -16947,6 +16989,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "work_order_parts_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "work_order_parts_job_line_id_fkey"
             columns: ["job_line_id"]
             isOneToOne: false
@@ -17719,6 +17768,68 @@ export type Database = {
           },
         ]
       }
+      inventory_stock_view: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          location: string | null
+          name: string | null
+          quantity: number | null
+          quantity_in_stock: number | null
+          reorder_point: number | null
+          shop_id: string | null
+          sku: string | null
+          status: string | null
+          supplier: string | null
+          unit_price: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          location?: string | null
+          name?: string | null
+          quantity?: number | null
+          quantity_in_stock?: number | null
+          reorder_point?: number | null
+          shop_id?: string | null
+          sku?: string | null
+          status?: string | null
+          supplier?: string | null
+          unit_price?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          location?: string | null
+          name?: string | null
+          quantity?: number | null
+          quantity_in_stock?: number | null
+          reorder_point?: number | null
+          shop_id?: string | null
+          sku?: string | null
+          status?: string | null
+          supplier?: string | null
+          unit_price?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_details: {
         Row: {
           affiliate_link: string | null
@@ -17961,6 +18072,10 @@ export type Database = {
       }
       generate_work_order_number: {
         Args: { p_shop_id: string }
+        Returns: string
+      }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
         Returns: string
       }
       get_email_processing_schedule: {
