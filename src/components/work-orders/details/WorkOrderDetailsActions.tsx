@@ -22,7 +22,6 @@ export function WorkOrderDetailsActions({
   
   const handleReopenWorkOrder = async () => {
     console.log('🔄 REOPEN DEBUG: Button clicked!');
-    alert('🔄 DEBUG: Button was clicked! Check console for details.');
     console.log('🔄 REOPEN DEBUG: Work Order ID:', workOrder.id);
     console.log('🔄 REOPEN DEBUG: Current Status:', workOrder.status);
     console.log('🔄 REOPEN DEBUG: Is Reopening:', isReopening);
@@ -39,22 +38,6 @@ export function WorkOrderDetailsActions({
       }
     } catch (error) {
       console.error('🔄 REOPEN DEBUG: Error in handleReopenWorkOrder:', error);
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    console.log('🔄 MOUSE DEBUG: Mouse down event triggered');
-    alert('🔄 DEBUG: Mouse down detected!');
-    e.preventDefault();
-    handleReopenWorkOrder();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      console.log('🔄 KEYBOARD DEBUG: Key pressed:', e.key);
-      alert('🔄 DEBUG: Keyboard event detected!');
-      e.preventDefault();
-      handleReopenWorkOrder();
     }
   };
 
@@ -96,46 +79,6 @@ export function WorkOrderDetailsActions({
           {isReopening ? 'Reopening...' : 'Reopen Work Order'}
         </Button>
       )}
-
-      {/* Debug button - always visible for testing */}
-      <Button 
-        variant="secondary" 
-        size="sm"
-        onClick={handleReopenWorkOrder}
-        onMouseDown={handleMouseDown}
-        onKeyDown={handleKeyDown}
-        tabIndex={0}
-        style={{ 
-          pointerEvents: 'auto',
-          backgroundColor: '#fef3c7',
-          borderColor: '#fcd34d',
-          color: '#92400e',
-          cursor: 'pointer',
-          zIndex: 1000
-        }}
-      >
-        <RotateCcw className="h-4 w-4 mr-2" />
-        Force Reopen (Debug)
-      </Button>
-
-      {/* Native HTML button test */}
-      <button
-        onClick={handleReopenWorkOrder}
-        onMouseDown={handleMouseDown}
-        style={{
-          backgroundColor: '#dc2626',
-          color: 'white',
-          padding: '8px 16px',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontSize: '14px',
-          fontWeight: '500',
-          zIndex: 1000
-        }}
-      >
-        🔴 Native Button Test
-      </button>
 
       <ConvertToInvoiceButton
         workOrderId={workOrder.id}
