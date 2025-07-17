@@ -63,9 +63,9 @@ export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceD
 
     const { data: workOrders, error } = await supabase
       .from('work_orders')
-      .select('technician, updated_at, total_cost')
+      .select('technician_id, updated_at, total_cost, profiles:technician_id(full_name)')
       .eq('status', 'completed')
-      .not('technician', 'is', null)
+      .not('technician_id', 'is', null)
       .gte('updated_at', sixMonthsAgo.toISOString());
 
     if (error) throw error;
@@ -81,7 +81,7 @@ export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceD
 
     workOrders.forEach(order => {
       const month = new Date(order.updated_at).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-      const technician = order.technician;
+      const technician = (order as any).profiles?.full_name || `Technician ${order.technician_id}`;
       const revenue = order.total_cost || 0;
 
       technicianSet.add(technician);
