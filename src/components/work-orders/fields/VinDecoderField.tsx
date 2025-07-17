@@ -31,7 +31,7 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
         // Update form fields with decoded vehicle information
         form.setValue("vehicleMake", decodedData.make || '');
         form.setValue("vehicleModel", decodedData.model || '');
-        form.setValue("vehicleYear", decodedData.year || '');
+        form.setValue("vehicleYear", decodedData.year?.toString() || '');
         
         // Add additional vehicle details to the form
         if (decodedData.drive_type) form.setValue("driveType", decodedData.drive_type);
