@@ -21,9 +21,23 @@ export function WorkOrderDetailsActions({
   const { reopenWorkOrder, isReopening } = useWorkOrderReopen();
   
   const handleReopenWorkOrder = async () => {
-    const result = await reopenWorkOrder(workOrder.id, 'in-progress');
-    if (result.success && onWorkOrderUpdated) {
-      onWorkOrderUpdated();
+    console.log('🔄 REOPEN DEBUG: Button clicked!');
+    console.log('🔄 REOPEN DEBUG: Work Order ID:', workOrder.id);
+    console.log('🔄 REOPEN DEBUG: Current Status:', workOrder.status);
+    console.log('🔄 REOPEN DEBUG: Is Reopening:', isReopening);
+    
+    try {
+      const result = await reopenWorkOrder(workOrder.id, 'in-progress');
+      console.log('🔄 REOPEN DEBUG: Service result:', result);
+      
+      if (result.success && onWorkOrderUpdated) {
+        console.log('🔄 REOPEN DEBUG: Calling onWorkOrderUpdated callback');
+        onWorkOrderUpdated();
+      } else {
+        console.log('🔄 REOPEN DEBUG: Not calling callback - success:', result.success, 'callback exists:', !!onWorkOrderUpdated);
+      }
+    } catch (error) {
+      console.error('🔄 REOPEN DEBUG: Error in handleReopenWorkOrder:', error);
     }
   };
 

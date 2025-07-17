@@ -220,13 +220,20 @@ export class WorkOrderRepository {
 
   async updateStatus(id: string, status: string, userId?: string, userName?: string): Promise<WorkOrder> {
     try {
-      console.log('WorkOrderRepository: Updating work order status:', id, 'to', status);
+      console.log('🔄 REPOSITORY DEBUG: updateStatus called');
+      console.log('🔄 REPOSITORY DEBUG: ID:', id);
+      console.log('🔄 REPOSITORY DEBUG: Status:', status);
+      console.log('🔄 REPOSITORY DEBUG: UserID:', userId);
+      console.log('🔄 REPOSITORY DEBUG: UserName:', userName);
       
       const updateData: any = { 
         status,
         updated_at: new Date().toISOString()
       };
+      
+      console.log('🔄 REPOSITORY DEBUG: Update data:', updateData);
 
+      console.log('🔄 REPOSITORY DEBUG: Making Supabase call...');
       const { data, error } = await supabase
         .from('work_orders')
         .update(updateData)
@@ -234,19 +241,30 @@ export class WorkOrderRepository {
         .select()
         .single();
 
+      console.log('🔄 REPOSITORY DEBUG: Supabase response - data:', data);
+      console.log('🔄 REPOSITORY DEBUG: Supabase response - error:', error);
+
       if (error) {
-        console.error('WorkOrderRepository: Error updating work order status:', error);
+        console.error('🔄 REPOSITORY DEBUG: Supabase error details:', {
+          message: error.message,
+          code: error.code,
+          hint: error.hint,
+          details: error.details
+        });
         throw new Error(`Failed to update work order status: ${error.message}`);
       }
 
       if (!data) {
+        console.error('🔄 REPOSITORY DEBUG: No data returned from Supabase');
         throw new Error(`Work order with ID ${id} not found`);
       }
 
-      console.log('WorkOrderRepository: Successfully updated work order status:', data.id);
-      return this.transformWorkOrder(data);
+      console.log('🔄 REPOSITORY DEBUG: Successfully updated work order status');
+      const transformed = this.transformWorkOrder(data);
+      console.log('🔄 REPOSITORY DEBUG: Transformed result:', transformed);
+      return transformed;
     } catch (error) {
-      console.error('WorkOrderRepository: Error in updateStatus:', error);
+      console.error('🔄 REPOSITORY DEBUG: Error in updateStatus:', error);
       throw error;
     }
   }

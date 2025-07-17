@@ -115,9 +115,17 @@ export class WorkOrderService {
 
   async updateWorkOrderStatus(id: string, status: string, userId?: string, userName?: string): Promise<WorkOrder> {
     try {
-      return await this.repository.updateStatus(id, status, userId, userName);
+      console.log('🔄 SERVICE DEBUG: updateWorkOrderStatus called');
+      console.log('🔄 SERVICE DEBUG: ID:', id);
+      console.log('🔄 SERVICE DEBUG: Status:', status);
+      console.log('🔄 SERVICE DEBUG: UserID:', userId);
+      console.log('🔄 SERVICE DEBUG: UserName:', userName);
+      
+      const result = await this.repository.updateStatus(id, status, userId, userName);
+      console.log('🔄 SERVICE DEBUG: Repository returned:', result);
+      return result;
     } catch (error) {
-      console.error('WorkOrderService: Error updating work order status:', error);
+      console.error('🔄 SERVICE DEBUG: Error updating work order status:', error);
       throw error;
     }
   }
