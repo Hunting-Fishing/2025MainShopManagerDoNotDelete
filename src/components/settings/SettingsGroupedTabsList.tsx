@@ -5,11 +5,29 @@ import { SettingsSection } from '@/types/settingsConfig';
 interface SettingsGroupedTabsListProps {
   sections: SettingsSection[];
   className?: string;
+  searchQuery?: string;
 }
+
+// Helper function to highlight search matches
+const highlightMatch = (text: string, searchQuery?: string) => {
+  if (!searchQuery || !text) return text;
+  
+  const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  
+  return parts.map((part, index) => 
+    regex.test(part) ? (
+      <mark key={index} className="bg-yellow-200 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-100">
+        {part}
+      </mark>
+    ) : part
+  );
+};
 
 export const SettingsGroupedTabsList: React.FC<SettingsGroupedTabsListProps> = ({ 
   sections, 
-  className 
+  className,
+  searchQuery 
 }) => {
   return (
     <div className={`w-full space-y-6 ${className || ''}`}>
@@ -26,15 +44,22 @@ export const SettingsGroupedTabsList: React.FC<SettingsGroupedTabsListProps> = (
             {section.tabs.map((tab) => {
               const Icon = tab.icon;
               return (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  className="flex flex-col items-center justify-center p-4 h-auto text-xs font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm gap-2 hover:bg-muted rounded-lg border border-border data-[state=active]:border-primary"
-                  title={tab.description}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-center leading-tight">{tab.label}</span>
-                </TabsTrigger>
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="flex flex-col items-center justify-center p-4 h-auto text-xs font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm gap-2 hover:bg-muted rounded-lg border border-border data-[state=active]:border-primary"
+                    title={tab.description}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="text-center leading-tight">
+                      {highlightMatch(tab.label, searchQuery)}
+                    </span>
+                    {searchQuery && tab.description && (
+                      <span className="text-xs text-muted-foreground text-center leading-tight">
+                        {highlightMatch(tab.description, searchQuery)}
+                      </span>
+                    )}
+                  </TabsTrigger>
               );
             })}
           </TabsList>
