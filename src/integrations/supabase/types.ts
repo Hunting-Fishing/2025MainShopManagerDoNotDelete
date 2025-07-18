@@ -18641,7 +18641,14 @@ export type Database = {
         Returns: string
       }
       log_security_event: {
-        Args: { event_type: string; details: Json }
+        Args:
+          | { event_type: string; details: Json }
+          | {
+              event_type: string
+              event_description: string
+              user_id?: string
+              metadata?: Json
+            }
         Returns: undefined
       }
       process_referral_reward: {
@@ -18873,6 +18880,7 @@ export type Database = {
         | "reception"
         | "other_staff"
         | "customer"
+        | "marketing"
       form_field_type:
         | "text"
         | "textarea"
@@ -19053,6 +19061,7 @@ export const Constants = {
         "reception",
         "other_staff",
         "customer",
+        "marketing",
       ],
       form_field_type: [
         "text",
