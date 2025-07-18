@@ -421,37 +421,35 @@ const ShoppingSettings: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="tax_rate">Default Tax Rate (%)</Label>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-blue-600" />
+                  <span className="text-blue-800 font-medium">Unified Tax Management</span>
+                </div>
+                <p className="text-blue-700 mt-1">
+                  E-commerce tax settings are now managed in Company Settings to ensure consistency across all modules.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-3"
+                  onClick={() => window.location.href = '/settings/company'}
+                >
+                  Configure Tax Settings
+                </Button>
+              </div>
+              
+              <div className="space-y-2 opacity-50">
+                <Label>Legacy Tax Rate (Read-Only)</Label>
                 <Input
-                  id="tax_rate"
                   type="number"
                   value={settings.tax_rate}
-                  onChange={(e) => updateSetting('tax_rate', parseFloat(e.target.value) || 0)}
+                  disabled
                   placeholder="8.25"
-                  step="0.01"
                 />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Tax Calculation</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select tax calculation method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="exclusive">Tax Exclusive (added to price)</SelectItem>
-                    <SelectItem value="inclusive">Tax Inclusive (included in price)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Enable Tax Collection</Label>
-                  <p className="text-sm text-muted-foreground">Collect taxes on all orders</p>
-                </div>
-                <Switch defaultChecked />
+                <p className="text-xs text-muted-foreground">
+                  This setting is now managed in Company Settings for consistency across quotes, work orders, and e-commerce.
+                </p>
               </div>
             </CardContent>
           </Card>

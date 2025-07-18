@@ -4,14 +4,23 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Truck, Package, Tag, Percent } from 'lucide-react';
 import { CartItem } from '@/hooks/shopping/useCart';
+import { useTaxSettings } from '@/hooks/useTaxSettings';
+import { useShopId } from '@/hooks/useShopId';
 
 interface OrderSummaryProps {
   items: CartItem[];
 }
 
 export const OrderSummary: React.FC<OrderSummaryProps> = ({ items }) => {
+  const { shopId } = useShopId();
+  const { taxSettings } = useTaxSettings(shopId || undefined);
+  
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.08; // 8% tax
+  
+  // Calculate tax using centralized tax settings
+  const taxRate = (taxSettings.parts_tax_rate || 0) / 100;
+  const tax = subtotal * taxRate;
+  
   const shipping = 0; // Free standard shipping
   const total = Number(subtotal + tax + shipping);
 
@@ -96,7 +105,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items }) => {
           )}
           
           <div className="flex justify-between text-sm">
-            <span>Tax (8%)</span>
+            <span>{taxSettings.tax_description || 'Tax'} ({(taxSettings.parts_tax_rate || 0).toFixed(1)}%)</span>
             <span>${tax.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
