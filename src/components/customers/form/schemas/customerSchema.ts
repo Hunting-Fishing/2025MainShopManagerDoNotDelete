@@ -46,6 +46,12 @@ export const customerSchema = z.object({
   credit_terms: z.string().nullish().transform(val => val || ""),
   terms_agreed: z.boolean().optional().default(false),
   
+  // Tax Exemption
+  labor_tax_exempt: z.boolean().optional().default(false),
+  parts_tax_exempt: z.boolean().optional().default(false),
+  tax_exempt_certificate_number: z.string().nullish().transform(val => val || ""),
+  tax_exempt_notes: z.string().nullish().transform(val => val || ""),
+  
   // Fleet Management
   is_fleet: z.boolean().optional().default(false),
   fleet_company: z.string().nullish().transform(val => val || ""),

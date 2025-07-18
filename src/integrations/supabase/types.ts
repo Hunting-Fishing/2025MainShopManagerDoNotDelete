@@ -3073,10 +3073,12 @@ export type Database = {
           household_id: string | null
           id: string
           is_fleet: boolean | null
+          labor_tax_exempt: boolean | null
           last_name: string
           notes: string | null
           other_business_industry: string | null
           other_referral_details: string | null
+          parts_tax_exempt: boolean | null
           phone: string | null
           postal_code: string | null
           preferred_payment_method: string | null
@@ -3088,6 +3090,8 @@ export type Database = {
           shop_id: string
           state: string | null
           tags: Json | null
+          tax_exempt_certificate_number: string | null
+          tax_exempt_notes: string | null
           tax_id: string | null
           terms_agreed: boolean | null
           updated_at: string
@@ -3114,10 +3118,12 @@ export type Database = {
           household_id?: string | null
           id?: string
           is_fleet?: boolean | null
+          labor_tax_exempt?: boolean | null
           last_name: string
           notes?: string | null
           other_business_industry?: string | null
           other_referral_details?: string | null
+          parts_tax_exempt?: boolean | null
           phone?: string | null
           postal_code?: string | null
           preferred_payment_method?: string | null
@@ -3129,6 +3135,8 @@ export type Database = {
           shop_id: string
           state?: string | null
           tags?: Json | null
+          tax_exempt_certificate_number?: string | null
+          tax_exempt_notes?: string | null
           tax_id?: string | null
           terms_agreed?: boolean | null
           updated_at?: string
@@ -3155,10 +3163,12 @@ export type Database = {
           household_id?: string | null
           id?: string
           is_fleet?: boolean | null
+          labor_tax_exempt?: boolean | null
           last_name?: string
           notes?: string | null
           other_business_industry?: string | null
           other_referral_details?: string | null
+          parts_tax_exempt?: boolean | null
           phone?: string | null
           postal_code?: string | null
           preferred_payment_method?: string | null
@@ -3170,6 +3180,8 @@ export type Database = {
           shop_id?: string
           state?: string | null
           tags?: Json | null
+          tax_exempt_certificate_number?: string | null
+          tax_exempt_notes?: string | null
           tax_id?: string | null
           terms_agreed?: boolean | null
           updated_at?: string

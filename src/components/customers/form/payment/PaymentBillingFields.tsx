@@ -107,6 +107,86 @@ export const PaymentBillingFields: React.FC<PaymentBillingFieldsProps> = ({ form
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="labor_tax_exempt"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Labor Tax Exempt</FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    Customer is exempt from labor tax charges
+                  </p>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="parts_tax_exempt"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Parts Tax Exempt</FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    Customer is exempt from parts tax charges
+                  </p>
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="tax_exempt_certificate_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tax Exempt Certificate Number</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Enter certificate number"
+                    {...field}
+                    value={field.value || ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="tax_exempt_notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tax Exempt Notes</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Additional tax exemption notes"
+                    {...field}
+                    value={field.value || ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       </CardContent>
     </Card>

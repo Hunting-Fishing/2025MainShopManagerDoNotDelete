@@ -47,6 +47,12 @@ export interface CustomerEntity {
   credit_terms?: string;
   terms_agreed?: boolean;
   
+  // Tax Exemption
+  labor_tax_exempt?: boolean;
+  parts_tax_exempt?: boolean;
+  tax_exempt_certificate_number?: string;
+  tax_exempt_notes?: string;
+  
   // Computed properties
   fullName: string;
   vehicleCount: number;
@@ -98,6 +104,10 @@ export class Customer implements CustomerEntity {
     public readonly auto_billing?: boolean,
     public readonly credit_terms?: string,
     public readonly terms_agreed?: boolean,
+    public readonly labor_tax_exempt?: boolean,
+    public readonly parts_tax_exempt?: boolean,
+    public readonly tax_exempt_certificate_number?: string,
+    public readonly tax_exempt_notes?: string,
     public readonly vehicles?: CustomerVehicle[]
   ) {}
 

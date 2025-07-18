@@ -57,6 +57,12 @@ export interface Customer {
   credit_terms?: string;
   terms_agreed?: boolean;
   
+  // Tax Exemption fields
+  labor_tax_exempt?: boolean;
+  parts_tax_exempt?: boolean;
+  tax_exempt_certificate_number?: string;
+  tax_exempt_notes?: string;
+  
   // Role field for distinguishing customers from employees/staff
   role?: string;
 }
