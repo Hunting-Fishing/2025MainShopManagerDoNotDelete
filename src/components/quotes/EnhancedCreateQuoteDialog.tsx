@@ -60,6 +60,8 @@ import { formatCurrency } from '@/utils/formatters';
 import { toast } from '@/hooks/use-toast';
 import { IntegratedServiceSelector } from '@/components/work-orders/fields/services/IntegratedServiceSelector';
 import { ComprehensiveQuotePartsSelector } from './ComprehensiveQuotePartsSelector';
+import { useQuoteTaxCalculations } from '@/hooks/useQuoteTaxCalculations';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface EnhancedCreateQuoteDialogProps {
   children: React.ReactNode;
@@ -89,14 +91,56 @@ export function EnhancedCreateQuoteDialog({
   const { customers, loading: customersLoading } = useCustomers();
   const { vehicles, loading: vehiclesLoading } = useVehicles(selectedCustomerId);
   const { sectors, isRefreshing: servicesLoading } = useServiceData();
+  const { userProfile } = useUserProfile();
+  
+  // Get customer data for tax calculations
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+  
+  // Convert services and parts to quote items format for tax calculation
+  const quoteItems = [
+    ...selectedServices.map(service => ({
+      id: '',
+      quote_id: '',
+      name: service.name,
+      description: service.description || '',
+      category: service.category || '',
+      quantity: 1,
+      unit_price: service.total_amount || 0,
+      total_price: service.total_amount || 0,
+      item_type: 'labor' as const,
+      display_order: 0,
+      created_at: '',
+      updated_at: ''
+    })),
+    ...selectedParts.map(part => ({
+      id: '',
+      quote_id: '',
+      name: part.name,
+      description: part.description || '',
+      category: part.category || '',
+      quantity: part.quantity,
+      unit_price: part.unit_price,
+      total_price: part.quantity * part.unit_price,
+      item_type: 'part' as const,
+      display_order: 0,
+      created_at: '',
+      updated_at: ''
+    }))
+  ];
+  
+  // Use centralized tax calculations
+  const taxCalculations = useQuoteTaxCalculations({
+    items: quoteItems,
+    customer: selectedCustomer,
+    shopId: undefined // TODO: Get shop_id from userProfile when available
+  });
 
-  // Calculate totals
+  // Calculate totals using centralized tax system
   const serviceTotal = selectedServices.reduce((sum, service) => sum + (service.total_amount || 0), 0);
   const partsTotal = selectedParts.reduce((sum, part) => sum + (part.total_price || part.quantity * part.unit_price), 0);
   const subtotal = serviceTotal + partsTotal;
-  const taxRate = 0.08; // 8% tax rate - configurable
-  const taxAmount = subtotal * taxRate;
-  const totalAmount = subtotal + taxAmount;
+  const taxAmount = taxCalculations.totalTax;
+  const totalAmount = taxCalculations.grandTotal;
 
   // Set expiry date to 30 days from now by default
   useEffect(() => {
@@ -168,7 +212,7 @@ export function EnhancedCreateQuoteDialog({
         vehicle_id: vehicleId || undefined,
         status: 'draft',
         subtotal,
-        tax_rate: taxRate,
+        tax_rate: taxCalculations.taxBreakdown.laborTaxRate / 100,
         tax_amount: taxAmount,
         total_amount: totalAmount,
         expiry_date: expiryDate || undefined,
@@ -462,7 +506,7 @@ export function EnhancedCreateQuoteDialog({
                         <span>{formatCurrency(subtotal)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Tax ({(taxRate * 100).toFixed(1)}%):</span>
+                        <span>{taxCalculations.taxBreakdown.taxDescription}:</span>
                         <span>{formatCurrency(taxAmount)}</span>
                       </div>
                       <div className="flex justify-between font-semibold text-lg border-t pt-2">

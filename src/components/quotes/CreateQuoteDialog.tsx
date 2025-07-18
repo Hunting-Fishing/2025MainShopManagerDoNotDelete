@@ -14,6 +14,8 @@ import { createQuoteItems } from '@/services/quote/quoteItemService';
 import { QuoteItemFormValues, QUOTE_ITEM_TYPES } from '@/types/quote';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from '@/hooks/use-toast';
+import { useQuoteTaxCalculations } from '@/hooks/useQuoteTaxCalculations';
+import { useUserProfile } from '@/hooks/useUserProfile';
 interface CreateQuoteDialogProps {
   children: React.ReactNode;
   onSuccess?: (quoteId: string) => void;
@@ -40,20 +42,40 @@ export function CreateQuoteDialog({
     unit_price: 0,
     item_type: 'service'
   }]);
-  const {
-    customers,
-    loading: customersLoading
-  } = useCustomers();
-  const {
-    vehicles,
-    loading: vehiclesLoading
-  } = useVehicles(selectedCustomerId);
+  const { customers, loading: customersLoading } = useCustomers();
+  const { vehicles, loading: vehiclesLoading } = useVehicles(selectedCustomerId);
+  const { userProfile } = useUserProfile();
+  
+  // Get customer data for tax calculations
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+  
+  // Convert form items to quote items format for tax calculation
+  const quoteItems = items.map(item => ({
+    id: '',
+    quote_id: '',
+    name: item.name,
+    description: item.description || '',
+    category: item.category || '',
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    total_price: item.quantity * item.unit_price,
+    item_type: item.item_type,
+    display_order: 0,
+    created_at: '',
+    updated_at: ''
+  }));
+  
+  // Use centralized tax calculations
+  const taxCalculations = useQuoteTaxCalculations({
+    items: quoteItems,
+    customer: selectedCustomer,
+    shopId: undefined // TODO: Get shop_id from userProfile when available
+  });
 
-  // Calculate totals
+  // Calculate totals using centralized tax system
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
-  const taxRate = 0.08; // 8% tax rate - this could be configurable
-  const taxAmount = subtotal * taxRate;
-  const totalAmount = subtotal + taxAmount;
+  const taxAmount = taxCalculations.totalTax;
+  const totalAmount = taxCalculations.grandTotal;
 
   // Set expiry date to 30 days from now by default
   useEffect(() => {
@@ -131,7 +153,7 @@ export function CreateQuoteDialog({
         vehicle_id: vehicleId || undefined,
         status: 'draft',
         subtotal,
-        tax_rate: taxRate,
+        tax_rate: taxCalculations.taxBreakdown.laborTaxRate / 100,
         tax_amount: taxAmount,
         total_amount: totalAmount,
         expiry_date: expiryDate || undefined,
@@ -301,7 +323,7 @@ export function CreateQuoteDialog({
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tax ({(taxRate * 100).toFixed(1)}%):</span>
+                  <span>{taxCalculations.taxBreakdown.taxDescription}:</span>
                   <span>{formatCurrency(taxAmount)}</span>
                 </div>
                 <div className="flex justify-between font-semibold text-lg border-t pt-2">

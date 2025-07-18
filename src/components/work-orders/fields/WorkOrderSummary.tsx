@@ -10,7 +10,9 @@ interface WorkOrderSummaryProps {
 }
 
 export function WorkOrderSummary({ form, total }: WorkOrderSummaryProps) {
-  const tax = total * 0.0825; // 8.25% tax rate
+  // Note: This component should ideally receive tax calculations from parent
+  // For now, using a default rate but this should be updated to use centralized tax system
+  const tax = total * 0.0825; // 8.25% tax rate - should use centralized tax calculations
   const grandTotal = total + tax;
 
   return (

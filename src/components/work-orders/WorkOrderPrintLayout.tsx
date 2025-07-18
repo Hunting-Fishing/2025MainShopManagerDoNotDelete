@@ -4,6 +4,7 @@ import { Customer } from '@/types/customer';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
+import { useWorkOrderTaxCalculations } from '@/hooks/useWorkOrderTaxCalculations';
 
 interface WorkOrderPrintLayoutProps {
   workOrder: WorkOrder;
@@ -20,17 +21,21 @@ export function WorkOrderPrintLayout({
   parts,
   timeEntries
 }: WorkOrderPrintLayoutProps) {
-  // Calculate totals
-  const laborTotal = jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0);
-  const partsTotal = parts.reduce((sum, part) => sum + ((part.customerPrice || part.unit_price) * part.quantity), 0);
+  // Use centralized tax calculations
+  const taxCalculations = useWorkOrderTaxCalculations({
+    jobLines,
+    parts,
+    customer
+  });
+  
+  const laborTotal = taxCalculations.laborAmount;
+  const partsTotal = taxCalculations.partsAmount;
   const shopSupplies = 5.00; // Standard shop supplies fee
   const hazardousMaterials = 0.00;
   const laborDiscount = 0.00;
   const partsDiscount = 0.00;
-  const laborTaxRate = 0.05; // 5% tax rate
-  const partsTaxRate = 0.07; // 7% tax rate
-  const laborTaxes = laborTotal * laborTaxRate;
-  const partsTaxes = partsTotal * partsTaxRate;
+  const laborTaxes = taxCalculations.laborTax;
+  const partsTaxes = taxCalculations.partsTax;
   const totalAmount = laborTotal + partsTotal + shopSupplies + hazardousMaterials + laborTaxes + partsTaxes - laborDiscount - partsDiscount;
 
   const formatCurrency = (amount: number) => {

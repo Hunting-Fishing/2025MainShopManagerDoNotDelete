@@ -9,6 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { createInvoice } from '@/services/invoiceService';
+import { useTaxSettings } from '@/hooks/useTaxSettings';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { calculateTax } from '@/utils/taxCalculations';
 import { 
   FileText, 
   User, 
@@ -54,6 +57,8 @@ const defaultFormData: InvoiceFormData = {
 export default function InvoiceCreate() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<InvoiceFormData>(defaultFormData);
+  const { userProfile } = useUserProfile();
+  const { taxSettings, loading: taxSettingsLoading } = useTaxSettings(undefined); // TODO: Get shop_id when available
 
   const updateFormData = (field: keyof Omit<InvoiceFormData, 'lineItems'>, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -103,12 +108,21 @@ export default function InvoiceCreate() {
     return formData.lineItems.reduce((sum, item) => sum + item.total, 0);
   };
 
-  const calculateTax = () => {
-    return calculateSubtotal() * 0.1; // 10% tax rate
+  const calculateTaxAmount = () => {
+    if (!taxSettings || taxSettingsLoading) return calculateSubtotal() * 0.1; // Default fallback
+    
+    const taxCalculation = calculateTax({
+      laborAmount: calculateSubtotal() * 0.6, // Assume 60% labor
+      partsAmount: calculateSubtotal() * 0.4, // Assume 40% parts
+      taxSettings,
+      isCustomerTaxExempt: false
+    });
+    
+    return taxCalculation.totalTax;
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() + calculateTax();
+    return calculateSubtotal() + calculateTaxAmount();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,7 +140,7 @@ export default function InvoiceCreate() {
 
     try {
       const subtotal = calculateSubtotal();
-      const tax = calculateTax();
+      const tax = calculateTaxAmount();
       const total = calculateTotal();
 
       const invoiceData = {
@@ -344,8 +358,8 @@ export default function InvoiceCreate() {
                 <span>${calculateSubtotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Tax (10%):</span>
-                <span>${calculateTax().toFixed(2)}</span>
+                <span>{taxSettings?.tax_description || 'Tax'}:</span>
+                <span>${calculateTaxAmount().toFixed(2)}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-lg">

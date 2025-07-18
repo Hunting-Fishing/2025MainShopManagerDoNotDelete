@@ -13,6 +13,7 @@ import { Calculator } from 'lucide-react';
 import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
 import { useWorkOrderJobLineOperations } from '@/hooks/useWorkOrderJobLineOperations';
 import { useWorkOrderPartsData } from '@/hooks/useWorkOrderPartsData';
+import { useWorkOrderTaxCalculations } from '@/hooks/useWorkOrderTaxCalculations';
 
 interface WorkOrderDetailedFormProps {
   workOrder: WorkOrder;
@@ -36,15 +37,18 @@ export function WorkOrderDetailedForm({
   onPartsChange,
   isEditMode
 }: WorkOrderDetailedFormProps) {
-  const [subtotal, setSubtotal] = useState(0);
-  const [tax, setTax] = useState(0);
-  const [total, setTotal] = useState(0);
-
   // Enhanced job line operations
   const jobLineOperations = useWorkOrderJobLineOperations(jobLines, onWorkOrderUpdate);
   
   // Parts data operations  
   const { addPart, updatePart, deletePart } = useWorkOrderPartsData(workOrder.id);
+  
+  // Use centralized tax calculations
+  const taxCalculations = useWorkOrderTaxCalculations({
+    jobLines,
+    parts: allParts,
+    customer
+  });
 
   // Handle part operations with proper error handling
   const handlePartUpdate = async (part: WorkOrderPart) => {
@@ -74,16 +78,10 @@ export function WorkOrderDetailedForm({
     }
   };
 
-  // Calculate totals from job lines and parts
-  useEffect(() => {
-    const jobLinesTotal = jobLines.reduce((sum, jobLine) => sum + (jobLine.total_amount || 0), 0);
-    const partsTotal = allParts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.customerPrice || part.unit_price || 0)), 0);
-    const newSubtotal = jobLinesTotal + partsTotal;
-    const newTax = newSubtotal * 0.08; // 8% tax rate - should be configurable
-    setSubtotal(newSubtotal);
-    setTax(newTax);
-    setTotal(newSubtotal + newTax);
-  }, [jobLines, allParts]);
+  // Totals are now calculated by the tax calculations hook
+  const subtotal = taxCalculations.subtotal;
+  const tax = taxCalculations.totalTax;
+  const total = taxCalculations.grandTotal;
 
   return (
     <div className="space-y-6 max-w-[1200px] mx-auto">
@@ -278,7 +276,7 @@ export function WorkOrderDetailedForm({
               <span className="font-medium">${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between py-2 border-b">
-              <span className="font-medium">Tax (8%):</span>
+              <span className="font-medium">{taxCalculations.taxBreakdown.taxDescription}:</span>
               <span className="font-medium">${tax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between py-3 border-t-2 border-primary/20">
