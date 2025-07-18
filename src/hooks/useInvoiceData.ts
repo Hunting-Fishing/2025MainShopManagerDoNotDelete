@@ -3,8 +3,12 @@ import { StaffMember, Invoice, InvoiceItem } from '@/types/invoice';
 import { WorkOrder } from '@/types/workOrder';
 import { InventoryItem } from '@/types/inventory';
 import { v4 as uuidv4 } from 'uuid';
+import { useTaxSettings } from '@/hooks/useTaxSettings';
+import { useShopId } from '@/hooks/useShopId';
 
 export function useInvoiceData(initialWorkOrderId?: string) {
+  const { shopId } = useShopId();
+  const { taxSettings } = useTaxSettings(shopId || undefined);
   const [invoice, setInvoice] = useState<Invoice>({
     id: uuidv4(),
     number: `INV-${Date.now().toString().slice(-6)}`,
@@ -20,7 +24,7 @@ export function useInvoiceData(initialWorkOrderId?: string) {
     payment_method: '',
     subtotal: 0,
     tax: 0,
-    tax_rate: 0.08,
+    tax_rate: (taxSettings.parts_tax_rate || 8) / 100,
     total: 0,
     notes: '',
     work_order_id: initialWorkOrderId || '',

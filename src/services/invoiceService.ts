@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Invoice } from '@/types/invoice';
 
 // Transform database invoice to our Invoice type
@@ -16,7 +16,7 @@ const transformDatabaseInvoice = (dbInvoice: any): Invoice => ({
   status: dbInvoice.status as 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled',
   subtotal: dbInvoice.subtotal || 0,
   tax: dbInvoice.tax || 0,
-  tax_rate: 0.08, // Default tax rate since field doesn't exist
+  tax_rate: 0.08, // Default fallback - should be updated with company tax settings
   total: dbInvoice.total || 0,
   created_at: dbInvoice.created_at,
   updated_at: dbInvoice.updated_at,

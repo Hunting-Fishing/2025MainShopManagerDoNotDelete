@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Order, OrderItem, CreateOrderRequest, UpdateOrderRequest } from "@/types/order";
+import { taxSettingsService } from "@/services/settings/taxSettingsService";
 
 /**
  * Create a new order from cart items with enhanced calculations
@@ -18,7 +19,27 @@ export const createOrder = async (request: CreateOrderRequest): Promise<Order> =
   const subtotal = request.items.reduce((sum, item) => 
     sum + (item.unit_price * item.quantity), 0
   );
-  const taxAmount = subtotal * 0.08; // 8% tax rate
+  
+  // Get shop ID and tax settings
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('shop_id')
+    .eq('id', user.id)
+    .maybeSingle();
+    
+  let taxAmount = 0;
+  if (profile?.shop_id) {
+    try {
+      const taxSettings = await taxSettingsService.getTaxSettings(profile.shop_id);
+      taxAmount = subtotal * (taxSettings.parts_tax_rate / 100);
+    } catch (error) {
+      console.error('Failed to get tax settings, using default:', error);
+      taxAmount = subtotal * 0.08; // Fallback to 8%
+    }
+  } else {
+    taxAmount = subtotal * 0.08; // Fallback to 8%
+  }
+  
   const shippingAmount = calculateShippingCost(request.shipping_method);
   const totalAmount = subtotal + taxAmount + shippingAmount;
 

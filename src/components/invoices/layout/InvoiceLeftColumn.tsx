@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { StaffMember, Invoice, InvoiceTemplate, InvoiceItem } from "@/types/invoice";
 import { WorkOrder } from "@/types/workOrder";
 import { InventoryItem } from "@/types/inventory";
+import { useTaxSettings } from "@/hooks/useTaxSettings";
+import { useShopId } from "@/hooks/useShopId";
 
 interface InvoiceLeftColumnProps {
   invoice: Invoice;
@@ -54,6 +56,8 @@ export function InvoiceLeftColumn({
   handleApplyTemplate,
   handleSaveTemplate
 }: InvoiceLeftColumnProps) {
+  const { shopId } = useShopId();
+  const { taxSettings } = useTaxSettings(shopId || undefined);
   const handleInvoiceChange = (field: string, value: any) => {
     setInvoice(prev => ({
       ...prev,
@@ -70,7 +74,7 @@ export function InvoiceLeftColumn({
         name: templateName,
         description: templateDescription || "",
         default_items: invoice.items || [],
-        default_tax_rate: invoice.tax_rate || 0.08,
+        default_tax_rate: invoice.tax_rate || (taxSettings.parts_tax_rate || 8) / 100,
         default_notes: invoice.notes || "",
         default_due_date_days: 30,
         last_used: null

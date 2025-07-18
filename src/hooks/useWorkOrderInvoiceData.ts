@@ -31,7 +31,7 @@ export const useWorkOrderInvoiceData = (workOrder: WorkOrder): InvoiceData => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
-  const [taxRate, setTaxRate] = useState(0.0832); // Default tax rate
+  const [taxRate, setTaxRate] = useState(0.08); // Default tax rate
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,18 +109,18 @@ export const useWorkOrderInvoiceData = (workOrder: WorkOrder): InvoiceData => {
             setShop(shopData);
           }
 
-          // Try to fetch tax rate from company settings
+          // Try to fetch tax rate from company tax settings
           const { data: taxSettings } = await supabase
             .from('company_settings')
             .select('settings_value')
             .eq('shop_id', shopId)
-            .eq('settings_key', 'tax_rate')
+            .eq('settings_key', 'tax_settings')
             .maybeSingle();
 
           if (taxSettings?.settings_value && typeof taxSettings.settings_value === 'object') {
-            const settingsValue = taxSettings.settings_value as { rate?: number };
-            if (settingsValue.rate) {
-              setTaxRate(Number(settingsValue.rate));
+            const settingsValue = taxSettings.settings_value as { parts_tax_rate?: number };
+            if (settingsValue.parts_tax_rate) {
+              setTaxRate(settingsValue.parts_tax_rate / 100);
             }
           }
         }

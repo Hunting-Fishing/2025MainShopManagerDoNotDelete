@@ -3,6 +3,9 @@ import React from "react";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTaxSettings } from "@/hooks/useTaxSettings";
+import { useShopId } from "@/hooks/useShopId";
+import { calculateTax } from "@/utils/taxCalculations";
 
 interface WorkOrderSummaryProps {
   form: any;
@@ -10,10 +13,18 @@ interface WorkOrderSummaryProps {
 }
 
 export function WorkOrderSummary({ form, total }: WorkOrderSummaryProps) {
-  // Note: This component should ideally receive tax calculations from parent
-  // For now, using a default rate but this should be updated to use centralized tax system
-  const tax = total * 0.0825; // 8.25% tax rate - should use centralized tax calculations
-  const grandTotal = total + tax;
+  const { shopId } = useShopId();
+  const { taxSettings } = useTaxSettings(shopId || undefined);
+  
+  // Calculate tax using centralized tax system
+  const taxCalculation = calculateTax({
+    laborAmount: total * 0.6, // Estimate 60% labor
+    partsAmount: total * 0.4,  // Estimate 40% parts
+    taxSettings
+  });
+  
+  const tax = taxCalculation.totalTax;
+  const grandTotal = taxCalculation.grandTotal;
 
   return (
     <div>
@@ -55,7 +66,7 @@ export function WorkOrderSummary({ form, total }: WorkOrderSummaryProps) {
                 <span className="font-medium">${total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Tax (8.25%):</span>
+                <span>{taxCalculation.taxBreakdown.taxDescription} ({((taxCalculation.taxBreakdown.laborTaxRate + taxCalculation.taxBreakdown.partsTaxRate) / 2).toFixed(2)}%):</span>
                 <span className="font-medium">${tax.toFixed(2)}</span>
               </div>
               <div className="border-t border-slate-300 my-2 pt-2 flex justify-between font-bold">
