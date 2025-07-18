@@ -9,9 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useToast } from "@/hooks/use-toast";
+import { TaxSettingsSection } from "./company/TaxSettingsSection";
+import { supabase } from "@/integrations/supabase/client";
 
 export function CompanyTab() {
   const { toast } = useToast();
+  const [taxDataChanged, setTaxDataChanged] = useState(false);
   
   const {
     companyInfo,
@@ -32,6 +35,30 @@ export function CompanyTab() {
     handleSave,
     loadCompanyInfo
   } = useCompanyInfo();
+
+  // Get shopId from the company info hook
+  const [shopId, setShopId] = useState<string>('');
+  
+  useEffect(() => {
+    const getShopId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('shop_id')
+            .eq('id', user.id)
+            .single();
+          if (profile?.shop_id) {
+            setShopId(profile.shop_id);
+          }
+        }
+      } catch (error) {
+        console.error('Error getting shop ID:', error);
+      }
+    };
+    getShopId();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -278,6 +305,14 @@ export function CompanyTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Tax Settings */}
+      {shopId && (
+        <TaxSettingsSection 
+          shopId={shopId} 
+          onDataChange={setTaxDataChanged}
+        />
+      )}
 
       {/* Save Button */}
       <div className="flex justify-end">
