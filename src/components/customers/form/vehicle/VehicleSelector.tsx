@@ -13,6 +13,7 @@ import {
 } from "./fields";
 import { VehicleAdditionalDetails } from "./VehicleAdditionalDetails";
 import { useVehicleForm } from "./useVehicleForm";
+import { DebugVehicleForm } from "../DebugVehicleForm";
 
 interface VehicleSelectorProps {
   form: UseFormReturn<any>;
@@ -94,6 +95,15 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
           />
         </div>
         <VehicleAdditionalDetails form={form} index={index} decodedDetails={decodedVehicleInfo} />
+        
+        {/* Debug component for development */}
+        <DebugVehicleForm
+          form={form}
+          index={index}
+          makes={makes}
+          isLoadingMakes={isLoadingMakes}
+          makesError={makesError}
+        />
       </CardContent>
     </Card>
   );

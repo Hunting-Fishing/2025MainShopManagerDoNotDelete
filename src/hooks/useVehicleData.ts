@@ -17,12 +17,21 @@ export const useVehicleData = () => {
       setMakesError(null);
       
       try {
-        console.log('Loading vehicle makes...');
+        console.log('🎯 useVehicleData: Loading vehicle makes...');
         const fetchedMakes = await fetchMakes();
-        console.log('Vehicle makes loaded:', fetchedMakes);
+        console.log('🎯 useVehicleData: Vehicle makes loaded:', {
+          count: fetchedMakes.length,
+          makes: fetchedMakes.slice(0, 3).map(m => m.make_display) // Show first 3 for debugging
+        });
+        
+        if (fetchedMakes.length === 0) {
+          console.warn('⚠️ useVehicleData: No vehicle makes found in database');
+          setMakesError('No vehicle makes found in database');
+        }
+        
         setMakes(fetchedMakes);
       } catch (error) {
-        console.error('Error loading makes:', error);
+        console.error('❌ useVehicleData: Error loading makes:', error);
         setMakesError(error instanceof Error ? error.message : 'Failed to load makes');
       } finally {
         setIsLoadingMakes(false);
@@ -35,6 +44,7 @@ export const useVehicleData = () => {
   // Fetch models for a specific make
   const fetchModels = useCallback(async (makeId: string) => {
     if (!makeId) {
+      console.log('🎯 useVehicleData: No makeId provided, clearing models');
       setModels([]);
       return;
     }
@@ -43,12 +53,21 @@ export const useVehicleData = () => {
     setModelsError(null);
     
     try {
-      console.log('Loading models for make:', makeId);
+      console.log('🎯 useVehicleData: Loading models for make:', makeId);
       const fetchedModels = await fetchVehicleModels(makeId);
-      console.log('Models loaded:', fetchedModels);
+      console.log('🎯 useVehicleData: Models loaded:', {
+        count: fetchedModels.length,
+        models: fetchedModels.slice(0, 3).map(m => m.model_display) // Show first 3 for debugging
+      });
+      
+      if (fetchedModels.length === 0) {
+        console.warn(`⚠️ useVehicleData: No models found for make: ${makeId}`);
+        setModelsError(`No models found for make: ${makeId}`);
+      }
+      
       setModels(fetchedModels);
     } catch (error) {
-      console.error('Error loading models:', error);
+      console.error('❌ useVehicleData: Error loading models:', error);
       setModelsError(error instanceof Error ? error.message : 'Failed to load models');
       setModels([]);
     } finally {

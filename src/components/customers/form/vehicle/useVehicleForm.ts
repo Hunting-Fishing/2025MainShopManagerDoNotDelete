@@ -31,12 +31,21 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
       setIsLoadingMakes(true);
       setMakesError(null);
       try {
-        console.log('Loading vehicle makes...');
+        console.log('🚗 useVehicleForm: Loading vehicle makes...');
         const makesData = await fetchMakes();
-        console.log('Vehicle makes loaded:', makesData);
+        console.log('🚗 useVehicleForm: Vehicle makes loaded:', {
+          count: makesData.length,
+          sample: makesData.slice(0, 3).map(m => m.make_display)
+        });
+        
+        if (makesData.length === 0) {
+          console.warn('⚠️ useVehicleForm: No vehicle makes found - this will cause validation issues');
+          setMakesError('No vehicle makes found in database');
+        }
+        
         setMakes(makesData);
       } catch (error) {
-        console.error('Error loading makes:', error);
+        console.error('❌ useVehicleForm: Error loading makes:', error);
         setMakesError(error instanceof Error ? error.message : 'Failed to load makes');
         setMakes([]);
       } finally {
@@ -48,24 +57,29 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   }, []);
 
   const fetchModels = async (makeId: string) => {
-    console.log('Fetching models for make:', makeId);
+    console.log('🚗 useVehicleForm: Fetching models for make:', makeId);
     try {
       const modelsData = await fetchVehicleModels(makeId);
+      console.log('🚗 useVehicleForm: Models fetched:', {
+        count: modelsData.length,
+        sample: modelsData.slice(0, 3).map(m => m.model_display)
+      });
       setModels(modelsData);
     } catch (error) {
-      console.error('Error loading models:', error);
+      console.error('❌ useVehicleForm: Error loading models:', error);
       setModels([]);
     }
   };
 
   const handleVinDecode = async (vin: string) => {
-    console.log('Starting VIN decode process for:', vin);
+    console.log('🔍 useVehicleForm: Starting VIN decode process for:', vin);
+    console.log('🔍 useVehicleForm: Current makes available:', makes.length);
     
     try {
       const result = await decode(vin);
       
       if (result) {
-        console.log('VIN decode successful, result:', result);
+        console.log('✅ useVehicleForm: VIN decode successful, result:', result);
         setDecodedVehicleInfo(result);
         
         // Set all available fields from VIN decode result
@@ -75,7 +89,8 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         }
         
         if (result.make) {
-          console.log('Setting decoded make:', result.make);
+          console.log('🏷️ useVehicleForm: Setting decoded make:', result.make);
+          console.log('🏷️ useVehicleForm: Available makes for matching:', makes.length);
           
           // Normalize the make name for matching
           const normalizedMake = result.make.toLowerCase().replace(/[^a-z0-9]/g, '-');
@@ -89,11 +104,12 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           );
           
           if (matchedMake) {
-            console.log('Found matching make in database:', matchedMake);
+            console.log('✅ useVehicleForm: Found matching make in database:', matchedMake);
             form.setValue(`vehicles.${index}.make`, matchedMake.make_id);
             fetchModels(matchedMake.make_id);
           } else {
-            console.log('No matching make found, using VIN decoded value:', result.make);
+            console.log('⚠️ useVehicleForm: No matching make found, using VIN decoded value:', result.make);
+            console.log('⚠️ useVehicleForm: This may cause validation issues if makes list is empty');
             // Store the decoded make as raw value for display
             form.setValue(`vehicles.${index}.make`, result.make);
             // Store decoded make separately for display purposes
@@ -154,14 +170,23 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           form.setValue(`vehicles.${index}.color`, result.color);
         }
         
-        // Trigger form validation
-        form.trigger(`vehicles.${index}`);
+        // Trigger form validation with debug info
+        console.log('🔄 useVehicleForm: Triggering form validation for vehicle', index);
+        const validationResult = await form.trigger(`vehicles.${index}`);
+        console.log('🔄 useVehicleForm: Validation result:', validationResult);
+        
+        // Get current form errors for debugging
+        const formErrors = form.formState.errors;
+        if (formErrors.vehicles && formErrors.vehicles[index]) {
+          console.error('❌ useVehicleForm: Validation errors after VIN decode:', formErrors.vehicles[index]);
+        }
+        
       } else {
-        console.log('VIN decode returned no result');
+        console.log('⚠️ useVehicleForm: VIN decode returned no result');
         setDecodedVehicleInfo(null);
       }
     } catch (error) {
-      console.error('VIN decode failed:', error);
+      console.error('❌ useVehicleForm: VIN decode failed:', error);
       setDecodedVehicleInfo(null);
     }
   };
