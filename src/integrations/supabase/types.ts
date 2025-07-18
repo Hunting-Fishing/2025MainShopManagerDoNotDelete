@@ -18259,18 +18259,15 @@ export type Database = {
           | { days_back?: number; result_limit?: number }
           | { limit_count?: number }
         Returns: {
-          product_id: string
-          product_name: string
-          interaction_count: number
-          view_count: number
-          cart_add_count: number
-          save_count: number
-          click_count: number
-          average_rating: number
-          review_count: number
-          image_url: string
+          id: string
+          name: string
+          title: string
           price: number
-          category: string
+          image_url: string
+          average_rating: number
+          view_count: number
+          order_count: number
+          popularity_score: number
         }[]
       }
       get_product_interactions_by_category: {
@@ -18299,9 +18296,12 @@ export type Database = {
           | { p_user_id?: string; p_session_id?: string; result_limit?: number }
           | { user_id_param: string; limit_count?: number }
         Returns: {
-          product_id: string
-          product_name: string
-          category: string
+          id: string
+          name: string
+          title: string
+          price: number
+          image_url: string
+          average_rating: number
           viewed_at: string
         }[]
       }
