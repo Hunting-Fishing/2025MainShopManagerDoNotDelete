@@ -17847,19 +17847,18 @@ export type Database = {
           affiliate_link: string | null
           average_rating: number | null
           category_id: string | null
-          category_name: string | null
-          category_slug: string | null
           created_at: string | null
           description: string | null
           dimensions: Json | null
           id: string | null
           image_url: string | null
-          inventory_quantity: number | null
-          inventory_status: string | null
+          inventory_item_id: string | null
           is_approved: boolean | null
           is_available: boolean | null
           is_bestseller: boolean | null
           is_featured: boolean | null
+          low_stock_threshold: number | null
+          name: string | null
           price: number | null
           product_type: Database["public"]["Enums"]["product_type"] | null
           review_count: number | null
@@ -17871,9 +17870,74 @@ export type Database = {
           suggested_by: string | null
           suggestion_reason: string | null
           title: string | null
+          track_inventory: boolean | null
           tracking_params: string | null
           updated_at: string | null
           weight: number | null
+        }
+        Insert: {
+          affiliate_link?: string | null
+          average_rating?: number | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          dimensions?: Json | null
+          id?: string | null
+          image_url?: string | null
+          inventory_item_id?: string | null
+          is_approved?: boolean | null
+          is_available?: boolean | null
+          is_bestseller?: boolean | null
+          is_featured?: boolean | null
+          low_stock_threshold?: number | null
+          name?: string | null
+          price?: number | null
+          product_type?: Database["public"]["Enums"]["product_type"] | null
+          review_count?: number | null
+          sale_end_date?: string | null
+          sale_price?: number | null
+          sale_start_date?: string | null
+          sku?: string | null
+          stock_quantity?: number | null
+          suggested_by?: string | null
+          suggestion_reason?: string | null
+          title?: string | null
+          track_inventory?: boolean | null
+          tracking_params?: string | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          affiliate_link?: string | null
+          average_rating?: number | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          dimensions?: Json | null
+          id?: string | null
+          image_url?: string | null
+          inventory_item_id?: string | null
+          is_approved?: boolean | null
+          is_available?: boolean | null
+          is_bestseller?: boolean | null
+          is_featured?: boolean | null
+          low_stock_threshold?: number | null
+          name?: string | null
+          price?: number | null
+          product_type?: Database["public"]["Enums"]["product_type"] | null
+          review_count?: number | null
+          sale_end_date?: string | null
+          sale_price?: number | null
+          sale_start_date?: string | null
+          sku?: string | null
+          stock_quantity?: number | null
+          suggested_by?: string | null
+          suggestion_reason?: string | null
+          title?: string | null
+          track_inventory?: boolean | null
+          tracking_params?: string | null
+          updated_at?: string | null
+          weight?: number | null
         }
         Relationships: [
           {
@@ -17881,6 +17945,20 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
             referencedColumns: ["id"]
           },
         ]
