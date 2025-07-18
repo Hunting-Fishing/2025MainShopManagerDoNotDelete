@@ -16706,7 +16706,7 @@ export type Database = {
           labor_rate_type: string | null
           name: string
           notes: string | null
-          status: string | null
+          status: Database["public"]["Enums"]["job_line_status"] | null
           subcategory: string | null
           total_amount: number | null
           updated_at: string
@@ -16727,7 +16727,7 @@ export type Database = {
           labor_rate_type?: string | null
           name: string
           notes?: string | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["job_line_status"] | null
           subcategory?: string | null
           total_amount?: number | null
           updated_at?: string
@@ -16748,7 +16748,7 @@ export type Database = {
           labor_rate_type?: string | null
           name?: string
           notes?: string | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["job_line_status"] | null
           subcategory?: string | null
           total_amount?: number | null
           updated_at?: string
@@ -18256,7 +18256,7 @@ export type Database = {
           labor_rate_type: string | null
           name: string
           notes: string | null
-          status: string | null
+          status: Database["public"]["Enums"]["job_line_status"] | null
           subcategory: string | null
           total_amount: number | null
           updated_at: string
@@ -18788,6 +18788,25 @@ export type Database = {
         | "email"
         | "phone"
         | "file"
+      job_line_status:
+        | "pending"
+        | "signed-onto-task"
+        | "in-progress"
+        | "waiting-for-parts"
+        | "paused"
+        | "awaiting-approval"
+        | "quality-check"
+        | "completed"
+        | "on-hold"
+        | "ready-for-delivery"
+        | "needs-road-test"
+        | "tech-support"
+        | "warranty"
+        | "sublet"
+        | "customer-auth-required"
+        | "parts-ordered"
+        | "parts-arrived"
+        | "rework-required"
       permission_type: "create" | "read" | "update" | "delete"
       product_type: "affiliate" | "suggested"
       resource_type:
@@ -18950,6 +18969,26 @@ export const Constants = {
         "email",
         "phone",
         "file",
+      ],
+      job_line_status: [
+        "pending",
+        "signed-onto-task",
+        "in-progress",
+        "waiting-for-parts",
+        "paused",
+        "awaiting-approval",
+        "quality-check",
+        "completed",
+        "on-hold",
+        "ready-for-delivery",
+        "needs-road-test",
+        "tech-support",
+        "warranty",
+        "sublet",
+        "customer-auth-required",
+        "parts-ordered",
+        "parts-arrived",
+        "rework-required",
       ],
       permission_type: ["create", "read", "update", "delete"],
       product_type: ["affiliate", "suggested"],
