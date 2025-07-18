@@ -18640,6 +18640,10 @@ export type Database = {
         }
         Returns: string
       }
+      log_security_event: {
+        Args: { event_type: string; details: Json }
+        Returns: undefined
+      }
       process_referral_reward: {
         Args: { referral_id: string; points?: number }
         Returns: string
