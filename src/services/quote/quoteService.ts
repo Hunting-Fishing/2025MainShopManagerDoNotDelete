@@ -123,7 +123,7 @@ export async function createQuote(quote: Partial<Quote>): Promise<Quote> {
       vehicle_id: quote.vehicle_id,
       status: quote.status || 'draft',
       subtotal: quote.subtotal || 0,
-      tax_rate: quote.tax_rate || 0.08,
+      tax_rate: quote.tax_rate || 0, // Let tax calculations handle this
       tax_amount: quote.tax_amount || 0,
       total_amount: quote.total_amount || 0,
       expiry_date: quote.expiry_date,

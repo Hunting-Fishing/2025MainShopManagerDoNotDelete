@@ -126,17 +126,8 @@ export const InvoiceRightColumn: React.FC<InvoiceRightColumnProps> = ({
           <span>${subtotal.toFixed(2)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <Label htmlFor="taxRate">Tax Rate:</Label>
-          <div className="flex items-center space-x-2">
-            <Input
-              id="taxRate"
-              type="number"
-              value={taxRate.toString()}
-              onChange={(e) => onTaxRateChange(parseFloat(e.target.value))}
-              className="w-20 text-right"
-            />
-            <span>%</span>
-          </div>
+          <span className="text-sm text-muted-foreground">Tax Details:</span>
+          <span className="text-sm">{taxRate.toFixed(2)}% (From Company Settings)</span>
         </div>
         <div className="flex justify-between">
           <span>Tax:</span>

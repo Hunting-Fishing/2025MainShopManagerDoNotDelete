@@ -92,8 +92,11 @@ export function useInvoiceForm(initialWorkOrderId?: string, initialInvoiceData?:
     return saveTemplate(templateData);
   };
 
-  // Use invoice totals hook
-  const totalsResult = useInvoiceTotals(items);
+  // Use invoice totals hook with customer information
+  const totalsResult = useInvoiceTotals({
+    items,
+    customer: (typeof invoice.customer === 'object' ? invoice.customer : null)
+  });
   const { subtotal, tax, total, taxRate } = totalsResult;
   
   const onTaxRateChange = (newRate: number) => {

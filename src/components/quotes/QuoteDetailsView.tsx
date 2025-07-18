@@ -9,6 +9,8 @@ import { formatCurrency } from '@/utils/formatters';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ConvertToWorkOrderButton } from './ConvertToWorkOrderButton';
+import { useQuoteTaxCalculations } from '@/hooks/useQuoteTaxCalculations';
+import { getTaxSummaryText } from '@/utils/taxCalculations';
 
 interface QuoteDetailsViewProps {
   quoteId: string;
@@ -19,6 +21,13 @@ export function QuoteDetailsView({ quoteId }: QuoteDetailsViewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('details');
+
+  // Get tax calculations using the centralized hook
+  const taxCalculations = useQuoteTaxCalculations({
+    quote,
+    items: quote?.items,
+    customer: null // We'd need to fetch customer data separately if needed
+  });
 
   useEffect(() => {
     fetchQuote(quoteId);
@@ -166,7 +175,7 @@ export function QuoteDetailsView({ quoteId }: QuoteDetailsViewProps) {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="font-medium">{formatCurrency(quote.total_amount)}</p>
+                  <p className="font-medium">{formatCurrency(taxCalculations.grandTotal || quote.total_amount)}</p>
                 </div>
               </div>
               {quote.notes && (
@@ -231,13 +240,15 @@ export function QuoteDetailsView({ quoteId }: QuoteDetailsViewProps) {
                     </tr>
                     <tr>
                       <td colSpan={4}></td>
-                      <td className="p-2 text-right font-medium">Tax ({(quote.tax_rate * 100).toFixed(2)}%)</td>
-                      <td className="p-2 text-right">{formatCurrency(quote.tax_amount)}</td>
+                      <td className="p-2 text-right font-medium">
+                        {taxCalculations.isLoading ? 'Tax (Loading...)' : getTaxSummaryText(taxCalculations)}
+                      </td>
+                      <td className="p-2 text-right">{formatCurrency(taxCalculations.totalTax)}</td>
                     </tr>
                     <tr className="font-bold">
                       <td colSpan={4}></td>
                       <td className="p-2 text-right">Total</td>
-                      <td className="p-2 text-right">{formatCurrency(quote.total_amount)}</td>
+                      <td className="p-2 text-right">{formatCurrency(taxCalculations.grandTotal || quote.total_amount)}</td>
                     </tr>
                   </tfoot>
                 </table>
