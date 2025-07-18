@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useToast } from "@/hooks/use-toast";
 import { TaxSettingsSection } from "./company/TaxSettingsSection";
+import { TaxSystemStatusCard } from "@/components/tax/TaxSystemStatusCard";
 import { supabase } from "@/integrations/supabase/client";
 
 export function CompanyTab() {
@@ -306,12 +307,15 @@ export function CompanyTab() {
         </CardContent>
       </Card>
 
-      {/* Tax Settings */}
+      {/* Tax Settings with System Status */}
       {shopId && (
-        <TaxSettingsSection 
-          shopId={shopId} 
-          onDataChange={setTaxDataChanged}
-        />
+        <div className="space-y-4">
+          <TaxSystemStatusCard shopId={shopId} />
+          <TaxSettingsSection 
+            shopId={shopId} 
+            onDataChange={setTaxDataChanged}
+          />
+        </div>
       )}
 
       {/* Save Button */}
