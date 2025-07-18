@@ -14,6 +14,8 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   const [makes, setMakes] = useState<any[]>([]);
   const [models, setModels] = useState<any[]>([]);
   const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
+  const [isLoadingMakes, setIsLoadingMakes] = useState(false);
+  const [makesError, setMakesError] = useState<string | null>(null);
   
   const { 
     decode, 
@@ -26,12 +28,19 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
 
   useEffect(() => {
     const loadMakes = async () => {
+      setIsLoadingMakes(true);
+      setMakesError(null);
       try {
+        console.log('Loading vehicle makes...');
         const makesData = await fetchMakes();
+        console.log('Vehicle makes loaded:', makesData);
         setMakes(makesData);
       } catch (error) {
         console.error('Error loading makes:', error);
+        setMakesError(error instanceof Error ? error.message : 'Failed to load makes');
         setMakes([]);
+      } finally {
+        setIsLoadingMakes(false);
       }
     };
 
@@ -167,6 +176,8 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     decodedVehicleInfo,
     fetchModels,
     handleVinDecode,
-    onVinRetry
+    onVinRetry,
+    isLoadingMakes,
+    makesError
   };
 };

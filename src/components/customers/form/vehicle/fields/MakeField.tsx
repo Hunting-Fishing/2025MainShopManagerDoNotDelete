@@ -12,9 +12,18 @@ import { CarMake } from "@/types/vehicle";
 interface MakeFieldProps extends BaseFieldProps {
   makes: CarMake[];
   onMakeChange?: (make: string) => void;
+  isLoadingMakes?: boolean;
+  makesError?: string | null;
 }
 
-export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], onMakeChange }) => {
+export const MakeField: React.FC<MakeFieldProps> = ({ 
+  form, 
+  index, 
+  makes = [], 
+  onMakeChange, 
+  isLoadingMakes = false, 
+  makesError = null 
+}) => {
   // Ensure makes is valid array
   const safeMakes = Array.isArray(makes) ? makes : [];
   
@@ -31,7 +40,7 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
   // Check if current value is a VIN decoded value (not in our makes list)
   const isVinDecodedValue = currentMakeValue && 
     !safeMakes.find(make => make.make_id === currentMakeValue) &&
-    (decodedMake || safeMakes.length === 0);
+    (decodedMake || safeMakes.length === 0 || isLoadingMakes);
   
   return (
     <FormField

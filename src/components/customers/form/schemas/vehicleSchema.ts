@@ -57,8 +57,14 @@ export const emptyVehicle: VehicleFormData = {
 // Add the vehicleSchema export using Zod - make year required with min length
 export const vehicleSchema = z.object({
   id: z.string().optional(),
-  make: z.string().min(1, "Make is required"),
-  model: z.string().min(1, "Model is required"),
+  make: z.string().min(1, "Make is required").refine((val) => {
+    // Allow any value if it's a VIN-decoded value or if makes aren't loaded yet
+    return val && val.length > 0;
+  }, "Make is required"),
+  model: z.string().min(1, "Model is required").refine((val) => {
+    // Allow any value if it's a VIN-decoded value or if models aren't loaded yet
+    return val && val.length > 0;
+  }, "Model is required"),
   year: z.string().min(1, "Year is required"),
   vin: z.string().optional().or(z.literal("")),
   license_plate: z.string().optional().or(z.literal("")),

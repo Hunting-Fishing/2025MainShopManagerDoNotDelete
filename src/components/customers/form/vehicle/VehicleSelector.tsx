@@ -25,7 +25,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   index,
   onRemove
 }) => {
-  const { 
+  const {
     makes, 
     models, 
     vinProcessing, 
@@ -35,7 +35,9 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     decodedVehicleInfo, 
     fetchModels,
     handleVinDecode,
-    onVinRetry
+    onVinRetry,
+    isLoadingMakes,
+    makesError
   } = useVehicleForm({ form, index });
 
   const make = form.watch(`vehicles.${index}.make`);
@@ -73,15 +75,17 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             index={index}
             years={Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i)}
           />
-          <MakeField 
-            form={form} 
-            index={index} 
-            makes={makes} 
-            onMakeChange={(selectedMake) => {
-              fetchModels(selectedMake);
-              form.setValue(`vehicles.${index}.model`, '');
-            }}
-          />
+            <MakeField 
+              form={form} 
+              index={index} 
+              makes={makes} 
+              onMakeChange={(selectedMake) => {
+                fetchModels(selectedMake);
+                form.setValue(`vehicles.${index}.model`, '');
+              }}
+              isLoadingMakes={isLoadingMakes}
+              makesError={makesError}
+            />
           <ModelField 
             form={form} 
             index={index} 

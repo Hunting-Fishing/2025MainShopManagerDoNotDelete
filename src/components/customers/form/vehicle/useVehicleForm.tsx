@@ -11,7 +11,7 @@ interface UseVehicleFormProps {
 }
 
 export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
-  const { makes, models, fetchModels } = useVehicleData();
+  const { makes, models, fetchModels, isLoadingMakes, makesError } = useVehicleData();
   const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
   
   const { 
@@ -199,6 +199,9 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     decodedVehicleInfo,
     fetchModels,
     handleVinDecode,
-    onVinRetry
+    onVinRetry,
+    isLoadingMakes,
+    makesError,
+    hasAttempted: false // Add this for compatibility
   };
 };
