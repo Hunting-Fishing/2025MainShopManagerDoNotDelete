@@ -18,14 +18,7 @@ export const useRecentlyViewedProducts = (userId?: string, sessionId?: string, l
     try {
       setIsLoading(true);
       const data = await getRecentlyViewedProducts(userId, sessionId, limit);
-      // Transform the data to match our interface
-      const transformedData: RecentlyViewedProduct[] = data.map((item: any) => ({
-        product_id: item.id || item.product_id || '',
-        product_name: item.name || item.title || item.product_name || '',
-        category: item.category || 'Uncategorized',
-        viewed_at: item.viewed_at || new Date().toISOString()
-      }));
-      setProducts(transformedData);
+      setProducts(data);
     } catch (error) {
       console.error('Error fetching recently viewed products:', error);
       toast({
