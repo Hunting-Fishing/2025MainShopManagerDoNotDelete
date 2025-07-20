@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { RoleGuard } from './RoleGuard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   requiredRole?: string;
   allowedRoles?: string[];
   requireOwner?: boolean;
@@ -79,7 +79,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       requireOwner={requireOwner}
       requireAdmin={requireAdmin}
     >
-      {children}
+      {children || <Outlet />}
     </RoleGuard>
   );
 };

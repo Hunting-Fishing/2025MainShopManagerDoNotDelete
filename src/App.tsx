@@ -5,12 +5,12 @@ import {
   Route,
   Navigate,
 } from 'react-router-dom';
-import { Login } from '@/pages/Login';
-import { Signup } from '@/pages/Signup';
-import { Dashboard } from '@/pages/Dashboard';
+import Login from '@/pages/Login';
+import Signup from '@/pages/Signup';
+import Dashboard from '@/pages/Dashboard';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import UserProfile from '@/pages/Profile';
-import UserOrders from '@/pages/Orders';
+import UserProfile from '@/pages/UserProfile';
+import UserOrders from '@/pages/UserOrders';
 import { Layout } from '@/components/layout/Layout';
 
 function App() {
