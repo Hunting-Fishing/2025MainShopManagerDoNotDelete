@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { AppErrorBoundary } from "@/components/error/AppErrorBoundary";
 import { AuthErrorBoundary } from "@/components/auth/AuthErrorBoundary";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -42,7 +42,6 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
             <AuthErrorBoundary>
               <Routes>
                 {/* Public routes */}
@@ -98,7 +97,6 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AuthErrorBoundary>
-          </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </AppErrorBoundary>
