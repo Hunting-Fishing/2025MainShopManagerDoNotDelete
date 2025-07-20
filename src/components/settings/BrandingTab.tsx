@@ -9,6 +9,7 @@ import { ColorsTab } from "./branding/ColorsTab";
 import { LogoTab } from "./branding/LogoTab";
 import { ThemeTab } from "./branding/ThemeTab";
 import { useShopName } from "@/hooks/useShopName";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Default branding colors
 const defaultColors = {
@@ -21,11 +22,10 @@ const defaultColors = {
 
 export function BrandingTab() {
   const { shopName, updateShopName, loading: shopNameLoading } = useShopName();
+  const { settings, updateTheme } = useTheme();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [colors, setColors] = useState(defaultColors);
-  
-  // Theme functionality temporarily disabled
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -52,6 +52,10 @@ export function BrandingTab() {
     const newName = e.target.value;
     // Update immediately for better UX, save happens on blur or save action
     updateShopName(newName);
+  };
+
+  const handleThemeChange = (theme: 'light' | 'dark' | 'auto') => {
+    updateTheme({ theme_mode: theme });
   };
 
   const handleReset = () => {
@@ -167,9 +171,11 @@ export function BrandingTab() {
           />
         </TabsContent>
 
-        <TabsContent value="theme" className="space-y-4">
-          {/* Remove theme and setTheme props */}
-          <ThemeTab />
+        <TabsContent value="theme">
+          <ThemeTab 
+            theme={settings.theme_mode} 
+            setTheme={handleThemeChange}
+          />
         </TabsContent>
       </Tabs>
     </div>

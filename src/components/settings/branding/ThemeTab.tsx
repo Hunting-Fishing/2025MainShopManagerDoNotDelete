@@ -5,10 +5,12 @@ import { ThemePreview } from "./ThemePreview";
 import { Label } from "@/components/ui/label";
 // Theme functionality temporarily disabled
 
-export function ThemeTab() {
-  // Theme functionality temporarily disabled
-  const theme = 'light';
-  const setTheme = () => {};
+interface ThemeTabProps {
+  theme: 'light' | 'dark' | 'auto';
+  setTheme: (theme: 'light' | 'dark' | 'auto') => void;
+}
+
+export function ThemeTab({ theme, setTheme }: ThemeTabProps) {
 
   return (
     <Card>

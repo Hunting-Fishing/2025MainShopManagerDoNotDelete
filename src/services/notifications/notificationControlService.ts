@@ -14,7 +14,7 @@ class NotificationControlService {
     try {
       const { data, error } = await supabase
         .from('user_preferences')
-        .select('notification_preferences')
+        .select('preferences')
         .eq('user_id', userId)
         .single();
 
@@ -65,7 +65,7 @@ class NotificationControlService {
         },
       };
 
-      return data?.notification_preferences || defaultPreferences;
+      return (data?.preferences as any) || defaultPreferences;
     } catch (error) {
       console.error('Error loading notification preferences:', error);
       throw error;
@@ -81,7 +81,8 @@ class NotificationControlService {
         .from('user_preferences')
         .upsert({
           user_id: userId,
-          notification_preferences: preferences,
+          category: 'notifications',
+          preferences: JSON.parse(JSON.stringify(preferences)),
           updated_at: new Date().toISOString()
         });
 
