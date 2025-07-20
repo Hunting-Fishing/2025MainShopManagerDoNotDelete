@@ -15470,6 +15470,54 @@ export type Database = {
         }
         Relationships: []
       }
+      unified_settings: {
+        Row: {
+          category: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_encrypted: boolean | null
+          key: string
+          migrated_from: string | null
+          schema_version: number
+          shop_id: string
+          updated_at: string | null
+          updated_by: string | null
+          validation_rules: Json | null
+          value: Json
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_encrypted?: boolean | null
+          key: string
+          migrated_from?: string | null
+          schema_version?: number
+          shop_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+          validation_rules?: Json | null
+          value: Json
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_encrypted?: boolean | null
+          key?: string
+          migrated_from?: string | null
+          schema_version?: number
+          shop_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          validation_rules?: Json | null
+          value?: Json
+        }
+        Relationships: []
+      }
       user_2fa: {
         Row: {
           backup_codes: string[] | null
@@ -18415,6 +18463,10 @@ export type Database = {
           viewed_at: string
         }[]
       }
+      get_setting_safe: {
+        Args: { p_shop_id: string; p_category: string; p_key: string }
+        Returns: Json
+      }
       get_upcoming_filing_deadlines: {
         Args: { days_ahead?: number }
         Returns: {
@@ -18769,6 +18821,10 @@ export type Database = {
             }
         Returns: undefined
       }
+      migrate_company_settings_to_unified: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       process_referral_reward: {
         Args: { referral_id: string; points?: number }
         Returns: string
@@ -18848,6 +18904,15 @@ export type Database = {
           updated_at: string
           relevance_score: number
         }[]
+      }
+      set_setting_safe: {
+        Args: {
+          p_shop_id: string
+          p_category: string
+          p_key: string
+          p_value: Json
+        }
+        Returns: string
       }
       track_product_interaction: {
         Args:
@@ -18985,6 +19050,16 @@ export type Database = {
           p_display_order: number
         }
         Returns: string
+      }
+      validate_settings_migration: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          shop_id: string
+          settings_key: string
+          legacy_exists: boolean
+          unified_exists: boolean
+          values_match: boolean
+        }[]
       }
     }
     Enums: {
