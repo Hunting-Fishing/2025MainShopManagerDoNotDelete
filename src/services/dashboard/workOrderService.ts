@@ -47,6 +47,7 @@ export const getRecentWorkOrders = async (): Promise<RecentWorkOrder[]> => {
     const formattedOrders = recentOrders.map(order => {
       console.log("Processing work order:", order.id);
       
+      // Fix: Use correct database column names
       const customerName = order.customer_name || 
         (order.customer_first_name && order.customer_last_name 
           ? `${order.customer_first_name} ${order.customer_last_name}`.trim()
