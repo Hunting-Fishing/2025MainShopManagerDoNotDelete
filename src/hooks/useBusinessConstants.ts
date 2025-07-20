@@ -29,6 +29,20 @@ export function useBusinessConstants() {
     }
   };
 
+  const addCustomIndustry = async (industryName: string): Promise<string> => {
+    try {
+      const value = await businessConstantsService.addCustomIndustry(industryName);
+      
+      // Refresh the constants to include the new industry
+      await fetchBusinessConstants();
+      
+      return value;
+    } catch (err: any) {
+      console.error('Error adding custom industry:', err);
+      throw new Error(err.message || 'Failed to add custom industry');
+    }
+  };
+
   useEffect(() => {
     fetchBusinessConstants();
   }, []);
@@ -39,6 +53,7 @@ export function useBusinessConstants() {
     paymentMethods, 
     isLoading, 
     error, 
-    fetchBusinessConstants 
+    fetchBusinessConstants,
+    addCustomIndustry
   };
 }

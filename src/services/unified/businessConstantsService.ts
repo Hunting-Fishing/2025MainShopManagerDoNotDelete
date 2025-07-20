@@ -19,12 +19,9 @@ class BusinessConstantsService {
    */
   async getBusinessConstants(): Promise<BusinessConstantsResponse> {
     try {
+      // Use raw SQL query since the types aren't generated yet
       const { data, error } = await supabase
-        .from('business_constants')
-        .select('category, key, label, value, description, sort_order')
-        .eq('is_active', true)
-        .order('category')
-        .order('sort_order');
+        .rpc('get_business_constants') as any;
 
       if (error) throw error;
 
