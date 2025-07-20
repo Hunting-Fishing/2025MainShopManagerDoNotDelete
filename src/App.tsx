@@ -7,8 +7,8 @@ import { HelmetProvider } from 'react-helmet-async';
 import { CompanyProvider } from '@/contexts/CompanyContext';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
 import { SidebarProvider } from '@/hooks/use-sidebar';
-import { ThemeProvider } from '@/hooks/use-theme';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { ThemeProvider } from 'next-themes';
+import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 // Import pages
@@ -23,7 +23,7 @@ import Settings from '@/pages/Settings';
 import Maintenance from '@/pages/Maintenance';
 import CustomerPortal from '@/pages/CustomerPortal';
 import ClientBooking from '@/pages/ClientBooking';
-import LandingPage from '@/pages/LandingPage';
+import Index from '@/pages/Index';
 
 // Settings sub-pages
 import BrandingSettings from '@/pages/settings/BrandingSettings';
@@ -50,7 +50,7 @@ function App() {
                 <Router>
                   <Routes>
                     {/* Public routes */}
-                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/" element={<Index />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/customer-portal" element={<CustomerPortal />} />
                     <Route path="/client-booking" element={<ClientBooking />} />
@@ -58,90 +58,90 @@ function App() {
                     {/* Protected routes with dashboard layout */}
                     <Route path="/dashboard" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <Dashboard />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                     
                     <Route path="/work-orders" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <WorkOrders />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                     
                     <Route path="/calendar" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <Calendar />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                     
                     <Route path="/inventory" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <Inventory />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                     
                     <Route path="/customers" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <Customers />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                     
                     <Route path="/reports" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <Reports />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                     
                     <Route path="/maintenance" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <Maintenance />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                     
                     <Route path="/settings" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <Settings />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                     
                     {/* Settings sub-routes */}
                     <Route path="/settings/branding" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <BrandingSettings />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                     
                     <Route path="/settings/company" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <CompanySettings />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                     
                     <Route path="/settings/appearance" element={
                       <ProtectedRoute>
-                        <DashboardLayout>
+                        <Layout>
                           <AppearanceSettings />
-                        </DashboardLayout>
+                        </Layout>
                       </ProtectedRoute>
                     } />
                   </Routes>
