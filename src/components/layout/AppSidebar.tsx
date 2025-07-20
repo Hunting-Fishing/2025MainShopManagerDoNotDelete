@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useSidebar } from '@/hooks/use-sidebar';
 
 interface SidebarProps {
   onClose?: () => void;
@@ -22,6 +23,7 @@ interface SidebarProps {
 export function AppSidebar({ onClose }: SidebarProps) {
   const { user, isAuthenticated } = useAuthUser();
   const { userRole, isLoading: roleLoading } = useUserRole();
+  const { toggle } = useSidebar();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -71,23 +73,21 @@ export function AppSidebar({ onClose }: SidebarProps) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white border-r border-gray-200">
+    <div className="h-full w-64 flex flex-col bg-white border-r border-gray-200 shadow-lg">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">AutoShop Pro</h2>
           <p className="text-sm text-gray-500">Management System</p>
         </div>
-        {onClose && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="lg:hidden"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose || toggle}
+          className="lg:hidden"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* User Profile Section */}
@@ -113,7 +113,9 @@ export function AppSidebar({ onClose }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <MainNavigation />
+      <div className="flex-1 overflow-y-auto">
+        <MainNavigation />
+      </div>
 
       {/* Footer */}
       <div className="p-4 border-t border-gray-200">
