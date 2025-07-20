@@ -2,19 +2,24 @@
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SettingsErrorBoundaryProps {
   error: string | null;
   onRetry?: () => void;
   onReset?: () => void;
+  showHomeButton?: boolean;
 }
 
 export const SettingsErrorBoundary: React.FC<SettingsErrorBoundaryProps> = ({
   error,
   onRetry,
-  onReset
+  onReset,
+  showHomeButton = false
 }) => {
+  const navigate = useNavigate();
+
   if (!error) return null;
 
   return (
@@ -22,7 +27,7 @@ export const SettingsErrorBoundary: React.FC<SettingsErrorBoundaryProps> = ({
       <AlertTriangle className="h-4 w-4" />
       <AlertDescription className="flex flex-col gap-3">
         <span>{error}</span>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {onRetry && (
             <Button variant="outline" size="sm" onClick={onRetry}>
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -32,6 +37,12 @@ export const SettingsErrorBoundary: React.FC<SettingsErrorBoundaryProps> = ({
           {onReset && (
             <Button variant="outline" size="sm" onClick={onReset}>
               Reset
+            </Button>
+          )}
+          {showHomeButton && (
+            <Button variant="outline" size="sm" onClick={() => navigate('/')}>
+              <Home className="h-4 w-4 mr-2" />
+              Go Home
             </Button>
           )}
         </div>

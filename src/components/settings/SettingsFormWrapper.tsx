@@ -11,6 +11,7 @@ interface SettingsFormWrapperProps {
   error?: string | null;
   onRetry?: () => void;
   children: React.ReactNode;
+  className?: string;
 }
 
 export const SettingsFormWrapper: React.FC<SettingsFormWrapperProps> = ({
@@ -19,10 +20,11 @@ export const SettingsFormWrapper: React.FC<SettingsFormWrapperProps> = ({
   isLoading = false,
   error = null,
   onRetry,
-  children
+  children,
+  className = ''
 }) => {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         {description && <p className="text-muted-foreground">{description}</p>}
