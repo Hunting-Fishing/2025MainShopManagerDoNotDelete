@@ -139,9 +139,9 @@ export const generateTrendingRecommendations = async (
     if (error) throw error;
 
     // Create trending recommendations
-    const recommendations = (trending || []).map((product, index) => ({
+    const recommendations = (trending || []).map((product: any, index) => ({
       user_id: userId,
-      product_id: product.product_id,
+      product_id: product.id || product.product_id || '',
       recommendation_type: 'trending' as const,
       score: Math.max(0.1, 1 - (index * 0.05)) // Decreasing score based on ranking
     }));

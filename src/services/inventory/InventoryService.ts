@@ -40,7 +40,7 @@ export class InventoryService {
       const { data, error } = await supabase
         .from('inventory_items')
         .select('*')
-        .lt('quantity', supabase.raw('minimum_stock'))
+        .filter('quantity', 'lt', 'minimum_stock')
         .order('quantity', { ascending: true });
 
       if (error) {

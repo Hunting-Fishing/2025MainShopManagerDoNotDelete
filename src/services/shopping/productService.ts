@@ -104,7 +104,37 @@ export class ProductService {
     
     if (error) throw error;
     
-    return (data || []).map(transformPopularProduct);
+    return (data || []).map((product: any) => ({
+      id: product.id || product.product_id,
+      name: product.name || product.product_name || product.title,
+      title: product.name || product.product_name || product.title,
+      description: product.description || '',
+      price: product.price || 0,
+      retailPrice: product.price || 0,
+      imageUrl: product.image_url || '',
+      image_url: product.image_url || '',
+      affiliateUrl: product.affiliate_link || '',
+      affiliate_link: product.affiliate_link || '',
+      category: product.category || 'Uncategorized',
+      categoryId: '',
+      manufacturer: 'Professional Tools',
+      rating: product.average_rating || 0,
+      reviewCount: product.review_count || product.order_count || 0,
+      tier: product.price > 500 ? 'premium' : product.price > 100 ? 'midgrade' : 'economy',
+      isFeatured: false,
+      bestSeller: false,
+      stockQuantity: 100,
+      sku: '',
+      productType: 'affiliate',
+      createdAt: '',
+      updatedAt: '',
+      discount: 0,
+      freeShipping: false,
+      source: 'other',
+      tags: [],
+      subcategory: undefined,
+      seller: 'Tool Supply Co'
+    }));
   }
 
   // Get products by category
