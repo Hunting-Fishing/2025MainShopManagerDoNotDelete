@@ -32,10 +32,12 @@ export function useCompanyInfo() {
   const [saveComplete, setSaveComplete] = useState(false);
   const [dataChanged, setDataChanged] = useState(false);
   const [shopId, setShopId] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
   const loadCompanyInfo = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       const { shopId: loadedShopId, companyInfo: loadedInfo } = await companyService.getShopInfo();
       const loadedHours = await companyService.getBusinessHours(loadedShopId);
@@ -46,9 +48,11 @@ export function useCompanyInfo() {
       setInitialized(true);
     } catch (error) {
       console.error('Failed to load company info:', error);
+      const errorMessage = "Failed to load company information";
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: "Failed to load company information",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -160,6 +164,7 @@ export function useCompanyInfo() {
     initialized,
     saveComplete,
     dataChanged,
+    error,
     handleInputChange,
     handleSelectChange,
     handleBusinessHoursChange,
