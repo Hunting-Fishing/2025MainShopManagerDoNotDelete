@@ -9,66 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Plus, Edit, Trash2, Download, Eye, Copy } from "lucide-react";
-
-interface ReportTemplate {
-  id: string;
-  name: string;
-  description: string | null;
-  template_type: string;
-  template_content: any;
-  is_active: boolean;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-const DEFAULT_TEMPLATES = [
-  {
-    name: "Annual Impact Report",
-    description: "Comprehensive report showing annual impact metrics and achievements",
-    template_type: "impact",
-    template_content: {
-      sections: [
-        { title: "Executive Summary", type: "text", required: true },
-        { title: "Program Outcomes", type: "metrics", required: true },
-        { title: "Financial Overview", type: "financial", required: true },
-        { title: "Volunteer Impact", type: "volunteer_stats", required: false },
-        { title: "Donor Recognition", type: "donor_list", required: false }
-      ]
-    }
-  },
-  {
-    name: "Grant Application Report",
-    description: "Template for grant applications and progress reports",
-    template_type: "grant",
-    template_content: {
-      sections: [
-        { title: "Project Description", type: "text", required: true },
-        { title: "Budget Breakdown", type: "budget", required: true },
-        { title: "Timeline & Milestones", type: "timeline", required: true },
-        { title: "Expected Outcomes", type: "metrics", required: true },
-        { title: "Organization Capacity", type: "capacity", required: false }
-      ]
-    }
-  },
-  {
-    name: "Board Meeting Report",
-    description: "Regular board meeting reports with financial and operational updates",
-    template_type: "board",
-    template_content: {
-      sections: [
-        { title: "Financial Summary", type: "financial", required: true },
-        { title: "Program Updates", type: "program_status", required: true },
-        { title: "Volunteer Metrics", type: "volunteer_stats", required: false },
-        { title: "Upcoming Events", type: "events", required: false },
-        { title: "Action Items", type: "action_items", required: true }
-      ]
-    }
-  }
-];
+import { reportTemplatesService, type ReportTemplate } from "@/lib/services/reportTemplatesService";
 
 interface ReportTemplateBuilderProps {
   onSubmit?: () => Promise<void>;
@@ -94,13 +37,8 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
 
   const loadTemplates = async () => {
     try {
-      const { data, error } = await supabase
-        .from("report_templates")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setTemplates(data || []);
+      const templates = await reportTemplatesService.getTemplates();
+      setTemplates(templates);
     } catch (error) {
       console.error("Error loading report templates:", error);
       toast({
@@ -114,28 +52,7 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
   const createDefaultTemplates = async () => {
     try {
       setLoading(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("shop_id")
-        .eq("id", user?.id)
-        .single();
-
-      if (!profile?.shop_id) throw new Error("Shop not found");
-
-      const templatesWithShop = DEFAULT_TEMPLATES.map(template => ({
-        ...template,
-        shop_id: profile.shop_id,
-        created_by: user?.id || '',
-        is_active: true
-      }));
-
-      const { error } = await supabase
-        .from("report_templates")
-        .insert(templatesWithShop);
-
-      if (error) throw error;
+      await reportTemplatesService.initializeDefaultTemplates();
 
       toast({
         title: "Success",
@@ -160,38 +77,11 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("shop_id")
-        .eq("id", user?.id)
-        .single();
-
-      if (!profile?.shop_id) throw new Error("Shop not found");
-
-      const templateData = {
-        ...formData,
-        shop_id: profile.shop_id,
-        created_by: user?.id || ''
-      };
-
-      let result;
       if (editingTemplate) {
-        result = await supabase
-          .from("report_templates")
-          .update(templateData)
-          .eq("id", editingTemplate.id)
-          .select()
-          .single();
+        await reportTemplatesService.updateTemplate(editingTemplate.key, formData);
       } else {
-        result = await supabase
-          .from("report_templates")
-          .insert(templateData)
-          .select()
-          .single();
+        await reportTemplatesService.createTemplate(formData);
       }
-
-      if (result.error) throw result.error;
 
       toast({
         title: "Success",
@@ -228,16 +118,11 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
     });
   };
 
-  const deleteTemplate = async (templateId: string) => {
+  const deleteTemplate = async (templateKey: string) => {
     if (!confirm("Are you sure you want to delete this report template?")) return;
 
     try {
-      const { error } = await supabase
-        .from("report_templates")
-        .delete()
-        .eq("id", templateId);
-
-      if (error) throw error;
+      await reportTemplatesService.deleteTemplate(templateKey);
 
       toast({
         title: "Success",
@@ -257,30 +142,15 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
 
   const duplicateTemplate = async (template: ReportTemplate) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("shop_id")
-        .eq("id", user?.id)
-        .single();
-
-      if (!profile?.shop_id) throw new Error("Shop not found");
-
       const duplicatedTemplate = {
         name: `${template.name} (Copy)`,
         description: template.description,
         template_type: template.template_type,
         template_content: template.template_content,
-        is_active: true,
-        shop_id: profile.shop_id,
-        created_by: user?.id || ''
+        is_active: true
       };
 
-      const { error } = await supabase
-        .from("report_templates")
-        .insert(duplicatedTemplate);
-
-      if (error) throw error;
+      await reportTemplatesService.createTemplate(duplicatedTemplate);
 
       toast({
         title: "Success",
@@ -449,7 +319,7 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
                 </TableHeader>
                 <TableBody>
                   {templates.map((template) => (
-                    <TableRow key={template.id}>
+                    <TableRow key={template.key}>
                       <TableCell className="font-medium">{template.name}</TableCell>
                       <TableCell>
                         <Badge className={getTemplateTypeColor(template.template_type)}>
@@ -465,7 +335,7 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {new Date(template.created_at).toLocaleDateString()}
+                        System Template
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -481,7 +351,7 @@ export function ReportTemplateBuilder({ onSubmit }: ReportTemplateBuilderProps) 
                           <Button variant="outline" size="sm" title="Generate Report">
                             <Download className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => deleteTemplate(template.id)} title="Delete">
+                          <Button variant="outline" size="sm" onClick={() => deleteTemplate(template.key)} title="Delete">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>

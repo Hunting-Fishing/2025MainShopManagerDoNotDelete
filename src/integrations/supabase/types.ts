@@ -18472,6 +18472,13 @@ export type Database = {
           viewed_at: string
         }[]
       }
+      get_report_templates: {
+        Args: { p_shop_id: string }
+        Returns: {
+          key: string
+          template_data: Json
+        }[]
+      }
       get_setting_safe: {
         Args: { p_shop_id: string; p_category: string; p_key: string }
         Returns: Json
@@ -18913,6 +18920,10 @@ export type Database = {
           updated_at: string
           relevance_score: number
         }[]
+      }
+      set_report_template: {
+        Args: { p_shop_id: string; p_key: string; p_template_data: Json }
+        Returns: string
       }
       set_setting_safe: {
         Args: {
