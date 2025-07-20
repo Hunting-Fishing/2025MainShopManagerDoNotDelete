@@ -1,4 +1,7 @@
-// Work Order Status Constants
+import { workOrderSettingsService } from '@/services/settings/workOrderSettingsService';
+
+// DEPRECATED: Use workOrderSettingsService.getAvailableStatuses() instead
+// This is kept for backward compatibility but will be removed in future versions
 export const WORK_ORDER_STATUSES = [
   { value: 'pending', label: 'Pending' },
   { value: 'in-progress', label: 'In Progress' },
@@ -23,7 +26,8 @@ export const WORK_ORDER_STATUSES = [
   { value: 'internal-ro', label: 'Internal RO' }
 ];
 
-// Work Order Priority Constants
+// DEPRECATED: Use workOrderSettingsService.getAvailablePriorities() instead
+// This is kept for backward compatibility but will be removed in future versions
 export const WORK_ORDER_PRIORITIES = [
   { value: 'low', label: 'Low' },
   { value: 'medium', label: 'Medium' },
@@ -31,7 +35,8 @@ export const WORK_ORDER_PRIORITIES = [
   { value: 'urgent', label: 'Urgent' }
 ];
 
-// Default form values
+// DEPRECATED: Use workOrderSettingsService.getDefaults() instead
+// This is kept for backward compatibility but will be removed in future versions
 export const DEFAULT_WORK_ORDER_VALUES = {
   customer: "",
   description: "",
@@ -49,3 +54,16 @@ export const DEFAULT_WORK_ORDER_VALUES = {
   vin: "",
   inventoryItems: []
 };
+
+// Helper functions for easier migration
+export async function getWorkOrderStatuses() {
+  return await workOrderSettingsService.getAvailableStatuses();
+}
+
+export async function getWorkOrderPriorities() {
+  return await workOrderSettingsService.getAvailablePriorities();
+}
+
+export async function getWorkOrderDefaults() {
+  return await workOrderSettingsService.getDefaults();
+}

@@ -1,20 +1,14 @@
 
 // Centralized settings services export
-// Only export services that actually exist to avoid build errors
+export { companyService } from './companyService';
+export { workOrderSettingsService } from './workOrderSettingsService';
 
-// Note: Add these exports when the actual service files are created:
-// export { companyService } from './companyService';
-// export { businessHoursService } from './businessHoursService';
-// export { businessIndustryService } from './businessIndustryService';
-// export { appearanceService } from './appearanceService';
-// export { securityService } from './securityService';
-// export { emailProviderService } from './emailProviderService';
-// export { integrationService } from './integrationService';
+// Re-export types for convenience
+export type { CompanyInfo, BusinessHours } from './companyService';
+export type { WorkOrderOption, WorkOrderDefaults } from './workOrderSettingsService';
 
-// Re-export types for convenience when services are implemented
-// export type { CompanyInfo, BusinessHours } from './companyService';
-
-// Placeholder for future service implementations
+// Unified settings services
 export const settingsServices = {
-  // Services will be added here as they are implemented
+  company: () => import('./companyService').then(m => m.companyService),
+  workOrder: () => import('./workOrderSettingsService').then(m => m.workOrderSettingsService),
 };
