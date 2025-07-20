@@ -9109,6 +9109,86 @@ export type Database = {
           },
         ]
       }
+      navigation_items: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number
+          href: string
+          icon: string
+          id: string
+          is_active: boolean | null
+          required_roles: string[] | null
+          section_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          href: string
+          icon: string
+          id?: string
+          is_active?: boolean | null
+          required_roles?: string[] | null
+          section_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          href?: string
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          required_roles?: string[] | null
+          section_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "navigation_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "navigation_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      navigation_sections: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       nonprofit_analytics: {
         Row: {
           created_at: string | null
@@ -15416,6 +15496,36 @@ export type Database = {
           id?: string
           secret?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_navigation_preferences: {
+        Row: {
+          created_at: string | null
+          custom_order: Json | null
+          hidden_items: string[] | null
+          hidden_sections: string[] | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          custom_order?: Json | null
+          hidden_items?: string[] | null
+          hidden_sections?: string[] | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          custom_order?: Json | null
+          hidden_items?: string[] | null
+          hidden_sections?: string[] | null
+          id?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
