@@ -1,21 +1,10 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { dashboardSettingsService } from '@/services/settings/dashboardSettingsService';
 import { useToast } from '@/hooks/use-toast';
+import type { DashboardWidget, DashboardPreferences } from '@/services/settings/dashboardSettingsService';
 
-export interface DashboardWidget {
-  id: string;
-  name: string;
-  enabled: boolean;
-  position: number;
-  [key: string]: any;
-}
-
-export interface DashboardPreferences {
-  layout: 'compact' | 'detailed' | 'executive';
-  refreshInterval: number; // in seconds
-  widgets: DashboardWidget[];
-  defaultView: 'default' | 'nonprofit';
-}
+// Re-export types for backward compatibility
+export type { DashboardWidget, DashboardPreferences };
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
   { id: 'statsCards', name: 'Key Statistics', enabled: true, position: 0 },
@@ -46,29 +35,11 @@ export function useDashboardPreferences() {
 
   const loadPreferences = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('preferences')
-        .eq('user_id', user.id)
-        .eq('category', 'dashboard')
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading preferences:', error);
-        return;
-      }
-
-      if (data?.preferences) {
-        setPreferences({ 
-          ...DEFAULT_PREFERENCES, 
-          ...(data.preferences as unknown as DashboardPreferences)
-        });
-      }
+      const prefs = await dashboardSettingsService.getPreferences();
+      setPreferences(prefs);
     } catch (error) {
       console.error('Error loading dashboard preferences:', error);
+      // Keep default preferences on error
     } finally {
       setIsLoading(false);
     }
@@ -76,23 +47,10 @@ export function useDashboardPreferences() {
 
   const savePreferences = async (newPreferences: Partial<DashboardPreferences>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const updatedPreferences = { ...preferences, ...newPreferences };
       setPreferences(updatedPreferences);
 
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          category: 'dashboard',
-          preferences: updatedPreferences as any,
-        });
-
-      if (error) {
-        throw error;
-      }
+      await dashboardSettingsService.savePreferences(newPreferences);
 
       toast({
         title: 'Preferences saved',
@@ -105,22 +63,37 @@ export function useDashboardPreferences() {
         description: 'Failed to save dashboard preferences.',
         variant: 'destructive',
       });
+      // Revert local state on error
+      await loadPreferences();
     }
   };
 
-  const toggleWidget = (widgetId: string) => {
-    const updatedWidgets = preferences.widgets.map(widget =>
-      widget.id === widgetId ? { ...widget, enabled: !widget.enabled } : widget
-    );
-    savePreferences({ widgets: updatedWidgets });
+  const toggleWidget = async (widgetId: string) => {
+    try {
+      await dashboardSettingsService.toggleWidget(widgetId);
+      await loadPreferences(); // Refresh from service
+    } catch (error) {
+      console.error('Error toggling widget:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update widget settings.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const reorderWidgets = (widgets: DashboardWidget[]) => {
-    const updatedWidgets = widgets.map((widget, index) => ({
-      ...widget,
-      position: index,
-    }));
-    savePreferences({ widgets: updatedWidgets });
+  const reorderWidgets = async (widgets: DashboardWidget[]) => {
+    try {
+      await dashboardSettingsService.reorderWidgets(widgets);
+      await loadPreferences(); // Refresh from service
+    } catch (error) {
+      console.error('Error reordering widgets:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reorder widgets.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getEnabledWidgets = () => {
