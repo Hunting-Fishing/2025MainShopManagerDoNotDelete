@@ -1,7 +1,6 @@
 
 import { companyInfoService } from "./companyInfoService";
 import { businessHoursService } from "./businessHoursService";
-import { unifiedSettingsService } from '@/services/unified/unifiedSettingsService';
 import { businessConstantsService } from '@/services/unified/businessConstantsService';
 
 export interface CompanyInfo {
@@ -39,11 +38,5 @@ export const companyService = {
   updateBusinessHours: businessHoursService.updateBusinessHours,
   
   // Business Industry Methods (now using unified service)
-  addCustomIndustry: businessConstantsService.addCustomIndustry,
-  
-  // Unified Settings Methods
-  getSetting: unifiedSettingsService.getSetting,
-  setSetting: unifiedSettingsService.setSetting,
-  getSettingsByCategory: unifiedSettingsService.getSettingsByCategory,
-  setSettingsForCategory: unifiedSettingsService.setSettingsForCategory
+  addCustomIndustry: businessConstantsService.addCustomIndustry
 };

@@ -15,34 +15,42 @@ export interface BusinessConstantsResponse {
 
 class BusinessConstantsService {
   /**
-   * Fetch business constants by category from the unified business_constants table
+   * Fetch business constants using existing tables for now
    */
   async getBusinessConstants(): Promise<BusinessConstantsResponse> {
     try {
-      // Use raw SQL query since the types aren't generated yet
-      const { data, error } = await supabase
-        .rpc('get_business_constants') as any;
+      // Fetch from existing tables for now
+      const [businessTypesResult, industriesResult] = await Promise.all([
+        supabase.from('business_types').select('*').order('label'),
+        supabase.from('business_industries').select('*').order('label')
+      ]);
 
-      if (error) throw error;
+      if (businessTypesResult.error) throw businessTypesResult.error;
+      if (industriesResult.error) throw industriesResult.error;
 
-      // Group constants by category
-      const grouped = data.reduce((acc, item) => {
-        if (!acc[item.category]) {
-          acc[item.category] = [];
-        }
-        acc[item.category].push({
-          value: item.value,
-          label: item.label,
-          description: item.description || undefined,
-          sortOrder: item.sort_order || 0
-        });
-        return acc;
-      }, {} as Record<string, BusinessConstant[]>);
+      const businessTypes = businessTypesResult.data?.map(item => ({
+        value: item.value,
+        label: item.label
+      })) || [];
+
+      const industries = industriesResult.data?.map(item => ({
+        value: item.value,
+        label: item.label
+      })) || [];
+
+      // Default payment methods for now
+      const paymentMethods = [
+        { value: 'cash', label: 'Cash' },
+        { value: 'check', label: 'Check' },
+        { value: 'credit_card', label: 'Credit Card' },
+        { value: 'debit_card', label: 'Debit Card' },
+        { value: 'bank_transfer', label: 'Bank Transfer' }
+      ];
 
       return {
-        businessTypes: grouped.business_types || [],
-        industries: grouped.industries || [],
-        paymentMethods: grouped.payment_methods || []
+        businessTypes,
+        industries,
+        paymentMethods
       };
     } catch (error) {
       console.error('Error fetching business constants:', error);
@@ -51,25 +59,31 @@ class BusinessConstantsService {
   }
 
   /**
-   * Get constants for a specific category
+   * Get constants for a specific category (simplified for existing tables)
    */
   async getConstantsByCategory(category: string): Promise<BusinessConstant[]> {
     try {
-      const { data, error } = await supabase
-        .from('business_constants')
-        .select('key, label, value, description, sort_order')
-        .eq('category', category)
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) throw error;
-
-      return data.map(item => ({
-        value: item.value,
-        label: item.label,
-        description: item.description || undefined,
-        sortOrder: item.sort_order || 0
-      }));
+      if (category === 'business_types') {
+        const { data, error } = await supabase
+          .from('business_types')
+          .select('*')
+          .order('label');
+        
+        if (error) throw error;
+        return data.map(item => ({ value: item.value, label: item.label }));
+      }
+      
+      if (category === 'industries') {
+        const { data, error } = await supabase
+          .from('business_industries')
+          .select('*')
+          .order('label');
+        
+        if (error) throw error;
+        return data.map(item => ({ value: item.value, label: item.label }));
+      }
+      
+      return [];
     } catch (error) {
       console.error(`Error fetching ${category} constants:`, error);
       throw new Error(`Failed to load ${category} constants`);
@@ -77,20 +91,17 @@ class BusinessConstantsService {
   }
 
   /**
-   * Add a custom industry (for backward compatibility)
+   * Add a custom industry (using existing table)
    */
   async addCustomIndustry(industryName: string): Promise<string> {
     try {
       const key = industryName.toLowerCase().replace(/\s+/g, '_');
       
       const { data, error } = await supabase
-        .from('business_constants')
+        .from('business_industries')
         .insert({
-          category: 'industries',
-          key,
-          label: industryName,
           value: key,
-          sort_order: 50 // Place custom industries in the middle
+          label: industryName
         })
         .select()
         .single();
@@ -105,7 +116,7 @@ class BusinessConstantsService {
   }
 
   /**
-   * Admin function to manage business constants
+   * Admin function to manage business constants (placeholder for future unified table)
    */
   async upsertConstant(
     category: string,
@@ -118,24 +129,8 @@ class BusinessConstantsService {
       isActive?: boolean;
     }
   ): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('business_constants')
-        .upsert({
-          category,
-          key,
-          label,
-          value: value || key,
-          description: options?.description,
-          sort_order: options?.sortOrder || 0,
-          is_active: options?.isActive ?? true
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error upserting business constant:', error);
-      throw new Error('Failed to save business constant');
-    }
+    // This will be implemented when we have the unified table
+    console.warn('upsertConstant not yet implemented - waiting for unified table migration');
   }
 }
 
