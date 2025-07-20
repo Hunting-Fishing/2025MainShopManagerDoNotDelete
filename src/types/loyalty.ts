@@ -67,6 +67,8 @@ export interface LoyaltyTier {
   shop_id?: string; // Added shop_id property
 }
 
+// DEPRECATED: Use loyaltySettingsService.getTierTemplates() instead
+// This is kept for backward compatibility but will be removed in future versions
 export const DEFAULT_LOYALTY_TIERS: LoyaltyTier[] = [
   {
     name: "Standard",
@@ -97,3 +99,9 @@ export const DEFAULT_LOYALTY_TIERS: LoyaltyTier[] = [
     color: "amber"
   }
 ];
+
+// Helper function for easier migration
+export async function getLoyaltyTiers() {
+  const { loyaltySettingsService } = await import('@/services/settings/loyaltySettingsService');
+  return await loyaltySettingsService.getTierTemplates();
+}
