@@ -41,12 +41,14 @@ export const createAddNotificationHandler = (
       
       // Play notification sound with better error handling
       if (preferences.sound && preferences.sound !== 'none') {
-        try {
-          playNotificationSound(preferences.sound);
-          console.log('Notification sound played successfully');
-        } catch (err) {
-          console.warn('Error playing notification sound:', err);
-        }
+        playNotificationSound(preferences.sound)
+          .then(() => {
+            console.log('Notification sound played successfully');
+          })
+          .catch(err => {
+            console.warn('Error playing notification sound:', err);
+            // Don't show error to user, just log it
+          });
       }
       
       // Show a toast when a new notification arrives with improved error handling
@@ -207,12 +209,13 @@ export const createHandleNewNotificationHandler = (
       if (frequency === 'realtime') {
         // Play notification sound with proper error handling
         if (preferences.sound && preferences.sound !== 'none') {
-          try {
-            playNotificationSound(preferences.sound);
-            console.log('New notification sound played successfully');
-          } catch (err) {
-            console.warn('Error playing new notification sound:', err);
-          }
+          playNotificationSound(preferences.sound)
+            .then(() => {
+              console.log('New notification sound played successfully');
+            })
+            .catch(err => {
+              console.warn('Error playing new notification sound:', err);
+            });
         }
         
         // Show toast for high priority notifications or based on frequency
