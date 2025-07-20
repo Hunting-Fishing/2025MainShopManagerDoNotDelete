@@ -18625,8 +18625,16 @@ export type Database = {
         }
         Returns: string
       }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_customer: {
         Args: { user_id: string }
+        Returns: boolean
+      }
+      is_staff_member: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       log_document_access: {
