@@ -1,61 +1,22 @@
 
-/**
- * Capitalize the first letter of a string
- * @param str String to capitalize
- * @returns Capitalized string
- */
-export function capitalize(str: string): string {
-  if (!str || typeof str !== 'string') return '';
+export const capitalize = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1);
-}
+};
 
-/**
- * Format a camelCase string to Title Case with spaces
- * @param str camelCase string to format
- * @returns Title Case string with spaces
- */
-export function camelCaseToTitleCase(str: string): string {
-  if (!str || typeof str !== 'string') return '';
-  
-  // Add space before capital letters and uppercase the first letter
-  const result = str.replace(/([A-Z])/g, ' $1');
-  return capitalize(result);
-}
+export const formatCategoryName = (category: string): string => {
+  if (category === 'workOrder') return 'Work Order';
+  return capitalize(category);
+};
 
-/**
- * Truncates text with ellipsis if it exceeds the specified length
- * @param str Text to truncate
- * @param length Maximum allowed length
- * @returns Truncated string with ellipsis if needed
- */
-export function truncateText(str: string, length: number): string {
-  if (!str || typeof str !== 'string') return '';
-  
-  if (str.length <= length) return str;
-  return str.slice(0, length) + '...';
-}
+export const slugify = (text: string): string => {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
 
-/**
- * Format a number with proper thousand separators
- * @param num Number to format
- * @param locale Locale to use for formatting
- * @returns Formatted number string
- */
-export function formatNumber(num: number, locale: string = 'en-US'): string {
-  if (num === undefined || num === null) return '';
-  
-  return new Intl.NumberFormat(locale).format(num);
-}
-
-/**
- * Converts kebab-case to camelCase
- * @param str Kebab case string
- * @returns camelCase string
- */
-export function kebabToCamelCase(str: string): string {
-  if (!str || typeof str !== 'string') return '';
-  
-  return str.replace(/-([a-z])/g, function(g) { 
-    return g[1].toUpperCase(); 
-  });
-}
+export const truncate = (text: string, length: number): string => {
+  if (text.length <= length) return text;
+  return text.slice(0, length).trim() + '...';
+};

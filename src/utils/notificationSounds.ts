@@ -1,86 +1,52 @@
 
-// This is a utility file for playing notification sounds
-
-// Audio cache to prevent reloading the same sound
-const audioCache: Record<string, HTMLAudioElement> = {};
-
-/**
- * Play a notification sound
- * @param sound The sound identifier
- * @returns Promise that resolves when the sound is played
- */
-export const playNotificationSound = (sound: string): Promise<void> => {
-  return new Promise((resolve) => {
-    if (sound === 'none') {
-      resolve();
-      return;
+// Utility for playing notification sounds
+export const playNotificationSound = (soundType: string) => {
+  try {
+    // Create audio context for better browser support
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Generate different tones for different sound types
+    const frequency = getSoundFrequency(soundType);
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    oscillator.type = 'sine';
+    
+    // Set volume and duration
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+    
+  } catch (error) {
+    console.log('Audio playback not supported or failed:', error);
+    // Fallback to system beep if available
+    if ('vibrate' in navigator) {
+      navigator.vibrate(200);
     }
-
-    try {
-      // Use data URLs for simple notification sounds instead of missing files
-      const soundMap: Record<string, string> = {
-        'default': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
-        'bell': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
-        'chime': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
-        'alert': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
-      };
-
-      const soundPath = soundMap[sound] || soundMap.default;
-
-      // Check if we have a cached audio instance
-      if (!audioCache[sound]) {
-        audioCache[sound] = new Audio(soundPath);
-        audioCache[sound].volume = 0.3; // Set a reasonable volume
-      }
-
-      const audio = audioCache[sound];
-      
-      // Reset the audio to the beginning if it's already played
-      audio.currentTime = 0;
-      
-      // Play the sound
-      audio.play()
-        .then(() => resolve())
-        .catch(err => {
-          console.warn('Unable to play notification sound:', err);
-          resolve(); // Resolve anyway to not block the notification flow
-        });
-
-      // Cleanup listeners
-      audio.onended = () => resolve();
-      audio.onerror = () => {
-        console.warn('Error playing notification sound');
-        resolve();  // Resolve anyway to not block the notification flow
-      };
-    } catch (error) {
-      console.warn('Error initializing notification sound:', error);
-      resolve();  // Resolve anyway to not block the notification flow
-    }
-  });
+  }
 };
 
-/**
- * Preload sounds for faster playback
- */
-export const preloadNotificationSounds = (): void => {
-  const sounds = ['default', 'bell', 'chime', 'alert'];
-  
-  sounds.forEach(sound => {
-    try {
-      // Use the same data URLs as above
-      const soundMap: Record<string, string> = {
-        'default': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
-        'bell': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
-        'chime': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
-        'alert': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
-      };
+const getSoundFrequency = (soundType: string): number => {
+  switch (soundType) {
+    case 'bell':
+      return 800;
+    case 'chime':
+      return 600;
+    case 'alert':
+      return 1000;
+    case 'default':
+    default:
+      return 440; // A4 note
+  }
+};
 
-      const audio = new Audio(soundMap[sound]);
-      audio.preload = 'auto';
-      audio.volume = 0.3;
-      audioCache[sound] = audio;
-    } catch (error) {
-      console.warn(`Failed to preload sound: ${sound}`, error);
-    }
-  });
+// Utility to capitalize strings
+export const capitalize = (str: string): string => {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 };

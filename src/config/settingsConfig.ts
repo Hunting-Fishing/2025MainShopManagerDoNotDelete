@@ -1,240 +1,103 @@
 
 import { 
   Building2, 
-  Users, 
-  Bell, 
   Palette, 
-  Package, 
+  Bell, 
+  Shield, 
+  LayoutDashboard,
   Wrench,
-  Hash,
-  HandHeart,
-  Target,
-  Calculator,
-  Ticket,
-  Globe,
-  FileText,
-  Shield,
-  Database,
-  Calendar,
-  Link,
-  UserCheck,
-  LayoutDashboard
+  DollarSign,
+  Users,
+  Gift,
+  Settings,
+  Zap,
+  Database
 } from 'lucide-react';
-import { CompanyTab } from '@/components/settings/CompanyTab';
-import { TeamTab } from '@/components/settings/TeamTab';
-import { NotificationsTab } from '@/components/settings/NotificationsTab';
-import { BrandingTab } from '@/components/settings/BrandingTab';
-import { InventorySettingsTab } from '@/components/settings/InventorySettingsTab';
-import { DIYBayRatesTab } from '@/components/settings/DIYBayRatesTab';
-import { WorkOrderNumberingTab } from '@/components/settings/WorkOrderNumberingTab';
-import { WorkOrderWorkflowTab } from '@/components/settings/WorkOrderWorkflowTab';
-import { WorkOrderTemplateTab } from '@/components/settings/WorkOrderTemplateTab';
-import { WorkOrderStatusTab } from '@/components/settings/WorkOrderStatusTab';
-import { WorkOrderManagementTab } from '@/components/settings/WorkOrderManagementTab';
-import { EnhancedWorkOrdersDashboard } from '@/components/settings/EnhancedWorkOrdersDashboard';
-import { NonProfitTab } from '@/components/settings/NonProfitTab';
-import { ProgramManagementTab } from '@/components/settings/ProgramManagementTab';
-import { FinancialManagementTab } from '@/components/settings/FinancialManagementTab';
-import { RaffleManagementTab } from '@/components/settings/RaffleManagementTab';
-import { PublicPortalTab } from '@/components/settings/PublicPortalTab';
-import { SettingsTabConfig, SettingsSection } from '@/types/settingsConfig';
-import { GrantManagementTab } from '@/components/settings/GrantManagementTab';
-import { ImpactMeasurementTab } from '@/components/settings/ImpactMeasurementTab';
-import { BoardMeetingTab } from '@/components/settings/BoardMeetingTab';
-import { ComplianceTab } from '@/components/settings/ComplianceTab';
-import { SecurityTab } from '@/components/settings/SecurityTab';
-import { AssetTrackingTab } from '@/components/settings/AssetTrackingTab';
-import { BudgetManagementTab } from '@/components/settings/BudgetManagementTab';
-import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
-import { VolunteerManagementTab } from '@/components/settings/VolunteerManagementTab';
-import { DashboardSettingsTab } from '@/components/settings/DashboardSettingsTab';
 
-export const SETTINGS_SECTIONS: SettingsSection[] = [
+// Import all tab components
+import { CompanyTab } from '@/components/settings/tabs/CompanyTab';
+import { BrandingTab } from '@/components/settings/branding/BrandingTab';
+import { NotificationsTab } from '@/components/settings/notifications/NotificationsTab';
+import { SecurityTab } from '@/components/settings/security/SecurityTab';
+import { DashboardSettingsTab } from '@/components/settings/DashboardSettingsTab';
+import { WorkOrderManagementTab } from '@/components/settings/WorkOrderManagementTab';
+import { LoyaltyTab } from '@/components/settings/tabs/LoyaltyTab';
+
+// Settings configuration with proper components
+export const SETTINGS_TABS = [
   {
-    id: 'basic',
-    title: 'Basic Settings',
-    description: 'Core business and team configuration',
-    tabs: [
-      {
-        id: 'company',
-        label: 'Company',
-        icon: Building2,
-        component: CompanyTab,
-        description: 'Manage company information and business hours'
-      },
-      {
-        id: 'dashboard',
-        label: 'Dashboard',
-        icon: LayoutDashboard,
-        component: DashboardSettingsTab,
-        description: 'Customize dashboard layout and widgets'
-      },
-      {
-        id: 'team',
-        label: 'Team',
-        icon: Users,
-        component: TeamTab,
-        description: 'Manage team members and permissions'
-      },
-      {
-        id: 'branding',
-        label: 'Branding',
-        icon: Palette,
-        component: BrandingTab,
-        description: 'Customize your brand appearance'
-      },
-      {
-        id: 'notifications',
-        label: 'Notifications',
-        icon: Bell,
-        component: NotificationsTab,
-        description: 'Configure notification preferences'
-      },
-      {
-        id: 'security',
-        label: 'Security',
-        icon: Shield,
-        component: SecurityTab,
-        description: 'Password and authentication settings'
-      }
-    ]
+    id: 'company',
+    label: 'Company',
+    icon: Building2,
+    component: CompanyTab,
+    description: 'Business information and contact details'
   },
   {
-    id: 'operations',
-    title: 'Operations',
-    description: 'Day-to-day business operations and workflows',
-    tabs: [
-      {
-        id: 'work-orders',
-        label: 'Work Orders',
-        icon: Hash,
-        component: WorkOrderManagementTab,
-        description: 'Comprehensive work order settings, workflows, and automation'
-      },
-      {
-        id: 'inventory',
-        label: 'Inventory',
-        icon: Package,
-        component: InventorySettingsTab,
-        description: 'Manage inventory settings and preferences'
-      },
-      {
-        id: 'diy-bays',
-        label: 'DIY Bay Rates',
-        icon: Wrench,
-        component: DIYBayRatesTab,
-        description: 'Set rates for DIY bay rentals'
-      },
-      {
-        id: 'integrations',
-        label: 'Integrations',
-        icon: Link,
-        component: IntegrationsTab,
-        description: 'Connect external services and manage API integrations'
-      }
-    ]
+    id: 'branding',
+    label: 'Branding',
+    icon: Palette,
+    component: BrandingTab,
+    description: 'Theme, colors, and visual appearance'
   },
   {
-    id: 'nonprofit',
-    title: 'Non-Profit Management',
-    description: 'Tools and features specifically for non-profit organizations',
-    tabs: [
-      {
-        id: 'nonprofit',
-        label: 'Non-Profit Settings',
-        icon: HandHeart,
-        component: NonProfitTab,
-        description: 'Manage non-profit specific features and settings'
-      },
-      {
-        id: 'programs',
-        label: 'Program Management',
-        icon: Target,
-        component: ProgramManagementTab,
-        description: 'Manage programs, volunteers, grants, and impact measurement'
-      },
-      {
-        id: 'volunteers',
-        label: 'Volunteer Management',
-        icon: UserCheck,
-        component: VolunteerManagementTab,
-        description: 'Manage volunteers, skills tracking, and assignment workflows'
-      },
-      {
-        id: 'grants',
-        label: 'Grant Management',
-        icon: FileText,
-        component: GrantManagementTab,
-        description: 'Track grant applications, deadlines, and reporting requirements'
-      },
-      {
-        id: 'financial',
-        label: 'Financial Management',
-        icon: Calculator,
-        component: FinancialManagementTab,
-        description: 'Budget tracking, financial reporting, and compliance management'
-      },
-      {
-        id: 'budget-management',
-        label: 'Budget Management',
-        icon: Calculator,
-        component: BudgetManagementTab,
-        description: 'Track budgets, expenses, and financial performance'
-      },
-      {
-        id: 'asset-tracking',
-        label: 'Asset Tracking',
-        icon: Database,
-        component: AssetTrackingTab,
-        description: 'Track and manage organizational assets and equipment'
-      },
-      {
-        id: 'board-meetings',
-        label: 'Board Meetings',
-        icon: Calendar,
-        component: BoardMeetingTab,
-        description: 'Manage board meetings, agendas, and minutes'
-      },
-      {
-        id: 'compliance',
-        label: 'Compliance',
-        icon: Shield,
-        component: ComplianceTab,
-        description: 'Track regulatory compliance requirements and deadlines'
-      },
-      {
-        id: 'impact',
-        label: 'Impact Measurement',
-        icon: Target,
-        component: ImpactMeasurementTab,
-        description: 'Track and measure your nonprofit\'s community impact'
-      },
-      {
-        id: 'raffles',
-        label: 'Raffle Management',
-        icon: Ticket,
-        component: RaffleManagementTab,
-        description: 'Create and manage vehicle raffles and ticket sales'
-      }
-    ]
+    id: 'notifications',
+    label: 'Notifications',
+    icon: Bell,
+    component: NotificationsTab,
+    description: 'Notification preferences and delivery settings'
   },
   {
-    id: 'public',
-    title: 'Public Interface',
-    description: 'Customer-facing features and portals',
-    tabs: [
-      {
-        id: 'public-portal',
-        label: 'Public Portal',
-        icon: Globe,
-        component: PublicPortalTab,
-        description: 'Manage public-facing portal and application forms'
-      }
-    ]
+    id: 'security',
+    label: 'Security',
+    icon: Shield,
+    component: SecurityTab,
+    description: 'Authentication and security policies'
+  },
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    component: DashboardSettingsTab,
+    description: 'Dashboard layout and widget preferences'
+  },
+  {
+    id: 'work-orders',
+    label: 'Work Orders',
+    icon: Wrench,
+    component: WorkOrderManagementTab,
+    description: 'Work order settings and workflows'
+  },
+  {
+    id: 'loyalty',
+    label: 'Loyalty Program',
+    icon: Gift,
+    component: LoyaltyTab,
+    description: 'Customer loyalty and rewards program'
   }
 ];
 
-// Flatten sections into a single array for compatibility
-export const SETTINGS_TABS: SettingsTabConfig[] = SETTINGS_SECTIONS.flatMap(section => section.tabs);
+export const SETTINGS_SECTIONS = [
+  {
+    id: 'core',
+    title: 'Core Settings',
+    description: 'Essential business and application settings',
+    tabs: [
+      SETTINGS_TABS.find(t => t.id === 'company')!,
+      SETTINGS_TABS.find(t => t.id === 'branding')!,
+      SETTINGS_TABS.find(t => t.id === 'notifications')!,
+      SETTINGS_TABS.find(t => t.id === 'security')!
+    ]
+  },
+  {
+    id: 'features',
+    title: 'Feature Configuration',
+    description: 'Configure specific application features',
+    tabs: [
+      SETTINGS_TABS.find(t => t.id === 'dashboard')!,
+      SETTINGS_TABS.find(t => t.id === 'work-orders')!,
+      SETTINGS_TABS.find(t => t.id === 'loyalty')!
+    ]
+  }
+];
 
 export const DEFAULT_SETTINGS_TAB = 'company';
