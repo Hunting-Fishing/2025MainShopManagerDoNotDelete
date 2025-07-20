@@ -7585,6 +7585,7 @@ export type Database = {
           location: string | null
           name: string
           quantity: number
+          quantity_in_stock: number | null
           reorder_point: number
           shop_id: string | null
           sku: string
@@ -7601,6 +7602,7 @@ export type Database = {
           location?: string | null
           name: string
           quantity?: number
+          quantity_in_stock?: number | null
           reorder_point?: number
           shop_id?: string | null
           sku: string
@@ -7617,6 +7619,7 @@ export type Database = {
           location?: string | null
           name?: string
           quantity?: number
+          quantity_in_stock?: number | null
           reorder_point?: number
           shop_id?: string | null
           sku?: string
@@ -10720,6 +10723,7 @@ export type Database = {
           id: string
           module: string
           name: string
+          resource: string | null
           updated_at: string
         }
         Insert: {
@@ -10729,6 +10733,7 @@ export type Database = {
           id?: string
           module: string
           name: string
+          resource?: string | null
           updated_at?: string
         }
         Update: {
@@ -10738,6 +10743,7 @@ export type Database = {
           id?: string
           module?: string
           name?: string
+          resource?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -11634,6 +11640,7 @@ export type Database = {
           department_id: string | null
           email: string
           first_name: string | null
+          full_name: string | null
           id: string
           job_title: string | null
           last_name: string | null
@@ -11648,6 +11655,7 @@ export type Database = {
           department_id?: string | null
           email: string
           first_name?: string | null
+          full_name?: string | null
           id: string
           job_title?: string | null
           last_name?: string | null
@@ -11662,6 +11670,7 @@ export type Database = {
           department_id?: string | null
           email?: string
           first_name?: string | null
+          full_name?: string | null
           id?: string
           job_title?: string | null
           last_name?: string | null
