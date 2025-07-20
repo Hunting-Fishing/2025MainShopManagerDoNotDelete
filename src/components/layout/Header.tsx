@@ -8,7 +8,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { HeaderSidebarToggle } from "./HeaderSidebarToggle";
 import { HeaderActions } from "./HeaderActions";
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
   const { unreadCount } = useNotifications();
   const [searchOpen, setSearchOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -16,7 +20,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-white dark:bg-slate-800 dark:border-slate-700 px-4 print:hidden">
       <div className="flex items-center gap-2">
-        <HeaderSidebarToggle />
+        <HeaderSidebarToggle onClick={onMenuClick} />
         
         {/* Search shown differently on mobile vs desktop */}
         {isMobile ? (

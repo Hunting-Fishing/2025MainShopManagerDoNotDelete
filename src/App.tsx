@@ -16,6 +16,16 @@ import NotFound from "@/pages/NotFound";
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Auth = lazy(() => import("@/pages/Auth"));
 const Profile = lazy(() => import("@/pages/Profile"));
+const UserProfile = lazy(() => import("@/pages/UserProfile"));
+const UserOrders = lazy(() => import("@/pages/UserOrders"));
+const Shopping = lazy(() => import("@/pages/Shopping"));
+const WishlistPage = lazy(() => import("@/pages/WishlistPage"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Customers = lazy(() => import("@/pages/Customers"));
+const WorkOrders = lazy(() => import("@/pages/WorkOrders"));
+const Inventory = lazy(() => import("@/pages/Inventory"));
+const Calendar = lazy(() => import("@/pages/Calendar"));
+const Analytics = lazy(() => import("@/pages/Analytics"));
 const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
 
 const queryClient = new QueryClient({
@@ -81,7 +91,128 @@ const App = () => {
                     <ProtectedRoute>
                       <Layout>
                         <Suspense fallback={<LoadingFallback />}>
-                          <Profile />
+                          <UserProfile />
+                        </Suspense>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/shopping"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Suspense fallback={<LoadingFallback />}>
+                          <Shopping />
+                        </Suspense>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Suspense fallback={<LoadingFallback />}>
+                          <UserOrders />
+                        </Suspense>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/wishlist"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Suspense fallback={<LoadingFallback />}>
+                          <WishlistPage />
+                        </Suspense>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/my-reviews"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <div className="p-8">
+                          <h1 className="text-2xl font-bold mb-4">My Reviews</h1>
+                          <p className="text-gray-600">Review management feature coming soon...</p>
+                        </div>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Suspense fallback={<LoadingFallback />}>
+                          <Settings />
+                        </Suspense>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/customers"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Suspense fallback={<LoadingFallback />}>
+                          <Customers />
+                        </Suspense>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/work-orders"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Suspense fallback={<LoadingFallback />}>
+                          <WorkOrders />
+                        </Suspense>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/inventory"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Suspense fallback={<LoadingFallback />}>
+                          <Inventory />
+                        </Suspense>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/calendar"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Suspense fallback={<LoadingFallback />}>
+                          <Calendar />
+                        </Suspense>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/analytics"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Suspense fallback={<LoadingFallback />}>
+                          <Analytics />
                         </Suspense>
                       </Layout>
                     </ProtectedRoute>

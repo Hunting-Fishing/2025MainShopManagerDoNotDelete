@@ -5,18 +5,28 @@ import { Menu } from 'lucide-react';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-export function HeaderSidebarToggle() {
+interface HeaderSidebarToggleProps {
+  onClick?: () => void;
+}
+
+export function HeaderSidebarToggle({ onClick }: HeaderSidebarToggleProps) {
   const { toggle } = useSidebar();
   const isMobile = useIsMobile();
 
-  if (!isMobile) return null;
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      toggle();
+    }
+  };
 
   return (
     <Button
       variant="ghost"
       size="sm"
-      onClick={toggle}
-      className="md:hidden"
+      onClick={handleClick}
+      className="lg:hidden"
     >
       <Menu className="h-5 w-5" />
     </Button>
