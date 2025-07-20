@@ -3,9 +3,12 @@ import { getRecentlyViewedProducts } from '@/services/productAnalyticsService';
 import { useToast } from '@/hooks/use-toast';
 
 interface RecentlyViewedProduct {
-  product_id: string;
-  product_name: string;
-  category: string;
+  id: string;
+  name: string;
+  title: string;
+  price: number;
+  image_url: string;
+  average_rating: number;
   viewed_at: string;
 }
 

@@ -76,22 +76,22 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({
         <div className="space-y-3">
           {products.map((product) => (
             <div 
-              key={`${product.product_id}-${product.viewed_at}`}
+              key={`${product.id}-${product.viewed_at}`}
               className="flex items-center justify-between p-2 rounded-lg border hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center space-x-3 flex-1">
                 <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded flex items-center justify-center">
                   <span className="text-xs font-medium text-primary">
-                    {product.product_name.charAt(0)}
+                    {product.name.charAt(0)}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {product.product_name}
+                    {product.name}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="secondary" className="text-xs">
-                      {product.category}
+                      Electronics
                     </Badge>
                     <span className="text-xs text-muted-foreground">
                       {new Date(product.viewed_at).toLocaleDateString()}

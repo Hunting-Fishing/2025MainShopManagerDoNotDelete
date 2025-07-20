@@ -190,10 +190,10 @@ export const transformDatabaseProduct = (dbProduct: DatabaseProduct, categoryNam
 });
 
 // Transform popular product to unified Product interface
-export const transformPopularProduct = (popularProduct: PopularProduct): Product => ({
-  id: popularProduct.product_id,
-  name: popularProduct.product_name,
-  title: popularProduct.product_name,
+export const transformPopularProduct = (popularProduct: any): Product => ({
+  id: popularProduct.id || popularProduct.product_id,
+  name: popularProduct.name || popularProduct.product_name,
+  title: popularProduct.title || popularProduct.name || popularProduct.product_name,
   description: '',
   price: popularProduct.price,
   retailPrice: popularProduct.price,
