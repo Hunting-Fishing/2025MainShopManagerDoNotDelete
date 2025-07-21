@@ -1465,6 +1465,101 @@ export type Database = {
         }
         Relationships: []
       }
+      business_locations: {
+        Row: {
+          address: string | null
+          city: string | null
+          coordinates: unknown | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          employee_count: number | null
+          id: string
+          is_active: boolean | null
+          is_headquarters: boolean | null
+          location_type: string | null
+          manager_email: string | null
+          manager_name: string | null
+          manager_phone: string | null
+          name: string
+          notes: string | null
+          operating_status: string | null
+          parent_location_id: string | null
+          phone: string | null
+          shop_id: string
+          specializations: string[] | null
+          square_footage: number | null
+          state: string | null
+          timezone: string | null
+          updated_at: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          coordinates?: unknown | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          employee_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_headquarters?: boolean | null
+          location_type?: string | null
+          manager_email?: string | null
+          manager_name?: string | null
+          manager_phone?: string | null
+          name: string
+          notes?: string | null
+          operating_status?: string | null
+          parent_location_id?: string | null
+          phone?: string | null
+          shop_id: string
+          specializations?: string[] | null
+          square_footage?: number | null
+          state?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          coordinates?: unknown | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          employee_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_headquarters?: boolean | null
+          location_type?: string | null
+          manager_email?: string | null
+          manager_name?: string | null
+          manager_phone?: string | null
+          name?: string
+          notes?: string | null
+          operating_status?: string | null
+          parent_location_id?: string | null
+          phone?: string | null
+          shop_id?: string
+          specializations?: string[] | null
+          square_footage?: number | null
+          state?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_locations_parent_location_id_fkey"
+            columns: ["parent_location_id"]
+            isOneToOne: false
+            referencedRelation: "business_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_types: {
         Row: {
           created_at: string | null
@@ -8384,6 +8479,103 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_business_hours: {
+        Row: {
+          break_end_time: string | null
+          break_start_time: string | null
+          close_time: string | null
+          created_at: string | null
+          day_of_week: number
+          id: string
+          is_closed: boolean | null
+          location_id: string
+          open_time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          break_end_time?: string | null
+          break_start_time?: string | null
+          close_time?: string | null
+          created_at?: string | null
+          day_of_week: number
+          id?: string
+          is_closed?: boolean | null
+          location_id: string
+          open_time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          break_end_time?: string | null
+          break_start_time?: string | null
+          close_time?: string | null
+          created_at?: string | null
+          day_of_week?: number
+          id?: string
+          is_closed?: boolean | null
+          location_id?: string
+          open_time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_business_hours_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "business_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_services: {
+        Row: {
+          base_price: number | null
+          created_at: string | null
+          equipment_required: string[] | null
+          estimated_duration: number | null
+          id: string
+          is_available: boolean | null
+          location_id: string
+          service_description: string | null
+          service_name: string
+          skill_level_required: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          base_price?: number | null
+          created_at?: string | null
+          equipment_required?: string[] | null
+          estimated_duration?: number | null
+          id?: string
+          is_available?: boolean | null
+          location_id: string
+          service_description?: string | null
+          service_name: string
+          skill_level_required?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          base_price?: number | null
+          created_at?: string | null
+          equipment_required?: string[] | null
+          estimated_duration?: number | null
+          id?: string
+          is_available?: boolean | null
+          location_id?: string
+          service_description?: string | null
+          service_name?: string
+          skill_level_required?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_services_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "business_locations"
             referencedColumns: ["id"]
           },
         ]
