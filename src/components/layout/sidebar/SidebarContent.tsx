@@ -8,6 +8,7 @@ import { useNavigationWithRoles } from '@/hooks/useNavigation';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { getIconComponent } from '@/utils/iconMapper';
 import { hasRoutePermission } from '@/utils/routeGuards';
+import { getSectionColorScheme } from '@/utils/sectionColors';
 import { SidebarLogo } from './SidebarLogo';
 import { navigation } from './navigation';
 
@@ -34,52 +35,74 @@ export function SidebarContent() {
   const activeNavigation = dbNavigation.length > 0 ? dbNavigation : filteredNavigation;
 
   return (
-    <div className="flex h-full flex-col bg-indigo-700">
+    <div className="flex h-full flex-col bg-white border-r border-gray-200">
       {/* Logo */}
-      <div className="flex h-16 items-center justify-center px-6">
+      <div className="flex h-16 items-center justify-center px-6 bg-gradient-to-r from-indigo-600 to-indigo-700 border-b border-indigo-800">
         <SidebarLogo />
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
-        {activeNavigation.map((section) => (
-          <div key={section.id || section.title} className="mb-4">
-            <h3 className="px-3 text-xs font-semibold text-indigo-200 uppercase tracking-wider mb-2">
-              {section.title}
-            </h3>
-            <div className="space-y-1">
-              {section.items.map((item) => {
-                const isActive = location.pathname === item.href || 
-                  (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
-                
-                const IconComponent = getIconComponent(item.icon);
-                
-                return (
-                  <Link
-                    key={item.id || item.href}
-                    to={item.href}
-                    onClick={handleLinkClick}
-                    className={cn(
-                      'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
-                      isActive
-                        ? 'bg-indigo-800 text-white'
-                        : 'text-indigo-100 hover:bg-indigo-600 hover:text-white'
-                    )}
-                    title={item.description || item.title}
-                  >
-                    <IconComponent
+      <nav className="flex-1 space-y-2 p-2 overflow-y-auto">
+        {activeNavigation.map((section) => {
+          const colorScheme = getSectionColorScheme(section.title);
+          
+          return (
+            <div key={section.id || section.title} className={cn(
+              "mb-3 rounded-lg border transition-all duration-200",
+              colorScheme.background,
+              colorScheme.border
+            )}>
+              {/* Section Header */}
+              <div className={cn(
+                "px-3 py-2 rounded-t-lg border-b",
+                colorScheme.header,
+                colorScheme.border
+              )}>
+                <h3 className={cn(
+                  "text-xs font-semibold uppercase tracking-wider",
+                  colorScheme.headerText
+                )}>
+                  {section.title}
+                </h3>
+              </div>
+              
+              {/* Section Items */}
+              <div className="p-2 space-y-1">
+                {section.items.map((item) => {
+                  const isActive = location.pathname === item.href || 
+                    (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+                  
+                  const IconComponent = getIconComponent(item.icon);
+                  
+                  return (
+                    <Link
+                      key={item.id || item.href}
+                      to={item.href}
+                      onClick={handleLinkClick}
                       className={cn(
-                        'mr-3 h-5 w-5 flex-shrink-0',
-                        isActive ? 'text-white' : 'text-indigo-300 group-hover:text-white'
+                        'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-150',
+                        isActive
+                          ? colorScheme.active + ' shadow-sm font-semibold'
+                          : colorScheme.text + ' ' + colorScheme.hover
                       )}
-                    />
-                    {item.title}
-                  </Link>
-                );
-              })}
+                      title={item.description || item.title}
+                    >
+                      <IconComponent
+                        className={cn(
+                          'mr-3 h-4 w-4 flex-shrink-0 transition-colors',
+                          isActive 
+                            ? colorScheme.icon.replace('text-', 'text-') + ' opacity-100'
+                            : colorScheme.icon + ' opacity-75 group-hover:opacity-100'
+                        )}
+                      />
+                      {item.title}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
     </div>
   );
