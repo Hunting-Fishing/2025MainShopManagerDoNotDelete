@@ -31,8 +31,14 @@ export function SidebarContent() {
     items: section.items.filter(item => hasRoutePermission(item.href, userRoles))
   })).filter(section => section.items.length > 0);
 
-  // Use database navigation if available, otherwise use filtered static navigation
+  // Always ensure we have complete navigation - merge database with static fallback
   const activeNavigation = dbNavigation.length > 0 ? dbNavigation : filteredNavigation;
+  
+  // If database navigation is missing key sections, fallback to static navigation
+  const hasStoreSection = activeNavigation.some(section => section.title === 'Store');
+  const hasAllMainSections = activeNavigation.length >= 8; // Should have at least 8 main sections
+  
+  const finalNavigation = (!hasStoreSection || !hasAllMainSections) ? filteredNavigation : activeNavigation;
 
   return (
     <div className="flex h-full flex-col bg-white border-r border-gray-200">
@@ -43,7 +49,7 @@ export function SidebarContent() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-2 p-2 overflow-y-auto">
-        {activeNavigation.map((section) => {
+        {finalNavigation.map((section) => {
           const colorScheme = getSectionColorScheme(section.title);
           
           return (
