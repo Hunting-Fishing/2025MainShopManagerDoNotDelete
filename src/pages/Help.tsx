@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, MessageSquare, Calendar, Bug, BookOpen, BarChart3, Settings, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,8 @@ import { FeatureRequestModal } from '@/components/help/FeatureRequestModal';
 import { HelpSearchEngine } from '@/components/help/HelpSearchEngine';
 import { HelpContentLibrary } from '@/components/help/HelpContentLibrary';
 import { HelpAnalytics } from '@/components/help/HelpAnalytics';
+import { HelpArticleViewer } from '@/components/help/HelpArticleViewer';
+import { SupportTicketManager } from '@/components/help/SupportTicketManager';
 
 interface QuickAction {
   id: string;
@@ -22,9 +25,17 @@ interface QuickAction {
 }
 
 const Help: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isFeatureRequestModalOpen, setIsFeatureRequestModalOpen] = useState(false);
+
+  const articleId = searchParams.get('id');
+
+  // If viewing a specific article, show the article viewer
+  if (articleId) {
+    return <HelpArticleViewer />;
+  }
 
   const quickActions: QuickAction[] = [
     {
@@ -61,8 +72,8 @@ const Help: React.FC = () => {
   };
 
   const handleSearchResult = (result: any) => {
-    console.log('Selected help article:', result);
-    // Handle navigation to specific help article
+    // Navigate to article by updating the URL
+    window.location.href = result.url;
   };
 
   return (
@@ -133,7 +144,7 @@ const Help: React.FC = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="search" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="search" className="flex items-center gap-2">
               <Search className="h-4 w-4" />
               Search
@@ -141,6 +152,10 @@ const Help: React.FC = () => {
             <TabsTrigger value="library" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Library
+            </TabsTrigger>
+            <TabsTrigger value="support" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Support
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -178,6 +193,10 @@ const Help: React.FC = () => {
                 <HelpContentLibrary />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="support" className="space-y-6">
+            <SupportTicketManager />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">

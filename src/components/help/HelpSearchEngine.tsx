@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SearchResult {
   id: string;
@@ -111,15 +112,44 @@ export const HelpSearchEngine: React.FC<HelpSearchEngineProps> = ({ onResultClic
   useEffect(() => {
     if (searchQuery.trim()) {
       setIsSearching(true);
-      const timer = setTimeout(() => {
-        const filtered = mockSearchResults.filter(result => 
-          result.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          result.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          result.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-        ).sort((a, b) => b.relevance - a.relevance);
-        
-        setSearchResults(filtered);
-        setIsSearching(false);
+      const timer = setTimeout(async () => {
+        try {
+          const { data, error } = await supabase
+            .from('help_articles')
+            .select('*')
+            .eq('status', 'published')
+            .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%,search_keywords.cs.{${searchQuery}}`)
+            .limit(10);
+
+          if (error) throw error;
+
+          const results = data.map(article => ({
+            id: article.id,
+            title: article.title,
+            description: article.content.substring(0, 150) + '...',
+            category: article.category as any,
+            tags: article.tags || [],
+            url: `/help?id=${article.id}`,
+            relevance: 95 // You could implement actual relevance scoring
+          }));
+
+          setSearchResults(results);
+          
+          // Record search analytics
+          await supabase
+            .from('help_search_analytics')
+            .insert({
+              search_query: searchQuery,
+              results_count: results.length,
+              search_time_ms: 300,
+              user_id: (await supabase.auth.getUser()).data.user?.id
+            });
+        } catch (error) {
+          console.error('Search error:', error);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
       }, 300);
 
       return () => clearTimeout(timer);

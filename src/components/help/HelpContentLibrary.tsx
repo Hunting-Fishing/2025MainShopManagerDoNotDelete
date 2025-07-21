@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, Video, FileText, MessageSquare, Star, Clock, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HelpArticle {
   id: string;
@@ -137,19 +138,73 @@ const getCategoryColor = (category: string) => {
 };
 
 export const HelpContentLibrary: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = React.useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [articles, setArticles] = useState<HelpArticle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadArticles();
+  }, []);
+
+  const loadArticles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('help_articles')
+        .select('*')
+        .eq('status', 'published')
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+
+      const transformedArticles = data.map(article => ({
+        id: article.id,
+        title: article.title,
+        description: article.content.substring(0, 150) + '...',
+        category: article.category as any,
+        difficulty: 'beginner' as any, // You could add this field to your DB
+        estimatedTime: '5 min', // You could calculate or store this
+        rating: 4.5, // You could calculate from feedback
+        views: article.view_count || 0,
+        tags: article.tags || [],
+        lastUpdated: article.updated_at
+      }));
+
+      setArticles(transformedArticles);
+    } catch (error) {
+      console.error('Error loading articles:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredArticles = selectedCategory === 'all' 
-    ? helpArticles 
-    : helpArticles.filter(article => article.category === selectedCategory);
+    ? articles 
+    : articles.filter(article => article.category === selectedCategory);
 
   const categories = [
-    { id: 'all', label: 'All Content', count: helpArticles.length },
-    { id: 'tutorial', label: 'Tutorials', count: helpArticles.filter(a => a.category === 'tutorial').length },
-    { id: 'guide', label: 'Guides', count: helpArticles.filter(a => a.category === 'guide').length },
-    { id: 'video', label: 'Videos', count: helpArticles.filter(a => a.category === 'video').length },
-    { id: 'faq', label: 'FAQ', count: helpArticles.filter(a => a.category === 'faq').length }
+    { id: 'all', label: 'All Content', count: articles.length },
+    { id: 'tutorial', label: 'Tutorials', count: articles.filter(a => a.category === 'tutorial').length },
+    { id: 'guide', label: 'Guides', count: articles.filter(a => a.category === 'guide').length },
+    { id: 'video', label: 'Videos', count: articles.filter(a => a.category === 'video').length },
+    { id: 'faq', label: 'FAQ', count: articles.filter(a => a.category === 'faq').length }
   ];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-10 w-24 bg-muted rounded animate-pulse"></div>
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-64 bg-muted rounded animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -171,7 +226,11 @@ export const HelpContentLibrary: React.FC = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredArticles.map((article) => (
-          <Card key={article.id} className="cursor-pointer transition-colors hover:bg-muted/50">
+          <Card 
+            key={article.id} 
+            className="cursor-pointer transition-colors hover:bg-muted/50"
+            onClick={() => window.location.href = `/help?id=${article.id}`}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
