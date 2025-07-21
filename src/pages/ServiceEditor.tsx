@@ -3,23 +3,23 @@ import React from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Bell, Calendar } from 'lucide-react';
+import { Plus, Wrench, Edit, Star } from 'lucide-react';
 
-export default function ServiceReminders() {
-  usePageTitle('Service Reminders');
+export default function ServiceEditor() {
+  usePageTitle('Service Editor');
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Service Reminders</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Service Editor</h1>
           <p className="text-muted-foreground">
-            Manage and track service reminders for your customers
+            Create and manage your service offerings
           </p>
         </div>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
-          Create Reminder
+          Create Service
         </Button>
       </div>
 
@@ -27,14 +27,14 @@ export default function ServiceReminders() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Active Reminders
+              Total Services
             </CardTitle>
-            <Bell className="h-4 w-4 text-muted-foreground" />
+            <Wrench className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">0</div>
             <p className="text-xs text-muted-foreground">
-              Service reminders active
+              Available services
             </p>
           </CardContent>
         </Card>
@@ -42,14 +42,14 @@ export default function ServiceReminders() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Upcoming This Week
+              Active Services
             </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Edit className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">0</div>
             <p className="text-xs text-muted-foreground">
-              Due this week
+              Currently offered
             </p>
           </CardContent>
         </Card>
@@ -57,14 +57,14 @@ export default function ServiceReminders() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Sent This Month
+              Popular Services
             </CardTitle>
-            <Bell className="h-4 w-4 text-muted-foreground" />
+            <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">0</div>
             <p className="text-xs text-muted-foreground">
-              Reminders sent
+              Most requested
             </p>
           </CardContent>
         </Card>
@@ -72,13 +72,13 @@ export default function ServiceReminders() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Reminders</CardTitle>
+          <CardTitle>Service Catalog</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            <Bell className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p>No service reminders found</p>
-            <p className="text-sm">Create your first reminder to get started</p>
+            <Wrench className="mx-auto h-12 w-12 mb-4 opacity-50" />
+            <p>No services found</p>
+            <p className="text-sm">Create your first service to get started</p>
           </div>
         </CardContent>
       </Card>
