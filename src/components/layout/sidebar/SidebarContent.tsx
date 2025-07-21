@@ -7,21 +7,31 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigationWithRoles } from '@/hooks/useNavigation';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { getIconComponent } from '@/utils/iconMapper';
+import { hasRoutePermission } from '@/utils/routeGuards';
 import { SidebarLogo } from './SidebarLogo';
-
+import { navigation } from './navigation';
 
 export function SidebarContent() {
   const location = useLocation();
   const { setIsOpen } = useSidebar();
   const isMobile = useIsMobile();
   const { data: userRoles = [] } = useUserRoles();
-  const navigation = useNavigationWithRoles(userRoles);
+  const dbNavigation = useNavigationWithRoles(userRoles);
 
   const handleLinkClick = () => {
     if (isMobile) {
       setIsOpen(false);
     }
   };
+
+  // Filter navigation items based on user permissions
+  const filteredNavigation = navigation.map(section => ({
+    ...section,
+    items: section.items.filter(item => hasRoutePermission(item.href, userRoles))
+  })).filter(section => section.items.length > 0);
+
+  // Use database navigation if available, otherwise use filtered static navigation
+  const activeNavigation = dbNavigation.length > 0 ? dbNavigation : filteredNavigation;
 
   return (
     <div className="flex h-full flex-col bg-indigo-700">
@@ -32,8 +42,8 @@ export function SidebarContent() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
-        {navigation.map((section) => (
-          <div key={section.id} className="mb-4">
+        {activeNavigation.map((section) => (
+          <div key={section.id || section.title} className="mb-4">
             <h3 className="px-3 text-xs font-semibold text-indigo-200 uppercase tracking-wider mb-2">
               {section.title}
             </h3>
@@ -46,7 +56,7 @@ export function SidebarContent() {
                 
                 return (
                   <Link
-                    key={item.id}
+                    key={item.id || item.href}
                     to={item.href}
                     onClick={handleLinkClick}
                     className={cn(

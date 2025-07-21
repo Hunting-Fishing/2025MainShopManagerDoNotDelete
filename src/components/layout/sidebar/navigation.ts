@@ -1,3 +1,4 @@
+
 import { 
   LayoutDashboard, 
   Users, 
@@ -21,7 +22,11 @@ import {
   Truck,
   UserCog,
   FileBarChart,
-  Building
+  Building,
+  MapPin,
+  Archive,
+  ShoppingBag,
+  Boxes
 } from 'lucide-react';
 
 export const navigation = [
@@ -32,6 +37,7 @@ export const navigation = [
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutDashboard,
+        description: 'Main dashboard overview'
       },
     ],
   },
@@ -42,6 +48,7 @@ export const navigation = [
         title: 'Customers',
         href: '/customers',
         icon: Users,
+        description: 'Manage customer database'
       },
     ],
   },
@@ -52,6 +59,31 @@ export const navigation = [
         title: 'Inventory',
         href: '/inventory',
         icon: Package,
+        description: 'Main inventory overview'
+      },
+      {
+        title: 'Inventory Manager',
+        href: '/inventory/manager',
+        icon: Boxes,
+        description: 'Advanced inventory management'
+      },
+      {
+        title: 'Orders',
+        href: '/inventory/orders',
+        icon: ShoppingCart,
+        description: 'Manage inventory orders'
+      },
+      {
+        title: 'Locations',
+        href: '/inventory/locations',
+        icon: MapPin,
+        description: 'Manage storage locations'
+      },
+      {
+        title: 'Suppliers',
+        href: '/inventory/suppliers',
+        icon: Building2,
+        description: 'Manage suppliers'
       },
     ],
   },
@@ -62,11 +94,13 @@ export const navigation = [
         title: 'Calendar',
         href: '/calendar',
         icon: Calendar,
+        description: 'Schedule appointments'
       },
       {
         title: 'Service Reminders',
         href: '/service-reminders',
         icon: Bell,
+        description: 'Manage service reminders'
       },
     ],
   },
@@ -77,11 +111,13 @@ export const navigation = [
         title: 'Customer Comms',
         href: '/customer-comms',
         icon: MessageSquare,
+        description: 'SMS templates and communications'
       },
       {
         title: 'Call Logger',
         href: '/call-logger',
         icon: Phone,
+        description: 'Log customer calls'
       },
     ],
   },
@@ -92,21 +128,31 @@ export const navigation = [
         title: 'Quotes',
         href: '/quotes',
         icon: FileText,
+        description: 'Manage quotes and estimates'
       },
       {
         title: 'Work Orders',
         href: '/work-orders',
         icon: Wrench,
+        description: 'Manage work orders'
       },
       {
         title: 'Invoices',
         href: '/invoices',
         icon: Receipt,
+        description: 'Manage invoices'
       },
       {
         title: 'Service Board',
         href: '/service-board',
         icon: ClipboardList,
+        description: 'Service management board'
+      },
+      {
+        title: 'Payments',
+        href: '/payments',
+        icon: ShoppingBag,
+        description: 'Payment processing'
       },
     ],
   },
@@ -117,21 +163,25 @@ export const navigation = [
         title: 'Company Profile',
         href: '/company-profile',
         icon: Building,
+        description: 'Company information'
       },
       {
         title: 'Team',
         href: '/team',
         icon: UserCog,
+        description: 'Team management'
       },
       {
         title: 'Vehicles',
         href: '/vehicles',
         icon: Truck,
+        description: 'Fleet management'
       },
       {
         title: 'Documents',
         href: '/documents',
         icon: FileBarChart,
+        description: 'Document management'
       },
     ],
   },
@@ -142,11 +192,19 @@ export const navigation = [
         title: 'Service Editor',
         href: '/service-editor',
         icon: Cog,
+        description: 'Edit service offerings'
       },
       {
         title: 'Service Library',
         href: '/services',
         icon: Star,
+        description: 'Browse service catalog'
+      },
+      {
+        title: 'Repair Plans',
+        href: '/repair-plans',
+        icon: Archive,
+        description: 'Manage repair plans'
       },
     ],
   },
@@ -157,6 +215,7 @@ export const navigation = [
         title: 'Settings',
         href: '/settings',
         icon: Settings,
+        description: 'System configuration'
       },
     ],
   },
@@ -167,11 +226,13 @@ export const navigation = [
         title: 'Help',
         href: '/help',
         icon: HelpCircle,
+        description: 'Help and documentation'
       },
       {
         title: 'Security',
         href: '/security',
         icon: Shield,
+        description: 'Security settings'
       },
     ],
   },
