@@ -1,287 +1,248 @@
+
 import React, { useState } from 'react';
+import { Search, MessageSquare, Calendar, Bug, BookOpen, BarChart3, Settings, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContactSupportModal } from '@/components/help/ContactSupportModal';
 import { ScheduleDemoModal } from '@/components/help/ScheduleDemoModal';
 import { FeatureRequestModal } from '@/components/help/FeatureRequestModal';
-import { 
-  Search, 
-  MessageCircle, 
-  Calendar, 
-  Users, 
-  Lightbulb, 
-  Book, 
-  Video, 
-  FileText, 
-  ExternalLink,
-  Phone,
-  Mail,
-  Clock,
-  CheckCircle,
-  ArrowRight,
-  Star,
-  Zap
-} from 'lucide-react';
+import { HelpSearchEngine } from '@/components/help/HelpSearchEngine';
+import { HelpContentLibrary } from '@/components/help/HelpContentLibrary';
+import { HelpAnalytics } from '@/components/help/HelpAnalytics';
 
-export default function Help() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [contactModalOpen, setContactModalOpen] = useState(false);
-  const [demoModalOpen, setDemoModalOpen] = useState(false);
-  const [featureModalOpen, setFeatureModalOpen] = useState(false);
+interface QuickAction {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  action: () => void;
+  variant: 'default' | 'outline';
+}
 
-  const quickActions = [
+const Help: React.FC = () => {
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isFeatureRequestModalOpen, setIsFeatureRequestModalOpen] = useState(false);
+
+  const quickActions: QuickAction[] = [
     {
-      icon: MessageCircle,
+      id: 'contact',
       title: 'Contact Support',
       description: 'Get help from our support team',
-      color: 'bg-blue-500',
-      action: () => setContactModalOpen(true)
+      icon: <MessageSquare className="h-5 w-5" />,
+      action: () => setIsContactModalOpen(true),
+      variant: 'default'
     },
     {
-      icon: Calendar,
+      id: 'demo',
       title: 'Schedule Demo',
-      description: 'Book a personalized demo',
-      color: 'bg-green-500',
-      action: () => setDemoModalOpen(true)
+      description: 'Book a personalized walkthrough',
+      icon: <Calendar className="h-5 w-5" />,
+      action: () => setIsScheduleModalOpen(true),
+      variant: 'outline'
     },
     {
-      icon: Users,
-      title: 'Community Forum',
-      description: 'Connect with other users',
-      color: 'bg-purple-500',
-      action: () => window.open('https://community.example.com', '_blank')
-    },
-    {
-      icon: Lightbulb,
-      title: 'Feature Request',
-      description: 'Suggest new features',
-      color: 'bg-orange-500',
-      action: () => setFeatureModalOpen(true)
+      id: 'feature',
+      title: 'Request Feature',
+      description: 'Suggest new functionality',
+      icon: <Bug className="h-5 w-5" />,
+      action: () => setIsFeatureRequestModalOpen(true),
+      variant: 'outline'
     }
   ];
 
-  const faqData = [
-    {
-      question: "How do I get started?",
-      answer: "Welcome! Start by setting up your profile and exploring our dashboard. Our quick start guide will walk you through the essentials."
-    },
-    {
-      question: "How do I reset my password?",
-      answer: "Click on 'Forgot Password' on the login page, enter your email, and follow the instructions sent to your inbox."
-    },
-    {
-      question: "Can I export my data?",
-      answer: "Yes, you can export your data in various formats including CSV, PDF, and Excel from the Reports section."
-    },
-    {
-      question: "How do I contact support?",
-      answer: "You can reach our support team through the Contact Support button above, or email us at support@example.com."
-    }
-  ];
+  const systemStatus = {
+    status: 'operational',
+    uptime: '99.9%',
+    responseTime: '120ms',
+    lastUpdate: '2 minutes ago'
+  };
 
-  const tutorials = [
-    {
-      title: "Getting Started Guide",
-      description: "Learn the basics of our platform",
-      duration: "5 min",
-      difficulty: "Beginner",
-      icon: Book
-    },
-    {
-      title: "Advanced Features",
-      description: "Master advanced functionality",
-      duration: "15 min",
-      difficulty: "Advanced",
-      icon: Zap
-    },
-    {
-      title: "Best Practices",
-      description: "Tips for optimal usage",
-      duration: "10 min",
-      difficulty: "Intermediate",
-      icon: Star
-    }
-  ];
-
-  const contactInfo = [
-    {
-      icon: Mail,
-      title: "Email Support",
-      value: "support@example.com",
-      description: "We typically respond within 24 hours"
-    },
-    {
-      icon: Phone,
-      title: "Phone Support",
-      value: "+1 (555) 123-4567",
-      description: "Available Mon-Fri, 9AM-6PM EST"
-    },
-    {
-      icon: Clock,
-      title: "Live Chat",
-      value: "Available 24/7",
-      description: "Instant help when you need it"
-    }
-  ];
-
-  const filteredFAQ = faqData.filter(faq => 
-    faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleSearchResult = (result: any) => {
+    console.log('Selected help article:', result);
+    // Handle navigation to specific help article
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Help Center</h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Find answers to your questions, learn new features, and get the support you need
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <HelpCircle className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold">Help Center</h1>
+          </div>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Find answers, tutorials, and get support for your business management needs
           </p>
         </div>
 
-        {/* Search */}
-        <div className="max-w-md mx-auto mb-8">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-            <Input
-              placeholder="Search help articles..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {quickActions.map((action, index) => (
-            <Card 
-              key={index} 
-              className="cursor-pointer hover:shadow-lg transition-shadow duration-200 group"
-              onClick={action.action}
-            >
-              <CardContent className="p-6 text-center">
-                <div className={`${action.color} w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-200`}>
-                  <action.icon className="h-6 w-6 text-white" />
+        <div className="grid gap-4 md:grid-cols-3 mb-8">
+          {quickActions.map((action) => (
+            <Card key={action.id} className="cursor-pointer transition-colors hover:bg-muted/50">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {action.icon}
+                    <div>
+                      <CardTitle className="text-lg">{action.title}</CardTitle>
+                      <CardDescription>{action.description}</CardDescription>
+                    </div>
+                  </div>
+                  <Button variant={action.variant} onClick={action.action}>
+                    Get Started
+                  </Button>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{action.title}</h3>
-                <p className="text-sm text-gray-600">{action.description}</p>
-                <ArrowRight className="h-4 w-4 text-gray-400 mx-auto mt-2 group-hover:translate-x-1 transition-transform duration-200" />
-              </CardContent>
+              </CardHeader>
             </Card>
           ))}
         </div>
 
+        {/* System Status */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              System Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-green-500 rounded-full" />
+                <span className="text-sm">All Systems Operational</span>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Uptime: </span>
+                <span className="font-medium">{systemStatus.uptime}</span>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Response Time: </span>
+                <span className="font-medium">{systemStatus.responseTime}</span>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Last Update: </span>
+                <span className="font-medium">{systemStatus.lastUpdate}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Main Content */}
-        <Tabs defaultValue="faq" className="w-full">
+        <Tabs defaultValue="search" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="faq">FAQ</TabsTrigger>
-            <TabsTrigger value="tutorials">Tutorials</TabsTrigger>
-            <TabsTrigger value="contact">Contact</TabsTrigger>
-            <TabsTrigger value="status">Status</TabsTrigger>
+            <TabsTrigger value="search" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Search
+            </TabsTrigger>
+            <TabsTrigger value="library" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Library
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="faq" className="flex items-center gap-2">
+              <HelpCircle className="h-4 w-4" />
+              FAQ
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="faq" className="space-y-4">
+          <TabsContent value="search" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Frequently Asked Questions</CardTitle>
+                <CardTitle>Search Help Articles</CardTitle>
                 <CardDescription>
-                  Find quick answers to common questions
+                  Find tutorials, guides, and answers to common questions
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {filteredFAQ.map((faq, index) => (
-                    <div key={index} className="border-b pb-4 last:border-b-0">
-                      <h3 className="font-semibold text-gray-900 mb-2">{faq.question}</h3>
-                      <p className="text-gray-600">{faq.answer}</p>
-                    </div>
-                  ))}
-                  {filteredFAQ.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">
-                      No FAQ items found matching your search.
-                    </p>
-                  )}
-                </div>
+                <HelpSearchEngine onResultClick={handleSearchResult} />
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="tutorials" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tutorials.map((tutorial, index) => (
-                <Card key={index} className="cursor-pointer hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center mb-4">
-                      <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                        <tutorial.icon className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <Badge variant="secondary">{tutorial.difficulty}</Badge>
-                      </div>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">{tutorial.title}</h3>
-                    <p className="text-gray-600 mb-4">{tutorial.description}</p>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Clock className="h-4 w-4 mr-1" />
-                      {tutorial.duration}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="contact" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {contactInfo.map((contact, index) => (
-                <Card key={index}>
-                  <CardContent className="p-6 text-center">
-                    <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <contact.icon className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">{contact.title}</h3>
-                    <p className="text-blue-600 font-medium mb-2">{contact.value}</p>
-                    <p className="text-sm text-gray-600">{contact.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="status" className="space-y-4">
+          <TabsContent value="library" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  System Status
-                </CardTitle>
+                <CardTitle>Help Content Library</CardTitle>
                 <CardDescription>
-                  All systems are operational
+                  Browse our comprehensive collection of tutorials, guides, and videos
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span>API Services</span>
-                    <Badge className="bg-green-100 text-green-800">Operational</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Database</span>
-                    <Badge className="bg-green-100 text-green-800">Operational</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Web Interface</span>
-                    <Badge className="bg-green-100 text-green-800">Operational</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Email Service</span>
-                    <Badge className="bg-green-100 text-green-800">Operational</Badge>
-                  </div>
+                <HelpContentLibrary />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Help Usage Analytics</CardTitle>
+                <CardDescription>
+                  Track help system usage and identify popular content
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <HelpAnalytics />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="faq" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Frequently Asked Questions</CardTitle>
+                <CardDescription>
+                  Quick answers to the most common questions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[
+                    {
+                      question: "How do I reset my password?",
+                      answer: "You can reset your password by clicking the 'Forgot Password' link on the login page and following the instructions sent to your email.",
+                      category: "Account"
+                    },
+                    {
+                      question: "How do I create a new work order?",
+                      answer: "Navigate to the Work Orders section and click 'New Work Order'. Fill in the required information and click 'Save'.",
+                      category: "Work Orders"
+                    },
+                    {
+                      question: "Can I customize the dashboard?",
+                      answer: "Yes, you can customize your dashboard by clicking the settings icon and selecting which widgets to display.",
+                      category: "Dashboard"
+                    },
+                    {
+                      question: "How do I add team members?",
+                      answer: "Go to Settings > Team Management and click 'Add Team Member'. Enter their details and assign appropriate roles.",
+                      category: "Team Management"
+                    },
+                    {
+                      question: "What payment methods do you accept?",
+                      answer: "We accept all major credit cards, PayPal, and bank transfers for enterprise customers.",
+                      category: "Billing"
+                    }
+                  ].map((faq, index) => (
+                    <Card key={index}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">{faq.question}</CardTitle>
+                          <Badge variant="outline">{faq.category}</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground">{faq.answer}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -291,17 +252,19 @@ export default function Help() {
 
       {/* Modals */}
       <ContactSupportModal 
-        isOpen={contactModalOpen} 
-        onClose={() => setContactModalOpen(false)} 
+        isOpen={isContactModalOpen} 
+        onClose={() => setIsContactModalOpen(false)} 
       />
       <ScheduleDemoModal 
-        isOpen={demoModalOpen} 
-        onClose={() => setDemoModalOpen(false)} 
+        isOpen={isScheduleModalOpen} 
+        onClose={() => setIsScheduleModalOpen(false)} 
       />
       <FeatureRequestModal 
-        isOpen={featureModalOpen} 
-        onClose={() => setFeatureModalOpen(false)} 
+        isOpen={isFeatureRequestModalOpen} 
+        onClose={() => setIsFeatureRequestModalOpen(false)} 
       />
     </div>
   );
-}
+};
+
+export default Help;
