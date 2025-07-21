@@ -1,378 +1,307 @@
-import React, { useState, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ContactSupportModal } from '@/components/help/ContactSupportModal';
+import { ScheduleDemoModal } from '@/components/help/ScheduleDemoModal';
+import { FeatureRequestModal } from '@/components/help/FeatureRequestModal';
 import { 
-  HelpCircle, 
-  Book, 
+  Search, 
   MessageCircle, 
+  Calendar, 
+  Users, 
+  Lightbulb, 
+  Book, 
+  Video, 
   FileText, 
   ExternalLink,
-  Search,
-  Video,
-  Users,
-  Lightbulb,
-  ChevronRight,
-  Star,
+  Phone,
+  Mail,
   Clock,
-  MapPin
+  CheckCircle,
+  ArrowRight,
+  Star,
+  Zap
 } from 'lucide-react';
 
-// Help articles database
-const helpArticles = [
-  {
-    id: '1',
-    title: 'Getting Started with Work Orders',
-    content: 'Learn how to create, manage, and track work orders effectively...',
-    category: 'Work Orders',
-    tags: ['basics', 'work-orders', 'getting-started'],
-    relevantRoutes: ['/work-orders', '/dashboard'],
-    difficulty: 'beginner',
-    readTime: 5,
-    rating: 4.8
-  },
-  {
-    id: '2',
-    title: 'Managing Customer Information',
-    content: 'Complete guide to adding, editing, and organizing customer data...',
-    category: 'Customers',
-    tags: ['customers', 'data-management', 'contacts'],
-    relevantRoutes: ['/customers'],
-    difficulty: 'beginner',
-    readTime: 3,
-    rating: 4.9
-  },
-  {
-    id: '3',
-    title: 'Inventory Management Best Practices',
-    content: 'Optimize your parts inventory with these proven strategies...',
-    category: 'Inventory',
-    tags: ['inventory', 'parts', 'optimization'],
-    relevantRoutes: ['/inventory'],
-    difficulty: 'intermediate',
-    readTime: 8,
-    rating: 4.7
-  },
-  {
-    id: '4',
-    title: 'API Integration Guide',
-    content: 'Step-by-step guide to integrating with external systems...',
-    category: 'Developer',
-    tags: ['api', 'integration', 'development'],
-    relevantRoutes: ['/developer', '/developer/api-docs'],
-    difficulty: 'advanced',
-    readTime: 15,
-    rating: 4.6
-  },
-  {
-    id: '5',
-    title: 'E-commerce Setup and Configuration',
-    content: 'Set up your online store and start selling parts online...',
-    category: 'Shopping',
-    tags: ['ecommerce', 'shopping', 'online-store'],
-    relevantRoutes: ['/shopping', '/developer/shopping-controls'],
-    difficulty: 'intermediate',
-    readTime: 10,
-    rating: 4.5
-  },
-  {
-    id: '6',
-    title: 'Setting Up User Roles and Permissions',
-    content: 'Configure team access and security settings...',
-    category: 'Security',
-    tags: ['security', 'permissions', 'team-management'],
-    relevantRoutes: ['/settings/security', '/developer/security'],
-    difficulty: 'intermediate',
-    readTime: 7,
-    rating: 4.8
-  }
-];
-
-const quickActions = [
-  {
-    title: 'Contact Support',
-    description: 'Get help from our support team',
-    icon: MessageCircle,
-    action: 'contact'
-  },
-  {
-    title: 'Schedule Demo',
-    description: 'Book a personalized walkthrough',
-    icon: Video,
-    action: 'demo'
-  },
-  {
-    title: 'Community Forum',
-    description: 'Connect with other users',
-    icon: Users,
-    action: 'forum'
-  },
-  {
-    title: 'Feature Request',
-    description: 'Suggest new features',
-    icon: Lightbulb,
-    action: 'feature'
-  }
-];
-
-const categories = ['All', 'Work Orders', 'Customers', 'Inventory', 'Developer', 'Shopping', 'Security'];
-
 export default function Help() {
-  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [activeTab, setActiveTab] = useState('search');
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [featureModalOpen, setFeatureModalOpen] = useState(false);
 
-  // Get contextual help based on current route
-  const contextualHelp = useMemo(() => {
-    const currentPath = location.pathname;
-    return helpArticles.filter(article => 
-      article.relevantRoutes.some(route => currentPath.startsWith(route))
-    );
-  }, [location.pathname]);
-
-  // Filter articles based on search and category
-  const filteredArticles = useMemo(() => {
-    let filtered = helpArticles;
-
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(article => article.category === selectedCategory);
+  const quickActions = [
+    {
+      icon: MessageCircle,
+      title: 'Contact Support',
+      description: 'Get help from our support team',
+      color: 'bg-blue-500',
+      action: () => setContactModalOpen(true)
+    },
+    {
+      icon: Calendar,
+      title: 'Schedule Demo',
+      description: 'Book a personalized demo',
+      color: 'bg-green-500',
+      action: () => setDemoModalOpen(true)
+    },
+    {
+      icon: Users,
+      title: 'Community Forum',
+      description: 'Connect with other users',
+      color: 'bg-purple-500',
+      action: () => window.open('https://community.example.com', '_blank')
+    },
+    {
+      icon: Lightbulb,
+      title: 'Feature Request',
+      description: 'Suggest new features',
+      color: 'bg-orange-500',
+      action: () => setFeatureModalOpen(true)
     }
+  ];
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(article =>
-        article.title.toLowerCase().includes(query) ||
-        article.content.toLowerCase().includes(query) ||
-        article.tags.some(tag => tag.toLowerCase().includes(query))
-      );
+  const faqData = [
+    {
+      question: "How do I get started?",
+      answer: "Welcome! Start by setting up your profile and exploring our dashboard. Our quick start guide will walk you through the essentials."
+    },
+    {
+      question: "How do I reset my password?",
+      answer: "Click on 'Forgot Password' on the login page, enter your email, and follow the instructions sent to your inbox."
+    },
+    {
+      question: "Can I export my data?",
+      answer: "Yes, you can export your data in various formats including CSV, PDF, and Excel from the Reports section."
+    },
+    {
+      question: "How do I contact support?",
+      answer: "You can reach our support team through the Contact Support button above, or email us at support@example.com."
     }
+  ];
 
-    return filtered.sort((a, b) => b.rating - a.rating);
-  }, [searchQuery, selectedCategory]);
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'beginner': return 'bg-green-100 text-green-800';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'advanced': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const tutorials = [
+    {
+      title: "Getting Started Guide",
+      description: "Learn the basics of our platform",
+      duration: "5 min",
+      difficulty: "Beginner",
+      icon: Book
+    },
+    {
+      title: "Advanced Features",
+      description: "Master advanced functionality",
+      duration: "15 min",
+      difficulty: "Advanced",
+      icon: Zap
+    },
+    {
+      title: "Best Practices",
+      description: "Tips for optimal usage",
+      duration: "10 min",
+      difficulty: "Intermediate",
+      icon: Star
     }
-  };
+  ];
 
-  const getCurrentPageContext = () => {
-    const path = location.pathname;
-    if (path.startsWith('/work-orders')) return 'Work Orders';
-    if (path.startsWith('/customers')) return 'Customer Management';
-    if (path.startsWith('/inventory')) return 'Inventory Management';
-    if (path.startsWith('/developer')) return 'Developer Tools';
-    if (path.startsWith('/shopping')) return 'E-commerce';
-    if (path.startsWith('/settings')) return 'Settings';
-    return 'Dashboard';
-  };
+  const contactInfo = [
+    {
+      icon: Mail,
+      title: "Email Support",
+      value: "support@example.com",
+      description: "We typically respond within 24 hours"
+    },
+    {
+      icon: Phone,
+      title: "Phone Support",
+      value: "+1 (555) 123-4567",
+      description: "Available Mon-Fri, 9AM-6PM EST"
+    },
+    {
+      icon: Clock,
+      title: "Live Chat",
+      value: "Available 24/7",
+      description: "Instant help when you need it"
+    }
+  ];
+
+  const filteredFAQ = faqData.filter(faq => 
+    faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Help & Support</h1>
-        <p className="text-muted-foreground">
-          Find answers, learn features, and get the help you need
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Help Center</h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Find answers to your questions, learn new features, and get the support you need
+          </p>
+        </div>
+
+        {/* Search */}
+        <div className="max-w-md mx-auto mb-8">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <Input
+              placeholder="Search help articles..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {quickActions.map((action, index) => (
+            <Card 
+              key={index} 
+              className="cursor-pointer hover:shadow-lg transition-shadow duration-200 group"
+              onClick={action.action}
+            >
+              <CardContent className="p-6 text-center">
+                <div className={`${action.color} w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-200`}>
+                  <action.icon className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-2">{action.title}</h3>
+                <p className="text-sm text-gray-600">{action.description}</p>
+                <ArrowRight className="h-4 w-4 text-gray-400 mx-auto mt-2 group-hover:translate-x-1 transition-transform duration-200" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Main Content */}
+        <Tabs defaultValue="faq" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="faq">FAQ</TabsTrigger>
+            <TabsTrigger value="tutorials">Tutorials</TabsTrigger>
+            <TabsTrigger value="contact">Contact</TabsTrigger>
+            <TabsTrigger value="status">Status</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="faq" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Frequently Asked Questions</CardTitle>
+                <CardDescription>
+                  Find quick answers to common questions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {filteredFAQ.map((faq, index) => (
+                    <div key={index} className="border-b pb-4 last:border-b-0">
+                      <h3 className="font-semibold text-gray-900 mb-2">{faq.question}</h3>
+                      <p className="text-gray-600">{faq.answer}</p>
+                    </div>
+                  ))}
+                  {filteredFAQ.length === 0 && (
+                    <p className="text-gray-500 text-center py-4">
+                      No FAQ items found matching your search.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tutorials" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {tutorials.map((tutorial, index) => (
+                <Card key={index} className="cursor-pointer hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-4">
+                      <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                        <tutorial.icon className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <Badge variant="secondary">{tutorial.difficulty}</Badge>
+                      </div>
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">{tutorial.title}</h3>
+                    <p className="text-gray-600 mb-4">{tutorial.description}</p>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <Clock className="h-4 w-4 mr-1" />
+                      {tutorial.duration}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="contact" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {contactInfo.map((contact, index) => (
+                <Card key={index}>
+                  <CardContent className="p-6 text-center">
+                    <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <contact.icon className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">{contact.title}</h3>
+                    <p className="text-blue-600 font-medium mb-2">{contact.value}</p>
+                    <p className="text-sm text-gray-600">{contact.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="status" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  System Status
+                </CardTitle>
+                <CardDescription>
+                  All systems are operational
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span>API Services</span>
+                    <Badge className="bg-green-100 text-green-800">Operational</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Database</span>
+                    <Badge className="bg-green-100 text-green-800">Operational</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Web Interface</span>
+                    <Badge className="bg-green-100 text-green-800">Operational</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Email Service</span>
+                    <Badge className="bg-green-100 text-green-800">Operational</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
-      {/* Context Banner */}
-      {contextualHelp.length > 0 && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Help for {getCurrentPageContext()}</CardTitle>
-            </div>
-            <CardDescription>
-              Here are some helpful resources related to what you're currently working on
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {contextualHelp.slice(0, 4).map((article) => (
-                <div key={article.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
-                  <div className="flex-1">
-                    <h4 className="font-medium text-sm">{article.title}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className={getDifficultyColor(article.difficulty)}>
-                        {article.difficulty}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {article.readTime}m
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="search">Search & Browse</TabsTrigger>
-          <TabsTrigger value="quick">Quick Actions</TabsTrigger>
-          <TabsTrigger value="popular">Popular Articles</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="search" className="space-y-6">
-          {/* Enhanced Search Bar */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    type="text"
-                    placeholder="Search help articles, guides, and documentation..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                
-                {/* Category Filter */}
-                <div className="flex flex-wrap gap-2">
-                  {categories.map((category) => (
-                    <Button
-                      key={category}
-                      variant={selectedCategory === category ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedCategory(category)}
-                    >
-                      {category}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Search Results */}
-          <div className="space-y-4">
-            {filteredArticles.length === 0 ? (
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <div className="flex flex-col items-center gap-4">
-                    <Search className="h-12 w-12 text-muted-foreground" />
-                    <div>
-                      <h3 className="font-semibold">No articles found</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Try adjusting your search terms or browse by category
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredArticles.map((article) => (
-                <Card key={article.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold">{article.title}</h3>
-                          <div className="flex items-center gap-1 text-yellow-500">
-                            <Star className="h-3 w-3 fill-current" />
-                            <span className="text-xs font-medium">{article.rating}</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          {article.content.substring(0, 120)}...
-                        </p>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="secondary" className={getDifficultyColor(article.difficulty)}>
-                            {article.difficulty}
-                          </Badge>
-                          <Badge variant="outline">{article.category}</Badge>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {article.readTime} min read
-                          </span>
-                        </div>
-                      </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground ml-4" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="quick" className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {quickActions.map((action, index) => {
-              const Icon = action.icon;
-              return (
-                <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{action.title}</h3>
-                        <p className="text-sm text-muted-foreground">{action.description}</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="popular" className="space-y-6">
-          <div className="grid gap-4">
-            {helpArticles
-              .sort((a, b) => b.rating - a.rating)
-              .slice(0, 6)
-              .map((article, index) => (
-                <Card key={article.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{article.title}</h3>
-                          <div className="flex items-center gap-1 text-yellow-500">
-                            <Star className="h-3 w-3 fill-current" />
-                            <span className="text-xs font-medium">{article.rating}</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {article.content.substring(0, 100)}...
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{article.category}</Badge>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {article.readTime}m
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* Modals */}
+      <ContactSupportModal 
+        isOpen={contactModalOpen} 
+        onClose={() => setContactModalOpen(false)} 
+      />
+      <ScheduleDemoModal 
+        isOpen={demoModalOpen} 
+        onClose={() => setDemoModalOpen(false)} 
+      />
+      <FeatureRequestModal 
+        isOpen={featureModalOpen} 
+        onClose={() => setFeatureModalOpen(false)} 
+      />
     </div>
   );
 }
