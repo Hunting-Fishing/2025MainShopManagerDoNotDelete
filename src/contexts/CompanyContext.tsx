@@ -19,6 +19,7 @@ interface CompanyContextType {
   industry: string;
   loading: boolean;
   refresh: () => void;
+  reloadCompanyInfo: () => void;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -53,7 +54,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     refresh: () => {
       refreshName();
       loadCompanyInfo();
-    }
+    },
+    reloadCompanyInfo: loadCompanyInfo
   };
 
   return (

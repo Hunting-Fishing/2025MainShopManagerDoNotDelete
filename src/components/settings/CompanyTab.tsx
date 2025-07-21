@@ -2,20 +2,25 @@
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Building, MapPin, Clock, Globe } from "lucide-react";
+import { Save, Building, MapPin, Clock, Globe, Plus, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useToast } from "@/hooks/use-toast";
 import { TaxSettingsSection } from "./company/TaxSettingsSection";
 import { TaxSystemStatusCard } from "@/components/tax/TaxSystemStatusCard";
+import { CompanyValidationStatus } from "./company/CompanyValidationStatus";
 import { supabase } from "@/integrations/supabase/client";
 
 export function CompanyTab() {
   const { toast } = useToast();
   const [taxDataChanged, setTaxDataChanged] = useState(false);
+  const [showCustomIndustry, setShowCustomIndustry] = useState(false);
+  const [customIndustryName, setCustomIndustryName] = useState('');
+  const [addingCustomIndustry, setAddingCustomIndustry] = useState(false);
   
   const {
     companyInfo,
@@ -61,8 +66,48 @@ export function CompanyTab() {
     getShopId();
   }, []);
 
+  const addCustomIndustry = async () => {
+    if (!customIndustryName.trim()) return;
+
+    try {
+      setAddingCustomIndustry(true);
+
+      const { data, error } = await supabase.rpc('addcustomindustry', {
+        industry_name: customIndustryName.trim()
+      });
+
+      if (error) throw error;
+
+      // Reload company info to get updated industries
+      await loadCompanyInfo();
+      
+      // Select the new custom industry
+      handleSelectChange('industry', customIndustryName.trim().toLowerCase().replace(/\s+/g, '_'));
+      
+      setCustomIndustryName('');
+      setShowCustomIndustry(false);
+
+      toast({
+        title: 'Success',
+        description: 'Custom industry added successfully',
+      });
+    } catch (error) {
+      console.error('Error adding custom industry:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add custom industry',
+        variant: 'destructive',
+      });
+    } finally {
+      setAddingCustomIndustry(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Company Validation Status */}
+      {initialized && <CompanyValidationStatus companyInfo={companyInfo} />}
+      
       {/* Basic Company Information */}
       <Card>
         <CardHeader className="flex flex-row items-center space-y-0 pb-3">
@@ -116,21 +161,69 @@ export function CompanyTab() {
             
             <div className="space-y-2">
               <Label htmlFor="industry">Industry</Label>
-              <Select 
-                value={companyInfo.industry || ''} 
-                onValueChange={(value) => handleSelectChange('industry', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select industry" />
-                </SelectTrigger>
-                <SelectContent>
-                  {businessIndustries.map((industry) => (
-                    <SelectItem key={industry.value} value={industry.value}>
-                      {industry.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select 
+                  value={companyInfo.industry || ''} 
+                  onValueChange={(value) => handleSelectChange('industry', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select industry" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {businessIndustries.map((industry) => (
+                      <SelectItem key={industry.value} value={industry.value}>
+                        {industry.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Dialog open={showCustomIndustry} onOpenChange={setShowCustomIndustry}>
+                  <DialogTrigger asChild>
+                    <Button type="button" variant="outline" size="icon" title="Add Custom Industry">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Custom Industry</DialogTitle>
+                      <DialogDescription>
+                        Add a new industry that's not in the current list. This will be available for future use.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="custom-industry">Industry Name</Label>
+                        <Input
+                          id="custom-industry"
+                          value={customIndustryName}
+                          onChange={(e) => setCustomIndustryName(e.target.value)}
+                          placeholder="e.g., Custom Manufacturing"
+                          maxLength={100}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowCustomIndustry(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={addCustomIndustry}
+                        disabled={addingCustomIndustry || !customIndustryName.trim()}
+                      >
+                        {addingCustomIndustry && (
+                          <span className="animate-spin mr-2">⏳</span>
+                        )}
+                        Add Industry
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
           
@@ -184,6 +277,34 @@ export function CompanyTab() {
             
           </div>
           
+          {/* Website Field */}
+          <div className="space-y-2">
+            <Label htmlFor="website">Website</Label>
+            <div className="relative">
+              <Input
+                id="website"
+                name="website"
+                type="url"
+                value={companyInfo.website || ''}
+                onChange={handleInputChange}
+                placeholder="https://www.yourcompany.com"
+                className="pr-10"
+              />
+              {companyInfo.website && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                  onClick={() => window.open(companyInfo.website, '_blank')}
+                  title="Open website"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+          
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
@@ -230,6 +351,41 @@ export function CompanyTab() {
                 />
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Company Description */}
+      <Card>
+        <CardHeader className="flex flex-row items-center space-y-0 pb-3">
+          <div className="flex items-center space-x-2">
+            <Globe className="h-5 w-5 text-primary" />
+            <CardTitle>Company Description</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="description">About Your Company</Label>
+            <Textarea
+              id="description"
+              name="description"
+              value={companyInfo.description || ''}
+              onChange={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                handleInputChange({
+                  target: {
+                    id: 'description',
+                    value: target.value
+                  }
+                } as React.ChangeEvent<HTMLInputElement>);
+              }}
+              placeholder="Briefly describe your company, services, and what makes you unique..."
+              className="min-h-[100px] resize-y"
+              maxLength={500}
+            />
+            <p className="text-sm text-muted-foreground">
+              {(companyInfo.description || '').length}/500 characters
+            </p>
           </div>
         </CardContent>
       </Card>

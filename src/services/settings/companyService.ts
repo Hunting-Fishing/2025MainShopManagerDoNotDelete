@@ -17,6 +17,8 @@ export interface CompanyInfo {
   industry: string;
   other_industry?: string;  
   logo_url: string;
+  website?: string;
+  description?: string;
 }
 
 export interface BusinessHours {
