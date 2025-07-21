@@ -214,7 +214,7 @@ export const CustomerDashboard = () => {
         </TabsContent>
 
         <TabsContent value="support">
-          <SupportTab userId={user?.id || ''} />
+          <SupportTab />
         </TabsContent>
       </Tabs>
     </div>
