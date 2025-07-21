@@ -26,7 +26,10 @@ import {
   MapPin,
   Archive,
   ShoppingBag,
-  Boxes
+  Boxes,
+  Store,
+  Heart,
+  CreditCard
 } from 'lucide-react';
 
 export const navigation = [
@@ -205,6 +208,35 @@ export const navigation = [
         href: '/repair-plans',
         icon: Archive,
         description: 'Manage repair plans'
+      },
+    ],
+  },
+  {
+    title: 'Store',
+    items: [
+      {
+        title: 'Shopping',
+        href: '/shopping',
+        icon: Store,
+        description: 'Browse products and tools'
+      },
+      {
+        title: 'Shopping Cart',
+        href: '/shopping/cart',
+        icon: ShoppingCart,
+        description: 'View cart and checkout'
+      },
+      {
+        title: 'Wishlist',
+        href: '/wishlist',
+        icon: Heart,
+        description: 'Your saved items'
+      },
+      {
+        title: 'Orders',
+        href: '/orders',
+        icon: ShoppingBag,
+        description: 'Order history and tracking'
       },
     ],
   },

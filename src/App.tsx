@@ -44,6 +44,9 @@ import InventoryManager from '@/pages/InventoryManager';
 import InventoryOrders from '@/pages/InventoryOrders';
 import InventoryLocations from '@/pages/InventoryLocations';
 import InventorySuppliers from '@/pages/InventorySuppliers';
+import Shopping from '@/pages/Shopping';
+import WishlistPage from '@/pages/WishlistPage';
+import Checkout from '@/pages/Checkout';
 
 // Create query client
 const queryClient = new QueryClient({
@@ -393,6 +396,59 @@ function App() {
                 </ProtectedRoute>
               } />
               
+              {/* Store/Shopping */}
+              <Route path="/shopping" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ResponsiveContainer>
+                      <Shopping />
+                    </ResponsiveContainer>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/shopping/cart" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ResponsiveContainer>
+                      <div className="p-6">
+                        <h1 className="text-2xl font-bold mb-4">Shopping Cart</h1>
+                        <p className="text-muted-foreground">Shopping cart functionality.</p>
+                      </div>
+                    </ResponsiveContainer>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/wishlist" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ResponsiveContainer>
+                      <WishlistPage />
+                    </ResponsiveContainer>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/orders" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ResponsiveContainer>
+                      <div className="p-6">
+                        <h1 className="text-2xl font-bold mb-4">Orders</h1>
+                        <p className="text-muted-foreground">Order history and tracking.</p>
+                      </div>
+                    </ResponsiveContainer>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/checkout" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ResponsiveContainer>
+                      <Checkout />
+                    </ResponsiveContainer>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+
               {/* Support */}
               <Route path="/help" element={
                 <ProtectedRoute>
