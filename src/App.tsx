@@ -13,6 +13,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 // Import pages
 import Login from '@/pages/Login';
+import StaffLogin from '@/pages/StaffLogin';
 import Dashboard from '@/pages/Dashboard';
 import WorkOrders from '@/pages/WorkOrders';
 import Calendar from '@/pages/Calendar';
@@ -51,6 +52,7 @@ function App() {
                     {/* Public routes */}
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/staff-login" element={<StaffLogin />} />
                     <Route path="/customer-portal" element={<CustomerPortal />} />
                     <Route path="/client-booking" element={<ClientBooking />} />
                     
