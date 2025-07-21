@@ -3,8 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Lock, User, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CompanyContactEnhanced } from "@/components/common/CompanyContactEnhanced";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export function CustomerLoginRequired() {
+  const { companyName } = useCompany();
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
       <Card className="w-full max-w-md shadow-lg border-blue-100 bg-gradient-to-br from-white to-blue-50">
@@ -15,7 +19,7 @@ export function CustomerLoginRequired() {
             </div>
             <h2 className="text-2xl font-bold mb-2">Login Required</h2>
             <p className="text-gray-600 mb-6">
-              You need to be logged in to access your customer portal.
+              You need to be logged in to access your {companyName} customer portal.
               Sign in or create an account to view your vehicle records, 
               service history, and schedule appointments.
             </p>
@@ -40,9 +44,15 @@ export function CustomerLoginRequired() {
               </Link>
             </div>
             
-            <p className="text-sm text-gray-500 mt-6">
-              Need assistance? Contact our support team for help.
-            </p>
+            <div className="mt-6 pt-4 border-t border-gray-200 w-full">
+              <p className="text-sm text-gray-500 mb-3">Need assistance?</p>
+              <CompanyContactEnhanced
+                variant="inline"
+                showAddress={false}
+                showBusinessHours={true}
+                className="text-xs"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

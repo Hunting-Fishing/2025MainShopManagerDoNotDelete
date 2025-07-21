@@ -5,9 +5,12 @@ import { Lock, User, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useNavigate } from "react-router-dom";
+import { CompanyContactEnhanced } from "@/components/common/CompanyContactEnhanced";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export function CustomerLoginRequiredWithImpersonation() {
   const { isImpersonating, stopImpersonation } = useImpersonation();
+  const { companyName } = useCompany();
   const navigate = useNavigate();
   
   const handleExitPreview = () => {
@@ -45,7 +48,7 @@ export function CustomerLoginRequiredWithImpersonation() {
             </div>
             <h2 className="text-2xl font-bold mb-2">Login Required</h2>
             <p className="text-gray-600 mb-6">
-              You need to be logged in to access your customer portal.
+              You need to be logged in to access your {companyName} customer portal.
               Sign in or create an account to view your vehicle records, 
               service history, and schedule appointments.
             </p>
@@ -70,9 +73,15 @@ export function CustomerLoginRequiredWithImpersonation() {
               </Link>
             </div>
             
-            <p className="text-sm text-gray-500 mt-6">
-              Need assistance? Contact our support team for help.
-            </p>
+            <div className="mt-6 pt-4 border-t border-gray-200 w-full">
+              <p className="text-sm text-gray-500 mb-3">Need assistance?</p>
+              <CompanyContactEnhanced
+                variant="inline"
+                showAddress={false}
+                showBusinessHours={true}
+                className="text-xs"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
