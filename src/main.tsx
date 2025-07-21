@@ -10,7 +10,6 @@ import { HelmetProvider } from 'react-helmet-async';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
 import { NotificationsProvider } from '@/context/notifications';
-import { CompanyProvider } from '@/contexts/CompanyContext';
 import { ConsoleErrorLogger } from '@/components/debug/ConsoleErrorLogger';
 import { GlobalErrorBoundary } from '@/components/error/GlobalErrorBoundary';
 import './i18n/config'; // Initialize i18n before rendering
@@ -55,16 +54,14 @@ ReactDOM.createRoot(rootElement).render(
             <LanguageProvider>
               <ImpersonationProvider>
                 <NotificationsProvider>
-                  <CompanyProvider>
-                    <BrowserRouter>
-                      <ConsoleErrorLogger />
-                      <App />
-                      <ReactQueryDevtools 
-                        initialIsOpen={false} 
-                        position="bottom"
-                      />
-                    </BrowserRouter>
-                  </CompanyProvider>
+                  <BrowserRouter>
+                    <ConsoleErrorLogger />
+                    <App />
+                    <ReactQueryDevtools 
+                      initialIsOpen={false} 
+                      position="bottom"
+                    />
+                  </BrowserRouter>
                 </NotificationsProvider>
               </ImpersonationProvider>
             </LanguageProvider>
