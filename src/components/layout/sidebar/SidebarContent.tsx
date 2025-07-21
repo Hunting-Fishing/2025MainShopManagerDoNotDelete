@@ -4,7 +4,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useNavigationWithRoles } from '@/hooks/useNavigation';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { getIconComponent } from '@/utils/iconMapper';
 import { hasRoutePermission } from '@/utils/routeGuards';
@@ -17,7 +16,6 @@ export function SidebarContent() {
   const { setIsOpen } = useSidebar();
   const isMobile = useIsMobile();
   const { data: userRoles = [] } = useUserRoles();
-  const dbNavigation = useNavigationWithRoles(userRoles);
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -25,20 +23,11 @@ export function SidebarContent() {
     }
   };
 
-  // Filter navigation items based on user permissions
+  // Use only static navigation - no more database sync issues
   const filteredNavigation = navigation.map(section => ({
     ...section,
     items: section.items.filter(item => hasRoutePermission(item.href, userRoles))
   })).filter(section => section.items.length > 0);
-
-  // Always ensure we have complete navigation - merge database with static fallback
-  const activeNavigation = dbNavigation.length > 0 ? dbNavigation : filteredNavigation;
-  
-  // If database navigation is missing key sections, fallback to static navigation
-  const hasStoreSection = activeNavigation.some(section => section.title === 'Store');
-  const hasAllMainSections = activeNavigation.length >= 8; // Should have at least 8 main sections
-  
-  const finalNavigation = (!hasStoreSection || !hasAllMainSections) ? filteredNavigation : activeNavigation;
 
   return (
     <div className="flex h-full flex-col bg-white border-r border-gray-200">
@@ -49,11 +38,11 @@ export function SidebarContent() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-2 p-2 overflow-y-auto">
-        {finalNavigation.map((section) => {
+        {filteredNavigation.map((section) => {
           const colorScheme = getSectionColorScheme(section.title);
           
           return (
-            <div key={section.id || section.title} className={cn(
+            <div key={section.title} className={cn(
               "mb-3 rounded-lg border transition-all duration-200",
               colorScheme.background,
               colorScheme.border
@@ -78,11 +67,11 @@ export function SidebarContent() {
                   const isActive = location.pathname === item.href || 
                     (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
                   
-                  const IconComponent = getIconComponent(item.icon);
+                  const IconComponent = item.icon;
                   
                   return (
                     <Link
-                      key={item.id || item.href}
+                      key={item.href}
                       to={item.href}
                       onClick={handleLinkClick}
                       className={cn(
