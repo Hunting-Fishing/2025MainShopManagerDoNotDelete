@@ -6560,6 +6560,183 @@ export type Database = {
         }
         Relationships: []
       }
+      help_article_feedback: {
+        Row: {
+          article_id: string
+          created_at: string
+          feedback_text: string | null
+          id: string
+          is_helpful: boolean
+          user_id: string | null
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          is_helpful: boolean
+          user_id?: string | null
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          is_helpful?: boolean
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_article_feedback_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_article_views: {
+        Row: {
+          article_id: string
+          created_at: string
+          id: string
+          session_id: string | null
+          source: string | null
+          user_id: string | null
+          view_duration_seconds: number | null
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          source?: string | null
+          user_id?: string | null
+          view_duration_seconds?: number | null
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          source?: string | null
+          user_id?: string | null
+          view_duration_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_article_views_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_articles: {
+        Row: {
+          author_id: string | null
+          category: string
+          content: string
+          created_at: string
+          featured: boolean | null
+          helpful_count: number | null
+          id: string
+          last_updated_by: string | null
+          search_keywords: string[] | null
+          slug: string
+          status: string
+          subcategory: string | null
+          summary: string | null
+          tags: string[] | null
+          title: string
+          unhelpful_count: number | null
+          updated_at: string
+          view_count: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string
+          content: string
+          created_at?: string
+          featured?: boolean | null
+          helpful_count?: number | null
+          id?: string
+          last_updated_by?: string | null
+          search_keywords?: string[] | null
+          slug: string
+          status?: string
+          subcategory?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title: string
+          unhelpful_count?: number | null
+          updated_at?: string
+          view_count?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          featured?: boolean | null
+          helpful_count?: number | null
+          id?: string
+          last_updated_by?: string | null
+          search_keywords?: string[] | null
+          slug?: string
+          status?: string
+          subcategory?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title?: string
+          unhelpful_count?: number | null
+          updated_at?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
+      help_search_analytics: {
+        Row: {
+          clicked_article_id: string | null
+          created_at: string
+          id: string
+          results_count: number | null
+          search_category: string | null
+          search_query: string
+          search_time_ms: number | null
+          user_id: string | null
+        }
+        Insert: {
+          clicked_article_id?: string | null
+          created_at?: string
+          id?: string
+          results_count?: number | null
+          search_category?: string | null
+          search_query: string
+          search_time_ms?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          clicked_article_id?: string | null
+          created_at?: string
+          id?: string
+          results_count?: number | null
+          search_category?: string | null
+          search_query?: string
+          search_time_ms?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_search_analytics_clicked_article_id_fkey"
+            columns: ["clicked_article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_members: {
         Row: {
           created_at: string
