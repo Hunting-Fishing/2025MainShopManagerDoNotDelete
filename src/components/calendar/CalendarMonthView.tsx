@@ -13,14 +13,23 @@ import { CalendarDay } from "./CalendarDay";
 import { CalendarEvent } from "@/types/calendar";
 import { ChatRoom } from "@/types/chat";
 
+interface BusinessHour {
+  day_of_week: number;
+  open_time: string;
+  close_time: string;
+  is_closed: boolean;
+}
+
 interface CalendarMonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
   currentTime?: Date;
   shiftChats?: ChatRoom[];
-  onDateClick?: (date: Date) => void; // Add new prop
-  isCustomerView?: boolean; // Add new prop
+  onDateClick?: (date: Date) => void;
+  isCustomerView?: boolean;
+  businessHours?: BusinessHour[];
+  isBusinessDay?: (dayOfWeek: number) => boolean;
 }
 
 export function CalendarMonthView({ 
@@ -30,9 +39,10 @@ export function CalendarMonthView({
   currentTime = new Date(),
   shiftChats = [],
   onDateClick,
-  isCustomerView = false
+  isCustomerView = false,
+  businessHours = [],
+  isBusinessDay = () => true
 }: CalendarMonthViewProps) {
-  // Get days in month view (including days from previous/next month to fill the grid)
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const calendarStart = startOfWeek(monthStart);
@@ -43,13 +53,11 @@ export function CalendarMonthView({
     end: calendarEnd,
   });
 
-  // Group events by day
   const getEventsForDay = (date: Date) => {
     return events.filter(event => {
       const eventStart = new Date(event.start);
       const eventEnd = new Date(event.end);
       
-      // Check if the day falls within the event's time range
       return date >= startOfWeek(eventStart) && date <= endOfWeek(eventEnd);
     });
   };
@@ -65,8 +73,9 @@ export function CalendarMonthView({
       </div>
       <div className="grid grid-cols-7 auto-rows-fr">
         {daysInMonth.map((day, i) => {
-          // Get events for this day
           const dayEvents = getEventsForDay(day);
+          const dayOfWeek = day.getDay();
+          const isBusinessDayForDate = isBusinessDay(dayOfWeek);
           
           return (
             <CalendarDay
@@ -80,6 +89,8 @@ export function CalendarMonthView({
               currentTime={currentTime}
               shiftChats={shiftChats}
               isCustomerView={isCustomerView}
+              isBusinessDay={isBusinessDayForDate}
+              businessHours={businessHours}
             />
           );
         })}

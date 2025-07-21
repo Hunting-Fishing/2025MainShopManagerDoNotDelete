@@ -1,18 +1,17 @@
 
-import { 
-  startOfWeek, 
-  endOfWeek, 
-  eachDayOfInterval, 
-  format, 
-  isToday,
-  isSameDay,
-  isPast,
-  set
-} from "date-fns";
+import { format, startOfWeek, addDays, isSameDay, isPast } from "date-fns";
 import { CalendarEvent } from "@/types/calendar";
 import { cn } from "@/lib/utils";
-import { priorityMap } from "@/types/workOrder"; // Updated import
+import { priorityMap } from "@/utils/workOrders";
 import { ChatRoom } from "@/types/chat";
+import { AlertTriangle } from "lucide-react";
+
+interface BusinessHour {
+  day_of_week: number;
+  open_time: string;
+  close_time: string;
+  is_closed: boolean;
+}
 
 interface CalendarWeekViewProps {
   currentDate: Date;
@@ -20,6 +19,8 @@ interface CalendarWeekViewProps {
   onEventClick: (event: CalendarEvent) => void;
   currentTime?: Date;
   shiftChats?: ChatRoom[];
+  businessHours?: BusinessHour[];
+  isBusinessDay?: (dayOfWeek: number) => boolean;
 }
 
 export function CalendarWeekView({ 
@@ -27,136 +28,113 @@ export function CalendarWeekView({
   events, 
   onEventClick,
   currentTime = new Date(),
-  shiftChats = []
+  shiftChats = [],
+  businessHours = [],
+  isBusinessDay = () => true
 }: CalendarWeekViewProps) {
-  // Get days in week
   const weekStart = startOfWeek(currentDate);
-  const weekEnd = endOfWeek(weekStart);
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   
-  const daysInWeek = eachDayOfInterval({
-    start: weekStart,
-    end: weekEnd,
-  });
-
-  // Group events by day
-  const getEventsForDay = (date: Date) => {
+  const getEventsForDayAndHour = (date: Date, hour: number) => {
     return events.filter(event => {
       const eventStart = new Date(event.start);
-      const eventEnd = new Date(event.end);
+      const eventHour = eventStart.getHours();
       
-      // Check if this day falls within the event timeframe
-      return (
-        (eventStart <= date && eventEnd >= date) ||
-        isSameDay(eventStart, date) ||
-        isSameDay(eventEnd, date)
-      );
+      return isSameDay(eventStart, date) && eventHour === hour;
     });
   };
 
-  // Time slots for the week view (8am to 6pm)
-  const timeSlots = Array.from({ length: 11 }, (_, i) => 8 + i);
+  const isWithinBusinessHours = (dayOfWeek: number, hour: number) => {
+    const dayHours = businessHours.find(h => h.day_of_week === dayOfWeek);
+    if (!dayHours || dayHours.is_closed) return false;
+    
+    const openHour = parseInt(dayHours.open_time.split(':')[0]);
+    const closeHour = parseInt(dayHours.close_time.split(':')[0]);
+    
+    return hour >= openHour && hour < closeHour;
+  };
 
+  const timeSlots = Array.from({ length: 11 }, (_, i) => 8 + i);
+  
   const now = currentTime;
   const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-  
+
   return (
     <div className="w-full">
-      {/* Day headers */}
+      {/* Week header */}
       <div className="grid grid-cols-8 border-b">
-        <div className="py-2 text-center font-medium"></div>
-        {daysInWeek.map((day, i) => (
-          <div 
-            key={i} 
-            className={cn(
-              "py-2 text-center font-medium",
-              isToday(day) && "bg-blue-50",
-              isPast(day) && !isToday(day) && "bg-red-50 bg-opacity-30"
-            )}
-          >
-            <div>{format(day, "EEE")}</div>
-            <div className={cn(
-              "text-sm",
-              isToday(day) && "rounded-full bg-blue-600 text-white h-6 w-6 mx-auto flex items-center justify-center"
-            )}>
-              {format(day, "d")}
+        <div className="p-3 text-center font-medium">Time</div>
+        {weekDays.map((day, index) => {
+          const dayOfWeek = day.getDay();
+          const isBusinessDayForDate = isBusinessDay(dayOfWeek);
+          
+          return (
+            <div key={index} className="p-3 text-center">
+              <div className="font-medium">{format(day, "EEE")}</div>
+              <div className="text-sm text-gray-500 flex items-center justify-center gap-1">
+                {format(day, "d")}
+                {!isBusinessDayForDate && (
+                  <AlertTriangle className="h-3 w-3 text-gray-400" />
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Time grid */}
-      <div className="relative">
+      {/* Time slots */}
+      <div>
         {timeSlots.map((hour) => {
           return (
-            <div key={hour} className="grid grid-cols-8 border-b">
-              {/* Time label */}
-              <div className={cn(
-                "p-2 text-right text-sm", 
-                hour < currentHour ? "text-gray-400" : "text-slate-500"
-              )}>
+            <div key={hour} className="grid grid-cols-8 border-b min-h-[80px]">
+              <div className="p-3 text-right text-sm text-gray-500">
                 {hour}:00
               </div>
-
-              {/* Day columns */}
-              {daysInWeek.map((day, dayIndex) => {
-                const dayEvents = getEventsForDay(day).filter(event => {
-                  const eventHour = new Date(event.start).getHours();
-                  return eventHour === hour;
-                });
-
-                // Check if this day is in the past
-                const isPastDay = isPast(day) && !isToday(day);
+              
+              {weekDays.map((day, dayIndex) => {
+                const dayOfWeek = day.getDay();
+                const hourEvents = getEventsForDayAndHour(day, hour);
+                const isCurrentHour = isSameDay(day, now) && hour === currentHour;
+                const isBusinessHour = isWithinBusinessHours(dayOfWeek, hour);
+                const isBusinessDayForDate = isBusinessDay(dayOfWeek);
                 
-                // Check if this is the current day and hour
-                const isCurrentDayAndHour = isToday(day) && hour === currentHour;
-                
-                // Check if this hour is fully in the past for today
-                const isFullyPastHour = isToday(day) && hour < currentHour;
-
                 return (
                   <div 
-                    key={dayIndex} 
+                    key={dayIndex}
                     className={cn(
-                      "border-l min-h-[80px] p-1 relative",
-                      isToday(day) && "bg-blue-50",
-                      isPastDay && "bg-red-50 bg-opacity-30"
+                      "p-2 border-l relative",
+                      isCurrentHour && "bg-blue-50",
+                      !isBusinessHour && "bg-gray-50 bg-opacity-50"
                     )}
                   >
-                    {/* Current hour partial overlay */}
-                    {isCurrentDayAndHour && (
-                      <div 
-                        className="absolute left-0 top-0 bg-red-50 bg-opacity-20 pointer-events-none"
-                        style={{
-                          width: '100%',
-                          height: `${(currentMinute / 60) * 100}%`
-                        }}
-                      ></div>
-                    )}
-                    
-                    {/* Past day overlay */}
-                    {isPastDay && (
-                      <div className="absolute inset-0 bg-red-100 bg-opacity-20 pointer-events-none"></div>
-                    )}
-                    
-                    {/* Fully past hour overlay for current day */}
-                    {isFullyPastHour && (
-                      <div className="absolute inset-0 bg-red-100 bg-opacity-20 pointer-events-none"></div>
-                    )}
-                    
-                    {dayEvents.map((event) => (
-                      <div
-                        key={event.id}
-                        onClick={() => onEventClick(event)}
-                        className={cn(
-                          "px-2 py-1 text-xs rounded mb-1 cursor-pointer relative z-10",
-                          priorityMap[event.priority].classes.replace("text-xs font-medium", "")
-                        )}
-                      >
-                        <div className="font-medium truncate">{event.title}</div>
-                        <div className="text-[10px] truncate">{event.technician}</div>
+                    {/* Business hours indicator */}
+                    {!isBusinessHour && isBusinessDayForDate && (
+                      <div className="absolute top-1 right-1 text-xs text-gray-400">
+                        Closed
                       </div>
-                    ))}
+                    )}
+                    
+                    {hourEvents.map((event) => {
+                      const isOutsideHours = !isBusinessHour;
+                      
+                      return (
+                        <div
+                          key={event.id}
+                          onClick={() => onEventClick(event)}
+                          className={cn(
+                            "px-2 py-1 text-xs rounded mb-1 cursor-pointer",
+                            priorityMap[event.priority].classes.replace("text-xs font-medium", ""),
+                            isOutsideHours && "ring-1 ring-orange-400 ring-opacity-50"
+                          )}
+                        >
+                          <div className="font-medium truncate flex items-center gap-1">
+                            {isOutsideHours && <AlertTriangle className="h-3 w-3 text-orange-500" />}
+                            {event.title}
+                          </div>
+                          <div className="text-[10px] truncate">{event.technician}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}

@@ -8,14 +8,23 @@ import { CalendarEventDialog } from "./CalendarEventDialog";
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { ChatRoom } from "@/types/chat";
 
+interface BusinessHour {
+  day_of_week: number;
+  open_time: string;
+  close_time: string;
+  is_closed: boolean;
+}
+
 interface CalendarViewProps {
   events: CalendarEvent[];
   currentDate: Date;
   view: CalendarViewType;
   loading?: boolean;
   shiftChats?: ChatRoom[];
-  onDateClick?: (date: Date) => void; // Add new prop
-  isCustomerView?: boolean; // Add new prop
+  onDateClick?: (date: Date) => void;
+  isCustomerView?: boolean;
+  businessHours?: BusinessHour[];
+  isBusinessDay?: (dayOfWeek: number) => boolean;
 }
 
 export function CalendarView({ 
@@ -25,7 +34,9 @@ export function CalendarView({
   loading = false,
   shiftChats = [],
   onDateClick,
-  isCustomerView = false
+  isCustomerView = false,
+  businessHours = [],
+  isBusinessDay = () => true
 }: CalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [now, setNow] = useState(new Date());
@@ -34,22 +45,19 @@ export function CalendarView({
   useEffect(() => {
     const intervalId = setInterval(() => {
       setNow(new Date());
-    }, 60000); // Update every minute
+    }, 60000);
     
     return () => clearInterval(intervalId);
   }, []);
 
-  // Open event details
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
   };
 
-  // Close event details
   const handleCloseDialog = () => {
     setSelectedEvent(null);
   };
 
-  // Show loading state
   if (loading) {
     return (
       <div className="h-[800px] flex items-center justify-center">
@@ -72,6 +80,8 @@ export function CalendarView({
           shiftChats={shiftChats}
           onDateClick={onDateClick}
           isCustomerView={isCustomerView}
+          businessHours={businessHours}
+          isBusinessDay={isBusinessDay}
         />
       )}
       
@@ -83,6 +93,8 @@ export function CalendarView({
             onEventClick={handleEventClick}
             currentTime={now}
             shiftChats={shiftChats}
+            businessHours={businessHours}
+            isBusinessDay={isBusinessDay}
           />
           <CurrentTimeIndicator currentTime={now} view="week" />
         </>
@@ -96,6 +108,8 @@ export function CalendarView({
             onEventClick={handleEventClick}
             currentTime={now}
             shiftChats={shiftChats}
+            businessHours={businessHours}
+            isBusinessDay={isBusinessDay}
           />
           <CurrentTimeIndicator currentTime={now} view="day" />
         </>
