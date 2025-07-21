@@ -10,7 +10,7 @@ interface FormsLayoutProps {
 
 export function FormsLayout({ formId = 'default' }: FormsLayoutProps) {
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Forms Management</h1>
       </div>

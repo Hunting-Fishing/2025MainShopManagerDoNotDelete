@@ -23,7 +23,7 @@ export function WorkOrderPageLayout({
 }: WorkOrderPageLayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="container mx-auto py-8 space-y-8">
+      <div className="w-full py-8 space-y-8 px-6">
         {/* Header Section */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-6">
           <div className="flex items-center justify-between">

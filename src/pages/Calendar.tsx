@@ -35,7 +35,7 @@ export default function Calendar() {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full p-6">
         <Card className="p-6 text-center">
           <h2 className="text-xl font-semibold mb-2">Error Loading Calendar</h2>
           <p className="text-muted-foreground">{error}</p>
@@ -45,7 +45,7 @@ export default function Calendar() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full p-6 space-y-6">
       <CalendarHeader
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}

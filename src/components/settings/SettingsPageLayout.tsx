@@ -38,7 +38,7 @@ export const SettingsPageLayout: React.FC<SettingsPageLayoutProps> = ({
   }, [location, navigate, defaultTab]);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="w-full px-4 py-8 max-w-none">
       <SettingsPageHeader
         title={title}
         description={description}

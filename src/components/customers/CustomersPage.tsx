@@ -1,6 +1,5 @@
 
 import React from "react";
-import { CustomersLayout } from "./layout/CustomersLayout";
 import { CustomersHeader } from "./list/CustomersHeader";
 import { CustomerStatsCards } from "./stats/CustomerStatsCards";
 import { CustomerFiltersPanel } from "./filters/CustomerFiltersPanel";
@@ -33,7 +32,7 @@ export function CustomersPage() {
 
   if (error) {
     return (
-      <CustomersLayout>
+      <div className="w-full p-6">
         <div className="text-center py-12">
           <p className="text-red-600 text-lg mb-4">Error loading customers</p>
           <p className="text-slate-500 mb-4">{error}</p>
@@ -44,12 +43,12 @@ export function CustomersPage() {
             Try Again
           </button>
         </div>
-      </CustomersLayout>
+      </div>
     );
   }
 
   return (
-    <CustomersLayout>
+    <div className="w-full p-6 space-y-6">
       <CustomersHeader />
       
       <CustomerStatsCards 
@@ -68,6 +67,6 @@ export function CustomersPage() {
         customers={filteredCustomers}
         isLoading={loading}
       />
-    </CustomersLayout>
+    </div>
   );
 }

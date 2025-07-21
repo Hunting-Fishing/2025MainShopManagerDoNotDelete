@@ -30,13 +30,13 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const isMobile = useIsMobile();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex w-full">
       <AppSidebar />
-      <div className={`flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
+      <div className={`flex flex-col min-h-screen flex-1 transition-all duration-300 ease-in-out ${
         !isMobile && isOpen ? 'ml-[280px] print:ml-0' : 'ml-0'
       }`}>
         <Header />
-        <main className="flex-1 w-full overflow-x-hidden print:w-full">
+        <main className="flex-1 w-full print:w-full">
           {children}
         </main>
       </div>
