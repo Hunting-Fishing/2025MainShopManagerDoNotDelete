@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -47,7 +47,6 @@ function App() {
           <CompanyProvider>
             <ImpersonationProvider>
               <SidebarProvider>
-                <Router>
                   <Routes>
                     {/* Public routes */}
                     <Route path="/" element={<Index />} />
@@ -145,7 +144,6 @@ function App() {
                       </ProtectedRoute>
                     } />
                   </Routes>
-                </Router>
                 <Toaster />
                 <ReactQueryDevtools initialIsOpen={false} />
               </SidebarProvider>
