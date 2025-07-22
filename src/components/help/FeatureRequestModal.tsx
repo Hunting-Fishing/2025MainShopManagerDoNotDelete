@@ -7,7 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Lightbulb, Star } from 'lucide-react';
+import { Lightbulb, Plus } from 'lucide-react';
+import { useFeatureRequests } from '@/hooks/useFeatureRequests';
+import { CreateFeatureRequestPayload } from '@/types/feature-requests';
 
 interface FeatureRequestModalProps {
   isOpen: boolean;
@@ -15,45 +17,57 @@ interface FeatureRequestModalProps {
 }
 
 export function FeatureRequestModal({ isOpen, onClose }: FeatureRequestModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreateFeatureRequestPayload & { 
+    submitter_email: string;
+    acceptance_criteria: string;
+  }>({
     title: '',
-    category: '',
+    category: 'other',
     priority: 'medium',
     description: '',
-    useCase: '',
-    email: ''
+    technical_requirements: '',
+    implementation_notes: '',
+    acceptance_criteria: '',
+    submitter_name: '',
+    submitter_email: '',
+    tags: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+  const { createFeatureRequest } = useFeatureRequests();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Feature Request Submitted",
-        description: "Thank you for your suggestion! We'll review it and get back to you.",
+      const result = await createFeatureRequest({
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        priority: formData.priority,
+        submitter_name: formData.submitter_name,
+        submitter_email: formData.submitter_email,
+        technical_requirements: formData.technical_requirements,
+        implementation_notes: formData.implementation_notes,
+        acceptance_criteria: formData.acceptance_criteria,
+        tags: formData.tags
       });
       
-      onClose();
-      setFormData({
-        title: '',
-        category: '',
-        priority: 'medium',
-        description: '',
-        useCase: '',
-        email: ''
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit feature request. Please try again.",
-        variant: "destructive",
-      });
+      if (result) {
+        onClose();
+        setFormData({
+          title: '',
+          category: 'other',
+          priority: 'medium',
+          description: '',
+          technical_requirements: '',
+          implementation_notes: '',
+          acceptance_criteria: '',
+          submitter_name: '',
+          submitter_email: '',
+          tags: []
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -84,16 +98,15 @@ export function FeatureRequestModal({ isOpen, onClose }: FeatureRequestModalProp
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="category">Category</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value as any })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ui">User Interface</SelectItem>
+                  <SelectItem value="ui_ux">User Interface & UX</SelectItem>
+                  <SelectItem value="functionality">Functionality</SelectItem>
                   <SelectItem value="performance">Performance</SelectItem>
                   <SelectItem value="integration">Integration</SelectItem>
-                  <SelectItem value="reporting">Reporting</SelectItem>
-                  <SelectItem value="mobile">Mobile</SelectItem>
                   <SelectItem value="security">Security</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
@@ -101,7 +114,7 @@ export function FeatureRequestModal({ isOpen, onClose }: FeatureRequestModalProp
             </div>
             <div>
               <Label htmlFor="priority">Priority</Label>
-              <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
+              <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value as any })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -128,25 +141,58 @@ export function FeatureRequestModal({ isOpen, onClose }: FeatureRequestModalProp
           </div>
 
           <div>
-            <Label htmlFor="useCase">Use Case</Label>
+            <Label htmlFor="technical_requirements">Technical Requirements (optional)</Label>
             <Textarea
-              id="useCase"
-              value={formData.useCase}
-              onChange={(e) => setFormData({ ...formData, useCase: e.target.value })}
-              placeholder="How would this feature help you and your workflow?"
-              rows={3}
+              id="technical_requirements"
+              value={formData.technical_requirements}
+              onChange={(e) => setFormData({ ...formData, technical_requirements: e.target.value })}
+              placeholder="Any specific technical requirements or constraints..."
+              rows={2}
             />
           </div>
 
           <div>
-            <Label htmlFor="email">Email (optional)</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="For follow-up questions"
+            <Label htmlFor="implementation_notes">Implementation Notes (optional)</Label>
+            <Textarea
+              id="implementation_notes"
+              value={formData.implementation_notes}
+              onChange={(e) => setFormData({ ...formData, implementation_notes: e.target.value })}
+              placeholder="Suggestions for how this could be implemented..."
+              rows={2}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="acceptance_criteria">Acceptance Criteria (optional)</Label>
+            <Textarea
+              id="acceptance_criteria"
+              value={formData.acceptance_criteria}
+              onChange={(e) => setFormData({ ...formData, acceptance_criteria: e.target.value })}
+              placeholder="What would make this feature complete and successful?"
+              rows={2}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="submitter_name">Name (optional)</Label>
+              <Input
+                id="submitter_name"
+                value={formData.submitter_name}
+                onChange={(e) => setFormData({ ...formData, submitter_name: e.target.value })}
+                placeholder="Your name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="submitter_email">Email (optional)</Label>
+              <Input
+                id="submitter_email"
+                type="email"
+                value={formData.submitter_email}
+                onChange={(e) => setFormData({ ...formData, submitter_email: e.target.value })}
+                placeholder="For follow-up questions"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">

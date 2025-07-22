@@ -5141,6 +5141,224 @@ export type Database = {
           },
         ]
       }
+      feature_request_comments: {
+        Row: {
+          commenter_email: string | null
+          commenter_name: string | null
+          content: string
+          created_at: string | null
+          feature_request_id: string
+          id: string
+          is_admin_comment: boolean | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          commenter_email?: string | null
+          commenter_name?: string | null
+          content: string
+          created_at?: string | null
+          feature_request_id: string
+          id?: string
+          is_admin_comment?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          commenter_email?: string | null
+          commenter_name?: string | null
+          content?: string
+          created_at?: string | null
+          feature_request_id?: string
+          id?: string
+          is_admin_comment?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_request_comments_feature_request_id_fkey"
+            columns: ["feature_request_id"]
+            isOneToOne: false
+            referencedRelation: "feature_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_request_status_history: {
+        Row: {
+          change_reason: string | null
+          changed_by: string | null
+          created_at: string | null
+          feature_request_id: string
+          id: string
+          new_status: string
+          old_status: string | null
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          feature_request_id: string
+          id?: string
+          new_status: string
+          old_status?: string | null
+        }
+        Update: {
+          change_reason?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          feature_request_id?: string
+          id?: string
+          new_status?: string
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_request_status_history_feature_request_id_fkey"
+            columns: ["feature_request_id"]
+            isOneToOne: false
+            referencedRelation: "feature_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_request_votes: {
+        Row: {
+          created_at: string | null
+          feature_request_id: string
+          id: string
+          user_id: string | null
+          vote_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          feature_request_id: string
+          id?: string
+          user_id?: string | null
+          vote_type: string
+        }
+        Update: {
+          created_at?: string | null
+          feature_request_id?: string
+          id?: string
+          user_id?: string | null
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_request_votes_feature_request_id_fkey"
+            columns: ["feature_request_id"]
+            isOneToOne: false
+            referencedRelation: "feature_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_requests: {
+        Row: {
+          acceptance_criteria: string | null
+          admin_notes: string | null
+          assigned_developer: string | null
+          attachments: Json | null
+          category: string
+          completed_at: string | null
+          complexity_estimate: string | null
+          created_at: string | null
+          description: string
+          downvotes: number | null
+          estimated_hours: number | null
+          id: string
+          implementation_notes: string | null
+          is_featured: boolean | null
+          is_public: boolean | null
+          priority: string
+          reviewed_at: string | null
+          status: string
+          submitted_by: string | null
+          submitter_email: string | null
+          submitter_name: string | null
+          support_ticket_id: string | null
+          tags: Json | null
+          target_version: string | null
+          technical_requirements: string | null
+          title: string
+          updated_at: string | null
+          upvotes: number | null
+          vote_count: number | null
+        }
+        Insert: {
+          acceptance_criteria?: string | null
+          admin_notes?: string | null
+          assigned_developer?: string | null
+          attachments?: Json | null
+          category: string
+          completed_at?: string | null
+          complexity_estimate?: string | null
+          created_at?: string | null
+          description: string
+          downvotes?: number | null
+          estimated_hours?: number | null
+          id?: string
+          implementation_notes?: string | null
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          priority?: string
+          reviewed_at?: string | null
+          status?: string
+          submitted_by?: string | null
+          submitter_email?: string | null
+          submitter_name?: string | null
+          support_ticket_id?: string | null
+          tags?: Json | null
+          target_version?: string | null
+          technical_requirements?: string | null
+          title: string
+          updated_at?: string | null
+          upvotes?: number | null
+          vote_count?: number | null
+        }
+        Update: {
+          acceptance_criteria?: string | null
+          admin_notes?: string | null
+          assigned_developer?: string | null
+          attachments?: Json | null
+          category?: string
+          completed_at?: string | null
+          complexity_estimate?: string | null
+          created_at?: string | null
+          description?: string
+          downvotes?: number | null
+          estimated_hours?: number | null
+          id?: string
+          implementation_notes?: string | null
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          priority?: string
+          reviewed_at?: string | null
+          status?: string
+          submitted_by?: string | null
+          submitter_email?: string | null
+          submitter_name?: string | null
+          support_ticket_id?: string | null
+          tags?: Json | null
+          target_version?: string | null
+          technical_requirements?: string | null
+          title?: string
+          updated_at?: string | null
+          upvotes?: number | null
+          vote_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_requests_support_ticket_id_fkey"
+            columns: ["support_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback_categories: {
         Row: {
           color: string | null

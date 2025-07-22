@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContactSupportModal } from '@/components/help/ContactSupportModal';
 import { ScheduleDemoModal } from '@/components/help/ScheduleDemoModal';
 import { FeatureRequestModal } from '@/components/help/FeatureRequestModal';
+import { FeatureRequestBoard } from '@/components/help/FeatureRequestBoard';
 import { HelpSearchEngine } from '@/components/help/HelpSearchEngine';
 import { HelpContentLibrary } from '@/components/help/HelpContentLibrary';
 import { HelpAnalytics } from '@/components/help/HelpAnalytics';
@@ -144,7 +145,7 @@ const Help: React.FC = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="search" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="search" className="flex items-center gap-2">
               <Search className="h-4 w-4" />
               Search
@@ -152,6 +153,10 @@ const Help: React.FC = () => {
             <TabsTrigger value="library" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Library
+            </TabsTrigger>
+            <TabsTrigger value="features" className="flex items-center gap-2">
+              <Bug className="h-4 w-4" />
+              Features
             </TabsTrigger>
             <TabsTrigger value="support" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
@@ -193,6 +198,10 @@ const Help: React.FC = () => {
                 <HelpContentLibrary />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="features" className="space-y-6">
+            <FeatureRequestBoard onRequestFeature={() => setIsFeatureRequestModalOpen(true)} />
           </TabsContent>
 
           <TabsContent value="support" className="space-y-6">
