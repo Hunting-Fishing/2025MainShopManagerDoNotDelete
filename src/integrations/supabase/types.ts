@@ -6778,6 +6778,36 @@ export type Database = {
         }
         Relationships: []
       }
+      help_analytics: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       help_article_feedback: {
         Row: {
           article_id: string
@@ -6970,6 +7000,84 @@ export type Database = {
         }
         Relationships: []
       }
+      help_faq: {
+        Row: {
+          answer: string
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          helpful_count: number | null
+          id: string
+          is_active: boolean | null
+          not_helpful_count: number | null
+          order_index: number | null
+          question: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          answer: string
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          not_helpful_count?: number | null
+          order_index?: number | null
+          question: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          answer?: string
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          not_helpful_count?: number | null
+          order_index?: number | null
+          question?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: []
+      }
+      help_feedback: {
+        Row: {
+          created_at: string | null
+          feedback_text: string | null
+          id: string
+          is_helpful: boolean | null
+          rating: number | null
+          resource_id: string | null
+          resource_type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          feedback_text?: string | null
+          id?: string
+          is_helpful?: boolean | null
+          rating?: number | null
+          resource_id?: string | null
+          resource_type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          feedback_text?: string | null
+          id?: string
+          is_helpful?: boolean | null
+          rating?: number | null
+          resource_id?: string | null
+          resource_type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       help_learning_paths: {
         Row: {
           articles: Json | null
@@ -7102,6 +7210,47 @@ export type Database = {
             columns: ["clicked_article_id"]
             isOneToOne: false
             referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_user_progress: {
+        Row: {
+          completed_at: string | null
+          completed_steps: Json | null
+          id: string
+          last_accessed_at: string | null
+          learning_path_id: string
+          progress_percentage: number | null
+          started_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_steps?: Json | null
+          id?: string
+          last_accessed_at?: string | null
+          learning_path_id: string
+          progress_percentage?: number | null
+          started_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_steps?: Json | null
+          id?: string
+          last_accessed_at?: string | null
+          learning_path_id?: string
+          progress_percentage?: number | null
+          started_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_user_progress_learning_path_id_fkey"
+            columns: ["learning_path_id"]
+            isOneToOne: false
+            referencedRelation: "help_learning_paths"
             referencedColumns: ["id"]
           },
         ]
@@ -15260,6 +15409,48 @@ export type Database = {
           },
         ]
       }
+      system_incidents: {
+        Row: {
+          affected_services: string[] | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          resolved_at: string | null
+          severity: string
+          started_at: string | null
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          affected_services?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          severity: string
+          started_at?: string | null
+          status: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          affected_services?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          severity?: string
+          started_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       system_metrics: {
         Row: {
           id: string
@@ -15323,6 +15514,42 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      system_status: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          last_check_at: string | null
+          response_time_ms: number | null
+          service_name: string
+          status: string
+          updated_at: string | null
+          uptime_percentage: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_check_at?: string | null
+          response_time_ms?: number | null
+          service_name: string
+          status: string
+          updated_at?: string | null
+          uptime_percentage?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_check_at?: string | null
+          response_time_ms?: number | null
+          service_name?: string
+          status?: string
+          updated_at?: string | null
+          uptime_percentage?: number | null
         }
         Relationships: []
       }
@@ -19404,6 +19631,10 @@ export type Database = {
         Args: { campaign_id: string }
         Returns: undefined
       }
+      increment_faq_views: {
+        Args: { faq_id: string }
+        Returns: undefined
+      }
       increment_rate_limit: {
         Args: {
           p_integration_id: string
@@ -19669,6 +19900,25 @@ export type Database = {
           p_category: string
           p_key: string
           p_value: Json
+        }
+        Returns: string
+      }
+      submit_help_feedback: {
+        Args: {
+          p_resource_type: string
+          p_resource_id?: string
+          p_rating?: number
+          p_is_helpful?: boolean
+          p_feedback_text?: string
+        }
+        Returns: string
+      }
+      track_help_analytics: {
+        Args: {
+          p_event_type: string
+          p_resource_type?: string
+          p_resource_id?: string
+          p_metadata?: Json
         }
         Returns: string
       }

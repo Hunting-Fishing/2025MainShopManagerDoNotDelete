@@ -15,6 +15,9 @@ import { HelpContentLibrary } from '@/components/help/HelpContentLibrary';
 import { HelpAnalytics } from '@/components/help/HelpAnalytics';
 import { HelpArticleViewer } from '@/components/help/HelpArticleViewer';
 import { SupportTicketManager } from '@/components/help/SupportTicketManager';
+import { FAQSection } from '@/components/help/FAQSection';
+import { SystemStatusWidget } from '@/components/help/SystemStatusWidget';
+import { useTrackAnalytics } from '@/hooks/useHelpAnalytics';
 
 interface QuickAction {
   id: string;
@@ -30,6 +33,13 @@ const Help: React.FC = () => {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isFeatureRequestModalOpen, setIsFeatureRequestModalOpen] = useState(false);
+  
+  const trackAnalytics = useTrackAnalytics();
+
+  // Track page view
+  React.useEffect(() => {
+    trackAnalytics.mutate({ eventType: 'page_view' });
+  }, []);
 
   const articleId = searchParams.get('id');
 
@@ -65,12 +75,7 @@ const Help: React.FC = () => {
     }
   ];
 
-  const systemStatus = {
-    status: 'operational',
-    uptime: '99.9%',
-    responseTime: '120ms',
-    lastUpdate: '2 minutes ago'
-  };
+  // Removed hardcoded system status - now using real database data
 
   const handleSearchResult = (result: any) => {
     // Navigate to article by updating the URL
@@ -114,34 +119,9 @@ const Help: React.FC = () => {
         </div>
 
         {/* System Status */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              System Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 bg-green-500 rounded-full" />
-                <span className="text-sm">All Systems Operational</span>
-              </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">Uptime: </span>
-                <span className="font-medium">{systemStatus.uptime}</span>
-              </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">Response Time: </span>
-                <span className="font-medium">{systemStatus.responseTime}</span>
-              </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">Last Update: </span>
-                <span className="font-medium">{systemStatus.lastUpdate}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="mb-8">
+          <SystemStatusWidget />
+        </div>
 
         {/* Main Content */}
         <Tabs defaultValue="search" className="w-full">
@@ -231,47 +211,7 @@ const Help: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {[
-                    {
-                      question: "How do I reset my password?",
-                      answer: "You can reset your password by clicking the 'Forgot Password' link on the login page and following the instructions sent to your email.",
-                      category: "Account"
-                    },
-                    {
-                      question: "How do I create a new work order?",
-                      answer: "Navigate to the Work Orders section and click 'New Work Order'. Fill in the required information and click 'Save'.",
-                      category: "Work Orders"
-                    },
-                    {
-                      question: "Can I customize the dashboard?",
-                      answer: "Yes, you can customize your dashboard by clicking the settings icon and selecting which widgets to display.",
-                      category: "Dashboard"
-                    },
-                    {
-                      question: "How do I add team members?",
-                      answer: "Go to Settings > Team Management and click 'Add Team Member'. Enter their details and assign appropriate roles.",
-                      category: "Team Management"
-                    },
-                    {
-                      question: "What payment methods do you accept?",
-                      answer: "We accept all major credit cards, PayPal, and bank transfers for enterprise customers.",
-                      category: "Billing"
-                    }
-                  ].map((faq, index) => (
-                    <Card key={index}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{faq.question}</CardTitle>
-                          <Badge variant="outline">{faq.category}</Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">{faq.answer}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <FAQSection />
               </CardContent>
             </Card>
           </TabsContent>
