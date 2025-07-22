@@ -34,7 +34,7 @@ export const LearningPathViewer: React.FC = () => {
   const fetchLearningPaths = async () => {
     try {
       const { data, error } = await supabase
-        .from('learning_paths' as any)
+        .from('help_learning_paths')
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: true });

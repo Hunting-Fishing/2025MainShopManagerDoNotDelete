@@ -16,11 +16,11 @@ interface UserStats {
 
 interface Achievement {
   id: string;
-  achievementName: string;
-  achievementDescription: string;
-  pointsAwarded: number;
-  iconName: string;
-  earnedAt: string;
+  achievement_name: string;
+  achievement_description: string;
+  points_awarded: number;
+  icon_name: string;
+  earned_at: string;
 }
 
 export const UserProgressDashboard: React.FC = () => {
@@ -234,20 +234,20 @@ export const UserProgressDashboard: React.FC = () => {
                   className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                 >
                   <div className="flex-shrink-0">
-                    {getIconComponent(achievement.iconName)}
+                    {getIconComponent(achievement.icon_name)}
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold">{achievement.achievementName}</h4>
+                    <h4 className="font-semibold">{achievement.achievement_name}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {achievement.achievementDescription}
+                      {achievement.achievement_description}
                     </p>
                   </div>
                   <div className="text-right">
                     <Badge variant="outline">
-                      +{achievement.pointsAwarded} pts
+                      +{achievement.points_awarded} pts
                     </Badge>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(achievement.earnedAt).toLocaleDateString()}
+                      {new Date(achievement.earned_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
