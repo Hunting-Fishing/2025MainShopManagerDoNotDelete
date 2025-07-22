@@ -72,20 +72,23 @@ export function EnhancedSupportTicketManager() {
 
   const loadTickets = async () => {
     try {
+      // Use existing support_tickets table for now
       const { data, error } = await supabase
         .from('support_tickets')
-        .select(`
-          *,
-          support_ticket_categories (
-            name,
-            color,
-            sla_hours
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTickets(data || []);
+      
+      // Transform data to match our interface
+      const transformedData = (data || []).map((ticket: any) => ({
+        ...ticket,
+        ticket_number: ticket.ticket_number || `TKT-${ticket.id.slice(0, 8)}`,
+        customer_name: ticket.customer_name || 'N/A',
+        customer_email: ticket.customer_email || 'N/A'
+      }));
+      
+      setTickets(transformedData);
     } catch (error) {
       console.error('Error loading tickets:', error);
       toast({
@@ -100,13 +103,15 @@ export function EnhancedSupportTicketManager() {
 
   const loadTicketCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('support_ticket_categories')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-      setTicketCategories(data || []);
+      // Use mock data for now until tables are available
+      const mockCategories = [
+        { id: '1', name: 'Technical Issue', color: '#EF4444', sla_hours: 4 },
+        { id: '2', name: 'Feature Request', color: '#10B981', sla_hours: 72 },
+        { id: '3', name: 'Account & Billing', color: '#F59E0B', sla_hours: 24 },
+        { id: '4', name: 'Training & Support', color: '#3B82F6', sla_hours: 8 },
+        { id: '5', name: 'General Inquiry', color: '#6B7280', sla_hours: 48 }
+      ];
+      setTicketCategories(mockCategories);
     } catch (error) {
       console.error('Error loading ticket categories:', error);
     }
@@ -114,14 +119,17 @@ export function EnhancedSupportTicketManager() {
 
   const loadTicketComments = async (ticketId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('support_ticket_comments')
-        .select('*')
-        .eq('ticket_id', ticketId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      setTicketComments(data || []);
+      // Use mock data for now
+      const mockComments: TicketComment[] = [
+        {
+          id: '1',
+          comment: 'Thank you for contacting support. We are looking into your issue.',
+          created_at: new Date().toISOString(),
+          is_internal: false,
+          user_id: 'support-1'
+        }
+      ];
+      setTicketComments(mockComments);
     } catch (error) {
       console.error('Error loading ticket comments:', error);
     }

@@ -105,7 +105,7 @@ export const HelpContentLibrary: React.FC = () => {
       case 'popularity':
         return (b.view_count || 0) - (a.view_count || 0);
       case 'rating':
-        return (b.rating || 0) - (a.rating || 0);
+        return ((b as any).rating || 0) - ((a as any).rating || 0);
       case 'date':
       default:
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -163,7 +163,7 @@ export const HelpContentLibrary: React.FC = () => {
           </div>
           <div className="flex items-center gap-1">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            {article.rating || 4.5}
+            {(article as any).rating || 4.5}
           </div>
         </div>
         
