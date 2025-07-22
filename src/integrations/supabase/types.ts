@@ -13215,6 +13215,56 @@ export type Database = {
         }
         Relationships: []
       }
+      reading_analytics: {
+        Row: {
+          article_id: string | null
+          created_at: string | null
+          feedback_text: string | null
+          id: string
+          rating: number | null
+          scroll_depth_percentage: number | null
+          session_end: string | null
+          session_start: string | null
+          time_spent_seconds: number | null
+          user_id: string
+          was_helpful: boolean | null
+        }
+        Insert: {
+          article_id?: string | null
+          created_at?: string | null
+          feedback_text?: string | null
+          id?: string
+          rating?: number | null
+          scroll_depth_percentage?: number | null
+          session_end?: string | null
+          session_start?: string | null
+          time_spent_seconds?: number | null
+          user_id: string
+          was_helpful?: boolean | null
+        }
+        Update: {
+          article_id?: string | null
+          created_at?: string | null
+          feedback_text?: string | null
+          id?: string
+          rating?: number | null
+          scroll_depth_percentage?: number | null
+          session_end?: string | null
+          session_start?: string | null
+          time_spent_seconds?: number | null
+          user_id?: string
+          was_helpful?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_analytics_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recently_viewed: {
         Row: {
           created_at: string
@@ -16525,6 +16575,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          achievement_description: string | null
+          achievement_name: string
+          achievement_type: string
+          created_at: string | null
+          earned_at: string | null
+          icon_name: string | null
+          id: string
+          points_awarded: number | null
+          user_id: string
+        }
+        Insert: {
+          achievement_description?: string | null
+          achievement_name: string
+          achievement_type: string
+          created_at?: string | null
+          earned_at?: string | null
+          icon_name?: string | null
+          id?: string
+          points_awarded?: number | null
+          user_id: string
+        }
+        Update: {
+          achievement_description?: string | null
+          achievement_name?: string
+          achievement_type?: string
+          created_at?: string | null
+          earned_at?: string | null
+          icon_name?: string | null
+          id?: string
+          points_awarded?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_navigation_preferences: {
         Row: {
           created_at: string | null
@@ -16550,6 +16636,51 @@ export type Database = {
           hidden_items?: string[] | null
           hidden_sections?: string[] | null
           id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_points: {
+        Row: {
+          articles_completed: number | null
+          created_at: string | null
+          current_streak: number | null
+          id: string
+          last_activity_date: string | null
+          level_name: string | null
+          longest_streak: number | null
+          paths_completed: number | null
+          time_spent_total_minutes: number | null
+          total_points: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          articles_completed?: number | null
+          created_at?: string | null
+          current_streak?: number | null
+          id?: string
+          last_activity_date?: string | null
+          level_name?: string | null
+          longest_streak?: number | null
+          paths_completed?: number | null
+          time_spent_total_minutes?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          articles_completed?: number | null
+          created_at?: string | null
+          current_streak?: number | null
+          id?: string
+          last_activity_date?: string | null
+          level_name?: string | null
+          longest_streak?: number | null
+          paths_completed?: number | null
+          time_spent_total_minutes?: number | null
+          total_points?: number | null
           updated_at?: string | null
           user_id?: string
         }
@@ -16581,6 +16712,72 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_progress: {
+        Row: {
+          article_id: string | null
+          completed_at: string | null
+          completion_percentage: number | null
+          created_at: string | null
+          id: string
+          last_accessed_at: string | null
+          learning_path_id: string | null
+          notes: string | null
+          progress_type: string
+          started_at: string | null
+          status: string
+          time_spent_minutes: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          article_id?: string | null
+          completed_at?: string | null
+          completion_percentage?: number | null
+          created_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          learning_path_id?: string | null
+          notes?: string | null
+          progress_type: string
+          started_at?: string | null
+          status?: string
+          time_spent_minutes?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          article_id?: string | null
+          completed_at?: string | null
+          completion_percentage?: number | null
+          created_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          learning_path_id?: string | null
+          notes?: string | null
+          progress_type?: string
+          started_at?: string | null
+          status?: string
+          time_spent_minutes?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_progress_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_progress_learning_path_id_fkey"
+            columns: ["learning_path_id"]
+            isOneToOne: false
+            referencedRelation: "help_learning_paths"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -19654,6 +19851,10 @@ export type Database = {
       increment_usage_count: {
         Args: { template_id: string }
         Returns: number
+      }
+      initialize_user_points: {
+        Args: { user_uuid: string }
+        Returns: string
       }
       insert_service_category: {
         Args: { p_name: string; p_description?: string; p_position?: number }
