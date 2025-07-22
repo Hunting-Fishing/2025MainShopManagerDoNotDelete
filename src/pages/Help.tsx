@@ -20,6 +20,8 @@ import { SystemStatusWidget } from '@/components/help/SystemStatusWidget';
 import { LearningPathViewer } from '@/components/help/LearningPathViewer';
 import { ResourceLibrary } from '@/components/help/ResourceLibrary';
 import { EnhancedSupportTicketManager } from '@/components/help/EnhancedSupportTicketManager';
+import { HelpSearch } from '@/components/help/HelpSearch';
+import { Breadcrumbs } from '@/components/help/Breadcrumbs';
 import { CategoryArticlesList } from '@/components/help/CategoryArticlesList';
 import { ArticleViewer } from '@/components/help/ArticleViewer';
 import { useTrackAnalytics } from '@/hooks/useHelpAnalytics';
