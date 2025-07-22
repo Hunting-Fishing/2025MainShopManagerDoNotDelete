@@ -19,12 +19,12 @@ import { useToast } from "@/hooks/use-toast";
 interface Article {
   id: string;
   title: string;
-  excerpt: string;
+  summary: string;
   difficulty_level: string;
   estimated_read_time: number;
   view_count: number;
   helpful_count: number;
-  featured: boolean;
+  is_featured: boolean;
   tags: string[];
   created_at: string;
   category_id: string;
@@ -79,11 +79,11 @@ export const CategoryArticlesList: React.FC<CategoryArticlesListProps> = ({
       const { data: articlesData, error: articlesError } = await supabase
         .from('help_articles' as any)
         .select(`
-          id, title, excerpt, difficulty_level, estimated_read_time,
-          view_count, helpful_count, featured, tags, created_at, category_id
+          id, title, summary, difficulty_level, estimated_read_time,
+          view_count, helpful_count, is_featured, tags, created_at, category_id
         `)
-        .eq('published', true)
-        .order('featured', { ascending: false })
+        .eq('status', 'published')
+        .order('is_featured', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (articlesError) throw articlesError;
@@ -120,7 +120,7 @@ export const CategoryArticlesList: React.FC<CategoryArticlesListProps> = ({
     if (searchTerm) {
       filtered = filtered.filter(article =>
         article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        article.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        article.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
         article.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
@@ -285,7 +285,7 @@ export const CategoryArticlesList: React.FC<CategoryArticlesListProps> = ({
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    {article.featured && (
+                    {article.is_featured && (
                       <Star className="h-4 w-4 text-yellow-500 fill-current" />
                     )}
                     <Badge 
@@ -301,7 +301,7 @@ export const CategoryArticlesList: React.FC<CategoryArticlesListProps> = ({
                   </h3>
                   
                   <p className="text-muted-foreground mb-3 line-clamp-2">
-                    {article.excerpt}
+                    {article.summary}
                   </p>
                   
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
