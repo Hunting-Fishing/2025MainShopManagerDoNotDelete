@@ -6637,11 +6637,15 @@ export type Database = {
         Row: {
           author_id: string | null
           category: string
+          category_id: string | null
           content: string
           created_at: string
+          difficulty_level: string | null
+          estimated_read_time: number | null
           featured: boolean | null
           helpful_count: number | null
           id: string
+          is_featured: boolean | null
           last_updated_by: string | null
           search_keywords: string[] | null
           slug: string
@@ -6652,16 +6656,21 @@ export type Database = {
           title: string
           unhelpful_count: number | null
           updated_at: string
+          video_url: string | null
           view_count: number | null
         }
         Insert: {
           author_id?: string | null
           category?: string
+          category_id?: string | null
           content: string
           created_at?: string
+          difficulty_level?: string | null
+          estimated_read_time?: number | null
           featured?: boolean | null
           helpful_count?: number | null
           id?: string
+          is_featured?: boolean | null
           last_updated_by?: string | null
           search_keywords?: string[] | null
           slug: string
@@ -6672,16 +6681,21 @@ export type Database = {
           title: string
           unhelpful_count?: number | null
           updated_at?: string
+          video_url?: string | null
           view_count?: number | null
         }
         Update: {
           author_id?: string | null
           category?: string
+          category_id?: string | null
           content?: string
           created_at?: string
+          difficulty_level?: string | null
+          estimated_read_time?: number | null
           featured?: boolean | null
           helpful_count?: number | null
           id?: string
+          is_featured?: boolean | null
           last_updated_by?: string | null
           search_keywords?: string[] | null
           slug?: string
@@ -6692,9 +6706,146 @@ export type Database = {
           title?: string
           unhelpful_count?: number | null
           updated_at?: string
+          video_url?: string | null
           view_count?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "help_articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "help_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
         Relationships: []
+      }
+      help_learning_paths: {
+        Row: {
+          articles: Json | null
+          created_at: string | null
+          description: string | null
+          difficulty_level: string | null
+          estimated_duration: string | null
+          id: string
+          is_active: boolean | null
+          prerequisites: Json | null
+          target_role: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          articles?: Json | null
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          estimated_duration?: string | null
+          id?: string
+          is_active?: boolean | null
+          prerequisites?: Json | null
+          target_role?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          articles?: Json | null
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          estimated_duration?: string | null
+          id?: string
+          is_active?: boolean | null
+          prerequisites?: Json | null
+          target_role?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      help_resources: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          download_count: number | null
+          download_url: string | null
+          file_url: string | null
+          id: string
+          is_active: boolean | null
+          resource_type: string | null
+          tags: Json | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          download_count?: number | null
+          download_url?: string | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          resource_type?: string | null
+          tags?: Json | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          download_count?: number | null
+          download_url?: string | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          resource_type?: string | null
+          tags?: Json | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_resources_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "help_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       help_search_analytics: {
         Row: {
