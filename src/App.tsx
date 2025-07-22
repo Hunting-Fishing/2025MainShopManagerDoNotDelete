@@ -20,6 +20,7 @@ import TeamManagement from '@/pages/TeamManagement';
 import Help from '@/pages/Help';
 import Login from '@/pages/Login';
 import { ArticleViewer } from '@/components/help/ArticleViewer';
+import { LearningPathDetail } from '@/components/help/LearningPathDetail';
 
 function App() {
   return (
@@ -91,6 +92,7 @@ function App() {
                   {/* Help & Support */}
                   <Route path="/help" element={<Help />} />
                   <Route path="/help/article/:articleId" element={<ArticleViewer />} />
+                  <Route path="/help/path/:pathId" element={<LearningPathDetail />} />
                   
                   {/* Catch all */}
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
