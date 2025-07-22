@@ -17,6 +17,11 @@ import { HelpArticleViewer } from '@/components/help/HelpArticleViewer';
 import { SupportTicketManager } from '@/components/help/SupportTicketManager';
 import { FAQSection } from '@/components/help/FAQSection';
 import { SystemStatusWidget } from '@/components/help/SystemStatusWidget';
+import { LearningPathViewer } from '@/components/help/LearningPathViewer';
+import { ResourceLibrary } from '@/components/help/ResourceLibrary';
+import { EnhancedSupportTicketManager } from '@/components/help/EnhancedSupportTicketManager';
+import { CategoryArticlesList } from '@/components/help/CategoryArticlesList';
+import { ArticleViewer } from '@/components/help/ArticleViewer';
 import { useTrackAnalytics } from '@/hooks/useHelpAnalytics';
 
 interface QuickAction {
@@ -33,6 +38,7 @@ const Help: React.FC = () => {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isFeatureRequestModalOpen, setIsFeatureRequestModalOpen] = useState(false);
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   
   const trackAnalytics = useTrackAnalytics();
 
@@ -44,8 +50,13 @@ const Help: React.FC = () => {
   const articleId = searchParams.get('id');
 
   // If viewing a specific article, show the article viewer
-  if (articleId) {
-    return <HelpArticleViewer />;
+  if (articleId || selectedArticleId) {
+    return (
+      <ArticleViewer 
+        articleId={articleId || selectedArticleId || undefined}
+        onClose={() => setSelectedArticleId(null)}
+      />
+    );
   }
 
   const quickActions: QuickAction[] = [
@@ -124,15 +135,19 @@ const Help: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="search" className="w-full">
+        <Tabs defaultValue="articles" className="w-full">
           <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="search" className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Search
-            </TabsTrigger>
-            <TabsTrigger value="library" className="flex items-center gap-2">
+            <TabsTrigger value="articles" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
-              Library
+              Articles
+            </TabsTrigger>
+            <TabsTrigger value="learning" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Learning
+            </TabsTrigger>
+            <TabsTrigger value="resources" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Resources
             </TabsTrigger>
             <TabsTrigger value="features" className="flex items-center gap-2">
               <Bug className="h-4 w-4" />
@@ -142,42 +157,22 @@ const Help: React.FC = () => {
               <MessageSquare className="h-4 w-4" />
               Support
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
             <TabsTrigger value="faq" className="flex items-center gap-2">
               <HelpCircle className="h-4 w-4" />
               FAQ
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="search" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Search Help Articles</CardTitle>
-                <CardDescription>
-                  Find tutorials, guides, and answers to common questions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <HelpSearchEngine onResultClick={handleSearchResult} />
-              </CardContent>
-            </Card>
+          <TabsContent value="articles" className="space-y-6">
+            <CategoryArticlesList onArticleSelect={setSelectedArticleId} />
           </TabsContent>
 
-          <TabsContent value="library" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Help Content Library</CardTitle>
-                <CardDescription>
-                  Browse our comprehensive collection of tutorials, guides, and videos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <HelpContentLibrary />
-              </CardContent>
-            </Card>
+          <TabsContent value="learning" className="space-y-6">
+            <LearningPathViewer />
+          </TabsContent>
+
+          <TabsContent value="resources" className="space-y-6">
+            <ResourceLibrary />
           </TabsContent>
 
           <TabsContent value="features" className="space-y-6">
@@ -185,21 +180,7 @@ const Help: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="support" className="space-y-6">
-            <SupportTicketManager />
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Help Usage Analytics</CardTitle>
-                <CardDescription>
-                  Track help system usage and identify popular content
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <HelpAnalytics />
-              </CardContent>
-            </Card>
+            <EnhancedSupportTicketManager />
           </TabsContent>
 
           <TabsContent value="faq" className="space-y-6">

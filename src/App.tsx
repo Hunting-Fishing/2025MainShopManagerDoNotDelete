@@ -19,6 +19,7 @@ import Calendar from '@/pages/Calendar';
 import TeamManagement from '@/pages/TeamManagement';
 import Help from '@/pages/Help';
 import Login from '@/pages/Login';
+import { ArticleViewer } from '@/components/help/ArticleViewer';
 
 function App() {
   return (
@@ -89,6 +90,7 @@ function App() {
                   
                   {/* Help & Support */}
                   <Route path="/help" element={<Help />} />
+                  <Route path="/help/article/:articleId" element={<ArticleViewer />} />
                   
                   {/* Catch all */}
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
