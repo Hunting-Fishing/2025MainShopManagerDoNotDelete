@@ -28,7 +28,7 @@ interface HelpArticle {
 
 interface HelpArticleEditorProps {
   articleId?: string;
-  onSave?: (article: HelpArticle) => void;
+  onSave?: () => void;
   onCancel?: () => void;
 }
 
@@ -134,7 +134,7 @@ export function HelpArticleEditor({ articleId, onSave, onCancel }: HelpArticleEd
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .trim('-');
+      .replace(/^-+|-+$/g, ''); // Remove leading and trailing hyphens
   };
 
   const handleTitleChange = (title: string) => {
@@ -226,7 +226,7 @@ export function HelpArticleEditor({ articleId, onSave, onCancel }: HelpArticleEd
       });
 
       if (onSave) {
-        onSave(article);
+        onSave();
       }
     } catch (error) {
       console.error('Error saving article:', error);
