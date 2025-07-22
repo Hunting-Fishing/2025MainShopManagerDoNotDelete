@@ -35,8 +35,8 @@ export function NotificationSettings() {
   useEffect(() => {
     if (preferences) {
       setEmailNotifications(preferences.email_notifications ?? true);
-      setSlackWebhookUrl(preferences.slack_webhook_url || '');
-      setDiscordWebhookUrl(preferences.discord_webhook_url || '');
+      setSlackWebhookUrl((preferences as any).slack_webhook_url || '');
+      setDiscordWebhookUrl((preferences as any).discord_webhook_url || '');
     }
   }, [preferences]);
 
@@ -205,31 +205,31 @@ export function NotificationSettings() {
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
-          {notificationHistory?.map((notification) => (
-            <Card key={notification.id}>
+          {notificationHistory?.map((notification: any) => (
+            <Card key={(notification as any).id || Math.random()}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={notification.sent ? 'default' : 'secondary'}>
-                        {notification.notification_type.replace('_', ' ')}
+                      <Badge variant={(notification as any).sent ? 'default' : 'secondary'}>
+                        {(notification as any).notification_type?.replace('_', ' ') || 'Notification'}
                       </Badge>
                       <Badge variant="outline">
-                        {notification.recipient_type}
+                        {(notification as any).recipient_type || 'User'}
                       </Badge>
-                      {notification.sent ? (
+                      {(notification as any).sent ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       ) : (
                         <AlertCircle className="h-4 w-4 text-yellow-500" />
                       )}
                     </div>
                     <p className="text-sm">
-                      {notification.feature_requests?.title || 'Feature Request'}
+                      {(notification as any).feature_requests?.title || 'Feature Request'}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(notification.created_at).toLocaleString()}
-                      {notification.sent_at && (
-                        <span> • Sent: {new Date(notification.sent_at).toLocaleString()}</span>
+                      {new Date((notification as any).created_at || Date.now()).toLocaleString()}
+                      {(notification as any).sent_at && (
+                        <span> • Sent: {new Date((notification as any).sent_at).toLocaleString()}</span>
                       )}
                     </p>
                   </div>
@@ -240,25 +240,25 @@ export function NotificationSettings() {
         </TabsContent>
 
         <TabsContent value="webhooks" className="space-y-4">
-          {webhookLogs?.map((log) => (
-            <Card key={log.id}>
+          {webhookLogs?.map((log: any) => (
+            <Card key={(log as any).id || Math.random()}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline">{log.webhook_type}</Badge>
-                      <Badge variant={log.success ? 'default' : 'destructive'}>
-                        {log.response_status}
+                      <Badge variant="outline">{(log as any).webhook_type || 'webhook'}</Badge>
+                      <Badge variant={(log as any).success ? 'default' : 'destructive'}>
+                        {(log as any).response_status || 'Unknown'}
                       </Badge>
-                      {log.success ? (
+                      {(log as any).success ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       ) : (
                         <AlertCircle className="h-4 w-4 text-red-500" />
                       )}
                     </div>
-                    <p className="text-sm truncate">{log.webhook_url}</p>
+                    <p className="text-sm truncate">{(log as any).webhook_url || 'URL not available'}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(log.created_at).toLocaleString()}
+                      {new Date((log as any).created_at || Date.now()).toLocaleString()}
                     </p>
                   </div>
                 </div>

@@ -300,7 +300,7 @@ function RequestManagementDialog({ request, onUpdate, isUpdating }: RequestManag
 
       <div>
         <label className="text-sm font-medium">Status</label>
-        <Select value={status} onValueChange={setStatus}>
+        <Select value={status} onValueChange={(value) => setStatus(value as typeof status)}>
           <SelectTrigger className="mt-1">
             <SelectValue />
           </SelectTrigger>
