@@ -18,6 +18,7 @@ import Settings from '@/pages/Settings';
 import Calendar from '@/pages/Calendar';
 import TeamManagement from '@/pages/TeamManagement';
 import Help from '@/pages/Help';
+import ServiceReminders from '@/pages/ServiceReminders';
 import Login from '@/pages/Login';
 import { ArticleViewer } from '@/components/help/ArticleViewer';
 import { LearningPathDetail } from '@/components/help/LearningPathDetail';
@@ -81,6 +82,9 @@ function App() {
                   
                   {/* Calendar */}
                   <Route path="/calendar" element={<Calendar />} />
+                  
+                  {/* Service Reminders */}
+                  <Route path="/service-reminders" element={<ServiceReminders />} />
                   
                   {/* Team Management */}
                   <Route path="/team" element={
