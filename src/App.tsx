@@ -17,6 +17,7 @@ import Analytics from '@/pages/Analytics';
 import Settings from '@/pages/Settings';
 import Calendar from '@/pages/Calendar';
 import TeamManagement from '@/pages/TeamManagement';
+import CustomerComms from '@/pages/CustomerComms';
 import Help from '@/pages/Help';
 import ServiceReminders from '@/pages/ServiceReminders';
 import Login from '@/pages/Login';
@@ -87,6 +88,13 @@ function App() {
                   <Route path="/service-reminders" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
                       <ServiceReminders />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Customer Communications */}
+                  <Route path="/customer-comms" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
+                      <CustomerComms />
                     </ProtectedRoute>
                   } />
                   
