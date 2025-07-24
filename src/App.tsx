@@ -84,7 +84,11 @@ function App() {
                   <Route path="/calendar" element={<Calendar />} />
                   
                   {/* Service Reminders */}
-                  <Route path="/service-reminders" element={<ServiceReminders />} />
+                  <Route path="/service-reminders" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
+                      <ServiceReminders />
+                    </ProtectedRoute>
+                  } />
                   
                   {/* Team Management */}
                   <Route path="/team" element={
