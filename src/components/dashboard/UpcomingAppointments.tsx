@@ -58,7 +58,21 @@ export const UpcomingAppointments: React.FC = () => {
         if (error) {
           console.error('Error fetching appointments:', error);
         } else {
-          setAppointments(data || []);
+          // Transform the data to match our interface since Supabase returns arrays
+          const transformedData: Appointment[] = (data || []).map((item: any) => ({
+            id: item.id,
+            date: item.date,
+            notes: item.notes,
+            duration: item.duration,
+            status: item.status,
+            customers: Array.isArray(item.customers) && item.customers.length > 0 
+              ? item.customers[0] as { first_name: string; last_name: string }
+              : null,
+            vehicles: Array.isArray(item.vehicles) && item.vehicles.length > 0 
+              ? item.vehicles[0] as { year: number; make: string; model: string }
+              : null
+          }));
+          setAppointments(transformedData);
         }
       } catch (error) {
         console.error('Failed to fetch appointments:', error);
