@@ -26,9 +26,16 @@ export function useAuthUser() {
       setUserId(session?.user?.id ?? null);
       setUserName(session?.user?.email ?? session?.user?.user_metadata?.full_name ?? null);
       
-      // For now, set basic roles - you can expand this later with real role checking
-      setIsAdmin(false);
-      setIsOwner(false);
+      // Fetch real user roles from database
+      if (session?.user?.id) {
+        // Use setTimeout to prevent potential deadlocks with auth state changes
+        setTimeout(() => {
+          fetchUserRoles(session.user.id);
+        }, 0);
+      } else {
+        setIsAdmin(false);
+        setIsOwner(false);
+      }
       
     } catch (err) {
       console.error('Error in auth state change handler:', err);
@@ -107,7 +114,41 @@ export function useAuthUser() {
     };
   }, [handleAuthStateChange]);
 
-  const refetchRoles = useCallback(() => Promise.resolve(), []);
+  // Function to fetch user roles from database
+  const fetchUserRoles = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select(`
+          roles (
+            name
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error fetching user roles:', error);
+        setIsAdmin(false);
+        setIsOwner(false);
+        return;
+      }
+
+      const roleNames = data?.map(item => (item.roles as any)?.name).filter(Boolean) as string[] || [];
+      setIsAdmin(roleNames.includes('admin'));
+      setIsOwner(roleNames.includes('owner'));
+    } catch (err) {
+      console.error('Error in fetchUserRoles:', err);
+      setIsAdmin(false);
+      setIsOwner(false);
+    }
+  }, []);
+
+  const refetchRoles = useCallback(() => {
+    if (userId) {
+      return fetchUserRoles(userId);
+    }
+    return Promise.resolve();
+  }, [userId, fetchUserRoles]);
 
   return {
     user,

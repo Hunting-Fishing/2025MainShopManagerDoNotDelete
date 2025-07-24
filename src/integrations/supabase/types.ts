@@ -20271,6 +20271,14 @@ export type Database = {
         }
         Returns: string
       }
+      user_has_any_role: {
+        Args: { user_id_param: string; role_names: string[] }
+        Returns: boolean
+      }
+      user_has_role: {
+        Args: { user_id_param: string; role_name_param: string }
+        Returns: boolean
+      }
       validate_settings_migration: {
         Args: Record<PropertyKey, never>
         Returns: {

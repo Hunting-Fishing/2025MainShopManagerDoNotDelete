@@ -13,12 +13,23 @@ export const useRoleAssignment = ({ currentUserName, currentUserId }: RoleAssign
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const assignRole = async (userId: string, roleId: string) => {
+  const assignRole = async (userId: string, roleName: string) => {
     setLoading(true);
     try {
+      // First get the role ID from the role name
+      const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', roleName.toLowerCase())
+        .single();
+      
+      if (roleError || !roleData) {
+        throw new Error(`Role "${roleName}" not found`);
+      }
+      
       const { data, error } = await supabase.rpc('assign_role_to_user', {
         user_id_param: userId,
-        role_id_param: roleId,
+        role_id_param: roleData.id,
       });
       
       if (error) throw error;
@@ -29,7 +40,7 @@ export const useRoleAssignment = ({ currentUserName, currentUserId }: RoleAssign
         action_type: 'role_assigned',
         action_by: currentUserId,
         action_by_name: currentUserName,
-        details: { role_id: roleId }
+        details: { role_id: roleData.id, role_name: roleName }
       });
       
       toast({
