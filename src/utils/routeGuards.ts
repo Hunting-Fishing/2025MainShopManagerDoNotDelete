@@ -23,6 +23,13 @@ export const routePermissions: RoutePermission[] = [
   { path: '/customers', allowedRoles: ['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner'] },
   { path: '/calendar', allowedRoles: ['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner'] },
   { path: '/inventory', allowedRoles: ['admin', 'manager', 'technician', 'inventory_manager', 'owner'] },
+  { path: '/inventory/manager', allowedRoles: ['admin', 'manager', 'inventory_manager', 'owner'] },
+  { path: '/inventory/add', allowedRoles: ['admin', 'manager', 'technician', 'inventory_manager', 'owner'] },
+  { path: '/inventory/categories', allowedRoles: ['admin', 'manager', 'inventory_manager', 'owner'] },
+  { path: '/inventory/suppliers', allowedRoles: ['admin', 'manager', 'inventory_manager', 'owner'] },
+  { path: '/inventory/locations', allowedRoles: ['admin', 'manager', 'inventory_manager', 'owner'] },
+  { path: '/inventory/orders', allowedRoles: ['admin', 'manager', 'inventory_manager', 'owner'] },
+  { path: '/inventory/item', allowedRoles: ['admin', 'manager', 'technician', 'inventory_manager', 'owner'] },
   { path: '/quotes', allowedRoles: ['admin', 'manager', 'service_advisor', 'owner'] },
   { path: '/invoices', allowedRoles: ['admin', 'manager', 'service_advisor', 'reception', 'owner'] },
   
