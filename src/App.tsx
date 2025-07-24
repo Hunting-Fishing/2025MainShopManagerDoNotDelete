@@ -58,12 +58,12 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Inventory */}
-                  <Route path="/inventory" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager']}>
-                      <Inventory />
-                    </ProtectedRoute>
-                  } />
+                   {/* Inventory */}
+                   <Route path="/inventory/*" element={
+                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'inventory_manager', 'owner']}>
+                       <Inventory />
+                     </ProtectedRoute>
+                   } />
                   
                   {/* Analytics */}
                   <Route path="/analytics" element={
