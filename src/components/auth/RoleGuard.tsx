@@ -78,10 +78,16 @@ export function RoleGuard({
     (requireAdmin && (isAdmin || isOwner)) ||
     (allowedRoles.length === 0) || // No specific roles required
     (isOwner) || // Owners always have access
+    (isAdmin) || // Admins have broad access
     (allowedRoles.some(role => {
       switch (role) {
         case 'owner': return isOwner;
         case 'admin': return isAdmin || isOwner;
+        case 'manager': return isAdmin || isOwner; // For now, treat manager like admin
+        case 'technician': return isAdmin || isOwner; // For now, allow admin/owner access
+        case 'service_advisor': return isAdmin || isOwner; // For now, allow admin/owner access
+        case 'reception': return isAdmin || isOwner; // For now, allow admin/owner access
+        case 'inventory_manager': return isAdmin || isOwner; // For now, allow admin/owner access
         default: return false;
       }
     }));

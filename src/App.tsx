@@ -65,7 +65,7 @@ function App() {
                   } />
                   
                   {/* Customer Management */}
-                  <Route path="/customers" element={
+                  <Route path="/customers/*" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
                       <Customers />
                     </ProtectedRoute>
