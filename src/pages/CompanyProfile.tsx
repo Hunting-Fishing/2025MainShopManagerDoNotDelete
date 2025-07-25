@@ -67,7 +67,7 @@ export default function CompanyProfilePage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Company Profile</h1>
-        <Link to="/settings/company">
+        <Link to="/settings?tab=company">
           <Button>Edit Profile</Button>
         </Link>
       </div>
@@ -202,19 +202,19 @@ export default function CompanyProfilePage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link to="/settings/company">
+            <Link to="/settings?tab=company">
               <Button variant="outline" className="w-full">
                 Basic Information
               </Button>
             </Link>
             
-            <Link to="/settings/branding">
+            <Link to="/settings?tab=branding">
               <Button variant="outline" className="w-full">
                 Branding & Appearance
               </Button>
             </Link>
             
-            <Link to="/settings/team">
+            <Link to="/settings?tab=team">
               <Button variant="outline" className="w-full">
                 Team Management
               </Button>
