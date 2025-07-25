@@ -20271,6 +20271,10 @@ export type Database = {
         }
         Returns: string
       }
+      user_can_access_shop: {
+        Args: { target_shop_id: string }
+        Returns: boolean
+      }
       user_has_any_role: {
         Args: { user_id_param: string; role_names: string[] }
         Returns: boolean
