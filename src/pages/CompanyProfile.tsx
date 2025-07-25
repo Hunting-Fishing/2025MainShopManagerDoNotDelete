@@ -1,16 +1,51 @@
 import React from 'react';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { teamDataService } from '@/services/team/teamDataService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building2, MapPin, Phone, Mail, Clock, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 export default function CompanyProfilePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthUser();
   const { companyInfo, loading } = useCompanyInfo();
+  const { businessHours } = useCompany();
+  const { teamMembers, isLoading: teamLoading } = useTeamMembers();
+  const [departmentCount, setDepartmentCount] = useState(0);
 
-  if (authLoading || loading) {
+  useEffect(() => {
+    const fetchDepartmentCount = async () => {
+      try {
+        const departments = await teamDataService.getDepartments();
+        setDepartmentCount(departments.length);
+      } catch (error) {
+        console.error('Failed to fetch departments:', error);
+      }
+    };
+    fetchDepartmentCount();
+  }, []);
+
+  const formatTime = (time: string) => {
+    if (!time) return '';
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour}:${minutes} ${ampm}`;
+  };
+
+  const getDayName = (dayIndex: number) => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[dayIndex];
+  };
+
+  const activeMembers = teamMembers.filter(member => member.status === 'Active').length;
+
+  if (authLoading || loading || teamLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
@@ -107,7 +142,24 @@ export default function CompanyProfilePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p className="text-muted-foreground">Business hours will be displayed from live database when configured</p>
+              {businessHours && businessHours.length > 0 ? (
+                businessHours
+                  .sort((a: any, b: any) => a.day_of_week - b.day_of_week)
+                  .map((dayHours: any) => (
+                    <div key={dayHours.day_of_week} className="flex justify-between items-center">
+                      <span className="font-medium">{getDayName(dayHours.day_of_week)}</span>
+                      <span className="text-muted-foreground">
+                        {dayHours.is_closed ? (
+                          'Closed'
+                        ) : (
+                          `${formatTime(dayHours.open_time)} - ${formatTime(dayHours.close_time)}`
+                        )}
+                      </span>
+                    </div>
+                  ))
+              ) : (
+                <p className="text-muted-foreground">Business hours not configured</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -121,13 +173,18 @@ export default function CompanyProfilePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
-              <span>Active Team Members</span>
-              <span className="font-semibold">Live Count</span>
+              <span>Total Team Members</span>
+              <span className="font-semibold">{teamMembers.length}</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span>Active Members</span>
+              <span className="font-semibold text-green-600">{activeMembers}</span>
             </div>
             
             <div className="flex justify-between items-center">
               <span>Departments</span>
-              <span className="font-semibold">Real Data</span>
+              <span className="font-semibold">{departmentCount}</span>
             </div>
 
             <Link to="/team">
