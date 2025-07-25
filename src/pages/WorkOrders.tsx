@@ -13,6 +13,12 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 function WorkOrdersList() {
   const { workOrders, loading, error, refetch } = useWorkOrders();
 
+  console.log('WorkOrdersList: Render state:', { 
+    workOrdersCount: workOrders.length, 
+    loading, 
+    error: error ? error.substring(0, 100) + '...' : null 
+  });
+
   // Show loading state while fetching data
   if (loading) {
     return (
@@ -32,19 +38,32 @@ function WorkOrdersList() {
       
       {/* Show error state if data fetching failed */}
       {error && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-yellow-800">Data Loading Issues</h3>
-              <p className="text-sm text-yellow-700">{error}</p>
+              <h3 className="text-sm font-medium text-red-800">Database Connection Error</h3>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+              <p className="text-xs text-red-600 mt-2">
+                This might be a temporary issue. Try refreshing the page or contact support if the problem persists.
+              </p>
             </div>
             <button
               onClick={refetch}
-              className="text-sm text-yellow-600 hover:text-yellow-800 underline"
+              className="px-3 py-1 text-sm bg-red-100 text-red-800 hover:bg-red-200 rounded border border-red-300"
             >
               Retry
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Show work orders count for debugging */}
+      {!error && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+          <p className="text-sm text-blue-800">
+            ✅ Database connection successful. Found {workOrders.length} work orders.
+            {workOrders.length === 0 && " Try creating a new work order to get started."}
+          </p>
         </div>
       )}
 
