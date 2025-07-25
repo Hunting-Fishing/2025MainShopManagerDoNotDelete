@@ -21,6 +21,10 @@ import CustomerComms from '@/pages/CustomerComms';
 import CallLogger from '@/pages/CallLogger';
 import Help from '@/pages/Help';
 import ServiceReminders from '@/pages/ServiceReminders';
+import Quotes from '@/pages/Quotes';
+import Invoices from '@/pages/Invoices';
+import ServiceBoard from '@/pages/ServiceBoard';
+import Payments from '@/pages/Payments';
 import Login from '@/pages/Login';
 import { ArticleViewer } from '@/components/help/ArticleViewer';
 import { LearningPathDetail } from '@/components/help/LearningPathDetail';
@@ -103,6 +107,31 @@ function App() {
                   <Route path="/call-logger" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
                       <CallLogger />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Operations */}
+                  <Route path="/quotes" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                      <Quotes />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/invoices" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                      <Invoices />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/service-board" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                      <ServiceBoard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/payments" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                      <Payments />
                     </ProtectedRoute>
                   } />
                   
