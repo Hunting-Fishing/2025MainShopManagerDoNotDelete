@@ -6,6 +6,28 @@ export class WorkOrderRepository {
   async findAll(): Promise<WorkOrder[]> {
     try {
       console.log('WorkOrderRepository: Starting to fetch all work orders...');
+      console.log('WorkOrderRepository: Current user:', (await supabase.auth.getUser()).data.user?.id);
+      
+      // Test auth first
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('WorkOrderRepository: Auth error:', authError);
+        throw new Error(`Authentication failed: ${authError.message}`);
+      }
+      console.log('WorkOrderRepository: Auth successful, user ID:', authData.user?.id);
+      
+      // Test count query first to check RLS
+      console.log('WorkOrderRepository: Testing count query...');
+      const { count, error: countError } = await supabase
+        .from('work_orders')
+        .select('*', { count: 'exact', head: true });
+      
+      if (countError) {
+        console.error('WorkOrderRepository: Count query failed:', countError);
+        console.error('WorkOrderRepository: Count error details:', JSON.stringify(countError, null, 2));
+        throw new Error(`Failed to count work orders: ${countError.message}`);
+      }
+      console.log('WorkOrderRepository: Count query successful, found', count, 'work orders');
       
       // First, try the simple query without joins to ensure basic functionality
       const { data: basicData, error: basicError } = await supabase
@@ -15,6 +37,7 @@ export class WorkOrderRepository {
 
       if (basicError) {
         console.error('WorkOrderRepository: Basic query failed:', basicError);
+        console.error('WorkOrderRepository: Basic error details:', JSON.stringify(basicError, null, 2));
         throw new Error(`Failed to fetch work orders: ${basicError.message}`);
       }
 
