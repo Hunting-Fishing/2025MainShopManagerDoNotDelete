@@ -134,8 +134,12 @@ export function useAuthUser() {
       }
 
       const roleNames = data?.map(item => (item.roles as any)?.name).filter(Boolean) as string[] || [];
-      setIsAdmin(roleNames.includes('admin'));
-      setIsOwner(roleNames.includes('owner'));
+      console.log('🔍 useAuthUser: Fetched role names:', roleNames);
+      const isAdminRole = roleNames.includes('admin');
+      const isOwnerRole = roleNames.includes('owner');
+      console.log('🔍 useAuthUser: Setting roles - admin:', isAdminRole, 'owner:', isOwnerRole);
+      setIsAdmin(isAdminRole);
+      setIsOwner(isOwnerRole);
     } catch (err) {
       console.error('Error in fetchUserRoles:', err);
       setIsAdmin(false);
