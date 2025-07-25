@@ -18,6 +18,7 @@ import Settings from '@/pages/Settings';
 import Calendar from '@/pages/Calendar';
 import TeamManagement from '@/pages/TeamManagement';
 import CustomerComms from '@/pages/CustomerComms';
+import CallLogger from '@/pages/CallLogger';
 import Help from '@/pages/Help';
 import ServiceReminders from '@/pages/ServiceReminders';
 import Login from '@/pages/Login';
@@ -95,6 +96,13 @@ function App() {
                   <Route path="/customer-comms" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
                       <CustomerComms />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Call Logger */}
+                  <Route path="/call-logger" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
+                      <CallLogger />
                     </ProtectedRoute>
                   } />
                   
