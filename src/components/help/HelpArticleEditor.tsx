@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -314,9 +315,9 @@ export function HelpArticleEditor({ articleId, onSave, onCancel }: HelpArticleEd
             </div>
           </CardHeader>
           <CardContent>
-            <div 
+            <SafeHTML 
+              html={article.content.replace(/\n/g, '<br>')}
               className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: article.content.replace(/\n/g, '<br>') }}
             />
           </CardContent>
         </Card>

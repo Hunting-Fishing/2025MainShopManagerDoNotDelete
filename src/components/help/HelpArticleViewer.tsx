@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -253,9 +254,9 @@ export function HelpArticleViewer() {
               </div>
             </CardHeader>
             <CardContent>
-              <div 
+              <SafeHTML 
+                html={article.content}
                 className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: article.content }}
               />
             </CardContent>
           </Card>

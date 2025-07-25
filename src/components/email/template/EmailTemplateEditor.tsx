@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
+import { SafeHTML } from "@/components/ui/SafeHTML";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -150,7 +151,7 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
         </div>
         
         <div className="border p-4 rounded-md bg-white">
-          <div dangerouslySetInnerHTML={{ __html: previewContent }} />
+          <SafeHTML html={previewContent} />
         </div>
         
         {template?.id && (

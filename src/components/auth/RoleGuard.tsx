@@ -22,17 +22,6 @@ export function RoleGuard({
   fallback 
 }: RoleGuardProps) {
   const { isLoading, isAuthenticated, isOwner, isAdmin, error } = useAuthUser();
-  
-  console.log('🔍 RoleGuard: Current auth state:', {
-    isLoading,
-    isAuthenticated,
-    isOwner,
-    isAdmin,
-    error,
-    allowedRoles,
-    requireOwner,
-    requireAdmin
-  });
 
   if (isLoading) {
     return (
