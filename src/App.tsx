@@ -16,7 +16,7 @@ import Inventory from '@/pages/Inventory';
 import Analytics from '@/pages/Analytics';
 import Settings from '@/pages/Settings';
 import Calendar from '@/pages/Calendar';
-import TeamManagement from '@/pages/TeamManagement';
+import Team from '@/pages/Team';
 import CustomerComms from '@/pages/CustomerComms';
 import CallLogger from '@/pages/CallLogger';
 import Help from '@/pages/Help';
@@ -161,9 +161,9 @@ function App() {
                   } />
                   
                   {/* Team Management */}
-                  <Route path="/team" element={
+                  <Route path="/team/*" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager']}>
-                      <TeamManagement />
+                      <Team />
                     </ProtectedRoute>
                   } />
                   

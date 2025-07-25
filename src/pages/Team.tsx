@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { TeamContent } from '@/components/team/TeamContent';
 import { TeamHeader } from '@/components/team/TeamHeader';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
 
 /**
  * IMPORTANT: This page uses full team management functionality
@@ -12,9 +13,12 @@ import { TeamHeader } from '@/components/team/TeamHeader';
 export default function Team() {
   const [view, setView] = useState<'grid' | 'list'>('grid');
   
-  // Mock data for now - in production this would come from a hook
-  const mockMembers = [];
-  const isLoading = false;
+  // Use real team data from the database
+  const { teamMembers, isLoading, error } = useTeamMembers();
+  
+  if (error) {
+    console.error('Error loading team members:', error);
+  }
   
   const getInitials = (name: string) => {
     return name
@@ -31,7 +35,7 @@ export default function Team() {
         <div className="p-6 space-y-6">
           <TeamHeader />
           <TeamContent 
-            members={mockMembers}
+            members={teamMembers}
             isLoading={isLoading}
             view={view}
             getInitials={getInitials}
@@ -40,7 +44,7 @@ export default function Team() {
       } />
       <Route path="/*" element={
         <TeamContent 
-          members={mockMembers}
+          members={teamMembers}
           isLoading={isLoading}
           view={view}
           getInitials={getInitials}
