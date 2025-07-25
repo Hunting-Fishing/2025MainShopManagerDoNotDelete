@@ -59,14 +59,14 @@ function App() {
                   
                   {/* Work Management */}
                   <Route path="/work-orders" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
                       <WorkOrders />
                     </ProtectedRoute>
                   } />
                   
                   {/* Customer Management */}
                   <Route path="/customers" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
                       <Customers />
                     </ProtectedRoute>
                   } />
@@ -162,7 +162,7 @@ function App() {
                   
                   {/* Team Management */}
                   <Route path="/team/*" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
                       <Team />
                     </ProtectedRoute>
                   } />
