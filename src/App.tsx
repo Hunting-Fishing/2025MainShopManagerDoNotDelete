@@ -25,6 +25,9 @@ import Quotes from '@/pages/Quotes';
 import Invoices from '@/pages/Invoices';
 import ServiceBoard from '@/pages/ServiceBoard';
 import Payments from '@/pages/Payments';
+import CompanyProfile from '@/pages/CompanyProfile';
+import VehiclesPage from '@/pages/VehiclesPage';
+import Documents from '@/pages/Documents';
 import Login from '@/pages/Login';
 import { ArticleViewer } from '@/components/help/ArticleViewer';
 import { LearningPathDetail } from '@/components/help/LearningPathDetail';
@@ -132,6 +135,25 @@ function App() {
                   <Route path="/payments" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
                       <Payments />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Company */}
+                  <Route path="/company-profile" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <CompanyProfile />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/vehicles" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                      <VehiclesPage />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/documents" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                      <Documents />
                     </ProtectedRoute>
                   } />
                   
