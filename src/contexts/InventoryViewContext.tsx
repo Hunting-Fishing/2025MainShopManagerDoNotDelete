@@ -9,6 +9,7 @@ interface InventoryViewState {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   bulkEditMode: boolean;
+  enableInfiniteScroll: boolean;
 }
 
 interface InventoryViewContextType extends InventoryViewState {
@@ -20,6 +21,7 @@ interface InventoryViewContextType extends InventoryViewState {
   clearSelection: () => void;
   setBulkEditMode: (enabled: boolean) => void;
   selectAllItems: (itemIds: string[]) => void;
+  setEnableInfiniteScroll: (enable: boolean) => void;
 }
 
 const InventoryViewContext = createContext<InventoryViewContextType | undefined>(undefined);
@@ -31,7 +33,8 @@ export function InventoryViewProvider({ children }: { children: ReactNode }) {
     selectedItems: [],
     sortBy: 'name',
     sortOrder: 'asc',
-    bulkEditMode: false
+    bulkEditMode: false,
+    enableInfiniteScroll: true
   });
 
   const setViewMode = (mode: ViewMode) => {
@@ -71,6 +74,10 @@ export function InventoryViewProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, selectedItems: itemIds }));
   };
 
+  const setEnableInfiniteScroll = (enable: boolean) => {
+    setState(prev => ({ ...prev, enableInfiniteScroll: enable }));
+  };
+
   return (
     <InventoryViewContext.Provider
       value={{
@@ -82,7 +89,8 @@ export function InventoryViewProvider({ children }: { children: ReactNode }) {
         setSorting,
         clearSelection,
         setBulkEditMode,
-        selectAllItems
+        selectAllItems,
+        setEnableInfiniteScroll
       }}
     >
       {children}

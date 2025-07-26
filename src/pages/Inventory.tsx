@@ -8,6 +8,7 @@ import { EnhancedNavigation } from '@/components/inventory/EnhancedNavigation';
 import { PerformanceIndicator } from '@/components/inventory/PerformanceOptimizations';
 import { useOptimizedInventoryItems } from '@/hooks/inventory/useOptimizedInventoryItems';
 import { useOptimizedInventoryFilters } from '@/hooks/inventory/useOptimizedInventoryFilters';
+import { useMemoryOptimization } from '@/hooks/inventory/useMemoryOptimization';
 import { InventoryLoadingState } from '@/components/inventory/InventoryLoadingState';
 import { InventoryErrorState } from '@/components/inventory/InventoryErrorState';
 import { InventoryViewProvider } from '@/contexts/InventoryViewContext';
@@ -34,6 +35,13 @@ export default function Inventory() {
   const { items, loading, error, updateItem, inventoryStats, refetch } = useOptimizedInventoryItems();
   const { filteredItems } = useOptimizedInventoryFilters();
   const { toast } = useToast();
+  
+  // Initialize memory optimization for better performance
+  useMemoryOptimization({
+    maxCacheSize: 50,
+    gcInterval: 3 * 60 * 1000, // 3 minutes
+    enablePerformanceMonitoring: true
+  });
   
   // Dialog states
   const [importExportOpen, setImportExportOpen] = React.useState(false);
