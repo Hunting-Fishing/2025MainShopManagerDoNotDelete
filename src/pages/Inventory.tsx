@@ -13,6 +13,9 @@ import { InventoryErrorState } from '@/components/inventory/InventoryErrorState'
 import { InventoryViewProvider } from '@/contexts/InventoryViewContext';
 import { ErrorBoundary } from '@/components/inventory/ErrorBoundary';
 import { QueryOptimizer } from '@/components/inventory/QueryOptimizer';
+import { BulkActionsBar } from '@/components/inventory/BulkActionsBar';
+import { ImportExportDialog } from '@/components/inventory/ImportExportDialog';
+import { useToast } from '@/hooks/use-toast';
 import InventoryAdd from '@/pages/InventoryAdd';
 import InventoryCategories from '@/pages/InventoryCategories';
 import InventorySuppliers from '@/pages/InventorySuppliers';
@@ -30,16 +33,87 @@ import InventoryItemDetailsPage from '@/pages/InventoryItemDetails';
 export default function Inventory() {
   const { items, loading, error, updateItem, inventoryStats, refetch } = useOptimizedInventoryItems();
   const { filteredItems } = useOptimizedInventoryFilters();
+  const { toast } = useToast();
+  
+  // Dialog states
+  const [importExportOpen, setImportExportOpen] = React.useState(false);
 
   // Use filtered items for display logic
   const displayItems = filteredItems;
+
+  // Bulk actions handlers
+  const handleBulkEdit = (itemIds: string[]) => {
+    console.log('Bulk edit for items:', itemIds);
+    toast({
+      title: "Bulk edit",
+      description: `Opening bulk edit for ${itemIds.length} items`,
+    });
+  };
+
+  const handleBulkDelete = async (itemIds: string[]) => {
+    console.log('Bulk delete for items:', itemIds);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    toast({
+      title: "Items deleted",
+      description: `Successfully deleted ${itemIds.length} items`,
+    });
+  };
+
+  const handleBulkStatusChange = async (itemIds: string[], status: string) => {
+    console.log('Bulk status change for items:', itemIds, 'to:', status);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    toast({
+      title: "Status updated",
+      description: `Updated status for ${itemIds.length} items to ${status}`,
+    });
+  };
+
+  const handleExportSelected = async (itemIds: string[]) => {
+    console.log('Export selected items:', itemIds);
+    toast({
+      title: "Export started",
+      description: `Exporting ${itemIds.length} items`,
+    });
+  };
+
+  // Import/Export handlers
+  const handleImport = async (file: File, options: any) => {
+    console.log('Importing file:', file.name, 'with options:', options);
+    // Simulate import process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    return {
+      success: true,
+      imported: 150,
+      failed: 5,
+      errors: ['Invalid SKU format in row 12', 'Missing price in row 34']
+    };
+  };
+
+  const handleExport = async (options: any) => {
+    console.log('Exporting with options:', options);
+    // Simulate export process
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Create and download a mock file
+    const blob = new Blob(['mock,export,data\n1,Item 1,100'], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventory-export.${options.format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const handleQuickReorder = () => {
     console.log('Quick reorder triggered');
   };
 
   const handleBulkImport = () => {
-    console.log('Bulk import triggered');
+    setImportExportOpen(true);
   };
 
   const handleGenerateReport = () => {
@@ -89,6 +163,22 @@ export default function Inventory() {
               />
             } />
           </Routes>
+
+          {/* Bulk Actions Bar */}
+          <BulkActionsBar
+            onBulkEdit={handleBulkEdit}
+            onBulkDelete={handleBulkDelete}
+            onBulkStatusChange={handleBulkStatusChange}
+            onExportSelected={handleExportSelected}
+          />
+
+          {/* Import/Export Dialog */}
+          <ImportExportDialog
+            isOpen={importExportOpen}
+            onClose={() => setImportExportOpen(false)}
+            onImport={handleImport}
+            onExport={handleExport}
+          />
 
           {/* Performance Monitor - Development Only */}
           <PerformanceIndicator />

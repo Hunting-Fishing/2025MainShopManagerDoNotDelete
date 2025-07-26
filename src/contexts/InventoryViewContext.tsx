@@ -8,6 +8,7 @@ interface InventoryViewState {
   selectedItems: string[];
   sortBy: string;
   sortOrder: 'asc' | 'desc';
+  bulkEditMode: boolean;
 }
 
 interface InventoryViewContextType extends InventoryViewState {
@@ -17,6 +18,8 @@ interface InventoryViewContextType extends InventoryViewState {
   toggleItemSelection: (itemId: string) => void;
   setSorting: (sortBy: string, sortOrder?: 'asc' | 'desc') => void;
   clearSelection: () => void;
+  setBulkEditMode: (enabled: boolean) => void;
+  selectAllItems: (itemIds: string[]) => void;
 }
 
 const InventoryViewContext = createContext<InventoryViewContextType | undefined>(undefined);
@@ -27,7 +30,8 @@ export function InventoryViewProvider({ children }: { children: ReactNode }) {
     isFilterSidebarOpen: false,
     selectedItems: [],
     sortBy: 'name',
-    sortOrder: 'asc'
+    sortOrder: 'asc',
+    bulkEditMode: false
   });
 
   const setViewMode = (mode: ViewMode) => {
@@ -56,7 +60,15 @@ export function InventoryViewProvider({ children }: { children: ReactNode }) {
   };
 
   const clearSelection = () => {
-    setState(prev => ({ ...prev, selectedItems: [] }));
+    setState(prev => ({ ...prev, selectedItems: [], bulkEditMode: false }));
+  };
+
+  const setBulkEditMode = (enabled: boolean) => {
+    setState(prev => ({ ...prev, bulkEditMode: enabled }));
+  };
+
+  const selectAllItems = (itemIds: string[]) => {
+    setState(prev => ({ ...prev, selectedItems: itemIds }));
   };
 
   return (
@@ -68,7 +80,9 @@ export function InventoryViewProvider({ children }: { children: ReactNode }) {
         setSelectedItems,
         toggleItemSelection,
         setSorting,
-        clearSelection
+        clearSelection,
+        setBulkEditMode,
+        selectAllItems
       }}
     >
       {children}

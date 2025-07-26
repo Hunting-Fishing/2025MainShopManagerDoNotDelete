@@ -10,6 +10,8 @@ import { ResponsiveBreakpointIndicator } from './ResponsiveBreakpointIndicator';
 import { useInventoryView } from '@/contexts/InventoryViewContext';
 import { useOptimizedInventoryItems } from '@/hooks/inventory/useOptimizedInventoryItems';
 import { useOptimizedInventoryFilters } from '@/hooks/inventory/useOptimizedInventoryFilters';
+import { AdvancedSearchInput } from './AdvancedSearchInput';
+import { FilterPresetsManager } from './FilterPresetsManager';
 
 export function InventoryPageHeader() {
   const navigate = useNavigate();
@@ -92,22 +94,21 @@ export function InventoryPageHeader() {
 
       {/* Search and Filter Bar - Desktop */}
       <div className="hidden md:flex items-center justify-between">
-        <div className="flex items-center space-x-4 flex-1 max-w-md">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search inventory..."
-              className="pl-9"
-              value={filters.search}
-              onChange={(e) => updateSearch(e.target.value)}
-            />
-          </div>
+        <div className="flex items-center space-x-4 flex-1">
+          <AdvancedSearchInput className="max-w-md" />
+          <FilterPresetsManager 
+            currentFilters={filters}
+            onApplyPreset={(preset) => {
+              updateSearch(preset.filters.search);
+              // Apply other filters...
+            }}
+          />
           <Button
             variant={isFilterSidebarOpen ? "default" : "outline"}
             onClick={toggleFilterSidebar}
           >
             <Filter className="h-4 w-4 mr-2" />
-            Filters
+            Advanced
           </Button>
         </div>
         
