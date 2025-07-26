@@ -81,21 +81,21 @@ export const InventoryTable = ({ items }: InventoryTableProps) => {
 
   return (
     <div className="w-full overflow-auto border rounded-md">
-      <Table>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-          modifiers={[restrictToHorizontalAxis]}
-        >
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+        modifiers={[restrictToHorizontalAxis]}
+      >
+        <Table>
           <TableHeader columns={columns} setColumns={setColumns} />
           <TableBody 
             items={items} 
             visibleColumns={visibleColumns} 
             onRowClick={handleRowClick} 
           />
-        </DndContext>
-      </Table>
+        </Table>
+      </DndContext>
     </div>
   );
 };

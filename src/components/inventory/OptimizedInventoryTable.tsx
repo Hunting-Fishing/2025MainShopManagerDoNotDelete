@@ -89,21 +89,21 @@ export const OptimizedInventoryTable = memo(({ items }: OptimizedInventoryTableP
 
   return (
     <div className="w-full overflow-auto border rounded-md">
-      <Table>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-          modifiers={[restrictToHorizontalAxis]}
-        >
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+        modifiers={[restrictToHorizontalAxis]}
+      >
+        <Table>
           <MemoizedTableHeader columns={columns} setColumns={setColumns} />
           <MemoizedTableBody 
             items={items} 
             visibleColumns={visibleColumns} 
             onRowClick={handleRowClick} 
           />
-        </DndContext>
-      </Table>
+        </Table>
+      </DndContext>
     </div>
   );
 });
