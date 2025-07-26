@@ -16,7 +16,10 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { TableHeader } from "./table/TableHeader";
 import { TableBody } from "./table/TableBody";
 import { useColumnDragDrop } from "./table/useColumnDragDrop";
+import { ColumnManagementPanel } from "./ColumnManagementPanel";
+import { BulkActionsToolbar } from "./BulkActionsToolbar";
 import { Column } from "./table/SortableColumnHeader";
+import { useInventoryView } from "@/contexts/InventoryViewContext";
 
 interface OptimizedInventoryTableProps {
   items: InventoryItemExtended[];
@@ -27,6 +30,7 @@ const MemoizedTableHeader = memo(TableHeader);
 
 export const OptimizedInventoryTable = memo(({ items }: OptimizedInventoryTableProps) => {
   const navigate = useNavigate();
+  const { selectedItems, clearSelection } = useInventoryView();
   
   // Memoize initial columns to prevent recreation on every render
   const initialColumns: Column[] = useMemo(() => [
@@ -57,6 +61,16 @@ export const OptimizedInventoryTable = memo(({ items }: OptimizedInventoryTableP
   ], []);
 
   const { columns, setColumns, handleDragEnd } = useColumnDragDrop(initialColumns);
+
+  const handleResetColumns = () => {
+    setColumns(initialColumns);
+    localStorage.removeItem("inventoryTableColumns");
+  };
+
+  const handleSaveLayout = () => {
+    localStorage.setItem("inventoryTableColumns", JSON.stringify(columns));
+    // Could also save to user preferences API
+  };
   
   // Load saved columns from localStorage
   useEffect(() => {
@@ -88,22 +102,49 @@ export const OptimizedInventoryTable = memo(({ items }: OptimizedInventoryTableP
   );
 
   return (
-    <div className="w-full overflow-auto border rounded-md">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-        modifiers={[restrictToHorizontalAxis]}
-      >
-        <Table>
-          <MemoizedTableHeader columns={columns} setColumns={setColumns} />
-          <MemoizedTableBody 
-            items={items} 
-            visibleColumns={visibleColumns} 
-            onRowClick={handleRowClick} 
+    <div className="space-y-4">
+      {/* Column Management */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <ColumnManagementPanel
+            columns={columns}
+            onColumnsChange={setColumns}
+            onResetToDefault={handleResetColumns}
+            onSaveLayout={handleSaveLayout}
           />
-        </Table>
-      </DndContext>
+        </div>
+      </div>
+
+      {/* Bulk Actions Toolbar */}
+      <BulkActionsToolbar
+        selectedCount={selectedItems.length}
+        onClearSelection={clearSelection}
+        onBulkEdit={() => console.log('Bulk edit')}
+        onBulkDelete={() => console.log('Bulk delete')}
+        onBulkExport={() => console.log('Bulk export')}
+        onBulkReorder={() => console.log('Bulk reorder')}
+        onBulkArchive={() => console.log('Bulk archive')}
+        onBulkTag={() => console.log('Bulk tag')}
+      />
+
+      {/* Table */}
+      <div className="w-full overflow-auto border rounded-lg shadow-sm">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToHorizontalAxis]}
+        >
+          <Table>
+            <MemoizedTableHeader columns={columns} setColumns={setColumns} />
+            <MemoizedTableBody 
+              items={items} 
+              visibleColumns={visibleColumns} 
+              onRowClick={handleRowClick} 
+            />
+          </Table>
+        </DndContext>
+      </div>
     </div>
   );
 });
