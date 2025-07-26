@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { InventoryItemDetails } from '@/components/inventory/InventoryItemDetails';
 import { useInventoryItem } from '@/hooks/inventory/useInventoryItem';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom';
 export default function InventoryItemDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editMode = searchParams.get('edit') === 'true';
   const { item, isLoading, error, updateItem, isUpdating } = useInventoryItem(id!);
 
   if (isLoading) {
@@ -66,6 +68,7 @@ export default function InventoryItemDetailsPage() {
         item={item}
         onUpdate={updateItem}
         isUpdating={isUpdating}
+        initialEditMode={editMode}
       />
     </div>
   );

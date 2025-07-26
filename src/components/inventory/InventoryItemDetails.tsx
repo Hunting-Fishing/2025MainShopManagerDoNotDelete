@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Edit2, Save, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency } from '@/lib/utils';
 import { InventoryItemExtended } from '@/types/inventory';
 
@@ -14,12 +14,31 @@ interface InventoryItemDetailsProps {
   item: InventoryItemExtended;
   onUpdate: (updates: Partial<InventoryItemExtended>) => void;
   isUpdating?: boolean;
+  initialEditMode?: boolean;
 }
 
-export function InventoryItemDetails({ item, onUpdate, isUpdating }: InventoryItemDetailsProps) {
+export function InventoryItemDetails({ item, onUpdate, isUpdating, initialEditMode = false }: InventoryItemDetailsProps) {
   const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [isEditing, setIsEditing] = useState(initialEditMode);
   const [editData, setEditData] = useState<Partial<InventoryItemExtended>>({});
+
+  useEffect(() => {
+    if (initialEditMode) {
+      setEditData({
+        name: item.name,
+        sku: item.sku,
+        category: item.category,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        reorder_point: item.reorder_point,
+        location: item.location,
+        supplier: item.supplier,
+        description: item.description,
+        status: item.status,
+      });
+    }
+  }, [initialEditMode, item]);
 
   const handleEdit = () => {
     setEditData({
@@ -35,16 +54,19 @@ export function InventoryItemDetails({ item, onUpdate, isUpdating }: InventoryIt
       status: item.status,
     });
     setIsEditing(true);
+    setSearchParams({ edit: 'true' });
   };
 
   const handleSave = () => {
     onUpdate(editData);
     setIsEditing(false);
+    setSearchParams({});
   };
 
   const handleCancel = () => {
     setEditData({});
     setIsEditing(false);
+    setSearchParams({});
   };
 
   const getStatusColor = (status: string) => {

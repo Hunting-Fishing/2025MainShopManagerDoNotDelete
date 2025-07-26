@@ -91,7 +91,7 @@ export function InventoryListItem({ item, onUpdateItem }: InventoryListItemProps
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate(`/inventory/item/${item.id}/edit`)}
+                    onClick={() => navigate(`/inventory/item/${item.id}?edit=true`)}
                     className="hover:bg-primary/10"
                   >
                     <Edit className="w-4 h-4" />
