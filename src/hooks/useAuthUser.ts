@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { useSessionRecovery } from './useSessionRecovery';
 
 export function useAuthUser() {
   const [user, setUser] = useState<User | null>(null);
@@ -13,6 +14,8 @@ export function useAuthUser() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  const { attemptSessionRecovery, isRecoveryInProgress } = useSessionRecovery();
 
   // Memoized auth state handler to prevent unnecessary re-renders
   const handleAuthStateChange = useCallback((event: string, session: Session | null) => {
@@ -114,9 +117,11 @@ export function useAuthUser() {
     };
   }, [handleAuthStateChange]);
 
-  // Function to fetch user roles from database
-  const fetchUserRoles = useCallback(async (userId: string) => {
+  // Function to fetch user roles from database with recovery support
+  const fetchUserRoles = useCallback(async (userId: string, retryWithRecovery = true) => {
     try {
+      console.log('🔍 Fetching user roles for userId:', userId);
+      
       const { data, error } = await supabase
         .from('user_roles')
         .select(`
@@ -127,21 +132,40 @@ export function useAuthUser() {
         .eq('user_id', userId);
 
       if (error) {
-        console.error('Error fetching user roles:', error);
+        console.error('❌ Error fetching user roles:', error);
+        
+        // If it's an auth error and we haven't tried recovery yet, attempt recovery
+        if (retryWithRecovery && error.message?.toLowerCase().includes('jwt') && !isRecoveryInProgress()) {
+          console.log('🔄 JWT error detected, attempting session recovery...');
+          const recoveryResult = await attemptSessionRecovery({ maxRetries: 2 });
+          
+          if (recoveryResult.success) {
+            console.log('✅ Session recovered, retrying role fetch...');
+            // Retry without recovery to prevent infinite loops
+            return fetchUserRoles(userId, false);
+          }
+        }
+        
         setIsAdmin(false);
         setIsOwner(false);
+        setError('Failed to load user permissions');
         return;
       }
 
       const roleNames = data?.map(item => (item.roles as any)?.name).filter(Boolean) as string[] || [];
+      console.log('✅ User roles fetched successfully:', roleNames);
+      
       setIsAdmin(roleNames.includes('admin'));
       setIsOwner(roleNames.includes('owner'));
+      setError(null); // Clear any previous errors
+      
     } catch (err) {
-      console.error('Error in fetchUserRoles:', err);
+      console.error('❌ Error in fetchUserRoles:', err);
       setIsAdmin(false);
       setIsOwner(false);
+      setError('Failed to load user permissions');
     }
-  }, []);
+  }, [attemptSessionRecovery, isRecoveryInProgress]);
 
   const refetchRoles = useCallback(() => {
     if (userId) {

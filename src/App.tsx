@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AuthGate } from '@/components/AuthGate';
+import { AuthDebugPanel } from '@/components/debug/AuthDebugPanel';
+import { authMonitor } from '@/utils/authMonitoring';
 
 // Pages
 import Dashboard from '@/pages/Dashboard';
@@ -36,6 +38,11 @@ import { LearningPathDetail } from '@/components/help/LearningPathDetail';
 import { ServiceManagementPage } from '@/pages/developer/ServiceManagementPage';
 
 function App() {
+  useEffect(() => {
+    // Initialize auth monitoring
+    console.log('🚀 App initialized with auth monitoring');
+  }, []);
+
   return (
     <>
       <Routes>
@@ -200,6 +207,7 @@ function App() {
         />
       </Routes>
       <Toaster />
+      <AuthDebugPanel />
     </>
   );
 }
