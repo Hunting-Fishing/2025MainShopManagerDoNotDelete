@@ -19667,6 +19667,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_shop_id_secure: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
       get_work_order_inventory_items: {
         Args: { work_order_id: string }
         Returns: {
@@ -19986,6 +19990,10 @@ export type Database = {
       }
       is_admin_or_owner: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_admin_or_owner_secure: {
+        Args: { user_uuid: string }
         Returns: boolean
       }
       is_admin_user: {
