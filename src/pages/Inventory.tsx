@@ -4,6 +4,8 @@ import { Routes, Route } from 'react-router-dom';
 import { InventoryPageHeader } from '@/components/inventory/InventoryPageHeader';
 import { InventoryContent } from '@/components/inventory/InventoryContent';
 import { QuickActionsFloatingButton } from '@/components/inventory/QuickActionsFloatingButton';
+import { EnhancedNavigation } from '@/components/inventory/EnhancedNavigation';
+import { PerformanceIndicator } from '@/components/inventory/PerformanceOptimizations';
 import { useOptimizedInventoryItems } from '@/hooks/inventory/useOptimizedInventoryItems';
 import { useOptimizedInventoryFilters } from '@/hooks/inventory/useOptimizedInventoryFilters';
 import { InventoryLoadingState } from '@/components/inventory/InventoryLoadingState';
@@ -15,6 +17,7 @@ import InventorySuppliers from '@/pages/InventorySuppliers';
 import InventoryLocations from '@/pages/InventoryLocations';
 import InventoryOrders from '@/pages/InventoryOrders';
 import InventoryManager from '@/pages/InventoryManager';
+import InventoryManagerNew from '@/pages/InventoryManagerNew';
 import InventoryItemDetailsPage from '@/pages/InventoryItemDetails';
 
 /**
@@ -51,6 +54,7 @@ export default function Inventory() {
         <Routes>
           <Route path="/" element={
             <div className="p-6 space-y-6">
+              <EnhancedNavigation />
               <InventoryPageHeader />
               {loading ? (
                 <InventoryLoadingState />
@@ -66,7 +70,7 @@ export default function Inventory() {
           <Route path="/suppliers" element={<InventorySuppliers />} />
           <Route path="/locations" element={<InventoryLocations />} />
           <Route path="/orders" element={<InventoryOrders />} />
-          <Route path="/manager" element={<InventoryManager />} />
+          <Route path="/manager" element={<InventoryManagerNew />} />
           <Route path="/item/:id" element={<InventoryItemDetailsPage />} />
         </Routes>
 
@@ -82,6 +86,9 @@ export default function Inventory() {
             />
           } />
         </Routes>
+
+        {/* Performance Monitor - Development Only */}
+        <PerformanceIndicator />
       </div>
     </InventoryViewProvider>
   );
