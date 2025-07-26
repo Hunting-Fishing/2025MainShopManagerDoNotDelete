@@ -3,6 +3,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { InventoryPageHeader } from '@/components/inventory/InventoryPageHeader';
 import { InventoryContent } from '@/components/inventory/InventoryContent';
+import { QuickActionsFloatingButton } from '@/components/inventory/QuickActionsFloatingButton';
 import { useOptimizedInventoryItems } from '@/hooks/inventory/useOptimizedInventoryItems';
 import { useOptimizedInventoryFilters } from '@/hooks/inventory/useOptimizedInventoryFilters';
 import { InventoryLoadingState } from '@/components/inventory/InventoryLoadingState';
@@ -22,35 +23,66 @@ import InventoryItemDetailsPage from '@/pages/InventoryItemDetails';
  * Includes: inventory list, creation, categories, suppliers, locations, etc.
  */
 export default function Inventory() {
-  const { items, loading, error, updateItem } = useOptimizedInventoryItems();
+  const { items, loading, error, updateItem, inventoryStats } = useOptimizedInventoryItems();
   const { filteredItems } = useOptimizedInventoryFilters();
 
   // Use filtered items if available, otherwise use all items
   const displayItems = filteredItems.length > 0 || items.length === 0 ? filteredItems : items;
 
+  const handleQuickReorder = () => {
+    console.log('Quick reorder triggered');
+  };
+
+  const handleBulkImport = () => {
+    console.log('Bulk import triggered');
+  };
+
+  const handleGenerateReport = () => {
+    console.log('Generate report triggered');
+  };
+
+  const handleScanBarcode = () => {
+    console.log('Scan barcode triggered');
+  };
+
   return (
     <InventoryViewProvider>
-      <Routes>
-        <Route path="/" element={
-          <div className="p-6 space-y-6">
-            <InventoryPageHeader />
-            {loading ? (
-              <InventoryLoadingState />
-            ) : error ? (
-              <InventoryErrorState error={error} />
-            ) : (
-              <InventoryContent items={displayItems} onUpdateItem={updateItem} />
-            )}
-          </div>
-        } />
-        <Route path="/add" element={<InventoryAdd />} />
-        <Route path="/categories" element={<InventoryCategories />} />
-        <Route path="/suppliers" element={<InventorySuppliers />} />
-        <Route path="/locations" element={<InventoryLocations />} />
-        <Route path="/orders" element={<InventoryOrders />} />
-        <Route path="/manager" element={<InventoryManager />} />
-        <Route path="/item/:id" element={<InventoryItemDetailsPage />} />
-      </Routes>
+      <div className="relative">
+        <Routes>
+          <Route path="/" element={
+            <div className="p-6 space-y-6">
+              <InventoryPageHeader />
+              {loading ? (
+                <InventoryLoadingState />
+              ) : error ? (
+                <InventoryErrorState error={error} />
+              ) : (
+                <InventoryContent items={displayItems} onUpdateItem={updateItem} />
+              )}
+            </div>
+          } />
+          <Route path="/add" element={<InventoryAdd />} />
+          <Route path="/categories" element={<InventoryCategories />} />
+          <Route path="/suppliers" element={<InventorySuppliers />} />
+          <Route path="/locations" element={<InventoryLocations />} />
+          <Route path="/orders" element={<InventoryOrders />} />
+          <Route path="/manager" element={<InventoryManager />} />
+          <Route path="/item/:id" element={<InventoryItemDetailsPage />} />
+        </Routes>
+
+        {/* Quick Actions Floating Button - Only on main inventory page */}
+        <Routes>
+          <Route path="/" element={
+            <QuickActionsFloatingButton
+              stats={inventoryStats}
+              onQuickReorder={handleQuickReorder}
+              onBulkImport={handleBulkImport}
+              onGenerateReport={handleGenerateReport}
+              onScanBarcode={handleScanBarcode}
+            />
+          } />
+        </Routes>
+      </div>
     </InventoryViewProvider>
   );
 }
