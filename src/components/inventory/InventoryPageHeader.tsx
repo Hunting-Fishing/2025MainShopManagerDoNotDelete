@@ -15,7 +15,7 @@ export function InventoryPageHeader() {
   const navigate = useNavigate();
   const { viewMode, setViewMode, isFilterSidebarOpen, toggleFilterSidebar } = useInventoryView();
   const { inventoryStats } = useOptimizedInventoryItems();
-  const { filteredItems } = useOptimizedInventoryFilters();
+  const { filteredItems, updateSearch, filters } = useOptimizedInventoryFilters();
   const [showInsights, setShowInsights] = React.useState(false);
 
   return (
@@ -98,6 +98,8 @@ export function InventoryPageHeader() {
             <Input
               placeholder="Search inventory..."
               className="pl-9"
+              value={filters.search}
+              onChange={(e) => updateSearch(e.target.value)}
             />
           </div>
           <Button
