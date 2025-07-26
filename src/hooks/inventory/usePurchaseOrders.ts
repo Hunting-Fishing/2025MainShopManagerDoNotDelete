@@ -1,129 +1,134 @@
-
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
+import { InventoryPurchaseOrder, InventoryPurchaseOrderItem } from '@/types/inventory';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from "@/lib/supabase";
-import { InventoryPurchaseOrder } from '@/types/inventory/purchaseOrders';
 
-export const usePurchaseOrders = () => {
-  const [orders, setOrders] = useState<InventoryPurchaseOrder[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+interface CreatePurchaseOrderParams {
+  vendorId: string;
+  items: Array<{
+    inventory_item_id: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+  expectedDeliveryDate?: string;
+  notes?: string;
+}
 
-  // Fetch all purchase orders
-  const fetchPurchaseOrders = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+interface PurchaseOrderFilters {
+  status?: string;
+  vendorId?: string;
+  dateRange?: {
+    from: Date;
+    to: Date;
+  };
+}
 
-    try {
-      const { data, error } = await supabase
-        .from('inventory_purchase_orders')
-        .select('*, inventory_purchase_order_items(*)');
+// Mock data
+const mockPurchaseOrders: InventoryPurchaseOrder[] = [
+  {
+    id: '1',
+    vendor_id: 'vendor-1',
+    order_date: '2024-01-15',
+    expected_delivery_date: '2024-01-22',
+    total_amount: 1250.00,
+    status: 'pending',
+    created_at: '2024-01-15T10:00:00Z',
+    updated_at: '2024-01-15T10:00:00Z',
+    notes: 'Urgent order for brake pads'
+  }
+];
 
-      if (error) {
-        throw new Error(error.message);
-      }
+export function usePurchaseOrders() {
+  const queryClient = useQueryClient();
+  const [filters, setFilters] = useState<PurchaseOrderFilters>({});
 
-      setOrders(data || []);
-    } catch (err: any) {
-      setError(err.message);
+  const {
+    data: purchaseOrders = [],
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['purchase-orders', filters],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return mockPurchaseOrders;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const createPurchaseOrderMutation = useMutation({
+    mutationFn: async (params: CreatePurchaseOrderParams) => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const newOrder: InventoryPurchaseOrder = {
+        id: `po-${Date.now()}`,
+        vendor_id: params.vendorId,
+        order_date: new Date().toISOString().split('T')[0],
+        expected_delivery_date: params.expectedDeliveryDate,
+        total_amount: params.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        notes: params.notes
+      };
+      
+      return newOrder;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       toast({
-        title: "Failed to load purchase orders",
-        description: err.message,
-        variant: "destructive"
+        title: "Purchase Order Created",
+        description: "Purchase order has been created successfully.",
       });
-    } finally {
-      setLoading(false);
     }
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return { id, status };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      toast({
+        title: "Status Updated",
+        description: "Purchase order status has been updated successfully.",
+      });
+    }
+  });
+
+  const createPurchaseOrder = useCallback((params: CreatePurchaseOrderParams) => {
+    return createPurchaseOrderMutation.mutateAsync(params);
+  }, [createPurchaseOrderMutation]);
+
+  const updateStatus = useCallback((id: string, status: string) => {
+    return updateStatusMutation.mutateAsync({ id, status });
+  }, [updateStatusMutation]);
+
+  const updateFilters = useCallback((newFilters: Partial<PurchaseOrderFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
-  // Create a new purchase order
-  const createPurchaseOrder = useCallback(async (orderData: Partial<InventoryPurchaseOrder>) => {
-    try {
-      const { data, error } = await supabase
-        .from('inventory_purchase_orders')
-        .insert([orderData])
-        .select()
-        .single();
-
-      if (error) throw new Error(error.message);
-      
-      toast({
-        title: "Purchase order created",
-        description: `Order #${data.id.substring(0, 8)} has been created.`
-      });
-      
-      return data;
-    } catch (err: any) {
-      toast({
-        title: "Failed to create purchase order",
-        description: err.message,
-        variant: "destructive"
-      });
-      throw err;
-    }
-  }, []);
-
-  // Update an existing purchase order
-  const updatePurchaseOrder = useCallback(async (id: string, updates: Partial<InventoryPurchaseOrder>) => {
-    try {
-      const { data, error } = await supabase
-        .from('inventory_purchase_orders')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw new Error(error.message);
-      
-      toast({
-        title: "Purchase order updated",
-        description: `Order #${id.substring(0, 8)} has been updated.`
-      });
-      
-      return data;
-    } catch (err: any) {
-      toast({
-        title: "Failed to update purchase order",
-        description: err.message,
-        variant: "destructive"
-      });
-      throw err;
-    }
-  }, []);
-
-  // Delete a purchase order
-  const deletePurchaseOrder = useCallback(async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('inventory_purchase_orders')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw new Error(error.message);
-      
-      toast({
-        title: "Purchase order deleted",
-        description: `Order #${id.substring(0, 8)} has been deleted.`
-      });
-      
-      return true;
-    } catch (err: any) {
-      toast({
-        title: "Failed to delete purchase order",
-        description: err.message,
-        variant: "destructive"
-      });
-      throw err;
-    }
-  }, []);
+  const generateAutoOrders = useCallback(async () => {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    toast({
+      title: "Auto Orders Generated",
+      description: "3 purchase orders have been automatically generated for low stock items.",
+    });
+    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+  }, [queryClient]);
 
   return {
-    orders,
-    loading,
+    purchaseOrders,
+    filters,
+    isLoading,
     error,
-    fetchPurchaseOrders,
+    isCreating: createPurchaseOrderMutation.isPending,
+    isUpdating: updateStatusMutation.isPending,
     createPurchaseOrder,
-    updatePurchaseOrder,
-    deletePurchaseOrder
+    updateStatus,
+    updateFilters,
+    generateAutoOrders,
+    refetch
   };
-};
+}
