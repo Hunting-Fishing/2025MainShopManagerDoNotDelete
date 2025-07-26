@@ -83,7 +83,7 @@ export function InventoryListItem({ item, onUpdateItem }: InventoryListItemProps
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate(`/inventory/${item.id}`)}
+                    onClick={() => navigate(`/inventory/item/${item.id}`)}
                     className="hover:bg-primary/10"
                   >
                     <Eye className="w-4 h-4" />
@@ -91,7 +91,7 @@ export function InventoryListItem({ item, onUpdateItem }: InventoryListItemProps
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate(`/inventory/${item.id}/edit`)}
+                    onClick={() => navigate(`/inventory/item/${item.id}/edit`)}
                     className="hover:bg-primary/10"
                   >
                     <Edit className="w-4 h-4" />
