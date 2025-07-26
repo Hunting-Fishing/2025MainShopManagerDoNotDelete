@@ -85,19 +85,24 @@ export function InventoryGridView({ items, onUpdateItem }: InventoryGridViewProp
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-        {items.map((item) => (
-          <InventoryCard
-            key={item.id}
-            item={item}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onReorder={handleReorder}
-            onDuplicate={handleDuplicate}
-            isSelected={selectedItems.includes(item.id)}
-            onToggleSelect={toggleItemSelection}
-            showSelection={showSelection}
-            variant="default"
-          />
+        {items.map((item, index) => (
+          <div 
+            key={item.id} 
+            className="animate-fade-in hover-scale"
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            <InventoryCard
+              item={item}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onReorder={handleReorder}
+              onDuplicate={handleDuplicate}
+              isSelected={selectedItems.includes(item.id)}
+              onToggleSelect={toggleItemSelection}
+              showSelection={showSelection}
+              variant="default"
+            />
+          </div>
         ))}
       </div>
     </div>

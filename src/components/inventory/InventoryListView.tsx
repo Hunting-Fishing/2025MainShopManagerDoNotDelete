@@ -69,7 +69,7 @@ export function InventoryListView({ items, onUpdateItem }: InventoryListViewProp
 
   return (
     <div className="space-y-3">
-      {items.map((item) => {
+      {items.map((item, index) => {
         const stockInfo = getStockLevel(item);
         const StockIcon = stockInfo.icon;
         const isSelected = selectedItems.includes(item.id);
@@ -78,10 +78,12 @@ export function InventoryListView({ items, onUpdateItem }: InventoryListViewProp
           <div
             key={item.id}
             className={`
-              group flex items-center space-x-4 p-4 bg-card rounded-lg border transition-all duration-200
-              hover:shadow-md hover:border-primary/20 cursor-pointer
-              ${isSelected ? 'ring-2 ring-primary border-primary bg-primary/5' : ''}
+              group flex items-center space-x-4 p-4 bg-card rounded-lg border 
+              transition-all duration-300 ease-in-out transform hover:scale-[1.02]
+              hover:shadow-lg hover:border-primary/30 cursor-pointer animate-fade-in
+              ${isSelected ? 'ring-2 ring-primary border-primary bg-primary/10 shadow-md' : ''}
             `}
+            style={{ animationDelay: `${index * 30}ms` }}
             onClick={() => handleViewDetails(item.id)}
           >
             {/* Selection Checkbox */}

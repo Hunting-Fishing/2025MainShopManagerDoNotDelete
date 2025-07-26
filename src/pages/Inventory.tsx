@@ -64,7 +64,7 @@ export default function Inventory() {
                 ) : error ? (
                   <InventoryErrorState error={error} onRetry={refetch} />
                 ) : (
-                  <InventoryContent items={displayItems} onUpdateItem={updateItem} />
+                  <InventoryContent items={displayItems} onUpdateItem={updateItem} loading={loading} />
                 )}
               </div>
             } />

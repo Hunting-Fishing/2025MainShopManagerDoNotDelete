@@ -22,10 +22,10 @@ export function ViewModeToggle() {
           size="sm"
           onClick={() => setViewMode(mode)}
           className={`
-            px-3 py-2 transition-all duration-200
+            px-3 py-2 transition-all duration-300 ease-in-out transform hover:scale-105
             ${viewMode === mode 
-              ? 'bg-primary text-primary-foreground shadow-sm' 
-              : 'hover:bg-muted'
+              ? 'bg-primary text-primary-foreground shadow-md scale-105' 
+              : 'hover:bg-muted hover:shadow-sm'
             }
           `}
           title={label}
