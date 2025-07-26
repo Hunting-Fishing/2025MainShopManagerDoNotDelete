@@ -1,6 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { cleanupAuthState } from '@/utils/authCleanup';
+import { AuthSecurityService } from '@/services/security/authSecurity';
 
 export interface SignUpData {
   firstName: string;
@@ -14,7 +15,7 @@ export interface AuthResponse {
 
 export class AuthService {
   /**
-   * Sign in with email and password
+   * Sign in with email and password (with enhanced security)
    */
   static async signIn(email: string, password: string): Promise<AuthResponse> {
     try {
@@ -29,23 +30,28 @@ export class AuthService {
         console.warn('Could not perform global sign out:', err);
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password
-      });
+      // Use enhanced security login
+      const securityResult = await AuthSecurityService.secureLogin(
+        email,
+        password,
+        // Note: Getting real IP would require server-side implementation
+        'browser'
+      );
 
-      if (error) {
-        return { error };
+      if (!securityResult.success) {
+        return { 
+          error: new Error(securityResult.error || 'Login failed'),
+          data: securityResult.requiresCaptcha ? { requiresCaptcha: true } : undefined
+        };
       }
 
-      if (data.user) {
-        // Force page reload for clean state
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 100);
-      }
+      // If we get here, login was successful
+      // Force page reload for clean state
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 100);
 
-      return { error: null, data };
+      return { error: null, data: { success: true } };
     } catch (error) {
       console.error('Sign in error:', error);
       return { 

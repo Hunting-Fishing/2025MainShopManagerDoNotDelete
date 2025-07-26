@@ -19386,6 +19386,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_user_role_secure: {
+        Args: { check_user_id: string; required_role: string }
+        Returns: boolean
+      }
       check_verified_purchase: {
         Args:
           | { p_user_id: string; p_product_id: string }
