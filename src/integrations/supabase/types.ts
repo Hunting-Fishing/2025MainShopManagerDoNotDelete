@@ -20169,13 +20169,20 @@ export type Database = {
         Returns: string
       }
       set_setting_safe: {
-        Args: {
-          p_shop_id: string
-          p_category: string
-          p_key: string
-          p_value: Json
-        }
-        Returns: string
+        Args:
+          | {
+              p_shop_id: string
+              p_category: string
+              p_key: string
+              p_value: Json
+            }
+          | {
+              p_shop_id: string
+              p_category: string
+              p_key: string
+              p_value: string
+            }
+        Returns: undefined
       }
       submit_help_feedback: {
         Args: {
