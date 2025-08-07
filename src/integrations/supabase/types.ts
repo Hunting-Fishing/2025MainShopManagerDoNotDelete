@@ -680,7 +680,7 @@ export type Database = {
           {
             foreignKeyName: "appearance_settings_shop_id_fkey"
             columns: ["shop_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "shops"
             referencedColumns: ["id"]
           },
