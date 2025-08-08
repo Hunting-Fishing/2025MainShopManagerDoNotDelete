@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Palette, Upload, PaintBucket } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { ColorsTab } from "./branding/ColorsTab";
 import { LogoTab } from "./branding/LogoTab";
 import { ThemeTab } from "./branding/ThemeTab";
 import { useShopName } from "@/hooks/useShopName";
+import { useShopData } from "@/hooks/useShopData";
 
 // Default branding colors
 const defaultColors = {
@@ -21,11 +22,49 @@ const defaultColors = {
 
 export function BrandingTab() {
   const { shopName, updateShopName, loading: shopNameLoading } = useShopName();
+  const { shopData } = useShopData();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [colors, setColors] = useState(defaultColors);
-  
-  // Theme functionality temporarily disabled
+  const [brandingSettings, setBrandingSettings] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load existing branding settings
+  useEffect(() => {
+    if (shopData?.id) {
+      loadBrandingSettings();
+    }
+  }, [shopData?.id]);
+
+  const loadBrandingSettings = async () => {
+    if (!shopData?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('branding_settings')
+        .select('*')
+        .eq('shop_id', shopData.id)
+        .single();
+
+      if (data) {
+        setBrandingSettings(data);
+        setColors({
+          primary: data.primary_color || defaultColors.primary,
+          secondary: data.secondary_color || defaultColors.secondary,
+          accent: data.accent_color || defaultColors.accent,
+          text: defaultColors.text,
+          background: defaultColors.background
+        });
+        if (data.logo_url) {
+          setLogoPreview(data.logo_url);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading branding settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -68,8 +107,17 @@ export function BrandingTab() {
   };
 
   const handleSave = async () => {
+    if (!shopData?.id) {
+      toast({
+        title: "Error",
+        description: "Shop ID not found",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      let logoUrl = null;
+      let logoUrl = brandingSettings?.logo_url;
       
       // Upload logo if file is selected
       if (logoFile) {
@@ -95,16 +143,17 @@ export function BrandingTab() {
         logoUrl = publicUrl;
       }
       
-      // Save branding settings to database
+      // Save branding settings to database using the actual shop_id
       const { error } = await supabase
         .from('branding_settings')
-        .upsert({
+        .update({
           primary_color: colors.primary,
           secondary_color: colors.secondary,
           accent_color: colors.accent,
           logo_url: logoUrl,
-          shop_id: 'default' // Replace with actual shop_id when available
-        });
+          updated_at: new Date().toISOString()
+        })
+        .eq('shop_id', shopData.id);
         
       if (error) {
         toast({
@@ -115,7 +164,16 @@ export function BrandingTab() {
         return;
       }
       
-      // Apply colors to CSS variables
+      // Update local state
+      setBrandingSettings(prev => ({
+        ...prev,
+        primary_color: colors.primary,
+        secondary_color: colors.secondary,
+        accent_color: colors.accent,
+        logo_url: logoUrl
+      }));
+      
+      // Apply colors to CSS variables for immediate UI feedback
       document.documentElement.style.setProperty('--primary', colors.primary);
       document.documentElement.style.setProperty('--secondary', colors.secondary);
       document.documentElement.style.setProperty('--accent', colors.accent);
@@ -132,6 +190,14 @@ export function BrandingTab() {
       });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

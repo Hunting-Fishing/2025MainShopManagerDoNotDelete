@@ -19,6 +19,7 @@ export function SecurityTab() {
   const [twoFAStatus, setTwoFAStatus] = useState<User2FA | null>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [securitySettings, setSecuritySettings] = useState<any>(null);
   
   // Password form state
   const [passwordForm, setPasswordForm] = useState({
@@ -40,6 +41,24 @@ export function SecurityTab() {
       if (!currentUser) return;
       
       setUser(currentUser);
+      
+      // Get user's shop ID to load security settings
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', currentUser.id)
+        .single();
+      
+      if (profile?.shop_id) {
+        // Load security settings for the shop
+        const { data: settings } = await supabase
+          .from('security_settings')
+          .select('*')
+          .eq('shop_id', profile.shop_id)
+          .single();
+        
+        setSecuritySettings(settings);
+      }
       
       // Load user sessions
       const userSessions = await userSecurityService.getUserSessions(currentUser.id);

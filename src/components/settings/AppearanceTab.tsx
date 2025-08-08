@@ -10,6 +10,7 @@ import { appearanceService } from "@/services/settings/appearanceService";
 import { AppearanceSettings } from "@/types/settings";
 import { useToast } from "@/components/ui/use-toast";
 import { Palette, Type, Brush } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppearanceTab({ shopId }: { shopId?: string }) {
   const [settings, setSettings] = useState<AppearanceSettings | null>(null);
@@ -18,34 +19,51 @@ export function AppearanceTab({ shopId }: { shopId?: string }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!shopId) return;
+    loadSettings();
+  }, [shopId]);
+  
+  const loadSettings = async () => {
+    setLoading(true);
     
-    const loadSettings = async () => {
-      setLoading(true);
-      const data = await appearanceService.getAppearanceSettings(shopId);
+    try {
+      // Get current user's shop ID if not provided
+      let currentShopId = shopId;
+      if (!currentShopId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('shop_id')
+          .eq('id', user.id)
+          .single();
+          
+        currentShopId = profile?.shop_id;
+      }
+      
+      if (!currentShopId) return;
+      
+      const data = await appearanceService.getAppearanceSettings(currentShopId);
       
       if (data) {
         setSettings(data);
       } else {
-        // Create default settings if none exist
-        const defaultSettings = {
-          shop_id: shopId,
+        // Default settings should already exist from the migration, but fallback just in case
+        setSettings({
+          shop_id: currentShopId,
           theme_mode: "light",
           font_family: "Inter",
           primary_color: "#0f172a",
           secondary_color: "#64748b",
           accent_color: "#3b82f6"
-        } as Partial<AppearanceSettings>;
-        
-        const newSettings = await appearanceService.createAppearanceSettings(defaultSettings);
-        setSettings(newSettings);
+        } as AppearanceSettings);
       }
-      
+    } catch (error) {
+      console.error('Error loading appearance settings:', error);
+    } finally {
       setLoading(false);
-    };
-    
-    loadSettings();
-  }, [shopId]);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -57,19 +75,32 @@ export function AppearanceTab({ shopId }: { shopId?: string }) {
   };
 
   const handleSave = async () => {
-    if (!settings || !shopId) return;
+    if (!settings) return;
     
     setSaving(true);
     
     try {
-      if (settings.id) {
-        await appearanceService.updateAppearanceSettings(settings.id, settings);
-      } else {
-        await appearanceService.createAppearanceSettings({
-          ...settings,
-          shop_id: shopId
-        });
+      // Use settings.shop_id which was set during loading
+      const result = await supabase
+        .from('appearance_settings')
+        .update({
+          theme_mode: settings.theme_mode,
+          font_family: settings.font_family,
+          primary_color: settings.primary_color,
+          secondary_color: settings.secondary_color,
+          accent_color: settings.accent_color,
+          updated_at: new Date().toISOString()
+        })
+        .eq('shop_id', settings.shop_id);
+      
+      if (result.error) {
+        throw result.error;
       }
+      
+      // Apply theme immediately
+      document.documentElement.style.setProperty('--primary', settings.primary_color);
+      document.documentElement.style.setProperty('--secondary', settings.secondary_color);
+      document.documentElement.style.setProperty('--accent', settings.accent_color);
       
       toast({
         title: "Settings saved",
