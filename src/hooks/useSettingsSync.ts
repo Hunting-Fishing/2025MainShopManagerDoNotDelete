@@ -89,7 +89,7 @@ export function useSettingsSync() {
         },
         (payload) => {
           console.log('Appearance settings changed:', payload);
-          if (payload.new && payload.new.shop_id === settings.shopId) {
+          if (payload.new && (payload.new as any)?.shop_id === settings.shopId) {
             setSettings(prev => ({ ...prev, appearance: payload.new }));
             applyAppearanceSettings(payload.new);
           }
@@ -109,7 +109,7 @@ export function useSettingsSync() {
         },
         (payload) => {
           console.log('Branding settings changed:', payload);
-          if (payload.new && payload.new.shop_id === settings.shopId) {
+          if (payload.new && (payload.new as any)?.shop_id === settings.shopId) {
             setSettings(prev => ({ ...prev, branding: payload.new }));
             applyBrandingSettings(payload.new);
           }
@@ -129,7 +129,7 @@ export function useSettingsSync() {
         },
         (payload) => {
           console.log('Security settings changed:', payload);
-          if (payload.new && payload.new.shop_id === settings.shopId) {
+          if (payload.new && (payload.new as any)?.shop_id === settings.shopId) {
             setSettings(prev => ({ ...prev, security: payload.new }));
           }
         }
@@ -194,14 +194,27 @@ export function useSettingsSync() {
     }
 
     try {
-      const table = `${category}_settings`;
-      const { error } = await supabase
-        .from(table)
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('shop_id', settings.shopId);
+      let error;
+      
+      if (category === 'appearance') {
+        const result = await supabase
+          .from('appearance_settings')
+          .update({ ...updates, updated_at: new Date().toISOString() })
+          .eq('shop_id', settings.shopId);
+        error = result.error;
+      } else if (category === 'branding') {
+        const result = await supabase
+          .from('branding_settings')
+          .update({ ...updates, updated_at: new Date().toISOString() })
+          .eq('shop_id', settings.shopId);
+        error = result.error;
+      } else if (category === 'security') {
+        const result = await supabase
+          .from('security_settings')
+          .update({ ...updates, updated_at: new Date().toISOString() })
+          .eq('shop_id', settings.shopId);
+        error = result.error;
+      }
 
       if (error) {
         throw error;
