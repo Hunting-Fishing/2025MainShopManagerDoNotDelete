@@ -20,8 +20,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'sans': ['Inter', 'system-ui', 'sans-serif'],
-				'heading': ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
+				'sans': ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+				'heading': ['Space Grotesk', 'Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -173,5 +173,11 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		require("tailwindcss-animate"),
+		require("@tailwindcss/forms"),
+		require("@tailwindcss/typography"),
+		require("@tailwindcss/aspect-ratio"),
+		require("@tailwindcss/line-clamp"),
+	],
 } satisfies Config;

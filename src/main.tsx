@@ -16,6 +16,7 @@ import { GlobalErrorBoundary } from '@/components/error/GlobalErrorBoundary';
 import './i18n/config'; // Initialize i18n before rendering
 import App from './App';
 import './index.css';
+import '@fontsource/plus-jakarta-sans/latin.css';
 import './styles/mobile.css';
 
 // Optimized query client configuration for better performance
