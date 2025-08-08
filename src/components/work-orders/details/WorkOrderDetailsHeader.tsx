@@ -5,6 +5,7 @@ import { WorkOrderStatusBadge } from '../WorkOrderStatusBadge';
 import { WorkOrderDetailsActions } from './WorkOrderDetailsActions';
 import { EditModeIndicator } from '../debug/EditModeIndicator';
 import { WorkOrderProgressTimeline } from '../shared/WorkOrderProgressTimeline';
+import { useNavigate } from 'react-router-dom';
 interface WorkOrderDetailsHeaderProps {
   workOrder: WorkOrder;
   customer: Customer | null;
@@ -21,6 +22,7 @@ export function WorkOrderDetailsHeader({
   onStatusChange,
   isEditMode
 }: WorkOrderDetailsHeaderProps) {
+  const navigate = useNavigate();
   const handleStatusChange = async (newStatus: string) => {
     await onStatusChange(newStatus);
   };
@@ -102,7 +104,7 @@ export function WorkOrderDetailsHeader({
           <WorkOrderDetailsActions 
             workOrder={workOrder} 
             onInvoiceCreated={(invoiceId) => {
-              console.log('Invoice created:', invoiceId);
+              navigate(`/invoices/${invoiceId}`);
             }} 
             onWorkOrderUpdated={() => {
               window.location.reload();

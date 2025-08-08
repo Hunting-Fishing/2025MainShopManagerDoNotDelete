@@ -36,6 +36,7 @@ import Login from '@/pages/Login';
 import { ArticleViewer } from '@/components/help/ArticleViewer';
 import { LearningPathDetail } from '@/components/help/LearningPathDetail';
 import { ServiceManagementPage } from '@/pages/developer/ServiceManagementPage';
+import InvoiceDetails from '@/pages/InvoiceDetails';
 
 function App() {
   useEffect(() => {
@@ -133,6 +134,11 @@ function App() {
                   <Route path="/invoices" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
                       <Invoices />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/invoices/:id" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                      <InvoiceDetails />
                     </ProtectedRoute>
                   } />
                   

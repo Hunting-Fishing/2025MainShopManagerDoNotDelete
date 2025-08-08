@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ConvertToWorkOrderButton } from './ConvertToWorkOrderButton';
 import { useQuoteTaxCalculations } from '@/hooks/useQuoteTaxCalculations';
 import { getTaxSummaryText } from '@/utils/taxCalculations';
+import { useNavigate } from 'react-router-dom';
 
 interface QuoteDetailsViewProps {
   quoteId: string;
@@ -21,6 +22,7 @@ export function QuoteDetailsView({ quoteId }: QuoteDetailsViewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('details');
+  const navigate = useNavigate();
 
   // Get tax calculations using the centralized hook
   const taxCalculations = useQuoteTaxCalculations({
@@ -99,6 +101,7 @@ export function QuoteDetailsView({ quoteId }: QuoteDetailsViewProps) {
           <ConvertToWorkOrderButton
             quoteId={quote.id}
             quoteStatus={quote.status}
+            onSuccess={(workOrderId) => navigate(`/work-orders/${workOrderId}`)}
           />
         </div>
       </div>

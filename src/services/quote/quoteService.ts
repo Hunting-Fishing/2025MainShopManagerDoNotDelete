@@ -197,9 +197,20 @@ export async function deleteQuote(id: string): Promise<void> {
 export async function convertQuoteToWorkOrder(quoteId: string, notes?: string): Promise<string> {
   console.log('convertQuoteToWorkOrder: Converting quote to work order:', quoteId);
   
+  // Ensure we have the current user id for auditing and RLS
+  const { data: userResp, error: userErr } = await supabase.auth.getUser();
+  if (userErr) {
+    console.error('convertQuoteToWorkOrder: Auth error:', userErr);
+    throw new Error('User not authenticated');
+  }
+  const userId = userResp?.user?.id;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+  
   const { data, error } = await supabase.rpc('convert_quote_to_work_order', {
     p_quote_id: quoteId,
-    p_converted_by: 'current_user', // This should be the actual user ID
+    p_converted_by: userId,
     p_notes: notes || null
   });
 
@@ -215,9 +226,20 @@ export async function convertQuoteToWorkOrder(quoteId: string, notes?: string): 
 export async function convertWorkOrderToInvoice(workOrderId: string, notes?: string): Promise<string> {
   console.log('convertWorkOrderToInvoice: Converting work order to invoice:', workOrderId);
   
+  // Ensure we have the current user id for auditing and RLS
+  const { data: userResp, error: userErr } = await supabase.auth.getUser();
+  if (userErr) {
+    console.error('convertWorkOrderToInvoice: Auth error:', userErr);
+    throw new Error('User not authenticated');
+  }
+  const userId = userResp?.user?.id;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+
   const { data, error } = await supabase.rpc('convert_work_order_to_invoice', {
     p_work_order_id: workOrderId,
-    p_converted_by: 'current_user', // This should be the actual user ID
+    p_converted_by: userId,
     p_notes: notes || null
   });
 
