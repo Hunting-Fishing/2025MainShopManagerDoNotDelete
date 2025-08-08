@@ -103,7 +103,7 @@ export const UpcomingAppointments: React.FC = () => {
   };
 
   return (
-    <Card>
+    <Card data-tour="dashboard-upcoming-appointments">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />

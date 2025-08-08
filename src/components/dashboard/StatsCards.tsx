@@ -90,7 +90,7 @@ export function StatsCards() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="dashboard-stats">
       {/* Real-time status indicator */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
         <div className="flex items-center gap-1">

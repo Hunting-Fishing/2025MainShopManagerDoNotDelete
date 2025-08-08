@@ -5,6 +5,7 @@ import { DashboardStats } from '@/components/dashboard/DashboardStats';
 import { RecentWorkOrders } from '@/components/dashboard/RecentWorkOrders';
 import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointments';
 import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
+import { DashboardTour } from '@/components/onboarding/DashboardTour';
 
 export default function Dashboard() {
   usePageTitle('Dashboard');
@@ -19,6 +20,7 @@ export default function Dashboard() {
       </div>
 
       <DashboardStats />
+      <DashboardTour />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-2">

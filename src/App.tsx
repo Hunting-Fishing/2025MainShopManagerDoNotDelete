@@ -37,6 +37,7 @@ import { ArticleViewer } from '@/components/help/ArticleViewer';
 import { LearningPathDetail } from '@/components/help/LearningPathDetail';
 import { ServiceManagementPage } from '@/pages/developer/ServiceManagementPage';
 import InvoiceDetails from '@/pages/InvoiceDetails';
+import { GlobalUX } from '@/components/ux/GlobalUX';
 
 function App() {
   useEffect(() => {
@@ -214,6 +215,8 @@ function App() {
       </Routes>
       <Toaster />
       <AuthDebugPanel />
+      {/* Global UX enhancements */}
+      <GlobalUX />
     </>
   );
 }

@@ -90,7 +90,7 @@ export function RecentWorkOrders() {
   }
 
   return (
-    <Card>
+    <Card data-tour="dashboard-recent-work-orders">
       <CardHeader>
         <CardTitle>Recent Work Orders</CardTitle>
       </CardHeader>
