@@ -9,9 +9,12 @@ import WorkOrderCreate from './WorkOrderCreate';
 import { DatabaseStatusIndicator } from '@/components/database/DatabaseStatusIndicator';
 import { useWorkOrders } from '@/hooks/useWorkOrders';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { WorkOrdersViewToggle } from '@/components/work-orders/WorkOrdersViewToggle';
+import { WorkOrdersCardsGrid } from '@/components/work-orders/WorkOrdersCardsGrid';
 
 function WorkOrdersList() {
   const { workOrders, loading, error, refetch } = useWorkOrders();
+  const [viewMode, setViewMode] = React.useState<'table' | 'cards'>('table');
 
   console.log('WorkOrdersList: Render state:', { 
     workOrdersCount: workOrders.length, 
@@ -68,7 +71,14 @@ function WorkOrdersList() {
       )}
 
       <WorkOrdersHeader workOrders={workOrders} />
-      <WorkOrderTable workOrders={workOrders} />
+      <div className="flex justify-end">
+        <WorkOrdersViewToggle view={viewMode} onChange={setViewMode} />
+      </div>
+      {viewMode === 'table' ? (
+        <WorkOrderTable workOrders={workOrders} />
+      ) : (
+        <WorkOrdersCardsGrid workOrders={workOrders} />
+      )}
     </div>
   );
 }
