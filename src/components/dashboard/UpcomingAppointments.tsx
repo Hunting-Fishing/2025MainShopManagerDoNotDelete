@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Calendar, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
@@ -141,9 +142,12 @@ export const UpcomingAppointments: React.FC = () => {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-center py-4">
-            No upcoming appointments scheduled
-          </p>
+          <EmptyState
+            icon={<Calendar className="h-6 w-6 text-muted-foreground" aria-hidden />}
+            title="No upcoming appointments"
+            description="Schedule an appointment to keep your bay full."
+            actionLink={{ label: 'Open Calendar', to: '/calendar' }}
+          />
         )}
       </CardContent>
     </Card>

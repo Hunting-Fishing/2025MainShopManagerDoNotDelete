@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRecentWorkOrders } from "@/services/dashboard/workOrderService";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Eye, ClipboardList, Plus } from "lucide-react";
+import { Loader2, Eye, ClipboardList } from "lucide-react";
 import { RecentWorkOrder } from "@/types/dashboard";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export function RecentWorkOrders() {
   const [workOrders, setWorkOrders] = useState<RecentWorkOrder[]>([]);
@@ -39,23 +39,32 @@ export function RecentWorkOrders() {
     navigate(`/work-orders/${workOrderId}`);
   };
 
-  const getStatusColor = (status: string): string => {
+  const getStatusVariant = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'pending': return 'bg-blue-100 text-blue-800';
-      case 'in-progress': 
-      case 'in_progress': return 'bg-amber-100 text-amber-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending':
+        return 'info';
+      case 'in-progress':
+      case 'in_progress':
+        return 'warning';
+      case 'completed':
+        return 'success';
+      case 'cancelled':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
-
-  const getPriorityColor = (priority: string): string => {
+  
+  const getPriorityVariant = (priority: string) => {
     switch (priority.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-amber-100 text-amber-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'warning';
+      case 'low':
+        return 'info';
+      default:
+        return 'secondary';
     }
   };
 
@@ -67,7 +76,7 @@ export function RecentWorkOrders() {
         </CardHeader>
         <CardContent>
           <div className="flex justify-center items-center h-64">
-            <Loader2 className="animate-spin h-8 w-8 text-gray-400" />
+            <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
@@ -97,26 +106,21 @@ export function RecentWorkOrders() {
       <CardContent>
         <div className="space-y-4">
           {workOrders.length === 0 ? (
-            <div className="text-center py-12">
-              <ClipboardList className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No Work Orders Yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Start by creating your first work order to track service jobs.
-              </p>
-              <Button onClick={() => navigate('/work-orders/create')}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Work Order
-              </Button>
-            </div>
+            <EmptyState
+              icon={<ClipboardList className="h-6 w-6 text-muted-foreground" aria-hidden />}
+              title="No work orders found"
+              description="Create your first work order to get started."
+              actionLink={{ label: 'Create Work Order', to: '/work-orders/create' }}
+            />
           ) : (
             workOrders.map((order) => (
               <div 
                 key={order.id} 
-                className="flex items-center justify-between border-b py-3 last:border-0 cursor-pointer hover:bg-slate-50 rounded-lg px-3 transition-colors group"
+                className="flex items-center justify-between border-b py-3 last:border-0 cursor-pointer hover:bg-muted/50 rounded-lg px-3 transition-colors group"
                 onClick={() => handleWorkOrderClick(order.id)}
               >
                 <div className="flex flex-col">
-                  <span className="font-medium group-hover:text-blue-600 transition-colors">
+                  <span className="font-medium group-hover:text-primary transition-colors">
                     {order.customer}
                   </span>
                   <span className="text-sm text-muted-foreground">
@@ -124,14 +128,14 @@ export function RecentWorkOrders() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className={getStatusColor(order.status)}>
+                  <Badge variant={getStatusVariant(order.status)}>
                     {order.status.replace('_', ' ')}
                   </Badge>
-                  <Badge variant="outline" className={getPriorityColor(order.priority)}>
+                  <Badge variant={getPriorityVariant(order.priority)}>
                     {order.priority}
                   </Badge>
                   <span className="text-sm">{order.date}</span>
-                  <Eye className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Eye className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
             ))

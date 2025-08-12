@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Calendar, Clock, Users, Wrench } from "lucide-react";
 import { getTodaySchedule, TodayScheduleItem } from "@/services/dashboard/calendarService";
 import { format } from "date-fns";
@@ -36,14 +37,14 @@ export function TodaySchedule() {
     }
   };
 
-  const getEventColor = (eventType: string) => {
+  const getEventVariant = (eventType: string) => {
     switch (eventType) {
       case 'appointment':
-        return 'bg-blue-100 text-blue-800';
+        return 'info';
       case 'meeting':
-        return 'bg-green-100 text-green-800';
+        return 'success';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'secondary';
     }
   };
 
@@ -60,8 +61,8 @@ export function TodaySchedule() {
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-muted-foreground/20 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-muted-foreground/20 rounded w-1/2"></div>
               </div>
             ))}
           </div>
@@ -80,9 +81,12 @@ export function TodaySchedule() {
       </CardHeader>
       <CardContent>
         {schedule.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            No scheduled events for today
-          </div>
+          <EmptyState
+            icon={<Calendar className="h-6 w-6 text-muted-foreground" aria-hidden />}
+            title="No events today"
+            description="You have no scheduled events for today."
+            actionLink={{ label: 'Open Calendar', to: '/calendar' }}
+          />
         ) : (
           <div className="space-y-3">
             {schedule.map((item) => (
@@ -97,7 +101,7 @@ export function TodaySchedule() {
                     </div>
                   </div>
                 </div>
-                <Badge variant="outline" className={getEventColor(item.event_type)}>
+                <Badge variant={getEventVariant(item.event_type)}>
                   {item.event_type}
                 </Badge>
               </div>
