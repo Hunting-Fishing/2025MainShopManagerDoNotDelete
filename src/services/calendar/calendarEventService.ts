@@ -10,7 +10,11 @@ export async function getCalendarEvents(
   endDate: string
 ): Promise<CalendarEvent[]> {
   try {
-    // Fetch events based on the date range
+    // Build full day time bounds to correctly include overlapping events
+    const startDateTime = `${startDate}T00:00:00`;
+    const endDateTime = `${endDate}T23:59:59.999`;
+
+    // Fetch events that overlap the range [startDate, endDate]
     const { data, error } = await supabase
       .from('calendar_events')
       .select(`
@@ -31,8 +35,8 @@ export async function getCalendarEvents(
         created_at,
         updated_at
       `)
-      .gte('start_time', startDate)
-      .lte('end_time', endDate)
+      .lte('start_time', endDateTime)
+      .gte('end_time', startDateTime)
       .order('start_time', { ascending: true });
 
     if (error) throw error;
@@ -92,8 +96,11 @@ export async function getCalendarEvents(
 /**
  * Fetch work order events for the calendar
  */
-export async function getWorkOrderEvents(): Promise<CalendarEvent[]> {
+export async function getWorkOrderEvents(startDate: string, endDate: string): Promise<CalendarEvent[]> {
   try {
+    const startDateTime = `${startDate}T00:00:00`;
+    const endDateTime = `${endDate}T23:59:59.999`;
+
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -106,7 +113,10 @@ export async function getWorkOrderEvents(): Promise<CalendarEvent[]> {
         technician_id,
         vehicle_id
       `)
-      .not('start_time', 'is', null);
+      .not('start_time', 'is', null)
+      .lte('start_time', endDateTime)
+      .gte('end_time', startDateTime)
+      .order('start_time', { ascending: true });
 
     if (error) throw error;
 
