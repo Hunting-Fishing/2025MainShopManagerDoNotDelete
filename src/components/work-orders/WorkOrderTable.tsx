@@ -4,47 +4,33 @@ import { WorkOrder } from '@/types/workOrder';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Eye, ClipboardList } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface WorkOrderTableProps {
   workOrders: WorkOrder[];
 }
 
 export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return 'bg-green-500 text-white';
-      case 'in-progress':
-        return 'bg-blue-500 text-white';
-      case 'pending':
-        return 'bg-yellow-500 text-black';
-      case 'cancelled':
-        return 'bg-red-500 text-white';
-      default:
-        return 'bg-gray-500 text-white';
-    }
-  };
+function getStatusVariant(status?: string) {
+  const s = (status ?? '').toLowerCase();
+  if (s.includes('open') || s.includes('in-progress') || s.includes('progress')) return 'default' as const;
+  if (s.includes('pending') || s.includes('waiting')) return 'secondary' as const;
+  if (s.includes('completed') || s.includes('closed')) return 'outline' as const;
+  if (s.includes('cancel')) return 'destructive' as const;
+  return 'secondary' as const;
+}
 
   if (workOrders.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12">
-          <div className="text-center">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No work orders found</h3>
-            <p className="text-gray-500 mb-6">
-              Get started by creating your first work order.
-            </p>
-            <Button asChild>
-              <Link to="/work-orders/create">
-                Create Work Order
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={<ClipboardList className="h-6 w-6 text-muted-foreground" aria-hidden />}
+        title="No work orders found"
+        description="Get started by creating your first work order."
+        actionLink={{ label: 'Create Work Order', to: '/work-orders/create' }}
+      />
     );
   }
 
@@ -75,7 +61,7 @@ export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
                   {workOrder.description || 'No description'}
                 </TableCell>
                 <TableCell>
-                  <Badge className={getStatusColor(workOrder.status)}>
+                  <Badge variant={getStatusVariant(String(workOrder.status))} className="capitalize">
                     {workOrder.status}
                   </Badge>
                 </TableCell>

@@ -1,9 +1,8 @@
 import React from 'react';
 import type { WorkOrder } from '@/types/workOrder';
 import { WorkOrderCard } from './WorkOrderCard';
-import { Button } from '@/components/ui/button';
 import { ClipboardList } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface WorkOrdersCardsGridProps {
   workOrders: WorkOrder[];
@@ -12,16 +11,12 @@ interface WorkOrdersCardsGridProps {
 export function WorkOrdersCardsGrid({ workOrders }: WorkOrdersCardsGridProps) {
   if (!workOrders || workOrders.length === 0) {
     return (
-      <div className="p-10 text-center border rounded-xl bg-card shadow-sm">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-          <ClipboardList className="h-6 w-6 text-muted-foreground" aria-hidden />
-        </div>
-        <p className="text-foreground font-medium">No work orders found</p>
-        <p className="text-sm text-muted-foreground mt-1">Create your first work order to get started.</p>
-        <Button asChild className="mt-4">
-          <Link to="/work-orders/create">Create Work Order</Link>
-        </Button>
-      </div>
+      <EmptyState
+        icon={<ClipboardList className="h-6 w-6 text-muted-foreground" aria-hidden />}
+        title="No work orders found"
+        description="Create your first work order to get started."
+        actionLink={{ label: 'Create Work Order', to: '/work-orders/create' }}
+      />
     );
   }
 
