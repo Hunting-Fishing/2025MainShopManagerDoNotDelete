@@ -29,7 +29,7 @@ export function WorkOrderCard({ wo }: WorkOrderCardProps) {
   const number = wo.work_order_number || wo.id;
 
   return (
-    <Card className="group relative h-full border border-border bg-card hover:shadow-md hover:shadow-primary/10 transition-all duration-200 rounded-xl overflow-hidden">
+    <Card className="group relative h-full border border-border bg-card hover:shadow-md hover:shadow-primary/10 transition-all duration-200 rounded-xl overflow-hidden" role="article" aria-labelledby={`wo-title-${wo.id}`}>
       {/* Accent top border */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/20 via-primary/60 to-primary/20" />
       <CardHeader className="pb-2 pt-4">
@@ -42,7 +42,7 @@ export function WorkOrderCard({ wo }: WorkOrderCardProps) {
             {String(wo.status).replace(/_/g, ' ')}
           </Badge>
         </div>
-        <CardTitle className="text-base leading-snug mt-2">
+        <CardTitle id={`wo-title-${wo.id}`} className="text-base leading-snug mt-2">
           {wo.description || 'Work order'}
         </CardTitle>
       </CardHeader>

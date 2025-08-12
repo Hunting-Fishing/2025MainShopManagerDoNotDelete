@@ -35,7 +35,7 @@ export const SettingsContainer: React.FC<SettingsContainerProps> = ({
           className="w-full max-w-md"
         />
         {isSearching && (
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-sm text-muted-foreground mt-2" role="status" aria-live="polite" aria-atomic="true">
             {hasResults 
               ? `Found ${filteredSections.reduce((acc, section) => acc + section.tabs.length, 0)} settings`
               : 'No settings found matching your search'

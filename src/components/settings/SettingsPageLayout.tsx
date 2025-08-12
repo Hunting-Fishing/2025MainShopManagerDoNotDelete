@@ -38,7 +38,7 @@ export const SettingsPageLayout: React.FC<SettingsPageLayoutProps> = ({
   }, [location, navigate, defaultTab]);
 
   return (
-    <div className="w-full px-4 py-8 max-w-none">
+    <main className="w-full px-4 py-8" aria-labelledby="settings-page-title">
       <SettingsPageHeader
         title={title}
         description={description}
@@ -46,13 +46,13 @@ export const SettingsPageLayout: React.FC<SettingsPageLayoutProps> = ({
         backPath={backPath}
       />
 
-      <div className="mt-6">
+      <section className="mt-6" aria-busy={isLoading ? true : undefined}>
         {isLoading ? (
           <SettingsLoadingState message={loadingMessage} />
         ) : (
           children
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
