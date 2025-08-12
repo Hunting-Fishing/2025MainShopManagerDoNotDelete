@@ -7,6 +7,7 @@ import { RecentWorkOrders } from '@/components/dashboard/RecentWorkOrders';
 import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointments';
 import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
 import { DashboardTour } from '@/components/onboarding/DashboardTour';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
@@ -31,23 +32,17 @@ export default function Dashboard() {
         })}</script>
       </Helmet>
 
-      <header className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back! Here's what's happening at your shop today.
-          </p>
-        </div>
-        <div className="mt-2 sm:mt-0 flex items-center gap-2">
-          <Button
-            variant="secondary"
-            aria-label="Start dashboard tour"
-            onClick={() => window.dispatchEvent(new CustomEvent('start-dashboard-tour'))}
-          >
-            Start quick tour
-          </Button>
-        </div>
-      </header>
+<DashboardHeader />
+
+<div className="flex justify-end">
+  <Button
+    variant="secondary"
+    aria-label="Start dashboard tour"
+    onClick={() => window.dispatchEvent(new CustomEvent('start-dashboard-tour'))}
+  >
+    Start quick tour
+  </Button>
+</div>
 
       <section aria-labelledby="kpi-heading" data-tour="dashboard-stats">
         <h2 id="kpi-heading" className="sr-only">Key performance indicators</h2>
