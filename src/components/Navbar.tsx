@@ -2,6 +2,8 @@
 import React from 'react';
 import { Bell, ChevronDown, Search, Settings, User, LogOut } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,30 +78,31 @@ const Navbar: React.FC = () => {
   const displayRole = userRole?.displayName || userRole?.name || 'User';
   
   return (
-    <header className="bg-white shadow-sm h-16 flex items-center px-6">
+    <header className="bg-background border-b border-border h-16 flex items-center px-4 md:px-6">
       <div className="flex-1">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <input
-            type="text"
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            type="search"
             placeholder="Search..."
-            className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="pl-10 rounded-full"
+            aria-label="Search"
           />
         </div>
       </div>
-      
-      <div className="flex items-center space-x-4">
-        <button className="relative p-2 rounded-full hover:bg-gray-100">
-          <Bell className="h-5 w-5 text-gray-600" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
-        
+
+      <div className="flex items-center gap-2 md:gap-4">
+        <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+          <Bell className="h-5 w-5" />
+          <span className="absolute top-1.5 right-1.5 inline-block h-2 w-2 rounded-full bg-destructive" />
+        </Button>
+
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2">
-            <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white">
+          <DropdownMenuTrigger className="flex items-center gap-3 cursor-pointer hover:bg-accent rounded-lg p-2">
+            <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
               <User className="h-4 w-4" />
             </div>
-            <div className="flex flex-col items-start">
+            <div className="hidden sm:flex flex-col items-start">
               <span className="font-medium text-sm">{user?.email}</span>
               {!roleLoading && (
                 <Badge 
@@ -110,7 +113,7 @@ const Navbar: React.FC = () => {
                 </Badge>
               )}
             </div>
-            <ChevronDown className="h-4 w-4 text-gray-500" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <div className="px-2 py-1.5 text-sm">
@@ -127,7 +130,7 @@ const Navbar: React.FC = () => {
               <span>Account Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Logout</span>
             </DropdownMenuItem>

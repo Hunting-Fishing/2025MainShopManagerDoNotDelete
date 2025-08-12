@@ -16,7 +16,7 @@ export function WorkOrdersCardsGrid({ workOrders }: WorkOrdersCardsGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
       {workOrders.map((wo) => (
         <WorkOrderCard key={wo.id} wo={wo} />
       ))}

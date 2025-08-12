@@ -29,8 +29,10 @@ export function WorkOrderCard({ wo }: WorkOrderCardProps) {
   const number = wo.work_order_number || wo.id;
 
   return (
-    <Card className="h-full hover:shadow-md transition-shadow duration-200">
-      <CardHeader className="pb-2">
+    <Card className="group relative h-full border border-border bg-card hover:shadow-md hover:shadow-primary/10 transition-all duration-200 rounded-xl overflow-hidden">
+      {/* Accent top border */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/20 via-primary/60 to-primary/20" />
+      <CardHeader className="pb-2 pt-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Hash className="h-4 w-4" />
@@ -71,7 +73,7 @@ export function WorkOrderCard({ wo }: WorkOrderCardProps) {
         )}
       </CardContent>
       <CardFooter className="pt-0">
-        <Button asChild className="w-full" variant="secondary">
+        <Button asChild className="w-full" variant="default">
           <Link to={`/work-orders/${wo.id}`}>View</Link>
         </Button>
       </CardFooter>
