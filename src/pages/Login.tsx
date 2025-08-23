@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AuthService } from '@/lib/services/AuthService';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Lock, LogIn, ArrowRight, Wrench } from 'lucide-react';
+import { Mail, Lock, LogIn, ArrowRight, Wrench, Info, Phone, HelpCircle } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -170,6 +170,50 @@ export default function Login() {
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 underline decoration-muted-foreground/30 hover:decoration-foreground"
                 >
                   Forgot your password?
+                </button>
+              </div>
+            </div>
+            
+            {/* Additional Features Section */}
+            <div className="space-y-3 pt-4 border-t border-border/50">
+              <div className="grid grid-cols-2 gap-3">
+                <Link 
+                  to="/about" 
+                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors duration-300 p-2 rounded-lg hover:bg-primary/5 group"
+                >
+                  <Info className="w-3 h-3 group-hover:text-primary" />
+                  About Us
+                </Link>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast({
+                      title: "Contact Support",
+                      description: "Call us at 1-800-AUTO-PRO or email support@autoshoppro.com",
+                    });
+                  }}
+                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors duration-300 p-2 rounded-lg hover:bg-primary/5 group"
+                >
+                  <Phone className="w-3 h-3 group-hover:text-primary" />
+                  Support
+                </button>
+              </div>
+              
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast({
+                      title: "Demo Credentials",
+                      description: "Use demo@autoshoppro.com / demo123 for testing",
+                      duration: 8000,
+                    });
+                  }}
+                  className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors duration-300 p-2 rounded-lg hover:bg-primary/5 group"
+                >
+                  <HelpCircle className="w-3 h-3 group-hover:text-primary" />
+                  Need demo credentials?
                 </button>
               </div>
             </div>
