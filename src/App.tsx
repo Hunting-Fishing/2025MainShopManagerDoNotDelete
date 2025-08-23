@@ -33,6 +33,7 @@ import Documents from '@/pages/Documents';
 import ServiceCatalog from '@/pages/ServiceCatalog';
 import RepairPlans from '@/pages/RepairPlans';
 import Login from '@/pages/Login';
+import Signup from '@/pages/Signup';
 import { ArticleViewer } from '@/components/help/ArticleViewer';
 import { LearningPathDetail } from '@/components/help/LearningPathDetail';
 import { ServiceManagementPage } from '@/pages/developer/ServiceManagementPage';
@@ -50,6 +51,7 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         
         {/* Protected routes */}
         <Route
