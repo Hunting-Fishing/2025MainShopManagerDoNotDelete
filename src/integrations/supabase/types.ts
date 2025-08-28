@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -2515,6 +2515,42 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_automation_preferences: {
+        Row: {
+          created_at: string | null
+          customer_id: string
+          email_notifications: boolean | null
+          id: string
+          marketing_emails: boolean | null
+          preferred_contact_time: string | null
+          service_reminders: boolean | null
+          sms_notifications: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id: string
+          email_notifications?: boolean | null
+          id?: string
+          marketing_emails?: boolean | null
+          preferred_contact_time?: string | null
+          service_reminders?: boolean | null
+          sms_notifications?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string
+          email_notifications?: boolean | null
+          id?: string
+          marketing_emails?: boolean | null
+          preferred_contact_time?: string | null
+          service_reminders?: boolean | null
+          sms_notifications?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       customer_communications: {
         Row: {
           content: string
@@ -4344,6 +4380,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_automation_templates: {
+        Row: {
+          body_html: string
+          body_text: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          shop_id: string
+          subject: string
+          template_type: string
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          body_html: string
+          body_text?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          shop_id: string
+          subject: string
+          template_type: string
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          body_html?: string
+          body_text?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          shop_id?: string
+          subject?: string
+          template_type?: string
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
       }
       email_campaign_analytics: {
         Row: {
@@ -14195,6 +14273,42 @@ export type Database = {
           },
         ]
       }
+      service_automation_rules: {
+        Row: {
+          automation_config: Json
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          rule_name: string
+          service_type: string | null
+          shop_id: string
+          updated_at: string | null
+          vehicle_criteria: Json | null
+        }
+        Insert: {
+          automation_config: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          rule_name: string
+          service_type?: string | null
+          shop_id: string
+          updated_at?: string | null
+          vehicle_criteria?: Json | null
+        }
+        Update: {
+          automation_config?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          rule_name?: string
+          service_type?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          vehicle_criteria?: Json | null
+        }
+        Relationships: []
+      }
       service_categories: {
         Row: {
           created_at: string | null
@@ -19350,16 +19464,16 @@ export type Database = {
       add_recently_viewed_product: {
         Args:
           | {
-              p_product_id: string
-              p_product_name: string
-              p_product_image_url?: string
               p_category?: string
+              p_product_id: string
+              p_product_image_url?: string
+              p_product_name: string
             }
           | {
-              p_product_id: string
-              p_product_name: string
-              p_product_image_url?: string
               p_category?: string
+              p_product_id: string
+              p_product_image_url?: string
+              p_product_name: string
             }
         Returns: undefined
       }
@@ -19372,7 +19486,7 @@ export type Database = {
         Returns: undefined
       }
       assign_role_to_user: {
-        Args: { user_id_param: string; role_id_param: string }
+        Args: { role_id_param: string; user_id_param: string }
         Returns: boolean
       }
       calculate_ab_test_winner: {
@@ -19388,9 +19502,9 @@ export type Database = {
       }
       calculate_budget_variance: {
         Args: {
-          p_shop_id: string
           p_category_id: string
           p_fiscal_year: number
+          p_shop_id: string
         }
         Returns: number
       }
@@ -19422,15 +19536,15 @@ export type Database = {
         Args: { p_product_id: string }
         Returns: {
           in_stock: boolean
-          quantity: number
-          low_stock_threshold: number
           is_low_stock: boolean
+          low_stock_threshold: number
+          quantity: number
         }[]
       }
       check_rate_limit: {
         Args: {
-          p_integration_id: string
           p_endpoint: string
+          p_integration_id: string
           p_limit: number
           p_window_minutes?: number
         }
@@ -19442,8 +19556,8 @@ export type Database = {
       }
       check_verified_purchase: {
         Args:
-          | { p_user_id: string; p_product_id: string }
-          | { p_user_id: string; p_product_id: string }
+          | { p_product_id: string; p_user_id: string }
+          | { p_product_id: string; p_user_id: string }
         Returns: boolean
       }
       clear_service_data: {
@@ -19451,14 +19565,14 @@ export type Database = {
         Returns: undefined
       }
       convert_quote_to_work_order: {
-        Args: { p_quote_id: string; p_converted_by: string; p_notes?: string }
+        Args: { p_converted_by: string; p_notes?: string; p_quote_id: string }
         Returns: string
       }
       convert_work_order_to_invoice: {
         Args: {
-          p_work_order_id: string
           p_converted_by: string
           p_notes?: string
+          p_work_order_id: string
         }
         Returns: string
       }
@@ -19468,27 +19582,27 @@ export type Database = {
       }
       create_audit_log: {
         Args: {
-          user_id: string
           action: string
+          details: Json
           resource: string
           resource_id: string
-          details: Json
+          user_id: string
         }
         Returns: string
       }
       create_custom_role: {
-        Args: { role_name: string; role_description: string }
+        Args: { role_description: string; role_name: string }
         Returns: string
       }
       create_smart_notification: {
         Args: {
-          p_user_id: string
-          p_title: string
-          p_message: string
-          p_priority?: string
-          p_type?: string
           p_ai_generated?: boolean
+          p_message: string
           p_metadata?: Json
+          p_priority?: string
+          p_title: string
+          p_type?: string
+          p_user_id: string
         }
         Returns: string
       }
@@ -19520,13 +19634,17 @@ export type Database = {
         Args: { work_order_id: string }
         Returns: undefined
       }
+      execute_workflow_trigger: {
+        Args: { p_context_data?: Json; p_trigger_id: string }
+        Returns: string
+      }
       generate_ai_recommendation: {
         Args: {
-          p_type: string
-          p_target_id: string
-          p_recommended_items: Json
           p_confidence: number
           p_reason?: string
+          p_recommended_items: Json
+          p_target_id: string
+          p_type: string
         }
         Returns: string
       }
@@ -19604,40 +19722,40 @@ export type Database = {
       get_latest_system_metrics: {
         Args: Record<PropertyKey, never>
         Returns: {
+          metadata: Json
           metric_name: string
-          metric_value: number
           metric_unit: string
+          metric_value: number
+          recorded_at: string
           status: string
           trend: string
-          recorded_at: string
-          metadata: Json
         }[]
       }
       get_order_with_items: {
         Args: { order_id_param: string }
         Returns: {
-          order_id: string
-          order_number: string
-          status: string
-          total_amount: number
-          user_id: string
           created_at: string
           item_id: string
+          order_id: string
+          order_number: string
           product_id: string
           product_name: string
           quantity: number
-          unit_price: number
+          status: string
+          total_amount: number
           total_price: number
+          unit_price: number
+          user_id: string
         }[]
       }
       get_overdue_grant_reports: {
         Args: Record<PropertyKey, never>
         Returns: {
-          report_id: string
-          grant_name: string
-          report_type: string
-          due_date: string
           days_overdue: number
+          due_date: string
+          grant_name: string
+          report_id: string
+          report_type: string
         }[]
       }
       get_popular_products: {
@@ -19645,49 +19763,49 @@ export type Database = {
           | { days_back?: number; result_limit?: number }
           | { limit_count?: number }
         Returns: {
-          id: string
-          name: string
-          title: string
-          price: number
-          image_url: string
           average_rating: number
-          view_count: number
+          id: string
+          image_url: string
+          name: string
           order_count: number
           popularity_score: number
+          price: number
+          title: string
+          view_count: number
         }[]
       }
       get_product_interactions_by_category: {
         Args: Record<PropertyKey, never>
         Returns: {
           category: string
-          total_views: number
-          total_clicks: number
           total_cart_adds: number
+          total_clicks: number
           total_saves: number
+          total_views: number
         }[]
       }
       get_product_stats: {
         Args: { p_product_id: string } | { p_product_id: string }
         Returns: {
-          total_views: number
-          total_clicks: number
-          total_cart_adds: number
-          total_saves: number
           avg_rating: number
           review_count: number
+          total_cart_adds: number
+          total_clicks: number
+          total_saves: number
+          total_views: number
         }[]
       }
       get_recently_viewed_products: {
         Args:
-          | { p_user_id?: string; p_session_id?: string; result_limit?: number }
-          | { user_id_param: string; limit_count?: number }
+          | { limit_count?: number; user_id_param: string }
+          | { p_session_id?: string; p_user_id?: string; result_limit?: number }
         Returns: {
-          id: string
-          name: string
-          title: string
-          price: number
-          image_url: string
           average_rating: number
+          id: string
+          image_url: string
+          name: string
+          price: number
+          title: string
           viewed_at: string
         }[]
       }
@@ -19699,16 +19817,16 @@ export type Database = {
         }[]
       }
       get_setting_safe: {
-        Args: { p_shop_id: string; p_category: string; p_key: string }
+        Args: { p_category: string; p_key: string; p_shop_id: string }
         Returns: Json
       }
       get_upcoming_filing_deadlines: {
         Args: { days_ahead?: number }
         Returns: {
+          days_until_due: number
+          due_date: string
           filing_id: string
           filing_name: string
-          due_date: string
-          days_until_due: number
           priority_level: string
           shop_id: string
         }[]
@@ -19832,57 +19950,57 @@ export type Database = {
       get_work_order_with_details: {
         Args: { work_order_id: string }
         Returns: {
-          id: string
-          customer_id: string
-          vehicle_id: string
           advisor_id: string
-          technician_id: string
-          estimated_hours: number
-          total_cost: number
-          created_by: string
           created_at: string
-          updated_at: string
-          start_time: string
-          end_time: string
-          service_category_id: string
-          invoiced_at: string
-          status: string
-          description: string
-          service_type: string
-          invoice_id: string
-          customer_first_name: string
-          customer_last_name: string
+          created_by: string
           customer_email: string
+          customer_first_name: string
+          customer_id: string
+          customer_last_name: string
           customer_phone: string
-          vehicle_year: string
+          description: string
+          end_time: string
+          estimated_hours: number
+          id: string
+          invoice_id: string
+          invoiced_at: string
+          service_category_id: string
+          service_type: string
+          start_time: string
+          status: string
+          technician_id: string
+          total_cost: number
+          updated_at: string
+          vehicle_id: string
+          vehicle_license_plate: string
           vehicle_make: string
           vehicle_model: string
           vehicle_vin: string
-          vehicle_license_plate: string
+          vehicle_year: string
         }[]
       }
       has_permission: {
         Args:
           | {
-              user_id: string
-              res: Database["public"]["Enums"]["resource_type"]
               act: Database["public"]["Enums"]["permission_type"]
+              res: Database["public"]["Enums"]["resource_type"]
+              user_id: string
             }
-          | { user_id_param: string; permission_module: string }
+          | { permission_module: string; user_id_param: string }
         Returns: boolean
       }
       has_permission_for_action: {
         Args: {
-          user_id_param: string
-          permission_module: string
           permission_action: string
+          permission_module: string
+          user_id_param: string
         }
         Returns: boolean
       }
       has_role: {
         Args:
-          | { user_id: string; role: Database["public"]["Enums"]["app_role"] }
-          | { user_id: string; role_name: string }
+          | { role: Database["public"]["Enums"]["app_role"]; user_id: string }
+          | { role_name: string; user_id: string }
         Returns: boolean
       }
       increment_campaign_clicks: {
@@ -19899,8 +20017,8 @@ export type Database = {
       }
       increment_rate_limit: {
         Args: {
-          p_integration_id: string
           p_endpoint: string
+          p_integration_id: string
           p_limit: number
           p_window_minutes?: number
         }
@@ -19919,122 +20037,122 @@ export type Database = {
         Returns: string
       }
       insert_service_category: {
-        Args: { p_name: string; p_description?: string; p_position?: number }
+        Args: { p_description?: string; p_name: string; p_position?: number }
         Returns: string
       }
       insert_service_job: {
         Args: {
-          p_subcategory_id: string
-          p_name: string
           p_description?: string
           p_estimated_time?: number
+          p_name: string
           p_price?: number
+          p_subcategory_id: string
         }
         Returns: string
       }
       insert_service_sector: {
-        Args: { p_name: string; p_description?: string; p_position?: number }
+        Args: { p_description?: string; p_name: string; p_position?: number }
         Returns: string
       }
       insert_service_subcategory: {
-        Args: { p_category_id: string; p_name: string; p_description?: string }
+        Args: { p_category_id: string; p_description?: string; p_name: string }
         Returns: string
       }
       insert_work_order_inventory_item: {
         Args: {
-          p_work_order_id: string
-          p_name: string
-          p_sku: string
           p_category: string
+          p_name: string
           p_quantity: number
+          p_sku: string
           p_unit_price: number
+          p_work_order_id: string
         }
         Returns: string
       }
       insert_work_order_part: {
         Args:
           | {
-              p_work_order_id: string
-              p_job_line_id: string
-              p_inventory_item_id: string
-              p_part_name: string
-              p_part_number: string
-              p_supplier_name: string
-              p_supplier_cost: number
-              p_markup_percentage: number
-              p_retail_price: number
-              p_customer_price: number
-              p_quantity: number
-              p_part_type: string
-              p_invoice_number: string
-              p_po_line: string
-              p_notes: string
-            }
-          | {
-              p_work_order_id: string
-              p_job_line_id: string
-              p_inventory_item_id: string
-              p_part_name: string
-              p_part_number: string
-              p_supplier_name: string
-              p_supplier_cost: number
-              p_markup_percentage: number
-              p_retail_price: number
-              p_customer_price: number
-              p_quantity: number
-              p_part_type: string
-              p_invoice_number: string
-              p_po_line: string
-              p_notes: string
               p_category?: string
-              p_is_taxable?: boolean
               p_core_charge_amount?: number
               p_core_charge_applied?: boolean
-              p_warranty_duration?: string
+              p_customer_price: number
               p_install_date?: string
               p_installed_by?: string
-              p_status?: string
-              p_is_stock_item?: boolean
-            }
-          | {
-              p_work_order_id: string
-              p_job_line_id: string
               p_inventory_item_id: string
+              p_invoice_number: string
+              p_is_stock_item?: boolean
+              p_is_taxable?: boolean
+              p_job_line_id: string
+              p_markup_percentage: number
+              p_notes: string
               p_part_name: string
               p_part_number: string
-              p_supplier_name: string
+              p_part_type: string
+              p_po_line: string
+              p_quantity: number
+              p_retail_price: number
+              p_status?: string
               p_supplier_cost: number
+              p_supplier_name: string
               p_supplier_suggested_retail_price: number
-              p_markup_percentage: number
-              p_retail_price: number
-              p_customer_price: number
-              p_quantity: number
-              p_part_type: string
-              p_invoice_number: string
-              p_po_line: string
-              p_notes: string
+              p_warranty_duration?: string
+              p_work_order_id: string
+            }
+          | {
               p_category?: string
-              p_is_taxable?: boolean
               p_core_charge_amount?: number
               p_core_charge_applied?: boolean
-              p_warranty_duration?: string
+              p_customer_price: number
               p_install_date?: string
               p_installed_by?: string
-              p_status?: string
+              p_inventory_item_id: string
+              p_invoice_number: string
               p_is_stock_item?: boolean
+              p_is_taxable?: boolean
+              p_job_line_id: string
+              p_markup_percentage: number
+              p_notes: string
+              p_part_name: string
+              p_part_number: string
+              p_part_type: string
+              p_po_line: string
+              p_quantity: number
+              p_retail_price: number
+              p_status?: string
+              p_supplier_cost: number
+              p_supplier_name: string
+              p_warranty_duration?: string
+              p_work_order_id: string
+            }
+          | {
+              p_customer_price: number
+              p_inventory_item_id: string
+              p_invoice_number: string
+              p_job_line_id: string
+              p_markup_percentage: number
+              p_notes: string
+              p_part_name: string
+              p_part_number: string
+              p_part_type: string
+              p_po_line: string
+              p_quantity: number
+              p_retail_price: number
+              p_supplier_cost: number
+              p_supplier_name: string
+              p_work_order_id: string
             }
         Returns: string
       }
       insert_work_order_time_entry: {
         Args: {
-          p_work_order_id: string
+          p_billable: boolean
+          p_duration: number
           p_employee_id: string
           p_employee_name: string
-          p_start_time: string
           p_end_time: string
-          p_duration: number
           p_notes: string
-          p_billable: boolean
+          p_start_time: string
+          p_work_order_id: string
         }
         Returns: string
       }
@@ -20060,10 +20178,10 @@ export type Database = {
       }
       log_document_access: {
         Args: {
-          p_document_id: string
           p_access_type: string
           p_accessed_by: string
           p_accessed_by_name: string
+          p_document_id: string
           p_ip_address?: string
           p_user_agent?: string
         }
@@ -20071,12 +20189,12 @@ export type Database = {
       }
       log_security_event: {
         Args:
-          | { event_type: string; details: Json }
+          | { details: Json; event_type: string }
           | {
-              event_type: string
               event_description: string
-              user_id?: string
+              event_type: string
               metadata?: Json
+              user_id?: string
             }
         Returns: undefined
       }
@@ -20085,7 +20203,7 @@ export type Database = {
         Returns: number
       }
       process_referral_reward: {
-        Args: { referral_id: string; points?: number }
+        Args: { points?: number; referral_id: string }
         Returns: string
       }
       receive_inventory_order: {
@@ -20098,40 +20216,40 @@ export type Database = {
       }
       record_status_change_activity: {
         Args: {
-          p_work_order_id: string
-          p_old_status: string
           p_new_status: string
+          p_old_status: string
           p_user_id: string
           p_user_name: string
+          p_work_order_id: string
         }
         Returns: undefined
       }
       record_team_history: {
         Args: {
-          profile_id_param: string
-          action_type_param: string
-          action_by_param: string
           action_by_name_param: string
+          action_by_param: string
+          action_type_param: string
           details_param: Json
+          profile_id_param: string
         }
         Returns: string
       }
       record_team_member_history: {
         Args: {
-          profile_id_param: string
-          action_type_param: string
-          action_by_param: string
           action_by_name_param: string
+          action_by_param: string
+          action_type_param: string
           details_param: Json
+          profile_id_param: string
         }
         Returns: string
       }
       record_work_order_activity: {
         Args: {
           p_action: string
-          p_work_order_id: string
           p_user_id: string
           p_user_name: string
+          p_work_order_id: string
         }
         Returns: string
       }
@@ -20141,101 +20259,101 @@ export type Database = {
       }
       search_documents: {
         Args: {
-          p_search_query?: string
           p_category_id?: string
-          p_document_type?: string
-          p_tags?: string[]
-          p_work_order_id?: string
           p_customer_id?: string
+          p_document_type?: string
           p_limit?: number
           p_offset?: number
+          p_search_query?: string
+          p_tags?: string[]
+          p_work_order_id?: string
         }
         Returns: {
-          id: string
-          title: string
+          category_name: string
+          created_at: string
+          created_by_name: string
           description: string
           document_type: string
           file_url: string
-          category_name: string
-          tags: string[]
-          created_by_name: string
-          created_at: string
-          updated_at: string
+          id: string
           relevance_score: number
+          tags: string[]
+          title: string
+          updated_at: string
         }[]
       }
       set_report_template: {
-        Args: { p_shop_id: string; p_key: string; p_template_data: Json }
+        Args: { p_key: string; p_shop_id: string; p_template_data: Json }
         Returns: string
       }
       set_setting_safe: {
         Args:
           | {
-              p_shop_id: string
               p_category: string
               p_key: string
+              p_shop_id: string
               p_value: Json
             }
           | {
-              p_shop_id: string
               p_category: string
               p_key: string
+              p_shop_id: string
               p_value: string
             }
         Returns: undefined
       }
       submit_help_feedback: {
         Args: {
-          p_resource_type: string
-          p_resource_id?: string
-          p_rating?: number
-          p_is_helpful?: boolean
           p_feedback_text?: string
+          p_is_helpful?: boolean
+          p_rating?: number
+          p_resource_id?: string
+          p_resource_type: string
         }
         Returns: string
       }
       track_help_analytics: {
         Args: {
           p_event_type: string
-          p_resource_type?: string
-          p_resource_id?: string
           p_metadata?: Json
+          p_resource_id?: string
+          p_resource_type?: string
         }
         Returns: string
       }
       track_product_interaction: {
         Args:
           | {
-              p_product_id: string
-              p_product_name: string
               p_category: string
               p_interaction_type: string
-              p_user_id?: string
-              p_session_id?: string
               p_metadata?: Json
-            }
-          | {
               p_product_id: string
               p_product_name: string
+              p_session_id?: string
+              p_user_id?: string
+            }
+          | {
               p_category?: string
               p_interaction_type?: string
-              p_user_id?: string
-              p_session_id?: string
               p_metadata?: Json
+              p_product_id: string
+              p_product_name: string
+              p_session_id?: string
+              p_user_id?: string
             }
         Returns: string
       }
       track_search_analytics: {
         Args: {
+          p_filters_used?: Json
           p_query: string
           p_results_count: number
-          p_filters_used?: Json
           p_search_time_ms?: number
         }
         Returns: string
       }
       trigger_integration_workflow: {
-        Args: { p_workflow_id: string; p_trigger_data?: Json }
+        Args: { p_trigger_data?: Json; p_workflow_id: string }
         Returns: string
       }
       update_email_processing_schedule: {
@@ -20244,99 +20362,99 @@ export type Database = {
       }
       update_order_status: {
         Args: {
-          order_id_param: string
           new_status: string
           notes_param?: string
+          order_id_param: string
           updated_by_param?: string
         }
         Returns: undefined
       }
       update_recommendation_engagement: {
-        Args: { p_recommendation_id: string; p_engagement_type: string }
+        Args: { p_engagement_type: string; p_recommendation_id: string }
         Returns: undefined
       }
       update_work_order_part: {
         Args:
           | {
-              p_id: string
-              p_part_name: string
-              p_part_number: string
-              p_supplier_name: string
-              p_supplier_cost: number
-              p_markup_percentage: number
-              p_retail_price: number
-              p_customer_price: number
-              p_quantity: number
-              p_part_type: string
-              p_invoice_number: string
-              p_po_line: string
-              p_notes: string
-            }
-          | {
-              p_id: string
-              p_part_name: string
-              p_part_number: string
-              p_supplier_name: string
-              p_supplier_cost: number
-              p_markup_percentage: number
-              p_retail_price: number
-              p_customer_price: number
-              p_quantity: number
-              p_part_type: string
-              p_invoice_number: string
-              p_po_line: string
-              p_notes: string
               p_category?: string
-              p_is_taxable?: boolean
               p_core_charge_amount?: number
               p_core_charge_applied?: boolean
-              p_warranty_duration?: string
+              p_customer_price: number
+              p_id: string
               p_install_date?: string
               p_installed_by?: string
-              p_status?: string
+              p_invoice_number: string
               p_is_stock_item?: boolean
-            }
-          | {
-              p_id: string
+              p_is_taxable?: boolean
+              p_markup_percentage: number
+              p_notes: string
               p_part_name: string
               p_part_number: string
-              p_supplier_name: string
+              p_part_type: string
+              p_po_line: string
+              p_quantity: number
+              p_retail_price: number
+              p_status?: string
               p_supplier_cost: number
+              p_supplier_name: string
               p_supplier_suggested_retail_price: number
-              p_markup_percentage: number
-              p_retail_price: number
-              p_customer_price: number
-              p_quantity: number
-              p_part_type: string
-              p_invoice_number: string
-              p_po_line: string
-              p_notes: string
+              p_warranty_duration?: string
+            }
+          | {
               p_category?: string
-              p_is_taxable?: boolean
               p_core_charge_amount?: number
               p_core_charge_applied?: boolean
-              p_warranty_duration?: string
+              p_customer_price: number
+              p_id: string
               p_install_date?: string
               p_installed_by?: string
-              p_status?: string
+              p_invoice_number: string
               p_is_stock_item?: boolean
+              p_is_taxable?: boolean
+              p_markup_percentage: number
+              p_notes: string
+              p_part_name: string
+              p_part_number: string
+              p_part_type: string
+              p_po_line: string
+              p_quantity: number
+              p_retail_price: number
+              p_status?: string
+              p_supplier_cost: number
+              p_supplier_name: string
+              p_warranty_duration?: string
+            }
+          | {
+              p_customer_price: number
+              p_id: string
+              p_invoice_number: string
+              p_markup_percentage: number
+              p_notes: string
+              p_part_name: string
+              p_part_number: string
+              p_part_type: string
+              p_po_line: string
+              p_quantity: number
+              p_retail_price: number
+              p_supplier_cost: number
+              p_supplier_name: string
             }
         Returns: string
       }
       upsert_work_order_job_line: {
         Args: {
-          p_id: string
-          p_work_order_id: string
-          p_name: string
           p_category: string
-          p_subcategory: string
           p_description: string
-          p_estimated_hours: number
-          p_labor_rate: number
-          p_total_amount: number
-          p_status: string
-          p_notes: string
           p_display_order: number
+          p_estimated_hours: number
+          p_id: string
+          p_labor_rate: number
+          p_name: string
+          p_notes: string
+          p_status: string
+          p_subcategory: string
+          p_total_amount: number
+          p_work_order_id: string
         }
         Returns: string
       }
@@ -20345,19 +20463,19 @@ export type Database = {
         Returns: boolean
       }
       user_has_any_role: {
-        Args: { user_id_param: string; role_names: string[] }
+        Args: { role_names: string[]; user_id_param: string }
         Returns: boolean
       }
       user_has_role: {
-        Args: { user_id_param: string; role_name_param: string }
+        Args: { role_name_param: string; user_id_param: string }
         Returns: boolean
       }
       validate_settings_migration: {
         Args: Record<PropertyKey, never>
         Returns: {
-          shop_id: string
-          settings_key: string
           legacy_exists: boolean
+          settings_key: string
+          shop_id: string
           unified_exists: boolean
           values_match: boolean
         }[]
