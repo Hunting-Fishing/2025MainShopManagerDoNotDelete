@@ -5,7 +5,20 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User } from 'lucide-react';
+import { 
+  LogOut, 
+  User, 
+  Plus, 
+  FileText, 
+  Receipt, 
+  Wrench,
+  Calendar,
+  Settings as SettingsIcon,
+  UserCircle,
+  BarChart3,
+  Users,
+  Brain
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,13 +26,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { hasRoutePermission } from '@/utils/routeGuards';
 import { cleanupAuthState } from '@/utils/authCleanup';
 
 export function HeaderActions() {
   const { isAuthenticated, userName, isLoading } = useAuthUser();
   const { userRole, isLoading: roleLoading } = useUserRole();
+  const { data: userRoles = [] } = useUserRoles();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -102,7 +119,7 @@ export function HeaderActions() {
             </div>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuLabel>
             <div className="flex flex-col">
               <span>My Account</span>
@@ -114,12 +131,70 @@ export function HeaderActions() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate('/settings')}>
-            Settings
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/profile')}>
-            Profile
-          </DropdownMenuItem>
+          
+          {/* Quick Actions */}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+              Quick Actions
+            </DropdownMenuLabel>
+            {hasRoutePermission('/work-orders', userRoles) && (
+              <DropdownMenuItem onClick={() => navigate('/work-orders/new')}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Work Order
+              </DropdownMenuItem>
+            )}
+            {hasRoutePermission('/quotes', userRoles) && (
+              <DropdownMenuItem onClick={() => navigate('/quotes/new')}>
+                <FileText className="mr-2 h-4 w-4" />
+                Create Quote
+              </DropdownMenuItem>
+            )}
+            {hasRoutePermission('/invoices', userRoles) && (
+              <DropdownMenuItem onClick={() => navigate('/invoices/new')}>
+                <Receipt className="mr-2 h-4 w-4" />
+                Create Invoice
+              </DropdownMenuItem>
+            )}
+            {hasRoutePermission('/calendar', userRoles) && (
+              <DropdownMenuItem onClick={() => navigate('/calendar')}>
+                <Calendar className="mr-2 h-4 w-4" />
+                Schedule Appointment
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuGroup>
+          
+          <DropdownMenuSeparator />
+          
+          {/* Navigation Links */}
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => navigate('/profile')}>
+              <UserCircle className="mr-2 h-4 w-4" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <SettingsIcon className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+            {hasRoutePermission('/developer', userRoles) && (
+              <DropdownMenuItem onClick={() => navigate('/developer')}>
+                <Brain className="mr-2 h-4 w-4" />
+                AI Hub
+              </DropdownMenuItem>
+            )}
+            {hasRoutePermission('/reports', userRoles) && (
+              <DropdownMenuItem onClick={() => navigate('/reports')}>
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Reports
+              </DropdownMenuItem>
+            )}
+            {hasRoutePermission('/team', userRoles) && (
+              <DropdownMenuItem onClick={() => navigate('/team')}>
+                <Users className="mr-2 h-4 w-4" />
+                Team
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuGroup>
+          
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
