@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { searchForDuplicates, DuplicateMatch } from '@/lib/services/duplicateDetectionService';
+import { DuplicateJobDialog } from '@/components/work-orders/job-lines/DuplicateJobDialog';
 interface AddServiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -28,9 +30,33 @@ export const AddServiceDialog: React.FC<AddServiceDialogProps> = ({
   const [estimatedTime, setEstimatedTime] = useState('');
   const [price, setPrice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
+  const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [forceCreate, setForceCreate] = useState(false);
   const {
     toast
   } = useToast();
+
+  // Check for duplicates when name changes
+  useEffect(() => {
+    const checkDuplicates = async () => {
+      if (name.trim().length < 3 || forceCreate) return;
+      
+      setIsCheckingDuplicates(true);
+      try {
+        const matches = await searchForDuplicates(name.trim(), description.trim());
+        setDuplicates(matches);
+      } catch (error) {
+        console.error('Error checking duplicates:', error);
+      } finally {
+        setIsCheckingDuplicates(false);
+      }
+    };
+
+    const timeoutId = setTimeout(checkDuplicates, 500);
+    return () => clearTimeout(timeoutId);
+  }, [name, description, forceCreate]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -41,6 +67,13 @@ export const AddServiceDialog: React.FC<AddServiceDialogProps> = ({
       });
       return;
     }
+
+    // Show duplicate dialog if duplicates found and not forcing create
+    if (duplicates.length > 0 && !forceCreate) {
+      setShowDuplicateDialog(true);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const {
@@ -64,6 +97,8 @@ export const AddServiceDialog: React.FC<AddServiceDialogProps> = ({
       setDescription('');
       setEstimatedTime('');
       setPrice('');
+      setForceCreate(false);
+      setDuplicates([]);
       onOpenChange(false);
       onSuccess();
     } catch (error: any) {
@@ -77,7 +112,26 @@ export const AddServiceDialog: React.FC<AddServiceDialogProps> = ({
       setIsLoading(false);
     }
   };
-  return <Dialog open={open} onOpenChange={onOpenChange}>
+
+  const handleSelectDuplicate = (duplicate: DuplicateMatch) => {
+    toast({
+      title: "Duplicate Selected",
+      description: `Using existing service: ${duplicate.job.name}`,
+    });
+    setShowDuplicateDialog(false);
+    onOpenChange(false);
+    onSuccess();
+  };
+
+  const handleCreateNew = () => {
+    setForceCreate(true);
+    setShowDuplicateDialog(false);
+    // Re-submit the form
+    handleSubmit(new Event('submit') as any);
+  };
+
+  return <>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-slate-50">
         <DialogHeader>
           <DialogTitle>Add New Service</DialogTitle>
@@ -91,6 +145,17 @@ export const AddServiceDialog: React.FC<AddServiceDialogProps> = ({
           <div className="space-y-2">
             <Label htmlFor="service-name">Service Name *</Label>
             <Input id="service-name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Replace Brake Pads, Control Arm Replacement" disabled={isLoading} required />
+            {isCheckingDuplicates && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Checking for duplicates...
+              </p>
+            )}
+            {duplicates.length > 0 && !forceCreate && (
+              <p className="text-xs text-warning flex items-center gap-1">
+                ⚠️ {duplicates.length} similar service{duplicates.length !== 1 ? 's' : ''} found
+              </p>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -121,5 +186,15 @@ export const AddServiceDialog: React.FC<AddServiceDialogProps> = ({
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+
+    <DuplicateJobDialog
+      open={showDuplicateDialog}
+      onOpenChange={setShowDuplicateDialog}
+      duplicates={duplicates}
+      proposedJobName={name}
+      onSelectDuplicate={handleSelectDuplicate}
+      onCreateNew={handleCreateNew}
+    />
+  </>;
 };
