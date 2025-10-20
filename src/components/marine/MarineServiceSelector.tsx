@@ -8,6 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Search, Plus, Clock, DollarSign, Ship } from 'lucide-react';
 import { getMarineServiceCategories, searchMarineServices } from '@/lib/marineServiceHierarchy';
 import { ServiceJob } from '@/types/service';
+import { CreateCustomJobDialog } from './CreateCustomJobDialog';
 
 interface MarineServiceSelectorProps {
   onServiceSelect: (service: ServiceJob, category: string, subcategory: string) => void;
@@ -47,6 +48,8 @@ export function MarineServiceSelector({ onServiceSelect }: MarineServiceSelector
               className="pl-10"
             />
           </div>
+
+          <CreateCustomJobDialog />
 
           <ScrollArea className="h-[600px]">
             <Accordion type="multiple" className="w-full">
