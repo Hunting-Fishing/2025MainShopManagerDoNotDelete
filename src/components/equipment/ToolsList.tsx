@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Hammer, CheckCircle, AlertCircle, XCircle, Wrench as WrenchIcon } from 'lucide-react';
+import { Plus, Search, Hammer, CheckCircle, AlertCircle, XCircle, Wrench as WrenchIcon, Download, ClipboardList } from 'lucide-react';
 import { ToolDialog } from './ToolDialog';
+import { ToolCheckoutDialog } from './ToolCheckoutDialog';
+import { ToolMaintenanceDialog } from './ToolMaintenanceDialog';
+import { ToolCard } from './ToolCard';
 import { useToast } from '@/hooks/use-toast';
 
 const statusIcons = {
@@ -35,11 +38,14 @@ export function ToolsList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [conditionFilter, setConditionFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
+  const [maintenanceDialogOpen, setMaintenanceDialogOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<any>(null);
 
   const { data: tools, isLoading, refetch } = useQuery({
-    queryKey: ['tools', shopId, categoryFilter, statusFilter],
+    queryKey: ['tools', shopId, categoryFilter, statusFilter, conditionFilter],
     queryFn: async () => {
       if (!shopId) return [];
       
@@ -55,6 +61,10 @@ export function ToolsList() {
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter as any);
+      }
+
+      if (conditionFilter !== 'all') {
+        query = query.eq('condition', conditionFilter as any);
       }
 
       const { data, error } = await query;
@@ -96,8 +106,84 @@ export function ToolsList() {
     refetch();
   };
 
+  const handleCheckout = (tool: any) => {
+    setSelectedTool(tool);
+    setCheckoutDialogOpen(true);
+  };
+
+  const handleMaintenance = (tool: any) => {
+    setSelectedTool(tool);
+    setMaintenanceDialogOpen(true);
+  };
+
+  const exportToCSV = () => {
+    if (!tools || tools.length === 0) return;
+    
+    const csvData = tools.map(tool => ({
+      Name: tool.name,
+      Category: tool.category || 'N/A',
+      Serial: tool.serial_number || 'N/A',
+      Status: tool.status,
+      Condition: tool.condition || 'N/A',
+      Location: tool.location || 'N/A',
+      'Purchase Date': tool.purchase_date || 'N/A',
+      Cost: tool.purchase_cost || 0
+    }));
+
+    const headers = Object.keys(csvData[0]).join(',');
+    const rows = csvData.map(row => Object.values(row).join(','));
+    const csv = [headers, ...rows].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tools-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    
+    toast({
+      title: 'Success',
+      description: 'Tools exported to CSV',
+    });
+  };
+
+  const stats = {
+    total: tools?.length || 0,
+    available: tools?.filter(t => t.status === 'available').length || 0,
+    in_use: tools?.filter(t => t.status === 'in_use').length || 0,
+    maintenance: tools?.filter(t => t.status === 'maintenance').length || 0,
+  };
+
   return (
     <div className="space-y-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">Total Tools</p>
+            <p className="text-2xl font-bold">{stats.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">Available</p>
+            <p className="text-2xl font-bold text-green-600">{stats.available}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">In Use</p>
+            <p className="text-2xl font-bold text-blue-600">{stats.in_use}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">Maintenance</p>
+            <p className="text-2xl font-bold text-orange-600">{stats.maintenance}</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -105,10 +191,16 @@ export function ToolsList() {
               <Hammer className="h-5 w-5" />
               Tool Inventory
             </CardTitle>
-            <Button onClick={handleAdd}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Tool
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={exportToCSV} disabled={!tools || tools.length === 0}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button onClick={handleAdd}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Tool
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -150,6 +242,18 @@ export function ToolsList() {
                 <SelectItem value="retired">Retired</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={conditionFilter} onValueChange={setConditionFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Condition" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Conditions</SelectItem>
+                <SelectItem value="excellent">Excellent</SelectItem>
+                <SelectItem value="good">Good</SelectItem>
+                <SelectItem value="fair">Fair</SelectItem>
+                <SelectItem value="poor">Poor</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {isLoading ? (
@@ -157,54 +261,14 @@ export function ToolsList() {
           ) : filteredTools && filteredTools.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTools.map((tool) => (
-                <Card
+                <ToolCard
                   key={tool.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => handleEdit(tool)}
-                >
-                  <CardContent className="pt-6">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{tool.name}</h3>
-                          <p className="text-sm text-muted-foreground">#{tool.tool_number}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {statusIcons[tool.status as keyof typeof statusIcons]}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="capitalize">
-                          {tool.category.replace('_', ' ')}
-                        </Badge>
-                        <Badge className={statusColors[tool.status as keyof typeof statusColors]}>
-                          {tool.status.replace('_', ' ')}
-                        </Badge>
-                      </div>
-
-                      <div className="text-sm space-y-1">
-                        {tool.manufacturer && (
-                          <p><span className="font-medium">Manufacturer:</span> {tool.manufacturer}</p>
-                        )}
-                        {tool.model && (
-                          <p><span className="font-medium">Model:</span> {tool.model}</p>
-                        )}
-                        {tool.location && (
-                          <p><span className="font-medium">Location:</span> {tool.location}</p>
-                        )}
-                        {tool.assigned_to_person_name && (
-                          <p><span className="font-medium">Assigned to:</span> {tool.assigned_to_person_name}</p>
-                        )}
-                        {tool.condition && (
-                          <Badge variant="secondary" className="text-xs capitalize">
-                            {tool.condition}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  tool={tool}
+                  onEdit={handleEdit}
+                  onDelete={refetch}
+                  onCheckout={handleCheckout}
+                  onMaintenance={handleMaintenance}
+                />
               ))}
             </div>
           ) : (
@@ -219,6 +283,20 @@ export function ToolsList() {
         open={dialogOpen}
         onClose={handleDialogClose}
         tool={selectedTool}
+      />
+
+      <ToolCheckoutDialog
+        open={checkoutDialogOpen}
+        onOpenChange={setCheckoutDialogOpen}
+        tool={selectedTool}
+        onSuccess={refetch}
+      />
+
+      <ToolMaintenanceDialog
+        open={maintenanceDialogOpen}
+        onOpenChange={setMaintenanceDialogOpen}
+        tool={selectedTool}
+        onSuccess={refetch}
       />
     </div>
   );
