@@ -1,25 +1,85 @@
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Plus, FileText, Wrench, Receipt, ClipboardList, Calendar } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { hasRoutePermission } from '@/utils/routeGuards';
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Customers', href: '/customers' },
-  { name: 'Work Orders', href: '/work-orders' },
-  { name: 'Equipment', href: '/equipment' },
-  { name: 'Inventory', href: '/inventory' },
-  { name: 'Tools Shop', href: '/tools' },
-  { name: 'Shopping', href: '/shopping' },
-  { name: 'Team', href: '/team' },
-  { name: 'Reports', href: '/reports' },
-  { name: 'Developer', href: '/developer' }
+// Quick action items for creating new records
+const quickActions = [
+  { name: 'Create Work Order', href: '/work-orders/new', icon: Plus, requiredPath: '/work-orders' },
+  { name: 'Create Quote', href: '/quotes/new', icon: FileText, requiredPath: '/quotes' },
+  { name: 'Create Invoice', href: '/invoices/new', icon: Receipt, requiredPath: '/invoices' },
+  { name: 'Schedule Appointment', href: '/calendar', icon: Calendar, requiredPath: '/calendar' },
+];
+
+// Main navigation organized by category
+const navigationCategories = [
+  {
+    title: 'Dashboard',
+    items: [
+      { name: 'Dashboard', href: '/dashboard', requiredPath: '/dashboard' },
+    ]
+  },
+  {
+    title: 'Operations',
+    items: [
+      { name: 'Work Orders', href: '/work-orders', requiredPath: '/work-orders' },
+      { name: 'Quotes', href: '/quotes', requiredPath: '/quotes' },
+      { name: 'Invoices', href: '/invoices', requiredPath: '/invoices' },
+      { name: 'Service Board', href: '/service-board', requiredPath: '/service-board' },
+    ]
+  },
+  {
+    title: 'Customer Management',
+    items: [
+      { name: 'Customers', href: '/customers', requiredPath: '/customers' },
+      { name: 'Calendar', href: '/calendar', requiredPath: '/calendar' },
+      { name: 'Customer Communications', href: '/customer-comms', requiredPath: '/customer-comms' },
+    ]
+  },
+  {
+    title: 'Inventory & Parts',
+    items: [
+      { name: 'Inventory', href: '/inventory', requiredPath: '/inventory' },
+      { name: 'Inventory Manager', href: '/inventory/manager', requiredPath: '/inventory/manager' },
+      { name: 'Orders', href: '/inventory/orders', requiredPath: '/inventory/orders' },
+    ]
+  },
+  {
+    title: 'Company',
+    items: [
+      { name: 'Team', href: '/team', requiredPath: '/team' },
+      { name: 'Company Profile', href: '/company-profile', requiredPath: '/company-profile' },
+      { name: 'Vehicles', href: '/vehicles', requiredPath: '/vehicles' },
+      { name: 'Equipment', href: '/equipment', requiredPath: '/equipment' },
+    ]
+  },
+  {
+    title: 'Store',
+    items: [
+      { name: 'Shopping', href: '/shopping', requiredPath: '/shopping' },
+      { name: 'Tools Shop', href: '/tools', requiredPath: '/tools' },
+    ]
+  },
+  {
+    title: 'Reports & Analytics',
+    items: [
+      { name: 'Reports', href: '/reports', requiredPath: '/reports' },
+    ]
+  },
+  {
+    title: 'Administration',
+    items: [
+      { name: 'Developer', href: '/developer', requiredPath: '/developer' },
+    ]
+  },
 ];
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { data: userRoles = [] } = useUserRoles();
   
   // Function to check if a navigation item is active based on the current URL path
   const isNavItemActive = (href: string) => {
@@ -37,6 +97,15 @@ export function Navbar() {
     return currentPath === href || 
            currentPath.startsWith(`${href}/`);
   };
+  
+  // Get desktop navigation items (just show main categories)
+  const desktopNavItems = [
+    { name: 'Dashboard', href: '/dashboard', requiredPath: '/dashboard' },
+    { name: 'Work Orders', href: '/work-orders', requiredPath: '/work-orders' },
+    { name: 'Customers', href: '/customers', requiredPath: '/customers' },
+    { name: 'Inventory', href: '/inventory', requiredPath: '/inventory' },
+    { name: 'Reports', href: '/reports', requiredPath: '/reports' },
+  ];
   
   return (
     <header className="bg-white shadow-sm dark:bg-slate-800 dark:border-slate-700 border-b border-slate-200">
@@ -59,18 +128,20 @@ export function Navbar() {
           </button>
         </div>
         <div className="hidden lg:flex lg:gap-x-8">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={`text-sm font-medium ${
-                isNavItemActive(item.href) 
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400'
-              }`}
-            >
-              {item.name}
-            </Link>
+          {desktopNavItems.map((item) => (
+            hasRoutePermission(item.requiredPath, userRoles) && (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`text-sm font-medium ${
+                  isNavItemActive(item.href) 
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400'
+                }`}
+              >
+                {item.name}
+              </Link>
+            )
           ))}
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
@@ -110,23 +181,63 @@ export function Navbar() {
               </button>
             </div>
             <div className="mt-6 flow-root">
-              <div className="-my-6 divide-y divide-gray-500/10">
-                <div className="space-y-2 py-6">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 ${
-                        isNavItemActive(item.href) 
-                          ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-slate-700'
-                          : 'text-slate-700 hover:bg-blue-50 dark:text-slate-300 dark:hover:bg-slate-700'
-                      }`}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
+              <div className="-my-6 divide-y divide-gray-500/10 dark:divide-slate-600">
+                {/* Quick Actions */}
+                <div className="py-6">
+                  <h3 className="px-3 mb-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Quick Actions
+                  </h3>
+                  <div className="space-y-1">
+                    {quickActions.map((action) => (
+                      hasRoutePermission(action.requiredPath, userRoles) && (
+                        <Link
+                          key={action.name}
+                          to={action.href}
+                          className="flex items-center gap-3 -mx-3 rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-700"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <action.icon className="h-5 w-5" />
+                          {action.name}
+                        </Link>
+                      )
+                    ))}
+                  </div>
                 </div>
+
+                {/* Categorized Navigation */}
+                {navigationCategories.map((category) => {
+                  const visibleItems = category.items.filter(item => 
+                    hasRoutePermission(item.requiredPath, userRoles)
+                  );
+                  
+                  if (visibleItems.length === 0) return null;
+                  
+                  return (
+                    <div key={category.title} className="py-6">
+                      <h3 className="px-3 mb-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        {category.title}
+                      </h3>
+                      <div className="space-y-1">
+                        {visibleItems.map((item) => (
+                          <Link
+                            key={item.name}
+                            to={item.href}
+                            className={`-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 ${
+                              isNavItemActive(item.href) 
+                                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-slate-700'
+                                : 'text-slate-700 hover:bg-blue-50 dark:text-slate-300 dark:hover:bg-slate-700'
+                            }`}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {item.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Settings */}
                 <div className="py-6">
                   <Link
                     to="/settings"
