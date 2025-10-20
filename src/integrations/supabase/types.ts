@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -5093,6 +5093,422 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment_assets: {
+        Row: {
+          asset_number: string
+          assigned_to: string | null
+          created_at: string | null
+          created_by: string
+          current_hours: number | null
+          current_mileage: number | null
+          department: string | null
+          equipment_type: Database["public"]["Enums"]["equipment_type"]
+          id: string
+          last_service_date: string | null
+          location: string | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          next_service_date: string | null
+          notes: string | null
+          purchase_cost: number | null
+          purchase_date: string | null
+          serial_number: string | null
+          shop_id: string
+          specifications: Json | null
+          status: Database["public"]["Enums"]["equipment_status"] | null
+          updated_at: string | null
+          year: number | null
+        }
+        Insert: {
+          asset_number: string
+          assigned_to?: string | null
+          created_at?: string | null
+          created_by: string
+          current_hours?: number | null
+          current_mileage?: number | null
+          department?: string | null
+          equipment_type: Database["public"]["Enums"]["equipment_type"]
+          id?: string
+          last_service_date?: string | null
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          next_service_date?: string | null
+          notes?: string | null
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          shop_id: string
+          specifications?: Json | null
+          status?: Database["public"]["Enums"]["equipment_status"] | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Update: {
+          asset_number?: string
+          assigned_to?: string | null
+          created_at?: string | null
+          created_by?: string
+          current_hours?: number | null
+          current_mileage?: number | null
+          department?: string | null
+          equipment_type?: Database["public"]["Enums"]["equipment_type"]
+          id?: string
+          last_service_date?: string | null
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          next_service_date?: string | null
+          notes?: string | null
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          shop_id?: string
+          specifications?: Json | null
+          status?: Database["public"]["Enums"]["equipment_status"] | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_assets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_assets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_assets_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_audit_trail: {
+        Row: {
+          action: string
+          change_summary: string | null
+          changed_at: string | null
+          changed_by: string
+          changed_by_name: string
+          entity_id: string
+          entity_type: string
+          field_name: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_value: Json | null
+          old_value: Json | null
+          shop_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          change_summary?: string | null
+          changed_at?: string | null
+          changed_by: string
+          changed_by_name: string
+          entity_id: string
+          entity_type: string
+          field_name?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_value?: Json | null
+          old_value?: Json | null
+          shop_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          change_summary?: string | null
+          changed_at?: string | null
+          changed_by?: string
+          changed_by_name?: string
+          entity_id?: string
+          entity_type?: string
+          field_name?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_value?: Json | null
+          old_value?: Json | null
+          shop_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_audit_trail_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_audit_trail_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_pm_schedules: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          equipment_id: string
+          estimated_duration: number | null
+          frequency_days: number | null
+          frequency_hours: number | null
+          frequency_mileage: number | null
+          frequency_type: string
+          id: string
+          is_active: boolean | null
+          is_overdue: boolean | null
+          last_service_date: string | null
+          last_service_hours: number | null
+          last_service_mileage: number | null
+          next_service_date: string | null
+          next_service_hours: number | null
+          next_service_mileage: number | null
+          parts_needed: Json | null
+          schedule_name: string
+          shop_id: string
+          tasks: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          equipment_id: string
+          estimated_duration?: number | null
+          frequency_days?: number | null
+          frequency_hours?: number | null
+          frequency_mileage?: number | null
+          frequency_type: string
+          id?: string
+          is_active?: boolean | null
+          is_overdue?: boolean | null
+          last_service_date?: string | null
+          last_service_hours?: number | null
+          last_service_mileage?: number | null
+          next_service_date?: string | null
+          next_service_hours?: number | null
+          next_service_mileage?: number | null
+          parts_needed?: Json | null
+          schedule_name: string
+          shop_id: string
+          tasks?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          equipment_id?: string
+          estimated_duration?: number | null
+          frequency_days?: number | null
+          frequency_hours?: number | null
+          frequency_mileage?: number | null
+          frequency_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_overdue?: boolean | null
+          last_service_date?: string | null
+          last_service_hours?: number | null
+          last_service_mileage?: number | null
+          next_service_date?: string | null
+          next_service_hours?: number | null
+          next_service_mileage?: number | null
+          parts_needed?: Json | null
+          schedule_name?: string
+          shop_id?: string
+          tasks?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_pm_schedules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_pm_schedules_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_pm_schedules_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_reports: {
+        Row: {
+          approval_status: Database["public"]["Enums"]["approval_status"] | null
+          approved_at: string | null
+          approved_by: string | null
+          approved_by_name: string | null
+          attachments: Json | null
+          condition_rating: number | null
+          created_at: string | null
+          ending_hours: number | null
+          ending_mileage: number | null
+          equipment_id: string
+          fluids_added: Json | null
+          fluids_checked: boolean | null
+          fuel_added: number | null
+          fuel_level: string | null
+          hours_used: number | null
+          id: string
+          issues_found: Json | null
+          maintenance_needed: boolean | null
+          mileage_used: number | null
+          notes: string | null
+          operator_id: string
+          operator_name: string
+          rejection_reason: string | null
+          report_date: string
+          report_number: string
+          report_type: Database["public"]["Enums"]["report_type"]
+          safety_checks: Json | null
+          safety_issues: Json | null
+          shift: string | null
+          shop_id: string
+          starting_hours: number | null
+          starting_mileage: number | null
+          submitted_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          approval_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          attachments?: Json | null
+          condition_rating?: number | null
+          created_at?: string | null
+          ending_hours?: number | null
+          ending_mileage?: number | null
+          equipment_id: string
+          fluids_added?: Json | null
+          fluids_checked?: boolean | null
+          fuel_added?: number | null
+          fuel_level?: string | null
+          hours_used?: number | null
+          id?: string
+          issues_found?: Json | null
+          maintenance_needed?: boolean | null
+          mileage_used?: number | null
+          notes?: string | null
+          operator_id: string
+          operator_name: string
+          rejection_reason?: string | null
+          report_date?: string
+          report_number: string
+          report_type: Database["public"]["Enums"]["report_type"]
+          safety_checks?: Json | null
+          safety_issues?: Json | null
+          shift?: string | null
+          shop_id: string
+          starting_hours?: number | null
+          starting_mileage?: number | null
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          approval_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          attachments?: Json | null
+          condition_rating?: number | null
+          created_at?: string | null
+          ending_hours?: number | null
+          ending_mileage?: number | null
+          equipment_id?: string
+          fluids_added?: Json | null
+          fluids_checked?: boolean | null
+          fuel_added?: number | null
+          fuel_level?: string | null
+          hours_used?: number | null
+          id?: string
+          issues_found?: Json | null
+          maintenance_needed?: boolean | null
+          mileage_used?: number | null
+          notes?: string | null
+          operator_id?: string
+          operator_name?: string
+          rejection_reason?: string | null
+          report_date?: string
+          report_number?: string
+          report_type?: Database["public"]["Enums"]["report_type"]
+          safety_checks?: Json | null
+          safety_issues?: Json | null
+          shift?: string | null
+          shop_id?: string
+          starting_hours?: number | null
+          starting_mileage?: number | null
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_reports_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_reports_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_reports_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_reports_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       escalation_executions: {
         Row: {
           cancelled_at: string | null
@@ -9690,6 +10106,164 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_requests: {
+        Row: {
+          actual_cost: number | null
+          actual_hours: number | null
+          approved_at: string | null
+          approved_by: string | null
+          approved_by_name: string | null
+          assigned_to: string | null
+          assigned_to_name: string | null
+          completed_at: string | null
+          completed_by: string | null
+          completed_by_name: string | null
+          created_at: string | null
+          description: string
+          equipment_id: string
+          estimated_cost: number | null
+          estimated_hours: number | null
+          id: string
+          issues_found: Json | null
+          parts_requested: Json | null
+          parts_used: Json | null
+          priority: string
+          rejection_reason: string | null
+          request_number: string
+          request_type: string
+          requested_at: string | null
+          requested_by: string
+          requested_by_name: string
+          shop_id: string
+          status:
+            | Database["public"]["Enums"]["maintenance_request_status"]
+            | null
+          title: string
+          updated_at: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          actual_cost?: number | null
+          actual_hours?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completed_by_name?: string | null
+          created_at?: string | null
+          description: string
+          equipment_id: string
+          estimated_cost?: number | null
+          estimated_hours?: number | null
+          id?: string
+          issues_found?: Json | null
+          parts_requested?: Json | null
+          parts_used?: Json | null
+          priority?: string
+          rejection_reason?: string | null
+          request_number: string
+          request_type: string
+          requested_at?: string | null
+          requested_by: string
+          requested_by_name: string
+          shop_id: string
+          status?:
+            | Database["public"]["Enums"]["maintenance_request_status"]
+            | null
+          title: string
+          updated_at?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          actual_cost?: number | null
+          actual_hours?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completed_by_name?: string | null
+          created_at?: string | null
+          description?: string
+          equipment_id?: string
+          estimated_cost?: number | null
+          estimated_hours?: number | null
+          id?: string
+          issues_found?: Json | null
+          parts_requested?: Json | null
+          parts_used?: Json | null
+          priority?: string
+          rejection_reason?: string | null
+          request_number?: string
+          request_type?: string
+          requested_at?: string | null
+          requested_by?: string
+          requested_by_name?: string
+          shop_id?: string
+          status?:
+            | Database["public"]["Enums"]["maintenance_request_status"]
+            | null
+          title?: string
+          updated_at?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -19475,7 +20049,7 @@ export type Database = {
               p_product_image_url?: string
               p_product_name: string
             }
-        Returns: undefined
+        Returns: string
       }
       addcustomindustry: {
         Args: { industry_name: string }
@@ -19800,12 +20374,9 @@ export type Database = {
           | { limit_count?: number; user_id_param: string }
           | { p_session_id?: string; p_user_id?: string; result_limit?: number }
         Returns: {
-          average_rating: number
-          id: string
-          image_url: string
-          name: string
-          price: number
-          title: string
+          category: string
+          product_id: string
+          product_name: string
           viewed_at: string
         }[]
       }
@@ -20300,7 +20871,7 @@ export type Database = {
               p_shop_id: string
               p_value: string
             }
-        Returns: undefined
+        Returns: string
       }
       submit_help_feedback: {
         Args: {
@@ -20493,6 +21064,9 @@ export type Database = {
         | "other_staff"
         | "customer"
         | "marketing"
+      approval_status: "pending" | "approved" | "rejected"
+      equipment_status: "operational" | "maintenance" | "down" | "retired"
+      equipment_type: "marine" | "forklift" | "semi" | "small_engine" | "other"
       form_field_type:
         | "text"
         | "textarea"
@@ -20523,8 +21097,15 @@ export type Database = {
         | "parts-ordered"
         | "parts-arrived"
         | "rework-required"
+      maintenance_request_status:
+        | "pending"
+        | "approved"
+        | "in_progress"
+        | "completed"
+        | "rejected"
       permission_type: "create" | "read" | "update" | "delete"
       product_type: "affiliate" | "suggested"
+      report_type: "daily" | "weekly" | "monthly"
       resource_type:
         | "users"
         | "roles"
@@ -20675,6 +21256,9 @@ export const Constants = {
         "customer",
         "marketing",
       ],
+      approval_status: ["pending", "approved", "rejected"],
+      equipment_status: ["operational", "maintenance", "down", "retired"],
+      equipment_type: ["marine", "forklift", "semi", "small_engine", "other"],
       form_field_type: [
         "text",
         "textarea",
@@ -20707,8 +21291,16 @@ export const Constants = {
         "parts-arrived",
         "rework-required",
       ],
+      maintenance_request_status: [
+        "pending",
+        "approved",
+        "in_progress",
+        "completed",
+        "rejected",
+      ],
       permission_type: ["create", "read", "update", "delete"],
       product_type: ["affiliate", "suggested"],
+      report_type: ["daily", "weekly", "monthly"],
       resource_type: [
         "users",
         "roles",
