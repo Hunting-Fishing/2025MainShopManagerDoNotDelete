@@ -6,6 +6,7 @@ import { MaintenanceRequestsList } from '@/components/equipment/MaintenanceReque
 import { EquipmentReportsList } from '@/components/equipment/EquipmentReportsList';
 import { PMSchedulesList } from '@/components/equipment/PMSchedulesList';
 import { ToolsList } from '@/components/equipment/ToolsList';
+import { ToolRequestForms } from '@/components/equipment/ToolRequestForms';
 import { Wrench, ClipboardList, FileText, Calendar, Hammer } from 'lucide-react';
 
 export default function EquipmentManagement() {
@@ -23,7 +24,7 @@ export default function EquipmentManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="equipment" className="flex items-center gap-2">
             <Wrench className="h-4 w-4" />
             Equipment
@@ -32,13 +33,17 @@ export default function EquipmentManagement() {
             <Hammer className="h-4 w-4" />
             Tools
           </TabsTrigger>
+          <TabsTrigger value="tool-forms" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Request Forms
+          </TabsTrigger>
           <TabsTrigger value="requests" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
-            Maintenance Requests
+            Maintenance
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Daily/Weekly Reports
+            Reports
           </TabsTrigger>
           <TabsTrigger value="pm" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
@@ -52,6 +57,10 @@ export default function EquipmentManagement() {
 
         <TabsContent value="tools" className="space-y-4">
           <ToolsList />
+        </TabsContent>
+
+        <TabsContent value="tool-forms" className="space-y-4">
+          <ToolRequestForms />
         </TabsContent>
 
         <TabsContent value="requests" className="space-y-4">
