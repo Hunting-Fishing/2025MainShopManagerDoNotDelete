@@ -17164,6 +17164,569 @@ export type Database = {
         }
         Relationships: []
       }
+      tool_checkout_history: {
+        Row: {
+          assigned_to_equipment_id: string | null
+          assigned_to_equipment_name: string | null
+          assigned_to_person_id: string | null
+          assigned_to_person_name: string | null
+          checked_in_at: string | null
+          checked_in_by: string | null
+          checked_in_by_name: string | null
+          checked_out_at: string | null
+          checked_out_by: string
+          checked_out_by_name: string
+          condition_at_checkout:
+            | Database["public"]["Enums"]["tool_condition"]
+            | null
+          condition_at_return:
+            | Database["public"]["Enums"]["tool_condition"]
+            | null
+          created_at: string | null
+          damage_notes: string | null
+          id: string
+          maintenance_request_id: string | null
+          notes: string | null
+          purpose: string | null
+          shop_id: string
+          tool_id: string
+          work_order_id: string | null
+        }
+        Insert: {
+          assigned_to_equipment_id?: string | null
+          assigned_to_equipment_name?: string | null
+          assigned_to_person_id?: string | null
+          assigned_to_person_name?: string | null
+          checked_in_at?: string | null
+          checked_in_by?: string | null
+          checked_in_by_name?: string | null
+          checked_out_at?: string | null
+          checked_out_by: string
+          checked_out_by_name: string
+          condition_at_checkout?:
+            | Database["public"]["Enums"]["tool_condition"]
+            | null
+          condition_at_return?:
+            | Database["public"]["Enums"]["tool_condition"]
+            | null
+          created_at?: string | null
+          damage_notes?: string | null
+          id?: string
+          maintenance_request_id?: string | null
+          notes?: string | null
+          purpose?: string | null
+          shop_id: string
+          tool_id: string
+          work_order_id?: string | null
+        }
+        Update: {
+          assigned_to_equipment_id?: string | null
+          assigned_to_equipment_name?: string | null
+          assigned_to_person_id?: string | null
+          assigned_to_person_name?: string | null
+          checked_in_at?: string | null
+          checked_in_by?: string | null
+          checked_in_by_name?: string | null
+          checked_out_at?: string | null
+          checked_out_by?: string
+          checked_out_by_name?: string
+          condition_at_checkout?:
+            | Database["public"]["Enums"]["tool_condition"]
+            | null
+          condition_at_return?:
+            | Database["public"]["Enums"]["tool_condition"]
+            | null
+          created_at?: string | null
+          damage_notes?: string | null
+          id?: string
+          maintenance_request_id?: string | null
+          notes?: string | null
+          purpose?: string | null
+          shop_id?: string
+          tool_id?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_checkout_history_assigned_to_equipment_id_fkey"
+            columns: ["assigned_to_equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_checkout_history_assigned_to_person_id_fkey"
+            columns: ["assigned_to_person_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_checkout_history_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_checkout_history_checked_out_by_fkey"
+            columns: ["checked_out_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_checkout_history_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_checkout_history_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_checkout_history_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_checkout_history_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tool_maintenance: {
+        Row: {
+          attachments: Json | null
+          condition_after: Database["public"]["Enums"]["tool_condition"] | null
+          condition_before: Database["public"]["Enums"]["tool_condition"] | null
+          created_at: string | null
+          description: string
+          id: string
+          labor_cost: number | null
+          maintenance_date: string
+          maintenance_type: string
+          next_calibration_date: string | null
+          next_maintenance_date: string | null
+          notes: string | null
+          parts_cost: number | null
+          parts_replaced: Json | null
+          performed_by: string | null
+          performed_by_name: string | null
+          shop_id: string
+          tool_id: string
+          total_cost: number | null
+          updated_at: string | null
+          vendor_name: string | null
+          work_performed: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          condition_after?: Database["public"]["Enums"]["tool_condition"] | null
+          condition_before?:
+            | Database["public"]["Enums"]["tool_condition"]
+            | null
+          created_at?: string | null
+          description: string
+          id?: string
+          labor_cost?: number | null
+          maintenance_date?: string
+          maintenance_type: string
+          next_calibration_date?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          parts_cost?: number | null
+          parts_replaced?: Json | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          shop_id: string
+          tool_id: string
+          total_cost?: number | null
+          updated_at?: string | null
+          vendor_name?: string | null
+          work_performed?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          condition_after?: Database["public"]["Enums"]["tool_condition"] | null
+          condition_before?:
+            | Database["public"]["Enums"]["tool_condition"]
+            | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          labor_cost?: number | null
+          maintenance_date?: string
+          maintenance_type?: string
+          next_calibration_date?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          parts_cost?: number | null
+          parts_replaced?: Json | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          shop_id?: string
+          tool_id?: string
+          total_cost?: number | null
+          updated_at?: string | null
+          vendor_name?: string | null
+          work_performed?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_maintenance_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_maintenance_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_maintenance_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tool_purchase_order_items: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          item_name: string
+          line_total: number
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          purchase_order_id: string
+          quantity_ordered: number
+          quantity_received: number | null
+          received_date: string | null
+          tool_id: string | null
+          unit_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          item_name: string
+          line_total: number
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          purchase_order_id: string
+          quantity_ordered?: number
+          quantity_received?: number | null
+          received_date?: string | null
+          tool_id?: string | null
+          unit_price: number
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          item_name?: string
+          line_total?: number
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          purchase_order_id?: string
+          quantity_ordered?: number
+          quantity_received?: number | null
+          received_date?: string | null
+          tool_id?: string | null
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "tool_purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_purchase_order_items_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tool_purchase_orders: {
+        Row: {
+          actual_delivery_date: string | null
+          approved_at: string | null
+          approved_by: string | null
+          approved_by_name: string | null
+          attachments: Json | null
+          created_at: string | null
+          expected_delivery_date: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          payment_date: string | null
+          payment_method: string | null
+          payment_status: string | null
+          po_number: string
+          requested_by: string
+          requested_by_name: string
+          shipping: number | null
+          shop_id: string
+          status: string
+          subtotal: number | null
+          tax: number | null
+          total: number | null
+          updated_at: string | null
+          vendor_contact: string | null
+          vendor_email: string | null
+          vendor_name: string
+          vendor_phone: string | null
+        }
+        Insert: {
+          actual_delivery_date?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          attachments?: Json | null
+          created_at?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          po_number: string
+          requested_by: string
+          requested_by_name: string
+          shipping?: number | null
+          shop_id: string
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+          vendor_contact?: string | null
+          vendor_email?: string | null
+          vendor_name: string
+          vendor_phone?: string | null
+        }
+        Update: {
+          actual_delivery_date?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          attachments?: Json | null
+          created_at?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          po_number?: string
+          requested_by?: string
+          requested_by_name?: string
+          shipping?: number | null
+          shop_id?: string
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+          vendor_contact?: string | null
+          vendor_email?: string | null
+          vendor_name?: string
+          vendor_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_purchase_orders_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_purchase_orders_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_purchase_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tools: {
+        Row: {
+          assigned_date: string | null
+          assigned_to_equipment_id: string | null
+          assigned_to_person_id: string | null
+          assigned_to_person_name: string | null
+          barcode: string | null
+          calibration_due_date: string | null
+          category: string
+          condition: Database["public"]["Enums"]["tool_condition"] | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          documents: Json | null
+          id: string
+          images: Json | null
+          last_maintenance_date: string | null
+          location: string | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          next_maintenance_date: string | null
+          notes: string | null
+          purchase_cost: number | null
+          purchase_date: string | null
+          qr_code: string | null
+          rfid_tag: string | null
+          serial_number: string | null
+          shop_id: string
+          specifications: Json | null
+          status: Database["public"]["Enums"]["tool_status"] | null
+          tool_number: string
+          updated_at: string | null
+          vendor: string | null
+          warranty_expiry: string | null
+        }
+        Insert: {
+          assigned_date?: string | null
+          assigned_to_equipment_id?: string | null
+          assigned_to_person_id?: string | null
+          assigned_to_person_name?: string | null
+          barcode?: string | null
+          calibration_due_date?: string | null
+          category: string
+          condition?: Database["public"]["Enums"]["tool_condition"] | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          documents?: Json | null
+          id?: string
+          images?: Json | null
+          last_maintenance_date?: string | null
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          qr_code?: string | null
+          rfid_tag?: string | null
+          serial_number?: string | null
+          shop_id: string
+          specifications?: Json | null
+          status?: Database["public"]["Enums"]["tool_status"] | null
+          tool_number: string
+          updated_at?: string | null
+          vendor?: string | null
+          warranty_expiry?: string | null
+        }
+        Update: {
+          assigned_date?: string | null
+          assigned_to_equipment_id?: string | null
+          assigned_to_person_id?: string | null
+          assigned_to_person_name?: string | null
+          barcode?: string | null
+          calibration_due_date?: string | null
+          category?: string
+          condition?: Database["public"]["Enums"]["tool_condition"] | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          documents?: Json | null
+          id?: string
+          images?: Json | null
+          last_maintenance_date?: string | null
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          qr_code?: string | null
+          rfid_tag?: string | null
+          serial_number?: string | null
+          shop_id?: string
+          specifications?: Json | null
+          status?: Database["public"]["Enums"]["tool_status"] | null
+          tool_number?: string
+          updated_at?: string | null
+          vendor?: string | null
+          warranty_expiry?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tools_assigned_to_equipment_id_fkey"
+            columns: ["assigned_to_equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tools_assigned_to_person_id_fkey"
+            columns: ["assigned_to_person_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tools_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tools_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transaction_allocations: {
         Row: {
           allocated_by: string
@@ -21117,6 +21680,20 @@ export type Database = {
         | "reports"
         | "customers"
       role_action_type: "added" | "removed" | "modified"
+      tool_condition:
+        | "new"
+        | "excellent"
+        | "good"
+        | "fair"
+        | "poor"
+        | "unusable"
+      tool_status:
+        | "available"
+        | "in_use"
+        | "maintenance"
+        | "broken"
+        | "lost"
+        | "retired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -21313,6 +21890,15 @@ export const Constants = {
         "customers",
       ],
       role_action_type: ["added", "removed", "modified"],
+      tool_condition: ["new", "excellent", "good", "fair", "poor", "unusable"],
+      tool_status: [
+        "available",
+        "in_use",
+        "maintenance",
+        "broken",
+        "lost",
+        "retired",
+      ],
     },
   },
 } as const

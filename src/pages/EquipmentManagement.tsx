@@ -5,7 +5,8 @@ import { EquipmentList } from '@/components/equipment/EquipmentList';
 import { MaintenanceRequestsList } from '@/components/equipment/MaintenanceRequestsList';
 import { EquipmentReportsList } from '@/components/equipment/EquipmentReportsList';
 import { PMSchedulesList } from '@/components/equipment/PMSchedulesList';
-import { Wrench, ClipboardList, FileText, Calendar } from 'lucide-react';
+import { ToolsList } from '@/components/equipment/ToolsList';
+import { Wrench, ClipboardList, FileText, Calendar, Hammer } from 'lucide-react';
 
 export default function EquipmentManagement() {
   const [activeTab, setActiveTab] = useState('equipment');
@@ -14,18 +15,22 @@ export default function EquipmentManagement() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Equipment Management</h1>
+          <h1 className="text-3xl font-bold">Equipment & Tool Management</h1>
           <p className="text-muted-foreground">
-            Manage marine equipment, forklifts, semis, and small engines
+            Manage marine equipment, forklifts, semis, small engines, and tools
           </p>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="equipment" className="flex items-center gap-2">
             <Wrench className="h-4 w-4" />
             Equipment
+          </TabsTrigger>
+          <TabsTrigger value="tools" className="flex items-center gap-2">
+            <Hammer className="h-4 w-4" />
+            Tools
           </TabsTrigger>
           <TabsTrigger value="requests" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
@@ -43,6 +48,10 @@ export default function EquipmentManagement() {
 
         <TabsContent value="equipment" className="space-y-4">
           <EquipmentList />
+        </TabsContent>
+
+        <TabsContent value="tools" className="space-y-4">
+          <ToolsList />
         </TabsContent>
 
         <TabsContent value="requests" className="space-y-4">
