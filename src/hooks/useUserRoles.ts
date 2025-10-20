@@ -10,16 +10,22 @@ export function useUserRoles() {
 
       const { data, error } = await supabase
         .from('user_roles')
-        .select(`
-          roles (
-            name
-          )
-        `)
+        .select('role_id, roles!inner(name)')
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user roles:', error);
+        throw error;
+      }
       
-      return data?.map(item => item.roles?.name).filter(Boolean) as string[] || [];
+      // Extract role names and convert enum to string
+      const roles = data?.map(item => {
+        const role = item.roles as any;
+        return role?.name?.toString();
+      }).filter(Boolean) as string[] || [];
+      
+      console.log('User roles loaded:', roles);
+      return roles;
     },
   });
 }
