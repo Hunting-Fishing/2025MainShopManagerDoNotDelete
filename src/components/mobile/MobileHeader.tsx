@@ -8,13 +8,32 @@ import {
   X,
   Settings,
   User,
-  LogOut
+  LogOut,
+  Plus,
+  FileText,
+  Receipt,
+  Calendar,
+  Wrench,
+  Users,
+  MessageSquare,
+  Package,
+  ClipboardList,
+  Building,
+  Truck,
+  ShoppingCart,
+  Store,
+  BarChart3,
+  Brain,
+  LayoutDashboard,
+  UserCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { hasRoutePermission } from '@/utils/routeGuards';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +60,7 @@ export function MobileHeader({
   const location = useLocation();
   const { unreadCount } = useNotifications();
   const { user } = useAuthUser();
+  const { data: userRoles = [] } = useUserRoles();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const getPageTitle = () => {
@@ -66,12 +86,82 @@ export function MobileHeader({
     navigate('/notifications');
   };
 
-  const menuItems = [
-    { label: 'Profile', icon: User, path: '/profile' },
+  // Quick Actions
+  const quickActions = [
+    { label: 'Create Work Order', icon: Plus, path: '/work-orders/new', requiredPath: '/work-orders' },
+    { label: 'Create Quote', icon: FileText, path: '/quotes/new', requiredPath: '/quotes' },
+    { label: 'Create Invoice', icon: Receipt, path: '/invoices/new', requiredPath: '/invoices' },
+    { label: 'Schedule Appointment', icon: Calendar, path: '/calendar', requiredPath: '/calendar' },
+  ].filter(item => hasRoutePermission(item.requiredPath, userRoles));
+
+  // Categorized Navigation
+  const navigationSections = [
+    {
+      title: 'Dashboard',
+      items: [
+        { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', requiredPath: '/dashboard' },
+      ]
+    },
+    {
+      title: 'Operations',
+      items: [
+        { label: 'Work Orders', icon: Wrench, path: '/work-orders', requiredPath: '/work-orders' },
+        { label: 'Quotes', icon: FileText, path: '/quotes', requiredPath: '/quotes' },
+        { label: 'Invoices', icon: Receipt, path: '/invoices', requiredPath: '/invoices' },
+        { label: 'Service Board', icon: ClipboardList, path: '/service-board', requiredPath: '/service-board' },
+      ]
+    },
+    {
+      title: 'Customer Management',
+      items: [
+        { label: 'Customers', icon: Users, path: '/customers', requiredPath: '/customers' },
+        { label: 'Calendar', icon: Calendar, path: '/calendar', requiredPath: '/calendar' },
+        { label: 'Communications', icon: MessageSquare, path: '/customer-comms', requiredPath: '/customer-comms' },
+      ]
+    },
+    {
+      title: 'Inventory & Parts',
+      items: [
+        { label: 'Inventory', icon: Package, path: '/inventory', requiredPath: '/inventory' },
+        { label: 'Inventory Manager', icon: ClipboardList, path: '/inventory/manager', requiredPath: '/inventory/manager' },
+        { label: 'Orders', icon: Truck, path: '/inventory/orders', requiredPath: '/inventory/orders' },
+      ]
+    },
+    {
+      title: 'Company',
+      items: [
+        { label: 'Team', icon: Users, path: '/team', requiredPath: '/team' },
+        { label: 'Company Profile', icon: Building, path: '/company-profile', requiredPath: '/company-profile' },
+      ]
+    },
+    {
+      title: 'Store',
+      items: [
+        { label: 'Shopping', icon: ShoppingCart, path: '/shopping', requiredPath: '/shopping' },
+        { label: 'Tools Shop', icon: Store, path: '/tools-shop', requiredPath: '/tools-shop' },
+      ]
+    },
+    {
+      title: 'Reports & Analytics',
+      items: [
+        { label: 'Reports', icon: BarChart3, path: '/reports', requiredPath: '/reports' },
+      ]
+    },
+    {
+      title: 'Administration',
+      items: [
+        { label: 'AI Hub', icon: Brain, path: '/developer', requiredPath: '/developer' },
+      ]
+    }
+  ].map(section => ({
+    ...section,
+    items: section.items.filter(item => hasRoutePermission(item.requiredPath, userRoles))
+  })).filter(section => section.items.length > 0);
+
+  // User Profile items
+  const profileItems = [
+    { label: 'Profile', icon: UserCircle, path: '/profile' },
     { label: 'Settings', icon: Settings, path: '/settings' },
-    { label: 'AI Hub', icon: Settings, path: '/ai' },
-    { label: 'Reports', icon: Settings, path: '/reports' },
-    { label: 'Team', icon: Settings, path: '/team' },
   ];
 
   const handleMenuItemClick = (path: string) => {
@@ -166,18 +256,66 @@ export function MobileHeader({
                   </div>
 
                   {/* Menu Items */}
-                  <nav className="flex-1">
-                    <div className="space-y-1">
-                      {menuItems.map((item) => (
-                        <button
-                          key={item.path}
-                          onClick={() => handleMenuItemClick(item.path)}
-                          className="w-full flex items-center space-x-3 px-3 py-3 text-left rounded-md hover:bg-accent transition-colors"
-                        >
-                          <item.icon className="h-5 w-5 text-muted-foreground" />
-                          <span>{item.label}</span>
-                        </button>
-                      ))}
+                  <nav className="flex-1 overflow-y-auto">
+                    {/* Quick Actions */}
+                    {quickActions.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Quick Actions
+                        </h3>
+                        <div className="space-y-1">
+                          {quickActions.map((item) => (
+                            <button
+                              key={item.path}
+                              onClick={() => handleMenuItemClick(item.path)}
+                              className="w-full flex items-center space-x-3 px-3 py-2.5 text-left rounded-md hover:bg-accent transition-colors"
+                            >
+                              <item.icon className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">{item.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Navigation Sections */}
+                    {navigationSections.map((section, sectionIndex) => (
+                      <div key={section.title} className="mb-6">
+                        <h3 className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          {section.title}
+                        </h3>
+                        <div className="space-y-1">
+                          {section.items.map((item) => (
+                            <button
+                              key={item.path}
+                              onClick={() => handleMenuItemClick(item.path)}
+                              className="w-full flex items-center space-x-3 px-3 py-2.5 text-left rounded-md hover:bg-accent transition-colors"
+                            >
+                              <item.icon className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">{item.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Divider */}
+                    <div className="border-t border-border my-4" />
+
+                    {/* User Profile Section */}
+                    <div className="mb-4">
+                      <div className="space-y-1">
+                        {profileItems.map((item) => (
+                          <button
+                            key={item.path}
+                            onClick={() => handleMenuItemClick(item.path)}
+                            className="w-full flex items-center space-x-3 px-3 py-2.5 text-left rounded-md hover:bg-accent transition-colors"
+                          >
+                            <item.icon className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{item.label}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </nav>
 
