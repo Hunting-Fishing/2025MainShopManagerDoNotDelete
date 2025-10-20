@@ -29,7 +29,9 @@ import {
   Boxes,
   Store,
   Heart,
-  CreditCard
+  CreditCard,
+  Hammer,
+  AlertCircle
 } from 'lucide-react';
 
 export const navigation = [
@@ -156,6 +158,23 @@ export const navigation = [
         href: '/payments',
         icon: ShoppingBag,
         description: 'Payment processing'
+      },
+    ],
+  },
+  {
+    title: 'Equipment & Tools',
+    items: [
+      {
+        title: 'Equipment Management',
+        href: '/equipment-management',
+        icon: Hammer,
+        description: 'Manage equipment, tools, and maintenance'
+      },
+      {
+        title: 'Maintenance Requests',
+        href: '/maintenance-requests',
+        icon: AlertCircle,
+        description: 'Track maintenance requests'
       },
     ],
   },

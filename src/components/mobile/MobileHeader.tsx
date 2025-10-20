@@ -25,7 +25,9 @@ import {
   BarChart3,
   Brain,
   LayoutDashboard,
-  UserCircle
+  UserCircle,
+  Hammer,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -125,6 +127,13 @@ export function MobileHeader({
         { label: 'Inventory', icon: Package, path: '/inventory', requiredPath: '/inventory' },
         { label: 'Inventory Manager', icon: ClipboardList, path: '/inventory/manager', requiredPath: '/inventory/manager' },
         { label: 'Orders', icon: Truck, path: '/inventory/orders', requiredPath: '/inventory/orders' },
+      ]
+    },
+    {
+      title: 'Equipment & Tools',
+      items: [
+        { label: 'Equipment Management', icon: Hammer, path: '/equipment-management', requiredPath: '/equipment-management' },
+        { label: 'Maintenance Requests', icon: AlertCircle, path: '/maintenance-requests', requiredPath: '/maintenance-requests' },
       ]
     },
     {

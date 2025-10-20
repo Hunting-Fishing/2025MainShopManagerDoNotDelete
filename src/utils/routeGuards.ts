@@ -32,6 +32,8 @@ export const routePermissions: RoutePermission[] = [
   { path: '/inventory/item', allowedRoles: ['admin', 'manager', 'technician', 'inventory_manager', 'owner'] },
   { path: '/quotes', allowedRoles: ['admin', 'manager', 'service_advisor', 'owner'] },
   { path: '/invoices', allowedRoles: ['admin', 'manager', 'service_advisor', 'reception', 'owner'] },
+  { path: '/equipment-management', allowedRoles: ['admin', 'manager', 'technician', 'owner'] },
+  { path: '/maintenance-requests', allowedRoles: ['admin', 'manager', 'technician', 'owner'] },
   
   // Public staff routes (all authenticated users)
   { path: '/dashboard', allowedRoles: [] }, // No specific roles required
