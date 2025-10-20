@@ -218,6 +218,23 @@ export function WorkOrderWorkflowTab() {
         <Workflow className="h-5 w-5 text-blue-600" />
         <h2 className="text-xl font-semibold">Work Order Workflow & Automation</h2>
       </div>
+
+      {/* Coming Soon Banner */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full p-2 bg-primary/10">
+              <Clock className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg mb-1">Workflow Execution Engine Coming Soon</h3>
+              <p className="text-sm text-muted-foreground">
+                The automated workflow execution engine is currently under development. You can configure your workflow rules now, and they will automatically activate once the execution engine is deployed.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       {/* Basic Automation Settings */}
       <Card>
