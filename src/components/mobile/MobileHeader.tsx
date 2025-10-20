@@ -174,6 +174,9 @@ export function MobileHeader({
   ];
 
   const handleMenuItemClick = (path: string) => {
+    console.log('📱 Mobile menu navigation clicked:', path);
+    console.log('📍 Current location:', location.pathname);
+    console.log('🔑 User roles:', userRoles);
     navigate(path);
     setIsMenuOpen(false);
   };

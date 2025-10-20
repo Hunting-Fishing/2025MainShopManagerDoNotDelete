@@ -17,7 +17,9 @@ export function SidebarContent() {
   const isMobile = useIsMobile();
   const { data: userRoles = [] } = useUserRoles();
 
-  const handleLinkClick = () => {
+  const handleLinkClick = (href: string) => {
+    console.log('🔗 Sidebar navigation clicked:', href);
+    console.log('📍 Current location:', location.pathname);
     if (isMobile) {
       setIsOpen(false);
     }
@@ -73,7 +75,7 @@ export function SidebarContent() {
                     <Link
                       key={item.href}
                       to={item.href}
-                      onClick={handleLinkClick}
+                      onClick={() => handleLinkClick(item.href)}
                       className={cn(
                         'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-150',
                         isActive
