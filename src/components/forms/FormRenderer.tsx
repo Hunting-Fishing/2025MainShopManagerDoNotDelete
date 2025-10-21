@@ -89,6 +89,53 @@ export const FormRenderer = ({
         return (
           <Input
             id={field.id}
+            type="text"
+            placeholder={field.placeholder || ''}
+            value={formValues[field.id] || field.defaultValue || ''}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
+            required={field.isRequired}
+          />
+        );
+      case 'number':
+        return (
+          <Input
+            id={field.id}
+            type="number"
+            placeholder={field.placeholder || ''}
+            value={formValues[field.id] || field.defaultValue || ''}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
+            required={field.isRequired}
+            min={field.validationRules?.min}
+            max={field.validationRules?.max}
+          />
+        );
+      case 'email':
+        return (
+          <Input
+            id={field.id}
+            type="email"
+            placeholder={field.placeholder || ''}
+            value={formValues[field.id] || field.defaultValue || ''}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
+            required={field.isRequired}
+          />
+        );
+      case 'phone':
+        return (
+          <Input
+            id={field.id}
+            type="tel"
+            placeholder={field.placeholder || ''}
+            value={formValues[field.id] || field.defaultValue || ''}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
+            required={field.isRequired}
+          />
+        );
+      case 'date':
+        return (
+          <Input
+            id={field.id}
+            type="date"
             placeholder={field.placeholder || ''}
             value={formValues[field.id] || field.defaultValue || ''}
             onChange={(e) => handleInputChange(field.id, e.target.value)}
@@ -103,6 +150,7 @@ export const FormRenderer = ({
             value={formValues[field.id] || field.defaultValue || ''}
             onChange={(e) => handleInputChange(field.id, e.target.value)}
             required={field.isRequired}
+            rows={4}
           />
         );
       case 'checkbox':
@@ -145,6 +193,20 @@ export const FormRenderer = ({
               ))}
             </SelectContent>
           </Select>
+        );
+      case 'file':
+        return (
+          <Input
+            id={field.id}
+            type="file"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                handleInputChange(field.id, file.name);
+              }
+            }}
+            required={field.isRequired}
+          />
         );
       default:
         return <Input placeholder="Unsupported field type" disabled />;
