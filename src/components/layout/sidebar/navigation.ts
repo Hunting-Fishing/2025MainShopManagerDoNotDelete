@@ -9,13 +9,11 @@ import {
   Calendar,
   MessageSquare,
   Settings,
-  BarChart3,
   ClipboardList,
   Phone,
   Star,
   Bell,
   Cog,
-  Shield,
   HelpCircle,
   ShoppingCart,
   Building2,
@@ -27,11 +25,7 @@ import {
   Archive,
   ShoppingBag,
   Boxes,
-  Store,
-  Heart,
-  CreditCard,
-  Hammer,
-  AlertCircle
+  Store
 } from 'lucide-react';
 
 export const navigation = [
@@ -162,23 +156,6 @@ export const navigation = [
     ],
   },
   {
-    title: 'Equipment & Tools',
-    items: [
-      {
-        title: 'Equipment Management',
-        href: '/equipment-management',
-        icon: Hammer,
-        description: 'Manage equipment, tools, and maintenance'
-      },
-      {
-        title: 'Maintenance Requests',
-        href: '/maintenance-requests',
-        icon: AlertCircle,
-        description: 'Track maintenance requests'
-      },
-    ],
-  },
-  {
     title: 'Company',
     items: [
       {
@@ -239,24 +216,6 @@ export const navigation = [
         icon: Store,
         description: 'Browse products and tools'
       },
-      {
-        title: 'Shopping Cart',
-        href: '/shopping/cart',
-        icon: ShoppingCart,
-        description: 'View cart and checkout'
-      },
-      {
-        title: 'Wishlist',
-        href: '/wishlist',
-        icon: Heart,
-        description: 'Your saved items'
-      },
-      {
-        title: 'Orders',
-        href: '/orders',
-        icon: ShoppingBag,
-        description: 'Order history and tracking'
-      },
     ],
   },
   {
@@ -278,12 +237,6 @@ export const navigation = [
         href: '/help',
         icon: HelpCircle,
         description: 'Help and documentation'
-      },
-      {
-        title: 'Security',
-        href: '/security',
-        icon: Shield,
-        description: 'Security settings'
       },
     ],
   },
