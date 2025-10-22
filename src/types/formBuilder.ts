@@ -11,7 +11,8 @@ export type FormFieldType =
   | 'date'
   | 'email'
   | 'phone'
-  | 'file';
+  | 'file'
+  | 'signature';
 
 export interface FormFieldOption {
   label: string;

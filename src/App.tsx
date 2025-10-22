@@ -39,6 +39,7 @@ import { ArticleViewer } from '@/components/help/ArticleViewer';
 import { LearningPathDetail } from '@/components/help/LearningPathDetail';
 import { ServiceManagementPage } from '@/pages/developer/ServiceManagementPage';
 import InvoiceDetails from '@/pages/InvoiceDetails';
+import SignatureDemo from '@/pages/SignatureDemo';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 
 function App() {
@@ -208,6 +209,9 @@ function App() {
                   <Route path="/help" element={<Help />} />
                   <Route path="/help/article/:articleId" element={<ArticleViewer />} />
                   <Route path="/help/path/:pathId" element={<LearningPathDetail />} />
+                  
+                  {/* Signature Demo */}
+                  <Route path="/signature-demo" element={<SignatureDemo />} />
                   
                   {/* Catch all */}
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />

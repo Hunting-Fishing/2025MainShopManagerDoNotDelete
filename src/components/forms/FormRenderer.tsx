@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { FormBuilderTemplate, FormBuilderField } from '@/types/formBuilder';
 import { useFormSubmission, FormFieldValue } from '@/hooks/useFormSubmission';
 import { getFormTemplate } from '@/services/formBuilderService';
+import { CompactSignaturePad } from '@/components/signature/CompactSignaturePad';
 
 interface FormRendererProps {
   templateId: string;
@@ -205,6 +206,14 @@ export const FormRenderer = ({
                 handleInputChange(field.id, file.name);
               }
             }}
+            required={field.isRequired}
+          />
+        );
+      case 'signature':
+        return (
+          <CompactSignaturePad
+            value={formValues[field.id] || ''}
+            onChange={(signature) => handleInputChange(field.id, signature)}
             required={field.isRequired}
           />
         );

@@ -529,4 +529,25 @@
   .border-info {
     border-color: hsl(var(--info));
   }
+
+  /* Signature Canvas Styles */
+  .signature-canvas {
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+
+  .signature-canvas:active {
+    cursor: crosshair;
+  }
+
+  @media (max-width: 768px) {
+    .signature-canvas {
+      width: 100% !important;
+      max-width: 100%;
+    }
+  }
 }
