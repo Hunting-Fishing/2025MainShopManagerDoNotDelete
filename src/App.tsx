@@ -40,6 +40,12 @@ import { LearningPathDetail } from '@/components/help/LearningPathDetail';
 import { ServiceManagementPage } from '@/pages/developer/ServiceManagementPage';
 import InvoiceDetails from '@/pages/InvoiceDetails';
 import SignatureDemo from '@/pages/SignatureDemo';
+import EquipmentManagement from '@/pages/EquipmentManagement';
+import MaintenanceRequests from '@/pages/MaintenanceRequests';
+import ShoppingCartPage from '@/pages/ShoppingCart';
+import Wishlist from '@/pages/Wishlist';
+import Orders from '@/pages/Orders';
+import Security from '@/pages/Security';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 
 function App() {
@@ -212,6 +218,27 @@ function App() {
                   
                   {/* Signature Demo */}
                   <Route path="/signature-demo" element={<SignatureDemo />} />
+                  
+                  {/* Equipment & Tools */}
+                  <Route path="/equipment-management" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                      <EquipmentManagement />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/maintenance-requests" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                      <MaintenanceRequests />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Shopping Cart & Orders */}
+                  <Route path="/shopping/cart" element={<ShoppingCartPage />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/orders" element={<Orders />} />
+                  
+                  {/* Security */}
+                  <Route path="/security" element={<Security />} />
                   
                   {/* Catch all */}
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
