@@ -29,7 +29,10 @@ import {
   Heart,
   Hammer,
   AlertCircle,
-  Shield
+  Shield,
+  User,
+  FileBarChart2,
+  FormInput
 } from 'lucide-react';
 
 export const navigation = [
@@ -258,8 +261,37 @@ export const navigation = [
     ],
   },
   {
+    title: 'Tools',
+    items: [
+      {
+        title: 'Reports',
+        href: '/reports',
+        icon: FileBarChart2,
+        description: 'Generate and view reports'
+      },
+      {
+        title: 'Forms',
+        href: '/forms',
+        icon: FormInput,
+        description: 'Create and manage forms'
+      },
+    ],
+  },
+  {
     title: 'Settings',
     items: [
+      {
+        title: 'Profile',
+        href: '/profile',
+        icon: User,
+        description: 'Your profile settings'
+      },
+      {
+        title: 'Notifications',
+        href: '/notifications',
+        icon: Bell,
+        description: 'Manage notifications'
+      },
       {
         title: 'Settings',
         href: '/settings',

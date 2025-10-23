@@ -46,6 +46,13 @@ import ShoppingCartPage from '@/pages/ShoppingCart';
 import Wishlist from '@/pages/Wishlist';
 import Orders from '@/pages/Orders';
 import Security from '@/pages/Security';
+import Profile from '@/pages/Profile';
+import Notifications from '@/pages/Notifications';
+import Reports from '@/pages/Reports';
+import FormBuilder from '@/pages/FormBuilder';
+import QuoteDetails from '@/pages/QuoteDetails';
+import WorkOrderDetails from '@/pages/WorkOrderDetails';
+import RepairPlanDetails from '@/pages/RepairPlanDetails';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 
 function App() {
@@ -81,6 +88,11 @@ function App() {
                   <Route path="/work-orders" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
                       <WorkOrders />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/work-orders/:id" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                      <WorkOrderDetails />
                     </ProtectedRoute>
                   } />
                   
@@ -140,6 +152,11 @@ function App() {
                   <Route path="/quotes" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
                       <Quotes />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/quotes/:id" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                      <QuoteDetails />
                     </ProtectedRoute>
                   } />
                   
@@ -210,6 +227,11 @@ function App() {
                       <RepairPlans />
                     </ProtectedRoute>
                   } />
+                  <Route path="/repair-plans/:id" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                      <RepairPlanDetails />
+                    </ProtectedRoute>
+                  } />
                   
                   {/* Help & Support */}
                   <Route path="/help" element={<Help />} />
@@ -239,6 +261,22 @@ function App() {
                   
                   {/* Security */}
                   <Route path="/security" element={<Security />} />
+                  
+                  {/* User Pages */}
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  
+                  {/* Reports & Forms */}
+                  <Route path="/reports" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <Reports />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/forms" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <FormBuilder />
+                    </ProtectedRoute>
+                  } />
                   
                   {/* Catch all */}
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
