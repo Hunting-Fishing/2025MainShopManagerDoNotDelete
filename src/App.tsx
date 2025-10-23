@@ -53,6 +53,15 @@ import FormBuilder from '@/pages/FormBuilder';
 import QuoteDetails from '@/pages/QuoteDetails';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import RepairPlanDetails from '@/pages/RepairPlanDetails';
+import AIHub from '@/pages/AIHub';
+import Chat from '@/pages/Chat';
+import EmailCampaigns from '@/pages/EmailCampaigns';
+import EmailSequences from '@/pages/EmailSequences';
+import EmailTemplates from '@/pages/EmailTemplates';
+import Feedback from '@/pages/Feedback';
+import DeveloperPortal from '@/pages/DeveloperPortal';
+import SmsManagement from '@/pages/SmsManagement';
+import SmsTemplates from '@/pages/SmsTemplates';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 
 function App() {
@@ -145,6 +154,38 @@ function App() {
                   <Route path="/call-logger" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
                       <CallLogger />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Team Chat */}
+                  <Route path="/chat" element={<Chat />} />
+                  
+                  {/* Email Marketing */}
+                  <Route path="/email-campaigns" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <EmailCampaigns />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/email-sequences" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <EmailSequences />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/email-templates" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <EmailTemplates />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* SMS Communications */}
+                  <Route path="/sms-management" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <SmsManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/sms-templates" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <SmsTemplates />
                     </ProtectedRoute>
                   } />
                   
@@ -275,6 +316,23 @@ function App() {
                   <Route path="/forms" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
                       <FormBuilder />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* AI & Automation */}
+                  <Route path="/ai-hub" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <AIHub />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Customer Feedback */}
+                  <Route path="/feedback" element={<Feedback />} />
+                  
+                  {/* Developer Portal */}
+                  <Route path="/developer/*" element={
+                    <ProtectedRoute requireAdmin={true}>
+                      <DeveloperPortal />
                     </ProtectedRoute>
                   } />
                   

@@ -32,7 +32,13 @@ import {
   Shield,
   User,
   FileBarChart2,
-  FormInput
+  FormInput,
+  MessageCircle,
+  Mail,
+  Send,
+  Brain,
+  Code,
+  MessagesSquare
 } from 'lucide-react';
 
 export const navigation = [
@@ -114,6 +120,12 @@ export const navigation = [
     title: 'Communications',
     items: [
       {
+        title: 'Team Chat',
+        href: '/chat',
+        icon: MessageCircle,
+        description: 'Internal team messaging'
+      },
+      {
         title: 'Customer Comms',
         href: '/customer-comms',
         icon: MessageSquare,
@@ -124,6 +136,41 @@ export const navigation = [
         href: '/call-logger',
         icon: Phone,
         description: 'Log customer calls'
+      },
+    ],
+  },
+  {
+    title: 'Marketing',
+    items: [
+      {
+        title: 'Email Campaigns',
+        href: '/email-campaigns',
+        icon: Mail,
+        description: 'Manage email campaigns'
+      },
+      {
+        title: 'Email Sequences',
+        href: '/email-sequences',
+        icon: Send,
+        description: 'Automated email workflows'
+      },
+      {
+        title: 'Email Templates',
+        href: '/email-templates',
+        icon: FileText,
+        description: 'Email template library'
+      },
+      {
+        title: 'SMS Management',
+        href: '/sms-management',
+        icon: MessagesSquare,
+        description: 'SMS campaigns and bulk messaging'
+      },
+      {
+        title: 'SMS Templates',
+        href: '/sms-templates',
+        icon: MessageSquare,
+        description: 'SMS template library'
       },
     ],
   },
@@ -264,6 +311,12 @@ export const navigation = [
     title: 'Tools',
     items: [
       {
+        title: 'AI Hub',
+        href: '/ai-hub',
+        icon: Brain,
+        description: 'AI-powered automation & insights'
+      },
+      {
         title: 'Reports',
         href: '/reports',
         icon: FileBarChart2,
@@ -274,6 +327,18 @@ export const navigation = [
         href: '/forms',
         icon: FormInput,
         description: 'Create and manage forms'
+      },
+      {
+        title: 'Feedback',
+        href: '/feedback',
+        icon: Star,
+        description: 'Customer feedback & reviews'
+      },
+      {
+        title: 'Developer',
+        href: '/developer',
+        icon: Code,
+        description: 'Developer tools & API'
       },
     ],
   },
