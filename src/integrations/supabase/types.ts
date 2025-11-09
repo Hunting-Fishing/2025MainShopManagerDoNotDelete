@@ -866,6 +866,62 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_work_orders: {
+        Row: {
+          asset_id: string
+          assigned_to: string | null
+          completed_date: string | null
+          created_at: string
+          description: string | null
+          id: string
+          notes: string | null
+          priority: string
+          scheduled_date: string | null
+          service_package_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          assigned_to?: string | null
+          completed_date?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          scheduled_date?: string | null
+          service_package_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          assigned_to?: string | null
+          completed_date?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          scheduled_date?: string | null
+          service_package_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_work_orders_service_package_id_fkey"
+            columns: ["service_package_id"]
+            isOneToOne: false
+            referencedRelation: "service_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -16214,6 +16270,57 @@ export type Database = {
           threshold_quantity?: number
         }
         Relationships: []
+      }
+      stock_transfers: {
+        Row: {
+          created_at: string
+          from_location: string
+          id: string
+          inventory_item_id: string
+          notes: string | null
+          quantity: number
+          to_location: string
+          transferred_at: string
+          transferred_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_location: string
+          id?: string
+          inventory_item_id: string
+          notes?: string | null
+          quantity: number
+          to_location: string
+          transferred_at?: string
+          transferred_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_location?: string
+          id?: string
+          inventory_item_id?: string
+          notes?: string | null
+          quantity?: number
+          to_location?: string
+          transferred_at?: string
+          transferred_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfers_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       success_stories: {
         Row: {

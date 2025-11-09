@@ -36,10 +36,10 @@ export function useWorkOrders() {
     isLoading,
     refetch
   } = useQuery({
-    queryKey: ['work-orders'],
+    queryKey: ['asset-work-orders'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('work_orders')
+        .from('asset_work_orders')
         .select('*')
         .order('scheduled_date', { ascending: true });
 
@@ -51,7 +51,7 @@ export function useWorkOrders() {
   const createWorkOrder = useMutation({
     mutationFn: async (input: CreateWorkOrderInput) => {
       const { data, error } = await supabase
-        .from('work_orders')
+        .from('asset_work_orders')
         .insert({
           ...input,
           status: 'scheduled',
@@ -64,7 +64,7 @@ export function useWorkOrders() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-work-orders'] });
       toast({
         title: "Work Order Created",
         description: "Work order has been created successfully.",
@@ -83,7 +83,7 @@ export function useWorkOrders() {
   const updateWorkOrder = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<WorkOrder> }) => {
       const { data, error } = await supabase
-        .from('work_orders')
+        .from('asset_work_orders')
         .update(updates)
         .eq('id', id)
         .select()
@@ -93,7 +93,7 @@ export function useWorkOrders() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-work-orders'] });
       toast({
         title: "Work Order Updated",
         description: "Work order has been updated successfully.",
@@ -112,7 +112,7 @@ export function useWorkOrders() {
   const completeWorkOrder = useMutation({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase
-        .from('work_orders')
+        .from('asset_work_orders')
         .update({
           status: 'completed',
           completed_date: new Date().toISOString()
@@ -125,7 +125,7 @@ export function useWorkOrders() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-work-orders'] });
       toast({
         title: "Work Order Completed",
         description: "Parts have been deducted from inventory.",
@@ -144,14 +144,14 @@ export function useWorkOrders() {
   const deleteWorkOrder = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('work_orders')
+        .from('asset_work_orders')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-work-orders'] });
       toast({
         title: "Work Order Deleted",
         description: "Work order has been removed successfully.",

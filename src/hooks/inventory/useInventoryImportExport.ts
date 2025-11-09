@@ -51,16 +51,15 @@ export function useInventoryImportExport() {
       // Validate and transform data
       const itemsToImport = jsonData.map((row: any) => ({
         name: row.name || row.Name,
-        part_number: row.part_number || row['Part Number'],
+        sku: row.sku || row.SKU || row.part_number || row['Part Number'] || 'AUTO-' + Date.now(),
         description: row.description || row.Description,
-        category_id: row.category_id || row['Category ID'],
-        supplier_id: row.supplier_id || row['Supplier ID'],
+        category: row.category || row.Category || 'General',
+        supplier: row.supplier || row.Supplier || 'Unknown',
         quantity: Number(row.quantity || row.Quantity || 0),
-        unit: row.unit || row.Unit || 'each',
         unit_price: Number(row.unit_price || row['Unit Price'] || 0),
         reorder_point: Number(row.reorder_point || row['Reorder Point'] || 0),
         location: row.location || row.Location,
-        notes: row.notes || row.Notes,
+        status: 'in_stock',
       }));
 
       // Insert items in batches
@@ -97,16 +96,15 @@ export function useInventoryImportExport() {
     const template = [
       {
         name: 'Example Part',
-        part_number: 'P-12345',
+        sku: 'P-12345',
         description: 'Example description',
-        category_id: '',
-        supplier_id: '',
+        category: 'Engine Parts',
+        supplier: 'NAPA',
         quantity: 10,
-        unit: 'each',
         unit_price: 25.99,
         reorder_point: 5,
         location: 'Shelf A1',
-        notes: 'Example notes'
+        status: 'in_stock'
       }
     ];
 

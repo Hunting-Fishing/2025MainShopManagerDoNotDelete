@@ -6,6 +6,7 @@ import { InventoryTableColumnsManager } from "./inventory/InventoryTableColumnsM
 import { CategoriesManager } from "./inventory/CategoriesManager";
 import { SuppliersManager } from "./inventory/SuppliersManager";
 import { ClearInventoryButton } from "@/components/inventory/ClearInventoryButton";
+import { ImportExportButtons } from "@/components/inventory/ImportExportButtons";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info, Building2, Car, Wrench } from "lucide-react";
 
@@ -85,15 +86,30 @@ export const InventorySettingsTab = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Alert variant="destructive" className="mb-4">
+            <Alert variant="default" className="mb-4 border-blue-200 bg-blue-50">
               <Info className="h-4 w-4" />
               <AlertDescription>
-                <strong>Warning:</strong> The actions below will permanently affect your inventory database. 
-                Use with caution and ensure you have backups if needed.
+                <strong>Import/Export:</strong> Bulk import inventory from Excel or export current data for backup and analysis.
               </AlertDescription>
             </Alert>
             
             <div className="space-y-4">
+              <div className="border rounded-lg p-4">
+                <h3 className="text-lg font-medium mb-2">Bulk Operations</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Import or export inventory data in Excel format. Download the template to see the required format.
+                </p>
+                <ImportExportButtons />
+              </div>
+
+              <Alert variant="destructive">
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Warning:</strong> The actions below will permanently affect your inventory database. 
+                  Use with caution and ensure you have backups if needed.
+                </AlertDescription>
+              </Alert>
+              
               <div className="border rounded-lg p-4">
                 <h3 className="text-lg font-medium mb-2">Clear All Inventory Data</h3>
                 <p className="text-sm text-muted-foreground mb-4">

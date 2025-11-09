@@ -63,7 +63,7 @@ export async function saveForecast(
   averageConsumptionRate: number
 ): Promise<void> {
   const { error } = await supabase
-    .from('inventory_forecast')
+    .from('inventory_forecasts')
     .upsert({
       inventory_item_id: inventoryItemId,
       forecast_type: 'usage_based',
@@ -82,7 +82,7 @@ export async function saveForecast(
 
 export async function getInventoryForecasts(): Promise<InventoryForecast[]> {
   const { data, error } = await supabase
-    .from('inventory_forecast')
+    .from('inventory_forecasts')
     .select('*')
     .order('predicted_runout_date', { ascending: true });
 
@@ -100,7 +100,7 @@ export async function updateForecastsForAllItems(): Promise<void> {
 
   // Get consumption rates
   const { data: rates, error: ratesError } = await supabase
-    .from('consumption_rate')
+    .from('inventory_consumption_rates')
     .select('*');
 
   if (ratesError) throw ratesError;

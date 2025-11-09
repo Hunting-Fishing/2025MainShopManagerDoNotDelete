@@ -73,6 +73,7 @@ export const navigation = [
     items: [
       { title: "Inventory Overview", href: "/inventory", icon: Package, description: "Main inventory overview" },
       { title: "Service Packages", href: "/service-packages", icon: Boxes, description: "Service templates with parts" },
+      { title: "Asset Work Orders", href: "/work-orders", icon: ClipboardList, description: "Manage maintenance work orders" },
       { title: "Asset Usage", href: "/asset-usage", icon: Gauge, description: "Track vehicle and equipment usage" },
       { title: "Consumption Tracking", href: "/consumption-tracking", icon: TrendingDown, description: "Log parts consumption" },
       { title: "Inventory Analytics", href: "/inventory-analytics", icon: BarChart3, description: "Forecasting & analytics" },
