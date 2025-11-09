@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { CreateScheduleDialog } from '@/components/maintenance/CreateScheduleDialog';
 import { BudgetDashboard } from '@/components/maintenance/BudgetDashboard';
 import { MaintenanceCalendar } from '@/components/maintenance/MaintenanceCalendar';
+import { MaintenanceHistory } from '@/components/maintenance/MaintenanceHistory';
 
 export default function MaintenancePlanning() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -104,6 +105,7 @@ export default function MaintenancePlanning() {
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="budget">Budget</TabsTrigger>
           <TabsTrigger value="predictions">AI Predictions</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="schedules" className="space-y-4">
@@ -199,6 +201,10 @@ export default function MaintenancePlanning() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="history">
+          <MaintenanceHistory />
         </TabsContent>
       </Tabs>
 

@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { useShopId } from '@/hooks/useShopId';
+import { recordMaintenanceActivity } from '@/services/maintenance/maintenanceActivityService';
 
 interface CreateScheduleDialogProps {
   open: boolean;
@@ -17,6 +19,7 @@ interface CreateScheduleDialogProps {
 
 export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: CreateScheduleDialogProps) {
   const { toast } = useToast();
+  const { shopId } = useShopId();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -68,7 +71,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: CreateSc
         nextDueDate.setFullYear(nextDueDate.getFullYear() + formData.frequency_interval);
       }
 
-      const { error } = await supabase.from('maintenance_schedules').insert({
+      const { data: newSchedule, error } = await supabase.from('maintenance_schedules').insert({
         title: formData.title,
         description: formData.description,
         maintenance_type: formData.maintenance_type,
@@ -83,9 +86,26 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: CreateSc
         priority: formData.priority,
         status: 'scheduled',
         created_by: user.user.id,
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Record activity
+      if (shopId && newSchedule) {
+        await recordMaintenanceActivity(
+          `Created maintenance schedule: ${formData.title}`,
+          shopId,
+          user.user.id,
+          user.user.user_metadata?.full_name || user.user.email || 'Unknown User',
+          newSchedule.id,
+          formData.asset_type === 'vehicle' ? formData.vehicle_id : formData.equipment_id,
+          {
+            maintenance_type: formData.maintenance_type,
+            frequency: `${formData.frequency_interval} ${formData.frequency_unit}`,
+            priority: formData.priority,
+          }
+        );
+      }
 
       toast({
         title: 'Schedule created',

@@ -10423,6 +10423,59 @@ export type Database = {
           },
         ]
       }
+      maintenance_activities: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          equipment_id: string | null
+          flag_reason: string | null
+          flagged: boolean | null
+          id: string
+          schedule_id: string | null
+          shop_id: string
+          timestamp: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          equipment_id?: string | null
+          flag_reason?: string | null
+          flagged?: boolean | null
+          id?: string
+          schedule_id?: string | null
+          shop_id: string
+          timestamp?: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          equipment_id?: string | null
+          flag_reason?: string | null
+          flagged?: boolean | null
+          id?: string
+          schedule_id?: string | null
+          shop_id?: string
+          timestamp?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_activities_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_requests: {
         Row: {
           actual_cost: number | null
