@@ -21,6 +21,7 @@ import InventoryAdd from '@/pages/InventoryAdd';
 import ServicePackages from '@/pages/ServicePackages';
 import AssetUsageTracking from '@/pages/AssetUsageTracking';
 import ConsumptionTracking from '@/pages/ConsumptionTracking';
+import MobileInventory from '@/pages/MobileInventory';
 import Analytics from '@/pages/Analytics';
 import Settings from '@/pages/Settings';
 import Calendar from '@/pages/Calendar';
@@ -157,6 +158,13 @@ function App() {
                     <Route path="/consumption-tracking" element={
                       <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
                         <ConsumptionTracking />
+                      </ProtectedRoute>
+                    } />
+
+                    {/* Mobile Inventory Scanner */}
+                    <Route path="/mobile-inventory" element={
+                      <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                        <MobileInventory />
                       </ProtectedRoute>
                     } />
                   

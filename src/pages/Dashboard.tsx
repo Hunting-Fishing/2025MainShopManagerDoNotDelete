@@ -8,6 +8,8 @@ import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointment
 import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
 import { DashboardTour } from '@/components/onboarding/DashboardTour';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { LowStockAlerts } from '@/components/inventory/LowStockAlerts';
+import { ServiceDueDashboard } from '@/components/inventory/ServiceDueDashboard';
 import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
@@ -66,6 +68,17 @@ export default function Dashboard() {
             <TodaySchedule />
           </article>
         </aside>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2" aria-label="Inventory & Service Alerts">
+        <article aria-labelledby="low-stock-heading">
+          <h2 id="low-stock-heading" className="sr-only">Low stock alerts</h2>
+          <LowStockAlerts />
+        </article>
+        <article aria-labelledby="service-due-heading">
+          <h2 id="service-due-heading" className="sr-only">Upcoming service schedule</h2>
+          <ServiceDueDashboard />
+        </article>
       </section>
     </main>
   );

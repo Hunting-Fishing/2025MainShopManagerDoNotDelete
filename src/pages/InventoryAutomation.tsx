@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PurchaseOrderManager } from '@/components/inventory/PurchaseOrderManager';
 import { AutoReorderManager } from '@/components/inventory/AutoReorderManager';
-import { BarcodeScannerDialog } from '@/components/inventory/BarcodeScannerDialog';
+import { BarcodeScanner } from '@/components/inventory/BarcodeScanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -321,12 +321,10 @@ export default function InventoryAutomation() {
       </Tabs>
 
       {/* Barcode Scanner Dialog */}
-      <BarcodeScannerDialog
-        isOpen={isScannerOpen}
+      <BarcodeScanner
+        open={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onScan={handleScanResult}
-        title="Inventory Barcode Scanner"
-        continuous={false}
       />
     </div>
   );
