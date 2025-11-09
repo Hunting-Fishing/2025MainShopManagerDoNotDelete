@@ -16,7 +16,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MoreVertical, Edit, Trash2, CheckCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { MoreVertical, Edit, Trash2, CheckCircle, History } from 'lucide-react';
+import { VersionHistory } from './VersionHistory';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useShopId } from '@/hooks/useShopId';
@@ -33,6 +40,7 @@ export function ScheduleActions({ schedule, onEdit, onComplete, onDelete }: Sche
   const { toast } = useToast();
   const { shopId } = useShopId();
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const [showVersionHistory, setShowVersionHistory] = React.useState(false);
 
   const handleComplete = async () => {
     try {
@@ -138,6 +146,10 @@ export function ScheduleActions({ schedule, onEdit, onComplete, onDelete }: Sche
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowVersionHistory(true)}>
+            <History className="h-4 w-4 mr-2" />
+            Version History
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={handleComplete}>
             <CheckCircle className="h-4 w-4 mr-2" />
             Mark Complete
@@ -165,6 +177,21 @@ export function ScheduleActions({ schedule, onEdit, onComplete, onDelete }: Sche
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showVersionHistory} onOpenChange={setShowVersionHistory}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Version History: {schedule.title}</DialogTitle>
+          </DialogHeader>
+          <VersionHistory 
+            scheduleId={schedule.id} 
+            onRestore={() => {
+              setShowVersionHistory(false);
+              onComplete();
+            }} 
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
