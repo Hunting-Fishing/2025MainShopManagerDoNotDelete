@@ -39,7 +39,9 @@ import {
   Brain,
   Code,
   MessagesSquare,
-  BarChart3
+  BarChart3,
+  Gauge,
+  TrendingDown
 } from 'lucide-react';
 
 export const navigation = [
@@ -71,6 +73,8 @@ export const navigation = [
     items: [
       { title: "Inventory Overview", href: "/inventory", icon: Package, description: "Main inventory overview" },
       { title: "Service Packages", href: "/service-packages", icon: Boxes, description: "Service templates with parts" },
+      { title: "Asset Usage", href: "/asset-usage", icon: Gauge, description: "Track vehicle and equipment usage" },
+      { title: "Consumption Tracking", href: "/consumption-tracking", icon: TrendingDown, description: "Log parts consumption" },
       { title: "Inventory Analytics", href: "/inventory-analytics", icon: BarChart3, description: "Forecasting & analytics" },
       { title: "Inventory Manager", href: "/inventory-manager", icon: Settings, description: "Advanced inventory settings" },
     ],

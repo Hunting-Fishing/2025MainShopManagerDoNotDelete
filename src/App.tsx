@@ -19,6 +19,8 @@ import InventoryAnalytics from '@/pages/InventoryAnalytics';
 import InventoryManager from '@/pages/InventoryManager';
 import InventoryAdd from '@/pages/InventoryAdd';
 import ServicePackages from '@/pages/ServicePackages';
+import AssetUsageTracking from '@/pages/AssetUsageTracking';
+import ConsumptionTracking from '@/pages/ConsumptionTracking';
 import Analytics from '@/pages/Analytics';
 import Settings from '@/pages/Settings';
 import Calendar from '@/pages/Calendar';
@@ -137,12 +139,26 @@ function App() {
                      </ProtectedRoute>
                    } />
                    
-                   {/* Service Packages */}
-                   <Route path="/service-packages" element={
-                     <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
-                       <ServicePackages />
-                     </ProtectedRoute>
-                   } />
+                    {/* Service Packages */}
+                    <Route path="/service-packages" element={
+                      <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                        <ServicePackages />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* Asset Usage Tracking */}
+                    <Route path="/asset-usage" element={
+                      <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                        <AssetUsageTracking />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* Consumption Tracking */}
+                    <Route path="/consumption-tracking" element={
+                      <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                        <ConsumptionTracking />
+                      </ProtectedRoute>
+                    } />
                   
                   {/* Analytics */}
                   <Route path="/analytics" element={
