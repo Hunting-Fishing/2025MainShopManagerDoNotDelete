@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { CreateScheduleDialog } from '@/components/maintenance/CreateScheduleDialog';
 import { BudgetDashboard } from '@/components/maintenance/BudgetDashboard';
 import { MaintenanceCalendar } from '@/components/maintenance/MaintenanceCalendar';
+import { MaintenanceActivityHistory } from '@/components/maintenance/MaintenanceActivityHistory';
 import { MaintenanceHistory } from '@/components/maintenance/MaintenanceHistory';
 
 export default function MaintenancePlanning() {
