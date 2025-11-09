@@ -8,13 +8,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateMaintenanceForecast } from '@/services/maintenance/predictiveMaintenanceService';
 import { format } from 'date-fns';
 import { CreateScheduleDialog } from '@/components/maintenance/CreateScheduleDialog';
+import { EditScheduleDialog } from '@/components/maintenance/EditScheduleDialog';
 import { BudgetDashboard } from '@/components/maintenance/BudgetDashboard';
 import { MaintenanceCalendar } from '@/components/maintenance/MaintenanceCalendar';
-import { MaintenanceActivityHistory } from '@/components/maintenance/MaintenanceActivityHistory';
 import { MaintenanceHistory } from '@/components/maintenance/MaintenanceHistory';
+import { ScheduleActions } from '@/components/maintenance/ScheduleActions';
 
 export default function MaintenancePlanning() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
 
   const { data: schedules, isLoading, refetch } = useQuery({
     queryKey: ['maintenance-schedules'],
@@ -151,7 +154,15 @@ export default function MaintenancePlanning() {
                             <p className="text-sm text-muted-foreground">${schedule.estimated_cost}</p>
                           )}
                         </div>
-                        <Button size="sm" className="ml-4">Schedule</Button>
+                        <ScheduleActions
+                          schedule={schedule}
+                          onEdit={() => {
+                            setSelectedSchedule(schedule);
+                            setEditDialogOpen(true);
+                          }}
+                          onComplete={refetch}
+                          onDelete={refetch}
+                        />
                       </div>
                     );
                   })}
@@ -209,12 +220,21 @@ export default function MaintenancePlanning() {
         </TabsContent>
       </Tabs>
 
-      {/* Create Schedule Dialog */}
+      {/* Dialogs */}
       <CreateScheduleDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={refetch}
       />
+      
+      {selectedSchedule && (
+        <EditScheduleDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSuccess={refetch}
+          schedule={selectedSchedule}
+        />
+      )}
     </div>
   );
 }
