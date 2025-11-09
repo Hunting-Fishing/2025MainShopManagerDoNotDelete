@@ -22,6 +22,7 @@ import ServicePackages from '@/pages/ServicePackages';
 import AssetUsageTracking from '@/pages/AssetUsageTracking';
 import ConsumptionTracking from '@/pages/ConsumptionTracking';
 import MobileInventory from '@/pages/MobileInventory';
+import MaintenancePlanning from '@/pages/MaintenancePlanning';
 import Analytics from '@/pages/Analytics';
 import Settings from '@/pages/Settings';
 import Calendar from '@/pages/Calendar';
@@ -165,6 +166,13 @@ function App() {
                     <Route path="/mobile-inventory" element={
                       <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
                         <MobileInventory />
+                      </ProtectedRoute>
+                    } />
+
+                    {/* Maintenance Planning */}
+                    <Route path="/maintenance-planning" element={
+                      <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                        <MaintenancePlanning />
                       </ProtectedRoute>
                     } />
                   

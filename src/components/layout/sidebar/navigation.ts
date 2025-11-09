@@ -80,6 +80,7 @@ export const navigation = [
       { title: "Mobile Scanner", href: "/mobile-inventory", icon: Smartphone, description: "Quick stock adjustments" },
       { title: "Inventory Analytics", href: "/inventory-analytics", icon: BarChart3, description: "Forecasting & analytics" },
       { title: "Inventory Manager", href: "/inventory-manager", icon: Settings, description: "Advanced inventory settings" },
+      { title: "Maintenance Planning", href: "/maintenance-planning", icon: Wrench, description: "Predictive maintenance & scheduling" },
     ],
   },
   {
