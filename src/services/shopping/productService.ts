@@ -234,37 +234,40 @@ export class ProductService {
     }
 
     // Transform the RPC result to Product interface
-    return (data || []).map((item: any) => ({
-      id: item.product_id,
-      name: item.product_name,
-      title: item.product_name,
-      description: '',
-      price: item.price || 0,
-      retailPrice: item.price || 0,
-      imageUrl: item.image_url || '',
-      image_url: item.image_url || '',
-      affiliateUrl: item.affiliate_link || '',
-      affiliate_link: item.affiliate_link || '',
-      category: item.category || 'Uncategorized',
-      categoryId: '',
-      manufacturer: 'Professional Tools',
-      rating: item.average_rating || 0,
-      reviewCount: item.review_count || 0,
-      tier: item.price > 500 ? 'premium' : item.price > 100 ? 'midgrade' : 'economy',
-      isFeatured: false,
-      bestSeller: false,
-      stockQuantity: 100,
-      sku: '',
-      productType: 'affiliate',
-      createdAt: '',
-      updatedAt: '',
-      discount: 0,
-      freeShipping: false,
-      source: 'other',
-      tags: [],
-      subcategory: undefined,
-      seller: 'Tool Supply Co'
-    }));
+    return (data || []).map((item: any) => {
+      const computedTier = item.price > 500 ? 'premium' : item.price > 100 ? 'midgrade' : 'economy';
+      return {
+        id: item.product_id,
+        name: item.product_name,
+        title: item.product_name,
+        description: '',
+        price: item.price || 0,
+        retailPrice: item.price || 0,
+        imageUrl: item.image_url || '',
+        image_url: item.image_url || '',
+        affiliateUrl: item.affiliate_link || '',
+        affiliate_link: item.affiliate_link || '',
+        category: item.category || 'Uncategorized',
+        categoryId: '',
+        manufacturer: 'Professional Tools',
+        rating: item.average_rating || 0,
+        reviewCount: item.review_count || 0,
+        tier: computedTier as 'premium' | 'midgrade' | 'economy',
+        isFeatured: false,
+        bestSeller: false,
+        stockQuantity: 100,
+        sku: '',
+        productType: 'affiliate',
+        createdAt: '',
+        updatedAt: '',
+        discount: 0,
+        freeShipping: false,
+        source: 'other' as 'amazon' | 'other',
+        tags: [],
+        subcategory: undefined,
+        seller: 'Tool Supply Co'
+      };
+    });
   }
 }
 

@@ -50,7 +50,8 @@ export const getProductStats = async (productId: string): Promise<ProductStats> 
     });
 
     if (error) throw error;
-    return data[0] || {
+    
+    const defaultStats: ProductStats = {
       total_views: 0,
       total_clicks: 0,
       total_cart_adds: 0,
@@ -58,9 +59,21 @@ export const getProductStats = async (productId: string): Promise<ProductStats> 
       avg_rating: 0,
       review_count: 0
     };
+    
+    if (!data) return defaultStats;
+    
+    const result = Array.isArray(data) ? data[0] : data;
+    return (result as unknown as ProductStats) || defaultStats;
   } catch (error) {
     console.error('Error getting product stats:', error);
-    throw error;
+    return {
+      total_views: 0,
+      total_clicks: 0,
+      total_cart_adds: 0,
+      total_saves: 0,
+      avg_rating: 0,
+      review_count: 0
+    };
   }
 };
 

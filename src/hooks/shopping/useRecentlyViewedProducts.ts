@@ -18,7 +18,7 @@ export const useRecentlyViewedProducts = (userId?: string, sessionId?: string, l
     try {
       setIsLoading(true);
       const data = await getRecentlyViewedProducts(userId, sessionId, limit);
-      setProducts(data);
+      setProducts(data as RecentlyViewedProduct[]);
     } catch (error) {
       console.error('Error fetching recently viewed products:', error);
       toast({
