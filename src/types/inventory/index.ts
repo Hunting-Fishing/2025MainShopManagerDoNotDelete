@@ -131,3 +131,4 @@ export * from './transactions';
 export * from './vendors';
 export * from './purchaseOrders';
 export * from './locations';
+export * from './predictive';

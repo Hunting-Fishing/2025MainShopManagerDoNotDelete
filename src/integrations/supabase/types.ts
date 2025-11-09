@@ -830,6 +830,42 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_usage_config: {
+        Row: {
+          asset_id: string
+          asset_type: string
+          average_usage_per_day: number | null
+          created_at: string
+          current_reading: number
+          id: string
+          last_reading_date: string | null
+          updated_at: string
+          usage_metric: string
+        }
+        Insert: {
+          asset_id: string
+          asset_type: string
+          average_usage_per_day?: number | null
+          created_at?: string
+          current_reading?: number
+          id?: string
+          last_reading_date?: string | null
+          updated_at?: string
+          usage_metric: string
+        }
+        Update: {
+          asset_id?: string
+          asset_type?: string
+          average_usage_per_day?: number | null
+          created_at?: string
+          current_reading?: number
+          id?: string
+          last_reading_date?: string | null
+          updated_at?: string
+          usage_metric?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -868,7 +904,7 @@ export type Database = {
           action: string
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_values: Json | null
           old_values: Json | null
           resource_id: string | null
@@ -881,7 +917,7 @@ export type Database = {
           action: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           resource_id?: string | null
@@ -894,7 +930,7 @@ export type Database = {
           action?: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           resource_id?: string | null
@@ -1505,7 +1541,7 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
-          coordinates: unknown | null
+          coordinates: unknown
           created_at: string | null
           created_by: string | null
           email: string | null
@@ -1533,7 +1569,7 @@ export type Database = {
         Insert: {
           address?: string | null
           city?: string | null
-          coordinates?: unknown | null
+          coordinates?: unknown
           created_at?: string | null
           created_by?: string | null
           email?: string | null
@@ -1561,7 +1597,7 @@ export type Database = {
         Update: {
           address?: string | null
           city?: string | null
-          coordinates?: unknown | null
+          coordinates?: unknown
           created_at?: string | null
           created_by?: string | null
           email?: string | null
@@ -8899,6 +8935,182 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_consumption_history: {
+        Row: {
+          consumed_at: string
+          id: string
+          inventory_item_id: string
+          notes: string | null
+          quantity_consumed: number
+          service_package_id: string | null
+          usage_metric: string
+          usage_value: number
+          work_order_id: string | null
+        }
+        Insert: {
+          consumed_at?: string
+          id?: string
+          inventory_item_id: string
+          notes?: string | null
+          quantity_consumed: number
+          service_package_id?: string | null
+          usage_metric: string
+          usage_value: number
+          work_order_id?: string | null
+        }
+        Update: {
+          consumed_at?: string
+          id?: string
+          inventory_item_id?: string
+          notes?: string | null
+          quantity_consumed?: number
+          service_package_id?: string | null
+          usage_metric?: string
+          usage_value?: number
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_consumption_history_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_consumption_history_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_consumption_history_service_package_id_fkey"
+            columns: ["service_package_id"]
+            isOneToOne: false
+            referencedRelation: "service_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_consumption_history_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_consumption_rates: {
+        Row: {
+          average_consumption: number | null
+          consumption_per_unit: number
+          created_at: string
+          id: string
+          inventory_item_id: string
+          last_calculated_at: string | null
+          updated_at: string
+          usage_metric: string
+          variance_percentage: number | null
+        }
+        Insert: {
+          average_consumption?: number | null
+          consumption_per_unit: number
+          created_at?: string
+          id?: string
+          inventory_item_id: string
+          last_calculated_at?: string | null
+          updated_at?: string
+          usage_metric: string
+          variance_percentage?: number | null
+        }
+        Update: {
+          average_consumption?: number | null
+          consumption_per_unit?: number
+          created_at?: string
+          id?: string
+          inventory_item_id?: string
+          last_calculated_at?: string | null
+          updated_at?: string
+          usage_metric?: string
+          variance_percentage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_consumption_rates_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_consumption_rates_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_forecasts: {
+        Row: {
+          average_consumption_rate: number
+          confidence_level: number | null
+          created_at: string
+          current_stock: number
+          forecast_type: string
+          id: string
+          inventory_item_id: string
+          predicted_runout_date: string | null
+          predicted_runout_usage: number | null
+          recommended_reorder_date: string | null
+          recommended_reorder_quantity: number | null
+          updated_at: string
+        }
+        Insert: {
+          average_consumption_rate: number
+          confidence_level?: number | null
+          created_at?: string
+          current_stock: number
+          forecast_type: string
+          id?: string
+          inventory_item_id: string
+          predicted_runout_date?: string | null
+          predicted_runout_usage?: number | null
+          recommended_reorder_date?: string | null
+          recommended_reorder_quantity?: number | null
+          updated_at?: string
+        }
+        Update: {
+          average_consumption_rate?: number
+          confidence_level?: number | null
+          created_at?: string
+          current_stock?: number
+          forecast_type?: string
+          id?: string
+          inventory_item_id?: string
+          predicted_runout_date?: string | null
+          predicted_runout_usage?: number | null
+          recommended_reorder_date?: string | null
+          recommended_reorder_quantity?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_forecasts_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_forecasts_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           category: string
@@ -9163,6 +9375,51 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "inventory_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_seasonal_factors: {
+        Row: {
+          adjustment_factor: number
+          category: string | null
+          created_at: string
+          id: string
+          inventory_item_id: string | null
+          month: number
+          notes: string | null
+        }
+        Insert: {
+          adjustment_factor?: number
+          category?: string | null
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          month: number
+          notes?: string | null
+        }
+        Update: {
+          adjustment_factor?: number
+          category?: string | null
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          month?: number
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_seasonal_factors_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_seasonal_factors_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
             referencedColumns: ["id"]
           },
         ]
@@ -14729,7 +14986,7 @@ export type Database = {
           description: string | null
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           resolved: boolean | null
           resolved_at: string | null
@@ -14743,7 +15000,7 @@ export type Database = {
           description?: string | null
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           resolved?: boolean | null
           resolved_at?: string | null
@@ -14757,7 +15014,7 @@ export type Database = {
           description?: string | null
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           resolved?: boolean | null
           resolved_at?: string | null
@@ -14997,6 +15254,106 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_package_items: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_item_id: string | null
+          is_optional: boolean | null
+          notes: string | null
+          part_name: string
+          part_number: string | null
+          quantity: number
+          service_package_id: string
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          is_optional?: boolean | null
+          notes?: string | null
+          part_name: string
+          part_number?: string | null
+          quantity: number
+          service_package_id: string
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          is_optional?: boolean | null
+          notes?: string | null
+          part_name?: string
+          part_number?: string | null
+          quantity?: number
+          service_package_id?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_package_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_package_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_package_items_service_package_id_fkey"
+            columns: ["service_package_id"]
+            isOneToOne: false
+            referencedRelation: "service_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_packages: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          interval_metric: string
+          interval_value: number
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          interval_metric: string
+          interval_value: number
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          interval_metric?: string
+          interval_value?: number
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       service_reminder_tags: {
         Row: {
@@ -18102,7 +18459,7 @@ export type Database = {
           device_name: string | null
           expires_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_current: boolean | null
           last_active: string | null
           location: string | null
@@ -18118,7 +18475,7 @@ export type Database = {
           device_name?: string | null
           expires_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_current?: boolean | null
           last_active?: string | null
           location?: string | null
@@ -18134,7 +18491,7 @@ export type Database = {
           device_name?: string | null
           expires_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_current?: boolean | null
           last_active?: string | null
           location?: string | null
@@ -20598,26 +20955,26 @@ export type Database = {
       }
     }
     Functions: {
-      add_recently_viewed_product: {
-        Args:
-          | {
+      add_recently_viewed_product:
+        | {
+            Args: {
               p_category?: string
               p_product_id: string
               p_product_image_url?: string
               p_product_name: string
             }
-          | {
+            Returns: string
+          }
+        | {
+            Args: {
               p_category?: string
               p_product_id: string
               p_product_image_url?: string
               p_product_name: string
             }
-        Returns: string
-      }
-      addcustomindustry: {
-        Args: { industry_name: string }
-        Returns: string
-      }
+            Returns: undefined
+          }
+      addcustomindustry: { Args: { industry_name: string }; Returns: string }
       adjust_customer_points: {
         Args: { p_customer_id: string; p_points: number }
         Returns: undefined
@@ -20691,16 +21048,16 @@ export type Database = {
         Args: { check_user_id: string; required_role: string }
         Returns: boolean
       }
-      check_verified_purchase: {
-        Args:
-          | { p_product_id: string; p_user_id: string }
-          | { p_product_id: string; p_user_id: string }
-        Returns: boolean
-      }
-      clear_service_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      check_verified_purchase:
+        | {
+            Args: { p_product_id: string; p_user_id: string }
+            Returns: boolean
+          }
+        | {
+            Args: { p_product_id: string; p_user_id: string }
+            Returns: boolean
+          }
+      clear_service_data: { Args: never; Returns: undefined }
       convert_quote_to_work_order: {
         Args: { p_converted_by: string; p_notes?: string; p_quote_id: string }
         Returns: string
@@ -20743,14 +21100,8 @@ export type Database = {
         }
         Returns: string
       }
-      create_storage_folders: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_work_order_procedures: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      create_storage_folders: { Args: never; Returns: undefined }
+      create_work_order_procedures: { Args: never; Returns: undefined }
       delete_work_order_inventory_items: {
         Args: { work_order_id: string }
         Returns: undefined
@@ -20785,10 +21136,7 @@ export type Database = {
         }
         Returns: string
       }
-      generate_quote_number: {
-        Args: { p_shop_id?: string }
-        Returns: string
-      }
+      generate_quote_number: { Args: { p_shop_id?: string }; Returns: string }
       generate_raffle_ticket_number: {
         Args: { p_raffle_id: string }
         Returns: string
@@ -20805,18 +21153,9 @@ export type Database = {
         Args: { p_shop_id: string }
         Returns: string
       }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_email_processing_schedule: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_inventory_categories: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
+      get_current_user_role: { Args: never; Returns: string }
+      get_email_processing_schedule: { Args: never; Returns: Json }
+      get_inventory_categories: { Args: never; Returns: string[] }
       get_job_line_parts: {
         Args: { job_line_id_param: string }
         Returns: {
@@ -20855,9 +21194,15 @@ export type Database = {
           warranty_expiry_date: string | null
           work_order_id: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "work_order_parts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_latest_system_metrics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           metadata: Json
           metric_name: string
@@ -20886,7 +21231,7 @@ export type Database = {
         }[]
       }
       get_overdue_grant_reports: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           days_overdue: number
           due_date: string
@@ -20895,24 +21240,40 @@ export type Database = {
           report_type: string
         }[]
       }
-      get_popular_products: {
-        Args:
-          | { days_back?: number; result_limit?: number }
-          | { limit_count?: number }
-        Returns: {
-          average_rating: number
-          id: string
-          image_url: string
-          name: string
-          order_count: number
-          popularity_score: number
-          price: number
-          title: string
-          view_count: number
-        }[]
-      }
+      get_popular_products:
+        | {
+            Args: { limit_count?: number }
+            Returns: {
+              average_rating: number
+              id: string
+              image_url: string
+              name: string
+              order_count: number
+              popularity_score: number
+              price: number
+              title: string
+              view_count: number
+            }[]
+          }
+        | {
+            Args: { days_back?: number; result_limit?: number }
+            Returns: {
+              average_rating: number
+              cart_add_count: number
+              category: string
+              click_count: number
+              image_url: string
+              interaction_count: number
+              price: number
+              product_id: string
+              product_name: string
+              review_count: number
+              save_count: number
+              view_count: number
+            }[]
+          }
       get_product_interactions_by_category: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           category: string
           total_cart_adds: number
@@ -20921,28 +21282,45 @@ export type Database = {
           total_views: number
         }[]
       }
-      get_product_stats: {
-        Args: { p_product_id: string } | { p_product_id: string }
-        Returns: {
-          avg_rating: number
-          review_count: number
-          total_cart_adds: number
-          total_clicks: number
-          total_saves: number
-          total_views: number
-        }[]
-      }
-      get_recently_viewed_products: {
-        Args:
-          | { limit_count?: number; user_id_param: string }
-          | { p_session_id?: string; p_user_id?: string; result_limit?: number }
-        Returns: {
-          category: string
-          product_id: string
-          product_name: string
-          viewed_at: string
-        }[]
-      }
+      get_product_stats:
+        | {
+            Args: { p_product_id: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.get_product_stats(p_product_id => text), public.get_product_stats(p_product_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"[]
+          }
+        | {
+            Args: { p_product_id: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.get_product_stats(p_product_id => text), public.get_product_stats(p_product_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"[]
+          }
+      get_recently_viewed_products:
+        | {
+            Args: {
+              p_session_id?: string
+              p_user_id?: string
+              result_limit?: number
+            }
+            Returns: {
+              category: string
+              product_id: string
+              product_name: string
+              viewed_at: string
+            }[]
+          }
+        | {
+            Args: { limit_count?: number; user_id_param: string }
+            Returns: {
+              average_rating: number
+              id: string
+              image_url: string
+              name: string
+              price: number
+              title: string
+              viewed_at: string
+            }[]
+          }
       get_report_templates: {
         Args: { p_shop_id: string }
         Returns: {
@@ -20965,14 +21343,8 @@ export type Database = {
           shop_id: string
         }[]
       }
-      get_user_shop_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_user_shop_id_secure: {
-        Args: { user_uuid: string }
-        Returns: string
-      }
+      get_user_shop_id: { Args: never; Returns: string }
+      get_user_shop_id_secure: { Args: { user_uuid: string }; Returns: string }
       get_work_order_inventory_items: {
         Args: { work_order_id: string }
         Returns: {
@@ -20985,6 +21357,12 @@ export type Database = {
           unit_price: number
           work_order_id: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "work_order_inventory_items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_work_order_job_lines: {
         Args: { work_order_id_param: string }
@@ -21009,6 +21387,12 @@ export type Database = {
           updated_at: string
           work_order_id: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "work_order_job_lines"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_work_order_notifications: {
         Args: { work_order_id_param: string }
@@ -21026,6 +21410,12 @@ export type Database = {
           updated_at: string | null
           work_order_id: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "work_order_notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_work_order_parts: {
         Args: { work_order_id_param: string }
@@ -21065,6 +21455,12 @@ export type Database = {
           warranty_expiry_date: string | null
           work_order_id: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "work_order_parts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_work_order_time_entries: {
         Args: { work_order_id: string }
@@ -21080,6 +21476,12 @@ export type Database = {
           start_time: string
           work_order_id: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "work_order_time_entries"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_work_order_with_details: {
         Args: { work_order_id: string }
@@ -21113,16 +21515,19 @@ export type Database = {
           vehicle_year: string
         }[]
       }
-      has_permission: {
-        Args:
-          | {
+      has_permission:
+        | {
+            Args: { permission_module: string; user_id_param: string }
+            Returns: boolean
+          }
+        | {
+            Args: {
               act: Database["public"]["Enums"]["permission_type"]
               res: Database["public"]["Enums"]["resource_type"]
               user_id: string
             }
-          | { permission_module: string; user_id_param: string }
-        Returns: boolean
-      }
+            Returns: boolean
+          }
       has_permission_for_action: {
         Args: {
           permission_action: string
@@ -21131,12 +21536,15 @@ export type Database = {
         }
         Returns: boolean
       }
-      has_role: {
-        Args:
-          | { role: Database["public"]["Enums"]["app_role"]; user_id: string }
-          | { role_name: string; user_id: string }
-        Returns: boolean
-      }
+      has_role:
+        | { Args: { role_name: string; user_id: string }; Returns: boolean }
+        | {
+            Args: {
+              role: Database["public"]["Enums"]["app_role"]
+              user_id: string
+            }
+            Returns: boolean
+          }
       increment_campaign_clicks: {
         Args: { campaign_id: string }
         Returns: undefined
@@ -21145,10 +21553,7 @@ export type Database = {
         Args: { campaign_id: string }
         Returns: undefined
       }
-      increment_faq_views: {
-        Args: { faq_id: string }
-        Returns: undefined
-      }
+      increment_faq_views: { Args: { faq_id: string }; Returns: undefined }
       increment_rate_limit: {
         Args: {
           p_endpoint: string
@@ -21162,14 +21567,8 @@ export type Database = {
         Args: { template_id: string }
         Returns: undefined
       }
-      increment_usage_count: {
-        Args: { template_id: string }
-        Returns: number
-      }
-      initialize_user_points: {
-        Args: { user_uuid: string }
-        Returns: string
-      }
+      increment_usage_count: { Args: { template_id: string }; Returns: number }
+      initialize_user_points: { Args: { user_uuid: string }; Returns: string }
       insert_service_category: {
         Args: { p_description?: string; p_name: string; p_position?: number }
         Returns: string
@@ -21203,9 +21602,29 @@ export type Database = {
         }
         Returns: string
       }
-      insert_work_order_part: {
-        Args:
-          | {
+      insert_work_order_part:
+        | {
+            Args: {
+              p_customer_price: number
+              p_inventory_item_id: string
+              p_invoice_number: string
+              p_job_line_id: string
+              p_markup_percentage: number
+              p_notes: string
+              p_part_name: string
+              p_part_number: string
+              p_part_type: string
+              p_po_line: string
+              p_quantity: number
+              p_retail_price: number
+              p_supplier_cost: number
+              p_supplier_name: string
+              p_work_order_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
               p_category?: string
               p_core_charge_amount?: number
               p_core_charge_applied?: boolean
@@ -21232,7 +21651,10 @@ export type Database = {
               p_warranty_duration?: string
               p_work_order_id: string
             }
-          | {
+            Returns: string
+          }
+        | {
+            Args: {
               p_category?: string
               p_core_charge_amount?: number
               p_core_charge_applied?: boolean
@@ -21258,25 +21680,8 @@ export type Database = {
               p_warranty_duration?: string
               p_work_order_id: string
             }
-          | {
-              p_customer_price: number
-              p_inventory_item_id: string
-              p_invoice_number: string
-              p_job_line_id: string
-              p_markup_percentage: number
-              p_notes: string
-              p_part_name: string
-              p_part_number: string
-              p_part_type: string
-              p_po_line: string
-              p_quantity: number
-              p_retail_price: number
-              p_supplier_cost: number
-              p_supplier_name: string
-              p_work_order_id: string
-            }
-        Returns: string
-      }
+            Returns: string
+          }
       insert_work_order_time_entry: {
         Args: {
           p_billable: boolean
@@ -21290,26 +21695,14 @@ export type Database = {
         }
         Returns: string
       }
-      is_admin_or_owner: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin_or_owner: { Args: never; Returns: boolean }
       is_admin_or_owner_secure: {
         Args: { user_uuid: string }
         Returns: boolean
       }
-      is_admin_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_customer: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
-      is_staff_member: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin_user: { Args: never; Returns: boolean }
+      is_customer: { Args: { user_id: string }; Returns: boolean }
+      is_staff_member: { Args: never; Returns: boolean }
       log_document_access: {
         Args: {
           p_access_type: string
@@ -21321,21 +21714,18 @@ export type Database = {
         }
         Returns: string
       }
-      log_security_event: {
-        Args:
-          | { details: Json; event_type: string }
-          | {
+      log_security_event:
+        | { Args: { details: Json; event_type: string }; Returns: undefined }
+        | {
+            Args: {
               event_description: string
               event_type: string
               metadata?: Json
               user_id?: string
             }
-        Returns: undefined
-      }
-      migrate_company_settings_to_unified: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+            Returns: undefined
+          }
+      migrate_company_settings_to_unified: { Args: never; Returns: number }
       process_referral_reward: {
         Args: { points?: number; referral_id: string }
         Returns: string
@@ -21420,22 +21810,25 @@ export type Database = {
         Args: { p_key: string; p_shop_id: string; p_template_data: Json }
         Returns: string
       }
-      set_setting_safe: {
-        Args:
-          | {
+      set_setting_safe:
+        | {
+            Args: {
               p_category: string
               p_key: string
               p_shop_id: string
               p_value: Json
             }
-          | {
+            Returns: string
+          }
+        | {
+            Args: {
               p_category: string
               p_key: string
               p_shop_id: string
               p_value: string
             }
-        Returns: string
-      }
+            Returns: undefined
+          }
       submit_help_feedback: {
         Args: {
           p_feedback_text?: string
@@ -21455,9 +21848,9 @@ export type Database = {
         }
         Returns: string
       }
-      track_product_interaction: {
-        Args:
-          | {
+      track_product_interaction:
+        | {
+            Args: {
               p_category: string
               p_interaction_type: string
               p_metadata?: Json
@@ -21466,7 +21859,10 @@ export type Database = {
               p_session_id?: string
               p_user_id?: string
             }
-          | {
+            Returns: string
+          }
+        | {
+            Args: {
               p_category?: string
               p_interaction_type?: string
               p_metadata?: Json
@@ -21475,8 +21871,8 @@ export type Database = {
               p_session_id?: string
               p_user_id?: string
             }
-        Returns: string
-      }
+            Returns: string
+          }
       track_search_analytics: {
         Args: {
           p_filters_used?: Json
@@ -21507,9 +21903,9 @@ export type Database = {
         Args: { p_engagement_type: string; p_recommendation_id: string }
         Returns: undefined
       }
-      update_work_order_part: {
-        Args:
-          | {
+      update_work_order_part:
+        | {
+            Args: {
               p_category?: string
               p_core_charge_amount?: number
               p_core_charge_applied?: boolean
@@ -21534,7 +21930,10 @@ export type Database = {
               p_supplier_suggested_retail_price: number
               p_warranty_duration?: string
             }
-          | {
+            Returns: string
+          }
+        | {
+            Args: {
               p_category?: string
               p_core_charge_amount?: number
               p_core_charge_applied?: boolean
@@ -21558,7 +21957,10 @@ export type Database = {
               p_supplier_name: string
               p_warranty_duration?: string
             }
-          | {
+            Returns: string
+          }
+        | {
+            Args: {
               p_customer_price: number
               p_id: string
               p_invoice_number: string
@@ -21573,8 +21975,8 @@ export type Database = {
               p_supplier_cost: number
               p_supplier_name: string
             }
-        Returns: string
-      }
+            Returns: string
+          }
       upsert_work_order_job_line: {
         Args: {
           p_category: string
@@ -21605,7 +22007,7 @@ export type Database = {
         Returns: boolean
       }
       validate_settings_migration: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           legacy_exists: boolean
           settings_key: string

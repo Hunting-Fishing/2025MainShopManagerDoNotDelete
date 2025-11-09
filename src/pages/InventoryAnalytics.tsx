@@ -1,6 +1,7 @@
 import React from 'react';
 import { InventoryAnalyticsDashboard } from '@/components/inventory/InventoryAnalyticsDashboard';
 import { ReportGenerator } from '@/components/inventory/ReportGenerator';
+import { ForecastingDashboard } from '@/components/inventory/predictive/ForecastingDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, FileText, Activity, TrendingUp } from 'lucide-react';
@@ -86,14 +87,7 @@ export default function InventoryAnalytics() {
         </TabsContent>
 
         <TabsContent value="forecasting" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Demand Forecasting</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Forecasting features will be implemented here.</p>
-            </CardContent>
-          </Card>
+          <ForecastingDashboard />
         </TabsContent>
       </Tabs>
     </div>

@@ -15,6 +15,10 @@ import CustomerPortal from '@/pages/CustomerPortal';
 import WorkOrders from '@/pages/WorkOrders';
 import Customers from '@/pages/Customers';
 import Inventory from '@/pages/Inventory';
+import InventoryAnalytics from '@/pages/InventoryAnalytics';
+import InventoryManager from '@/pages/InventoryManager';
+import InventoryAdd from '@/pages/InventoryAdd';
+import ServicePackages from '@/pages/ServicePackages';
 import Analytics from '@/pages/Analytics';
 import Settings from '@/pages/Settings';
 import Calendar from '@/pages/Calendar';
@@ -116,6 +120,27 @@ function App() {
                    <Route path="/inventory/*" element={
                      <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'inventory_manager', 'owner']}>
                        <Inventory />
+                     </ProtectedRoute>
+                   } />
+                   
+                   {/* Inventory Analytics */}
+                   <Route path="/inventory-analytics" element={
+                     <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                       <InventoryAnalytics />
+                     </ProtectedRoute>
+                   } />
+                   
+                   {/* Inventory Manager */}
+                   <Route path="/inventory-manager" element={
+                     <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                       <InventoryManager />
+                     </ProtectedRoute>
+                   } />
+                   
+                   {/* Service Packages */}
+                   <Route path="/service-packages" element={
+                     <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                       <ServicePackages />
                      </ProtectedRoute>
                    } />
                   

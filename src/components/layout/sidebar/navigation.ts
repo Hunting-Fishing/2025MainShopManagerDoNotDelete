@@ -38,7 +38,8 @@ import {
   Send,
   Brain,
   Code,
-  MessagesSquare
+  MessagesSquare,
+  BarChart3
 } from 'lucide-react';
 
 export const navigation = [
@@ -65,38 +66,13 @@ export const navigation = [
     ],
   },
   {
-    title: 'Inventory',
+    title: "Inventory",
+    icon: Package,
     items: [
-      {
-        title: 'Inventory',
-        href: '/inventory',
-        icon: Package,
-        description: 'Main inventory overview'
-      },
-      {
-        title: 'Inventory Manager',
-        href: '/inventory/manager',
-        icon: Boxes,
-        description: 'Advanced inventory management'
-      },
-      {
-        title: 'Orders',
-        href: '/inventory/orders',
-        icon: ShoppingCart,
-        description: 'Manage inventory orders'
-      },
-      {
-        title: 'Locations',
-        href: '/inventory/locations',
-        icon: MapPin,
-        description: 'Manage storage locations'
-      },
-      {
-        title: 'Suppliers',
-        href: '/inventory/suppliers',
-        icon: Building2,
-        description: 'Manage suppliers'
-      },
+      { title: "Inventory Overview", href: "/inventory", icon: Package, description: "Main inventory overview" },
+      { title: "Service Packages", href: "/service-packages", icon: Boxes, description: "Service templates with parts" },
+      { title: "Inventory Analytics", href: "/inventory-analytics", icon: BarChart3, description: "Forecasting & analytics" },
+      { title: "Inventory Manager", href: "/inventory-manager", icon: Settings, description: "Advanced inventory settings" },
     ],
   },
   {
