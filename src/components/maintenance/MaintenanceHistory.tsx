@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useShopId } from '@/hooks/useShopId';
 import { getMaintenanceActivities } from '@/services/maintenance/maintenanceActivityService';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,31 @@ export function MaintenanceHistory() {
     queryFn: () => getMaintenanceActivities(shopId!),
     enabled: !!shopId,
   });
+
+  // Real-time subscription
+  useEffect(() => {
+    if (!shopId) return;
+
+    const channel = supabase
+      .channel('maintenance_activities_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'maintenance_activities',
+          filter: `shop_id=eq.${shopId}`,
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [shopId, refetch]);
 
   const filteredActivities = activities.filter(activity => {
     const matchesSearch = 

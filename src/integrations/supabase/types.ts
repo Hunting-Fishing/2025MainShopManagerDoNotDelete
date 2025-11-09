@@ -10634,6 +10634,47 @@ export type Database = {
           },
         ]
       }
+      maintenance_schedule_versions: {
+        Row: {
+          change_reason: string | null
+          changed_by: string
+          changed_by_name: string
+          created_at: string
+          id: string
+          schedule_id: string
+          snapshot: Json
+          version_number: number
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_by: string
+          changed_by_name: string
+          created_at?: string
+          id?: string
+          schedule_id: string
+          snapshot: Json
+          version_number: number
+        }
+        Update: {
+          change_reason?: string | null
+          changed_by?: string
+          changed_by_name?: string
+          created_at?: string
+          id?: string
+          schedule_id?: string
+          snapshot?: Json
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_schedule_versions_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_schedules: {
         Row: {
           assigned_technician_id: string | null

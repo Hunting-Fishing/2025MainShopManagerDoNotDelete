@@ -7,17 +7,21 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { generateMaintenanceForecast } from '@/services/maintenance/predictiveMaintenanceService';
 import { format } from 'date-fns';
+import { useShopId } from '@/hooks/useShopId';
 import { CreateScheduleDialog } from '@/components/maintenance/CreateScheduleDialog';
 import { EditScheduleDialog } from '@/components/maintenance/EditScheduleDialog';
 import { BudgetDashboard } from '@/components/maintenance/BudgetDashboard';
 import { MaintenanceCalendar } from '@/components/maintenance/MaintenanceCalendar';
 import { MaintenanceHistory } from '@/components/maintenance/MaintenanceHistory';
+import { ActivityAnalytics } from '@/components/maintenance/ActivityAnalytics';
+import { ActivityExport } from '@/components/maintenance/ActivityExport';
 import { ScheduleActions } from '@/components/maintenance/ScheduleActions';
 
 export default function MaintenancePlanning() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
+  const { shopId } = useShopId();
 
   const { data: schedules, isLoading, refetch } = useQuery({
     queryKey: ['maintenance-schedules'],
@@ -35,6 +39,16 @@ export default function MaintenancePlanning() {
   const { data: predictions } = useQuery({
     queryKey: ['maintenance-predictions'],
     queryFn: generateMaintenanceForecast
+  });
+
+  const { data: activities = [] } = useQuery({
+    queryKey: ['maintenance-activities', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { getMaintenanceActivities } = await import('@/services/maintenance/maintenanceActivityService');
+      return getMaintenanceActivities(shopId);
+    },
+    enabled: !!shopId,
   });
 
   const upcomingCount = schedules?.filter(s => {
@@ -216,7 +230,23 @@ export default function MaintenancePlanning() {
         </TabsContent>
 
         <TabsContent value="history">
-          <MaintenanceHistory />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <ActivityExport activities={activities} />
+            </div>
+            <Tabs defaultValue="timeline" className="w-full">
+              <TabsList>
+                <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
+              <TabsContent value="timeline">
+                <MaintenanceHistory />
+              </TabsContent>
+              <TabsContent value="analytics">
+                <ActivityAnalytics activities={activities} />
+              </TabsContent>
+            </Tabs>
+          </div>
         </TabsContent>
       </Tabs>
 

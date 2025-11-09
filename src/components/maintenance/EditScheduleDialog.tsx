@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useShopId } from '@/hooks/useShopId';
 import { recordMaintenanceActivity } from '@/services/maintenance/maintenanceActivityService';
+import { saveScheduleVersion } from '@/services/maintenance/versionService';
 
 interface EditScheduleDialogProps {
   open: boolean;
@@ -54,6 +55,15 @@ export function EditScheduleDialog({ open, onOpenChange, onSuccess, schedule }: 
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Not authenticated');
+
+      // Save current version before updating
+      await saveScheduleVersion(
+        schedule.id,
+        schedule,
+        user.user.id,
+        user.user.user_metadata?.full_name || user.user.email || 'Unknown User',
+        'Manual update'
+      );
 
       // Track changes for activity log
       const changes: string[] = [];
