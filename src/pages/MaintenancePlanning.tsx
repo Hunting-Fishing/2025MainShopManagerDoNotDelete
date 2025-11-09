@@ -1,14 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Wrench, DollarSign, Package, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Calendar, Wrench, DollarSign, Package, AlertTriangle, TrendingUp, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { generateMaintenanceForecast } from '@/services/maintenance/predictiveMaintenanceService';
 import { format } from 'date-fns';
+import { CreateScheduleDialog } from '@/components/maintenance/CreateScheduleDialog';
+import { BudgetDashboard } from '@/components/maintenance/BudgetDashboard';
+import { MaintenanceCalendar } from '@/components/maintenance/MaintenanceCalendar';
 
 export default function MaintenancePlanning() {
-  const { data: schedules, isLoading } = useQuery({
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+  const { data: schedules, isLoading, refetch } = useQuery({
     queryKey: ['maintenance-schedules'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -35,11 +41,17 @@ export default function MaintenancePlanning() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Maintenance Planning</h1>
-        <p className="text-muted-foreground">
-          Predictive maintenance scheduling with automatic parts ordering
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Maintenance Planning</h1>
+          <p className="text-muted-foreground">
+            Predictive maintenance scheduling with automatic parts ordering
+          </p>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Schedule
+        </Button>
       </div>
 
       {/* Stats */}
@@ -85,50 +97,117 @@ export default function MaintenancePlanning() {
         </Card>
       </div>
 
-      {/* Upcoming Maintenance */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Maintenance Schedule</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-muted-foreground">Loading schedules...</p>
-          ) : schedules?.length === 0 ? (
-            <p className="text-muted-foreground">No maintenance schedules found</p>
-          ) : (
-            <div className="space-y-3">
-              {schedules?.slice(0, 10).map(schedule => {
-                const daysUntil = Math.floor((new Date(schedule.next_due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                const isOverdue = daysUntil < 0;
-                const isDueSoon = daysUntil <= 7 && daysUntil >= 0;
-                
-                return (
-                  <div key={schedule.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{schedule.title}</h4>
-                      <p className="text-sm text-muted-foreground">{schedule.maintenance_type}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Due: {format(new Date(schedule.next_due_date), 'MMM d, yyyy')}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className={`text-sm font-medium ${
-                        isOverdue ? 'text-red-600' : isDueSoon ? 'text-yellow-600' : 'text-green-600'
-                      }`}>
-                        {isOverdue ? `${Math.abs(daysUntil)} days overdue` : `${daysUntil} days`}
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="schedules" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="schedules">Schedules</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          <TabsTrigger value="budget">Budget</TabsTrigger>
+          <TabsTrigger value="predictions">AI Predictions</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="schedules" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Maintenance Schedule</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <p className="text-muted-foreground">Loading schedules...</p>
+              ) : schedules?.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">No maintenance schedules found</p>
+                  <Button onClick={() => setCreateDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Schedule
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {schedules?.slice(0, 10).map(schedule => {
+                    const daysUntil = Math.floor((new Date(schedule.next_due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                    const isOverdue = daysUntil < 0;
+                    const isDueSoon = daysUntil <= 7 && daysUntil >= 0;
+                    
+                    return (
+                      <div key={schedule.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{schedule.title}</h4>
+                          <p className="text-sm text-muted-foreground">{schedule.maintenance_type}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Due: {format(new Date(schedule.next_due_date), 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-sm font-medium ${
+                            isOverdue ? 'text-red-600' : isDueSoon ? 'text-yellow-600' : 'text-green-600'
+                          }`}>
+                            {isOverdue ? `${Math.abs(daysUntil)} days overdue` : `${daysUntil} days`}
+                          </div>
+                          {schedule.estimated_cost && (
+                            <p className="text-sm text-muted-foreground">${schedule.estimated_cost}</p>
+                          )}
+                        </div>
+                        <Button size="sm" className="ml-4">Schedule</Button>
                       </div>
-                      {schedule.estimated_cost && (
-                        <p className="text-sm text-muted-foreground">${schedule.estimated_cost}</p>
-                      )}
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <MaintenanceCalendar />
+        </TabsContent>
+
+        <TabsContent value="budget">
+          <BudgetDashboard />
+        </TabsContent>
+
+        <TabsContent value="predictions">
+          <Card>
+            <CardHeader>
+              <CardTitle>AI-Powered Predictions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {predictions?.length === 0 ? (
+                <p className="text-muted-foreground">No predictions available yet. Create maintenance schedules to get AI-powered forecasts.</p>
+              ) : (
+                <div className="space-y-3">
+                  {predictions?.map((prediction, idx) => (
+                    <div key={idx} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-medium">{prediction.maintenanceType}</h4>
+                          <p className="text-sm text-muted-foreground">{prediction.assetName}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Predicted due: {format(new Date(prediction.predictedDueDate), 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-medium">{prediction.daysUntilDue} days</div>
+                          <p className="text-xs text-muted-foreground">
+                            {(prediction.confidenceLevel * 100).toFixed(0)}% confidence
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <Button size="sm" className="ml-4">Schedule</Button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Create Schedule Dialog */}
+      <CreateScheduleDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={refetch}
+      />
     </div>
   );
 }
