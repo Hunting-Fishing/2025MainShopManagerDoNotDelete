@@ -37,6 +37,7 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
 
     try {
       setLoading(true);
+      console.log('Starting asset creation with data:', formData);
       
       // Add unit number to VIN field
       const assetData = {
@@ -44,7 +45,10 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
         vin: unitNumber
       };
       
-      await onAdd(assetData as CreateVehicleInput);
+      console.log('Calling onAdd with:', assetData);
+      const result = await onAdd(assetData as CreateVehicleInput);
+      console.log('Asset created successfully:', result);
+      
       toast.success('Company asset added successfully');
       setOpen(false);
       setFormData({
@@ -62,7 +66,9 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
       });
       setUnitNumber('');
     } catch (error) {
-      toast.error('Failed to add company asset');
+      console.error('Error adding company asset:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add company asset';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
