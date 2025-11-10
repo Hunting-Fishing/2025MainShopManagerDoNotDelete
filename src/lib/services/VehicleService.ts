@@ -24,10 +24,6 @@ export class VehicleService {
         throw new Error('Customer ID is required for customer vehicles');
       }
 
-      if (vehicleData.owner_type === 'company' && !vehicleData.asset_category) {
-        throw new Error('Asset category is required for company assets');
-      }
-
       // Check for duplicate VIN if provided
       if (vehicleData.vin) {
         const existingVehicle = await this.repository.findByVin(vehicleData.vin);
