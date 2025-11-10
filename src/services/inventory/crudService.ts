@@ -7,9 +7,29 @@ export async function getInventoryItems(): Promise<InventoryItemExtended[]> {
   try {
     console.log('Fetching inventory items from database...');
     
+    // Get the current user's shop_id from the profiles table
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log('No authenticated user found');
+      return [];
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('shop_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.shop_id) {
+      console.log('No shop_id found for user');
+      return [];
+    }
+
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*')
+      .eq('shop_id', profile.shop_id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -17,7 +37,7 @@ export async function getInventoryItems(): Promise<InventoryItemExtended[]> {
       throw error;
     }
 
-    console.log(`Successfully fetched ${data?.length || 0} inventory items`);
+    console.log(`Successfully fetched ${data?.length || 0} inventory items for shop ${profile.shop_id}`);
     return data?.map(formatInventoryItem) || [];
   } catch (error) {
     console.error('Error in getInventoryItems:', error);
@@ -54,7 +74,27 @@ export async function createInventoryItem(item: Omit<InventoryItemExtended, 'id'
   try {
     console.log('Creating inventory item:', item);
     
-    const apiData = formatInventoryForApi(item);
+    // Get the current user's shop_id
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('shop_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.shop_id) {
+      throw new Error('No shop_id found for user');
+    }
+
+    const apiData = {
+      ...formatInventoryForApi(item),
+      shop_id: profile.shop_id
+    };
     
     const { data, error } = await supabase
       .from('inventory_items')
