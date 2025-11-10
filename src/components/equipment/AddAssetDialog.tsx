@@ -32,16 +32,6 @@ export function AddAssetDialog({ open, onOpenChange }: AddAssetDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.make || !formData.model || !formData.year) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please fill in make, model, and year',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     setLoading(true);
     try {
       await createAsset({
@@ -93,29 +83,27 @@ export function AddAssetDialog({ open, onOpenChange }: AddAssetDialogProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="make">Make *</Label>
+              <Label htmlFor="make">Make</Label>
               <Input
                 id="make"
                 value={formData.make}
                 onChange={(e) => setFormData({ ...formData, make: e.target.value })}
                 placeholder="e.g., Toyota, Caterpillar"
-                required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="model">Model *</Label>
+              <Label htmlFor="model">Model</Label>
               <Input
                 id="model"
                 value={formData.model}
                 onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                 placeholder="e.g., Camry, 950H"
-                required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="year">Year *</Label>
+              <Label htmlFor="year">Year</Label>
               <Input
                 id="year"
                 type="number"
@@ -123,7 +111,6 @@ export function AddAssetDialog({ open, onOpenChange }: AddAssetDialogProps) {
                 onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
                 min={1900}
                 max={new Date().getFullYear() + 1}
-                required
               />
             </div>
 
