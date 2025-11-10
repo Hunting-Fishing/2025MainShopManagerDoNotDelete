@@ -14,6 +14,7 @@ interface AddAssetDialogProps {
 }
 
 export function AddAssetDialog({ open, onOpenChange }: AddAssetDialogProps) {
+  console.log('AddAssetDialog rendered, open:', open);
   const { createAsset } = useCompanyAssets();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -202,7 +203,11 @@ export function AddAssetDialog({ open, onOpenChange }: AddAssetDialogProps) {
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              onClick={() => console.log('Submit button clicked')}
+            >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Add Asset
             </Button>
