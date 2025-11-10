@@ -4,66 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Calendar, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-
-interface Equipment {
-  id: string;
-  name: string;
-  type: string;
-  model: string;
-  serialNumber: string;
-  status: 'operational' | 'maintenance' | 'repair' | 'inactive';
-  lastMaintenance: string;
-  nextMaintenance: string;
-  location: string;
-}
-
-const mockEquipment: Equipment[] = [
-  {
-    id: '1',
-    name: 'Hydraulic Lift #1',
-    type: 'Lift',
-    model: 'BendPak XPR-10XLS',
-    serialNumber: 'BP2023001',
-    status: 'operational',
-    lastMaintenance: '2024-06-15',
-    nextMaintenance: '2024-09-15',
-    location: 'Bay 1',
-  },
-  {
-    id: '2',
-    name: 'Tire Balancer',
-    type: 'Tire Equipment',
-    model: 'Hunter GSP9700',
-    serialNumber: 'HT2023002',
-    status: 'maintenance',
-    lastMaintenance: '2024-07-01',
-    nextMaintenance: '2024-07-15',
-    location: 'Tire Shop',
-  },
-  {
-    id: '3',
-    name: 'Air Compressor',
-    type: 'Pneumatic',
-    model: 'Ingersoll Rand T30',
-    serialNumber: 'IR2023003',
-    status: 'operational',
-    lastMaintenance: '2024-05-30',
-    nextMaintenance: '2024-08-30',
-    location: 'Shop Floor',
-  },
-  {
-    id: '4',
-    name: 'Diagnostic Scanner',
-    type: 'Diagnostic',
-    model: 'Launch X431 Pro',
-    serialNumber: 'LC2023004',
-    status: 'repair',
-    lastMaintenance: '2024-06-01',
-    nextMaintenance: '2024-07-20',
-    location: 'Bay 3',
-  },
-];
+import { Search, Calendar, AlertTriangle, CheckCircle, Clock, Plus, Loader2 } from 'lucide-react';
+import { useCompanyAssets } from '@/hooks/useCompanyAssets';
+import { AddAssetDialog } from './AddAssetDialog';
+import { useToast } from '@/hooks/use-toast';
 
 const getStatusIcon = (status: string) => {
   switch (status) {
@@ -84,23 +28,47 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
 };
 
 export function EquipmentList() {
-  const [equipment] = useState<Equipment[]>(mockEquipment);
+  const { assets, loading, error } = useCompanyAssets();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const filteredEquipment = equipment.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.model.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+  const filteredAssets = assets.filter(item => {
+    const matchesSearch = 
+      `${item.make} ${item.model}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.vin?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (item.license_plate?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+    const matchesStatus = statusFilter === 'all' || item.asset_status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-destructive">
+            <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+            <p>Error loading equipment: {error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Equipment Inventory</CardTitle>
-        <div className="flex gap-4">
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between mb-4">
+            <CardTitle>Company Assets & Equipment</CardTitle>
+            <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Asset</span>
+              <span className="sm:hidden">Add</span>
+            </Button>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -116,52 +84,65 @@ export function EquipmentList() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="operational">Operational</SelectItem>
+              <SelectItem value="available">Available</SelectItem>
+              <SelectItem value="in_use">In Use</SelectItem>
               <SelectItem value="maintenance">Maintenance</SelectItem>
-              <SelectItem value="repair">Repair</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="out_of_service">Out of Service</SelectItem>
+              <SelectItem value="retired">Retired</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {filteredEquipment.map((item) => (
-            <Card key={item.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    {getStatusIcon(item.status)}
-                    <div>
-                      <h3 className="font-semibold">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">{item.type} • {item.model}</p>
+        {loading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredAssets.length === 0 ? (
+          <div className="text-center p-8 text-muted-foreground">
+            <p>No assets found. Click "Add Asset" to get started.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredAssets.map((item) => (
+              <Card key={item.id} className="p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      {getStatusIcon(item.asset_status || 'available')}
+                      <div>
+                        <h3 className="font-semibold">{item.year} {item.make} {item.model}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {item.asset_category || 'Equipment'} • {item.vin || 'No VIN'}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <p className="text-sm font-medium">Serial: {item.serialNumber}</p>
-                    <p className="text-xs text-muted-foreground">Location: {item.location}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    {item.license_plate && (
+                      <div className="text-left sm:text-right">
+                        <p className="text-sm font-medium">Plate: {item.license_plate}</p>
+                        <p className="text-xs text-muted-foreground">Location: {item.current_location || 'N/A'}</p>
+                      </div>
+                    )}
+                    <Badge variant={getStatusVariant(item.asset_status || 'available')}>
+                      {item.asset_status || 'available'}
+                    </Badge>
+                    <Button variant="outline" size="sm">
+                      View Details
+                    </Button>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Next Maintenance</p>
-                    <p className="text-sm font-medium flex items-center">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {new Date(item.nextMaintenance).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Badge variant={getStatusVariant(item.status)}>
-                    {item.status}
-                  </Badge>
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
+    <AddAssetDialog 
+      open={isAddDialogOpen} 
+      onOpenChange={setIsAddDialogOpen}
+    />
+    </>
   );
 }
