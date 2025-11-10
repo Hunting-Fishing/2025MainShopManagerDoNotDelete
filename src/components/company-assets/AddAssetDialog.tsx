@@ -29,6 +29,7 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
     current_location: '',
     notes: ''
   });
+  const [customEquipmentType, setCustomEquipmentType] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +62,7 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
         current_location: '',
         notes: ''
       });
+      setCustomEquipmentType('');
     } catch (error) {
       toast.error('Failed to add company asset');
     } finally {
@@ -87,7 +89,10 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
               <Label htmlFor="asset_category">Asset Category</Label>
               <Select 
                 value={formData.asset_category} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, asset_category: value as any }))}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, asset_category: value as any }));
+                  if (value !== 'other') setCustomEquipmentType('');
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
@@ -122,6 +127,25 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
               </Select>
             </div>
           </div>
+
+          {formData.asset_category === 'other' && (
+            <div>
+              <Label htmlFor="equipment_type">Equipment Type *</Label>
+              <Input
+                id="equipment_type"
+                placeholder="e.g., Forklift, Excavator, Dump Truck, Generator"
+                value={customEquipmentType}
+                onChange={(e) => {
+                  setCustomEquipmentType(e.target.value);
+                  setFormData(prev => ({ ...prev, model: e.target.value }));
+                }}
+                required
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Specify the type of equipment or asset
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-4">
             <div>
