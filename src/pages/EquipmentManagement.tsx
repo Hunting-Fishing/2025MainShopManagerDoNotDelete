@@ -10,10 +10,12 @@ import { ToolRequestForms } from '@/components/equipment/ToolRequestForms';
 import { Wrench, ClipboardList, FileText, Calendar, Hammer } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useEquipment } from '@/hooks/useEquipment';
 
 export default function EquipmentManagement() {
   const [activeTab, setActiveTab] = useState('equipment');
   const isMobile = useIsMobile();
+  const { equipment, isLoading } = useEquipment();
 
   const tabs = [
     { value: 'equipment', label: 'Equipment', icon: Wrench },
@@ -70,7 +72,7 @@ export default function EquipmentManagement() {
         )}
 
         <TabsContent value="equipment" className="space-y-4">
-          <EquipmentList />
+          <EquipmentList equipment={equipment} loading={isLoading} />
         </TabsContent>
 
         <TabsContent value="tools" className="space-y-4">

@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Cog, Plus, Settings, Wrench } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Cog, Settings, Wrench } from 'lucide-react';
 import { EquipmentList } from '@/components/equipment/EquipmentList';
+import { AddEquipmentDialog } from '@/components/equipment/AddEquipmentDialog';
+import { useEquipment } from '@/hooks/useEquipment';
 
 export default function Equipment() {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { equipment, stats, isLoading, refetch } = useEquipment();
+
   return (
     <>
       <Helmet>
-        <title>Equipment | AutoShop Pro</title>
+        <title>Equipment Management | AutoShop Pro</title>
       </Helmet>
       
       <div className="space-y-6">
@@ -20,10 +24,13 @@ export default function Equipment() {
               Manage your shop equipment, tools, and machinery
             </p>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Equipment
-          </Button>
+          <AddEquipmentDialog 
+            open={dialogOpen} 
+            onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) refetch();
+            }}
+          />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -33,7 +40,7 @@ export default function Equipment() {
               <Cog className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">47</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : stats.total}</div>
               <p className="text-xs text-muted-foreground">
                 Active equipment items
               </p>
@@ -46,7 +53,7 @@ export default function Equipment() {
               <Wrench className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : stats.needsMaintenance}</div>
               <p className="text-xs text-muted-foreground">
                 Items need maintenance
               </p>
@@ -55,19 +62,19 @@ export default function Equipment() {
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Service</CardTitle>
+              <CardTitle className="text-sm font-medium">Out of Service</CardTitle>
               <Settings className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : stats.outOfService}</div>
               <p className="text-xs text-muted-foreground">
-                Currently being serviced
+                Currently out of service
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <EquipmentList />
+        <EquipmentList equipment={equipment} loading={isLoading} />
       </div>
     </>
   );
