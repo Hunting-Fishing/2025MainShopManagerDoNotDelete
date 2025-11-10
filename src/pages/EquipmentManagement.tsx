@@ -8,48 +8,66 @@ import { PMSchedulesList } from '@/components/equipment/PMSchedulesList';
 import { ToolsList } from '@/components/equipment/ToolsList';
 import { ToolRequestForms } from '@/components/equipment/ToolRequestForms';
 import { Wrench, ClipboardList, FileText, Calendar, Hammer } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function EquipmentManagement() {
   const [activeTab, setActiveTab] = useState('equipment');
+  const isMobile = useIsMobile();
+
+  const tabs = [
+    { value: 'equipment', label: 'Equipment', icon: Wrench },
+    { value: 'tools', label: 'Tools', icon: Hammer },
+    { value: 'tool-forms', label: 'Request Forms', icon: FileText },
+    { value: 'requests', label: 'Maintenance', icon: ClipboardList },
+    { value: 'reports', label: 'Reports', icon: FileText },
+    { value: 'pm', label: 'PM Schedules', icon: Calendar }
+  ];
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Equipment & Tool Management</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold">Equipment & Tool Management</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             Manage marine equipment, forklifts, semis, small engines, and tools
           </p>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="equipment" className="flex items-center gap-2">
-            <Wrench className="h-4 w-4" />
-            Equipment
-          </TabsTrigger>
-          <TabsTrigger value="tools" className="flex items-center gap-2">
-            <Hammer className="h-4 w-4" />
-            Tools
-          </TabsTrigger>
-          <TabsTrigger value="tool-forms" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Request Forms
-          </TabsTrigger>
-          <TabsTrigger value="requests" className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4" />
-            Maintenance
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Reports
-          </TabsTrigger>
-          <TabsTrigger value="pm" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            PM Schedules
-          </TabsTrigger>
-        </TabsList>
+        {isMobile ? (
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full mb-4">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <SelectItem key={tab.value} value={tab.value}>
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" />
+                      {tab.label}
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        ) : (
+          <TabsList className="grid w-full grid-cols-6">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        )}
 
         <TabsContent value="equipment" className="space-y-4">
           <EquipmentList />

@@ -42,16 +42,16 @@ export function MobileNavigation() {
       badge: activeCount
     },
     {
+      id: 'equipment',
+      label: 'Equipment',
+      icon: Package,
+      path: '/equipment-management'
+    },
+    {
       id: 'customers',
       label: 'Customers',
       icon: Users,
       path: '/customers'
-    },
-    {
-      id: 'inventory',
-      label: 'Inventory',
-      icon: Package,
-      path: '/inventory'
     },
     {
       id: 'more',
