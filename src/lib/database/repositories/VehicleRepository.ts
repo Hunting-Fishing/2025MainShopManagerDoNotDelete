@@ -6,6 +6,7 @@ export interface Vehicle {
   id: string;
   customer_id?: string; // Now optional for company assets
   owner_type: 'customer' | 'company';
+  equipment_type?: 'vehicle' | 'generator' | 'forklift' | 'semi_truck' | 'small_engine' | 'outboard_motor' | 'marine_equipment' | 'heavy_equipment' | 'trailer' | 'rv' | 'atv_utv' | 'other';
   asset_category?: 'courtesy' | 'rental' | 'fleet' | 'service' | 'equipment' | 'other';
   asset_status?: 'available' | 'in_use' | 'maintenance' | 'out_of_service' | 'retired';
   checked_out_to?: string;
@@ -30,6 +31,7 @@ export interface Vehicle {
 export interface CreateVehicleInput {
   customer_id?: string; // Optional for company assets
   owner_type: 'customer' | 'company';
+  equipment_type?: 'vehicle' | 'generator' | 'forklift' | 'semi_truck' | 'small_engine' | 'outboard_motor' | 'marine_equipment' | 'heavy_equipment' | 'trailer' | 'rv' | 'atv_utv' | 'other';
   asset_category?: 'courtesy' | 'rental' | 'fleet' | 'service' | 'equipment' | 'other';
   asset_status?: 'available' | 'in_use' | 'maintenance' | 'out_of_service' | 'retired';
   checked_out_to?: string;
@@ -52,6 +54,7 @@ export interface CreateVehicleInput {
 export interface UpdateVehicleInput {
   customer_id?: string;
   owner_type?: 'customer' | 'company';
+  equipment_type?: 'vehicle' | 'generator' | 'forklift' | 'semi_truck' | 'small_engine' | 'outboard_motor' | 'marine_equipment' | 'heavy_equipment' | 'trailer' | 'rv' | 'atv_utv' | 'other';
   asset_category?: 'courtesy' | 'rental' | 'fleet' | 'service' | 'equipment' | 'other';
   asset_status?: 'available' | 'in_use' | 'maintenance' | 'out_of_service' | 'retired';
   checked_out_to?: string;
@@ -131,6 +134,7 @@ export class VehicleRepository {
     const insertData = {
       customer_id: entity.customer_id || null,
       owner_type: entity.owner_type,
+      equipment_type: entity.equipment_type || null,
       asset_category: entity.asset_category || null,
       asset_status: entity.asset_status || null,
       checked_out_to: entity.checked_out_to || null,

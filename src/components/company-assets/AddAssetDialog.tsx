@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
 import { CreateVehicleInput } from '@/lib/database/repositories/VehicleRepository';
 import { toast } from 'sonner';
+import { EQUIPMENT_TYPES } from '@/components/customers/form/vehicle/fields/EquipmentTypeField';
 
 interface AddAssetDialogProps {
   onAdd: (assetData: CreateVehicleInput) => Promise<any>;
@@ -18,7 +19,7 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<CreateVehicleInput>>({
     owner_type: 'company',
-    asset_category: undefined,
+    equipment_type: 'vehicle',
     asset_status: 'available',
     year: undefined,
     make: '',
@@ -29,29 +30,28 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
     current_location: '',
     notes: ''
   });
-  const [customEquipmentType, setCustomEquipmentType] = useState('');
   const [unitNumber, setUnitNumber] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.asset_category) {
-      toast.error('Please select an asset category');
+    if (!formData.equipment_type) {
+      toast.error('Please select an equipment type');
       return;
     }
 
-    if (!formData.model && !customEquipmentType) {
-      toast.error('Please provide asset type/model');
+    if (!unitNumber) {
+      toast.error('Please provide a unit number');
       return;
     }
 
     try {
       setLoading(true);
       
-      // Add unit number to VIN field if provided (or use separate tracking)
+      // Add unit number to VIN field
       const assetData = {
         ...formData,
-        vin: unitNumber || formData.vin
+        vin: unitNumber
       };
       
       await onAdd(assetData as CreateVehicleInput);
@@ -59,7 +59,7 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
       setOpen(false);
       setFormData({
         owner_type: 'company',
-        asset_category: undefined,
+        equipment_type: 'vehicle',
         asset_status: 'available',
         year: undefined,
         make: '',
@@ -70,7 +70,6 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
         current_location: '',
         notes: ''
       });
-      setCustomEquipmentType('');
       setUnitNumber('');
     } catch (error) {
       toast.error('Failed to add company asset');
@@ -109,28 +108,24 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="asset_category">Asset Category *</Label>
+              <Label htmlFor="equipment_type">Equipment Type *</Label>
               <Select 
-                value={formData.asset_category} 
-                onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, asset_category: value as any }));
-                  if (value !== 'other') setCustomEquipmentType('');
-                }}
+                value={formData.equipment_type} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, equipment_type: value as any }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="Select equipment type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="courtesy">Courtesy Vehicle</SelectItem>
-                  <SelectItem value="rental">Rental Vehicle</SelectItem>
-                  <SelectItem value="fleet">Fleet Vehicle</SelectItem>
-                  <SelectItem value="service">Service Vehicle</SelectItem>
-                  <SelectItem value="equipment">Equipment</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  {EQUIPMENT_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Select the primary category for this asset
+                Select the type of equipment or asset
               </p>
             </div>
 
@@ -154,25 +149,6 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
             </div>
           </div>
 
-          {formData.asset_category === 'other' && (
-            <div>
-              <Label htmlFor="equipment_type">Equipment Type *</Label>
-              <Input
-                id="equipment_type"
-                placeholder="e.g., Forklift, Excavator, Dump Truck, Generator"
-                value={customEquipmentType}
-                onChange={(e) => {
-                  setCustomEquipmentType(e.target.value);
-                  setFormData(prev => ({ ...prev, model: e.target.value }));
-                }}
-                required
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Specify the type of equipment or asset
-              </p>
-            </div>
-          )}
-
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="year">Year</Label>
@@ -194,14 +170,12 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
               />
             </div>
             <div>
-              <Label htmlFor="model">Model *</Label>
+              <Label htmlFor="model">Model</Label>
               <Input
                 id="model"
-                placeholder="e.g., Camry, 320D, Generator"
+                placeholder="e.g., Camry, 320D, 5000W"
                 value={formData.model || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-                required={formData.asset_category !== 'other'}
-                disabled={formData.asset_category === 'other'}
               />
             </div>
           </div>
