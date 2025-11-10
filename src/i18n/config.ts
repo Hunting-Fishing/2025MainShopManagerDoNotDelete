@@ -19,11 +19,12 @@ const resources = {
   }
 };
 
+// Initialize i18n synchronously to ensure it's ready before app renders
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'en', // default language
+    lng: localStorage.getItem('preferredLanguage') || 'en', // Load saved language preference
     fallbackLng: 'en',
     debug: false,
 
@@ -32,7 +33,12 @@ i18n
     },
 
     react: {
-      useSuspense: false
+      useSuspense: false,
+      bindI18n: 'languageChanged',
+      bindI18nStore: '',
+      transEmptyNodeValue: '',
+      transSupportBasicHtmlNodes: true,
+      transKeepBasicHtmlNodesFor: ['br', 'strong', 'i']
     }
   });
 
