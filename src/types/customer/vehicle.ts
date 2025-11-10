@@ -1,4 +1,19 @@
 
+// Equipment type categories for customer assets
+export type CustomerEquipmentType = 
+  | 'vehicle'           // Cars, trucks, SUVs
+  | 'generator'         // Power generators
+  | 'forklift'          // Forklifts
+  | 'semi_truck'        // Semi trucks / tractor trailers
+  | 'small_engine'      // Lawn mowers, pressure washers, etc.
+  | 'outboard_motor'    // Boat motors
+  | 'marine_equipment'  // Boats, jet skis, marine gear
+  | 'heavy_equipment'   // Excavators, bulldozers, etc.
+  | 'trailer'           // Trailers
+  | 'rv'                // RVs, motorhomes
+  | 'atv_utv'           // ATVs, UTVs, side-by-sides
+  | 'other';
+
 // Vehicle-related type definitions
 export interface CustomerVehicle {
   id?: string;
@@ -9,6 +24,7 @@ export interface CustomerVehicle {
   vin?: string;
   license_plate?: string;
   trim?: string;
+  equipment_type?: CustomerEquipmentType; // Type of equipment/asset
   last_service_date?: string;
   notes?: string;
   created_at?: string;
@@ -52,6 +68,7 @@ export const convertFormVehicleToCustomerVehicle = (formVehicle: any): CustomerV
     vin: formVehicle.vin || undefined,
     license_plate: formVehicle.license_plate || undefined,
     trim: formVehicle.trim || undefined,
+    equipment_type: formVehicle.equipment_type || 'vehicle',
     transmission: formVehicle.transmission || undefined,
     transmission_type: formVehicle.transmission_type || undefined,
     drive_type: formVehicle.drive_type || undefined,

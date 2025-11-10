@@ -9,7 +9,8 @@ import {
   YearField, 
   MakeField, 
   ModelField, 
-  LicensePlateField 
+  LicensePlateField,
+  EquipmentTypeField
 } from "./fields";
 import { VehicleAdditionalDetails } from "./VehicleAdditionalDetails";
 import { useVehicleForm } from "./useVehicleForm";
@@ -56,7 +57,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       </Button>
       
       <CardContent className="pt-6 pb-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <VinField 
             form={form} 
             index={index} 
@@ -69,6 +70,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             onVinDecode={handleVinDecode}
           />
           <LicensePlateField form={form} index={index} />
+          <EquipmentTypeField form={form} index={index} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
           <YearField 

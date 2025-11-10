@@ -10,6 +10,7 @@ export interface VehicleFormData {
   vin?: string;
   license_plate?: string;
   trim?: string;
+  equipment_type?: string;
   
   // Additional vehicle details
   transmission?: string;
@@ -43,6 +44,7 @@ export const emptyVehicle: VehicleFormData = {
   vin: '',
   license_plate: '',
   trim: '',
+  equipment_type: 'vehicle',
   transmission: '',
   drive_type: '',
   fuel_type: '',
@@ -69,6 +71,7 @@ export const vehicleSchema = z.object({
   vin: z.string().optional().or(z.literal("")),
   license_plate: z.string().optional().or(z.literal("")),
   trim: z.string().optional().or(z.literal("")),
+  equipment_type: z.string().optional().or(z.literal("")),
   transmission: z.string().optional().or(z.literal("")),
   drive_type: z.string().optional().or(z.literal("")),
   fuel_type: z.string().optional().or(z.literal("")),
