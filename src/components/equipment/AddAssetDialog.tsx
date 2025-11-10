@@ -32,12 +32,15 @@ export function AddAssetDialog({ open, onOpenChange }: AddAssetDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted with data:', formData);
     setLoading(true);
     try {
-      await createAsset({
+      console.log('Calling createAsset...');
+      const result = await createAsset({
         ...formData,
         owner_type: 'company'
       });
+      console.log('Asset created successfully:', result);
 
       toast({
         title: 'Success',
