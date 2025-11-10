@@ -30,6 +30,7 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
     notes: ''
   });
   const [customEquipmentType, setCustomEquipmentType] = useState('');
+  const [unitNumber, setUnitNumber] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,14 +40,21 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
       return;
     }
 
-    if (!formData.make || !formData.model) {
-      toast.error('Make and model are required');
+    if (!formData.model && !customEquipmentType) {
+      toast.error('Please provide asset type/model');
       return;
     }
 
     try {
       setLoading(true);
-      await onAdd(formData as CreateVehicleInput);
+      
+      // Add unit number to VIN field if provided (or use separate tracking)
+      const assetData = {
+        ...formData,
+        vin: unitNumber || formData.vin
+      };
+      
+      await onAdd(assetData as CreateVehicleInput);
       toast.success('Company asset added successfully');
       setOpen(false);
       setFormData({
@@ -63,6 +71,7 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
         notes: ''
       });
       setCustomEquipmentType('');
+      setUnitNumber('');
     } catch (error) {
       toast.error('Failed to add company asset');
     } finally {
@@ -84,9 +93,23 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="unit_number">Unit # *</Label>
+            <Input
+              id="unit_number"
+              placeholder="e.g., FT-1, PU-20, CV-5"
+              value={unitNumber}
+              onChange={(e) => setUnitNumber(e.target.value)}
+              required
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Unique identifier for this asset (e.g., FT-1 for Forklift #1)
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="asset_category">Asset Category</Label>
+              <Label htmlFor="asset_category">Asset Category *</Label>
               <Select 
                 value={formData.asset_category} 
                 onValueChange={(value) => {
@@ -106,6 +129,9 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Select the primary category for this asset
+              </p>
             </div>
 
             <div>
@@ -153,26 +179,29 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
               <Input
                 id="year"
                 type="number"
+                placeholder="2024"
                 value={formData.year || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) || undefined }))}
               />
             </div>
             <div>
-              <Label htmlFor="make">Make</Label>
+              <Label htmlFor="make">Make/Brand</Label>
               <Input
                 id="make"
+                placeholder="e.g., Toyota, CAT, Honda"
                 value={formData.make || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
-                required
               />
             </div>
             <div>
-              <Label htmlFor="model">Model</Label>
+              <Label htmlFor="model">Model *</Label>
               <Input
                 id="model"
+                placeholder="e.g., Camry, 320D, Generator"
                 value={formData.model || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-                required
+                required={formData.asset_category !== 'other'}
+                disabled={formData.asset_category === 'other'}
               />
             </div>
           </div>
