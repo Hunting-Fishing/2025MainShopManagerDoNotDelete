@@ -34,16 +34,6 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.equipment_type) {
-      toast.error('Please select an equipment type');
-      return;
-    }
-
-    if (!unitNumber) {
-      toast.error('Please provide a unit number');
-      return;
-    }
 
     try {
       setLoading(true);
@@ -93,13 +83,12 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="unit_number">Unit # *</Label>
+            <Label htmlFor="unit_number">Unit #</Label>
             <Input
               id="unit_number"
               placeholder="e.g., FT-1, PU-20, CV-5"
               value={unitNumber}
               onChange={(e) => setUnitNumber(e.target.value)}
-              required
             />
             <p className="text-xs text-muted-foreground mt-1">
               Unique identifier for this asset (e.g., FT-1 for Forklift #1)
@@ -108,8 +97,8 @@ export function AddAssetDialog({ onAdd }: AddAssetDialogProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="equipment_type">Equipment Type *</Label>
-              <Select 
+              <Label htmlFor="equipment_type">Equipment Type</Label>
+              <Select
                 value={formData.equipment_type} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, equipment_type: value as any }))}
               >
