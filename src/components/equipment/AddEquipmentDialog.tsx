@@ -51,28 +51,33 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         throw new Error('No shop associated with user');
       }
 
-      const equipmentId = crypto.randomUUID();
+      // Get current user
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Not authenticated');
+
+      // Generate asset number if not provided
+      const assetNumber = `AST-${Date.now()}`;
       
       const { error } = await supabase
-        .from('equipment')
+        .from('equipment_assets')
         .insert({
-          id: equipmentId,
+          shop_id: profile.shop_id,
+          equipment_type: formData.equipment_type as any,
+          asset_number: assetNumber,
+          unit_number: formData.unit_number || null,
           name: formData.name,
-          model: formData.model || 'Unknown',
-          manufacturer: formData.manufacturer || 'Unknown',
-          serial_number: formData.serial_number || '',
-          category: formData.equipment_type,
+          manufacturer: formData.manufacturer || null,
+          model: formData.model || null,
+          serial_number: formData.serial_number || null,
+          location: formData.location || null,
+          purchase_date: formData.purchase_date || null,
+          purchase_cost: formData.purchase_price ? parseFloat(formData.purchase_price) : null,
           status: 'operational',
-          location: formData.location || '',
-          customer: 'Internal',
-          purchase_date: formData.purchase_date || new Date().toISOString().split('T')[0],
-          install_date: formData.purchase_date || new Date().toISOString().split('T')[0],
-          warranty_expiry_date: formData.warranty_expiry || new Date().toISOString().split('T')[0],
-          warranty_status: 'active',
-          last_maintenance_date: new Date().toISOString().split('T')[0],
-          next_maintenance_date: formData.warranty_expiry || new Date().toISOString().split('T')[0],
-          maintenance_frequency: formData.maintenance_interval_days ? `${formData.maintenance_interval_days} days` : '90 days',
-          notes: formData.notes || null
+          current_hours: 0,
+          current_mileage: 0,
+          maintenance_intervals: [],
+          notes: formData.notes || null,
+          created_by: userData.user.id
         });
 
       if (error) throw error;
