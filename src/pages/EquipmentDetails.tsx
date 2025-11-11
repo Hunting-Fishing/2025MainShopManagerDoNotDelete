@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { getEquipmentById, updateEquipmentStatus, type EquipmentDetails } from '@/services/equipment/equipmentService';
+import { MaintenanceIntervals } from '@/components/equipment/MaintenanceIntervals';
 
 export default function EquipmentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -181,6 +182,10 @@ export default function EquipmentDetails() {
       <Tabs defaultValue="details" className="space-y-4">
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="intervals">
+            <Wrench className="h-4 w-4 mr-2" />
+            Maintenance Intervals
+          </TabsTrigger>
           <TabsTrigger value="maintenance">Maintenance History</TabsTrigger>
           <TabsTrigger value="specifications">Specifications</TabsTrigger>
         </TabsList>
@@ -260,6 +265,10 @@ export default function EquipmentDetails() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="intervals" className="space-y-4">
+          <MaintenanceIntervals equipmentId={id!} />
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-4">

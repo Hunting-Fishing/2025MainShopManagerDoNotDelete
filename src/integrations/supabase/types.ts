@@ -5288,6 +5288,80 @@ export type Database = {
           },
         ]
       }
+      equipment_maintenance_items: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          equipment_id: string
+          id: string
+          interval_type: string
+          interval_unit: string
+          interval_value: number
+          is_active: boolean | null
+          item_category: string
+          item_name: string
+          last_service_date: string | null
+          last_service_hours: number | null
+          next_service_date: string | null
+          next_service_hours: number | null
+          notes: string | null
+          part_numbers: string[] | null
+          quantity: number | null
+          quantity_unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          equipment_id: string
+          id?: string
+          interval_type?: string
+          interval_unit: string
+          interval_value: number
+          is_active?: boolean | null
+          item_category: string
+          item_name: string
+          last_service_date?: string | null
+          last_service_hours?: number | null
+          next_service_date?: string | null
+          next_service_hours?: number | null
+          notes?: string | null
+          part_numbers?: string[] | null
+          quantity?: number | null
+          quantity_unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          equipment_id?: string
+          id?: string
+          interval_type?: string
+          interval_unit?: string
+          interval_value?: number
+          is_active?: boolean | null
+          item_category?: string
+          item_name?: string
+          last_service_date?: string | null
+          last_service_hours?: number | null
+          next_service_date?: string | null
+          next_service_hours?: number | null
+          notes?: string | null
+          part_numbers?: string[] | null
+          quantity?: number | null
+          quantity_unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_maintenance_items_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_pm_schedules: {
         Row: {
           created_at: string | null
