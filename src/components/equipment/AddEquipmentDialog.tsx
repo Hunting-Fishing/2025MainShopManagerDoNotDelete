@@ -22,6 +22,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
     manufacturer: '',
     serial_number: '',
     equipment_type: '',
+    unit_number: '',
     location: '',
     purchase_date: '',
     purchase_price: '',
@@ -88,6 +89,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         manufacturer: '',
         serial_number: '',
         equipment_type: '',
+        unit_number: '',
         location: '',
         purchase_date: '',
         purchase_price: '',
@@ -188,6 +190,16 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                 id="serial_number"
                 value={formData.serial_number}
                 onChange={(e) => setFormData(prev => ({ ...prev, serial_number: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="unit_number">Unit #</Label>
+              <Input
+                id="unit_number"
+                value={formData.unit_number}
+                onChange={(e) => setFormData(prev => ({ ...prev, unit_number: e.target.value }))}
+                placeholder="e.g., UNIT-001"
               />
             </div>
 

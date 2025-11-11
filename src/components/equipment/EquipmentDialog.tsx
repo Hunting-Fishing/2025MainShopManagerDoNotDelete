@@ -9,8 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
 import { useToast } from '@/hooks/use-toast';
-import { History } from 'lucide-react';
+import { History, Wrench } from 'lucide-react';
 import { EquipmentAuditTrail } from './EquipmentAuditTrail';
+import { MaintenanceIntervalsConfig } from './MaintenanceIntervalsConfig';
 
 interface EquipmentDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
   const [formData, setFormData] = useState({
     equipment_type: '',
     asset_number: '',
+    unit_number: '',
     name: '',
     manufacturer: '',
     model: '',
@@ -36,12 +38,14 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
     current_mileage: '',
     notes: '',
   });
+  const [maintenanceIntervals, setMaintenanceIntervals] = useState<any[]>([]);
 
   useEffect(() => {
     if (equipment) {
       setFormData({
         equipment_type: equipment.equipment_type || '',
         asset_number: equipment.asset_number || '',
+        unit_number: equipment.unit_number || '',
         name: equipment.name || '',
         manufacturer: equipment.manufacturer || '',
         model: equipment.model || '',
@@ -53,10 +57,12 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
         current_mileage: equipment.current_mileage?.toString() || '',
         notes: equipment.notes || '',
       });
+      setMaintenanceIntervals(equipment.maintenance_intervals || []);
     } else {
       setFormData({
         equipment_type: '',
         asset_number: '',
+        unit_number: '',
         name: '',
         manufacturer: '',
         model: '',
@@ -68,6 +74,7 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
         current_mileage: '',
         notes: '',
       });
+      setMaintenanceIntervals([]);
     }
   }, [equipment]);
 
@@ -89,6 +96,7 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
         shop_id: shopId,
         equipment_type: formData.equipment_type as any,
         asset_number: formData.asset_number,
+        unit_number: formData.unit_number || null,
         name: formData.name,
         manufacturer: formData.manufacturer || null,
         model: formData.model || null,
@@ -98,6 +106,7 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
         status: formData.status as any,
         current_hours: formData.current_hours ? parseFloat(formData.current_hours) : 0,
         current_mileage: formData.current_mileage ? parseFloat(formData.current_mileage) : 0,
+        maintenance_intervals: maintenanceIntervals,
         notes: formData.notes || null,
         created_by: userData.user.id,
       };
@@ -144,8 +153,12 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className={equipment ? "grid w-full grid-cols-2" : "w-full"}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="maintenance">
+              <Wrench className="h-4 w-4 mr-2" />
+              Maintenance
+            </TabsTrigger>
             {equipment && (
               <TabsTrigger value="history">
                 <History className="h-4 w-4 mr-2" />
@@ -205,14 +218,26 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="name">Equipment Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="unit_number">Unit #</Label>
+                  <Input
+                    id="unit_number"
+                    value={formData.unit_number}
+                    onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
+                    placeholder="e.g., UNIT-001"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">Equipment Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -328,6 +353,22 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
                 </Button>
               </div>
             </form>
+          </TabsContent>
+
+          <TabsContent value="maintenance" className="pt-4">
+            <MaintenanceIntervalsConfig
+              equipmentType={formData.equipment_type}
+              intervals={maintenanceIntervals}
+              onChange={setMaintenanceIntervals}
+            />
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" form="equipment-form" disabled={saving}>
+                {saving ? 'Saving...' : equipment ? 'Update' : 'Create'}
+              </Button>
+            </div>
           </TabsContent>
 
           {equipment && (

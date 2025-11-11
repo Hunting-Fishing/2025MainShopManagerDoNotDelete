@@ -5198,6 +5198,7 @@ export type Database = {
           id: string
           last_service_date: string | null
           location: string | null
+          maintenance_intervals: Json | null
           manufacturer: string | null
           model: string | null
           name: string
@@ -5209,6 +5210,7 @@ export type Database = {
           shop_id: string
           specifications: Json | null
           status: Database["public"]["Enums"]["equipment_status"] | null
+          unit_number: string | null
           updated_at: string | null
           year: number | null
         }
@@ -5224,6 +5226,7 @@ export type Database = {
           id?: string
           last_service_date?: string | null
           location?: string | null
+          maintenance_intervals?: Json | null
           manufacturer?: string | null
           model?: string | null
           name: string
@@ -5235,6 +5238,7 @@ export type Database = {
           shop_id: string
           specifications?: Json | null
           status?: Database["public"]["Enums"]["equipment_status"] | null
+          unit_number?: string | null
           updated_at?: string | null
           year?: number | null
         }
@@ -5250,6 +5254,7 @@ export type Database = {
           id?: string
           last_service_date?: string | null
           location?: string | null
+          maintenance_intervals?: Json | null
           manufacturer?: string | null
           model?: string | null
           name?: string
@@ -5261,6 +5266,7 @@ export type Database = {
           shop_id?: string
           specifications?: Json | null
           status?: Database["public"]["Enums"]["equipment_status"] | null
+          unit_number?: string | null
           updated_at?: string | null
           year?: number | null
         }
