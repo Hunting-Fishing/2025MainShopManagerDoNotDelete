@@ -9169,55 +9169,106 @@ export type Database = {
       }
       inventory_items: {
         Row: {
+          barcode: string | null
           category: string
+          cost_per_unit: number | null
           created_at: string
+          date_bought: string | null
+          date_last: string | null
           description: string | null
+          dimensions: string | null
           id: string
           location: string | null
+          manufacturer: string | null
+          margin_markup: number | null
           name: string
+          notes: string | null
+          on_hold: number | null
+          on_order: number | null
+          part_number: string | null
           quantity: number
           quantity_in_stock: number | null
           reorder_point: number
+          sell_price_per_unit: number | null
           shop_id: string | null
           sku: string
           status: string
+          subcategory: string | null
           supplier: string
           unit_price: number
           updated_at: string
+          vehicle_compatibility: string | null
+          warranty_period: string | null
+          web_links: Json | null
+          weight: number | null
         }
         Insert: {
+          barcode?: string | null
           category: string
+          cost_per_unit?: number | null
           created_at?: string
+          date_bought?: string | null
+          date_last?: string | null
           description?: string | null
+          dimensions?: string | null
           id?: string
           location?: string | null
+          manufacturer?: string | null
+          margin_markup?: number | null
           name: string
+          notes?: string | null
+          on_hold?: number | null
+          on_order?: number | null
+          part_number?: string | null
           quantity?: number
           quantity_in_stock?: number | null
           reorder_point?: number
+          sell_price_per_unit?: number | null
           shop_id?: string | null
           sku: string
           status?: string
+          subcategory?: string | null
           supplier: string
           unit_price: number
           updated_at?: string
+          vehicle_compatibility?: string | null
+          warranty_period?: string | null
+          web_links?: Json | null
+          weight?: number | null
         }
         Update: {
+          barcode?: string | null
           category?: string
+          cost_per_unit?: number | null
           created_at?: string
+          date_bought?: string | null
+          date_last?: string | null
           description?: string | null
+          dimensions?: string | null
           id?: string
           location?: string | null
+          manufacturer?: string | null
+          margin_markup?: number | null
           name?: string
+          notes?: string | null
+          on_hold?: number | null
+          on_order?: number | null
+          part_number?: string | null
           quantity?: number
           quantity_in_stock?: number | null
           reorder_point?: number
+          sell_price_per_unit?: number | null
           shop_id?: string | null
           sku?: string
           status?: string
+          subcategory?: string | null
           supplier?: string
           unit_price?: number
           updated_at?: string
+          vehicle_compatibility?: string | null
+          warranty_period?: string | null
+          web_links?: Json | null
+          weight?: number | null
         }
         Relationships: [
           {
