@@ -33,58 +33,94 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.name || !formData.equipment_type) {
+      toast({
+        title: "Validation Error",
+        description: "Equipment Name and Type are required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
+      console.log('Starting equipment submission...', { name: formData.name, type: formData.equipment_type });
+      
+      // Get current user
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('User auth error:', userError);
+        throw new Error(`Authentication error: ${userError.message}`);
+      }
+      
+      if (!userData.user) {
+        throw new Error('You must be logged in to add equipment');
+      }
+      
+      console.log('User authenticated:', userData.user.id);
+
       // Get current user's shop_id from profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
+        .eq('id', userData.user.id)
         .maybeSingle();
 
       if (profileError) {
         console.error('Profile fetch error:', profileError);
-        throw new Error('Failed to fetch profile');
+        throw new Error(`Failed to fetch user profile: ${profileError.message}`);
       }
 
       if (!profile?.shop_id) {
-        throw new Error('No shop associated with user');
+        console.error('No shop_id found in profile:', profile);
+        throw new Error('No shop associated with your account. Please contact support.');
       }
+      
+      console.log('Shop ID found:', profile.shop_id);
 
-      // Get current user
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('Not authenticated');
-
-      // Generate asset number if not provided
+      // Generate asset number
       const assetNumber = `AST-${Date.now()}`;
       
-      const { error } = await supabase
+      const equipmentData = {
+        shop_id: profile.shop_id,
+        equipment_type: formData.equipment_type as any,
+        asset_number: assetNumber,
+        unit_number: formData.unit_number || null,
+        name: formData.name,
+        manufacturer: formData.manufacturer || null,
+        model: formData.model || null,
+        serial_number: formData.serial_number || null,
+        location: formData.location || null,
+        purchase_date: formData.purchase_date || null,
+        purchase_cost: formData.purchase_price ? parseFloat(formData.purchase_price) : null,
+        status: 'operational' as any,
+        current_hours: 0,
+        current_mileage: 0,
+        maintenance_intervals: [],
+        notes: formData.notes || null,
+        created_by: userData.user.id
+      };
+      
+      console.log('Inserting equipment data:', equipmentData);
+      
+      const { data: insertedData, error: insertError } = await supabase
         .from('equipment_assets')
-        .insert({
-          shop_id: profile.shop_id,
-          equipment_type: formData.equipment_type as any,
-          asset_number: assetNumber,
-          unit_number: formData.unit_number || null,
-          name: formData.name,
-          manufacturer: formData.manufacturer || null,
-          model: formData.model || null,
-          serial_number: formData.serial_number || null,
-          location: formData.location || null,
-          purchase_date: formData.purchase_date || null,
-          purchase_cost: formData.purchase_price ? parseFloat(formData.purchase_price) : null,
-          status: 'operational',
-          current_hours: 0,
-          current_mileage: 0,
-          maintenance_intervals: [],
-          notes: formData.notes || null,
-          created_by: userData.user.id
-        });
+        .insert([equipmentData])
+        .select();
 
-      if (error) throw error;
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        throw new Error(`Database error: ${insertError.message}`);
+      }
+      
+      console.log('Equipment inserted successfully:', insertedData);
 
       toast({
-        title: "Equipment added",
-        description: "Equipment has been successfully added to your inventory.",
+        title: "Success!",
+        description: `${formData.name} has been added to your equipment inventory.`,
       });
 
       // Reset form and close dialog
@@ -106,9 +142,10 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
 
     } catch (error) {
       console.error('Error adding equipment:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
-        title: "Error",
-        description: "Failed to add equipment. Please try again.",
+        title: "Failed to Add Equipment",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -273,14 +310,21 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || !formData.name || !formData.equipment_type}>
-              {isSubmitting ? 'Adding...' : 'Add Equipment'}
-            </Button>
-          </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting || !formData.name || !formData.equipment_type}>
+                {isSubmitting ? (
+                  <>
+                    <span className="mr-2">Adding...</span>
+                    <span className="animate-spin">⏳</span>
+                  </>
+                ) : (
+                  'Add Equipment'
+                )}
+              </Button>
+            </div>
         </form>
       </DialogContent>
     </Dialog>

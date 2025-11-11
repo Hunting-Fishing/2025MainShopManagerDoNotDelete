@@ -82,15 +82,24 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
     e.preventDefault();
     
     if (!shopId) {
-      toast({ title: 'Error', description: 'Shop ID not found', variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: 'Shop ID not found. Please log out and log back in.', 
+        variant: 'destructive' 
+      });
       return;
     }
 
     setSaving(true);
 
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('Not authenticated');
+      console.log('Starting equipment save...', { equipment: equipment?.id, formData });
+      
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        console.error('Authentication error:', userError);
+        throw new Error('You must be logged in to save equipment');
+      }
 
       const payload = {
         shop_id: shopId,
@@ -110,6 +119,8 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
         notes: formData.notes || null,
         created_by: userData.user.id,
       };
+      
+      console.log('Payload:', payload);
 
       if (equipment) {
         const { error } = await supabase
@@ -117,7 +128,10 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
           .update(payload)
           .eq('id', equipment.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw new Error(`Failed to update: ${error.message}`);
+        }
 
         toast({ title: 'Success', description: 'Equipment updated successfully' });
       } else {
@@ -125,7 +139,10 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
           .from('equipment_assets')
           .insert([payload]);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw new Error(`Failed to create: ${error.message}`);
+        }
 
         toast({ title: 'Success', description: 'Equipment added successfully' });
       }
@@ -133,9 +150,10 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
       onClose();
     } catch (error: any) {
       console.error('Error saving equipment:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to save equipment',
+        title: 'Failed to Save Equipment',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
