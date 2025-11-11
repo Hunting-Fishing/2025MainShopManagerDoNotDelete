@@ -5110,81 +5110,6 @@ export type Database = {
         }
         Relationships: []
       }
-      equipment: {
-        Row: {
-          category: string
-          created_at: string | null
-          customer: string
-          id: string
-          install_date: string
-          last_maintenance_date: string
-          location: string
-          maintenance_frequency: string
-          maintenance_history: Json | null
-          maintenance_schedules: Json | null
-          manufacturer: string
-          model: string
-          name: string
-          next_maintenance_date: string
-          notes: string | null
-          purchase_date: string
-          serial_number: string
-          status: string
-          updated_at: string | null
-          warranty_expiry_date: string
-          warranty_status: string
-          work_order_history: Json | null
-        }
-        Insert: {
-          category: string
-          created_at?: string | null
-          customer: string
-          id: string
-          install_date: string
-          last_maintenance_date: string
-          location: string
-          maintenance_frequency: string
-          maintenance_history?: Json | null
-          maintenance_schedules?: Json | null
-          manufacturer: string
-          model: string
-          name: string
-          next_maintenance_date: string
-          notes?: string | null
-          purchase_date: string
-          serial_number: string
-          status: string
-          updated_at?: string | null
-          warranty_expiry_date: string
-          warranty_status: string
-          work_order_history?: Json | null
-        }
-        Update: {
-          category?: string
-          created_at?: string | null
-          customer?: string
-          id?: string
-          install_date?: string
-          last_maintenance_date?: string
-          location?: string
-          maintenance_frequency?: string
-          maintenance_history?: Json | null
-          maintenance_schedules?: Json | null
-          manufacturer?: string
-          model?: string
-          name?: string
-          next_maintenance_date?: string
-          notes?: string | null
-          purchase_date?: string
-          serial_number?: string
-          status?: string
-          updated_at?: string | null
-          warranty_expiry_date?: string
-          warranty_status?: string
-          work_order_history?: Json | null
-        }
-        Relationships: []
-      }
       equipment_assets: {
         Row: {
           asset_number: string
@@ -10822,13 +10747,6 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maintenance_schedules_equipment_id_fkey"
-            columns: ["equipment_id"]
-            isOneToOne: false
-            referencedRelation: "equipment"
             referencedColumns: ["id"]
           },
           {
