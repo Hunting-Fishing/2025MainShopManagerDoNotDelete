@@ -47,10 +47,10 @@ export function CreateMaintenanceRequestDialog({
         return;
       }
 
-      // Get user's shop_id from profile
+      // Get user's shop_id and name from profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('shop_id')
+        .select('shop_id, first_name, last_name')
         .eq('id', user.id)
         .single();
 
@@ -73,6 +73,11 @@ export function CreateMaintenanceRequestDialog({
 
       const requestNumber = `MR-${nextNumber.toString().padStart(4, '0')}`;
 
+      // Get submitter name from profile
+      const submitterName = profile.first_name && profile.last_name
+        ? `${profile.first_name} ${profile.last_name}`
+        : user.email?.split('@')[0] || 'Unknown';
+
       // Create maintenance request
       const { error } = await supabase
         .from('maintenance_requests')
@@ -87,7 +92,7 @@ export function CreateMaintenanceRequestDialog({
           status: 'pending',
           requested_at: new Date().toISOString(),
           requested_by: user.id,
-          requested_by_name: user.email?.split('@')[0] || 'Unknown'
+          requested_by_name: submitterName
         });
 
       if (error) throw error;
@@ -186,7 +191,7 @@ export function CreateMaintenanceRequestDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="scheduled_date">Preferred Date (Optional)</Label>
+            <Label htmlFor="scheduled_date">Date of Problem Reporting (Optional)</Label>
             <Input
               id="scheduled_date"
               type="date"
