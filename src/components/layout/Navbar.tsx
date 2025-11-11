@@ -51,8 +51,7 @@ const navigationCategories = [
     items: [
       { name: 'Team', href: '/team', requiredPath: '/team' },
       { name: 'Company Profile', href: '/company-profile', requiredPath: '/company-profile' },
-      { name: 'Vehicles', href: '/vehicles', requiredPath: '/vehicles' },
-      { name: 'Equipment', href: '/equipment', requiredPath: '/equipment' },
+      { name: 'Assets & Equipment', href: '/equipment', requiredPath: '/equipment' },
     ]
   },
   {
