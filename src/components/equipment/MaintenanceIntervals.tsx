@@ -90,6 +90,10 @@ const QUANTITY_UNITS = [
 export function MaintenanceIntervals({ equipmentId }: MaintenanceIntervalsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MaintenanceItem | null>(null);
+  const [partDialogOpen, setPartDialogOpen] = useState(false);
+  const [partEntryMode, setPartEntryMode] = useState<'manual' | 'inventory'>('manual');
+  const [manualPartNumber, setManualPartNumber] = useState('');
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<string>('');
   const queryClient = useQueryClient();
 
   // Form state
@@ -102,7 +106,7 @@ export function MaintenanceIntervals({ equipmentId }: MaintenanceIntervalsProps)
     interval_unit: 'months',
     quantity: '',
     quantity_unit: '',
-    part_numbers: '',
+    part_numbers: [] as string[],
     notes: '',
   });
 
@@ -119,6 +123,20 @@ export function MaintenanceIntervals({ equipmentId }: MaintenanceIntervalsProps)
 
       if (error) throw error;
       return data as MaintenanceItem[];
+    },
+  });
+
+  // Fetch inventory items for selection
+  const { data: inventoryItems = [] } = useQuery({
+    queryKey: ['inventory-items'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('id, name, sku, part_number')
+        .order('name');
+
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -179,8 +197,36 @@ export function MaintenanceIntervals({ equipmentId }: MaintenanceIntervalsProps)
       interval_unit: 'months',
       quantity: '',
       quantity_unit: '',
-      part_numbers: '',
+      part_numbers: [],
       notes: '',
+    });
+  };
+
+  const handleAddPart = () => {
+    if (partEntryMode === 'manual' && manualPartNumber.trim()) {
+      setFormData({
+        ...formData,
+        part_numbers: [...formData.part_numbers, manualPartNumber.trim()]
+      });
+      setManualPartNumber('');
+    } else if (partEntryMode === 'inventory' && selectedInventoryItem) {
+      const item = inventoryItems.find(i => i.id === selectedInventoryItem);
+      if (item && item.part_number) {
+        setFormData({
+          ...formData,
+          part_numbers: [...formData.part_numbers, item.part_number]
+        });
+        setSelectedInventoryItem('');
+      }
+    }
+    setPartDialogOpen(false);
+    setPartEntryMode('manual');
+  };
+
+  const handleRemovePart = (index: number) => {
+    setFormData({
+      ...formData,
+      part_numbers: formData.part_numbers.filter((_, i) => i !== index)
     });
   };
 
@@ -195,7 +241,7 @@ export function MaintenanceIntervals({ equipmentId }: MaintenanceIntervalsProps)
       interval_unit: item.interval_unit,
       quantity: item.quantity?.toString() || '',
       quantity_unit: item.quantity_unit || '',
-      part_numbers: item.part_numbers?.join(', ') || '',
+      part_numbers: item.part_numbers || [],
       notes: item.notes || '',
     });
     setDialogOpen(true);
@@ -213,9 +259,7 @@ export function MaintenanceIntervals({ equipmentId }: MaintenanceIntervalsProps)
       interval_unit: formData.interval_unit,
       quantity: formData.quantity ? parseFloat(formData.quantity) : null,
       quantity_unit: formData.quantity_unit || null,
-      part_numbers: formData.part_numbers 
-        ? formData.part_numbers.split(',').map(p => p.trim()).filter(Boolean)
-        : null,
+      part_numbers: formData.part_numbers.length > 0 ? formData.part_numbers : null,
       notes: formData.notes || null,
     };
 
@@ -412,16 +456,119 @@ export function MaintenanceIntervals({ equipmentId }: MaintenanceIntervalsProps)
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="part_numbers">Part Numbers</Label>
-                <Input
-                  id="part_numbers"
-                  value={formData.part_numbers}
-                  onChange={(e) => setFormData({ ...formData, part_numbers: e.target.value })}
-                  placeholder="Comma-separated part numbers (e.g., ABC123, XYZ456)"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Separate multiple part numbers with commas
-                </p>
+                <Label>Part Numbers</Label>
+                <div className="space-y-2">
+                  {formData.part_numbers.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-muted/30">
+                      {formData.part_numbers.map((partNum, index) => (
+                        <Badge key={index} variant="secondary" className="gap-1">
+                          {partNum}
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePart(index)}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-3 border rounded-md bg-muted/30 text-sm text-muted-foreground text-center">
+                      No parts added yet
+                    </div>
+                  )}
+                  <Dialog open={partDialogOpen} onOpenChange={setPartDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button type="button" variant="outline" size="sm" className="w-full">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Part
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Part Number</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={partEntryMode === 'manual' ? 'default' : 'outline'}
+                            onClick={() => setPartEntryMode('manual')}
+                            className="flex-1"
+                          >
+                            Manual Entry
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={partEntryMode === 'inventory' ? 'default' : 'outline'}
+                            onClick={() => setPartEntryMode('inventory')}
+                            className="flex-1"
+                          >
+                            From Inventory
+                          </Button>
+                        </div>
+
+                        {partEntryMode === 'manual' ? (
+                          <div className="space-y-2">
+                            <Label htmlFor="manual_part">Part Number</Label>
+                            <Input
+                              id="manual_part"
+                              value={manualPartNumber}
+                              onChange={(e) => setManualPartNumber(e.target.value)}
+                              placeholder="Enter part number"
+                            />
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <Label htmlFor="inventory_select">Select from Inventory</Label>
+                            <Select
+                              value={selectedInventoryItem}
+                              onValueChange={setSelectedInventoryItem}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose an item" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {inventoryItems.filter(item => item.part_number).map((item) => (
+                                  <SelectItem key={item.id} value={item.id}>
+                                    {item.name} - {item.part_number}
+                                    {item.sku && ` (${item.sku})`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setPartDialogOpen(false);
+                              setPartEntryMode('manual');
+                              setManualPartNumber('');
+                              setSelectedInventoryItem('');
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={handleAddPart}
+                            disabled={
+                              (partEntryMode === 'manual' && !manualPartNumber.trim()) ||
+                              (partEntryMode === 'inventory' && !selectedInventoryItem)
+                            }
+                          >
+                            Add Part
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
 
               <div className="space-y-2">
