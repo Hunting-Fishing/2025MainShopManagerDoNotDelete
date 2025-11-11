@@ -177,10 +177,26 @@ export function EquipmentDialog({ open, onClose, equipment }: EquipmentDialogPro
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="marine">Marine</SelectItem>
+                    <SelectItem value="diagnostic">Diagnostic Equipment</SelectItem>
+                    <SelectItem value="lifting">Lifting Equipment</SelectItem>
+                    <SelectItem value="air_tools">Air Tools</SelectItem>
+                    <SelectItem value="hand_tools">Hand Tools</SelectItem>
+                    <SelectItem value="electrical">Electrical Equipment</SelectItem>
+                    <SelectItem value="generator">Generator</SelectItem>
                     <SelectItem value="forklift">Forklift</SelectItem>
+                    <SelectItem value="excavator">Excavator</SelectItem>
+                    <SelectItem value="loader">Loader</SelectItem>
+                    <SelectItem value="dozer">Dozer</SelectItem>
+                    <SelectItem value="heavy_truck">Heavy Truck</SelectItem>
+                    <SelectItem value="vessel">Vessel</SelectItem>
+                    <SelectItem value="outboard">Outboard Motor</SelectItem>
+                    <SelectItem value="marine">Marine</SelectItem>
                     <SelectItem value="semi">Semi</SelectItem>
                     <SelectItem value="small_engine">Small Engine</SelectItem>
+                    <SelectItem value="fleet_vehicle">Fleet Vehicle</SelectItem>
+                    <SelectItem value="courtesy_car">Courtesy Car</SelectItem>
+                    <SelectItem value="rental_vehicle">Rental Vehicle</SelectItem>
+                    <SelectItem value="service_vehicle">Service Vehicle</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
