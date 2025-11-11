@@ -49,6 +49,7 @@ import InvoiceDetails from '@/pages/InvoiceDetails';
 import SignatureDemo from '@/pages/SignatureDemo';
 import EquipmentManagement from '@/pages/EquipmentManagement';
 import Equipment from '@/pages/Equipment';
+import EquipmentDetails from '@/pages/EquipmentDetails';
 import FleetManagement from '@/pages/FleetManagement';
 import MaintenanceRequests from '@/pages/MaintenanceRequests';
 import ShoppingCartPage from '@/pages/ShoppingCart';
@@ -350,6 +351,12 @@ function App() {
                   <Route path="/equipment" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
                       <Equipment />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/equipment/:id" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                      <EquipmentDetails />
                     </ProtectedRoute>
                   } />
                   

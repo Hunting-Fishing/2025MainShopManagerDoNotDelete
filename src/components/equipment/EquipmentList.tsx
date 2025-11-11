@@ -9,6 +9,7 @@ import { Search, AlertTriangle, CheckCircle, Clock, Wrench, Loader2, Trash2 } fr
 import { Equipment } from '@/types/equipment';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface EquipmentListProps {
   equipment: Equipment[];
@@ -39,6 +40,7 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
 
 export function EquipmentList({ equipment, loading, onUpdate }: EquipmentListProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -134,7 +136,11 @@ export function EquipmentList({ equipment, loading, onUpdate }: EquipmentListPro
                     <Badge variant={getStatusVariant(item.status)}>
                       {item.status.replace('_', ' ')}
                     </Badge>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate(`/equipment/${item.id}`)}
+                    >
                       View Details
                     </Button>
                     <AlertDialog>
