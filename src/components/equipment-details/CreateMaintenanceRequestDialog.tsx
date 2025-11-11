@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, X, Image, Video } from 'lucide-react';
 
 interface CreateMaintenanceRequestDialogProps {
   open: boolean;
@@ -25,6 +25,7 @@ export function CreateMaintenanceRequestDialog({
   onSuccess
 }: CreateMaintenanceRequestDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -33,6 +34,17 @@ export function CreateMaintenanceRequestDialog({
     scheduled_date: '',
     notes: ''
   });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +90,37 @@ export function CreateMaintenanceRequestDialog({
         ? `${profile.first_name} ${profile.last_name}`
         : user.email?.split('@')[0] || 'Unknown';
 
+      // Upload files to storage if any
+      const attachments = [];
+      if (files.length > 0) {
+        for (const file of files) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          
+          const { error: uploadError, data } = await supabase.storage
+            .from('maintenance-attachments')
+            .upload(fileName, file);
+
+          if (uploadError) {
+            console.error('Error uploading file:', uploadError);
+            toast.error(`Failed to upload ${file.name}`);
+            continue;
+          }
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('maintenance-attachments')
+            .getPublicUrl(fileName);
+
+          attachments.push({
+            name: file.name,
+            url: publicUrl,
+            type: file.type,
+            size: file.size
+          });
+        }
+      }
+
       // Create maintenance request
       const { error } = await supabase
         .from('maintenance_requests')
@@ -92,7 +135,8 @@ export function CreateMaintenanceRequestDialog({
           status: 'pending',
           requested_at: new Date().toISOString(),
           requested_by: user.id,
-          requested_by_name: submitterName
+          requested_by_name: submitterName,
+          attachments: attachments
         });
 
       if (error) throw error;
@@ -110,6 +154,7 @@ export function CreateMaintenanceRequestDialog({
         scheduled_date: '',
         notes: ''
       });
+      setFiles([]);
     } catch (error) {
       console.error('Error creating maintenance request:', error);
       toast.error('Failed to submit maintenance request');
@@ -200,6 +245,64 @@ export function CreateMaintenanceRequestDialog({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="attachments">Photos & Videos (Optional)</Label>
+            <div className="border-2 border-dashed border-border rounded-lg p-4">
+              <input
+                id="attachments"
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <label
+                htmlFor="attachments"
+                className="flex flex-col items-center justify-center cursor-pointer"
+              >
+                <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Click to upload photos or videos
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PNG, JPG, MP4, MOV up to 20MB
+                </p>
+              </label>
+            </div>
+
+            {files.length > 0 && (
+              <div className="space-y-2 mt-3">
+                {files.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 bg-muted rounded-md"
+                  >
+                    <div className="flex items-center gap-2">
+                      {file.type.startsWith('image/') ? (
+                        <Image className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Video className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <span className="text-sm truncate max-w-[200px]">
+                        {file.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button

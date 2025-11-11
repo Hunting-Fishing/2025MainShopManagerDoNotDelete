@@ -10541,6 +10541,7 @@ export type Database = {
           approved_by_name: string | null
           assigned_to: string | null
           assigned_to_name: string | null
+          attachments: Json | null
           completed_at: string | null
           completed_by: string | null
           completed_by_name: string | null
@@ -10576,6 +10577,7 @@ export type Database = {
           approved_by_name?: string | null
           assigned_to?: string | null
           assigned_to_name?: string | null
+          attachments?: Json | null
           completed_at?: string | null
           completed_by?: string | null
           completed_by_name?: string | null
@@ -10611,6 +10613,7 @@ export type Database = {
           approved_by_name?: string | null
           assigned_to?: string | null
           assigned_to_name?: string | null
+          attachments?: Json | null
           completed_at?: string | null
           completed_by?: string | null
           completed_by_name?: string | null
