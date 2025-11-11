@@ -4,12 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, AlertTriangle, CheckCircle, Clock, Wrench, Loader2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Search, AlertTriangle, CheckCircle, Clock, Wrench, Loader2, Trash2 } from 'lucide-react';
 import { Equipment } from '@/types/equipment';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface EquipmentListProps {
   equipment: Equipment[];
   loading: boolean;
+  onUpdate?: () => void;
 }
 
 const getStatusIcon = (status: string) => {
@@ -33,7 +37,8 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
   }
 };
 
-export function EquipmentList({ equipment, loading }: EquipmentListProps) {
+export function EquipmentList({ equipment, loading, onUpdate }: EquipmentListProps) {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -46,6 +51,25 @@ export function EquipmentList({ equipment, loading }: EquipmentListProps) {
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase.from('equipment').delete().eq('id', id);
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Equipment deleted successfully',
+      });
+      onUpdate?.();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <Card>
@@ -113,6 +137,27 @@ export function EquipmentList({ equipment, loading }: EquipmentListProps) {
                     <Button variant="outline" size="sm">
                       View Details
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Equipment?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{item.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(item.id)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </Card>

@@ -74,7 +74,7 @@ export default function Equipment() {
           </Card>
         </div>
 
-        <EquipmentList equipment={equipment} loading={isLoading} />
+        <EquipmentList equipment={equipment} loading={isLoading} onUpdate={refetch} />
       </div>
     </>
   );

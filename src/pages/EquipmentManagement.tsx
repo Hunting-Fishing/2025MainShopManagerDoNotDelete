@@ -88,7 +88,7 @@ export default function EquipmentManagement() {
         )}
 
         <TabsContent value="equipment" className="space-y-4">
-          <EquipmentList equipment={equipment} loading={isLoading} />
+          <EquipmentList equipment={equipment} loading={isLoading} onUpdate={refetch} />
         </TabsContent>
 
         <TabsContent value="tools" className="space-y-4">
