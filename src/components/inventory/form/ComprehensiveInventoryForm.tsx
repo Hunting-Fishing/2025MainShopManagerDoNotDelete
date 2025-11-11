@@ -57,10 +57,17 @@ export function ComprehensiveInventoryForm({
   const [currentTab, setCurrentTab] = useState("basic");
   const [formData, setFormData] = useState<any>(() => {
     if (initialData && isEditMode) {
-      return {
+      // Map database fields to form fields
+      const mappedData = {
         ...initialData,
-        webLinks: (initialData as any).webLinks || []
+        // Map web_links from database to webLinks for form
+        webLinks: (initialData as any).web_links || (initialData as any).webLinks || []
       };
+      
+      console.log('Loading edit data:', mappedData);
+      console.log('Web links from DB:', (initialData as any).web_links);
+      
+      return mappedData;
     }
     
     return {

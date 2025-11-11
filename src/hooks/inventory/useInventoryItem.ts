@@ -31,11 +31,14 @@ export function useInventoryItem(itemId: string) {
 
       // Map the data to include all extended fields
       if (data) {
-        return {
+        const mappedData = {
           ...data,
           price: data.unit_price, // Map unit_price to price for UI compatibility
-          webLinks: data.web_links || [] // Map web_links from DB
-        } as InventoryItemExtended;
+          webLinks: data.web_links || [], // Map web_links from DB to webLinks
+          web_links: data.web_links || [] // Keep both for compatibility
+        };
+        console.log('Fetched item data:', mappedData);
+        return mappedData as InventoryItemExtended;
       }
 
       return null;

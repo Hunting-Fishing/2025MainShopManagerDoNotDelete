@@ -114,8 +114,11 @@ export const formatInventoryForApi = (item: Partial<InventoryItemExtended>) => {
     date_bought: item.dateBought,
     date_last: item.dateLast,
     notes: item.notes,
-    web_links: (item as any).webLinks || []
+    web_links: (item as any).webLinks || (item as any).web_links || []
   };
+  
+  console.log('Formatting for API - webLinks:', (item as any).webLinks);
+  console.log('Formatting for API - web_links output:', apiData.web_links);
   
   // Remove undefined values
   Object.keys(apiData).forEach(key => {
