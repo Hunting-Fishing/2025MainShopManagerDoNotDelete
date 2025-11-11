@@ -29,11 +29,12 @@ export function useInventoryItem(itemId: string) {
         throw error;
       }
 
-      // Map the data to include the required price field for UI consistency
+      // Map the data to include all extended fields
       if (data) {
         return {
           ...data,
-          price: data.unit_price // Map unit_price to price for UI compatibility
+          price: data.unit_price, // Map unit_price to price for UI compatibility
+          webLinks: data.web_links || [] // Map web_links from DB
         } as InventoryItemExtended;
       }
 

@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Edit2, Save, X } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Edit2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '@/lib/utils';
 import { InventoryItemExtended } from '@/types/inventory';
 import { WebLinksDisplay } from './WebLinksDisplay';
@@ -20,54 +18,10 @@ interface InventoryItemDetailsProps {
 
 export function InventoryItemDetails({ item, onUpdate, isUpdating, initialEditMode = false }: InventoryItemDetailsProps) {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [isEditing, setIsEditing] = useState(initialEditMode);
-  const [editData, setEditData] = useState<Partial<InventoryItemExtended>>({});
-
-  useEffect(() => {
-    if (initialEditMode) {
-      setEditData({
-        name: item.name,
-        sku: item.sku,
-        category: item.category,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        reorder_point: item.reorder_point,
-        location: item.location,
-        supplier: item.supplier,
-        description: item.description,
-        status: item.status,
-      });
-    }
-  }, [initialEditMode, item]);
 
   const handleEdit = () => {
-    setEditData({
-      name: item.name,
-      sku: item.sku,
-      category: item.category,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      reorder_point: item.reorder_point,
-      location: item.location,
-      supplier: item.supplier,
-      description: item.description,
-      status: item.status,
-    });
-    setIsEditing(true);
-    setSearchParams({ edit: 'true' });
-  };
-
-  const handleSave = () => {
-    onUpdate(editData);
-    setIsEditing(false);
-    setSearchParams({});
-  };
-
-  const handleCancel = () => {
-    setEditData({});
-    setIsEditing(false);
-    setSearchParams({});
+    // Navigate to edit page with comprehensive form
+    navigate(`/inventory/edit/${item.id}`);
   };
 
   const getStatusColor = (status: string) => {
@@ -103,33 +57,10 @@ export function InventoryItemDetails({ item, onUpdate, isUpdating, initialEditMo
             <p className="text-muted-foreground">SKU: {item.sku}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {isEditing ? (
-            <>
-              <Button
-                onClick={handleSave}
-                disabled={isUpdating}
-                size="sm"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                size="sm"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <Button onClick={handleEdit} size="sm">
-              <Edit2 className="h-4 w-4 mr-2" />
-              Edit Item
-            </Button>
-          )}
-        </div>
+        <Button onClick={handleEdit} size="sm">
+          <Edit2 className="h-4 w-4 mr-2" />
+          Edit Item
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -141,67 +72,27 @@ export function InventoryItemDetails({ item, onUpdate, isUpdating, initialEditMo
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="name">Name</Label>
-                {isEditing ? (
-                  <Input
-                    id="name"
-                    value={editData.name || ''}
-                    onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                  />
-                ) : (
-                  <p className="text-sm font-medium mt-1">{item.name}</p>
-                )}
+                <Label>Name</Label>
+                <p className="text-sm font-medium mt-1">{item.name}</p>
               </div>
               <div>
-                <Label htmlFor="sku">SKU</Label>
-                {isEditing ? (
-                  <Input
-                    id="sku"
-                    value={editData.sku || ''}
-                    onChange={(e) => setEditData({ ...editData, sku: e.target.value })}
-                  />
-                ) : (
-                  <p className="text-sm font-medium mt-1">{item.sku}</p>
-                )}
+                <Label>SKU</Label>
+                <p className="text-sm font-medium mt-1">{item.sku}</p>
               </div>
               <div>
-                <Label htmlFor="category">Category</Label>
-                {isEditing ? (
-                  <Input
-                    id="category"
-                    value={editData.category || ''}
-                    onChange={(e) => setEditData({ ...editData, category: e.target.value })}
-                  />
-                ) : (
-                  <p className="text-sm font-medium mt-1">{item.category}</p>
-                )}
+                <Label>Category</Label>
+                <p className="text-sm font-medium mt-1">{item.category}</p>
               </div>
               <div>
-                <Label htmlFor="supplier">Supplier</Label>
-                {isEditing ? (
-                  <Input
-                    id="supplier"
-                    value={editData.supplier || ''}
-                    onChange={(e) => setEditData({ ...editData, supplier: e.target.value })}
-                  />
-                ) : (
-                  <p className="text-sm font-medium mt-1">{item.supplier || 'N/A'}</p>
-                )}
+                <Label>Supplier</Label>
+                <p className="text-sm font-medium mt-1">{item.supplier || 'N/A'}</p>
               </div>
               <div>
-                <Label htmlFor="location">Location</Label>
-                {isEditing ? (
-                  <Input
-                    id="location"
-                    value={editData.location || ''}
-                    onChange={(e) => setEditData({ ...editData, location: e.target.value })}
-                  />
-                ) : (
-                  <p className="text-sm font-medium mt-1">{item.location || 'N/A'}</p>
-                )}
+                <Label>Location</Label>
+                <p className="text-sm font-medium mt-1">{item.location || 'N/A'}</p>
               </div>
               <div>
-                <Label htmlFor="status">Status</Label>
+                <Label>Status</Label>
                 <div className="mt-1">
                   <Badge className={getStatusColor(item.status)}>
                     {item.status}
@@ -210,17 +101,8 @@ export function InventoryItemDetails({ item, onUpdate, isUpdating, initialEditMo
               </div>
             </div>
             <div>
-              <Label htmlFor="description">Description</Label>
-              {isEditing ? (
-                <Textarea
-                  id="description"
-                  value={editData.description || ''}
-                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                  rows={3}
-                />
-              ) : (
-                <p className="text-sm mt-1">{item.description || 'No description available'}</p>
-              )}
+              <Label>Description</Label>
+              <p className="text-sm mt-1">{item.description || 'No description available'}</p>
             </div>
           </CardContent>
         </Card>
@@ -233,30 +115,12 @@ export function InventoryItemDetails({ item, onUpdate, isUpdating, initialEditMo
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="quantity">Current Stock</Label>
-                {isEditing ? (
-                  <Input
-                    id="quantity"
-                    type="number"
-                    value={editData.quantity || 0}
-                    onChange={(e) => setEditData({ ...editData, quantity: Number(e.target.value) })}
-                  />
-                ) : (
-                  <p className="text-2xl font-bold text-primary">{item.quantity}</p>
-                )}
+                <Label>Current Stock</Label>
+                <p className="text-2xl font-bold text-primary">{item.quantity}</p>
               </div>
               <div>
-                <Label htmlFor="reorder_point">Reorder Point</Label>
-                {isEditing ? (
-                  <Input
-                    id="reorder_point"
-                    type="number"
-                    value={editData.reorder_point || 0}
-                    onChange={(e) => setEditData({ ...editData, reorder_point: Number(e.target.value) })}
-                  />
-                ) : (
-                  <p className="text-sm font-medium mt-1">{item.reorder_point || 0}</p>
-                )}
+                <Label>Reorder Point</Label>
+                <p className="text-sm font-medium mt-1">{item.reorder_point || 0}</p>
               </div>
             </CardContent>
           </Card>
@@ -267,18 +131,8 @@ export function InventoryItemDetails({ item, onUpdate, isUpdating, initialEditMo
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="unit_price">Unit Price</Label>
-                {isEditing ? (
-                  <Input
-                    id="unit_price"
-                    type="number"
-                    step="0.01"
-                    value={editData.unit_price || 0}
-                    onChange={(e) => setEditData({ ...editData, unit_price: Number(e.target.value) })}
-                  />
-                ) : (
-                  <p className="text-lg font-semibold">{formatCurrency(item.unit_price)}</p>
-                )}
+                <Label>Unit Price</Label>
+                <p className="text-lg font-semibold">{formatCurrency(item.unit_price)}</p>
               </div>
               <div>
                 <Label>Total Value</Label>

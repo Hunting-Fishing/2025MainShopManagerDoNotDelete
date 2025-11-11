@@ -18,6 +18,7 @@ import { BulkActionsBar } from '@/components/inventory/BulkActionsBar';
 import { ImportExportDialog } from '@/components/inventory/ImportExportDialog';
 import { useToast } from '@/hooks/use-toast';
 import InventoryAdd from '@/pages/InventoryAdd';
+import InventoryEdit from '@/pages/InventoryEdit';
 import InventoryCategories from '@/pages/InventoryCategories';
 import InventorySuppliers from '@/pages/InventorySuppliers';
 import InventoryLocations from '@/pages/InventoryLocations';
@@ -151,6 +152,7 @@ export default function Inventory() {
               </div>
             } />
             <Route path="/add" element={<InventoryAdd />} />
+            <Route path="/edit/:id" element={<InventoryEdit />} />
             <Route path="/categories" element={<InventoryCategories />} />
             <Route path="/suppliers" element={<InventorySuppliers />} />
             <Route path="/locations" element={<InventoryLocations />} />

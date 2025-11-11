@@ -29,6 +29,8 @@ interface ComprehensiveInventoryFormProps {
   onSubmit: (data: Omit<InventoryItemExtended, "id">) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
+  initialData?: InventoryItemExtended;
+  isEditMode?: boolean;
 }
 
 const MEASUREMENT_UNITS = [
@@ -48,45 +50,56 @@ const TABS = [
 export function ComprehensiveInventoryForm({ 
   onSubmit, 
   onCancel, 
-  isLoading = false 
+  isLoading = false,
+  initialData,
+  isEditMode = false
 }: ComprehensiveInventoryFormProps) {
   const [currentTab, setCurrentTab] = useState("basic");
-  const [formData, setFormData] = useState<any>({
-    // Basic Info
-    name: "",
-    sku: "",
-    description: "",
-    category: "",
-    status: "active",
-    manufacturer: "",
-    supplier: "",
-    vehicleCompatibility: "",
+  const [formData, setFormData] = useState<any>(() => {
+    if (initialData && isEditMode) {
+      return {
+        ...initialData,
+        webLinks: (initialData as any).webLinks || []
+      };
+    }
     
-    // Pricing
-    unit_price: 0,
-    sell_price_per_unit: 0,
-    marginMarkup: 0,
-    
-    // Inventory Management
-    quantity: 0,
-    reorder_point: 0,
-    measurementUnit: "Each",
-    location: "",
-    
-    // Product Details
-    weight: 0,
-    dimensions: "",
-    color: "",
-    material: "",
-    
-    // Tax & Fees
-    taxRate: 0,
-    environmentalFee: 0,
-    coreCharge: 0,
-    
-    // Additional
-    notes: "",
-    webLinks: []
+    return {
+      // Basic Info
+      name: "",
+      sku: "",
+      description: "",
+      category: "",
+      status: "active",
+      manufacturer: "",
+      supplier: "",
+      vehicleCompatibility: "",
+      
+      // Pricing
+      unit_price: 0,
+      sell_price_per_unit: 0,
+      marginMarkup: 0,
+      
+      // Inventory Management
+      quantity: 0,
+      reorder_point: 0,
+      measurementUnit: "Each",
+      location: "",
+      
+      // Product Details
+      weight: 0,
+      dimensions: "",
+      color: "",
+      material: "",
+      
+      // Tax & Fees
+      taxRate: 0,
+      environmentalFee: 0,
+      coreCharge: 0,
+      
+      // Additional
+      notes: "",
+      webLinks: []
+    };
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
