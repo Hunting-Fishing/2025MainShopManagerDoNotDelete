@@ -123,7 +123,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         description: `${formData.name} has been added to your equipment inventory.`,
       });
 
-      // Reset form and close dialog
+      // Reset form
       setFormData({
         name: '',
         model: '',
@@ -138,6 +138,8 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         maintenance_interval_days: '',
         notes: ''
       });
+      
+      // Close dialog and trigger refresh
       onOpenChange(false);
 
     } catch (error) {

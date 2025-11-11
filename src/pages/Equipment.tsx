@@ -28,7 +28,10 @@ export default function Equipment() {
             open={dialogOpen} 
             onOpenChange={(open) => {
               setDialogOpen(open);
-              if (!open) refetch();
+              if (!open) {
+                // Force refetch after closing to show new equipment
+                setTimeout(() => refetch(), 300);
+              }
             }}
           />
         </div>
