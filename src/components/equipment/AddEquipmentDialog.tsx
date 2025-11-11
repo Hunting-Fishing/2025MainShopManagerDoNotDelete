@@ -22,7 +22,6 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
     manufacturer: '',
     serial_number: '',
     equipment_type: '',
-    unit_number: '',
     location: '',
     purchase_date: '',
     purchase_price: '',
@@ -37,10 +36,15 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
 
     try {
       // Get current user's shop_id from profile
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
-        .single();
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        throw new Error('Failed to fetch profile');
+      }
 
       if (!profile?.shop_id) {
         throw new Error('No shop associated with user');
@@ -84,7 +88,6 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         manufacturer: '',
         serial_number: '',
         equipment_type: '',
-        unit_number: '',
         location: '',
         purchase_date: '',
         purchase_price: '',
@@ -185,16 +188,6 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                 id="serial_number"
                 value={formData.serial_number}
                 onChange={(e) => setFormData(prev => ({ ...prev, serial_number: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="unit_number">Unit #</Label>
-              <Input
-                id="unit_number"
-                value={formData.unit_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, unit_number: e.target.value }))}
-                placeholder="e.g., UNIT-001"
               />
             </div>
 
