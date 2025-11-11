@@ -48,8 +48,11 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: CreateSc
   const { data: equipment } = useQuery({
     queryKey: ['equipment'],
     queryFn: async () => {
-      const { data } = await supabase.from('equipment').select('id, name, category').order('name');
-      return data || [];
+      const { data } = await supabase.from('equipment_assets').select('id, name, equipment_type').order('name');
+      return (data || []).map(item => ({
+        ...item,
+        category: item.equipment_type
+      }));
     }
   });
 

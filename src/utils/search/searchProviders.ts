@@ -197,7 +197,7 @@ export const searchEquipment = async (query: string): Promise<SearchResult[]> =>
   
   try {
     const { data, error } = await supabase
-      .from('equipment')
+      .from('equipment_assets')
       .select('*')
       .or(`name.ilike.%${query}%,model.ilike.%${query}%,serial_number.ilike.%${query}%`)
       .limit(10);
@@ -207,14 +207,14 @@ export const searchEquipment = async (query: string): Promise<SearchResult[]> =>
       return [];
     }
     
-    return (data || []).map(equipment => ({
-      id: equipment.id,
-      title: equipment.name,
-      subtitle: `${equipment.model} - ${equipment.category}`,
-      type: 'equipment',
-      url: `/equipment/${equipment.id}`,
-      relevance: 1
-    }));
+      return (data || []).map(equipment => ({
+        id: equipment.id,
+        title: equipment.name,
+        subtitle: `${equipment.model || 'Unknown'} - ${equipment.equipment_type || 'Unknown'}`,
+        type: 'equipment',
+        url: `/equipment/${equipment.id}`,
+        relevance: 1
+      }));
   } catch (error) {
     console.error('Error in searchEquipment:', error);
     return [];

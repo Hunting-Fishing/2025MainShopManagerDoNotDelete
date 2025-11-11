@@ -11,7 +11,7 @@ export function useEquipmentManagement() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('equipment')
+        .from('equipment_assets')
         .insert([equipmentData])
         .select()
         .single();
@@ -41,7 +41,7 @@ export function useEquipmentManagement() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('equipment')
+        .from('equipment_assets')
         .update(updates)
         .eq('id', id)
         .select()
@@ -72,7 +72,7 @@ export function useEquipmentManagement() {
     try {
       setLoading(true);
       const { error } = await supabase
-        .from('equipment')
+        .from('equipment_assets')
         .delete()
         .eq('id', id);
 

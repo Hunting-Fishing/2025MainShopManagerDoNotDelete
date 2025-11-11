@@ -18,13 +18,26 @@ export function useEquipment() {
       console.log("Fetching equipment data...");
       
       const { data, error } = await supabase
-        .from('equipment')
+        .from('equipment_assets')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const equipmentData = data || [];
+      const equipmentData = (data || []).map((item: any) => ({
+        ...item,
+        category: item.equipment_type || 'other',
+        customer: 'Internal',
+        install_date: item.purchase_date || item.created_at,
+        warranty_expiry_date: item.purchase_date || item.created_at,
+        warranty_status: 'active',
+        last_maintenance_date: item.last_service_date || item.created_at,
+        next_maintenance_date: item.next_service_date || item.created_at,
+        maintenance_frequency: '90 days',
+        work_order_history: [],
+        maintenance_history: [],
+        maintenance_schedules: []
+      }));
       setEquipment(equipmentData);
 
       // Calculate stats
@@ -32,7 +45,7 @@ export function useEquipment() {
         total: equipmentData.length,
         operational: equipmentData.filter(item => item.status === 'operational').length,
         needsMaintenance: equipmentData.filter(item => item.status === 'maintenance').length,
-        outOfService: equipmentData.filter(item => item.status === 'out_of_service').length
+        outOfService: equipmentData.filter(item => item.status === 'down' || item.status === 'retired').length
       };
       setStats(stats);
       

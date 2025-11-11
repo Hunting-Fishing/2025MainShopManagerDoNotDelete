@@ -22,10 +22,10 @@ export interface EquipmentDetails extends Equipment {
 export async function getEquipmentById(id: string): Promise<EquipmentDetails | null> {
   try {
     const { data: equipment, error } = await supabase
-      .from('equipment')
+      .from('equipment_assets')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     if (!equipment) return null;
@@ -62,7 +62,7 @@ export async function getEquipmentById(id: string): Promise<EquipmentDetails | n
 export async function updateEquipmentStatus(id: string, status: string): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('equipment')
+      .from('equipment_assets')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', id);
 
@@ -76,7 +76,7 @@ export async function updateEquipmentStatus(id: string, status: string): Promise
 export async function getAllEquipment(): Promise<Equipment[]> {
   try {
     const { data, error } = await supabase
-      .from('equipment')
+      .from('equipment_assets')
       .select('*')
       .order('name');
 

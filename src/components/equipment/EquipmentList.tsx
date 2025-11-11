@@ -54,7 +54,7 @@ export function EquipmentList({ equipment, loading, onUpdate }: EquipmentListPro
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from('equipment').delete().eq('id', id);
+      const { error } = await supabase.from('equipment_assets').delete().eq('id', id);
       if (error) throw error;
       
       toast({

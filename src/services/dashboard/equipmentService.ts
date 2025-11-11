@@ -9,10 +9,10 @@ export const getEquipmentRecommendations = async (): Promise<EquipmentRecommenda
   try {
     // Fetch equipment that needs maintenance or has issues
     const { data, error } = await supabase
-      .from('equipment')
+      .from('equipment_assets')
       .select('*')
-      .or('status.eq.maintenance-required,status.eq.out-of-service')
-      .order('next_maintenance_date');
+      .or('status.eq.maintenance,status.eq.down')
+      .order('next_service_date');
       
     if (error) throw error;
     
