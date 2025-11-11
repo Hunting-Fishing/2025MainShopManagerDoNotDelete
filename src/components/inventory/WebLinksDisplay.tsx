@@ -30,33 +30,35 @@ interface WebLinksDisplayProps {
 }
 
 const getLinkIcon = (type: string) => {
-  switch (type) {
-    case 'Manufacturer Website':
+  const normalizedType = type.toLowerCase().replace(/_/g, ' ');
+  
+  switch (normalizedType) {
+    case 'manufacturer website':
       return <Globe className="h-4 w-4" />;
-    case 'Product Datasheet':
+    case 'product datasheet':
       return <FileText className="h-4 w-4" />;
-    case 'Installation Guide':
+    case 'installation guide':
       return <BookOpen className="h-4 w-4" />;
-    case 'YouTube Tutorial':
-    case 'YouTube Video':
+    case 'youtube tutorial':
+    case 'youtube video':
       return <Youtube className="h-4 w-4" />;
-    case 'OneDrive Document':
-    case 'OneDrive Link':
+    case 'onedrive document':
+    case 'onedrive link':
       return <HardDrive className="h-4 w-4" />;
-    case 'Supplier Portal':
+    case 'supplier portal':
       return <ShoppingCart className="h-4 w-4" />;
-    case 'Product Image':
-    case 'Product Images':
+    case 'product image':
+    case 'product images':
       return <ImageIcon className="h-4 w-4" />;
-    case 'Support Forum':
+    case 'support forum':
       return <MessageSquare className="h-4 w-4" />;
-    case 'Training Video':
+    case 'training video':
       return <PlayCircle className="h-4 w-4" />;
-    case 'Warranty Info':
+    case 'warranty info':
       return <Shield className="h-4 w-4" />;
-    case 'Maintenance Manual':
+    case 'maintenance manual':
       return <Wrench className="h-4 w-4" />;
-    case 'Purchase Link':
+    case 'purchase link':
       return <Package className="h-4 w-4" />;
     default:
       return <LinkIcon className="h-4 w-4" />;
@@ -113,7 +115,7 @@ export function WebLinksDisplay({ webLinks }: WebLinksDisplayProps) {
                   {link.label}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {link.type}
+                  {link.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </p>
               </div>
               <ExternalLink className="h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-accent-foreground transition-colors" />
