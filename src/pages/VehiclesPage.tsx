@@ -70,7 +70,10 @@ export default function VehiclesPage() {
           open={dialogOpen} 
           onOpenChange={(open) => {
             setDialogOpen(open);
-            if (!open) refetch();
+            if (!open) {
+              // Force refetch after closing to show new assets
+              setTimeout(() => refetch(), 300);
+            }
           }}
         />
       </div>
