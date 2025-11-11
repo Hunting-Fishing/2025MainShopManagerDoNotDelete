@@ -186,7 +186,7 @@ function App() {
                   } />
                   
                   {/* Settings */}
-                  <Route path="/settings" element={
+                  <Route path="/settings/*" element={
                     <ProtectedRoute requireAdmin={true}>
                       <Settings />
                     </ProtectedRoute>
