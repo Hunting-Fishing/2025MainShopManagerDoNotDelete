@@ -85,7 +85,8 @@ export function ComprehensiveInventoryForm({
     coreCharge: 0,
     
     // Additional
-    notes: ""
+    notes: "",
+    webLinks: []
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});

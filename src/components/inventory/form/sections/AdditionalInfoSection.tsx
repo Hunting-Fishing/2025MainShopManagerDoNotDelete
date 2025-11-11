@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InventoryFormField } from '../InventoryFormField';
 import { Separator } from '@/components/ui/separator';
+import { WebLinksSection } from './WebLinksSection';
 
 interface AdditionalInfoSectionProps {
   values: any;
@@ -52,6 +53,12 @@ export function AdditionalInfoSection({ values, errors, onChange }: AdditionalIn
           />
         </CardContent>
       </Card>
+
+      {/* Web Links Section */}
+      <WebLinksSection 
+        values={values}
+        onChange={onChange}
+      />
     </div>
   );
 }

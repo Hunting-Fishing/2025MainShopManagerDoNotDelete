@@ -69,6 +69,12 @@ export interface InventoryItemExtended extends InventoryItem {
   dateBought?: string;
   dateLast?: string;
   notes?: string;
+  webLinks?: Array<{
+    id: string;
+    type: string;
+    label: string;
+    url: string;
+  }>;
   
   // Legacy fields for backward compatibility
   cost?: number;

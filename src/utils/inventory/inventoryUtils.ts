@@ -57,6 +57,8 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     
     // Pricing - using correct property names from type definition
     marginMarkup: dbItem.margin_markup || 0,
+    sellPricePerUnit: dbItem.sell_price_per_unit || 0,
+    costPerUnit: dbItem.cost_per_unit || 0,
     
     // Product Details - only including properties that exist in InventoryItemExtended type
     weight: dbItem.weight || 0,
@@ -66,15 +68,16 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     // Additional Info
     dateBought: dbItem.date_bought || '',
     dateLast: dbItem.date_last || '',
-    notes: dbItem.notes || ''
-  };
+    notes: dbItem.notes || '',
+    webLinks: dbItem.web_links ? (Array.isArray(dbItem.web_links) ? dbItem.web_links : []) : []
+  } as InventoryItemExtended;
 };
 
 /**
  * Format inventory item for API submission
  */
 export const formatInventoryForApi = (item: Partial<InventoryItemExtended>) => {
-  return {
+  const apiData: any = {
     name: item.name,
     sku: item.sku,
     category: item.category,
@@ -84,8 +87,44 @@ export const formatInventoryForApi = (item: Partial<InventoryItemExtended>) => {
     description: item.description,
     quantity: item.quantity,
     reorder_point: item.reorder_point,
-    unit_price: item.unit_price
+    unit_price: item.unit_price,
+    
+    // Extended fields - use snake_case for database columns
+    part_number: item.partNumber,
+    barcode: item.barcode,
+    subcategory: item.subcategory,
+    manufacturer: item.manufacturer,
+    vehicle_compatibility: item.vehicleCompatibility,
+    
+    // Inventory Management
+    on_hold: item.onHold,
+    on_order: item.onOrder,
+    
+    // Pricing - handle both camelCase and snake_case
+    margin_markup: item.marginMarkup,
+    sell_price_per_unit: (item as any).sell_price_per_unit || (item as any).sellPricePerUnit,
+    cost_per_unit: (item as any).cost_per_unit || (item as any).costPerUnit,
+    
+    // Product Details
+    weight: item.weight,
+    dimensions: item.dimensions,
+    warranty_period: item.warrantyPeriod,
+    
+    // Additional Info
+    date_bought: item.dateBought,
+    date_last: item.dateLast,
+    notes: item.notes,
+    web_links: (item as any).webLinks || []
   };
+  
+  // Remove undefined values
+  Object.keys(apiData).forEach(key => {
+    if (apiData[key] === undefined) {
+      delete apiData[key];
+    }
+  });
+  
+  return apiData;
 };
 
 /**
