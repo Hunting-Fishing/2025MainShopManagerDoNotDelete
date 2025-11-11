@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InventoryFormField } from '../InventoryFormField';
 import { InventoryFormSelect } from '../InventoryFormSelect';
+import { HierarchicalCategorySelect } from '../HierarchicalCategorySelect';
 
 interface BasicInfoSectionProps {
   values: any;
@@ -81,33 +82,25 @@ export function BasicInfoSection({ values, errors, onChange }: BasicInfoSectionP
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <InventoryFormSelect
-              id="category"
-              label="Category"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <HierarchicalCategorySelect
               value={values.category || ''}
-              onValueChange={(value) => onChange('category', value)}
-              options={CATEGORY_OPTIONS}
+              subcategoryValue={values.subcategory || ''}
+              onMainCategoryChange={(value) => onChange('category', value)}
+              onSubcategoryChange={(value) => onChange('subcategory', value)}
               error={errors.category}
             />
 
-            <InventoryFormField
-              label="Subcategory"
-              name="subcategory"
-              value={values.subcategory || ''}
-              onChange={(e) => onChange('subcategory', e.target.value)}
-              error={errors.subcategory}
-              placeholder="Enter subcategory"
-            />
-
-            <InventoryFormSelect
-              id="status"
-              label="Status"
-              value={values.status || ''}
-              onValueChange={(value) => onChange('status', value)}
-              options={STATUS_OPTIONS}
-              error={errors.status}
-            />
+            <div>
+              <InventoryFormSelect
+                id="status"
+                label="Status"
+                value={values.status || ''}
+                onValueChange={(value) => onChange('status', value)}
+                options={STATUS_OPTIONS}
+                error={errors.status}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
