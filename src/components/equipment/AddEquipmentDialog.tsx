@@ -22,6 +22,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
     manufacturer: '',
     serial_number: '',
     equipment_type: '',
+    unit_number: '',
     location: '',
     purchase_date: '',
     purchase_price: '',
@@ -83,6 +84,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         manufacturer: '',
         serial_number: '',
         equipment_type: '',
+        unit_number: '',
         location: '',
         purchase_date: '',
         purchase_price: '',
@@ -143,9 +145,13 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                   <SelectItem value="excavator">Excavator</SelectItem>
                   <SelectItem value="loader">Loader</SelectItem>
                   <SelectItem value="dozer">Dozer</SelectItem>
+                  <SelectItem value="crane">Crane</SelectItem>
                   <SelectItem value="heavy_truck">Heavy Truck</SelectItem>
                   <SelectItem value="vessel">Vessel</SelectItem>
                   <SelectItem value="outboard">Outboard Motor</SelectItem>
+                  <SelectItem value="marine">Marine</SelectItem>
+                  <SelectItem value="semi">Semi</SelectItem>
+                  <SelectItem value="small_engine">Small Engine</SelectItem>
                   <SelectItem value="fleet_vehicle">Fleet Vehicle</SelectItem>
                   <SelectItem value="courtesy_car">Courtesy Car</SelectItem>
                   <SelectItem value="rental_vehicle">Rental Vehicle</SelectItem>
@@ -179,6 +185,16 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                 id="serial_number"
                 value={formData.serial_number}
                 onChange={(e) => setFormData(prev => ({ ...prev, serial_number: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="unit_number">Unit #</Label>
+              <Input
+                id="unit_number"
+                value={formData.unit_number}
+                onChange={(e) => setFormData(prev => ({ ...prev, unit_number: e.target.value }))}
+                placeholder="e.g., UNIT-001"
               />
             </div>
 
