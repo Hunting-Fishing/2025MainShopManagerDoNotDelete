@@ -9,6 +9,7 @@ import { ArrowLeft, Edit2, Save, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency } from '@/lib/utils';
 import { InventoryItemExtended } from '@/types/inventory';
+import { WebLinksDisplay } from './WebLinksDisplay';
 
 interface InventoryItemDetailsProps {
   item: InventoryItemExtended;
@@ -285,6 +286,9 @@ export function InventoryItemDetails({ item, onUpdate, isUpdating, initialEditMo
               </div>
             </CardContent>
           </Card>
+
+          {/* Web Links Section */}
+          <WebLinksDisplay webLinks={(item as any).webLinks} />
         </div>
       </div>
     </div>
