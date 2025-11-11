@@ -82,30 +82,90 @@ export function useInventoryAnalytics() {
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
-    // Mock trends data (in real app, this would come from historical data)
-    const stockTrends = Array.from({ length: 12 }, (_, i) => {
-      const date = new Date();
-      date.setMonth(date.getMonth() - (11 - i));
-      return {
-        date: date.toISOString().split('T')[0],
-        totalStock: Math.floor(totalItems * (0.8 + Math.random() * 0.4)),
-        totalValue: Math.floor(totalValue * (0.8 + Math.random() * 0.4))
-      };
-    });
+    // Stock trends based on created_at dates
+    const stockTrends = (() => {
+      // Group items by month of creation
+      const monthlyData = new Map<string, { count: number; value: number }>();
+      
+      items.forEach(item => {
+        if (item.created_at) {
+          const date = new Date(item.created_at);
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          const value = item.unit_price * item.quantity;
+          
+          const existing = monthlyData.get(monthKey) || { count: 0, value: 0 };
+          monthlyData.set(monthKey, {
+            count: existing.count + 1,
+            value: existing.value + value
+          });
+        }
+      });
+      
+      // Generate last 12 months with actual data where available
+      const trends = Array.from({ length: 12 }, (_, i) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - (11 - i));
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const data = monthlyData.get(monthKey) || { count: 0, value: 0 };
+        
+        return {
+          date: date.toISOString().split('T')[0],
+          totalStock: data.count,
+          totalValue: Math.round(data.value)
+        };
+      });
+      
+      return trends;
+    })();
 
-    // Mock monthly movement
-    const monthlyMovement = Array.from({ length: 6 }, (_, i) => {
-      const date = new Date();
-      date.setMonth(date.getMonth() - (5 - i));
-      return {
-        month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        added: Math.floor(Math.random() * 50 + 10),
-        removed: Math.floor(Math.random() * 30 + 5)
-      };
-    });
+    // Monthly movement based on created_at dates
+    const monthlyMovement = (() => {
+      const monthlyData = new Map<string, { added: number }>();
+      
+      items.forEach(item => {
+        if (item.created_at) {
+          const date = new Date(item.created_at);
+          const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          const existing = monthlyData.get(monthKey) || { added: 0 };
+          monthlyData.set(monthKey, {
+            added: existing.added + 1
+          });
+        }
+      });
+      
+      return Array.from({ length: 6 }, (_, i) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - (5 - i));
+        const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        const data = monthlyData.get(monthKey) || { added: 0 };
+        
+        return {
+          month: monthKey,
+          added: data.added,
+          removed: 0 // Would need transaction tracking to calculate actual removals
+        };
+      });
+    })();
 
-    // Mock turnover rate
-    const turnoverRate = Math.random() * 4 + 1; // 1-5 times per year
+    // Calculate average age of inventory items (turnover estimation)
+    const turnoverRate = (() => {
+      const now = new Date().getTime();
+      const itemAges = items
+        .filter(item => item.created_at)
+        .map(item => {
+          const createdAt = new Date(item.created_at!).getTime();
+          const ageInDays = (now - createdAt) / (1000 * 60 * 60 * 24);
+          return ageInDays;
+        });
+      
+      if (itemAges.length === 0) return 0;
+      
+      const avgAgeInDays = itemAges.reduce((sum, age) => sum + age, 0) / itemAges.length;
+      const avgAgeInYears = avgAgeInDays / 365;
+      
+      // Turnover rate = 1 / average age in years (approximation)
+      return avgAgeInYears > 0 ? Number((1 / avgAgeInYears).toFixed(2)) : 0;
+    })();
 
     return {
       totalValue,
