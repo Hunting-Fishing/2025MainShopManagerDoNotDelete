@@ -36,7 +36,6 @@ import Invoices from '@/pages/Invoices';
 import ServiceBoard from '@/pages/ServiceBoard';
 import Payments from '@/pages/Payments';
 import CompanyProfile from '@/pages/CompanyProfile';
-import VehiclesPage from '@/pages/VehiclesPage';
 import Documents from '@/pages/Documents';
 import ServiceCatalog from '@/pages/ServiceCatalog';
 import RepairPlans from '@/pages/RepairPlans';
@@ -292,7 +291,7 @@ function App() {
                   
                   <Route path="/vehicles" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
-                      <VehiclesPage />
+                      <Equipment />
                     </ProtectedRoute>
                   } />
                   
