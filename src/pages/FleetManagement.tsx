@@ -3,16 +3,20 @@ import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Car, Plus, Settings, Wrench } from 'lucide-react';
 import { FleetList } from '@/components/fleet/FleetList';
-import { AddFleetVehicleDialog } from '@/components/fleet/AddFleetVehicleDialog';
-import { useCompanyAssets } from '@/hooks/useCompanyAssets';
+import { AddEquipmentDialog } from '@/components/equipment/AddEquipmentDialog';
+import { useEquipment } from '@/hooks/useEquipment';
 
 export default function FleetManagement() {
-  const { assets, loading, refetch } = useCompanyAssets();
+  const { equipment, isLoading, refetch } = useEquipment();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const availableCount = assets.filter(a => a.asset_status === 'available').length;
-  const inUseCount = assets.filter(a => a.asset_status === 'in_use').length;
-  const maintenanceCount = assets.filter(a => a.asset_status === 'maintenance').length;
+  // Filter for fleet vehicles only
+  const fleetCategories = ['fleet_vehicle', 'courtesy_car', 'rental_vehicle', 'service_vehicle'];
+  const fleetAssets = equipment.filter(item => fleetCategories.includes(item.category));
+
+  const availableCount = fleetAssets.filter(a => a.status === 'operational').length;
+  const inUseCount = fleetAssets.filter(a => a.status === 'maintenance').length;
+  const maintenanceCount = fleetAssets.filter(a => a.status === 'out_of_service').length;
 
   return (
     <>
@@ -28,10 +32,12 @@ export default function FleetManagement() {
               Manage company vehicles, courtesy cars, and rental fleet
             </p>
           </div>
-          <AddFleetVehicleDialog 
+          <AddEquipmentDialog 
             open={dialogOpen} 
-            onOpenChange={setDialogOpen}
-            onSuccess={refetch}
+            onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) refetch();
+            }}
           />
         </div>
 
@@ -42,7 +48,7 @@ export default function FleetManagement() {
               <Car className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loading ? '...' : assets.length}</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : fleetAssets.length}</div>
               <p className="text-xs text-muted-foreground">
                 Company vehicles
               </p>
@@ -55,7 +61,7 @@ export default function FleetManagement() {
               <Car className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loading ? '...' : availableCount}</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : availableCount}</div>
               <p className="text-xs text-muted-foreground">
                 Ready for use
               </p>
@@ -68,7 +74,7 @@ export default function FleetManagement() {
               <Settings className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loading ? '...' : inUseCount}</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : inUseCount}</div>
               <p className="text-xs text-muted-foreground">
                 Currently checked out
               </p>
@@ -81,7 +87,7 @@ export default function FleetManagement() {
               <Wrench className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loading ? '...' : maintenanceCount}</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : maintenanceCount}</div>
               <p className="text-xs text-muted-foreground">
                 Being serviced
               </p>
@@ -89,7 +95,7 @@ export default function FleetManagement() {
           </Card>
         </div>
 
-        <FleetList assets={assets} loading={loading} onUpdate={refetch} />
+        <FleetList assets={fleetAssets} loading={isLoading} onUpdate={refetch} />
       </div>
     </>
   );

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { EquipmentList } from '@/components/equipment/EquipmentList';
 import { MaintenanceRequestsList } from '@/components/equipment/MaintenanceRequestsList';
 import { EquipmentReportsList } from '@/components/equipment/EquipmentReportsList';
 import { PMSchedulesList } from '@/components/equipment/PMSchedulesList';
 import { ToolsList } from '@/components/equipment/ToolsList';
 import { ToolRequestForms } from '@/components/equipment/ToolRequestForms';
+import { AddEquipmentDialog } from '@/components/equipment/AddEquipmentDialog';
 import { Wrench, ClipboardList, FileText, Calendar, Hammer } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,8 +17,9 @@ import { useEquipment } from '@/hooks/useEquipment';
 
 export default function EquipmentManagement() {
   const [activeTab, setActiveTab] = useState('equipment');
+  const [dialogOpen, setDialogOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { equipment, isLoading } = useEquipment();
+  const { equipment, isLoading, refetch } = useEquipment();
 
   const tabs = [
     { value: 'equipment', label: 'Equipment', icon: Wrench },
@@ -35,7 +39,19 @@ export default function EquipmentManagement() {
             Manage marine equipment, forklifts, semis, small engines, and tools
           </p>
         </div>
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Equipment
+        </Button>
       </div>
+
+      <AddEquipmentDialog 
+        open={dialogOpen} 
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) refetch();
+        }}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {isMobile ? (

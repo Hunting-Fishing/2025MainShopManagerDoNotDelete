@@ -133,11 +133,15 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                   <SelectValue placeholder="Select equipment type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="diagnostic">Diagnostic</SelectItem>
+                  <SelectItem value="diagnostic">Diagnostic Equipment</SelectItem>
                   <SelectItem value="lifting">Lifting Equipment</SelectItem>
                   <SelectItem value="air_tools">Air Tools</SelectItem>
                   <SelectItem value="hand_tools">Hand Tools</SelectItem>
-                  <SelectItem value="electrical">Electrical</SelectItem>
+                  <SelectItem value="electrical">Electrical Equipment</SelectItem>
+                  <SelectItem value="fleet_vehicle">Fleet Vehicle</SelectItem>
+                  <SelectItem value="courtesy_car">Courtesy Car</SelectItem>
+                  <SelectItem value="rental_vehicle">Rental Vehicle</SelectItem>
+                  <SelectItem value="service_vehicle">Service Vehicle</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
