@@ -22207,7 +22207,29 @@ export type Database = {
         | "marketing"
       approval_status: "pending" | "approved" | "rejected"
       equipment_status: "operational" | "maintenance" | "down" | "retired"
-      equipment_type: "marine" | "forklift" | "semi" | "small_engine" | "other"
+      equipment_type:
+        | "marine"
+        | "forklift"
+        | "semi"
+        | "small_engine"
+        | "other"
+        | "fleet_vehicle"
+        | "courtesy_car"
+        | "rental_vehicle"
+        | "service_vehicle"
+        | "heavy_truck"
+        | "excavator"
+        | "loader"
+        | "dozer"
+        | "crane"
+        | "vessel"
+        | "outboard"
+        | "diagnostic"
+        | "lifting"
+        | "air_tools"
+        | "hand_tools"
+        | "electrical"
+        | "generator"
       form_field_type:
         | "text"
         | "textarea"
@@ -22413,7 +22435,30 @@ export const Constants = {
       ],
       approval_status: ["pending", "approved", "rejected"],
       equipment_status: ["operational", "maintenance", "down", "retired"],
-      equipment_type: ["marine", "forklift", "semi", "small_engine", "other"],
+      equipment_type: [
+        "marine",
+        "forklift",
+        "semi",
+        "small_engine",
+        "other",
+        "fleet_vehicle",
+        "courtesy_car",
+        "rental_vehicle",
+        "service_vehicle",
+        "heavy_truck",
+        "excavator",
+        "loader",
+        "dozer",
+        "crane",
+        "vessel",
+        "outboard",
+        "diagnostic",
+        "lifting",
+        "air_tools",
+        "hand_tools",
+        "electrical",
+        "generator",
+      ],
       form_field_type: [
         "text",
         "textarea",
