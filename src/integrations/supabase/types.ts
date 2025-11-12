@@ -22307,6 +22307,16 @@ export type Database = {
         | "hand_tools"
         | "electrical"
         | "generator"
+        | "fire_extinguisher"
+        | "life_raft"
+        | "life_ring"
+        | "epirb"
+        | "survival_suit"
+        | "flare"
+        | "first_aid_kit"
+        | "safety_harness"
+        | "life_jacket"
+        | "immersion_suit"
       form_field_type:
         | "text"
         | "textarea"
@@ -22535,6 +22545,16 @@ export const Constants = {
         "hand_tools",
         "electrical",
         "generator",
+        "fire_extinguisher",
+        "life_raft",
+        "life_ring",
+        "epirb",
+        "survival_suit",
+        "flare",
+        "first_aid_kit",
+        "safety_harness",
+        "life_jacket",
+        "immersion_suit",
       ],
       form_field_type: [
         "text",
