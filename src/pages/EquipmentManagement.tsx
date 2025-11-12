@@ -9,8 +9,9 @@ import { EquipmentReportsList } from '@/components/equipment/EquipmentReportsLis
 import { PMSchedulesList } from '@/components/equipment/PMSchedulesList';
 import { ToolsList } from '@/components/equipment/ToolsList';
 import { ToolRequestForms } from '@/components/equipment/ToolRequestForms';
+import { SafetyEquipmentList } from '@/components/equipment/SafetyEquipmentList';
 import { AddEquipmentDialog } from '@/components/equipment/AddEquipmentDialog';
-import { Wrench, ClipboardList, FileText, Calendar, Hammer } from 'lucide-react';
+import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEquipment } from '@/hooks/useEquipment';
@@ -23,6 +24,7 @@ export default function EquipmentManagement() {
 
   const tabs = [
     { value: 'equipment', label: 'Equipment', icon: Wrench },
+    { value: 'safety', label: 'Safety Equipment', icon: ShieldCheck },
     { value: 'tools', label: 'Tools', icon: Hammer },
     { value: 'tool-forms', label: 'Request Forms', icon: FileText },
     { value: 'requests', label: 'Maintenance', icon: ClipboardList },
@@ -74,7 +76,7 @@ export default function EquipmentManagement() {
             </SelectContent>
           </Select>
         ) : (
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -89,6 +91,10 @@ export default function EquipmentManagement() {
 
         <TabsContent value="equipment" className="space-y-4">
           <EquipmentList equipment={equipment} loading={isLoading} onUpdate={refetch} />
+        </TabsContent>
+
+        <TabsContent value="safety" className="space-y-4">
+          <SafetyEquipmentList />
         </TabsContent>
 
         <TabsContent value="tools" className="space-y-4">
