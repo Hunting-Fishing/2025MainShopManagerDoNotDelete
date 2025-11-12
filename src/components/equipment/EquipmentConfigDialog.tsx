@@ -323,24 +323,42 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="basic">
-              <Wrench className="h-4 w-4 mr-2" />
-              Basic Info
-            </TabsTrigger>
-            <TabsTrigger value="specifications">
-              <FileText className="h-4 w-4 mr-2" />
-              Specifications
-            </TabsTrigger>
-            <TabsTrigger value="maintenance">
-              <Settings className="h-4 w-4 mr-2" />
-              Maintenance Items
-            </TabsTrigger>
-            <TabsTrigger value="media">
-              <Image className="h-4 w-4 mr-2" />
-              Media & Files
-            </TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <TabsList className="inline-flex h-11 items-center justify-start rounded-full bg-muted/60 p-1 text-muted-foreground min-w-max w-full">
+              <TabsTrigger 
+                value="basic"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-border gap-2"
+              >
+                <Wrench className="h-4 w-4" />
+                <span className="hidden sm:inline">Basic Info</span>
+                <span className="sm:hidden">Basic</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="specifications"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-border gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Specifications</span>
+                <span className="sm:hidden">Specs</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="maintenance"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-border gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Maintenance Items</span>
+                <span className="sm:hidden">Maint</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="media"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-border gap-2"
+              >
+                <Image className="h-4 w-4" />
+                <span className="hidden sm:inline">Media & Files</span>
+                <span className="sm:hidden">Media</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="basic" className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
