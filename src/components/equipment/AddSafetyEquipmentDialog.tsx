@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { ShieldCheck } from 'lucide-react';
 
 interface AddSafetyEquipmentDialogProps {
@@ -30,9 +30,9 @@ const SAFETY_EQUIPMENT_TYPES = [
 
 const STATUS_OPTIONS = [
   { value: 'operational', label: 'Operational' },
-  { value: 'inspection_due', label: 'Inspection Due' },
-  { value: 'expired', label: 'Expired' },
-  { value: 'maintenance', label: 'Needs Maintenance' },
+  { value: 'maintenance', label: 'Needs Maintenance / Inspection Due' },
+  { value: 'down', label: 'Out of Service / Expired' },
+  { value: 'retired', label: 'Retired' },
 ];
 
 export function AddSafetyEquipmentDialog({ open, onOpenChange, onSuccess }: AddSafetyEquipmentDialogProps) {
@@ -70,11 +70,20 @@ export function AddSafetyEquipmentDialog({ open, onOpenChange, onSuccess }: AddS
       if (!user) throw new Error('Not authenticated');
 
       // Get shop_id from profiles
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .eq('user_id', user.id)
-        .single();
+      let shop_id = user.id;
+      try {
+        const result = await supabase
+          .from('profiles')
+          .select('shop_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (result.data?.shop_id) {
+          shop_id = result.data.shop_id;
+        }
+      } catch (e) {
+        // Use user.id as fallback
+      }
 
       const insertData = {
         equipment_type: formData.equipment_type,
@@ -84,7 +93,7 @@ export function AddSafetyEquipmentDialog({ open, onOpenChange, onSuccess }: AddS
         location: formData.location,
         status: formData.status,
         notes: formData.notes || null,
-        shop_id: profile?.shop_id || user.id,
+        shop_id: shop_id,
         created_by: user.id,
         specifications: {
           inspection_date: formData.inspection_date || null,
