@@ -9,12 +9,14 @@ import { toast } from 'sonner';
 import { getEquipmentById, updateEquipmentStatus, type EquipmentDetails } from '@/services/equipment/equipmentService';
 import { MaintenanceIntervals } from '@/components/equipment/MaintenanceIntervals';
 import { EquipmentWorkRequests } from '@/components/equipment-details/EquipmentWorkRequests';
+import { EquipmentConfigDialog } from '@/components/equipment/EquipmentConfigDialog';
 
 export default function EquipmentDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [equipment, setEquipment] = useState<EquipmentDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [configOpen, setConfigOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -119,7 +121,7 @@ export default function EquipmentDetails() {
           <Badge className={getStatusColor(equipment.currentStatus)}>
             {equipment.currentStatus}
           </Badge>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
             <Settings className="h-4 w-4 mr-2" />
             Configure
           </Button>
@@ -417,6 +419,13 @@ export default function EquipmentDetails() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <EquipmentConfigDialog
+        open={configOpen}
+        onOpenChange={setConfigOpen}
+        equipment={equipment}
+        onSave={loadEquipmentDetails}
+      />
     </div>
   );
 }
