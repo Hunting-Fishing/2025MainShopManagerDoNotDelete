@@ -504,28 +504,104 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                     <CardContent className="p-4">
                       <div className="flex gap-3 items-start">
                         <div className="flex-1 space-y-3">
-                          <div className="space-y-2">
-                            <Label htmlFor={`spec-key-${index}`} className="text-xs font-medium">
-                              Specification Name
-                            </Label>
-                            <Input
-                              id={`spec-key-${index}`}
-                              placeholder="e.g., Oil Type"
-                              value={spec.key}
-                              onChange={(e) => handleSpecificationChange(index, 'key', e.target.value)}
-                              className="h-12 text-base touch-manipulation"
-                            />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label htmlFor={`spec-type-${index}`} className="text-xs font-medium">
+                                Type *
+                              </Label>
+                              <Select 
+                                value={spec.spec_type}
+                                onValueChange={(value) => handleSpecificationChange(index, 'spec_type', value)}
+                              >
+                                <SelectTrigger id={`spec-type-${index}`} className="h-12 touch-manipulation">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {specTypes.map(type => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor={`spec-name-${index}`} className="text-xs font-medium">
+                                Specification Name *
+                              </Label>
+                              <Input
+                                id={`spec-name-${index}`}
+                                placeholder="e.g., 5W-30 Synthetic"
+                                value={spec.spec_name}
+                                onChange={(e) => handleSpecificationChange(index, 'spec_name', e.target.value)}
+                                className="h-12 text-base touch-manipulation"
+                              />
+                            </div>
                           </div>
+
                           <div className="space-y-2">
-                            <Label htmlFor={`spec-value-${index}`} className="text-xs font-medium">
-                              Value
+                            <Label htmlFor={`spec-inventory-${index}`} className="text-xs font-medium">
+                              Link to Inventory Item (Optional)
                             </Label>
-                            <Input
-                              id={`spec-value-${index}`}
-                              placeholder="e.g., 5W-30 Synthetic"
-                              value={spec.value}
-                              onChange={(e) => handleSpecificationChange(index, 'value', e.target.value)}
-                              className="h-12 text-base touch-manipulation"
+                            <Select 
+                              value={spec.inventory_id || 'none'}
+                              onValueChange={(value) => handleSpecificationChange(index, 'inventory_id', value === 'none' ? null : value)}
+                            >
+                              <SelectTrigger id={`spec-inventory-${index}`} className="h-12 touch-manipulation">
+                                <SelectValue placeholder="Select inventory item..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No inventory link</SelectItem>
+                                {inventoryItems
+                                  .filter(item => item.category?.toLowerCase().includes(spec.spec_type.toLowerCase()) || spec.spec_type === 'Other')
+                                  .map(item => (
+                                    <SelectItem key={item.id} value={item.id}>
+                                      {item.name} ({item.sku})
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label htmlFor={`spec-qty-${index}`} className="text-xs font-medium">
+                                Quantity
+                              </Label>
+                              <Input
+                                id={`spec-qty-${index}`}
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={spec.quantity}
+                                onChange={(e) => handleSpecificationChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                className="h-12 text-base touch-manipulation"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor={`spec-unit-${index}`} className="text-xs font-medium">
+                                Unit
+                              </Label>
+                              <Input
+                                id={`spec-unit-${index}`}
+                                placeholder="L, qt, pcs"
+                                value={spec.unit}
+                                onChange={(e) => handleSpecificationChange(index, 'unit', e.target.value)}
+                                className="h-12 text-base touch-manipulation"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor={`spec-notes-${index}`} className="text-xs font-medium">
+                              Notes
+                            </Label>
+                            <Textarea
+                              id={`spec-notes-${index}`}
+                              placeholder="Additional notes or specifications..."
+                              value={spec.notes}
+                              onChange={(e) => handleSpecificationChange(index, 'notes', e.target.value)}
+                              className="min-h-[60px] text-base touch-manipulation"
                             />
                           </div>
                         </div>
@@ -547,7 +623,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                   <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
                     <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p className="font-medium">No specifications added yet</p>
-                    <p className="text-xs mt-1">Click "Add Specification" or select from common specs below</p>
+                    <p className="text-xs mt-1">Click "Add Specification" to get started</p>
                   </div>
                 )}
               </div>
@@ -555,41 +631,31 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
               <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
                 <p className="text-sm font-semibold mb-3 flex items-center gap-2">
                   <Settings className="h-4 w-4" />
-                  Quick Add Common Specifications
+                  Quick Add Common Specification Types
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    'Oil Type & Capacity',
-                    'Air Filter Part Number',
-                    'Fuel Filter Part Number',
-                    'Hydraulic Fluid Type',
-                    'Coolant Type & Capacity',
-                    'Tire Size & Pressure',
-                    'Battery Specifications',
-                    'Belt Part Numbers',
-                    'Engine Hours',
-                    'Transmission Type',
-                    'Hydraulic Pump Model',
-                    'PTO Specifications'
-                  ].map((specName) => (
+                  {specTypes.map((type) => (
                     <Button
-                      key={specName}
+                      key={type}
                       type="button"
                       variant="secondary"
                       size="sm"
                       onClick={() => {
-                        const exists = specifications.some(s => s.key === specName);
-                        if (!exists) {
-                          setSpecifications([...specifications, { key: specName, value: '' }]);
-                          toast.success(`Added "${specName}" specification`);
-                        } else {
-                          toast.info('This specification already exists');
-                        }
+                        setSpecifications([...specifications, { 
+                          spec_type: type,
+                          spec_name: '',
+                          inventory_id: null,
+                          quantity: 1,
+                          unit: type === 'Oil' ? 'L' : 'pcs',
+                          custom_value: '',
+                          notes: ''
+                        }]);
+                        toast.success(`Added ${type} specification`);
                       }}
                       className="touch-manipulation text-xs"
                     >
                       <Plus className="h-3 w-3 mr-1" />
-                      {specName}
+                      {type}
                     </Button>
                   ))}
                 </div>
