@@ -85,8 +85,11 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
   });
 
   // Specifications State
-  const [specifications, setSpecifications] = useState<Specification[]>([]);
-  const [specTypes, setSpecTypes] = useState<string[]>([
+  const [specifications, setSpecifications] = useState<Specification[]>(() => {
+    const specs = (equipment as any).specifications || [];
+    return Array.isArray(specs) ? specs : [];
+  });
+  const [specTypes] = useState<string[]>([
     'Oil', 'Filter', 'Fluid', 'Battery', 'Belt', 'Tire', 'Coolant', 'Other'
   ]);
 
@@ -147,31 +150,6 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     }
   };
 
-  const fetchEquipmentSpecifications = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('equipment_specifications')
-        .select('*')
-        .eq('equipment_id', equipment.id);
-
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setSpecifications(data.map(spec => ({
-          id: spec.id,
-          spec_type: spec.spec_type,
-          spec_name: spec.spec_name,
-          inventory_id: spec.inventory_id,
-          quantity: spec.quantity,
-          unit: spec.unit,
-          custom_value: spec.custom_value || '',
-          notes: spec.notes || ''
-        })));
-      }
-    } catch (error) {
-      console.error('Error fetching specifications:', error);
-    }
-  };
 
   const handleAddSpecification = () => {
     setSpecifications([...specifications, { 
@@ -185,22 +163,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     }]);
   };
 
-  const handleRemoveSpecification = async (index: number, id?: string) => {
-    if (id) {
-      try {
-        const { error } = await supabase
-          .from('equipment_specifications')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-        toast.success('Specification deleted');
-      } catch (error) {
-        console.error('Error deleting specification:', error);
-        toast.error('Failed to delete specification');
-        return;
-      }
-    }
+  const handleRemoveSpecification = (index: number) => {
     setSpecifications(specifications.filter((_, i) => i !== index));
   };
 
@@ -219,33 +182,6 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     setSpecifications(updated);
   };
 
-  const saveSpecifications = async () => {
-    try {
-      // Delete all existing specifications for this equipment
-      await supabase
-        .from('equipment_specifications')
-        .delete()
-        .eq('equipment_id', equipment.id);
-
-      // Insert new specifications
-      if (specifications.length > 0) {
-        const specsToInsert = specifications.map(spec => ({
-          ...spec,
-          equipment_id: equipment.id,
-          id: undefined // Remove id for new inserts
-        }));
-
-        const { error } = await supabase
-          .from('equipment_specifications')
-          .insert(specsToInsert);
-
-        if (error) throw error;
-      }
-    } catch (error) {
-      console.error('Error saving specifications:', error);
-      throw error;
-    }
-  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -377,7 +313,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
       // Prepare update data
       const updates = {
         ...formData,
-        specifications: specsObject,
+        specifications: specifications,
         attachments: attachments,
         updated_at: new Date().toISOString()
       };
