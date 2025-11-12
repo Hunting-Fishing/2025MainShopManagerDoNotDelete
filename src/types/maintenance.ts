@@ -1,6 +1,6 @@
 // Comprehensive Maintenance Planning Types
 
-export type IntervalMetric = 'days' | 'weeks' | 'months' | 'years' | 'mileage' | 'engine_hours';
+export type IntervalMetric = 'days' | 'weeks' | 'months' | 'years' | 'mileage' | 'hours' | 'engine_hours';
 export type MaintenancePriority = 'low' | 'medium' | 'high' | 'critical';
 export type MaintenanceStatus = 'scheduled' | 'due_soon' | 'overdue' | 'completed' | 'cancelled';
 export type BudgetPeriod = 'monthly' | 'quarterly' | 'yearly';

@@ -32,6 +32,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: CreateSc
     frequency_interval: 3,
     frequency_unit: 'months',
     mileage_interval: 0,
+    hours_interval: 0,
     estimated_cost: 0,
     priority: 'medium',
   });
@@ -83,7 +84,8 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: CreateSc
         frequency_type: formData.frequency_type,
         frequency_interval: formData.frequency_interval,
         frequency_unit: formData.frequency_unit,
-        mileage_interval: formData.frequency_type === 'usage_based' || formData.frequency_type === 'both' ? formData.mileage_interval : null,
+        mileage_interval: formData.frequency_type === 'mileage_based' || formData.frequency_type === 'both' ? formData.mileage_interval : null,
+        hours_interval: formData.frequency_type === 'hours_based' || formData.frequency_type === 'both' ? formData.hours_interval : null,
         next_due_date: nextDueDate.toISOString(),
         estimated_cost: formData.estimated_cost,
         priority: formData.priority,
@@ -252,8 +254,9 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: CreateSc
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="time_based">Time-Based Only</SelectItem>
-                  <SelectItem value="usage_based">Usage-Based Only (Mileage/Hours)</SelectItem>
-                  <SelectItem value="both">Both (Whichever Comes First)</SelectItem>
+                  <SelectItem value="mileage_based">Mileage-Based Only</SelectItem>
+                  <SelectItem value="hours_based">Operating Hours-Based Only</SelectItem>
+                  <SelectItem value="both">Combined (Whichever Comes First)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -292,19 +295,35 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: CreateSc
               </div>
             )}
 
-            {(formData.frequency_type === 'usage_based' || formData.frequency_type === 'both') && (
-              <div className="space-y-2">
-                <Label htmlFor="mileage_interval">Mileage/Hours Interval *</Label>
+            {(formData.frequency_type === 'mileage_based' || formData.frequency_type === 'both') && (
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="mileage_interval">Mileage Interval *</Label>
                 <Input
                   id="mileage_interval"
                   type="number"
                   min="0"
                   value={formData.mileage_interval}
                   onChange={(e) => setFormData({ ...formData, mileage_interval: parseInt(e.target.value) })}
-                  placeholder="e.g., 5000 miles or 250 hours"
+                  placeholder="e.g., 5000 miles"
                   required
                 />
-                <p className="text-xs text-muted-foreground">Enter miles for vehicles, hours for equipment</p>
+                <p className="text-xs text-muted-foreground">Service every X miles/kilometers</p>
+              </div>
+            )}
+
+            {(formData.frequency_type === 'hours_based' || formData.frequency_type === 'both') && (
+              <div className="space-y-2">
+                <Label htmlFor="hours_interval">Operating Hours Interval *</Label>
+                <Input
+                  id="hours_interval"
+                  type="number"
+                  min="0"
+                  value={formData.hours_interval}
+                  onChange={(e) => setFormData({ ...formData, hours_interval: parseInt(e.target.value) })}
+                  placeholder="e.g., 250 hours"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">Service every X operating hours</p>
               </div>
             )}
           </div>
