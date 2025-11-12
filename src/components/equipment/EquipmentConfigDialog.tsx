@@ -23,8 +23,14 @@ interface EquipmentConfigDialogProps {
 }
 
 interface Specification {
-  key: string;
-  value: string;
+  id?: string;
+  spec_type: string; // Oil, Filter, Fluid, Battery, Belt, Tire, Other
+  spec_name: string;
+  inventory_id: string | null;
+  quantity: number;
+  unit: string;
+  custom_value: string; // For non-inventory specs
+  notes: string;
 }
 
 interface MediaAttachment {
@@ -79,13 +85,10 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
   });
 
   // Specifications State
-  const [specifications, setSpecifications] = useState<Specification[]>(() => {
-    const specs = (equipment as any).specifications || {};
-    return Object.entries(specs).map(([key, value]) => ({
-      key,
-      value: String(value)
-    }));
-  });
+  const [specifications, setSpecifications] = useState<Specification[]>([]);
+  const [specTypes, setSpecTypes] = useState<string[]>([
+    'Oil', 'Filter', 'Fluid', 'Battery', 'Belt', 'Tire', 'Coolant', 'Other'
+  ]);
 
   // Media Attachments State
   const [attachments, setAttachments] = useState<MediaAttachment[]>([]);
