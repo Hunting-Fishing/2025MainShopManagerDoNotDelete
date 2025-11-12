@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CalendarEvent } from '@/types/calendar';
 import { getCalendarEvents, getWorkOrderEvents } from '@/services/calendar/calendarEventService';
 import { getShiftChats } from '@/services/calendar/shiftChatService';
+import { getMaintenanceRequestEvents } from '@/services/calendar/maintenanceRequestService';
 import { ChatRoom } from '@/types/chat';
 import { format, startOfMonth, endOfMonth, addMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,10 +36,11 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
 
-      // Fetch calendar events (DB + work orders + shift chats)
-      const [calendarEvents, workOrderEvents, shiftChatsData] = await Promise.all([
+      // Fetch calendar events (DB + work orders + maintenance requests + shift chats)
+      const [calendarEvents, workOrderEvents, maintenanceRequestEvents, shiftChatsData] = await Promise.all([
         getCalendarEvents(startDateStr, endDateStr),
         getWorkOrderEvents(startDateStr, endDateStr),
+        getMaintenanceRequestEvents(startDateStr, endDateStr),
         getShiftChats(startDateStr, endDateStr)
       ]);
 
@@ -65,7 +67,8 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
         ...calendarEvents,
         ...workOrderEvents.filter(wo =>
           !calendarEvents.some(event => event.workOrderId === wo.id && event.type === 'work-order')
-        )
+        ),
+        ...maintenanceRequestEvents
       ].map(event => ({
         id: event.id,
         title: event.title,
@@ -99,7 +102,7 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
     fetchCalendarData();
   }, [fetchCalendarData]);
 
-  // Realtime updates: refetch when calendar_events or work_orders change
+  // Realtime updates: refetch when calendar_events, work_orders, or maintenance_requests change
   useEffect(() => {
     const channel = supabase
       .channel('calendar-realtime')
@@ -109,6 +112,10 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'work_orders' }, () => {
         console.log('Realtime: work_orders changed');
+        fetchCalendarData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'maintenance_requests' }, () => {
+        console.log('Realtime: maintenance_requests changed');
         fetchCalendarData();
       })
       .subscribe();
