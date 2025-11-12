@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { useEquipmentManagement } from '@/hooks/useEquipmentManagement';
 import { EquipmentDetails } from '@/services/equipment/equipmentService';
-import { Wrench, FileText, Image, Plus, X, Upload } from 'lucide-react';
+import { Wrench, FileText, Image, Plus, X, Upload, Settings, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -30,6 +32,33 @@ interface MediaAttachment {
   name: string;
   url: string;
   type: 'image' | 'video' | 'document';
+}
+
+interface EquipmentServiceItem {
+  id?: string;
+  item_name: string;
+  item_type: string;
+  inventory_id: string | null;
+  part_number: string;
+  quantity: number;
+  hours_interval: number | null;
+  mileage_interval: number | null;
+  calendar_interval: number | null;
+  calendar_interval_unit: string;
+  item_category: string;
+  position: string;
+  notes: string;
+  is_critical: boolean;
+}
+
+interface InventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  part_number: string;
+  category: string;
+  quantity: number;
+  unit_price: number;
 }
 
 export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }: EquipmentConfigDialogProps) {
@@ -60,6 +89,60 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
 
   // Media Attachments State
   const [attachments, setAttachments] = useState<MediaAttachment[]>([]);
+
+  // Equipment Service Items State
+  const [serviceItems, setServiceItems] = useState<EquipmentServiceItem[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  // Fetch service items and inventory on mount
+  useEffect(() => {
+    if (open && equipment.id) {
+      fetchServiceItems();
+      fetchInventoryItems();
+    }
+  }, [open, equipment.id]);
+
+  // Filter inventory by category
+  useEffect(() => {
+    if (categoryFilter === 'all') {
+      setFilteredInventory(inventoryItems);
+    } else {
+      setFilteredInventory(inventoryItems.filter(item => 
+        item.category?.toLowerCase() === categoryFilter.toLowerCase()
+      ));
+    }
+  }, [categoryFilter, inventoryItems]);
+
+  const fetchServiceItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('equipment_maintenance_items')
+        .select('*')
+        .eq('equipment_id', equipment.id);
+
+      if (error) throw error;
+      setServiceItems(data || []);
+    } catch (error) {
+      console.error('Error fetching service items:', error);
+    }
+  };
+
+  const fetchInventoryItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('id, name, sku, part_number, category, quantity, unit_price')
+        .order('name');
+
+      if (error) throw error;
+      setInventoryItems(data || []);
+      setFilteredInventory(data || []);
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+    }
+  };
 
   const handleAddSpecification = () => {
     setSpecifications([...specifications, { key: '', value: '' }]);
@@ -119,6 +202,87 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     setAttachments(attachments.filter((_, i) => i !== index));
   };
 
+  const handleAddServiceItem = () => {
+    setServiceItems([...serviceItems, {
+      item_name: '',
+      item_type: 'filter',
+      inventory_id: null,
+      part_number: '',
+      quantity: 1,
+      hours_interval: null,
+      mileage_interval: null,
+      calendar_interval: null,
+      calendar_interval_unit: 'days',
+      item_category: '',
+      position: '',
+      notes: '',
+      is_critical: false
+    }]);
+  };
+
+  const handleRemoveServiceItem = async (index: number, id?: string) => {
+    if (id) {
+      try {
+        const { error } = await supabase
+          .from('equipment_maintenance_items')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        toast.success('Service item deleted');
+      } catch (error) {
+        console.error('Error deleting service item:', error);
+        toast.error('Failed to delete service item');
+        return;
+      }
+    }
+    setServiceItems(serviceItems.filter((_, i) => i !== index));
+  };
+
+  const handleServiceItemChange = (index: number, field: keyof EquipmentServiceItem, value: any) => {
+    const updated = [...serviceItems];
+    updated[index][field] = value as never;
+
+    // Auto-fill part number when inventory item is selected
+    if (field === 'inventory_id' && value) {
+      const inventoryItem = inventoryItems.find(item => item.id === value);
+      if (inventoryItem) {
+        updated[index].part_number = inventoryItem.part_number || inventoryItem.sku;
+        updated[index].item_name = inventoryItem.name;
+      }
+    }
+
+    setServiceItems(updated);
+  };
+
+  const saveServiceItems = async () => {
+    try {
+      // Delete all existing items for this equipment
+      await supabase
+        .from('equipment_maintenance_items')
+        .delete()
+        .eq('equipment_id', equipment.id);
+
+      // Insert new items
+      if (serviceItems.length > 0) {
+        const itemsToInsert = serviceItems.map(item => ({
+          ...item,
+          equipment_id: equipment.id,
+          id: undefined // Remove id for new inserts
+        }));
+
+        const { error } = await supabase
+          .from('equipment_maintenance_items')
+          .insert(itemsToInsert);
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error saving service items:', error);
+      throw error;
+    }
+  };
+
   const handleSave = async () => {
     try {
       // Convert specifications array to object
@@ -137,6 +301,10 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         updated_at: new Date().toISOString()
       };
 
+      // Save service items first
+      await saveServiceItems();
+
+      // Update equipment
       await updateEquipment(equipment.id, updates);
       toast.success('Equipment updated successfully');
       onSave();
@@ -155,7 +323,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="basic">
               <Wrench className="h-4 w-4 mr-2" />
               Basic Info
@@ -163,6 +331,10 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
             <TabsTrigger value="specifications">
               <FileText className="h-4 w-4 mr-2" />
               Specifications
+            </TabsTrigger>
+            <TabsTrigger value="maintenance">
+              <Settings className="h-4 w-4 mr-2" />
+              Maintenance Items
             </TabsTrigger>
             <TabsTrigger value="media">
               <Image className="h-4 w-4 mr-2" />
@@ -335,6 +507,230 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                   <div>• Battery Specifications</div>
                   <div>• Belt Part Numbers</div>
                 </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="maintenance" className="space-y-4 mt-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 flex-1">
+                  <Label htmlFor="category-filter" className="whitespace-nowrap">Filter by Type:</Label>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger id="category-filter" className="w-[200px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Items</SelectItem>
+                      <SelectItem value="marine">Marine</SelectItem>
+                      <SelectItem value="automotive">Automotive</SelectItem>
+                      <SelectItem value="heavy equipment">Heavy Equipment</SelectItem>
+                      <SelectItem value="filters">Filters</SelectItem>
+                      <SelectItem value="oils & fluids">Oils & Fluids</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="button" onClick={handleAddServiceItem} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+
+              {serviceItems.length > 0 ? (
+                <Card>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[180px]">Item Name</TableHead>
+                            <TableHead className="w-[120px]">Type</TableHead>
+                            <TableHead className="w-[120px]">Position</TableHead>
+                            <TableHead className="w-[200px]">Inventory Item</TableHead>
+                            <TableHead className="w-[100px]">Part #</TableHead>
+                            <TableHead className="w-[80px]">Qty</TableHead>
+                            <TableHead className="w-[100px]">Hours</TableHead>
+                            <TableHead className="w-[100px]">Mileage</TableHead>
+                            <TableHead className="w-[120px]">Calendar</TableHead>
+                            <TableHead className="w-[80px]">Critical</TableHead>
+                            <TableHead className="w-[60px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {serviceItems.map((item, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <Input
+                                  value={item.item_name}
+                                  onChange={(e) => handleServiceItemChange(index, 'item_name', e.target.value)}
+                                  placeholder="Item name"
+                                  className="h-8"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={item.item_type}
+                                  onValueChange={(value) => handleServiceItemChange(index, 'item_type', value)}
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="filter">Filter</SelectItem>
+                                    <SelectItem value="oil">Oil</SelectItem>
+                                    <SelectItem value="coolant">Coolant</SelectItem>
+                                    <SelectItem value="belt">Belt</SelectItem>
+                                    <SelectItem value="fluid">Fluid</SelectItem>
+                                    <SelectItem value="other">Other</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={item.position}
+                                  onValueChange={(value) => handleServiceItemChange(index, 'position', value)}
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue placeholder="Position" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="">None</SelectItem>
+                                    <SelectItem value="primary">Primary</SelectItem>
+                                    <SelectItem value="secondary">Secondary</SelectItem>
+                                    <SelectItem value="left">Left</SelectItem>
+                                    <SelectItem value="right">Right</SelectItem>
+                                    <SelectItem value="front">Front</SelectItem>
+                                    <SelectItem value="rear">Rear</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={item.inventory_id || ''}
+                                  onValueChange={(value) => handleServiceItemChange(index, 'inventory_id', value || null)}
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue placeholder="Select item" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="">None</SelectItem>
+                                    {filteredInventory.map((invItem) => (
+                                      <SelectItem key={invItem.id} value={invItem.id}>
+                                        {invItem.name} ({invItem.sku})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  value={item.part_number}
+                                  onChange={(e) => handleServiceItemChange(index, 'part_number', e.target.value)}
+                                  placeholder="Part #"
+                                  className="h-8"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.1"
+                                  value={item.quantity}
+                                  onChange={(e) => handleServiceItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                  className="h-8"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={item.hours_interval || ''}
+                                  onChange={(e) => handleServiceItemChange(index, 'hours_interval', e.target.value ? parseInt(e.target.value) : null)}
+                                  placeholder="hrs"
+                                  className="h-8"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={item.mileage_interval || ''}
+                                  onChange={(e) => handleServiceItemChange(index, 'mileage_interval', e.target.value ? parseInt(e.target.value) : null)}
+                                  placeholder="mi/km"
+                                  className="h-8"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={item.calendar_interval || ''}
+                                    onChange={(e) => handleServiceItemChange(index, 'calendar_interval', e.target.value ? parseInt(e.target.value) : null)}
+                                    placeholder="90"
+                                    className="h-8 w-16"
+                                  />
+                                  <Select
+                                    value={item.calendar_interval_unit}
+                                    onValueChange={(value) => handleServiceItemChange(index, 'calendar_interval_unit', value)}
+                                  >
+                                    <SelectTrigger className="h-8 w-20">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="days">Days</SelectItem>
+                                      <SelectItem value="weeks">Weeks</SelectItem>
+                                      <SelectItem value="months">Months</SelectItem>
+                                      <SelectItem value="years">Years</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Input
+                                  type="checkbox"
+                                  checked={item.is_critical}
+                                  onChange={(e) => handleServiceItemChange(index, 'is_critical', e.target.checked)}
+                                  className="h-4 w-4"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleRemoveServiceItem(index, item.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                  <Settings className="h-12 w-12 mx-auto mb-2 opacity-50 text-muted-foreground" />
+                  <p className="text-muted-foreground">No maintenance items added yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Click "Add Item" to define parts and service intervals
+                  </p>
+                </div>
+              )}
+
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <p className="text-sm font-medium">Service Intervals Guide:</p>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>• <strong>Hours:</strong> Service every X operating hours (e.g., 250 hours)</li>
+                  <li>• <strong>Mileage:</strong> Service every X miles or kilometers (e.g., 5000 miles)</li>
+                  <li>• <strong>Calendar:</strong> Service every X days/weeks/months (e.g., 90 days)</li>
+                  <li>• <strong>Position:</strong> Use for multiple items (Primary/Secondary filters, Left/Right)</li>
+                  <li>• <strong>Critical:</strong> Mark items that require immediate attention when due</li>
+                </ul>
               </div>
             </div>
           </TabsContent>
