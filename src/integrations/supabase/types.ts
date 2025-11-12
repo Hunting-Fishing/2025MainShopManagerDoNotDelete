@@ -5290,66 +5290,60 @@ export type Database = {
       }
       equipment_maintenance_items: {
         Row: {
+          calendar_interval: number | null
+          calendar_interval_unit: string | null
           created_at: string | null
-          description: string | null
           equipment_id: string
+          hours_interval: number | null
           id: string
-          interval_type: string
-          interval_unit: string
-          interval_value: number
-          is_active: boolean | null
-          item_category: string
+          inventory_id: string | null
+          is_critical: boolean | null
+          item_category: string | null
           item_name: string
-          last_service_date: string | null
-          last_service_hours: number | null
-          next_service_date: string | null
-          next_service_hours: number | null
+          item_type: string | null
+          mileage_interval: number | null
           notes: string | null
-          part_numbers: string[] | null
+          part_number: string | null
+          position: string | null
           quantity: number | null
-          quantity_unit: string | null
           updated_at: string | null
         }
         Insert: {
+          calendar_interval?: number | null
+          calendar_interval_unit?: string | null
           created_at?: string | null
-          description?: string | null
           equipment_id: string
+          hours_interval?: number | null
           id?: string
-          interval_type?: string
-          interval_unit: string
-          interval_value: number
-          is_active?: boolean | null
-          item_category: string
+          inventory_id?: string | null
+          is_critical?: boolean | null
+          item_category?: string | null
           item_name: string
-          last_service_date?: string | null
-          last_service_hours?: number | null
-          next_service_date?: string | null
-          next_service_hours?: number | null
+          item_type?: string | null
+          mileage_interval?: number | null
           notes?: string | null
-          part_numbers?: string[] | null
+          part_number?: string | null
+          position?: string | null
           quantity?: number | null
-          quantity_unit?: string | null
           updated_at?: string | null
         }
         Update: {
+          calendar_interval?: number | null
+          calendar_interval_unit?: string | null
           created_at?: string | null
-          description?: string | null
           equipment_id?: string
+          hours_interval?: number | null
           id?: string
-          interval_type?: string
-          interval_unit?: string
-          interval_value?: number
-          is_active?: boolean | null
-          item_category?: string
+          inventory_id?: string | null
+          is_critical?: boolean | null
+          item_category?: string | null
           item_name?: string
-          last_service_date?: string | null
-          last_service_hours?: number | null
-          next_service_date?: string | null
-          next_service_hours?: number | null
+          item_type?: string | null
+          mileage_interval?: number | null
           notes?: string | null
-          part_numbers?: string[] | null
+          part_number?: string | null
+          position?: string | null
           quantity?: number | null
-          quantity_unit?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -5358,6 +5352,13 @@ export type Database = {
             columns: ["equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_maintenance_items_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
             referencedColumns: ["id"]
           },
         ]
