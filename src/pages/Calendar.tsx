@@ -4,16 +4,19 @@ import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { CalendarFilters } from '@/components/calendar/CalendarFilters';
 import { BusinessHoursInfo } from '@/components/calendar/BusinessHoursInfo';
+import { CalendarDayDetailDialog } from '@/components/calendar/CalendarDayDetailDialog';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useBusinessHours } from '@/hooks/useBusinessHours';
-import { CalendarViewType } from '@/types/calendar';
+import { CalendarViewType, CalendarEvent } from '@/types/calendar';
 import { Card } from '@/components/ui/card';
+import { isSameDay } from 'date-fns';
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewType>("month");
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const { events, shiftChats, isLoading, error } = useCalendarEvents(currentDate, view);
   const { businessHours, isBusinessDay } = useBusinessHours();
@@ -32,6 +35,26 @@ export default function Calendar() {
     
     return true;
   });
+
+  // Get events for selected date
+  const selectedDateEvents = selectedDate 
+    ? filteredEvents.filter(event => 
+        isSameDay(new Date(event.start), selectedDate)
+      )
+    : [];
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+  };
+
+  const handleCloseDetailDialog = () => {
+    setSelectedDate(null);
+  };
+
+  const handleEventClickFromDetail = (event: CalendarEvent) => {
+    // This will open the regular event dialog through CalendarView
+    setSelectedDate(null);
+  };
 
   if (error) {
     return (
@@ -70,6 +93,7 @@ export default function Calendar() {
             shiftChats={shiftChats}
             businessHours={businessHours}
             isBusinessDay={isBusinessDay}
+            onDateClick={handleDateClick}
           />
         </div>
         
@@ -80,6 +104,14 @@ export default function Calendar() {
           />
         </div>
       </div>
+
+      <CalendarDayDetailDialog
+        date={selectedDate}
+        events={selectedDateEvents}
+        isOpen={!!selectedDate}
+        onClose={handleCloseDetailDialog}
+        onEventClick={handleEventClickFromDetail}
+      />
     </div>
   );
 }

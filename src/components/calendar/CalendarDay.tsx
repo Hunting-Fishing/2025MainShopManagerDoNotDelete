@@ -73,8 +73,14 @@ export function CalendarDay({
   };
 
   const handleDayClick = () => {
-    if (isCustomerView && onDateClick && !isPastDate && isBusinessDay) {
-      onDateClick(date);
+    if (onDateClick) {
+      if (isCustomerView) {
+        if (!isPastDate && isBusinessDay) {
+          onDateClick(date);
+        }
+      } else {
+        onDateClick(date);
+      }
     }
   };
 
@@ -86,7 +92,8 @@ export function CalendarDay({
         isToday && "bg-blue-50",
         isPastDate && "bg-red-50 bg-opacity-30",
         !isBusinessDay && "bg-gray-100",
-        isCustomerView && !isPastDate && isBusinessDay && "cursor-pointer hover:bg-blue-50"
+        onDateClick && "cursor-pointer hover:bg-blue-50/50",
+        isCustomerView && !isPastDate && isBusinessDay && "hover:bg-blue-50"
       )}
       onClick={handleDayClick}
     >
