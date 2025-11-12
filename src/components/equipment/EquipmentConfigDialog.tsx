@@ -448,11 +448,16 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
 
           <TabsContent value="specifications" className="space-y-4 mt-4">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <p className="text-sm text-muted-foreground">
                   Add technical specifications like oil type, filter numbers, capacities, etc.
                 </p>
-                <Button type="button" onClick={handleAddSpecification} size="sm" variant="outline">
+                <Button 
+                  type="button" 
+                  onClick={handleAddSpecification} 
+                  size="default"
+                  className="w-full sm:w-auto touch-manipulation"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Specification
                 </Button>
@@ -460,52 +465,98 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
 
               <div className="space-y-3">
                 {specifications.map((spec, index) => (
-                  <Card key={index} className="p-4">
-                    <div className="flex gap-3 items-start">
-                      <div className="flex-1 grid grid-cols-2 gap-3">
-                        <Input
-                          placeholder="Specification name (e.g., Oil Type)"
-                          value={spec.key}
-                          onChange={(e) => handleSpecificationChange(index, 'key', e.target.value)}
-                        />
-                        <Input
-                          placeholder="Value (e.g., 5W-30 Synthetic)"
-                          value={spec.value}
-                          onChange={(e) => handleSpecificationChange(index, 'value', e.target.value)}
-                        />
+                  <Card key={index} className="border-2 hover:border-primary/50 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex gap-3 items-start">
+                        <div className="flex-1 space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor={`spec-key-${index}`} className="text-xs font-medium">
+                              Specification Name
+                            </Label>
+                            <Input
+                              id={`spec-key-${index}`}
+                              placeholder="e.g., Oil Type"
+                              value={spec.key}
+                              onChange={(e) => handleSpecificationChange(index, 'key', e.target.value)}
+                              className="h-12 text-base touch-manipulation"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`spec-value-${index}`} className="text-xs font-medium">
+                              Value
+                            </Label>
+                            <Input
+                              id={`spec-value-${index}`}
+                              placeholder="e.g., 5W-30 Synthetic"
+                              value={spec.value}
+                              onChange={(e) => handleSpecificationChange(index, 'value', e.target.value)}
+                              className="h-12 text-base touch-manipulation"
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveSpecification(index)}
+                          className="h-10 w-10 mt-6 touch-manipulation shrink-0"
+                        >
+                          <X className="h-5 w-5" />
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveSpecification(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    </CardContent>
                   </Card>
                 ))}
 
                 {specifications.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No specifications added yet</p>
-                    <p className="text-xs mt-1">Click "Add Specification" to get started</p>
+                  <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="font-medium">No specifications added yet</p>
+                    <p className="text-xs mt-1">Click "Add Specification" or select from common specs below</p>
                   </div>
                 )}
               </div>
 
-              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm font-medium mb-2">Common Specifications:</p>
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <div>• Oil Type & Capacity</div>
-                  <div>• Air Filter Part Number</div>
-                  <div>• Fuel Filter Part Number</div>
-                  <div>• Hydraulic Fluid Type</div>
-                  <div>• Coolant Type & Capacity</div>
-                  <div>• Tire Size & Pressure</div>
-                  <div>• Battery Specifications</div>
-                  <div>• Belt Part Numbers</div>
+              <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Quick Add Common Specifications
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'Oil Type & Capacity',
+                    'Air Filter Part Number',
+                    'Fuel Filter Part Number',
+                    'Hydraulic Fluid Type',
+                    'Coolant Type & Capacity',
+                    'Tire Size & Pressure',
+                    'Battery Specifications',
+                    'Belt Part Numbers',
+                    'Engine Hours',
+                    'Transmission Type',
+                    'Hydraulic Pump Model',
+                    'PTO Specifications'
+                  ].map((specName) => (
+                    <Button
+                      key={specName}
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        const exists = specifications.some(s => s.key === specName);
+                        if (!exists) {
+                          setSpecifications([...specifications, { key: specName, value: '' }]);
+                          toast.success(`Added "${specName}" specification`);
+                        } else {
+                          toast.info('This specification already exists');
+                        }
+                      }}
+                      className="touch-manipulation text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      {specName}
+                    </Button>
+                  ))}
                 </div>
               </div>
             </div>
