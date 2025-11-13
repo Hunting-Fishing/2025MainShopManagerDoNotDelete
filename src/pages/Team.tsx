@@ -5,6 +5,7 @@ import { TeamContent } from '@/components/team/TeamContent';
 import { TeamHeader } from '@/components/team/TeamHeader';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import TeamMemberProfile from './TeamMemberProfile';
+import TeamMemberCreate from './TeamMemberCreate';
 
 /**
  * IMPORTANT: This page uses full team management functionality
@@ -43,6 +44,8 @@ export default function Team() {
           />
         </div>
       } />
+      {/* Specific routes must come BEFORE dynamic routes */}
+      <Route path="/create" element={<TeamMemberCreate />} />
       <Route path="/:id" element={<TeamMemberProfile />} />
       <Route path="/*" element={
         <TeamContent 
