@@ -120,7 +120,9 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
             
             {isMaintenanceRequest && (
               <Button asChild>
-                <Link to={`/work-orders/new?maintenanceRequestId=${event.work_order_id || event.id}`}>
+                <Link to={`/work-orders/new?maintenanceRequestId=${
+                  (event.work_order_id || event.id).replace(/^maintenance-/, '')
+                }`}>
                   <Wrench className="mr-2 h-4 w-4" />
                   Convert to Work Order
                 </Link>
