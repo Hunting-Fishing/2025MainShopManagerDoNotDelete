@@ -38,7 +38,8 @@ export default function TeamMemberCreate() {
           phone: formData.phone,
           job_title: formData.jobTitle,
           department: formData.department,
-          shop_id: shopId
+          shop_id: shopId,
+          has_auth_account: false // Mark as not having auth account yet
         }]);
 
       if (profileError) throw profileError;
