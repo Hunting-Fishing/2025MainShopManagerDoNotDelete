@@ -91,6 +91,9 @@ export async function getMaintenanceRequestEvents(
  */
 export async function getMaintenanceRequestById(id: string) {
   try {
+    // Strip "maintenance-" prefix if present
+    const cleanId = id.replace(/^maintenance-/, '');
+    
     const { data, error } = await supabase
       .from('maintenance_requests')
       .select(`
@@ -106,10 +109,13 @@ export async function getMaintenanceRequestById(id: string) {
         requested_by_name,
         equipment_id
       `)
-      .eq('id', id)
-      .single();
+      .eq('id', cleanId)
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) {
+      throw new Error('Maintenance request not found');
+    }
 
     // Get equipment name
     let equipmentName = "Unknown Equipment";
