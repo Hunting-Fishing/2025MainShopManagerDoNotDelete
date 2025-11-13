@@ -4,9 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2, AlertCircle, Wrench, Calendar, User } from 'lucide-react';
+import { Plus, Loader2, AlertCircle, Wrench, Calendar, User, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { CreateMaintenanceRequestDialog } from './CreateMaintenanceRequestDialog';
+import { ConvertToWorkOrderDialog } from './ConvertToWorkOrderDialog';
 
 const statusColors = {
   pending: 'bg-yellow-500/10 text-yellow-500',
@@ -30,6 +31,8 @@ interface EquipmentWorkRequestsProps {
 
 export function EquipmentWorkRequests({ equipmentId, equipmentName }: EquipmentWorkRequestsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
   const { data: requests, isLoading, refetch } = useQuery({
     queryKey: ['equipment-maintenance-requests', equipmentId],
@@ -116,6 +119,24 @@ export function EquipmentWorkRequests({ equipmentId, equipmentName }: EquipmentW
                       <span className="text-muted-foreground">{request.notes}</span>
                     </div>
                   )}
+
+                  {/* Convert to Work Order Button */}
+                  {request.status === 'pending' && (
+                    <div className="mt-3 pt-3 border-t">
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setConvertDialogOpen(true);
+                        }}
+                        className="w-full sm:w-auto"
+                      >
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        Convert to Work Order
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
@@ -130,6 +151,15 @@ export function EquipmentWorkRequests({ equipmentId, equipmentName }: EquipmentW
         equipmentName={equipmentName}
         onSuccess={refetch}
       />
+
+      {selectedRequest && (
+        <ConvertToWorkOrderDialog
+          open={convertDialogOpen}
+          onOpenChange={setConvertDialogOpen}
+          request={selectedRequest}
+          onSuccess={refetch}
+        />
+      )}
     </>
   );
 }
