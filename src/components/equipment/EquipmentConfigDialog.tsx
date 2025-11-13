@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useEquipmentManagement } from '@/hooks/useEquipmentManagement';
 import { EquipmentDetails } from '@/services/equipment/equipmentService';
-import { Wrench, FileText, Image, Plus, X, Upload, Settings, Trash2 } from 'lucide-react';
+import { Wrench, FileText, Image, Plus, X, Upload, Settings, Trash2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -365,6 +365,14 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">Maintenance Items</span>
                 <span className="sm:hidden">Maint</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="safety"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-border gap-2"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">Safety</span>
+                <span className="sm:hidden">Safety</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="media"
@@ -884,6 +892,38 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                   <li>• <strong>Critical:</strong> Mark items that require immediate attention when due</li>
                 </ul>
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="safety" className="space-y-4 mt-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Link safety equipment requirements and certifications for this equipment.
+                </p>
+                <Button 
+                  type="button" 
+                  onClick={() => window.open('/equipment?tab=safety', '_blank')}
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Safety Equipment
+                </Button>
+              </div>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center py-8">
+                    <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Safety Equipment Linking</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Link required safety equipment like fire extinguishers, first aid kits, PPE, etc.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      This feature allows you to track which safety equipment is required or assigned to this equipment.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
