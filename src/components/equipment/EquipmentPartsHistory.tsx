@@ -69,7 +69,7 @@ export function EquipmentPartsHistory({ equipmentId }: EquipmentPartsHistoryProp
     try {
       setLoading(true);
       let query = supabase
-        .from('equipment_parts_history')
+        .from('equipment_parts_history' as any)
         .select('*')
         .order('replacement_date', { ascending: false });
 
@@ -80,7 +80,7 @@ export function EquipmentPartsHistory({ equipmentId }: EquipmentPartsHistoryProp
       const { data, error } = await query;
 
       if (error) throw error;
-      setPartsHistory(data || []);
+      setPartsHistory(data as any || []);
     } catch (error) {
       console.error('Error fetching parts history:', error);
       toast.error('Failed to load parts history');
@@ -118,7 +118,7 @@ export function EquipmentPartsHistory({ equipmentId }: EquipmentPartsHistoryProp
 
       if (editingPart) {
         const { error } = await supabase
-          .from('equipment_parts_history')
+          .from('equipment_parts_history' as any)
           .update(dataToSave)
           .eq('id', editingPart.id);
 
@@ -126,7 +126,7 @@ export function EquipmentPartsHistory({ equipmentId }: EquipmentPartsHistoryProp
         toast.success('Part history updated successfully');
       } else {
         const { error } = await supabase
-          .from('equipment_parts_history')
+          .from('equipment_parts_history' as any)
           .insert(dataToSave);
 
         if (error) throw error;
@@ -147,7 +147,7 @@ export function EquipmentPartsHistory({ equipmentId }: EquipmentPartsHistoryProp
 
     try {
       const { error } = await supabase
-        .from('equipment_parts_history')
+        .from('equipment_parts_history' as any)
         .delete()
         .eq('id', id);
 
