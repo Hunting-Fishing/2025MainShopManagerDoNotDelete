@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2, AlertCircle, Wrench, Calendar, User, ArrowRight } from 'lucide-react';
+import { Plus, Loader2, AlertCircle, Wrench, Calendar, User, ArrowRight, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { CreateMaintenanceRequestDialog } from './CreateMaintenanceRequestDialog';
 import { ConvertToWorkOrderDialog } from './ConvertToWorkOrderDialog';
+import { ViewMaintenanceRequestDialog } from './ViewMaintenanceRequestDialog';
 
 const statusColors = {
   pending: 'bg-yellow-500/10 text-yellow-500',
@@ -32,6 +33,7 @@ interface EquipmentWorkRequestsProps {
 export function EquipmentWorkRequests({ equipmentId, equipmentName }: EquipmentWorkRequestsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
   const { data: requests, isLoading, refetch } = useQuery({
@@ -120,9 +122,21 @@ export function EquipmentWorkRequests({ equipmentId, equipmentName }: EquipmentW
                     </div>
                   )}
 
-                  {/* Convert to Work Order Button */}
+                  {/* Action Buttons */}
                   {request.status === 'pending' && (
-                    <div className="mt-3 pt-3 border-t">
+                    <div className="mt-3 pt-3 border-t flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setViewDialogOpen(true);
+                        }}
+                        className="flex-1 sm:flex-none"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </Button>
                       <Button 
                         size="sm" 
                         variant="default"
@@ -130,10 +144,28 @@ export function EquipmentWorkRequests({ equipmentId, equipmentName }: EquipmentW
                           setSelectedRequest(request);
                           setConvertDialogOpen(true);
                         }}
-                        className="w-full sm:w-auto"
+                        className="flex-1 sm:flex-none"
                       >
                         <ArrowRight className="h-4 w-4 mr-2" />
                         Convert to Work Order
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* View button for non-pending requests */}
+                  {request.status !== 'pending' && (
+                    <div className="mt-3 pt-3 border-t">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setViewDialogOpen(true);
+                        }}
+                        className="w-full sm:w-auto"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
                       </Button>
                     </div>
                   )}
@@ -153,12 +185,25 @@ export function EquipmentWorkRequests({ equipmentId, equipmentName }: EquipmentW
       />
 
       {selectedRequest && (
-        <ConvertToWorkOrderDialog
-          open={convertDialogOpen}
-          onOpenChange={setConvertDialogOpen}
-          request={selectedRequest}
-          onSuccess={refetch}
-        />
+        <>
+          <ConvertToWorkOrderDialog
+            open={convertDialogOpen}
+            onOpenChange={setConvertDialogOpen}
+            request={selectedRequest}
+            onSuccess={refetch}
+          />
+          
+          <ViewMaintenanceRequestDialog
+            open={viewDialogOpen}
+            onOpenChange={setViewDialogOpen}
+            request={selectedRequest}
+            onConvert={() => {
+              setViewDialogOpen(false);
+              setConvertDialogOpen(true);
+            }}
+            onRefetch={refetch}
+          />
+        </>
       )}
     </>
   );
