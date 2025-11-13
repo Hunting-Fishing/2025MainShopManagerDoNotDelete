@@ -14,6 +14,7 @@ import { EquipmentDetails } from '@/services/equipment/equipmentService';
 import { Wrench, FileText, Image, Plus, X, Upload, Settings, Trash2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { AddSafetyEquipmentDialog } from './AddSafetyEquipmentDialog';
 
 interface EquipmentConfigDialogProps {
   open: boolean;
@@ -70,6 +71,7 @@ interface InventoryItem {
 export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }: EquipmentConfigDialogProps) {
   const { updateEquipment, loading } = useEquipmentManagement();
   const [uploading, setUploading] = useState(false);
+  const [safetyDialogOpen, setSafetyDialogOpen] = useState(false);
   
   // Basic Info State
   const [formData, setFormData] = useState({
@@ -899,27 +901,37 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  Link safety equipment requirements and certifications for this equipment.
+                  Add and track safety equipment requirements and certifications for this equipment.
                 </p>
                 <Button 
                   type="button" 
-                  onClick={() => window.open('/equipment?tab=safety', '_blank')}
+                  onClick={() => setSafetyDialogOpen(true)}
                   size="sm"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Safety Equipment
                 </Button>
               </div>
+
+              <AddSafetyEquipmentDialog
+                open={safetyDialogOpen}
+                onOpenChange={setSafetyDialogOpen}
+                onSuccess={() => {
+                  toast.success('Safety equipment added successfully');
+                  setSafetyDialogOpen(false);
+                }}
+              />
+
               <Card>
                 <CardContent className="p-6">
                   <div className="text-center py-8">
                     <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Safety Equipment Linking</h3>
+                    <h3 className="text-lg font-semibold mb-2">Safety Equipment Management</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Link required safety equipment like fire extinguishers, first aid kits, PPE, etc.
+                      Track required safety equipment like fire extinguishers, first aid kits, life rafts, EPIRBs, and more.
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      This feature allows you to track which safety equipment is required or assigned to this equipment.
+                      Click "Add Safety Equipment" above to record safety equipment items and track inspections, expiry dates, and compliance.
                     </p>
                   </div>
                 </CardContent>
