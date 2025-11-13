@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { CalendarEvent } from "@/types/calendar";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, User, Calendar as CalendarIcon, FileText } from "lucide-react";
+import { Clock, MapPin, User, Calendar as CalendarIcon, FileText, Wrench } from "lucide-react";
 import { statusMap } from "@/utils/workOrders"; // Updated import path
 import { formatDate, formatTime } from "@/utils/dateUtils";
 import { Link } from "react-router-dom";
@@ -31,8 +31,9 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
     formatDate(event.start) : 
     formatDate(new Date().toISOString()); // Fallback to today if event.start is missing
 
-  // Determine if this is a work order event
+  // Determine event type
   const isWorkOrder = event.type === 'work-order';
+  const isMaintenanceRequest = event.type === 'maintenance-request';
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -45,7 +46,9 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
           {/* Event Type Badge */}
           <div className="flex items-center justify-between">
             <Badge variant={event.type === 'work-order' ? 'default' : 'secondary'}>
-              {event.type === 'work-order' ? 'Work Order' : 'Appointment'}
+              {event.type === 'work-order' ? 'Work Order' : 
+               event.type === 'maintenance-request' ? 'Maintenance Request' : 
+               'Appointment'}
             </Badge>
             
             {/* Status Badge - Only for work orders */}
@@ -106,13 +109,24 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
             Close
           </Button>
           
-          {isWorkOrder && event.id && (
-            <Button asChild>
-              <Link to={`/work-orders/${event.id}`}>
-                View Work Order
-              </Link>
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {isWorkOrder && event.id && (
+              <Button asChild>
+                <Link to={`/work-orders/${event.id}`}>
+                  View Work Order
+                </Link>
+              </Button>
+            )}
+            
+            {isMaintenanceRequest && (
+              <Button asChild>
+                <Link to={`/work-orders/new?maintenanceRequestId=${event.work_order_id || event.id}`}>
+                  <Wrench className="mr-2 h-4 w-4" />
+                  Convert to Work Order
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
