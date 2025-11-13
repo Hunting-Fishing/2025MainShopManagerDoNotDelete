@@ -75,13 +75,14 @@ export function AddSafetyEquipmentDialog({ open, onOpenChange, onSuccess }: AddS
         const result = await supabase
           .from('profiles')
           .select('shop_id')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .maybeSingle();
         
         if (result.data?.shop_id) {
           shop_id = result.data.shop_id;
         }
       } catch (e) {
+        console.error('Error fetching shop_id:', e);
         // Use user.id as fallback
       }
 
