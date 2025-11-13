@@ -24,33 +24,15 @@ export default function TeamMemberCreate() {
 
     setIsSubmitting(true);
     try {
-      // Generate a UUID for the new profile
-      const { data: { user }, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        password: 'temporary-password-123', // In production, this should be generated securely
-        email_confirm: true,
-        user_metadata: {
-          first_name: formData.first_name,
-          last_name: formData.last_name
-        }
-      });
-
-      if (authError) throw authError;
-
-      if (!user) {
-        throw new Error('Failed to create user');
-      }
-
-      // Create profile with the user's ID
+      // Create profile directly (auth user creation would be handled separately via invitation)
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([{
-          id: user.id,
           email: formData.email,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
           phone: formData.phone,
-          job_title: formData.job_title,
+          job_title: formData.jobTitle,
           department: formData.department,
           shop_id: shopId
         }]);
