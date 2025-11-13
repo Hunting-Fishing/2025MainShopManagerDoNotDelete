@@ -10,6 +10,7 @@ import { getEquipmentById, updateEquipmentStatus, type EquipmentDetails } from '
 import { MaintenanceIntervals } from '@/components/equipment/MaintenanceIntervals';
 import { EquipmentWorkRequests } from '@/components/equipment-details/EquipmentWorkRequests';
 import { EquipmentConfigDialog } from '@/components/equipment/EquipmentConfigDialog';
+import { SafetyEquipmentList } from '@/components/equipment/SafetyEquipmentList';
 
 export default function EquipmentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -279,65 +280,7 @@ export default function EquipmentDetails() {
         </TabsContent>
 
         <TabsContent value="safety" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Safety Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Last Inspection Date</label>
-                  <p className="mt-1">
-                    {equipment.specifications?.inspection_date 
-                      ? new Date(equipment.specifications.inspection_date).toLocaleDateString()
-                      : 'N/A'
-                    }
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Next Inspection Due</label>
-                  <p className="mt-1">
-                    {equipment.specifications?.expiry_date 
-                      ? new Date(equipment.specifications.expiry_date).toLocaleDateString()
-                      : 'N/A'
-                    }
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Certification Status</label>
-                  <div className="mt-1">
-                    {equipment.specifications?.expiry_date ? (
-                      new Date(equipment.specifications.expiry_date) > new Date() ? (
-                        <Badge className="bg-success/10 text-success">Valid</Badge>
-                      ) : (
-                        <Badge className="bg-error/10 text-error">Expired</Badge>
-                      )
-                    ) : (
-                      <span className="text-muted-foreground">N/A</span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Quantity</label>
-                  <p className="mt-1">{equipment.specifications?.quantity || 'N/A'}</p>
-                </div>
-              </div>
-
-              {equipment.notes && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Safety Notes</label>
-                  <p className="mt-1">{equipment.notes}</p>
-                </div>
-              )}
-
-              {!equipment.specifications?.inspection_date && !equipment.specifications?.expiry_date && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <ShieldCheck className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No safety information recorded for this equipment</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <SafetyEquipmentList parentEquipmentId={id} />
         </TabsContent>
 
         <TabsContent value="work-requests" className="space-y-4">
