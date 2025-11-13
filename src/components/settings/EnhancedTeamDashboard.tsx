@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,7 @@ import { QuickActions } from './enhanced-team/QuickActions';
 import { AdvancedFilters } from './enhanced-team/AdvancedFilters';
 
 export function EnhancedTeamDashboard() {
+  const navigate = useNavigate();
   const [activeView, setActiveView] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
@@ -89,7 +91,11 @@ export function EnhancedTeamDashboard() {
             <Upload className="h-4 w-4 mr-2" />
             Import
           </Button>
-          <Button size="sm" className="bg-gradient-to-r from-primary to-primary/80">
+          <Button 
+            size="sm" 
+            className="bg-gradient-to-r from-primary to-primary/80"
+            onClick={() => navigate('/team/create')}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Member
           </Button>
