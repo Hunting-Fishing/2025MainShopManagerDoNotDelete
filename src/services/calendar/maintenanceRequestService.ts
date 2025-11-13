@@ -87,6 +87,55 @@ export async function getMaintenanceRequestEvents(
 }
 
 /**
+ * Fetch a single maintenance request by ID
+ */
+export async function getMaintenanceRequestById(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from('maintenance_requests')
+      .select(`
+        id,
+        request_number,
+        title,
+        description,
+        status,
+        priority,
+        requested_at,
+        assigned_to,
+        assigned_to_name,
+        requested_by_name,
+        equipment_id
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+
+    // Get equipment name
+    let equipmentName = "Unknown Equipment";
+    if (data.equipment_id) {
+      const { data: equipmentData } = await supabase
+        .from('equipment_assets')
+        .select('name')
+        .eq('id', data.equipment_id)
+        .single();
+      
+      if (equipmentData) {
+        equipmentName = equipmentData.name;
+      }
+    }
+
+    return {
+      ...data,
+      equipment_name: equipmentName
+    };
+  } catch (error) {
+    handleApiError(error, "Failed to fetch maintenance request");
+    throw error;
+  }
+}
+
+/**
  * Get color based on priority
  */
 function getPriorityColor(priority: string): string {
