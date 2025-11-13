@@ -39,7 +39,8 @@ const OrganizationDetails: React.FC = () => {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching organization:', error);
-        toast.error('Failed to load organization details');
+        toast.error(`Failed to load organization: ${error.message || 'Database connection error'}`);
+        setLoading(false);
         return;
       }
 
@@ -49,7 +50,8 @@ const OrganizationDetails: React.FC = () => {
       }
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Failed to load organization details');
+      const errorMessage = error instanceof Error ? error.message : 'Database connection error';
+      toast.error(`Failed to load organization: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
