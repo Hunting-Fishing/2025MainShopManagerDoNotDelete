@@ -11,7 +11,8 @@ import { ToolsList } from '@/components/equipment/ToolsList';
 import { ToolRequestForms } from '@/components/equipment/ToolRequestForms';
 import { SafetyEquipmentList } from '@/components/equipment/SafetyEquipmentList';
 import { AddEquipmentDialog } from '@/components/equipment/AddEquipmentDialog';
-import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck } from 'lucide-react';
+import { EquipmentPartsHistory } from '@/components/equipment/EquipmentPartsHistory';
+import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck, Package } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEquipment } from '@/hooks/useEquipment';
@@ -24,6 +25,7 @@ export default function EquipmentManagement() {
 
   const tabs = [
     { value: 'equipment', label: 'Equipment', icon: Wrench },
+    { value: 'parts', label: 'Parts History', icon: Package },
     { value: 'safety', label: 'Safety Equipment', icon: ShieldCheck },
     { value: 'tools', label: 'Tools', icon: Hammer },
     { value: 'tool-forms', label: 'Request Forms', icon: FileText },
@@ -76,7 +78,7 @@ export default function EquipmentManagement() {
             </SelectContent>
           </Select>
         ) : (
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -91,6 +93,10 @@ export default function EquipmentManagement() {
 
         <TabsContent value="equipment" className="space-y-4">
           <EquipmentList equipment={equipment} loading={isLoading} onUpdate={refetch} />
+        </TabsContent>
+
+        <TabsContent value="parts" className="space-y-4">
+          <EquipmentPartsHistory />
         </TabsContent>
 
         <TabsContent value="safety" className="space-y-4">

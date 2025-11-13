@@ -71,6 +71,7 @@ const WorkOrderCreate = () => {
       location: maintenanceData.equipment_name,
       maintenanceRequestId: maintenanceData.id,
       maintenanceRequestNumber: maintenanceData.request_number,
+      partsRequested: maintenanceData.parts_requested || [],
     });
   }
 
