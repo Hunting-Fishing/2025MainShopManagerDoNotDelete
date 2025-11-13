@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2, AlertCircle, Wrench, Calendar, User, ArrowRight, Eye } from 'lucide-react';
+import { Plus, Loader2, AlertCircle, Wrench, Calendar, User, ArrowRight, Eye, Image, Video, Package, DollarSign, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { CreateMaintenanceRequestDialog } from './CreateMaintenanceRequestDialog';
 import { ConvertToWorkOrderDialog } from './ConvertToWorkOrderDialog';
@@ -76,44 +76,96 @@ export function EquipmentWorkRequests({ equipmentId, equipmentName }: EquipmentW
             </div>
           ) : (
             <div className="space-y-4">
-              {requests.map((request: any) => (
-                <Card key={request.id} className="p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold">{request.title}</h3>
-                        <Badge className={priorityColors[request.priority as keyof typeof priorityColors]}>
-                          {request.priority}
-                        </Badge>
-                        <Badge className={statusColors[request.status as keyof typeof statusColors]}>
-                          {request.status.replace('_', ' ')}
-                        </Badge>
+              {requests.map((request: any) => {
+                // Check for attachments
+                const attachments = request.attachments || [];
+                const hasImages = attachments.some((att: any) => 
+                  att?.type?.startsWith('image/') || 
+                  att?.file_type?.startsWith('image/')
+                );
+                const hasVideos = attachments.some((att: any) => 
+                  att?.type?.startsWith('video/') || 
+                  att?.file_type?.startsWith('video/')
+                );
+                const partsCount = request.parts_requested?.length || 0;
+
+                return (
+                  <Card key={request.id} className="p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold">{request.title}</h3>
+                          <Badge className={priorityColors[request.priority as keyof typeof priorityColors]}>
+                            {request.priority}
+                          </Badge>
+                          <Badge className={statusColors[request.status as keyof typeof statusColors]}>
+                            {request.status.replace('_', ' ')}
+                          </Badge>
+                          {request.request_type && (
+                            <Badge variant="outline" className="capitalize">
+                              {request.request_type.replace('_', ' ')}
+                            </Badge>
+                          )}
+                        </div>
+                        {request.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">{request.description}</p>
+                        )}
                       </div>
-                      {request.description && (
-                        <p className="text-sm text-muted-foreground">{request.description}</p>
+                    </div>
+                    
+                    {/* Additional Info Row */}
+                    <div className="flex items-center gap-4 text-xs border-t pt-3 pb-2 flex-wrap">
+                      <span className="font-mono text-muted-foreground">#{request.request_number}</span>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        {format(new Date(request.requested_at), 'MMM d, yyyy')}
+                      </div>
+                      {request.requested_by_name && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <User className="h-3 w-3" />
+                          {request.requested_by_name}
+                        </div>
+                      )}
+                      {request.estimated_cost && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <DollarSign className="h-3 w-3" />
+                          <span>${request.estimated_cost}</span>
+                        </div>
+                      )}
+                      {request.estimated_hours && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span>{request.estimated_hours}h</span>
+                        </div>
+                      )}
+                      {partsCount > 0 && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Package className="h-3 w-3" />
+                          <span>{partsCount} part{partsCount !== 1 ? 's' : ''}</span>
+                        </div>
+                      )}
+                      {(hasImages || hasVideos) && (
+                        <div className="flex items-center gap-2 ml-auto">
+                          {hasImages && (
+                            <div className="flex items-center gap-1 text-primary">
+                              <Image className="h-4 w-4" />
+                            </div>
+                          )}
+                          {hasVideos && (
+                            <div className="flex items-center gap-1 text-primary">
+                              <Video className="h-4 w-4" />
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground border-t pt-3">
-                    <span className="font-mono">#{request.request_number}</span>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {format(new Date(request.requested_at), 'MMM d, yyyy')}
-                    </div>
-                    {request.requested_by_name && (
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {request.requested_by_name}
-                      </div>
-                    )}
+
                     {request.scheduled_date && (
-                      <div className="flex items-center gap-1">
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 pb-2">
                         <Calendar className="h-3 w-3" />
                         <span>Scheduled: {format(new Date(request.scheduled_date), 'MMM d, yyyy')}</span>
                       </div>
                     )}
-                  </div>
 
                   {request.notes && (
                     <div className="mt-3 text-sm border-t pt-3">
@@ -169,8 +221,9 @@ export function EquipmentWorkRequests({ equipmentId, equipmentName }: EquipmentW
                       </Button>
                     </div>
                   )}
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </CardContent>
