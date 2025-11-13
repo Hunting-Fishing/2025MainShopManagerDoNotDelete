@@ -21630,7 +21630,9 @@ export type Database = {
           shop_id: string
         }[]
       }
-      get_user_shop_id: { Args: never; Returns: string }
+      get_user_shop_id:
+        | { Args: { user_id: string }; Returns: string }
+        | { Args: never; Returns: string }
       get_user_shop_id_secure: { Args: { user_uuid: string }; Returns: string }
       get_work_order_inventory_items: {
         Args: { work_order_id: string }
