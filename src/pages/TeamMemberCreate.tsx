@@ -24,10 +24,14 @@ export default function TeamMemberCreate() {
 
     setIsSubmitting(true);
     try {
+      // Generate a UUID for the profile (team members don't need auth accounts immediately)
+      const profileId = crypto.randomUUID();
+      
       // Create profile directly (auth user creation would be handled separately via invitation)
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([{
+          id: profileId,
           email: formData.email,
           first_name: formData.firstName,
           last_name: formData.lastName,
