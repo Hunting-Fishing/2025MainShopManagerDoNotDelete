@@ -16,6 +16,7 @@ export interface Profile {
 
 /**
  * Hook for fetching user profiles from Supabase
+ * SECURITY: Profiles are automatically filtered by shop_id via RLS policies
  */
 export function useFetchProfiles() {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,24 +27,8 @@ export function useFetchProfiles() {
     setError(null);
     
     try {
-      // Get current user's shop_id for proper data isolation
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Get the current user's shop_id
-      const { data: currentUserProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError || !currentUserProfile?.shop_id) {
-        throw new Error('Unable to determine user shop');
-      }
-
-      // Fetch ONLY profiles from the same shop (defense-in-depth with RLS)
+      // Fetch profiles - RLS policies automatically filter by shop_id
+      // Only profiles from the current user's shop will be returned
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -59,12 +44,13 @@ export function useFetchProfiles() {
           profile_metadata!left (
             metadata
           )
-        `)
-        .eq('shop_id', currentUserProfile.shop_id);
+        `);
 
       if (profilesError) {
         throw profilesError;
       }
+
+      console.log(`Fetched ${profiles?.length || 0} profiles from current shop (RLS enforced)`);
 
       // Process profiles and map them with status from metadata
       return (profiles || [])
