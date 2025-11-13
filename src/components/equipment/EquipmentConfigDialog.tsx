@@ -146,11 +146,20 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         .select('id, name, sku, part_number, category, quantity, unit_price')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Inventory fetch error:', error);
+        throw error;
+      }
+      
+      console.log('Inventory items loaded:', data?.length || 0);
       setInventoryItems(data || []);
       setFilteredInventory(data || []);
     } catch (error) {
       console.error('Error fetching inventory:', error);
+      toast.error('Failed to load inventory items');
+      // Set empty arrays to prevent undefined errors
+      setInventoryItems([]);
+      setFilteredInventory([]);
     }
   };
 
@@ -232,21 +241,28 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
   };
 
   const handleAddServiceItem = () => {
-    setServiceItems([...serviceItems, {
-      item_name: '',
-      item_type: 'filter',
-      inventory_id: null,
-      part_number: '',
-      quantity: 1,
-      hours_interval: null,
-      mileage_interval: null,
-      calendar_interval: null,
-      calendar_interval_unit: 'days',
-      item_category: '',
-      position: '',
-      notes: '',
-      is_critical: false
-    }]);
+    try {
+      console.log('Adding new service item...');
+      setServiceItems([...serviceItems, {
+        item_name: '',
+        item_type: 'filter',
+        inventory_id: null,
+        part_number: '',
+        quantity: 1,
+        hours_interval: null,
+        mileage_interval: null,
+        calendar_interval: null,
+        calendar_interval_unit: 'days',
+        item_category: '',
+        position: '',
+        notes: '',
+        is_critical: false
+      }]);
+      console.log('Service item added successfully');
+    } catch (error) {
+      console.error('Error adding service item:', error);
+      toast.error('Failed to add service item');
+    }
   };
 
   const handleRemoveServiceItem = async (index: number, id?: string) => {
