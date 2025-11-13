@@ -22,11 +22,12 @@ interface SafetyEquipmentItem {
 
 interface SafetyEquipmentListProps {
   refreshTrigger?: number;
+  parentEquipmentId?: string; // Filter by parent equipment
 }
 
 type StatusLevel = 'good' | 'warning' | 'urgent' | 'overdue';
 
-export function SafetyEquipmentList({ refreshTrigger }: SafetyEquipmentListProps) {
+export function SafetyEquipmentList({ refreshTrigger, parentEquipmentId }: SafetyEquipmentListProps) {
   const [items, setItems] = useState<SafetyEquipmentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -110,12 +111,18 @@ export function SafetyEquipmentList({ refreshTrigger }: SafetyEquipmentListProps
         'life_jacket', 'immersion_suit'
       ];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('equipment_assets')
         .select('*')
         .eq('shop_id', shop_id)
-        .in('equipment_type', safetyTypes)
-        .order('created_at', { ascending: false });
+        .in('equipment_type', safetyTypes);
+      
+      // Filter by parent equipment if specified
+      if (parentEquipmentId) {
+        query = query.eq('parent_equipment_id', parentEquipmentId);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 

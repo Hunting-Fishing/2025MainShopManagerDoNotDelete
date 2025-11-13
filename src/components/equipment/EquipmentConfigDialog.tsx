@@ -938,6 +938,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
               <AddSafetyEquipmentDialog
                 open={safetyDialogOpen}
                 onOpenChange={setSafetyDialogOpen}
+                parentEquipmentId={equipment.id}
                 onSuccess={() => {
                   toast.success('Safety equipment added successfully');
                   setSafetyDialogOpen(false);
@@ -945,7 +946,10 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                 }}
               />
 
-              <SafetyEquipmentList refreshTrigger={safetyRefreshTrigger} />
+              <SafetyEquipmentList 
+                refreshTrigger={safetyRefreshTrigger} 
+                parentEquipmentId={equipment.id}
+              />
             </div>
           </TabsContent>
 

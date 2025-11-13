@@ -5129,6 +5129,7 @@ export type Database = {
           name: string
           next_service_date: string | null
           notes: string | null
+          parent_equipment_id: string | null
           purchase_cost: number | null
           purchase_date: string | null
           serial_number: string | null
@@ -5157,6 +5158,7 @@ export type Database = {
           name: string
           next_service_date?: string | null
           notes?: string | null
+          parent_equipment_id?: string | null
           purchase_cost?: number | null
           purchase_date?: string | null
           serial_number?: string | null
@@ -5185,6 +5187,7 @@ export type Database = {
           name?: string
           next_service_date?: string | null
           notes?: string | null
+          parent_equipment_id?: string | null
           purchase_cost?: number | null
           purchase_date?: string | null
           serial_number?: string | null
@@ -5208,6 +5211,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_assets_parent_equipment_id_fkey"
+            columns: ["parent_equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
             referencedColumns: ["id"]
           },
           {

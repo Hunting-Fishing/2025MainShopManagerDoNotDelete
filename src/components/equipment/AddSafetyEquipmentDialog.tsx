@@ -13,6 +13,7 @@ interface AddSafetyEquipmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  parentEquipmentId?: string; // Link safety equipment to parent equipment
 }
 
 const SAFETY_EQUIPMENT_TYPES = [
@@ -35,7 +36,7 @@ const STATUS_OPTIONS = [
   { value: 'retired', label: 'Retired' },
 ];
 
-export function AddSafetyEquipmentDialog({ open, onOpenChange, onSuccess }: AddSafetyEquipmentDialogProps) {
+export function AddSafetyEquipmentDialog({ open, onOpenChange, onSuccess, parentEquipmentId }: AddSafetyEquipmentDialogProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   
@@ -96,6 +97,7 @@ export function AddSafetyEquipmentDialog({ open, onOpenChange, onSuccess }: AddS
         notes: formData.notes || null,
         shop_id: shop_id,
         created_by: user.id,
+        parent_equipment_id: parentEquipmentId || null,
         specifications: {
           inspection_date: formData.inspection_date || null,
           expiry_date: formData.expiry_date || null,
