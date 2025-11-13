@@ -26,7 +26,24 @@ export function useFetchProfiles() {
     setError(null);
     
     try {
-      // Fetch all profiles from Supabase with their metadata for status
+      // Get current user's shop_id for proper data isolation
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Get the current user's shop_id
+      const { data: currentUserProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !currentUserProfile?.shop_id) {
+        throw new Error('Unable to determine user shop');
+      }
+
+      // Fetch ONLY profiles from the same shop (defense-in-depth with RLS)
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -38,10 +55,12 @@ export function useFetchProfiles() {
           job_title,
           department,
           created_at,
+          shop_id,
           profile_metadata!left (
             metadata
           )
-        `);
+        `)
+        .eq('shop_id', currentUserProfile.shop_id);
 
       if (profilesError) {
         throw profilesError;

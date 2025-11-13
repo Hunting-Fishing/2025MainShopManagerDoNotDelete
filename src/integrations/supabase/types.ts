@@ -22001,6 +22001,7 @@ export type Database = {
       }
       is_admin_user: { Args: never; Returns: boolean }
       is_customer: { Args: { user_id: string }; Returns: boolean }
+      is_same_shop: { Args: { target_user_id: string }; Returns: boolean }
       is_staff_member: { Args: never; Returns: boolean }
       log_document_access: {
         Args: {
