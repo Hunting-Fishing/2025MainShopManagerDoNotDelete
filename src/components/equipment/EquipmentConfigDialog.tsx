@@ -15,6 +15,7 @@ import { Wrench, FileText, Image, Plus, X, Upload, Settings, Trash2, ShieldCheck
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AddSafetyEquipmentDialog } from './AddSafetyEquipmentDialog';
+import { SafetyEquipmentList } from './SafetyEquipmentList';
 
 interface EquipmentConfigDialogProps {
   open: boolean;
@@ -72,6 +73,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
   const { updateEquipment, loading } = useEquipmentManagement();
   const [uploading, setUploading] = useState(false);
   const [safetyDialogOpen, setSafetyDialogOpen] = useState(false);
+  const [safetyRefreshTrigger, setSafetyRefreshTrigger] = useState(0);
   
   // Basic Info State
   const [formData, setFormData] = useState({
@@ -900,9 +902,29 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
           <TabsContent value="safety" className="space-y-4 mt-4">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Add and track safety equipment requirements and certifications for this equipment.
-                </p>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Track safety equipment with color-coded status indicators
+                  </p>
+                  <div className="flex items-center gap-4 mt-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span className="text-muted-foreground">Current (&gt;30 days)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                      <span className="text-muted-foreground">Due Soon (7-30 days)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                      <span className="text-muted-foreground">Urgent (&lt;7 days)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <span className="text-muted-foreground">Overdue</span>
+                    </div>
+                  </div>
+                </div>
                 <Button 
                   type="button" 
                   onClick={() => setSafetyDialogOpen(true)}
@@ -919,23 +941,11 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                 onSuccess={() => {
                   toast.success('Safety equipment added successfully');
                   setSafetyDialogOpen(false);
+                  setSafetyRefreshTrigger(prev => prev + 1);
                 }}
               />
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center py-8">
-                    <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Safety Equipment Management</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Track required safety equipment like fire extinguishers, first aid kits, life rafts, EPIRBs, and more.
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Click "Add Safety Equipment" above to record safety equipment items and track inspections, expiry dates, and compliance.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <SafetyEquipmentList refreshTrigger={safetyRefreshTrigger} />
             </div>
           </TabsContent>
 
