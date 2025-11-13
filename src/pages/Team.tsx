@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import { TeamContent } from '@/components/team/TeamContent';
 import { TeamHeader } from '@/components/team/TeamHeader';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
+import TeamMemberProfile from './TeamMemberProfile';
 
 /**
  * IMPORTANT: This page uses full team management functionality
@@ -42,6 +43,7 @@ export default function Team() {
           />
         </div>
       } />
+      <Route path="/:id" element={<TeamMemberProfile />} />
       <Route path="/*" element={
         <TeamContent 
           members={teamMembers}
