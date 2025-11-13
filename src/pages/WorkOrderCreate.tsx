@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { useToast } from '@/hooks/use-toast';
@@ -7,11 +7,40 @@ import { createWorkOrder } from '@/services/workOrder';
 import { WorkOrderForm } from '@/components/work-orders/WorkOrderForm';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getMaintenanceRequestById } from '@/services/calendar/maintenanceRequestService';
 
 const WorkOrderCreate = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isLoadingMaintenance, setIsLoadingMaintenance] = useState(false);
+  const [maintenanceData, setMaintenanceData] = useState<any>(null);
+
+  // Check if converting from maintenance request
+  const maintenanceRequestId = searchParams.get('maintenanceRequestId');
+
+  // Fetch maintenance request data if converting
+  useEffect(() => {
+    if (maintenanceRequestId) {
+      setIsLoadingMaintenance(true);
+      getMaintenanceRequestById(maintenanceRequestId)
+        .then((data) => {
+          console.log('Fetched maintenance request:', data);
+          setMaintenanceData(data);
+        })
+        .catch((error) => {
+          console.error('Error fetching maintenance request:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to load maintenance request details',
+            variant: 'destructive',
+          });
+        })
+        .finally(() => {
+          setIsLoadingMaintenance(false);
+        });
+    }
+  }, [maintenanceRequestId, toast]);
 
   // Extract and clean up pre-populated data from URL parameters
   const prePopulatedData = {
@@ -30,6 +59,20 @@ const WorkOrderCreate = () => {
     vehicleLicensePlate: searchParams.get('vehicleLicensePlate') || undefined,
     vehicleVin: searchParams.get('vehicleVin') || undefined,
   };
+
+  // If converting from maintenance request, override with maintenance data
+  if (maintenanceData) {
+    prePopulatedData.customerName = maintenanceData.requested_by_name || prePopulatedData.customerName;
+    // Add maintenance request specific fields
+    Object.assign(prePopulatedData, {
+      description: maintenanceData.description,
+      priority: maintenanceData.priority,
+      status: 'pending',
+      location: maintenanceData.equipment_name,
+      maintenanceRequestId: maintenanceData.id,
+      maintenanceRequestNumber: maintenanceData.request_number,
+    });
+  }
 
   // Filter out empty strings and convert to undefined
   const cleanedData = Object.fromEntries(
@@ -98,11 +141,15 @@ const WorkOrderCreate = () => {
             </Button>
             
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Create New Work Order</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {maintenanceRequestId ? 'Convert Maintenance Request to Work Order' : 'Create New Work Order'}
+              </h1>
               <p className="text-sm text-gray-600 mt-1">
-                {cleanedData.customerName 
-                  ? `Creating work order for ${cleanedData.customerName}` 
-                  : 'Create a comprehensive work order with customer and vehicle details'
+                {maintenanceRequestId && maintenanceData
+                  ? `Converting ${maintenanceData.request_number}: ${maintenanceData.title}`
+                  : cleanedData.customerName 
+                    ? `Creating work order for ${cleanedData.customerName}` 
+                    : 'Create a comprehensive work order with customer and vehicle details'
                 }
               </p>
             </div>
@@ -111,10 +158,19 @@ const WorkOrderCreate = () => {
       </div>
 
       <ResponsiveContainer maxWidth="full" className="py-6">
-        <WorkOrderForm
-          onSubmit={handleCreateWorkOrder}
-          prePopulatedCustomer={cleanedData}
-        />
+        {isLoadingMaintenance ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading maintenance request details...</p>
+            </div>
+          </div>
+        ) : (
+          <WorkOrderForm
+            onSubmit={handleCreateWorkOrder}
+            prePopulatedCustomer={cleanedData}
+          />
+        )}
       </ResponsiveContainer>
     </div>
   );
