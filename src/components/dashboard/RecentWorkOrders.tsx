@@ -15,7 +15,10 @@ export function RecentWorkOrders() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchWorkOrders = async () => {
+    const fetchWorkOrders = async (retryCount = 0) => {
+      const maxRetries = 3;
+      const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+      
       try {
         setLoading(true);
         console.log("Fetching recent work orders for dashboard...");
@@ -23,8 +26,23 @@ export function RecentWorkOrders() {
         console.log("Received work orders data:", data);
         setWorkOrders(data || []);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching recent work orders:", err);
+        
+        // Check if it's an auth error and retry
+        const isAuthError = err?.message?.includes('JWT') || 
+                           err?.message?.includes('expired') ||
+                           err?.code === 'PGRST301' || 
+                           err?.code === 'PGRST302' ||
+                           err?.code === 'PGRST303';
+        
+        if (isAuthError && retryCount < maxRetries) {
+          console.log(`Auth error fetching work orders, retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})...`);
+          setLoading(false);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          return fetchWorkOrders(retryCount + 1);
+        }
+        
         setError("Failed to load recent work orders");
         setWorkOrders([]);
       } finally {
