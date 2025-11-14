@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Clock, FileText, Package, Wrench, Plus, DollarSign } from 'lucide-react';
+import { Calendar, User, Clock, FileText, Package, Wrench, Plus, DollarSign, Edit, History, Image as ImageIcon, Video } from 'lucide-react';
 import { format } from 'date-fns';
 import { PartsRequestManager } from '@/components/maintenance/PartsRequestManager';
 import { MaintenanceRequestActivityFeed } from '@/components/maintenance/MaintenanceRequestActivityFeed';
 import { AddUpdateDialog } from '@/components/maintenance/AddUpdateDialog';
+import { EditMaintenanceRequestDialog } from './EditMaintenanceRequestDialog';
+import { MaintenanceRequestHistoryDialog } from './MaintenanceRequestHistoryDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,8 +44,22 @@ export function ViewMaintenanceRequestDialog({
   onRefetch
 }: ViewMaintenanceRequestDialogProps) {
   const [addUpdateOpen, setAddUpdateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Get current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
   if (!request) return null;
+
+  const isOriginalSubmitter = currentUserId === request.requested_by;
 
   const parts = request.parts_requested || [];
 
@@ -68,29 +84,56 @@ export function ViewMaintenanceRequestDialog({
     onRefetch();
   };
 
+  const handleEditSuccess = () => {
+    onRefetch();
+    refetchUpdates();
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1 flex-1">
                 <DialogTitle className="text-2xl">{request.title}</DialogTitle>
                 <p className="text-sm text-muted-foreground">
                   Request #{request.request_number}
                 </p>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                <Badge className={priorityColors[request.priority as keyof typeof priorityColors]}>
-                  {request.priority}
-                </Badge>
-                <Badge className={statusColors[request.status as keyof typeof statusColors]}>
-                  {request.status.replace('_', ' ')}
-                </Badge>
-                {request.request_type && (
-                  <Badge variant="outline" className="capitalize">
-                    {request.request_type.replace('_', ' ')}
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2 flex-wrap justify-end">
+                  <Badge className={priorityColors[request.priority as keyof typeof priorityColors]}>
+                    {request.priority}
                   </Badge>
+                  <Badge className={statusColors[request.status as keyof typeof statusColors]}>
+                    {request.status.replace('_', ' ')}
+                  </Badge>
+                  {request.request_type && (
+                    <Badge variant="outline" className="capitalize">
+                      {request.request_type.replace('_', ' ')}
+                    </Badge>
+                  )}
+                </div>
+                {isOriginalSubmitter && request.status === 'pending' && (
+                  <div className="flex gap-2 justify-end">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setEditOpen(true)}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setHistoryOpen(true)}
+                    >
+                      <History className="h-3 w-3 mr-1" />
+                      History
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -116,8 +159,21 @@ export function ViewMaintenanceRequestDialog({
                     <FileText className="h-4 w-4" />
                     Description
                   </div>
-                  <p className="text-sm text-muted-foreground pl-6">
+                  <p className="text-sm text-muted-foreground pl-6 whitespace-pre-wrap">
                     {request.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Reported By Person */}
+              {request.reported_by_person && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <User className="h-4 w-4" />
+                    Reported By
+                  </div>
+                  <p className="text-sm text-muted-foreground pl-6">
+                    {request.reported_by_person}
                   </p>
                 </div>
               )}
@@ -198,6 +254,34 @@ export function ViewMaintenanceRequestDialog({
                 </div>
               )}
 
+              {/* Attachments */}
+              {request.attachments && Array.isArray(request.attachments) && request.attachments.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <FileText className="h-4 w-4" />
+                    Attachments
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pl-6">
+                    {request.attachments.map((attachment: any, index: number) => (
+                      <a
+                        key={index}
+                        href={attachment.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-3 bg-muted rounded-md hover:bg-muted/80 transition-colors"
+                      >
+                        {attachment.type?.startsWith('image/') ? (
+                          <ImageIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        ) : (
+                          <Video className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        )}
+                        <span className="text-xs truncate">{attachment.name}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex gap-2 pt-4 border-t">
                 {request.status === 'pending' && (
@@ -258,6 +342,20 @@ export function ViewMaintenanceRequestDialog({
         maintenanceRequestId={request.id}
         shopId={request.shop_id}
         onUpdate={handleUpdateAdded}
+      />
+
+      <EditMaintenanceRequestDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        request={request}
+        onSuccess={handleEditSuccess}
+      />
+
+      <MaintenanceRequestHistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        requestId={request.id}
+        currentVersion={request}
       />
     </>
   );
