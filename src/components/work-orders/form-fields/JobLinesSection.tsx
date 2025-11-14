@@ -146,13 +146,24 @@ export function JobLinesSection({
             jobLines={jobLines} 
             onUpdate={onJobLinesChange} 
             onDelete={isEditMode ? handleDeleteJobLine : undefined}
-            onAddJobLine={isEditMode ? async (jobLine) => {
-              // Handle adding single job line
+            onAddJobLine={async (jobLine) => {
               console.log('Adding job line:', jobLine);
-              // In real implementation, this would add the job line to the database
-              // For now, just refresh the job lines to get latest data
-              await onJobLinesChange();
-            } : undefined}
+              
+              if (isEditMode) {
+                // For existing work orders, save to database and refresh
+                await onJobLinesChange();
+              } else {
+                // For new work orders, add to local state by passing new job lines array
+                const newJobLine: WorkOrderJobLine = {
+                  ...jobLine,
+                  id: `temp-jl-${Date.now()}-${Math.random()}`,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                } as WorkOrderJobLine;
+                
+                await onJobLinesChange([newJobLine]);
+              }
+            }}
             onAddPart={async (partData) => {
               // Handle adding parts to job lines
               console.log('Adding part:', partData);
