@@ -40,12 +40,26 @@ export const scheduleMaintenanceWorkOrder = async (
   description: string
 ): Promise<string> => {
   try {
+    // Get current user's shop_id
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('shop_id')
+      .eq('id', user.id)
+      .single();
+    
+    if (!profile?.shop_id) throw new Error('User shop not found');
+    
     // Create a real work order in the database
     const { data, error } = await supabase
       .from('work_orders')
       .insert({
         description: `Scheduled maintenance: ${description}`,
         status: 'pending',
+        shop_id: profile.shop_id,
+        created_by: user.id,
         created_at: new Date().toISOString(),
       })
       .select('id')
