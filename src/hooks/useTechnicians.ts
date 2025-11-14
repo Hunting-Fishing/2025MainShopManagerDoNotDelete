@@ -19,7 +19,7 @@ export function useTechnicians() {
         setIsLoading(true);
         setError(null);
 
-        // Fetch from profiles table where people have technical roles
+        // Fetch all staff except office roles
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, first_name, last_name, job_title')
@@ -29,10 +29,30 @@ export function useTechnicians() {
           throw profilesError;
         }
 
-        // Transform profiles into technicians format and remove duplicates
+        // Office roles to exclude
+        const officeRoles = [
+          'office manager',
+          'administrative assistant',
+          'receptionist',
+          'secretary',
+          'office assistant',
+          'admin',
+          'office',
+          'administrator'
+        ];
+
+        // Transform profiles into technicians format, excluding office roles
         const technicianMap = new Map<string, Technician>();
         
         profiles?.forEach((profile) => {
+          const jobTitle = (profile.job_title || '').toLowerCase();
+          const isOfficeRole = officeRoles.some(role => jobTitle.includes(role));
+          
+          // Skip office roles
+          if (isOfficeRole) {
+            return;
+          }
+          
           const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
           const key = fullName || profile.id;
           
