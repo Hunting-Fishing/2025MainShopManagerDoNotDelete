@@ -129,9 +129,15 @@ export function ConvertToWorkOrderDialog({
     }
 
     setLoading(true);
+    
+    // Show progress toast
+    const loadingToast = toast.loading('Creating work order...');
+    
     try {
       // Get current user and shop_id
       console.log('👤 Getting user...');
+      toast.loading('Verifying user...', { id: loadingToast });
+      
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) {
         console.error('❌ User error:', userError);
@@ -144,6 +150,8 @@ export function ConvertToWorkOrderDialog({
       console.log('✅ User ID:', user.id);
 
       console.log('🏪 Getting shop...');
+      toast.loading('Loading shop data...', { id: loadingToast });
+      
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
@@ -162,6 +170,8 @@ export function ConvertToWorkOrderDialog({
 
       // Get or create a generic "Internal Maintenance" customer for this shop
       console.log('👥 Checking for existing Internal Maintenance customer...');
+      toast.loading('Setting up customer...', { id: loadingToast });
+      
       let customerId: string;
       const { data: existingCustomer, error: customerCheckError } = await supabase
         .from('customers')
@@ -181,6 +191,8 @@ export function ConvertToWorkOrderDialog({
       } else {
         // Create the generic customer
         console.log('➕ Creating new Internal Maintenance customer...');
+        toast.loading('Creating customer record...', { id: loadingToast });
+        
         const { data: newCustomer, error: customerError } = await supabase
           .from('customers')
           .insert({
@@ -210,6 +222,8 @@ export function ConvertToWorkOrderDialog({
       console.log('👷 Technician:', technicianFullName, selectedTechnicianId);
 
       // Create work order from maintenance request with all required fields
+      toast.loading('Creating work order...', { id: loadingToast });
+      
       const workOrderData = {
         customer_id: customerId,
         created_by: user.id,
@@ -241,6 +255,8 @@ export function ConvertToWorkOrderDialog({
 
       // Update maintenance request status
       console.log('📝 Updating maintenance request status...');
+      toast.loading('Updating request status...', { id: loadingToast });
+      
       const { error: updateError } = await supabase
         .from('maintenance_requests')
         .update({ 
@@ -254,12 +270,14 @@ export function ConvertToWorkOrderDialog({
       if (updateError) {
         console.error('⚠️ Maintenance request update error:', updateError);
         // Don't fail the whole operation if update fails
+        toast.dismiss(loadingToast);
         toast.error('Work order created but failed to update request status');
       } else {
         console.log('✅ Maintenance request updated');
       }
 
       console.log('🎉 Success! Work order created and assigned to', technicianFullName);
+      toast.dismiss(loadingToast);
       toast.success(`Work order created and assigned to ${technicianFullName}`);
       onSuccess();
       onOpenChange(false);
@@ -270,8 +288,12 @@ export function ConvertToWorkOrderDialog({
     } catch (error: any) {
       console.error('❌❌❌ CRITICAL ERROR converting to work order:', error);
       console.error('Error stack:', error.stack);
-      const errorMessage = error?.message || 'Failed to create work order. Check console for details.';
-      toast.error(errorMessage, { duration: 5000 });
+      const errorMessage = error?.message || 'Failed to create work order';
+      toast.dismiss(loadingToast);
+      toast.error(`ERROR: ${errorMessage}`, { 
+        duration: 10000,
+        description: 'Please take a screenshot of this error message' 
+      });
     } finally {
       setLoading(false);
       console.log('🏁 Work order conversion process completed');
