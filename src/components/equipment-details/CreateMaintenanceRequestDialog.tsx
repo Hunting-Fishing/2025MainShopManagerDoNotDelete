@@ -29,6 +29,7 @@ export function CreateMaintenanceRequestDialog({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    reported_by_person: '',
     priority: 'medium',
     request_type: 'repair',
     scheduled_date: '',
@@ -130,6 +131,7 @@ export function CreateMaintenanceRequestDialog({
           equipment_id: equipmentId,
           title: formData.title,
           description: formData.description,
+          reported_by_person: formData.reported_by_person || null,
           priority: formData.priority,
           request_type: formData.request_type,
           status: 'pending',
@@ -149,6 +151,7 @@ export function CreateMaintenanceRequestDialog({
       setFormData({
         title: '',
         description: '',
+        reported_by_person: '',
         priority: 'medium',
         request_type: 'repair',
         scheduled_date: '',
@@ -195,6 +198,19 @@ export function CreateMaintenanceRequestDialog({
               rows={4}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="reported_by_person">Reported By (Optional)</Label>
+            <Input
+              id="reported_by_person"
+              value={formData.reported_by_person}
+              onChange={(e) => setFormData({ ...formData, reported_by_person: e.target.value })}
+              placeholder="e.g., John - Forklift Operator"
+            />
+            <p className="text-xs text-muted-foreground">
+              Person who initially noticed the problem
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
