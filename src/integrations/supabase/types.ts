@@ -5406,6 +5406,83 @@ export type Database = {
           },
         ]
       }
+      equipment_parts_history: {
+        Row: {
+          cost: number | null
+          created_at: string | null
+          equipment_id: string
+          hours_at_replacement: number | null
+          id: string
+          installed_by: string | null
+          invoice_number: string | null
+          mileage_at_replacement: number | null
+          next_replacement_date: string | null
+          notes: string | null
+          part_name: string
+          part_number: string
+          replacement_date: string
+          replacement_interval_days: number | null
+          replacement_interval_hours: number | null
+          replacement_interval_mileage: number | null
+          supplier_name: string | null
+          updated_at: string | null
+          warranty_expiry_date: string | null
+          warranty_months: number | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string | null
+          equipment_id: string
+          hours_at_replacement?: number | null
+          id?: string
+          installed_by?: string | null
+          invoice_number?: string | null
+          mileage_at_replacement?: number | null
+          next_replacement_date?: string | null
+          notes?: string | null
+          part_name: string
+          part_number: string
+          replacement_date: string
+          replacement_interval_days?: number | null
+          replacement_interval_hours?: number | null
+          replacement_interval_mileage?: number | null
+          supplier_name?: string | null
+          updated_at?: string | null
+          warranty_expiry_date?: string | null
+          warranty_months?: number | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string | null
+          equipment_id?: string
+          hours_at_replacement?: number | null
+          id?: string
+          installed_by?: string | null
+          invoice_number?: string | null
+          mileage_at_replacement?: number | null
+          next_replacement_date?: string | null
+          notes?: string | null
+          part_name?: string
+          part_number?: string
+          replacement_date?: string
+          replacement_interval_days?: number | null
+          replacement_interval_hours?: number | null
+          replacement_interval_mileage?: number | null
+          supplier_name?: string | null
+          updated_at?: string | null
+          warranty_expiry_date?: string | null
+          warranty_months?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_parts_history_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_pm_schedules: {
         Row: {
           created_at: string | null
@@ -10576,6 +10653,71 @@ export type Database = {
           },
         ]
       }
+      maintenance_request_updates: {
+        Row: {
+          assigned_to: string | null
+          assigned_to_name: string | null
+          attachments: Json | null
+          attention_to: string | null
+          attention_to_name: string | null
+          created_at: string
+          created_by: string
+          created_by_name: string
+          id: string
+          maintenance_request_id: string
+          new_status: string | null
+          old_status: string | null
+          parts_ordered: Json | null
+          shop_id: string
+          update_text: string | null
+          update_type: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          attachments?: Json | null
+          attention_to?: string | null
+          attention_to_name?: string | null
+          created_at?: string
+          created_by: string
+          created_by_name: string
+          id?: string
+          maintenance_request_id: string
+          new_status?: string | null
+          old_status?: string | null
+          parts_ordered?: Json | null
+          shop_id: string
+          update_text?: string | null
+          update_type: string
+        }
+        Update: {
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          attachments?: Json | null
+          attention_to?: string | null
+          attention_to_name?: string | null
+          created_at?: string
+          created_by?: string
+          created_by_name?: string
+          id?: string
+          maintenance_request_id?: string
+          new_status?: string | null
+          old_status?: string | null
+          parts_ordered?: Json | null
+          shop_id?: string
+          update_text?: string | null
+          update_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_request_updates_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_requests: {
         Row: {
           actual_cost: number | null
@@ -13722,6 +13864,7 @@ export type Database = {
           email: string
           first_name: string | null
           full_name: string | null
+          has_auth_account: boolean | null
           id: string
           job_title: string | null
           last_name: string | null
@@ -13737,6 +13880,7 @@ export type Database = {
           email: string
           first_name?: string | null
           full_name?: string | null
+          has_auth_account?: boolean | null
           id: string
           job_title?: string | null
           last_name?: string | null
@@ -13752,6 +13896,7 @@ export type Database = {
           email?: string
           first_name?: string | null
           full_name?: string | null
+          has_auth_account?: boolean | null
           id?: string
           job_title?: string | null
           last_name?: string | null
@@ -20556,6 +20701,7 @@ export type Database = {
           diagnostic_notes: string | null
           drop_off_type: string | null
           end_time: string | null
+          equipment_id: string | null
           estimated_hours: number | null
           id: string
           initial_mileage: number | null
@@ -20565,10 +20711,12 @@ export type Database = {
           is_warranty: boolean | null
           linked_prior_work_order_id: string | null
           preferred_contact_method: string | null
+          priority: string | null
           requested_services: Json | null
           service_category_id: string | null
           service_tags: string[] | null
           service_type: string | null
+          shop_id: string
           start_time: string | null
           status: string
           technician_id: string | null
@@ -20598,6 +20746,7 @@ export type Database = {
           diagnostic_notes?: string | null
           drop_off_type?: string | null
           end_time?: string | null
+          equipment_id?: string | null
           estimated_hours?: number | null
           id?: string
           initial_mileage?: number | null
@@ -20607,10 +20756,12 @@ export type Database = {
           is_warranty?: boolean | null
           linked_prior_work_order_id?: string | null
           preferred_contact_method?: string | null
+          priority?: string | null
           requested_services?: Json | null
           service_category_id?: string | null
           service_tags?: string[] | null
           service_type?: string | null
+          shop_id: string
           start_time?: string | null
           status: string
           technician_id?: string | null
@@ -20640,6 +20791,7 @@ export type Database = {
           diagnostic_notes?: string | null
           drop_off_type?: string | null
           end_time?: string | null
+          equipment_id?: string | null
           estimated_hours?: number | null
           id?: string
           initial_mileage?: number | null
@@ -20649,10 +20801,12 @@ export type Database = {
           is_warranty?: boolean | null
           linked_prior_work_order_id?: string | null
           preferred_contact_method?: string | null
+          priority?: string | null
           requested_services?: Json | null
           service_category_id?: string | null
           service_tags?: string[] | null
           service_type?: string | null
+          shop_id?: string
           start_time?: string | null
           status?: string
           technician_id?: string | null
@@ -20717,6 +20871,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "work_orders_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "work_orders_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
@@ -20728,6 +20889,13 @@ export type Database = {
             columns: ["service_category_id"]
             isOneToOne: false
             referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
           {
