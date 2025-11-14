@@ -145,7 +145,12 @@ export function ConvertToWorkOrderDialog({
         .select()
         .single();
 
-      if (workOrderError) throw workOrderError;
+      if (workOrderError) {
+        console.error('Work order creation error:', workOrderError);
+        throw new Error(`Database error: ${workOrderError.message}`);
+      }
+
+      console.log('Work order created successfully:', workOrder);
 
       // Update maintenance request status
       const { error: updateError } = await supabase
@@ -158,7 +163,11 @@ export function ConvertToWorkOrderDialog({
         })
         .eq('id', request.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Maintenance request update error:', updateError);
+        // Don't fail the whole operation if update fails
+        toast.error('Work order created but failed to update request status');
+      }
 
       toast.success(`Work order created and assigned to ${technicianFullName}`);
       onSuccess();
@@ -167,9 +176,10 @@ export function ConvertToWorkOrderDialog({
       // Reset form
       setSelectedTechnicianId('');
       setAdditionalNotes('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error converting to work order:', error);
-      toast.error('Failed to create work order');
+      const errorMessage = error?.message || 'Failed to create work order';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
