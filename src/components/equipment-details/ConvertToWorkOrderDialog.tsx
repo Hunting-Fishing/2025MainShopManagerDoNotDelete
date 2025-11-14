@@ -232,11 +232,33 @@ export function ConvertToWorkOrderDialog({
       console.log('👷 Technician:', technicianFullName, selectedTechnicianId);
       alert(`Step 5: Creating work order for technician ${technicianFullName}...`);
 
-      // Create work order from maintenance request with all required fields
+      // Generate unique work order number
+      const { data: latestWorkOrder } = await supabase
+        .from('work_orders')
+        .select('work_order_number')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
       
+      let workOrderNumber: string;
+      if (latestWorkOrder?.work_order_number) {
+        // Extract number and increment
+        const match = latestWorkOrder.work_order_number.match(/\d+$/);
+        const nextNum = match ? parseInt(match[0]) + 1 : 1;
+        workOrderNumber = `WO-${String(nextNum).padStart(6, '0')}`;
+      } else {
+        // First work order
+        workOrderNumber = 'WO-000001';
+      }
+      
+      alert(`Step 5b: Generated work order number ${workOrderNumber}`);
+
+      // Create work order from maintenance request with all required fields
       const workOrderData = {
+        work_order_number: workOrderNumber,
         customer_id: customerId,
         created_by: user.id,
+        shop_id: profile.shop_id,
         description: request.title,
         status: 'in-progress',
         priority: request.priority || 'medium',
