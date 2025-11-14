@@ -102,25 +102,42 @@ export function ConvertToWorkOrderDialog({
 
     setLoading(true);
     try {
+      // Get current user and shop_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.shop_id) throw new Error('No shop found');
+
       // Get selected technician details
       const selectedTech = technicians.find(t => t.id === selectedTechnicianId);
       const technicianFullName = selectedTech 
         ? `${selectedTech.first_name} ${selectedTech.last_name}`.trim()
         : '';
 
-      // Create work order from maintenance request
+      // Create work order from maintenance request with all required fields
       const workOrderData = {
+        shop_id: profile.shop_id,
+        created_by: user.id,
         description: request.title,
         customer_name: request.requested_by_name || 'Equipment Maintenance',
         status: 'in-progress',
         priority: request.priority || 'medium',
         service_type: 'Maintenance',
+        technician_id: selectedTechnicianId,
         assigned_to: selectedTechnicianId,
         assigned_to_name: technicianFullName,
         equipment_id: request.equipment_id,
         notes: `Converted from Maintenance Request #${request.request_number}\n\n${request.description || ''}\n\n${additionalNotes}`.trim(),
         scheduled_date: request.scheduled_date || new Date().toISOString(),
       };
+
+      console.log('Creating work order with data:', workOrderData);
 
       const { data: workOrder, error: workOrderError } = await supabase
         .from('work_orders')
