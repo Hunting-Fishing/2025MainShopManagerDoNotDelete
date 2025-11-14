@@ -17,8 +17,10 @@ interface ConvertToWorkOrderDialogProps {
 
 interface Technician {
   id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   email: string;
+  job_title?: string;
 }
 
 export function ConvertToWorkOrderDialog({ 
@@ -56,18 +58,32 @@ export function ConvertToWorkOrderDialog({
       const profile = profileResult.data;
       if (!profile?.shop_id) throw new Error('No shop found');
 
-      // Fetch technicians from the same shop
+      // Fetch all staff except office roles from the same shop
       const techResult: any = await supabase
         .from('profiles')
-        .select('id, full_name, email, role')
-        .eq('shop_id', profile.shop_id);
+        .select('id, first_name, last_name, email, job_title')
+        .eq('shop_id', profile.shop_id)
+        .not('job_title', 'is', null);
 
       if (techResult.error) throw techResult.error;
       
-      // Filter by role in code
-      const filteredTechs = (techResult.data || []).filter((t: any) => 
-        ['technician', 'manager', 'admin', 'owner'].includes(t.role)
-      );
+      // Office roles to exclude
+      const officeRoles = [
+        'office manager',
+        'administrative assistant',
+        'receptionist',
+        'secretary',
+        'office assistant',
+        'admin',
+        'office',
+        'administrator'
+      ];
+      
+      // Filter out office roles
+      const filteredTechs = (techResult.data || []).filter((t: any) => {
+        const jobTitle = (t.job_title || '').toLowerCase();
+        return !officeRoles.some(role => jobTitle.includes(role));
+      });
       
       setTechnicians(filteredTechs);
     } catch (error) {
@@ -88,6 +104,9 @@ export function ConvertToWorkOrderDialog({
     try {
       // Get selected technician details
       const selectedTech = technicians.find(t => t.id === selectedTechnicianId);
+      const technicianFullName = selectedTech 
+        ? `${selectedTech.first_name} ${selectedTech.last_name}`.trim()
+        : '';
 
       // Create work order from maintenance request
       const workOrderData = {
@@ -97,7 +116,7 @@ export function ConvertToWorkOrderDialog({
         priority: request.priority || 'medium',
         service_type: 'Maintenance',
         assigned_to: selectedTechnicianId,
-        assigned_to_name: selectedTech?.full_name,
+        assigned_to_name: technicianFullName,
         equipment_id: request.equipment_id,
         notes: `Converted from Maintenance Request #${request.request_number}\n\n${request.description || ''}\n\n${additionalNotes}`.trim(),
         scheduled_date: request.scheduled_date || new Date().toISOString(),
@@ -117,14 +136,14 @@ export function ConvertToWorkOrderDialog({
         .update({ 
           status: 'in_progress',
           assigned_to: selectedTechnicianId,
-          assigned_to_name: selectedTech?.full_name,
+          assigned_to_name: technicianFullName,
           notes: `Converted to Work Order. ${request.notes || ''}`.trim()
         })
         .eq('id', request.id);
 
       if (updateError) throw updateError;
 
-      toast.success(`Work order created and assigned to ${selectedTech?.full_name}`);
+      toast.success(`Work order created and assigned to ${technicianFullName}`);
       onSuccess();
       onOpenChange(false);
       
@@ -183,7 +202,8 @@ export function ConvertToWorkOrderDialog({
                 <SelectContent>
                   {technicians.map((tech) => (
                     <SelectItem key={tech.id} value={tech.id}>
-                      {tech.full_name}
+                      {`${tech.first_name} ${tech.last_name}`.trim()}
+                      {tech.job_title && ` - ${tech.job_title}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
