@@ -314,20 +314,20 @@ export function ConvertToWorkOrderDialog({
           status: 'in_progress',
           assigned_to: selectedTechnicianId,
           assigned_to_name: technicianFullName,
-          notes: `Converted to Work Order. ${request.notes || ''}`.trim()
+          work_order_id: workOrder.id
         })
         .eq('id', request.id);
 
       if (updateError) {
         console.error('⚠️ Maintenance request update error:', updateError);
         // Don't fail the whole operation if update fails
-        alert(`WARNING: Work order created but failed to update request status: ${updateError.message}`);
       } else {
         console.log('✅ Maintenance request updated');
       }
 
       console.log('🎉 Success! Work order created and assigned to', technicianFullName);
-      alert(`SUCCESS! Work order created and assigned to ${technicianFullName}`);
+      
+      toast.success(`Work order created and assigned to ${technicianFullName}`);
       onSuccess();
       onOpenChange(false);
       
