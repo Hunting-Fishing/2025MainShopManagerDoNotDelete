@@ -6,7 +6,7 @@ import { Layout } from '@/components/layout/Layout';
 import { WorkOrderDetailsView } from '@/components/work-orders/WorkOrderDetailsView';
 
 export default function WorkOrderDetails() {
-  const { workOrderId } = useParams<{ workOrderId: string }>();
+  const { id: workOrderId } = useParams<{ id: string }>();
 
   if (!workOrderId) {
     return (
