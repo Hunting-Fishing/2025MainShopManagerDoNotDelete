@@ -10653,6 +10653,72 @@ export type Database = {
           },
         ]
       }
+      maintenance_request_history: {
+        Row: {
+          attachments: Json | null
+          change_summary: string | null
+          created_at: string
+          description: string
+          edited_at: string
+          edited_by: string
+          edited_by_name: string
+          id: string
+          maintenance_request_id: string
+          priority: string
+          reported_by_person: string | null
+          request_type: string
+          title: string
+          version_number: number
+        }
+        Insert: {
+          attachments?: Json | null
+          change_summary?: string | null
+          created_at?: string
+          description: string
+          edited_at?: string
+          edited_by: string
+          edited_by_name: string
+          id?: string
+          maintenance_request_id: string
+          priority: string
+          reported_by_person?: string | null
+          request_type: string
+          title: string
+          version_number: number
+        }
+        Update: {
+          attachments?: Json | null
+          change_summary?: string | null
+          created_at?: string
+          description?: string
+          edited_at?: string
+          edited_by?: string
+          edited_by_name?: string
+          id?: string
+          maintenance_request_id?: string
+          priority?: string
+          reported_by_person?: string | null
+          request_type?: string
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_request_history_edited_by_fkey"
+            columns: ["edited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_request_history_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_request_updates: {
         Row: {
           assigned_to: string | null
