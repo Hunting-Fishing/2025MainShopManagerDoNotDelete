@@ -10742,6 +10742,7 @@ export type Database = {
           parts_used: Json | null
           priority: string
           rejection_reason: string | null
+          reported_by_person: string | null
           request_number: string
           request_type: string
           requested_at: string | null
@@ -10778,6 +10779,7 @@ export type Database = {
           parts_used?: Json | null
           priority?: string
           rejection_reason?: string | null
+          reported_by_person?: string | null
           request_number: string
           request_type: string
           requested_at?: string | null
@@ -10814,6 +10816,7 @@ export type Database = {
           parts_used?: Json | null
           priority?: string
           rejection_reason?: string | null
+          reported_by_person?: string | null
           request_number?: string
           request_type?: string
           requested_at?: string | null
