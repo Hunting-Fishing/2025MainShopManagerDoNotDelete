@@ -34,7 +34,10 @@ export function useCompanyInfo() {
   const [shopId, setShopId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  const loadCompanyInfo = async () => {
+  const loadCompanyInfo = async (retryCount = 0) => {
+    const maxRetries = 3;
+    const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff, max 5s
+    
     try {
       setLoading(true);
       setError(null);
@@ -46,15 +49,34 @@ export function useCompanyInfo() {
       setCompanyInfo(loadedInfo);
       setBusinessHours(loadedHours);
       setInitialized(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load company info:', error);
+      
+      // Check if it's a JWT/auth error and retry
+      const isAuthError = error?.message?.includes('JWT') || 
+                         error?.message?.includes('expired') ||
+                         error?.code === 'PGRST301' || 
+                         error?.code === 'PGRST302' ||
+                         error?.code === 'PGRST303';
+      
+      if (isAuthError && retryCount < maxRetries) {
+        console.log(`JWT error detected, retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})...`);
+        setLoading(false);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return loadCompanyInfo(retryCount + 1);
+      }
+      
+      // Only show error toast if we've exhausted retries
       const errorMessage = "Failed to load company information";
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      
+      if (retryCount >= maxRetries || !isAuthError) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
