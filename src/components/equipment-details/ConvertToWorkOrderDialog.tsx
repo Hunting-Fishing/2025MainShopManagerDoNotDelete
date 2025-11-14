@@ -224,13 +224,29 @@ export function ConvertToWorkOrderDialog({
         alert(`Step 4 complete: Customer created (${customerId})`);
       }
 
-      // Get selected technician details
-      const selectedTech = technicians.find(t => t.id === selectedTechnicianId);
-      const technicianFullName = selectedTech 
-        ? `${selectedTech.first_name} ${selectedTech.last_name}`.trim()
-        : '';
-      console.log('👷 Technician:', technicianFullName, selectedTechnicianId);
-      alert(`Step 5: Creating work order for technician ${technicianFullName}...`);
+      // Validate and get selected technician details
+      let validTechnicianId: string | null = null;
+      let technicianFullName = 'Unassigned';
+      
+      if (selectedTechnicianId) {
+        // Verify the technician exists in the profiles table
+        const { data: techProfile, error: techError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .eq('id', selectedTechnicianId)
+          .single();
+        
+        if (techError || !techProfile) {
+          console.warn('⚠️ Selected technician not found in profiles, proceeding without assignment');
+          alert('Warning: Selected technician not found, work order will be unassigned');
+        } else {
+          validTechnicianId = techProfile.id;
+          technicianFullName = `${techProfile.first_name} ${techProfile.last_name}`.trim();
+          console.log('👷 Validated technician:', technicianFullName, validTechnicianId);
+        }
+      }
+      
+      alert(`Step 5: Creating work order${validTechnicianId ? ` for technician ${technicianFullName}` : ' (unassigned)'}...`);
 
       // Generate unique work order number
       const { data: latestWorkOrder } = await supabase
@@ -254,7 +270,7 @@ export function ConvertToWorkOrderDialog({
       alert(`Step 5b: Generated work order number ${workOrderNumber}`);
 
       // Create work order from maintenance request with all required fields
-      const workOrderData = {
+      const workOrderData: any = {
         work_order_number: workOrderNumber,
         customer_id: customerId,
         created_by: user.id,
@@ -263,11 +279,15 @@ export function ConvertToWorkOrderDialog({
         status: 'in-progress',
         priority: request.priority || 'medium',
         service_type: 'Maintenance',
-        technician_id: selectedTechnicianId,
         equipment_id: request.equipment_id,
         additional_info: `Converted from Maintenance Request #${request.request_number}\n\n${request.description || ''}\n\n${additionalNotes}`.trim(),
         start_time: request.scheduled_date || new Date().toISOString(),
       };
+      
+      // Only add technician_id if we have a valid one
+      if (validTechnicianId) {
+        workOrderData.technician_id = validTechnicianId;
+      }
 
       console.log('📝 Creating work order with data:', workOrderData);
 
