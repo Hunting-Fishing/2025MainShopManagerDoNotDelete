@@ -114,6 +114,36 @@ export function ConvertToWorkOrderDialog({
 
       if (!profile?.shop_id) throw new Error('No shop found');
 
+      // Get or create a generic "Internal Maintenance" customer for this shop
+      let customerId: string;
+      const { data: existingCustomer } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('shop_id', profile.shop_id)
+        .eq('email', 'internal.maintenance@shop.local')
+        .single();
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+      } else {
+        // Create the generic customer
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('customers')
+          .insert({
+            shop_id: profile.shop_id,
+            first_name: 'Internal',
+            last_name: 'Maintenance',
+            email: 'internal.maintenance@shop.local',
+            phone: 'N/A',
+            notes: 'Auto-generated customer for internal equipment maintenance work orders'
+          })
+          .select('id')
+          .single();
+
+        if (customerError) throw new Error(`Failed to create customer: ${customerError.message}`);
+        customerId = newCustomer.id;
+      }
+
       // Get selected technician details
       const selectedTech = technicians.find(t => t.id === selectedTechnicianId);
       const technicianFullName = selectedTech 
@@ -122,19 +152,16 @@ export function ConvertToWorkOrderDialog({
 
       // Create work order from maintenance request with all required fields
       const workOrderData = {
-        shop_id: profile.shop_id,
+        customer_id: customerId,
         created_by: user.id,
         description: request.title,
-        customer_name: request.requested_by_name || 'Equipment Maintenance',
         status: 'in-progress',
         priority: request.priority || 'medium',
         service_type: 'Maintenance',
         technician_id: selectedTechnicianId,
-        assigned_to: selectedTechnicianId,
-        assigned_to_name: technicianFullName,
         equipment_id: request.equipment_id,
-        notes: `Converted from Maintenance Request #${request.request_number}\n\n${request.description || ''}\n\n${additionalNotes}`.trim(),
-        scheduled_date: request.scheduled_date || new Date().toISOString(),
+        additional_info: `Converted from Maintenance Request #${request.request_number}\n\n${request.description || ''}\n\n${additionalNotes}`.trim(),
+        start_time: request.scheduled_date || new Date().toISOString(),
       };
 
       console.log('Creating work order with data:', workOrderData);
