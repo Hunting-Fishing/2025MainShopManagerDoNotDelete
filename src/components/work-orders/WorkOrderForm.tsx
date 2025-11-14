@@ -69,10 +69,17 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     setCurrentTab(tabValue);
   };
 
-  const handleJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
+  const handleJobLinesChange = (newJobLines?: WorkOrderJobLine[]) => {
     console.log('=== WORK ORDER FORM JOB LINES UPDATE ===');
     console.log('New job lines:', newJobLines);
-    setJobLines(newJobLines);
+    
+    if (newJobLines) {
+      // Merge new job lines with existing ones
+      setJobLines(prev => [...prev, ...newJobLines]);
+    } else {
+      // If no job lines provided, this might be a refresh call - keep existing
+      console.log('No new job lines provided, keeping existing');
+    }
   };
 
   return (
