@@ -44,58 +44,86 @@ export function ConvertToWorkOrderDialog({
   const fetchTechnicians = async () => {
     try {
       setLoadingTechs(true);
+      console.log('🔍 Fetching technicians...');
       
       // Get current user's shop_id
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('👤 User:', user?.id);
+      if (userError) {
+        console.error('❌ User error:', userError);
+        throw new Error(`User error: ${userError.message}`);
+      }
+      if (!user) {
+        console.error('❌ No user found');
+        throw new Error('No user found');
+      }
 
-      const profileResult: any = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
         .eq('id', user.id)
         .single();
 
-      const profile = profileResult.data;
-      if (!profile?.shop_id) throw new Error('No shop found');
+      console.log('🏪 Profile shop_id:', profile?.shop_id);
+      if (profileError) {
+        console.error('❌ Profile error:', profileError);
+        throw new Error(`Profile error: ${profileError.message}`);
+      }
+      if (!profile?.shop_id) {
+        console.error('❌ No shop found');
+        throw new Error('No shop found');
+      }
 
-      // Fetch all staff except office roles from the same shop
-      const techResult: any = await supabase
+      // Get technicians for this shop
+      const { data: techniciansData, error: techError } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email, job_title')
-        .eq('shop_id', profile.shop_id)
-        .not('job_title', 'is', null);
-
-      if (techResult.error) throw techResult.error;
+        .eq('shop_id', profile.shop_id);
       
-      // Office roles to exclude
+      console.log('👷 Raw technicians data:', techniciansData);
+      if (techError) {
+        console.error('❌ Technicians error:', techError);
+        throw new Error(`Technicians error: ${techError.message}`);
+      }
+      
+      // List of roles to exclude (office/admin roles)
       const officeRoles = [
+        'owner',
+        'manager',
+        'admin',
+        'service advisor',
+        'service writer',
+        'receptionist',
+        'accountant',
+        'dispatcher',
         'office manager',
         'administrative assistant',
-        'receptionist',
         'secretary',
         'office assistant',
-        'admin',
         'office',
         'administrator'
       ];
       
       // Filter out office roles
-      const filteredTechs = (techResult.data || []).filter((t: any) => {
+      const filteredTechs = (techniciansData || []).filter((t: any) => {
         const jobTitle = (t.job_title || '').toLowerCase();
         return !officeRoles.some(role => jobTitle.includes(role));
       });
       
+      console.log('✅ Filtered technicians:', filteredTechs.length);
       setTechnicians(filteredTechs);
-    } catch (error) {
-      console.error('Error fetching technicians:', error);
-      toast.error('Failed to load technicians');
+    } catch (error: any) {
+      console.error('❌ Error fetching technicians:', error);
+      toast.error(`Failed to load technicians: ${error.message}`);
     } finally {
       setLoadingTechs(false);
     }
   };
 
   const handleConvert = async () => {
+    console.log('🚀 Starting work order conversion...');
     if (!selectedTechnicianId) {
+      console.warn('⚠️ No technician selected');
       toast.error('Please select a technician');
       return;
     }
@@ -103,30 +131,56 @@ export function ConvertToWorkOrderDialog({
     setLoading(true);
     try {
       // Get current user and shop_id
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
+      console.log('👤 Getting user...');
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('❌ User error:', userError);
+        throw new Error(`User error: ${userError.message}`);
+      }
+      if (!user) {
+        console.error('❌ No user found');
+        throw new Error('No user found');
+      }
+      console.log('✅ User ID:', user.id);
 
-      const { data: profile } = await supabase
+      console.log('🏪 Getting shop...');
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
         .eq('id', user.id)
         .single();
 
-      if (!profile?.shop_id) throw new Error('No shop found');
+      if (profileError) {
+        console.error('❌ Profile error:', profileError);
+        throw new Error(`Profile error: ${profileError.message}`);
+      }
+      if (!profile?.shop_id) {
+        console.error('❌ No shop found');
+        throw new Error('No shop found');
+      }
+      console.log('✅ Shop ID:', profile.shop_id);
 
       // Get or create a generic "Internal Maintenance" customer for this shop
+      console.log('👥 Checking for existing Internal Maintenance customer...');
       let customerId: string;
-      const { data: existingCustomer } = await supabase
+      const { data: existingCustomer, error: customerCheckError } = await supabase
         .from('customers')
         .select('id')
         .eq('shop_id', profile.shop_id)
         .eq('email', 'internal.maintenance@shop.local')
         .single();
 
+      if (customerCheckError && customerCheckError.code !== 'PGRST116') {
+        console.error('❌ Customer check error:', customerCheckError);
+        throw new Error(`Customer check error: ${customerCheckError.message}`);
+      }
+
       if (existingCustomer) {
         customerId = existingCustomer.id;
+        console.log('✅ Using existing customer:', customerId);
       } else {
         // Create the generic customer
+        console.log('➕ Creating new Internal Maintenance customer...');
         const { data: newCustomer, error: customerError } = await supabase
           .from('customers')
           .insert({
@@ -140,8 +194,12 @@ export function ConvertToWorkOrderDialog({
           .select('id')
           .single();
 
-        if (customerError) throw new Error(`Failed to create customer: ${customerError.message}`);
-        customerId = newCustomer.id;
+        if (customerError) {
+          console.error('❌ Customer creation error:', customerError);
+          throw new Error(`Failed to create customer: ${customerError.message}`);
+        }
+        customerId = newCustomer!.id;
+        console.log('✅ Created new customer:', customerId);
       }
 
       // Get selected technician details
@@ -149,6 +207,7 @@ export function ConvertToWorkOrderDialog({
       const technicianFullName = selectedTech 
         ? `${selectedTech.first_name} ${selectedTech.last_name}`.trim()
         : '';
+      console.log('👷 Technician:', technicianFullName, selectedTechnicianId);
 
       // Create work order from maintenance request with all required fields
       const workOrderData = {
@@ -164,7 +223,7 @@ export function ConvertToWorkOrderDialog({
         start_time: request.scheduled_date || new Date().toISOString(),
       };
 
-      console.log('Creating work order with data:', workOrderData);
+      console.log('📝 Creating work order with data:', workOrderData);
 
       const { data: workOrder, error: workOrderError } = await supabase
         .from('work_orders')
@@ -173,13 +232,15 @@ export function ConvertToWorkOrderDialog({
         .single();
 
       if (workOrderError) {
-        console.error('Work order creation error:', workOrderError);
-        throw new Error(`Database error: ${workOrderError.message}`);
+        console.error('❌ Work order creation error:', workOrderError);
+        console.error('Error details:', JSON.stringify(workOrderError, null, 2));
+        throw new Error(`Database error: ${workOrderError.message || 'Unknown database error'}`);
       }
 
-      console.log('Work order created successfully:', workOrder);
+      console.log('✅ Work order created successfully:', workOrder);
 
       // Update maintenance request status
+      console.log('📝 Updating maintenance request status...');
       const { error: updateError } = await supabase
         .from('maintenance_requests')
         .update({ 
@@ -191,11 +252,14 @@ export function ConvertToWorkOrderDialog({
         .eq('id', request.id);
 
       if (updateError) {
-        console.error('Maintenance request update error:', updateError);
+        console.error('⚠️ Maintenance request update error:', updateError);
         // Don't fail the whole operation if update fails
         toast.error('Work order created but failed to update request status');
+      } else {
+        console.log('✅ Maintenance request updated');
       }
 
+      console.log('🎉 Success! Work order created and assigned to', technicianFullName);
       toast.success(`Work order created and assigned to ${technicianFullName}`);
       onSuccess();
       onOpenChange(false);
@@ -204,11 +268,13 @@ export function ConvertToWorkOrderDialog({
       setSelectedTechnicianId('');
       setAdditionalNotes('');
     } catch (error: any) {
-      console.error('Error converting to work order:', error);
-      const errorMessage = error?.message || 'Failed to create work order';
-      toast.error(errorMessage);
+      console.error('❌❌❌ CRITICAL ERROR converting to work order:', error);
+      console.error('Error stack:', error.stack);
+      const errorMessage = error?.message || 'Failed to create work order. Check console for details.';
+      toast.error(errorMessage, { duration: 5000 });
     } finally {
       setLoading(false);
+      console.log('🏁 Work order conversion process completed');
     }
   };
 
