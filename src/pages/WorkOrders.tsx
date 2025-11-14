@@ -59,15 +59,19 @@ export default function WorkOrders() {
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Work Orders</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Work Orders</h1>
               <p className="text-sm text-gray-600 mt-1">
                 Manage service work orders and track inventory usage
               </p>
             </div>
-            <Button onClick={() => navigate('/work-orders/create')} size="lg">
+            <Button 
+              onClick={() => navigate('/work-orders/create')} 
+              size="lg"
+              className="w-full sm:w-auto min-h-[44px]"
+            >
               <Plus className="h-5 w-5 mr-2" />
               Create Work Order
             </Button>
@@ -75,7 +79,7 @@ export default function WorkOrders() {
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-6">
+      <div className="container mx-auto px-3 sm:px-6 py-6">
         {workOrders.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
@@ -93,7 +97,7 @@ export default function WorkOrders() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {workOrders.map((workOrder) => (
               <Card 
                 key={workOrder.id} 

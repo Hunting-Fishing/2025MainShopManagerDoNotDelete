@@ -56,31 +56,31 @@ export function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
               className="work-order-card animate-fade-in"
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  {/* Main Content */}
-                  <div className="flex-1 space-y-4">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                  {/* Main Content - Mobile Optimized */}
+                  <div className="flex-1 space-y-4 min-w-0">
                     {/* Header */}
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-lg font-bold font-heading gradient-text">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base sm:text-lg font-bold font-heading gradient-text truncate">
                           {workOrder.work_order_number || `WO-${workOrder.id.slice(0, 8)}`}
                         </h3>
-                        <p className="text-sm text-muted-foreground font-body mt-1">
+                        <p className="text-sm text-muted-foreground font-body mt-1 line-clamp-2">
                           {workOrder.description || 'No description provided'}
                         </p>
                       </div>
                       <WorkOrderStatusBadge status={workOrder.status} />
                     </div>
 
-                    {/* Details Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Details Grid - Mobile Optimized */}
+                    <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       {workOrder.customer_name && (
-                        <div className="flex items-center gap-2">
-                          <div className="p-1.5 rounded-lg bg-primary/10">
+                        <div className="flex items-center gap-2 min-h-[44px]">
+                          <div className="p-2 rounded-lg bg-primary/10 shrink-0">
                             <User className="w-4 h-4 text-primary" />
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs text-muted-foreground font-body">Customer</p>
                             <p className="text-sm font-medium font-body truncate">
                               {workOrder.customer_name}
@@ -90,11 +90,11 @@ export function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
                       )}
 
                       {(workOrder.vehicle_make && workOrder.vehicle_model) && (
-                        <div className="flex items-center gap-2">
-                          <div className="p-1.5 rounded-lg bg-info/10">
+                        <div className="flex items-center gap-2 min-h-[44px]">
+                          <div className="p-2 rounded-lg bg-info/10 shrink-0">
                             <Car className="w-4 h-4 text-info" />
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs text-muted-foreground font-body">Vehicle</p>
                             <p className="text-sm font-medium font-body truncate">
                               {workOrder.vehicle_year} {workOrder.vehicle_make} {workOrder.vehicle_model}
@@ -104,11 +104,11 @@ export function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
                       )}
 
                       {workOrder.total_cost && (
-                        <div className="flex items-center gap-2">
-                          <div className="p-1.5 rounded-lg bg-success/10">
+                        <div className="flex items-center gap-2 min-h-[44px]">
+                          <div className="p-2 rounded-lg bg-success/10 shrink-0">
                             <DollarSign className="w-4 h-4 text-success" />
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs text-muted-foreground font-body">Total Cost</p>
                             <p className="text-sm font-bold font-heading text-success">
                               ${workOrder.total_cost.toFixed(2)}
@@ -118,11 +118,11 @@ export function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
                       )}
 
                       {workOrder.created_at && (
-                        <div className="flex items-center gap-2">
-                          <div className="p-1.5 rounded-lg bg-warning/10">
+                        <div className="flex items-center gap-2 min-h-[44px]">
+                          <div className="p-2 rounded-lg bg-warning/10 shrink-0">
                             <Calendar className="w-4 h-4 text-warning" />
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs text-muted-foreground font-body">Created</p>
                             <p className="text-sm font-medium font-body">
                               {formatDate(workOrder.created_at)}
@@ -133,13 +133,13 @@ export function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
                     </div>
                   </div>
 
-                  {/* Action Button */}
-                  <div className="ml-6">
+                  {/* Action Button - Mobile Optimized */}
+                  <div className="w-full sm:w-auto sm:ml-6 mt-4 sm:mt-0">
                     <Button 
                       asChild
                       variant="outline"
-                      size="sm"
-                      className="btn-gradient-primary border-0 text-white hover:shadow-lg transition-all duration-300"
+                      size="default"
+                      className="w-full sm:w-auto btn-gradient-primary border-0 text-white hover:shadow-lg transition-all duration-300 min-h-[44px]"
                     >
                       <Link to={`/work-orders/${workOrder.id}`}>
                         <Eye className="w-4 h-4 mr-2" />

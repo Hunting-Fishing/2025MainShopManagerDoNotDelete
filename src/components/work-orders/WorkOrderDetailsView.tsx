@@ -151,14 +151,14 @@ function WorkOrderDetailsContent({ workOrderId }: { workOrderId: string }) {
       </div>
 
       {/* Regular Screen Layout */}
-      <div className="space-y-10 max-w-[1600px] mx-auto print:hidden px-4 sm:px-6 lg:px-8" id="work-order-printable-content">
+      <div className="space-y-10 max-w-[1600px] mx-auto print:hidden px-2 sm:px-4 lg:px-8" id="work-order-printable-content">
         {/* Navigation */}
         <div className="flex items-center gap-3 pt-4">
           <Button 
             variant="ghost" 
-            size="sm" 
+            size="default" 
             onClick={() => navigate('/work-orders')}
-            className="hover:bg-muted/60 transition-all duration-300 rounded-xl px-4 py-2 font-medium"
+            className="hover:bg-muted/60 transition-all duration-300 rounded-xl px-4 py-2 font-medium min-h-[44px] w-full sm:w-auto"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Work Orders

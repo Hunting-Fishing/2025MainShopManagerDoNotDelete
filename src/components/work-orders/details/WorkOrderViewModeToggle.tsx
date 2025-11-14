@@ -17,24 +17,24 @@ export function WorkOrderViewModeToggle({
   className 
 }: WorkOrderViewModeToggleProps) {
   return (
-    <div className={cn("flex items-center gap-1 border rounded-lg p-1 bg-muted/50", className)}>
+    <div className={cn("flex items-center gap-1 border rounded-lg p-1 bg-muted/50 w-full", className)}>
       <Button
         variant={mode === 'tabbed' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onModeChange('tabbed')}
-        className="h-8 px-3"
+        className="h-10 px-3 flex-1 min-h-[44px]"
       >
-        <LayoutGrid className="h-4 w-4 mr-2" />
-        Tabbed View
+        <LayoutGrid className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Tabbed View</span>
       </Button>
       <Button
         variant={mode === 'detailed' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onModeChange('detailed')}
-        className="h-8 px-3"
+        className="h-10 px-3 flex-1 min-h-[44px]"
       >
-        <FileText className="h-4 w-4 mr-2" />
-        Detailed Form
+        <FileText className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Detailed Form</span>
       </Button>
     </div>
   );
