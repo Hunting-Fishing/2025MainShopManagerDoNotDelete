@@ -6,6 +6,18 @@ export async function createWorkOrder(formData: WorkOrderFormSchemaValues) {
   console.log('Creating work order with data:', formData);
   
   try {
+    // Get current user's shop_id
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('shop_id')
+      .eq('id', user.id)
+      .single();
+    
+    if (!profile?.shop_id) throw new Error('User shop not found');
+    
     // Map form data to work_orders table structure (only include fields that exist in the table)
     const workOrderInsert = {
       customer_id: formData.customerId || null,
@@ -14,6 +26,8 @@ export async function createWorkOrder(formData: WorkOrderFormSchemaValues) {
       description: formData.description,
       status: formData.status,
       service_type: formData.priority, // Using priority as service_type since that exists in the table
+      shop_id: profile.shop_id,
+      created_by: user.id,
     };
 
     console.log('Prepared work order insert:', workOrderInsert);
