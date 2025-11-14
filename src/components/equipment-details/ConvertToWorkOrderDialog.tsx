@@ -258,7 +258,6 @@ export function ConvertToWorkOrderDialog({
         work_order_number: workOrderNumber,
         customer_id: customerId,
         created_by: user.id,
-        shop_id: profile.shop_id,
         description: request.title,
         status: 'in-progress',
         priority: request.priority || 'medium',
