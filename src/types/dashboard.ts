@@ -44,6 +44,8 @@ export interface RecentWorkOrder {
   status: string;
   date: string;
   priority: string;
+  equipmentName?: string;
+  assetNumber?: string;
 }
 
 export interface ChecklistStat {
