@@ -72,6 +72,7 @@ import Feedback from '@/pages/Feedback';
 import DeveloperPortal from '@/pages/DeveloperPortal';
 import SmsManagement from '@/pages/SmsManagement';
 import SmsTemplates from '@/pages/SmsTemplates';
+import Timesheet from '@/pages/Timesheet';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 
 function App() {
@@ -306,6 +307,13 @@ function App() {
                   <Route path="/team/*" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
                       <Team />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Timesheet */}
+                  <Route path="/timesheet" element={
+                    <ProtectedRoute>
+                      <Timesheet />
                     </ProtectedRoute>
                   } />
                   

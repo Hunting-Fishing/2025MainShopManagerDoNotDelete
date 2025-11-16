@@ -18147,6 +18147,154 @@ export type Database = {
         }
         Relationships: []
       }
+      timesheet_entries: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          break_minutes: number | null
+          created_at: string | null
+          employee_id: string
+          end_time: string | null
+          id: string
+          is_billable: boolean | null
+          is_overtime: boolean | null
+          job_code: string | null
+          notes: string | null
+          rejection_reason: string | null
+          start_time: string
+          status: string | null
+          submitted_at: string | null
+          total_hours: number | null
+          updated_at: string | null
+          vessel_id: string | null
+          work_date: string
+          work_description: string
+          work_location_type: string
+          work_order_id: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_minutes?: number | null
+          created_at?: string | null
+          employee_id: string
+          end_time?: string | null
+          id?: string
+          is_billable?: boolean | null
+          is_overtime?: boolean | null
+          job_code?: string | null
+          notes?: string | null
+          rejection_reason?: string | null
+          start_time: string
+          status?: string | null
+          submitted_at?: string | null
+          total_hours?: number | null
+          updated_at?: string | null
+          vessel_id?: string | null
+          work_date: string
+          work_description: string
+          work_location_type: string
+          work_order_id?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_minutes?: number | null
+          created_at?: string | null
+          employee_id?: string
+          end_time?: string | null
+          id?: string
+          is_billable?: boolean | null
+          is_overtime?: boolean | null
+          job_code?: string | null
+          notes?: string | null
+          rejection_reason?: string | null
+          start_time?: string
+          status?: string | null
+          submitted_at?: string | null
+          total_hours?: number | null
+          updated_at?: string | null
+          vessel_id?: string | null
+          work_date?: string
+          work_description?: string
+          work_location_type?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_vessel_id_fkey"
+            columns: ["vessel_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timesheet_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string | null
+          end_date: string
+          id: string
+          period_name: string
+          start_date: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string | null
+          end_date: string
+          id?: string
+          period_name: string
+          start_date: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          period_name?: string
+          start_date?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_periods_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tool_categories: {
         Row: {
           created_at: string
@@ -21654,6 +21802,32 @@ export type Database = {
             columns: ["inventory_item_id"]
             isOneToOne: false
             referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timesheet_summary: {
+        Row: {
+          approved_count: number | null
+          billable_hours: number | null
+          draft_count: number | null
+          email: string | null
+          employee_id: string | null
+          entry_count: number | null
+          first_name: string | null
+          last_name: string | null
+          overtime_hours: number | null
+          pending_count: number | null
+          total_hours: number | null
+          week_start: string | null
+          work_date: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
