@@ -35,9 +35,9 @@ export function KeyboardShortcuts() {
 
     window.addEventListener('keydown', onKeyDown);
 
-    // Hint once per session
-    if (!sessionStorage.getItem('ux_hint_shown')) {
-      sessionStorage.setItem('ux_hint_shown', '1');
+    // Hint only on first visit
+    if (!localStorage.getItem('ux_hint_shown')) {
+      localStorage.setItem('ux_hint_shown', '1');
       toast({ title: 'Pro tip', description: "Press Shift+/ to start a quick tour. Use 'g d', 'g w', 'g c' to jump around." });
     }
 
