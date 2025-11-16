@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Save } from "lucide-react";
+import { PermissionsGuide } from "@/components/settings/PermissionsGuide";
 
 type RolePermissions = {
   view: boolean;
@@ -142,6 +143,8 @@ export default function RolePermissionsSettings() {
       title="Role Permissions"
       description="Configure access control for maritime roles - control what deckhands, captains, and crew can see and do"
     >
+      <PermissionsGuide />
+      
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
