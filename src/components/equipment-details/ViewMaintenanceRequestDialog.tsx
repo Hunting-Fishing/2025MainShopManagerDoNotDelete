@@ -256,28 +256,70 @@ export function ViewMaintenanceRequestDialog({
 
               {/* Attachments */}
               {request.attachments && Array.isArray(request.attachments) && request.attachments.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <FileText className="h-4 w-4" />
-                    Attachments
+                    Attachments ({request.attachments.length})
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pl-6">
-                    {request.attachments.map((attachment: any, index: number) => (
-                      <a
-                        key={index}
-                        href={attachment.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-3 bg-muted rounded-md hover:bg-muted/80 transition-colors"
-                      >
-                        {attachment.type?.startsWith('image/') ? (
-                          <ImageIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        ) : (
-                          <Video className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        )}
-                        <span className="text-xs truncate">{attachment.name}</span>
-                      </a>
-                    ))}
+                  <div className="space-y-4 pl-6">
+                    {request.attachments.map((attachment: any, index: number) => {
+                      const isImage = attachment.type?.startsWith('image/') || attachment.file_type?.startsWith('image/');
+                      const isVideo = attachment.type?.startsWith('video/') || attachment.file_type?.startsWith('video/');
+                      
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {isImage ? (
+                              <ImageIcon className="h-3 w-3" />
+                            ) : isVideo ? (
+                              <Video className="h-3 w-3" />
+                            ) : (
+                              <FileText className="h-3 w-3" />
+                            )}
+                            <span className="font-medium">{attachment.name || `Attachment ${index + 1}`}</span>
+                          </div>
+                          
+                          {isImage && (
+                            <a 
+                              href={attachment.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block"
+                            >
+                              <img 
+                                src={attachment.url} 
+                                alt={attachment.name || `Image ${index + 1}`}
+                                className="w-full max-w-2xl rounded-lg border border-border hover:opacity-90 transition-opacity cursor-pointer"
+                                loading="lazy"
+                              />
+                            </a>
+                          )}
+                          
+                          {isVideo && (
+                            <video 
+                              controls 
+                              className="w-full max-w-2xl rounded-lg border border-border"
+                              preload="metadata"
+                            >
+                              <source src={attachment.url} type={attachment.type || attachment.file_type} />
+                              Your browser does not support the video tag.
+                            </video>
+                          )}
+                          
+                          {!isImage && !isVideo && (
+                            <a
+                              href={attachment.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-2 bg-muted rounded-md hover:bg-muted/80 transition-colors text-sm"
+                            >
+                              <FileText className="h-4 w-4" />
+                              Download {attachment.name}
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
