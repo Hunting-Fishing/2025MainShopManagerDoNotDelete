@@ -144,6 +144,11 @@ export function RecentWorkOrders() {
                   <span className="text-sm text-muted-foreground">
                     {order.service}
                   </span>
+                  {order.equipmentName && (
+                    <span className="text-xs text-muted-foreground mt-0.5">
+                      Unit: {order.equipmentName} {order.assetNumber && `(${order.assetNumber})`}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={getStatusVariant(order.status)}>

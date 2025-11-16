@@ -63,6 +63,11 @@ export class WorkOrderRepository {
               year,
               vin,
               license_plate
+            ),
+            equipment_assets!work_orders_equipment_id_fkey (
+              id,
+              name,
+              asset_number
             )
           `)
           .order('created_at', { ascending: false });
@@ -335,6 +340,9 @@ export class WorkOrderRepository {
     // Handle vehicle data from joined table
     const vehicle = data.vehicles;
 
+    // Handle equipment data from joined table
+    const equipment = data.equipment_assets;
+
     return {
       ...data,
       // Ensure customer name is available in multiple formats for compatibility
@@ -351,6 +359,10 @@ export class WorkOrderRepository {
       vehicle_vin: vehicle?.vin || null,
       vehicle_license_plate: vehicle?.license_plate || null,
       
+      // Ensure equipment data is available
+      equipment_name: equipment?.name || null,
+      asset_number: equipment?.asset_number || null,
+      
       // Ensure status is always available
       status: data.status || 'pending',
       
@@ -360,7 +372,8 @@ export class WorkOrderRepository {
       
       // Clean up the nested objects to avoid confusion
       customers: undefined,
-      vehicles: undefined
+      vehicles: undefined,
+      equipment_assets: undefined
     } as WorkOrder;
   }
 }

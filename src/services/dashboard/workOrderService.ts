@@ -52,13 +52,15 @@ export const getRecentWorkOrders = async (): Promise<RecentWorkOrder[]> => {
           ? `${order.customer_first_name} ${order.customer_last_name}`.trim()
           : 'Unknown Customer');
 
-      const formattedOrder = {
+      const formattedOrder: RecentWorkOrder = {
         id: order.id,
         customer: customerName,
         service: order.service_type || order.description || 'Service',
         status: order.status || 'pending',
         date: order.created_at ? new Date(order.created_at).toLocaleDateString() : '',
-        priority: order.priority || 'medium'
+        priority: order.priority || 'medium',
+        equipmentName: (order as any).equipment_name,
+        assetNumber: (order as any).asset_number
       };
       
       console.log("Formatted work order:", formattedOrder);
