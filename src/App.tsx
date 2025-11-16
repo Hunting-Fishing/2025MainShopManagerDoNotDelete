@@ -422,6 +422,7 @@ function App() {
           <Route path="/feature-requests" element={<FeatureRequests />} />
           <Route path="/settings/role-permissions" element={<RolePermissionsSettings />} />
           <Route path="/settings/employee-permissions" element={<EmployeePermissions />} />
+          <Route path="/settings/employee-permissions" element={<EmployeePermissions />} />
                   
                   {/* Equipment Tracking */}
                   <Route path="/equipment-tracking" element={
