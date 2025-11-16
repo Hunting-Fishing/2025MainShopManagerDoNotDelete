@@ -5343,6 +5343,78 @@ export type Database = {
           },
         ]
       }
+      equipment_inspections: {
+        Row: {
+          created_at: string | null
+          current_reading: number
+          equipment_id: string
+          fluid_levels_ok: boolean | null
+          fluid_notes: string | null
+          general_notes: string | null
+          id: string
+          inspection_date: string
+          inspector_id: string | null
+          operational_notes: string | null
+          operational_ok: boolean | null
+          overall_status: string
+          parts_needed: Json | null
+          reading_type: string
+          requires_maintenance: boolean | null
+          safety_equipment_notes: string | null
+          safety_equipment_ok: boolean | null
+          signature_data: string | null
+          urgent_repair: boolean | null
+          visual_damage_notes: string | null
+          visual_damage_ok: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_reading: number
+          equipment_id: string
+          fluid_levels_ok?: boolean | null
+          fluid_notes?: string | null
+          general_notes?: string | null
+          id?: string
+          inspection_date?: string
+          inspector_id?: string | null
+          operational_notes?: string | null
+          operational_ok?: boolean | null
+          overall_status: string
+          parts_needed?: Json | null
+          reading_type: string
+          requires_maintenance?: boolean | null
+          safety_equipment_notes?: string | null
+          safety_equipment_ok?: boolean | null
+          signature_data?: string | null
+          urgent_repair?: boolean | null
+          visual_damage_notes?: string | null
+          visual_damage_ok?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          current_reading?: number
+          equipment_id?: string
+          fluid_levels_ok?: boolean | null
+          fluid_notes?: string | null
+          general_notes?: string | null
+          id?: string
+          inspection_date?: string
+          inspector_id?: string | null
+          operational_notes?: string | null
+          operational_ok?: boolean | null
+          overall_status?: string
+          parts_needed?: Json | null
+          reading_type?: string
+          requires_maintenance?: boolean | null
+          safety_equipment_notes?: string | null
+          safety_equipment_ok?: boolean | null
+          signature_data?: string | null
+          urgent_repair?: boolean | null
+          visual_damage_notes?: string | null
+          visual_damage_ok?: boolean | null
+        }
+        Relationships: []
+      }
       equipment_maintenance_items: {
         Row: {
           calendar_interval: number | null
@@ -5527,6 +5599,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      equipment_parts_requirements: {
+        Row: {
+          created_at: string | null
+          equipment_id: string
+          id: string
+          is_critical: boolean | null
+          minimum_stock_level: number | null
+          notes: string | null
+          part_name: string
+          part_sku: string
+          quantity_per_service: number | null
+          reorder_point: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_id: string
+          id?: string
+          is_critical?: boolean | null
+          minimum_stock_level?: number | null
+          notes?: string | null
+          part_name: string
+          part_sku: string
+          quantity_per_service?: number | null
+          reorder_point?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          equipment_id?: string
+          id?: string
+          is_critical?: boolean | null
+          minimum_stock_level?: number | null
+          notes?: string | null
+          part_name?: string
+          part_sku?: string
+          quantity_per_service?: number | null
+          reorder_point?: number | null
+        }
+        Relationships: []
       }
       equipment_pm_schedules: {
         Row: {
@@ -5771,6 +5882,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      equipment_usage_logs: {
+        Row: {
+          created_at: string | null
+          equipment_id: string
+          id: string
+          notes: string | null
+          operation_type: string | null
+          reading_date: string
+          reading_type: string
+          reading_value: number
+          recorded_by: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_id: string
+          id?: string
+          notes?: string | null
+          operation_type?: string | null
+          reading_date?: string
+          reading_type: string
+          reading_value: number
+          recorded_by?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          equipment_id?: string
+          id?: string
+          notes?: string | null
+          operation_type?: string | null
+          reading_date?: string
+          reading_type?: string
+          reading_value?: number
+          recorded_by?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       escalation_executions: {
         Row: {
@@ -10698,6 +10848,74 @@ export type Database = {
           },
         ]
       }
+      maintenance_compliance_tracking: {
+        Row: {
+          actual_completion_date: string | null
+          compliance_score: number | null
+          created_at: string | null
+          days_overdue: number | null
+          equipment_id: string
+          id: string
+          impact_level: string | null
+          late_days_count: number | null
+          locked_due_date: string
+          notes: string | null
+          original_due_date: string
+          reading_at_completion: number | null
+          reading_at_due: number | null
+          schedule_id: string | null
+          updated_at: string | null
+          usage_overrun: number | null
+          was_completed_late: boolean | null
+        }
+        Insert: {
+          actual_completion_date?: string | null
+          compliance_score?: number | null
+          created_at?: string | null
+          days_overdue?: number | null
+          equipment_id: string
+          id?: string
+          impact_level?: string | null
+          late_days_count?: number | null
+          locked_due_date: string
+          notes?: string | null
+          original_due_date: string
+          reading_at_completion?: number | null
+          reading_at_due?: number | null
+          schedule_id?: string | null
+          updated_at?: string | null
+          usage_overrun?: number | null
+          was_completed_late?: boolean | null
+        }
+        Update: {
+          actual_completion_date?: string | null
+          compliance_score?: number | null
+          created_at?: string | null
+          days_overdue?: number | null
+          equipment_id?: string
+          id?: string
+          impact_level?: string | null
+          late_days_count?: number | null
+          locked_due_date?: string
+          notes?: string | null
+          original_due_date?: string
+          reading_at_completion?: number | null
+          reading_at_due?: number | null
+          schedule_id?: string | null
+          updated_at?: string | null
+          usage_overrun?: number | null
+          was_completed_late?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_compliance_tracking_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_schedules_enhanced"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_request_history: {
         Row: {
           attachments: Json | null
@@ -11134,6 +11352,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      maintenance_schedules_enhanced: {
+        Row: {
+          assigned_technician: string | null
+          average_daily_usage: number | null
+          created_at: string | null
+          description: string | null
+          equipment_id: string
+          estimated_duration_hours: number | null
+          id: string
+          last_service_date: string | null
+          last_service_reading: number | null
+          locked_service_date: string | null
+          next_service_date: string | null
+          next_service_reading: number | null
+          predicted_service_date: string | null
+          priority: string | null
+          required_parts: Json | null
+          schedule_name: string
+          status: string | null
+          time_interval_days: number | null
+          trigger_type: string
+          updated_at: string | null
+          usage_interval: number | null
+          usage_metric: string | null
+        }
+        Insert: {
+          assigned_technician?: string | null
+          average_daily_usage?: number | null
+          created_at?: string | null
+          description?: string | null
+          equipment_id: string
+          estimated_duration_hours?: number | null
+          id?: string
+          last_service_date?: string | null
+          last_service_reading?: number | null
+          locked_service_date?: string | null
+          next_service_date?: string | null
+          next_service_reading?: number | null
+          predicted_service_date?: string | null
+          priority?: string | null
+          required_parts?: Json | null
+          schedule_name: string
+          status?: string | null
+          time_interval_days?: number | null
+          trigger_type: string
+          updated_at?: string | null
+          usage_interval?: number | null
+          usage_metric?: string | null
+        }
+        Update: {
+          assigned_technician?: string | null
+          average_daily_usage?: number | null
+          created_at?: string | null
+          description?: string | null
+          equipment_id?: string
+          estimated_duration_hours?: number | null
+          id?: string
+          last_service_date?: string | null
+          last_service_reading?: number | null
+          locked_service_date?: string | null
+          next_service_date?: string | null
+          next_service_reading?: number | null
+          predicted_service_date?: string | null
+          priority?: string | null
+          required_parts?: Json | null
+          schedule_name?: string
+          status?: string | null
+          time_interval_days?: number | null
+          trigger_type?: string
+          updated_at?: string | null
+          usage_interval?: number | null
+          usage_metric?: string | null
+        }
+        Relationships: []
       }
       manufacturers: {
         Row: {
