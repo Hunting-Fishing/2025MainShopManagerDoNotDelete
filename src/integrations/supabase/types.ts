@@ -5274,6 +5274,58 @@ export type Database = {
           },
         ]
       }
+      equipment_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          equipment_id: string
+          id: string
+          is_primary_operator: boolean | null
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          equipment_id: string
+          id?: string
+          is_primary_operator?: boolean | null
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          equipment_id?: string
+          id?: string
+          is_primary_operator?: boolean | null
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_assignments_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_assignments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_audit_trail: {
         Row: {
           action: string
@@ -16559,6 +16611,54 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "integration_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_role_permissions: {
+        Row: {
+          actions: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          module: string
+          role_name: string
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          actions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          module: string
+          role_name: string
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          actions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          module?: string
+          role_name?: string
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_role_permissions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_role_permissions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
