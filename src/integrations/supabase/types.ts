@@ -2014,6 +2014,51 @@ export type Database = {
           },
         ]
       }
+      certificate_renewal_reminders: {
+        Row: {
+          certificate_id: string
+          created_at: string | null
+          id: string
+          reminder_date: string
+          reminder_days_before: number
+          sent: boolean | null
+          sent_at: string | null
+        }
+        Insert: {
+          certificate_id: string
+          created_at?: string | null
+          id?: string
+          reminder_date: string
+          reminder_days_before: number
+          sent?: boolean | null
+          sent_at?: string | null
+        }
+        Update: {
+          certificate_id?: string
+          created_at?: string | null
+          id?: string
+          reminder_date?: string
+          reminder_days_before?: number
+          sent?: boolean | null
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_renewal_reminders_certificate_id_fkey"
+            columns: ["certificate_id"]
+            isOneToOne: false
+            referencedRelation: "expiring_certificates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_renewal_reminders_certificate_id_fkey"
+            columns: ["certificate_id"]
+            isOneToOne: false
+            referencedRelation: "staff_certificates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_message_reactions: {
         Row: {
           created_at: string
@@ -16642,6 +16687,109 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_certificate_types: {
+        Row: {
+          created_at: string | null
+          default_validity_months: number | null
+          description: string | null
+          id: string
+          name: string
+          requires_renewal: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_validity_months?: number | null
+          description?: string | null
+          id?: string
+          name: string
+          requires_renewal?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_validity_months?: number | null
+          description?: string | null
+          id?: string
+          name?: string
+          requires_renewal?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      staff_certificates: {
+        Row: {
+          certificate_number: string | null
+          certificate_type_id: string
+          created_at: string | null
+          created_by: string | null
+          document_url: string | null
+          expiry_date: string | null
+          id: string
+          issue_date: string
+          issuing_authority: string | null
+          notes: string | null
+          staff_id: string
+          status: string | null
+          training_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          certificate_number?: string | null
+          certificate_type_id: string
+          created_at?: string | null
+          created_by?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date: string
+          issuing_authority?: string | null
+          notes?: string | null
+          staff_id: string
+          status?: string | null
+          training_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          certificate_number?: string | null
+          certificate_type_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string
+          issuing_authority?: string | null
+          notes?: string | null
+          staff_id?: string
+          status?: string | null
+          training_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_certificates_certificate_type_id_fkey"
+            columns: ["certificate_type_id"]
+            isOneToOne: false
+            referencedRelation: "staff_certificate_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_certificates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_certificates_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_alerts: {
         Row: {
           alert_type: string
@@ -21300,6 +21448,29 @@ export type Database = {
             columns: ["referrer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expiring_certificates: {
+        Row: {
+          certificate_name: string | null
+          certificate_number: string | null
+          days_until_expiry: number | null
+          email: string | null
+          expiry_date: string | null
+          first_name: string | null
+          id: string | null
+          last_name: string | null
+          staff_id: string | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_certificates_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
