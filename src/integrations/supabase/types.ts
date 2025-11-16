@@ -19485,6 +19485,64 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissions: {
+        Row: {
+          actions: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          module: string
+          notes: string | null
+          shop_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          actions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          module: string
+          notes?: string | null
+          shop_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          actions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          module?: string
+          notes?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_points: {
         Row: {
           articles_completed: number | null
@@ -22615,6 +22673,10 @@ export type Database = {
           shop_id: string
         }[]
       }
+      get_user_effective_permissions: {
+        Args: { _module: string; _user_id: string }
+        Returns: Json
+      }
       get_user_shop_id:
         | { Args: { user_id: string }; Returns: string }
         | { Args: never; Returns: string }
@@ -23275,6 +23337,10 @@ export type Database = {
       }
       user_has_any_role: {
         Args: { role_names: string[]; user_id_param: string }
+        Returns: boolean
+      }
+      user_has_permission: {
+        Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
       }
       user_has_role: {
