@@ -73,6 +73,7 @@ import DeveloperPortal from '@/pages/DeveloperPortal';
 import SmsManagement from '@/pages/SmsManagement';
 import SmsTemplates from '@/pages/SmsTemplates';
 import Timesheet from '@/pages/Timesheet';
+import FeatureRequests from '@/pages/FeatureRequests';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 
 function App() {
@@ -413,6 +414,9 @@ function App() {
                   
                   {/* Customer Feedback */}
                   <Route path="/feedback" element={<Feedback />} />
+                  
+                  {/* Feature Requests */}
+                  <Route path="/feature-requests" element={<FeatureRequests />} />
                   
                   {/* Developer Portal */}
                   <Route path="/developer/*" element={
