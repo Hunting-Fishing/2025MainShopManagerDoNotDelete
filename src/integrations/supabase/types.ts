@@ -22566,6 +22566,13 @@ export type Database = {
         | "other_staff"
         | "customer"
         | "marketing"
+        | "deckhand"
+        | "boson"
+        | "mate"
+        | "captain"
+        | "chief_engineer"
+        | "marine_engineer"
+        | "fishing_master"
       approval_status: "pending" | "approved" | "rejected"
       equipment_status: "operational" | "maintenance" | "down" | "retired"
       equipment_type:
@@ -22803,6 +22810,13 @@ export const Constants = {
         "other_staff",
         "customer",
         "marketing",
+        "deckhand",
+        "boson",
+        "mate",
+        "captain",
+        "chief_engineer",
+        "marine_engineer",
+        "fishing_master",
       ],
       approval_status: ["pending", "approved", "rejected"],
       equipment_status: ["operational", "maintenance", "down", "retired"],
