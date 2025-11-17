@@ -2,8 +2,8 @@ import React from 'react';
 import { Progress } from '@/components/ui/progress';
 
 interface PerformanceMetricsProps {
-  data: any;
-  isLoading: boolean;
+  data?: any;
+  isLoading?: boolean;
 }
 
 export function PerformanceMetrics({ data, isLoading }: PerformanceMetricsProps) {
@@ -20,14 +20,15 @@ export function PerformanceMetrics({ data, isLoading }: PerformanceMetricsProps)
     );
   }
 
-  const defaultMetrics = [
-    { label: 'Customer Satisfaction', value: 85, target: 90 },
-    { label: 'On-Time Completion', value: 78, target: 85 },
-    { label: 'First-Time Fix Rate', value: 92, target: 95 },
-    { label: 'Equipment Utilization', value: 67, target: 80 },
-  ];
+  if (!data || data.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No performance data available. Complete work orders to see metrics.
+      </div>
+    );
+  }
 
-  const metrics = data || defaultMetrics;
+  const metrics = data;
 
   return (
     <div className="space-y-6">
