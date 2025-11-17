@@ -1,13 +1,14 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, List, Table, Grid3X3 } from 'lucide-react';
+import { LayoutGrid, List, Table, Grid3X3, Sheet } from 'lucide-react';
 import { useInventoryView, ViewMode } from '@/contexts/InventoryViewContext';
 
 const viewModes = [
   { mode: 'cards' as ViewMode, icon: LayoutGrid, label: 'Cards' },
   { mode: 'grid' as ViewMode, icon: Grid3X3, label: 'Grid' },
   { mode: 'list' as ViewMode, icon: List, label: 'List' },
-  { mode: 'table' as ViewMode, icon: Table, label: 'Table' }
+  { mode: 'table' as ViewMode, icon: Table, label: 'Table' },
+  { mode: 'excel' as ViewMode, icon: Sheet, label: 'Excel' }
 ];
 
 export function ViewModeToggle() {

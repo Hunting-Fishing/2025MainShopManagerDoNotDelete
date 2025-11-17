@@ -20,6 +20,7 @@ import { ColumnManagementPanel } from "./ColumnManagementPanel";
 import { BulkActionsToolbar } from "./BulkActionsToolbar";
 import { Column } from "./table/SortableColumnHeader";
 import { useInventoryView } from "@/contexts/InventoryViewContext";
+import { ExcelViewTable } from "./ExcelViewTable";
 
 interface OptimizedInventoryTableProps {
   items: InventoryItemExtended[];
@@ -30,7 +31,7 @@ const MemoizedTableHeader = memo(TableHeader);
 
 export const OptimizedInventoryTable = memo(({ items }: OptimizedInventoryTableProps) => {
   const navigate = useNavigate();
-  const { selectedItems, clearSelection } = useInventoryView();
+  const { selectedItems, clearSelection, viewMode } = useInventoryView();
   
   // Memoize initial columns to prevent recreation on every render
   const initialColumns: Column[] = useMemo(() => [
@@ -128,23 +129,27 @@ export const OptimizedInventoryTable = memo(({ items }: OptimizedInventoryTableP
       />
 
       {/* Table */}
-      <div className="w-full overflow-auto border rounded-lg shadow-sm">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-          modifiers={[restrictToHorizontalAxis]}
-        >
-          <Table>
-            <MemoizedTableHeader columns={columns} setColumns={setColumns} />
-            <MemoizedTableBody 
-              items={items} 
-              visibleColumns={visibleColumns} 
-              onRowClick={handleRowClick} 
-            />
-          </Table>
-        </DndContext>
-      </div>
+      {viewMode === 'excel' ? (
+        <ExcelViewTable items={items} columns={columns} />
+      ) : (
+        <div className="w-full overflow-auto border rounded-lg shadow-sm">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            modifiers={[restrictToHorizontalAxis]}
+          >
+            <Table>
+              <MemoizedTableHeader columns={columns} setColumns={setColumns} />
+              <MemoizedTableBody 
+                items={items} 
+                visibleColumns={visibleColumns} 
+                onRowClick={handleRowClick} 
+              />
+            </Table>
+          </DndContext>
+        </div>
+      )}
     </div>
   );
 });

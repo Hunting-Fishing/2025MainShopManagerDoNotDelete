@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export type ViewMode = 'cards' | 'grid' | 'list' | 'table';
+export type ViewMode = 'cards' | 'grid' | 'list' | 'table' | 'excel';
 
 interface InventoryViewState {
   viewMode: ViewMode;
