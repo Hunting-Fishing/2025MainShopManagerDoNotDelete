@@ -78,7 +78,7 @@ export default function EquipmentManagement() {
             </SelectContent>
           </Select>
         ) : (
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-8 gap-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
