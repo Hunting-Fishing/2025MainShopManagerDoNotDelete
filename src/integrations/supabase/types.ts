@@ -5483,6 +5483,65 @@ export type Database = {
           },
         ]
       }
+      equipment_future_plans: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          equipment_id: string
+          estimated_cost: number | null
+          id: string
+          modifications: string | null
+          notes: string | null
+          parts_list: Json | null
+          planned_date: string | null
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          equipment_id: string
+          estimated_cost?: number | null
+          id?: string
+          modifications?: string | null
+          notes?: string | null
+          parts_list?: Json | null
+          planned_date?: string | null
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          equipment_id?: string
+          estimated_cost?: number | null
+          id?: string
+          modifications?: string | null
+          notes?: string | null
+          parts_list?: Json | null
+          planned_date?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_future_plans_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_inspections: {
         Row: {
           created_at: string | null

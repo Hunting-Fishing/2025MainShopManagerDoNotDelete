@@ -12,7 +12,8 @@ import { ToolRequestForms } from '@/components/equipment/ToolRequestForms';
 import { SafetyEquipmentList } from '@/components/equipment/SafetyEquipmentList';
 import { AddEquipmentDialog } from '@/components/equipment/AddEquipmentDialog';
 import { EquipmentPartsHistory } from '@/components/equipment/EquipmentPartsHistory';
-import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck, Package } from 'lucide-react';
+import { FuturePlanningList } from '@/components/equipment/FuturePlanningList';
+import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck, Package, Lightbulb } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEquipment } from '@/hooks/useEquipment';
@@ -25,6 +26,7 @@ export default function EquipmentManagement() {
 
   const tabs = [
     { value: 'equipment', label: 'Equipment', icon: Wrench },
+    { value: 'future-planning', label: 'Future Planning', icon: Lightbulb },
     { value: 'parts', label: 'Parts History', icon: Package },
     { value: 'safety', label: 'Safety Equipment', icon: ShieldCheck },
     { value: 'tools', label: 'Tools', icon: Hammer },
@@ -78,7 +80,7 @@ export default function EquipmentManagement() {
             </SelectContent>
           </Select>
         ) : (
-          <TabsList className="grid w-full grid-cols-8 gap-1">
+          <TabsList className="grid w-full grid-cols-9 gap-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -93,6 +95,10 @@ export default function EquipmentManagement() {
 
         <TabsContent value="equipment" className="space-y-4">
           <EquipmentList equipment={equipment} loading={isLoading} onUpdate={refetch} />
+        </TabsContent>
+
+        <TabsContent value="future-planning" className="space-y-4">
+          <FuturePlanningList />
         </TabsContent>
 
         <TabsContent value="parts" className="space-y-4">
