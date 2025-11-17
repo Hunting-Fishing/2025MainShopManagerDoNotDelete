@@ -44,6 +44,7 @@ export function InventoryContent({ items, onUpdateItem, loading = false }: Inven
 
     // Fallback to original views for smaller datasets
     switch (viewMode) {
+      case 'excel':
       case 'table':
       default:
         return (
