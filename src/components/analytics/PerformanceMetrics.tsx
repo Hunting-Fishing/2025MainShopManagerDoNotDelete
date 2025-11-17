@@ -1,12 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
+import { getPerformanceMetrics, PerformanceMetric } from '@/services/analytics/performanceService';
 
 interface PerformanceMetricsProps {
   data?: any;
   isLoading?: boolean;
 }
 
-export function PerformanceMetrics({ data, isLoading }: PerformanceMetricsProps) {
+export function PerformanceMetrics({ data, isLoading: externalLoading }: PerformanceMetricsProps) {
+  const [metrics, setMetrics] = useState<PerformanceMetric[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      if (data) {
+        setMetrics(data);
+        setIsLoading(externalLoading || false);
+      } else {
+        setIsLoading(true);
+        const result = await getPerformanceMetrics();
+        setMetrics(result);
+        setIsLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, [data, externalLoading]);
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -20,15 +40,13 @@ export function PerformanceMetrics({ data, isLoading }: PerformanceMetricsProps)
     );
   }
 
-  if (!data || data.length === 0) {
+  if (!metrics || metrics.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         No performance data available. Complete work orders to see metrics.
       </div>
     );
   }
-
-  const metrics = data;
 
   return (
     <div className="space-y-6">
