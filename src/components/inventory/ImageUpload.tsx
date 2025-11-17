@@ -4,6 +4,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
+
+interface ImageWithProgress {
+  dataUrl: string;
+  progress: number;
+  timeRemaining?: string;
+  uploading: boolean;
+}
 
 interface ImageUploadProps {
   images: string[];
@@ -12,10 +20,49 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUploadProps) {
-  const [uploading, setUploading] = useState(false);
+  const [imagesWithProgress, setImagesWithProgress] = useState<ImageWithProgress[]>(
+    images.map(img => ({ dataUrl: img, progress: 100, uploading: false }))
+  );
+
+  const simulateImageUpload = async (file: File, tempIndex: number) => {
+    const startTime = Date.now();
+    const fileSize = file.size;
+    
+    for (let progress = 0; progress <= 100; progress += 10) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const elapsed = (Date.now() - startTime) / 1000;
+      const speed = (fileSize * (progress / 100)) / elapsed;
+      const remaining = ((fileSize - (fileSize * (progress / 100))) / speed);
+      
+      const timeRemaining = remaining > 60 
+        ? `${Math.ceil(remaining / 60)}m ${Math.ceil(remaining % 60)}s`
+        : `${Math.ceil(remaining)}s`;
+      
+      setImagesWithProgress(prev => 
+        prev.map((img, idx) => 
+          idx === tempIndex 
+            ? { ...img, progress, timeRemaining: progress < 100 ? timeRemaining : undefined }
+            : img
+        )
+      );
+    }
+    
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImagesWithProgress(prev => 
+        prev.map((img, idx) => 
+          idx === tempIndex 
+            ? { ...img, dataUrl: reader.result as string, uploading: false }
+            : img
+        )
+      );
+    };
+    reader.readAsDataURL(file);
+  };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (images.length + acceptedFiles.length > maxImages) {
+    if (imagesWithProgress.length + acceptedFiles.length > maxImages) {
       toast({
         title: "Too Many Images",
         description: `Maximum ${maxImages} images allowed.`,
@@ -24,60 +71,62 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUplo
       return;
     }
 
-    setUploading(true);
-    try {
-      const newImages = await Promise.all(
-        acceptedFiles.map(file => {
-          return new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(file);
-          });
-        })
-      );
+    const newImagesWithProgress: ImageWithProgress[] = acceptedFiles.map(() => ({
+      dataUrl: '',
+      progress: 0,
+      uploading: true
+    }));
+    
+    const startIndex = imagesWithProgress.length;
+    setImagesWithProgress(prev => [...prev, ...newImagesWithProgress]);
+    
+    acceptedFiles.forEach((file, index) => {
+      simulateImageUpload(file, startIndex + index);
+    });
 
-      onImagesChange([...images, ...newImages]);
-      toast({
-        title: "Images Uploaded",
-        description: `${newImages.length} image(s) added successfully.`,
-      });
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast({
-        title: "Upload Failed",
-        description: "Failed to upload images.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
+    toast({
+      title: "Uploading Images",
+      description: `Uploading ${acceptedFiles.length} image(s)...`,
+    });
+  }, [imagesWithProgress, maxImages]);
+
+  React.useEffect(() => {
+    const completedImages = imagesWithProgress
+      .filter(img => !img.uploading && img.dataUrl)
+      .map(img => img.dataUrl);
+    
+    if (completedImages.length !== images.length) {
+      onImagesChange(completedImages);
     }
-  }, [images, maxImages, onImagesChange]);
+  }, [imagesWithProgress]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'image/*': ['.png', '.jpg', '.jpeg', '.webp']
     },
-    maxFiles: maxImages - images.length,
-    disabled: images.length >= maxImages
+    maxFiles: maxImages - imagesWithProgress.length,
+    disabled: imagesWithProgress.length >= maxImages
   });
 
   const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    onImagesChange(newImages);
+    const filtered = imagesWithProgress.filter((_, i) => i !== index);
+    setImagesWithProgress(filtered);
+    onImagesChange(filtered.filter(img => !img.uploading && img.dataUrl).map(img => img.dataUrl));
   };
 
   const setPrimaryImage = (index: number) => {
     if (index === 0) return;
-    const newImages = [...images];
+    const newImages = [...imagesWithProgress];
     const [primary] = newImages.splice(index, 1);
     newImages.unshift(primary);
-    onImagesChange(newImages);
+    setImagesWithProgress(newImages);
+    onImagesChange(newImages.filter(img => !img.uploading && img.dataUrl).map(img => img.dataUrl));
   };
 
   return (
     <div className="space-y-4">
-      {images.length < maxImages && (
+      {imagesWithProgress.length < maxImages && (
         <div
           {...getRootProps()}
           className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
@@ -94,49 +143,78 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUplo
                 Drag & drop images here, or click to select
               </p>
               <p className="text-xs text-muted-foreground">
-                {images.length}/{maxImages} images uploaded
+                {imagesWithProgress.length}/{maxImages} images uploaded
               </p>
             </div>
           )}
         </div>
       )}
 
-      {images.length > 0 && (
+      {imagesWithProgress.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {images.map((image, index) => (
+          {imagesWithProgress.map((imageWithProgress, index) => (
             <Card key={index} className="relative group">
               <CardContent className="p-2">
                 <div className="aspect-square relative rounded-md overflow-hidden bg-muted">
-                  <img
-                    src={image}
-                    alt={`Product ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {index === 0 && (
+                  {imageWithProgress.dataUrl ? (
+                    <img
+                      src={imageWithProgress.dataUrl}
+                      alt={`Product ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Upload className="h-8 w-8 text-muted-foreground animate-pulse" />
+                    </div>
+                  )}
+                  
+                  {imageWithProgress.uploading && (
+                    <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center p-4">
+                      <div className="w-full space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Uploading...</span>
+                          <div className="flex items-center gap-2">
+                            {imageWithProgress.timeRemaining && (
+                              <span className="text-muted-foreground">
+                                {imageWithProgress.timeRemaining}
+                              </span>
+                            )}
+                            <span className="font-medium">{Math.round(imageWithProgress.progress)}%</span>
+                          </div>
+                        </div>
+                        <Progress value={imageWithProgress.progress} className="h-2" />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!imageWithProgress.uploading && index === 0 && (
                     <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
                       Primary
                     </div>
                   )}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                    {index !== 0 && (
+                  
+                  {!imageWithProgress.uploading && (
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                      {index !== 0 && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-6 w-6 p-0"
+                          onClick={() => setPrimaryImage(index)}
+                        >
+                          <ImageIcon className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
-                        variant="secondary"
+                        variant="destructive"
                         className="h-6 w-6 p-0"
-                        onClick={() => setPrimaryImage(index)}
+                        onClick={() => removeImage(index)}
                       >
-                        <ImageIcon className="h-3 w-3" />
+                        <X className="h-3 w-3" />
                       </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="h-6 w-6 p-0"
-                      onClick={() => removeImage(index)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
