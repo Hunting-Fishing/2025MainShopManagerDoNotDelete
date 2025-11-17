@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -11,7 +10,7 @@ export function PartsSupplierAnalysis() {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            Supplier analysis would be displayed here
+            Add inventory purchases and supplier data to see supplier analytics
           </div>
         </CardContent>
       </Card>
