@@ -1300,6 +1300,94 @@ export type Database = {
           },
         ]
       }
+      boat_inspections: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          inspection_date: string
+          inspection_items: Json | null
+          inspector_id: string | null
+          inspector_name: string
+          inspector_signature: string | null
+          location: string | null
+          notes: string | null
+          overall_condition: string | null
+          photo_annotations: Json | null
+          recommendations: string | null
+          registration_number: string | null
+          shop_id: string | null
+          updated_at: string | null
+          vessel_name: string
+          vessel_photos: string[] | null
+          vessel_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          inspection_date?: string
+          inspection_items?: Json | null
+          inspector_id?: string | null
+          inspector_name: string
+          inspector_signature?: string | null
+          location?: string | null
+          notes?: string | null
+          overall_condition?: string | null
+          photo_annotations?: Json | null
+          recommendations?: string | null
+          registration_number?: string | null
+          shop_id?: string | null
+          updated_at?: string | null
+          vessel_name: string
+          vessel_photos?: string[] | null
+          vessel_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          inspection_date?: string
+          inspection_items?: Json | null
+          inspector_id?: string | null
+          inspector_name?: string
+          inspector_signature?: string | null
+          location?: string | null
+          notes?: string | null
+          overall_condition?: string | null
+          photo_annotations?: Json | null
+          recommendations?: string | null
+          registration_number?: string | null
+          shop_id?: string | null
+          updated_at?: string | null
+          vessel_name?: string
+          vessel_photos?: string[] | null
+          vessel_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boat_inspections_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boat_inspections_inspector_id_fkey"
+            columns: ["inspector_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boat_inspections_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branding_settings: {
         Row: {
           accent_color: string | null

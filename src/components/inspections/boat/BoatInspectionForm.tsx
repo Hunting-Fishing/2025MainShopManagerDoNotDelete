@@ -129,7 +129,6 @@ export function BoatInspectionForm() {
     try {
       const signature = signatureRef.current?.toDataURL();
 
-      // @ts-ignore - table will exist after migration is applied
       const { data, error } = await supabase.from('boat_inspections').insert({
         vessel_name: formData.vessel_name,
         vessel_type: formData.vessel_type,
@@ -138,13 +137,13 @@ export function BoatInspectionForm() {
         inspection_date: formData.inspection_date,
         location: formData.location,
         vessel_photos: [vesselPhoto],
-        inspection_items: inspectionItems,
-        photo_annotations: getAnnotations(),
+        inspection_items: inspectionItems as any,
+        photo_annotations: getAnnotations() as any,
         overall_condition: formData.overall_condition,
         notes: formData.notes,
         recommendations: formData.recommendations,
         inspector_signature: signature,
-      });
+      } as any);
 
       if (error) throw error;
 
