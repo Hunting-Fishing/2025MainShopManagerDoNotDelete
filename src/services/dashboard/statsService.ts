@@ -18,62 +18,117 @@ export const getStats = async (): Promise<DashboardStats> => {
   try {
     console.log("Fetching live dashboard stats from Supabase...");
 
-    // Get active work orders count
-    const { data: activeWorkOrders, error: woError } = await supabase
+    // Calculate date ranges
+    const now = new Date();
+    const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+    const firstDayTwoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString();
+
+    // Get current active work orders count
+    const { count: currentActiveWorkOrders, error: woError } = await supabase
       .from('work_orders')
-      .select('id', { count: 'exact' })
+      .select('id', { count: 'exact', head: true })
       .neq('status', 'completed');
 
     if (woError) throw woError;
 
-    // Get total team members
-    const { data: teamMembers, error: teamError } = await supabase
+    // Get last month's active work orders count
+    const { count: lastMonthActiveWorkOrders } = await supabase
+      .from('work_orders')
+      .select('id', { count: 'exact', head: true })
+      .neq('status', 'completed')
+      .gte('created_at', firstDayTwoMonthsAgo)
+      .lt('created_at', firstDayLastMonth);
+
+    // Get current team members count
+    const { count: currentTeamMembers, error: teamError } = await supabase
       .from('profiles')
-      .select('id', { count: 'exact' });
+      .select('id', { count: 'exact', head: true });
 
     if (teamError) throw teamError;
 
-    // Get inventory items count
-    const { data: inventoryItems, error: invError } = await supabase
+    // Get last month's team members count
+    const { count: lastMonthTeamMembers } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .lte('created_at', firstDayThisMonth);
+
+    // Get current inventory items count
+    const { count: currentInventoryItems, error: invError } = await supabase
       .from('inventory_items')
-      .select('id', { count: 'exact' });
+      .select('id', { count: 'exact', head: true });
 
     if (invError) throw invError;
 
-    // Calculate average completion time from completed work orders
-    const { data: completedOrders, error: completedError } = await supabase
+    // Get last month's inventory items count
+    const { count: lastMonthInventoryItems } = await supabase
+      .from('inventory_items')
+      .select('id', { count: 'exact', head: true })
+      .lte('created_at', firstDayThisMonth);
+
+    // Calculate this month's average completion time
+    const { data: thisMonthOrders, error: thisMonthError } = await supabase
       .from('work_orders')
       .select('created_at, updated_at')
       .eq('status', 'completed')
-      .limit(50);
+      .gte('created_at', firstDayThisMonth);
 
-    if (completedError) throw completedError;
+    if (thisMonthError) throw thisMonthError;
 
-    let avgCompletionHours = 0;
-    if (completedOrders && completedOrders.length > 0) {
-      const totalHours = completedOrders.reduce((sum, order) => {
+    // Calculate last month's average completion time
+    const { data: lastMonthOrders, error: lastMonthError } = await supabase
+      .from('work_orders')
+      .select('created_at, updated_at')
+      .eq('status', 'completed')
+      .gte('created_at', firstDayLastMonth)
+      .lt('created_at', firstDayThisMonth);
+
+    if (lastMonthError) throw lastMonthError;
+
+    // Calculate average completion times
+    const calculateAvgHours = (orders: any[]) => {
+      if (!orders || orders.length === 0) return 0;
+      const totalHours = orders.reduce((sum, order) => {
         const created = new Date(order.created_at);
         const completed = new Date(order.updated_at);
         const hours = (completed.getTime() - created.getTime()) / (1000 * 60 * 60);
         return sum + hours;
       }, 0);
-      avgCompletionHours = totalHours / completedOrders.length;
-    }
+      return totalHours / orders.length;
+    };
+
+    const thisMonthAvgHours = calculateAvgHours(thisMonthOrders || []);
+    const lastMonthAvgHours = calculateAvgHours(lastMonthOrders || []);
+
+    // Calculate percentage changes
+    const calculateChange = (current: number, previous: number): string => {
+      if (previous === 0) return current > 0 ? "+100%" : "0%";
+      const change = ((current - previous) / previous) * 100;
+      if (change === 0) return "0%";
+      return change > 0 ? `+${change.toFixed(1)}%` : `${change.toFixed(1)}%`;
+    };
+
+    const workOrderChange = calculateChange(currentActiveWorkOrders || 0, lastMonthActiveWorkOrders || 0);
+    const teamChange = calculateChange(currentTeamMembers || 0, lastMonthTeamMembers || 0);
+    const inventoryChange = calculateChange(currentInventoryItems || 0, lastMonthInventoryItems || 0);
+    const completionTimeChange = lastMonthAvgHours > 0 
+      ? calculateChange(thisMonthAvgHours, lastMonthAvgHours)
+      : "0%";
 
     const stats: DashboardStats = {
-      activeWorkOrders: activeWorkOrders?.length || 0,
-      workOrderChange: "+12%", // This could be calculated from historical data
-      teamMembers: teamMembers?.length || 0,
-      teamChange: "+2%",
-      inventoryItems: inventoryItems?.length || 0,
-      inventoryChange: "-5%",
-      avgCompletionTime: avgCompletionHours > 0 ? `${avgCompletionHours.toFixed(1)}h` : "No data",
-      completionTimeChange: "-8%",
+      activeWorkOrders: currentActiveWorkOrders || 0,
+      workOrderChange,
+      teamMembers: currentTeamMembers || 0,
+      teamChange,
+      inventoryItems: currentInventoryItems || 0,
+      inventoryChange,
+      avgCompletionTime: thisMonthAvgHours > 0 ? `${thisMonthAvgHours.toFixed(1)}h` : "No data",
+      completionTimeChange,
       customerSatisfaction: 4.8,
       schedulingEfficiency: "94%"
     };
 
-    console.log("Live dashboard stats loaded:", stats);
+    console.log("Live dashboard stats loaded with real changes:", stats);
     return stats;
 
   } catch (error) {
