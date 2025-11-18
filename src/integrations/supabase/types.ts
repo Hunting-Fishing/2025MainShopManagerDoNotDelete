@@ -5225,6 +5225,79 @@ export type Database = {
           },
         ]
       }
+      employee_accommodations: {
+        Row: {
+          accommodation_type: string
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          description: string
+          employee_id: string | null
+          end_date: string | null
+          id: string
+          is_permanent: boolean | null
+          notes: string | null
+          shop_id: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accommodation_type: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          description: string
+          employee_id?: string | null
+          end_date?: string | null
+          id?: string
+          is_permanent?: boolean | null
+          notes?: string | null
+          shop_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accommodation_type?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          description?: string
+          employee_id?: string | null
+          end_date?: string | null
+          id?: string
+          is_permanent?: boolean | null
+          notes?: string | null
+          shop_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_accommodations_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_accommodations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_accommodations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employment_types: {
         Row: {
           created_at: string | null
@@ -14902,6 +14975,70 @@ export type Database = {
           },
         ]
       }
+      pto_balances: {
+        Row: {
+          created_at: string | null
+          employee_id: string | null
+          id: string
+          pending_days: number | null
+          remaining_days: number | null
+          shop_id: string | null
+          time_off_type_id: string | null
+          total_allocated: number | null
+          updated_at: string | null
+          used_days: number | null
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id?: string | null
+          id?: string
+          pending_days?: number | null
+          remaining_days?: number | null
+          shop_id?: string | null
+          time_off_type_id?: string | null
+          total_allocated?: number | null
+          updated_at?: string | null
+          used_days?: number | null
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string | null
+          id?: string
+          pending_days?: number | null
+          remaining_days?: number | null
+          shop_id?: string | null
+          time_off_type_id?: string | null
+          total_allocated?: number | null
+          updated_at?: string | null
+          used_days?: number | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pto_balances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pto_balances_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pto_balances_time_off_type_id_fkey"
+            columns: ["time_off_type_id"]
+            isOneToOne: false
+            referencedRelation: "time_off_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_applications: {
         Row: {
           applicant_address: Json | null
@@ -18846,6 +18983,136 @@ export type Database = {
         }
         Relationships: []
       }
+      time_off_requests: {
+        Row: {
+          created_at: string | null
+          employee_id: string | null
+          end_date: string
+          id: string
+          reason: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string | null
+          start_date: string
+          status: string | null
+          time_off_type_id: string | null
+          total_days: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id?: string | null
+          end_date: string
+          id?: string
+          reason?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string | null
+          start_date: string
+          status?: string | null
+          time_off_type_id?: string | null
+          total_days: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string | null
+          end_date?: string
+          id?: string
+          reason?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string | null
+          start_date?: string
+          status?: string | null
+          time_off_type_id?: string | null
+          total_days?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_off_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_requests_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_requests_time_off_type_id_fkey"
+            columns: ["time_off_type_id"]
+            isOneToOne: false
+            referencedRelation: "time_off_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_off_types: {
+        Row: {
+          code: string
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_paid: boolean | null
+          max_days_per_year: number | null
+          name: string
+          requires_approval: boolean | null
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_paid?: boolean | null
+          max_days_per_year?: number | null
+          name: string
+          requires_approval?: boolean | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_paid?: boolean | null
+          max_days_per_year?: number | null
+          name?: string
+          requires_approval?: boolean | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_off_types_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timesheet_entries: {
         Row: {
           approved_at: string | null
@@ -22025,6 +22292,79 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_schedule_assignments: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          day_of_week: number
+          effective_from: string
+          effective_until: string | null
+          employee_id: string | null
+          id: string
+          is_recurring: boolean | null
+          notes: string | null
+          schedule_name: string
+          shift_end: string
+          shift_start: string
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          day_of_week: number
+          effective_from: string
+          effective_until?: string | null
+          employee_id?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          schedule_name: string
+          shift_end: string
+          shift_start: string
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          day_of_week?: number
+          effective_from?: string
+          effective_until?: string | null
+          employee_id?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          schedule_name?: string
+          shift_end?: string
+          shift_start?: string
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_schedule_assignments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_schedule_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_schedule_assignments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
