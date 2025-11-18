@@ -74,8 +74,6 @@ import SmsManagement from '@/pages/SmsManagement';
 import SmsTemplates from '@/pages/SmsTemplates';
 import Timesheet from '@/pages/Timesheet';
 import FeatureRequests from '@/pages/FeatureRequests';
-import RolePermissionsSettings from '@/pages/settings/RolePermissionsSettings';
-import UserPermissionsSettings from '@/pages/settings/UserPermissionsSettings';
 import EquipmentTracking from '@/pages/EquipmentTracking';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 
@@ -422,18 +420,8 @@ function App() {
                   {/* Customer Feedback */}
                   <Route path="/feedback" element={<Feedback />} />
                   
-                  {/* Feature Requests */}
+          {/* Feature Requests */}
           <Route path="/feature-requests" element={<FeatureRequests />} />
-          <Route path="/settings/role-permissions" element={
-            <ProtectedRoute requireAdmin={true}>
-              <RolePermissionsSettings />
-            </ProtectedRoute>
-          } />
-          <Route path="/settings/user-permissions" element={
-            <ProtectedRoute requireAdmin={true}>
-              <UserPermissionsSettings />
-            </ProtectedRoute>
-          } />
                   
                   {/* Equipment Tracking */}
                   <Route path="/equipment-tracking" element={
