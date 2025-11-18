@@ -75,6 +75,7 @@ import SmsTemplates from '@/pages/SmsTemplates';
 import Timesheet from '@/pages/Timesheet';
 import FeatureRequests from '@/pages/FeatureRequests';
 import EquipmentTracking from '@/pages/EquipmentTracking';
+import EmployeeScheduling from '@/pages/EmployeeScheduling';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 
 function App() {
@@ -427,6 +428,13 @@ function App() {
                   <Route path="/equipment-tracking" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'deckhand', 'captain', 'mate', 'chief_engineer', 'marine_engineer', 'owner']}>
                       <EquipmentTracking />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Employee Scheduling */}
+                  <Route path="/scheduling" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <EmployeeScheduling />
                     </ProtectedRoute>
                   } />
                   

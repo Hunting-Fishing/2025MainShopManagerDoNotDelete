@@ -1,0 +1,78 @@
+import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Clock, FileText, Settings, UserCog } from 'lucide-react';
+import { ScheduleCalendar } from '@/components/scheduling/ScheduleCalendar';
+import { TimeOffRequests } from '@/components/scheduling/TimeOffRequests';
+import { PTOManagement } from '@/components/scheduling/PTOManagement';
+import { AccommodationsManagement } from '@/components/scheduling/AccommodationsManagement';
+import { SchedulingSettings } from '@/components/scheduling/SchedulingSettings';
+
+export default function EmployeeScheduling() {
+  const [activeTab, setActiveTab] = useState('schedule');
+
+  return (
+    <>
+      <Helmet>
+        <title>Employee Scheduling | ServicePro</title>
+      </Helmet>
+
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <Calendar className="h-8 w-8" />
+            Employee Scheduling
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Manage work schedules, time-off requests, PTO, and accommodations
+          </p>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="schedule" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Schedule</span>
+            </TabsTrigger>
+            <TabsTrigger value="time-off" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Time Off</span>
+            </TabsTrigger>
+            <TabsTrigger value="pto" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">PTO</span>
+            </TabsTrigger>
+            <TabsTrigger value="accommodations" className="flex items-center gap-2">
+              <UserCog className="h-4 w-4" />
+              <span className="hidden sm:inline">Accommodations</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="schedule" className="space-y-4">
+            <ScheduleCalendar />
+          </TabsContent>
+
+          <TabsContent value="time-off" className="space-y-4">
+            <TimeOffRequests />
+          </TabsContent>
+
+          <TabsContent value="pto" className="space-y-4">
+            <PTOManagement />
+          </TabsContent>
+
+          <TabsContent value="accommodations" className="space-y-4">
+            <AccommodationsManagement />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-4">
+            <SchedulingSettings />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </>
+  );
+}
