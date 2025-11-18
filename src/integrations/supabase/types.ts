@@ -5243,6 +5243,60 @@ export type Database = {
         }
         Relationships: []
       }
+      engines: {
+        Row: {
+          common_applications: string[] | null
+          cooling_system: string | null
+          created_at: string
+          cylinders: number | null
+          displacement: string | null
+          engine_type: string | null
+          fuel_type: string | null
+          horsepower: number | null
+          id: string
+          manufacturer: string
+          model: string
+          notes: string | null
+          updated_at: string
+          year_discontinued: number | null
+          year_introduced: number | null
+        }
+        Insert: {
+          common_applications?: string[] | null
+          cooling_system?: string | null
+          created_at?: string
+          cylinders?: number | null
+          displacement?: string | null
+          engine_type?: string | null
+          fuel_type?: string | null
+          horsepower?: number | null
+          id?: string
+          manufacturer: string
+          model: string
+          notes?: string | null
+          updated_at?: string
+          year_discontinued?: number | null
+          year_introduced?: number | null
+        }
+        Update: {
+          common_applications?: string[] | null
+          cooling_system?: string | null
+          created_at?: string
+          cylinders?: number | null
+          displacement?: string | null
+          engine_type?: string | null
+          fuel_type?: string | null
+          horsepower?: number | null
+          id?: string
+          manufacturer?: string
+          model?: string
+          notes?: string | null
+          updated_at?: string
+          year_discontinued?: number | null
+          year_introduced?: number | null
+        }
+        Relationships: []
+      }
       equipment_assets: {
         Row: {
           asset_number: string
@@ -5252,6 +5306,7 @@ export type Database = {
           current_hours: number | null
           current_mileage: number | null
           department: string | null
+          engine_id: string | null
           equipment_type: Database["public"]["Enums"]["equipment_type"]
           id: string
           last_service_date: string | null
@@ -5281,6 +5336,7 @@ export type Database = {
           current_hours?: number | null
           current_mileage?: number | null
           department?: string | null
+          engine_id?: string | null
           equipment_type: Database["public"]["Enums"]["equipment_type"]
           id?: string
           last_service_date?: string | null
@@ -5310,6 +5366,7 @@ export type Database = {
           current_hours?: number | null
           current_mileage?: number | null
           department?: string | null
+          engine_id?: string | null
           equipment_type?: Database["public"]["Enums"]["equipment_type"]
           id?: string
           last_service_date?: string | null
@@ -5344,6 +5401,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_assets_engine_id_fkey"
+            columns: ["engine_id"]
+            isOneToOne: false
+            referencedRelation: "engines"
             referencedColumns: ["id"]
           },
           {
