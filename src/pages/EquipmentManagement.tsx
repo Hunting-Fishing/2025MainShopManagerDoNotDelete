@@ -14,7 +14,8 @@ import { AddEquipmentDialog } from '@/components/equipment/AddEquipmentDialog';
 import { EquipmentPartsHistory } from '@/components/equipment/EquipmentPartsHistory';
 import { FuturePlanningList } from '@/components/equipment/FuturePlanningList';
 import { EquipmentManualsLibrary } from '@/components/equipment/EquipmentManualsLibrary';
-import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck, Package, Lightbulb, BookOpen } from 'lucide-react';
+import { EnginesList } from '@/components/equipment/EnginesList';
+import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck, Package, Lightbulb, BookOpen, Fuel } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEquipment } from '@/hooks/useEquipment';
@@ -27,6 +28,7 @@ export default function EquipmentManagement() {
 
   const tabs = [
     { value: 'equipment', label: 'Equipment', icon: Wrench },
+    { value: 'engines', label: 'Engines', icon: Fuel },
     { value: 'manuals', label: 'Manuals', icon: BookOpen },
     { value: 'future-planning', label: 'Future Planning', icon: Lightbulb },
     { value: 'parts', label: 'Parts History', icon: Package },
@@ -82,7 +84,7 @@ export default function EquipmentManagement() {
             </SelectContent>
           </Select>
         ) : (
-          <TabsList className="grid w-full grid-cols-10 gap-1">
+          <TabsList className="grid w-full grid-cols-11 gap-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -97,6 +99,10 @@ export default function EquipmentManagement() {
 
         <TabsContent value="equipment" className="space-y-4">
           <EquipmentList equipment={equipment} loading={isLoading} onUpdate={refetch} />
+        </TabsContent>
+
+        <TabsContent value="engines" className="space-y-4">
+          <EnginesList />
         </TabsContent>
 
         <TabsContent value="manuals" className="space-y-4">

@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { getEquipmentById, updateEquipmentStatus, type EquipmentDetails } from '@/services/equipment/equipmentService';
 import { MaintenanceIntervals } from '@/components/equipment/MaintenanceIntervals';
 import { EquipmentWorkRequests } from '@/components/equipment-details/EquipmentWorkRequests';
 import { EquipmentConfigDialog } from '@/components/equipment/EquipmentConfigDialog';
 import { SafetyEquipmentList } from '@/components/equipment/SafetyEquipmentList';
+import { EquipmentManuals } from '@/components/equipment/EquipmentManuals';
 
 export default function EquipmentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -186,6 +187,10 @@ export default function EquipmentDetails() {
       <Tabs defaultValue="details" className="space-y-4">
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="manuals">
+            <BookOpen className="h-4 w-4 mr-2" />
+            Manuals
+          </TabsTrigger>
           <TabsTrigger value="safety">
             <ShieldCheck className="h-4 w-4 mr-2" />
             Safety
@@ -277,6 +282,10 @@ export default function EquipmentDetails() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="manuals" className="space-y-4">
+          <EquipmentManuals equipmentId={id!} equipmentName={equipment.name} />
         </TabsContent>
 
         <TabsContent value="safety" className="space-y-4">
