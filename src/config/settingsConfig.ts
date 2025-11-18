@@ -18,7 +18,9 @@ import {
   Calendar,
   Link,
   UserCheck,
-  LayoutDashboard
+  LayoutDashboard,
+  Lock,
+  UserCog
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -48,6 +50,8 @@ import { BudgetManagementTab } from '@/components/settings/BudgetManagementTab';
 import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
 import { VolunteerManagementTab } from '@/components/settings/VolunteerManagementTab';
 import { DashboardSettingsTab } from '@/components/settings/DashboardSettingsTab';
+import { RolePermissionsSettingsTab } from '@/components/settings/RolePermissionsSettingsTab';
+import { UserPermissionsSettingsTab } from '@/components/settings/UserPermissionsSettingsTab';
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
@@ -229,6 +233,27 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         icon: Globe,
         component: PublicPortalTab,
         description: 'Manage public-facing portal and application forms'
+      }
+    ]
+  },
+  {
+    id: 'access-control',
+    title: 'Access Control',
+    description: 'Manage user roles, permissions, and access rights',
+    tabs: [
+      {
+        id: 'role-permissions',
+        label: 'Role Permissions',
+        icon: Shield,
+        component: RolePermissionsSettingsTab,
+        description: 'Configure default permissions for each role'
+      },
+      {
+        id: 'user-permissions',
+        label: 'User Permissions',
+        icon: UserCog,
+        component: UserPermissionsSettingsTab,
+        description: 'Override permissions for individual users'
       }
     ]
   }

@@ -19,15 +19,15 @@ type UserPermissions = {
   delete?: boolean;
 };
 
-const MODULES = [
-  { id: "work_orders", name: "Work Orders" },
-  { id: "inventory", name: "Inventory" },
-  { id: "equipment_tracking", name: "Equipment Tracking" },
-  { id: "customers", name: "Customers" },
-  { id: "accounting", name: "Accounting" },
-  { id: "team", name: "Team Management" },
-  { id: "reports", name: "Reports" },
-];
+import { PERMISSION_MODULES, MODULE_CATEGORIES } from "@/types/permissionModules";
+
+// Use centralized module definitions
+const MODULES = PERMISSION_MODULES.map(module => ({
+  id: module.id,
+  name: module.name,
+  description: module.description,
+  category: module.category
+}));
 
 export default function UserPermissionsSettings() {
   const [selectedUserId, setSelectedUserId] = useState<string>("");
@@ -318,78 +318,103 @@ export default function UserPermissionsSettings() {
               {loadingPermissions ? (
                 <div>Loading permissions...</div>
               ) : (
-                <div className="space-y-4">
-                  {MODULES.map((module) => {
-                    const modulePerms = getEffectivePermissions(module.id);
-                    const customized = isCustomized(module.id);
-
+                <div className="space-y-8">
+                  {MODULE_CATEGORIES.map((category) => {
+                    const categoryModules = MODULES.filter(m => m.category === category.id);
+                    if (categoryModules.length === 0) return null;
+                    
                     return (
-                      <Card key={module.id} className={customized ? "border-primary" : "border"}>
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <CardTitle className="text-base">{module.name}</CardTitle>
-                              {customized && (
-                                <Badge variant="outline" className="text-xs">
-                                  Custom
-                                </Badge>
-                              )}
-                            </div>
-                            {customized && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleReset(module.id)}
+                      <div key={category.id} className="space-y-4">
+                        <div className="border-b pb-2">
+                          <h3 className="text-lg font-semibold text-foreground">{category.label}</h3>
+                          <p className="text-sm text-muted-foreground">{category.description}</p>
+                        </div>
+                        <div className="space-y-4">
+                          {categoryModules.map((module) => {
+                            const modulePerms = getEffectivePermissions(module.id);
+                            const customized = isCustomized(module.id);
+
+                            return (
+                              <Card 
+                                key={module.id} 
+                                className={customized ? "border-l-4 border-l-primary" : "border-l-4 border-l-muted"}
                               >
-                                <RefreshCw className="h-4 w-4 mr-1" />
-                                Reset to Role Default
-                              </Button>
-                            )}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor={`${module.id}-view`}>View</Label>
-                            <Switch
-                              id={`${module.id}-view`}
-                              checked={modulePerms.view}
-                              onCheckedChange={(checked) =>
-                                handleToggle(module.id, "view", checked)
-                              }
-                            />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor={`${module.id}-create`}>Create</Label>
-                            <Switch
-                              id={`${module.id}-create`}
-                              checked={modulePerms.create || false}
-                              onCheckedChange={(checked) =>
-                                handleToggle(module.id, "create", checked)
-                              }
-                            />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor={`${module.id}-edit`}>Edit</Label>
-                            <Switch
-                              id={`${module.id}-edit`}
-                              checked={modulePerms.edit || false}
-                              onCheckedChange={(checked) =>
-                                handleToggle(module.id, "edit", checked)
-                              }
-                            />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor={`${module.id}-delete`}>Delete</Label>
-                            <Switch
-                              id={`${module.id}-delete`}
-                              checked={modulePerms.delete || false}
-                              onCheckedChange={(checked) =>
-                                handleToggle(module.id, "delete", checked)
-                              }
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
+                                <CardHeader className="pb-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <CardTitle className="text-base">{module.name}</CardTitle>
+                                        {customized && (
+                                          <Badge variant="outline" className="text-xs">
+                                            Custom
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      {module.description && (
+                                        <CardDescription className="text-sm mt-1">
+                                          {module.description}
+                                        </CardDescription>
+                                      )}
+                                    </div>
+                                    {customized && (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleReset(module.id)}
+                                      >
+                                        <RefreshCw className="h-4 w-4 mr-1" />
+                                        Reset
+                                      </Button>
+                                    )}
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`${module.id}-view`}>View</Label>
+                                    <Switch
+                                      id={`${module.id}-view`}
+                                      checked={modulePerms.view}
+                                      onCheckedChange={(checked) =>
+                                        handleToggle(module.id, "view", checked)
+                                      }
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`${module.id}-create`}>Create</Label>
+                                    <Switch
+                                      id={`${module.id}-create`}
+                                      checked={modulePerms.create || false}
+                                      onCheckedChange={(checked) =>
+                                        handleToggle(module.id, "create", checked)
+                                      }
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`${module.id}-edit`}>Edit</Label>
+                                    <Switch
+                                      id={`${module.id}-edit`}
+                                      checked={modulePerms.edit || false}
+                                      onCheckedChange={(checked) =>
+                                        handleToggle(module.id, "edit", checked)
+                                      }
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`${module.id}-delete`}>Delete</Label>
+                                    <Switch
+                                      id={`${module.id}-delete`}
+                                      checked={modulePerms.delete || false}
+                                      onCheckedChange={(checked) =>
+                                        handleToggle(module.id, "delete", checked)
+                                      }
+                                    />
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
