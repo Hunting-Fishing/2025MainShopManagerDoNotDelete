@@ -13,7 +13,8 @@ import { SafetyEquipmentList } from '@/components/equipment/SafetyEquipmentList'
 import { AddEquipmentDialog } from '@/components/equipment/AddEquipmentDialog';
 import { EquipmentPartsHistory } from '@/components/equipment/EquipmentPartsHistory';
 import { FuturePlanningList } from '@/components/equipment/FuturePlanningList';
-import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck, Package, Lightbulb } from 'lucide-react';
+import { EquipmentManualsLibrary } from '@/components/equipment/EquipmentManualsLibrary';
+import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck, Package, Lightbulb, BookOpen } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEquipment } from '@/hooks/useEquipment';
@@ -26,6 +27,7 @@ export default function EquipmentManagement() {
 
   const tabs = [
     { value: 'equipment', label: 'Equipment', icon: Wrench },
+    { value: 'manuals', label: 'Manuals', icon: BookOpen },
     { value: 'future-planning', label: 'Future Planning', icon: Lightbulb },
     { value: 'parts', label: 'Parts History', icon: Package },
     { value: 'safety', label: 'Safety Equipment', icon: ShieldCheck },
@@ -80,7 +82,7 @@ export default function EquipmentManagement() {
             </SelectContent>
           </Select>
         ) : (
-          <TabsList className="grid w-full grid-cols-9 gap-1">
+          <TabsList className="grid w-full grid-cols-10 gap-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -95,6 +97,10 @@ export default function EquipmentManagement() {
 
         <TabsContent value="equipment" className="space-y-4">
           <EquipmentList equipment={equipment} loading={isLoading} onUpdate={refetch} />
+        </TabsContent>
+
+        <TabsContent value="manuals" className="space-y-4">
+          <EquipmentManualsLibrary />
         </TabsContent>
 
         <TabsContent value="future-planning" className="space-y-4">

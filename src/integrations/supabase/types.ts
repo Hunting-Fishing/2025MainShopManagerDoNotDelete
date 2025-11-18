@@ -5722,6 +5722,101 @@ export type Database = {
           },
         ]
       }
+      equipment_manual_links: {
+        Row: {
+          created_at: string | null
+          equipment_id: string
+          id: string
+          linked_by: string | null
+          manual_id: string
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_id: string
+          id?: string
+          linked_by?: string | null
+          manual_id: string
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          equipment_id?: string
+          id?: string
+          linked_by?: string | null
+          manual_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_manual_links_manual_id_fkey"
+            columns: ["manual_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_manuals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_manuals: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          document_number: string | null
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          manual_type: string | null
+          manufacturer: string | null
+          mime_type: string | null
+          model: string | null
+          notes: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          uploaded_by: string | null
+          version: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          document_number?: string | null
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          manual_type?: string | null
+          manufacturer?: string | null
+          mime_type?: string | null
+          model?: string | null
+          notes?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          version?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          document_number?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          manual_type?: string | null
+          manufacturer?: string | null
+          mime_type?: string | null
+          model?: string | null
+          notes?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
       equipment_parts_history: {
         Row: {
           cost: number | null
