@@ -185,70 +185,74 @@ function App() {
                   
                   {/* Analytics */}
                   <Route path="/analytics" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
                       <Analytics />
                     </ProtectedRoute>
                   } />
                   
                   {/* Settings */}
                   <Route path="/settings/*" element={
-                    <ProtectedRoute requireAdmin={true}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
                       <Settings />
                     </ProtectedRoute>
                   } />
                   
                   {/* Calendar */}
-                  <Route path="/calendar" element={<Calendar />} />
-                  
-                  {/* Service Reminders */}
-                  <Route path="/service-reminders" element={
+                  <Route path="/calendar" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
-                      <ServiceReminders />
+                      <Calendar />
                     </ProtectedRoute>
                   } />
                   
+                  {/* Service Reminders */}
+                  <Route path="/service-reminders" element={<ServiceReminders />} />
+                  
                   {/* Customer Communications */}
                   <Route path="/customer-comms" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
                       <CustomerComms />
                     </ProtectedRoute>
                   } />
                   
                   {/* Call Logger */}
                   <Route path="/call-logger" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
                       <CallLogger />
                     </ProtectedRoute>
                   } />
                   
                   {/* Team Chat */}
-                  <Route path="/chat" element={<Chat />} />
+                  <Route path="/chat" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                      <Chat />
+                    </ProtectedRoute>
+                  } />
                   
                   {/* Email Marketing */}
                   <Route path="/email-campaigns" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
                       <EmailCampaigns />
                     </ProtectedRoute>
                   } />
                   <Route path="/email-sequences" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
                       <EmailSequences />
                     </ProtectedRoute>
                   } />
                   <Route path="/email-templates" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
                       <EmailTemplates />
                     </ProtectedRoute>
                   } />
                   
                   {/* SMS Communications */}
                   <Route path="/sms-management" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
                       <SmsManagement />
                     </ProtectedRoute>
                   } />
                   <Route path="/sms-templates" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
                       <SmsTemplates />
                     </ProtectedRoute>
                   } />
@@ -420,12 +424,20 @@ function App() {
                   
                   {/* Feature Requests */}
           <Route path="/feature-requests" element={<FeatureRequests />} />
-          <Route path="/settings/role-permissions" element={<RolePermissionsSettings />} />
-          <Route path="/settings/user-permissions" element={<UserPermissionsSettings />} />
+          <Route path="/settings/role-permissions" element={
+            <ProtectedRoute requireAdmin={true}>
+              <RolePermissionsSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings/user-permissions" element={
+            <ProtectedRoute requireAdmin={true}>
+              <UserPermissionsSettings />
+            </ProtectedRoute>
+          } />
                   
                   {/* Equipment Tracking */}
                   <Route path="/equipment-tracking" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'deckhand', 'captain', 'mate', 'chief_engineer', 'marine_engineer', 'owner']}>
                       <EquipmentTracking />
                     </ProtectedRoute>
                   } />
