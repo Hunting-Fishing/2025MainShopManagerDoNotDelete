@@ -23344,6 +23344,7 @@ export type Database = {
       }
       is_admin_user: { Args: never; Returns: boolean }
       is_customer: { Args: { user_id: string }; Returns: boolean }
+      is_owner_or_admin: { Args: { check_user_id: string }; Returns: boolean }
       is_same_shop: { Args: { target_user_id: string }; Returns: boolean }
       is_staff_member: { Args: never; Returns: boolean }
       log_document_access: {
@@ -23636,6 +23637,10 @@ export type Database = {
           p_work_order_id: string
         }
         Returns: string
+      }
+      user_belongs_to_shop: {
+        Args: { check_shop_id: string; check_user_id: string }
+        Returns: boolean
       }
       user_can_access_shop: {
         Args: { target_shop_id: string }
