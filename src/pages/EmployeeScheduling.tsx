@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, FileText, Settings, UserCog } from 'lucide-react';
+import { Calendar, Clock, FileText, Settings, UserCog, Package } from 'lucide-react';
 import { ScheduleCalendar } from '@/components/scheduling/ScheduleCalendar';
 import { TimeOffRequests } from '@/components/scheduling/TimeOffRequests';
 import { PTOManagement } from '@/components/scheduling/PTOManagement';
 import { AccommodationsManagement } from '@/components/scheduling/AccommodationsManagement';
 import { SchedulingSettings } from '@/components/scheduling/SchedulingSettings';
+import { AssetAssignments } from '@/components/scheduling/AssetAssignments';
 
 export default function EmployeeScheduling() {
   const [activeTab, setActiveTab] = useState('schedule');
@@ -29,10 +30,14 @@ export default function EmployeeScheduling() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="schedule" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Schedule</span>
+            </TabsTrigger>
+            <TabsTrigger value="assets" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              <span className="hidden sm:inline">Assets</span>
             </TabsTrigger>
             <TabsTrigger value="time-off" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
@@ -54,6 +59,10 @@ export default function EmployeeScheduling() {
 
           <TabsContent value="schedule" className="space-y-4">
             <ScheduleCalendar />
+          </TabsContent>
+
+          <TabsContent value="assets" className="space-y-4">
+            <AssetAssignments />
           </TabsContent>
 
           <TabsContent value="time-off" className="space-y-4">

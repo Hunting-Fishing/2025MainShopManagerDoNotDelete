@@ -761,6 +761,76 @@ export type Database = {
           },
         ]
       }
+      asset_assignments: {
+        Row: {
+          asset_id: string
+          asset_type: string
+          assigned_by: string | null
+          assignment_end: string
+          assignment_start: string
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          purpose: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          asset_type: string
+          assigned_by?: string | null
+          assignment_end: string
+          assignment_start: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          asset_type?: string
+          assigned_by?: string | null
+          assignment_end?: string
+          assignment_start?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_assignments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_tracking: {
         Row: {
           asset_name: string
