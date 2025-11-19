@@ -771,8 +771,14 @@ export type Database = {
           created_at: string
           employee_id: string
           id: string
+          is_recurring: boolean
           notes: string | null
+          parent_assignment_id: string | null
           purpose: string | null
+          recurrence_days_of_week: number[] | null
+          recurrence_end_date: string | null
+          recurrence_interval: number | null
+          recurrence_pattern: string | null
           shop_id: string
           status: string
           updated_at: string
@@ -786,8 +792,14 @@ export type Database = {
           created_at?: string
           employee_id: string
           id?: string
+          is_recurring?: boolean
           notes?: string | null
+          parent_assignment_id?: string | null
           purpose?: string | null
+          recurrence_days_of_week?: number[] | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
           shop_id: string
           status?: string
           updated_at?: string
@@ -801,8 +813,14 @@ export type Database = {
           created_at?: string
           employee_id?: string
           id?: string
+          is_recurring?: boolean
           notes?: string | null
+          parent_assignment_id?: string | null
           purpose?: string | null
+          recurrence_days_of_week?: number[] | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
           shop_id?: string
           status?: string
           updated_at?: string
@@ -820,6 +838,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_assignments_parent_assignment_id_fkey"
+            columns: ["parent_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "asset_assignments"
             referencedColumns: ["id"]
           },
           {
