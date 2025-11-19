@@ -19,7 +19,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAssetAssignments } from '@/hooks/useAssetAssignments';
 import { supabase } from '@/lib/supabase';
 import { useShopId } from '@/hooks/useShopId';
-import type { AssetType } from '@/types/assetAssignment';
+import type { AssetType, RecurrencePattern } from '@/types/assetAssignment';
+import { RecurrenceFields } from './RecurrenceFields';
 
 interface AddAssetAssignmentDialogProps {
   open: boolean;
@@ -40,7 +41,12 @@ export function AddAssetAssignmentDialog({ open, onOpenChange }: AddAssetAssignm
     assignment_start: '',
     assignment_end: '',
     purpose: '',
-    notes: ''
+    notes: '',
+    is_recurring: false,
+    recurrence_pattern: 'weekly' as RecurrencePattern,
+    recurrence_interval: 1,
+    recurrence_end_date: '',
+    recurrence_days_of_week: [] as number[]
   });
 
   useEffect(() => {
@@ -110,7 +116,12 @@ export function AddAssetAssignmentDialog({ open, onOpenChange }: AddAssetAssignm
         assignment_start: '',
         assignment_end: '',
         purpose: '',
-        notes: ''
+        notes: '',
+        is_recurring: false,
+        recurrence_pattern: 'weekly',
+        recurrence_interval: 1,
+        recurrence_end_date: '',
+        recurrence_days_of_week: []
       });
     } catch (error) {
       console.error('Error creating assignment:', error);
@@ -238,6 +249,19 @@ export function AddAssetAssignmentDialog({ open, onOpenChange }: AddAssetAssignm
               rows={3}
             />
           </div>
+
+          <RecurrenceFields
+            isRecurring={formData.is_recurring}
+            recurrencePattern={formData.recurrence_pattern}
+            recurrenceInterval={formData.recurrence_interval}
+            recurrenceEndDate={formData.recurrence_end_date}
+            recurrenceDaysOfWeek={formData.recurrence_days_of_week}
+            onIsRecurringChange={(value) => setFormData({ ...formData, is_recurring: value })}
+            onPatternChange={(value) => setFormData({ ...formData, recurrence_pattern: value })}
+            onIntervalChange={(value) => setFormData({ ...formData, recurrence_interval: value })}
+            onEndDateChange={(value) => setFormData({ ...formData, recurrence_end_date: value })}
+            onDaysOfWeekChange={(days) => setFormData({ ...formData, recurrence_days_of_week: days })}
+          />
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

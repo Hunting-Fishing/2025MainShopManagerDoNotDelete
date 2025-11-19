@@ -2,7 +2,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreVertical, Trash2 } from 'lucide-react';
+import { MoreVertical, Trash2, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
 import type { AssetAssignment } from '@/types/assetAssignment';
 import { useAssetAssignments } from '@/hooks/useAssetAssignments';
@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AssetAssignmentsListProps {
   assignments: AssetAssignment[];
@@ -52,24 +53,37 @@ export function AssetAssignmentsList({ assignments }: AssetAssignmentsListProps)
   };
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Employee</TableHead>
-          <TableHead>Asset Type</TableHead>
-          <TableHead>Start Date</TableHead>
-          <TableHead>End Date</TableHead>
-          <TableHead>Purpose</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {assignments.map((assignment) => (
-          <TableRow key={assignment.id}>
-            <TableCell className="font-medium">
-              {assignment.profiles?.first_name} {assignment.profiles?.last_name}
-            </TableCell>
+    <TooltipProvider>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Employee</TableHead>
+            <TableHead>Asset Type</TableHead>
+            <TableHead>Start Date</TableHead>
+            <TableHead>End Date</TableHead>
+            <TableHead>Purpose</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {assignments.map((assignment) => (
+            <TableRow key={assignment.id}>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2">
+                  {assignment.is_recurring && (
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Repeat className="h-4 w-4 text-primary" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Recurring: {assignment.recurrence_pattern}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {assignment.profiles?.first_name} {assignment.profiles?.last_name}
+                </div>
+              </TableCell>
             <TableCell>
               <Badge variant="outline">
                 {ASSET_TYPE_LABELS[assignment.asset_type]}
@@ -122,9 +136,10 @@ export function AssetAssignmentsList({ assignments }: AssetAssignmentsListProps)
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TooltipProvider>
   );
 }
