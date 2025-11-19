@@ -45,16 +45,15 @@ export function useAssetAssignments() {
 
   const createAssignment = async (input: CreateAssetAssignmentInput) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      // shop_id and assigned_by are now auto-populated by database triggers
       const { data, error } = await supabase
         .from('asset_assignments')
-        .insert([{
-          ...input,
-          shop_id: shopId,
-          assigned_by: user?.id
-        }])
-        .select()
+        .insert([input])
+        .select(`
+          *,
+          profiles:employee_id(first_name, last_name, email),
+          assigned_by_profile:assigned_by(first_name, last_name)
+        `)
         .single();
 
       if (error) throw error;
