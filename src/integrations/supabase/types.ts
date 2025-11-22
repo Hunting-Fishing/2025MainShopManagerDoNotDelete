@@ -16368,6 +16368,177 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduling_conflicts: {
+        Row: {
+          conflict_date: string
+          conflict_end_time: string | null
+          conflict_start_time: string | null
+          conflict_type: string
+          conflicting_assignment_id: string | null
+          created_at: string | null
+          description: string
+          employee_id: string | null
+          id: string
+          is_resolved: boolean | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          schedule_assignment_id: string | null
+          severity: string
+          shop_id: string
+          time_off_request_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          conflict_date: string
+          conflict_end_time?: string | null
+          conflict_start_time?: string | null
+          conflict_type: string
+          conflicting_assignment_id?: string | null
+          created_at?: string | null
+          description: string
+          employee_id?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          schedule_assignment_id?: string | null
+          severity?: string
+          shop_id: string
+          time_off_request_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          conflict_date?: string
+          conflict_end_time?: string | null
+          conflict_start_time?: string | null
+          conflict_type?: string
+          conflicting_assignment_id?: string | null
+          created_at?: string | null
+          description?: string
+          employee_id?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          schedule_assignment_id?: string | null
+          severity?: string
+          shop_id?: string
+          time_off_request_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduling_conflicts_conflicting_assignment_id_fkey"
+            columns: ["conflicting_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "work_schedule_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduling_conflicts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduling_conflicts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduling_conflicts_schedule_assignment_id_fkey"
+            columns: ["schedule_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "work_schedule_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduling_conflicts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduling_conflicts_time_off_request_id_fkey"
+            columns: ["time_off_request_id"]
+            isOneToOne: false
+            referencedRelation: "time_off_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduling_statistics: {
+        Row: {
+          active_conflicts: number | null
+          coverage_percentage: number | null
+          created_at: string | null
+          critical_conflicts: number | null
+          id: string
+          labor_cost_estimate: number | null
+          metadata: Json | null
+          overstaffed_shifts: number | null
+          overtime_hours: number | null
+          shop_id: string
+          stat_date: string
+          total_employees_scheduled: number | null
+          total_scheduled_hours: number | null
+          total_shifts: number | null
+          understaffed_shifts: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_conflicts?: number | null
+          coverage_percentage?: number | null
+          created_at?: string | null
+          critical_conflicts?: number | null
+          id?: string
+          labor_cost_estimate?: number | null
+          metadata?: Json | null
+          overstaffed_shifts?: number | null
+          overtime_hours?: number | null
+          shop_id: string
+          stat_date: string
+          total_employees_scheduled?: number | null
+          total_scheduled_hours?: number | null
+          total_shifts?: number | null
+          understaffed_shifts?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_conflicts?: number | null
+          coverage_percentage?: number | null
+          created_at?: string | null
+          critical_conflicts?: number | null
+          id?: string
+          labor_cost_estimate?: number | null
+          metadata?: Json | null
+          overstaffed_shifts?: number | null
+          overtime_hours?: number | null
+          shop_id?: string
+          stat_date?: string
+          total_employees_scheduled?: number | null
+          total_scheduled_hours?: number | null
+          total_shifts?: number | null
+          understaffed_shifts?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduling_statistics_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_events: {
         Row: {
           created_at: string
@@ -23089,6 +23260,10 @@ export type Database = {
         Args: { p_raffle_id: string }
         Returns: number
       }
+      calculate_scheduling_statistics: {
+        Args: { p_date: string; p_shop_id: string }
+        Returns: undefined
+      }
       calculate_work_order_totals_with_discounts: {
         Args: { work_order_id_param: string }
         Returns: Json
@@ -23192,6 +23367,22 @@ export type Database = {
       delete_work_order_time_entries: {
         Args: { work_order_id: string }
         Returns: undefined
+      }
+      detect_schedule_conflicts: {
+        Args: {
+          p_date_range_end: string
+          p_date_range_start: string
+          p_shop_id: string
+        }
+        Returns: {
+          conflict_date: string
+          conflict_id: string
+          conflict_type: string
+          description: string
+          employee_id: string
+          employee_name: string
+          severity: string
+        }[]
       }
       execute_workflow_trigger: {
         Args: { p_context_data?: Json; p_trigger_id: string }
