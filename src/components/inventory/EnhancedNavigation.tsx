@@ -15,7 +15,8 @@ import {
   Truck,
   ShoppingCart,
   Clock,
-  TrendingUp
+  TrendingUp,
+  ScanLine
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -117,6 +118,15 @@ export function EnhancedNavigation({ className }: EnhancedNavigationProps) {
       description: 'Manage purchase orders',
       badge: 'New',
       keywords: ['orders', 'purchase', 'buying']
+    },
+    {
+      id: 'inventory-scan',
+      title: 'Scan Invoice',
+      path: '/inventory/scan',
+      icon: ScanLine,
+      description: 'Scan invoices to add products',
+      badge: 'AI',
+      keywords: ['scan', 'invoice', 'receipt', 'camera', 'ai', 'extract', 'ocr']
     },
     {
       id: 'inventory-manager',

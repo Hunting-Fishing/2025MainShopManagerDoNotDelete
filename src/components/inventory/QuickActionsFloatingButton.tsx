@@ -128,6 +128,23 @@ export function QuickActionsFloatingButton({
             </div>
           </DropdownMenuItem>
 
+          {/* Invoice Scanner - AI */}
+          <DropdownMenuItem 
+            onClick={() => navigate('/inventory/scan')}
+            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-emerald-50"
+          >
+            <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <Package className="h-4 w-4 text-emerald-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium">Scan Invoice</p>
+              <p className="text-xs text-muted-foreground">AI-powered product extraction</p>
+            </div>
+            <Badge variant="secondary" className="text-xs">
+              AI
+            </Badge>
+          </DropdownMenuItem>
+
           <DropdownMenuSeparator />
 
           {/* Bulk Actions */}
