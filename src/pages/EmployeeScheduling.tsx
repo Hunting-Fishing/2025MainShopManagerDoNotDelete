@@ -8,6 +8,9 @@ import { PTOManagement } from '@/components/scheduling/PTOManagement';
 import { AccommodationsManagement } from '@/components/scheduling/AccommodationsManagement';
 import { SchedulingSettings } from '@/components/scheduling/SchedulingSettings';
 import { AssetAssignments } from '@/components/scheduling/AssetAssignments';
+import { EmployeeAvailabilityManager } from '@/components/scheduling/EmployeeAvailabilityManager';
+import { ShiftSwapManager } from '@/components/scheduling/ShiftSwapManager';
+import { ScheduleNotifications } from '@/components/scheduling/ScheduleNotifications';
 
 export default function EmployeeScheduling() {
   const [activeTab, setActiveTab] = useState('schedule');
@@ -30,10 +33,22 @@ export default function EmployeeScheduling() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="schedule" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Schedule</span>
+            </TabsTrigger>
+            <TabsTrigger value="availability" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Availability</span>
+            </TabsTrigger>
+            <TabsTrigger value="swaps" className="flex items-center gap-2">
+              <UserCog className="h-4 w-4" />
+              <span className="hidden sm:inline">Swaps</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Alerts</span>
             </TabsTrigger>
             <TabsTrigger value="assets" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
@@ -59,6 +74,18 @@ export default function EmployeeScheduling() {
 
           <TabsContent value="schedule" className="space-y-4">
             <ScheduleCalendar />
+          </TabsContent>
+
+          <TabsContent value="availability" className="space-y-4">
+            <EmployeeAvailabilityManager />
+          </TabsContent>
+
+          <TabsContent value="swaps" className="space-y-4">
+            <ShiftSwapManager />
+          </TabsContent>
+
+          <TabsContent value="notifications" className="space-y-4">
+            <ScheduleNotifications />
           </TabsContent>
 
           <TabsContent value="assets" className="space-y-4">
