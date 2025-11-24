@@ -1,11 +1,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Shield, Lock } from 'lucide-react';
-import { usePermissions } from '@/hooks/usePermissions';
+import { usePermissionsManager } from '@/hooks/usePermissionsManager';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Permission } from '@/types/phase4';
 
 export function PermissionsManager() {
-  const { loading, permissions } = usePermissions();
+  const { loading, permissions } = usePermissionsManager();
 
   if (loading) {
     return (
@@ -30,7 +31,7 @@ export function PermissionsManager() {
     }
     acc[perm.module].push(perm);
     return acc;
-  }, {} as Record<string, typeof permissions>);
+  }, {} as Record<string, Permission[]>);
 
   return (
     <Card>
@@ -45,7 +46,7 @@ export function PermissionsManager() {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {Object.entries(groupedPermissions).map(([module, perms]) => (
+          {Object.entries(groupedPermissions).map(([module, perms]: [string, Permission[]]) => (
             <div key={module} className="space-y-2">
               <h3 className="text-lg font-semibold capitalize flex items-center gap-2">
                 <Lock className="h-4 w-4" />
