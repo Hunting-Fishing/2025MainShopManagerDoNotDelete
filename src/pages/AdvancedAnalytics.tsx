@@ -4,7 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, DollarSign, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
 import { LaborCostDashboard } from '@/components/analytics/LaborCostDashboard';
 import { TimeCardManager } from '@/components/payroll/TimeCardManager';
+import { PayrollManager } from '@/components/payroll/PayrollManager';
 import { ComplianceMonitor } from '@/components/compliance/ComplianceMonitor';
+import { ForecastingDashboard } from '@/components/forecasting/ForecastingDashboard';
 
 export default function AdvancedAnalytics() {
   const [activeTab, setActiveTab] = useState('labor');
@@ -59,9 +61,7 @@ export default function AdvancedAnalytics() {
           </TabsContent>
 
           <TabsContent value="payroll" className="space-y-4">
-            <div className="text-center py-12 text-muted-foreground">
-              Payroll management features coming soon
-            </div>
+            <PayrollManager />
           </TabsContent>
 
           <TabsContent value="compliance" className="space-y-4">
@@ -69,9 +69,7 @@ export default function AdvancedAnalytics() {
           </TabsContent>
 
           <TabsContent value="forecasting" className="space-y-4">
-            <div className="text-center py-12 text-muted-foreground">
-              Forecasting and optimization metrics coming soon
-            </div>
+            <ForecastingDashboard />
           </TabsContent>
         </Tabs>
       </div>
