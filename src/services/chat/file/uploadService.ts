@@ -17,11 +17,25 @@ export const uploadChatFile = async (roomId: string, file: File): Promise<ChatFi
     const timestamp = new Date().getTime();
     const fileExtension = file.name.split('.').pop();
     const fileName = `${timestamp}-${file.name.replace(/\s+/g, '_')}`;
-    const filePath = `chat/${roomId}/${fileName}`;
+    const filePath = `${roomId}/${fileName}`;
     
-    // For this implementation, we'll create a temporary URL
-    // In a real app, you would upload the file to Supabase storage
-    const url = URL.createObjectURL(file);
+    // Upload file to Supabase storage
+    const { data, error: uploadError } = await supabase.storage
+      .from('chat-media')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+    
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw new Error(`Upload failed: ${uploadError.message}`);
+    }
+    
+    // Get public URL for the uploaded file
+    const { data: { publicUrl } } = supabase.storage
+      .from('chat-media')
+      .getPublicUrl(filePath);
     
     // Determine file type
     let type: ChatFileInfo['type'] = 'file';
@@ -41,7 +55,7 @@ export const uploadChatFile = async (roomId: string, file: File): Promise<ChatFi
     
     // Return file info
     return {
-      url,
+      url: publicUrl,
       type,
       name: file.name,
       size: file.size,

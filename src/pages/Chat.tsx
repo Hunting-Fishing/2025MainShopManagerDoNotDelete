@@ -2,7 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, Users, Clock, Send } from 'lucide-react';
-import { ChatInterface } from '@/components/chat/ChatInterface';
+import { ChatInterfaceConnected } from '@/components/chat/ChatInterfaceConnected';
 
 export default function Chat() {
   return (
@@ -73,7 +73,7 @@ export default function Chat() {
           </Card>
         </div>
 
-        <ChatInterface />
+        <ChatInterfaceConnected />
       </div>
     </>
   );
