@@ -26,6 +26,7 @@ import InventoryOrders from '@/pages/InventoryOrders';
 import InventoryManager from '@/pages/InventoryManager';
 import InventoryManagerNew from '@/pages/InventoryManagerNew';
 import InventoryItemDetailsPage from '@/pages/InventoryItemDetails';
+import InvoiceScan from '@/pages/InvoiceScan';
 
 /**
  * IMPORTANT: This page uses optimized inventory functionality with centralized data management
@@ -158,6 +159,7 @@ export default function Inventory() {
             <Route path="/locations" element={<InventoryLocations />} />
             <Route path="/orders" element={<InventoryOrders />} />
             <Route path="/manager" element={<InventoryManagerNew />} />
+            <Route path="/scan" element={<InvoiceScan />} />
             <Route path="/item/:id" element={<InventoryItemDetailsPage />} />
           </Routes>
 
