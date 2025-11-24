@@ -2718,6 +2718,96 @@ export type Database = {
         }
         Relationships: []
       }
+      compliance_violations: {
+        Row: {
+          created_at: string
+          description: string
+          employee_id: string | null
+          id: string
+          resolution_notes: string | null
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          schedule_assignment_id: string | null
+          severity: string
+          shop_id: string
+          time_card_id: string | null
+          updated_at: string
+          violation_date: string
+          violation_type: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          employee_id?: string | null
+          id?: string
+          resolution_notes?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          schedule_assignment_id?: string | null
+          severity: string
+          shop_id: string
+          time_card_id?: string | null
+          updated_at?: string
+          violation_date: string
+          violation_type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          employee_id?: string | null
+          id?: string
+          resolution_notes?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          schedule_assignment_id?: string | null
+          severity?: string
+          shop_id?: string
+          time_card_id?: string | null
+          updated_at?: string
+          violation_date?: string
+          violation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_violations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_violations_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_violations_schedule_assignment_id_fkey"
+            columns: ["schedule_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "work_schedule_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_violations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_violations_time_card_id_fkey"
+            columns: ["time_card_id"]
+            isOneToOne: false
+            referencedRelation: "time_card_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversion_audit: {
         Row: {
           conversion_notes: string | null
@@ -10931,6 +11021,65 @@ export type Database = {
           },
         ]
       }
+      labor_cost_analytics: {
+        Row: {
+          average_hourly_rate: number | null
+          created_at: string
+          id: string
+          labor_cost_percentage: number | null
+          overtime_hours: number
+          period_end: string
+          period_start: string
+          regular_hours: number
+          revenue: number | null
+          shop_id: string
+          total_labor_cost: number
+          total_labor_hours: number
+          total_shifts: number
+          updated_at: string
+        }
+        Insert: {
+          average_hourly_rate?: number | null
+          created_at?: string
+          id?: string
+          labor_cost_percentage?: number | null
+          overtime_hours?: number
+          period_end: string
+          period_start: string
+          regular_hours?: number
+          revenue?: number | null
+          shop_id: string
+          total_labor_cost?: number
+          total_labor_hours?: number
+          total_shifts?: number
+          updated_at?: string
+        }
+        Update: {
+          average_hourly_rate?: number | null
+          created_at?: string
+          id?: string
+          labor_cost_percentage?: number | null
+          overtime_hours?: number
+          period_end?: string
+          period_start?: string
+          regular_hours?: number
+          revenue?: number | null
+          shop_id?: string
+          total_labor_cost?: number
+          total_labor_hours?: number
+          total_shifts?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "labor_cost_analytics_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       labor_rates: {
         Row: {
           created_at: string
@@ -13585,6 +13734,66 @@ export type Database = {
         }
         Relationships: []
       }
+      overtime_tracking: {
+        Row: {
+          alert_sent: boolean
+          created_at: string
+          employee_id: string
+          id: string
+          overtime_hours: number
+          regular_hours: number
+          shop_id: string
+          status: string
+          updated_at: string
+          week_end_date: string
+          week_start_date: string
+          weekly_limit: number
+        }
+        Insert: {
+          alert_sent?: boolean
+          created_at?: string
+          employee_id: string
+          id?: string
+          overtime_hours?: number
+          regular_hours?: number
+          shop_id: string
+          status?: string
+          updated_at?: string
+          week_end_date: string
+          week_start_date: string
+          weekly_limit?: number
+        }
+        Update: {
+          alert_sent?: boolean
+          created_at?: string
+          employee_id?: string
+          id?: string
+          overtime_hours?: number
+          regular_hours?: number
+          shop_id?: string
+          status?: string
+          updated_at?: string
+          week_end_date?: string
+          week_start_date?: string
+          weekly_limit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "overtime_tracking_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "overtime_tracking_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       part_discounts: {
         Row: {
           approved_at: string | null
@@ -13713,6 +13922,69 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pay_periods: {
+        Row: {
+          created_at: string
+          employee_count: number | null
+          end_date: string
+          id: string
+          period_name: string
+          processed_at: string | null
+          processed_by: string | null
+          shop_id: string
+          start_date: string
+          status: string
+          total_cost: number | null
+          total_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_count?: number | null
+          end_date: string
+          id?: string
+          period_name: string
+          processed_at?: string | null
+          processed_by?: string | null
+          shop_id: string
+          start_date: string
+          status?: string
+          total_cost?: number | null
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_count?: number | null
+          end_date?: string
+          id?: string
+          period_name?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          shop_id?: string
+          start_date?: string
+          status?: string
+          total_cost?: number | null
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pay_periods_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pay_periods_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_methods: {
         Row: {
@@ -16424,6 +16696,56 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_forecasts: {
+        Row: {
+          actual_value: number | null
+          confidence_level: number | null
+          created_at: string
+          factors: Json | null
+          forecast_date: string
+          forecast_type: string
+          id: string
+          predicted_value: number
+          shop_id: string
+          updated_at: string
+          variance: number | null
+        }
+        Insert: {
+          actual_value?: number | null
+          confidence_level?: number | null
+          created_at?: string
+          factors?: Json | null
+          forecast_date: string
+          forecast_type: string
+          id?: string
+          predicted_value: number
+          shop_id: string
+          updated_at?: string
+          variance?: number | null
+        }
+        Update: {
+          actual_value?: number | null
+          confidence_level?: number | null
+          created_at?: string
+          factors?: Json | null
+          forecast_date?: string
+          forecast_type?: string
+          id?: string
+          predicted_value?: number
+          shop_id?: string
+          updated_at?: string
+          variance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_forecasts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedule_notifications: {
         Row: {
           action_url: string | null
@@ -16476,6 +16798,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "schedule_notifications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedule_optimization_metrics: {
+        Row: {
+          cost_score: number | null
+          coverage_score: number | null
+          created_at: string
+          efficiency_score: number | null
+          employee_satisfaction_score: number | null
+          id: string
+          metric_date: string
+          optimal_hours: number | null
+          overstaffed_hours: number | null
+          recommendations: Json | null
+          shop_id: string
+          total_gaps: number | null
+          total_overlaps: number | null
+          understaffed_hours: number | null
+        }
+        Insert: {
+          cost_score?: number | null
+          coverage_score?: number | null
+          created_at?: string
+          efficiency_score?: number | null
+          employee_satisfaction_score?: number | null
+          id?: string
+          metric_date: string
+          optimal_hours?: number | null
+          overstaffed_hours?: number | null
+          recommendations?: Json | null
+          shop_id: string
+          total_gaps?: number | null
+          total_overlaps?: number | null
+          understaffed_hours?: number | null
+        }
+        Update: {
+          cost_score?: number | null
+          coverage_score?: number | null
+          created_at?: string
+          efficiency_score?: number | null
+          employee_satisfaction_score?: number | null
+          id?: string
+          metric_date?: string
+          optimal_hours?: number | null
+          overstaffed_hours?: number | null
+          recommendations?: Json | null
+          shop_id?: string
+          total_gaps?: number | null
+          total_overlaps?: number | null
+          understaffed_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_optimization_metrics_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -19492,6 +19873,94 @@ export type Database = {
           technician_id?: string
         }
         Relationships: []
+      }
+      time_card_entries: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          break_duration_minutes: number | null
+          break_end_time: string | null
+          break_start_time: string | null
+          clock_in_time: string
+          clock_out_time: string | null
+          created_at: string
+          employee_id: string
+          hourly_rate: number | null
+          id: string
+          notes: string | null
+          overtime_hours: number | null
+          regular_hours: number | null
+          shop_id: string
+          status: string
+          total_hours: number | null
+          total_pay: number | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_duration_minutes?: number | null
+          break_end_time?: string | null
+          break_start_time?: string | null
+          clock_in_time: string
+          clock_out_time?: string | null
+          created_at?: string
+          employee_id: string
+          hourly_rate?: number | null
+          id?: string
+          notes?: string | null
+          overtime_hours?: number | null
+          regular_hours?: number | null
+          shop_id: string
+          status?: string
+          total_hours?: number | null
+          total_pay?: number | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_duration_minutes?: number | null
+          break_end_time?: string | null
+          break_start_time?: string | null
+          clock_in_time?: string
+          clock_out_time?: string | null
+          created_at?: string
+          employee_id?: string
+          hourly_rate?: number | null
+          id?: string
+          notes?: string | null
+          overtime_hours?: number | null
+          regular_hours?: number | null
+          shop_id?: string
+          status?: string
+          total_hours?: number | null
+          total_pay?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_card_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_card_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_card_entries_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       time_off_requests: {
         Row: {
