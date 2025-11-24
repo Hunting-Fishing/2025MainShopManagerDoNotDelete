@@ -5393,6 +5393,62 @@ export type Database = {
           },
         ]
       }
+      employee_availability: {
+        Row: {
+          available_end: string
+          available_start: string
+          created_at: string
+          day_of_week: number
+          effective_from: string
+          effective_until: string | null
+          employee_id: string
+          id: string
+          is_available: boolean | null
+          notes: string | null
+          recurring: boolean | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          available_end: string
+          available_start: string
+          created_at?: string
+          day_of_week: number
+          effective_from?: string
+          effective_until?: string | null
+          employee_id: string
+          id?: string
+          is_available?: boolean | null
+          notes?: string | null
+          recurring?: boolean | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          available_end?: string
+          available_start?: string
+          created_at?: string
+          day_of_week?: number
+          effective_from?: string
+          effective_until?: string | null
+          employee_id?: string
+          id?: string
+          is_available?: boolean | null
+          notes?: string | null
+          recurring?: boolean | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_availability_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employment_types: {
         Row: {
           created_at: string | null
@@ -16368,6 +16424,65 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_notifications: {
+        Row: {
+          action_url: string | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          metadata: Json | null
+          notification_type: string
+          priority: string | null
+          read_at: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          shop_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          priority?: string | null
+          read_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          shop_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          priority?: string | null
+          read_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          shop_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_notifications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduling_conflicts: {
         Row: {
           conflict_date: string
@@ -17184,6 +17299,79 @@ export type Database = {
             columns: ["chat_room_id"]
             isOneToOne: false
             referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_swap_requests: {
+        Row: {
+          created_at: string
+          id: string
+          original_schedule_id: string
+          proposed_schedule_id: string | null
+          reason: string | null
+          requesting_employee_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string
+          status: string
+          swap_date: string
+          target_employee_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          original_schedule_id: string
+          proposed_schedule_id?: string | null
+          reason?: string | null
+          requesting_employee_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id: string
+          status?: string
+          swap_date: string
+          target_employee_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          original_schedule_id?: string
+          proposed_schedule_id?: string | null
+          reason?: string | null
+          requesting_employee_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string
+          status?: string
+          swap_date?: string
+          target_employee_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_swap_requests_original_schedule_id_fkey"
+            columns: ["original_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "work_schedule_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_swap_requests_proposed_schedule_id_fkey"
+            columns: ["proposed_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "work_schedule_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_swap_requests_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
