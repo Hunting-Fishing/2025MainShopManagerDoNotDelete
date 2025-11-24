@@ -17188,6 +17188,62 @@ export type Database = {
           },
         ]
       }
+      shift_templates: {
+        Row: {
+          break_duration_minutes: number | null
+          color: string | null
+          created_at: string
+          created_by: string | null
+          days_of_week: number[]
+          description: string | null
+          id: string
+          is_active: boolean | null
+          shift_end: string
+          shift_start: string
+          shop_id: string
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          break_duration_minutes?: number | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          days_of_week: number[]
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          shift_end: string
+          shift_start: string
+          shop_id: string
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          break_duration_minutes?: number | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          days_of_week?: number[]
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          shift_end?: string
+          shift_start?: string
+          shop_id?: string
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_templates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipping_methods: {
         Row: {
           base_cost: number
@@ -23165,6 +23221,25 @@ export type Database = {
             columns: ["inventory_item_id"]
             isOneToOne: false
             referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedule_coverage_summary: {
+        Row: {
+          day_of_week: number | null
+          employee_count: number | null
+          employee_ids: string[] | null
+          employee_names: string[] | null
+          hour_block: unknown
+          shop_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_schedule_assignments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
