@@ -3,9 +3,12 @@ import React, { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { TeamContent } from '@/components/team/TeamContent';
 import { TeamHeader } from '@/components/team/TeamHeader';
+import { TeamSearchFilters } from '@/components/team/TeamSearchFilters';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { useTeamFilters } from '@/hooks/useTeamFilters';
 import TeamMemberProfile from './TeamMemberProfile';
 import TeamMemberCreate from './TeamMemberCreate';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * IMPORTANT: This page uses full team management functionality
@@ -18,9 +21,33 @@ export default function Team() {
   // Use real team data from the database
   const { teamMembers, isLoading, error } = useTeamMembers();
   
+  // Use filtering hook
+  const {
+    searchQuery,
+    setSearchQuery,
+    roleFilter,
+    setRoleFilter,
+    departmentFilter,
+    setDepartmentFilter,
+    statusFilter,
+    setStatusFilter,
+    roles,
+    departments,
+    statuses,
+    filteredMembers,
+    resetFilters
+  } = useTeamFilters(teamMembers);
+  
   if (error) {
     console.error('Error loading team members:', error);
   }
+
+  // Calculate active filter count
+  const activeFilterCount = 
+    (searchQuery ? 1 : 0) +
+    roleFilter.length +
+    departmentFilter.length +
+    statusFilter.length;
   
   const getInitials = (name: string) => {
     return name
@@ -36,8 +63,40 @@ export default function Team() {
       <Route path="/" element={
         <div className="p-6 space-y-6">
           <TeamHeader />
+          
+          {/* Search and Filters */}
+          <TeamSearchFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            roleFilter={roleFilter}
+            onRoleFilterChange={setRoleFilter}
+            departmentFilter={departmentFilter}
+            onDepartmentFilterChange={setDepartmentFilter}
+            availableRoles={roles}
+            availableDepartments={departments}
+            availableStatuses={statuses}
+            onClearFilters={resetFilters}
+            activeFilterCount={activeFilterCount}
+          />
+
+          {/* Results Count */}
+          {!isLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>
+                Showing {filteredMembers.length} of {teamMembers.length} team member{teamMembers.length !== 1 ? 's' : ''}
+              </span>
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
+                </Badge>
+              )}
+            </div>
+          )}
+          
           <TeamContent 
-            members={teamMembers}
+            members={filteredMembers}
             isLoading={isLoading}
             view={view}
             getInitials={getInitials}
@@ -49,7 +108,7 @@ export default function Team() {
       <Route path="/:id" element={<TeamMemberProfile />} />
       <Route path="/*" element={
         <TeamContent 
-          members={teamMembers}
+          members={filteredMembers}
           isLoading={isLoading}
           view={view}
           getInitials={getInitials}
