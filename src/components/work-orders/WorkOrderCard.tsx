@@ -34,9 +34,14 @@ export function WorkOrderCard({ wo }: WorkOrderCardProps) {
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/20 via-primary/60 to-primary/20" />
       <CardHeader className="pb-2 pt-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Hash className="h-4 w-4" />
-            <span className="font-medium">{number}</span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Hash className="h-4 w-4" />
+              <span className="font-medium">{number}</span>
+            </div>
+            <div className="text-xs text-muted-foreground pl-6">
+              {vehicle || customer}
+            </div>
           </div>
           <Badge variant={getStatusVariant(String(wo.status))} className="capitalize">
             {String(wo.status).replace(/_/g, ' ')}
@@ -47,16 +52,6 @@ export function WorkOrderCard({ wo }: WorkOrderCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <User2 className="h-4 w-4" />
-          <span className="line-clamp-1">{customer}</span>
-        </div>
-        {vehicle && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Car className="h-4 w-4" />
-            <span className="line-clamp-1">{vehicle}</span>
-          </div>
-        )}
         <div className="flex items-center gap-2 text-muted-foreground">
           <CalendarClock className="h-4 w-4" />
           <span>
