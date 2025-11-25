@@ -189,7 +189,7 @@ export class WorkOrderRepository {
       
       const { data, error } = await supabase
         .from('work_orders')
-        .insert([cleanedData])
+        .insert([cleanedData] as any)
         .select()
         .single();
 

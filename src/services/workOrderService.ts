@@ -24,7 +24,7 @@ export async function createWorkOrder(newWorkOrder: Partial<WorkOrder>): Promise
 
     const { data, error } = await supabase
       .from('work_orders')
-      .insert(workOrderData)
+      .insert([workOrderData] as any)
       .select();
 
     if (error) throw new Error(`Failed to create work order: ${error.message}`);

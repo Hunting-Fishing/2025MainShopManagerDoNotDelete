@@ -133,9 +133,8 @@ async function saveFormField(field: FormBuilderField): Promise<string | null> {
     const { error } = await supabase
       .from('form_fields')
       .insert({
-        ...fieldData,
-        id: fieldId
-      });
+        ...fieldData
+      } as any);
     
     if (error) throw error;
     

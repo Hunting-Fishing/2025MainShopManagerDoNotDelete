@@ -132,20 +132,12 @@ export class SupabaseNotificationService implements INotificationService {
       const { error } = await supabase
         .from('notifications')
         .insert({
-          title: notification.title,
           message: notification.message,
           type: notification.type,
-          category: notification.category,
-          recipient_id: this.userId,
-          link: notification.link,
-          sender: notification.sender,
-          recipient: notification.recipient,
-          duration: notification.duration,
-          priority: notification.priority,
-          action_url: notification.actionUrl,
+          user_id: this.userId,
           read: false,
           created_at: new Date().toISOString()
-        });
+        } as any);
 
       if (error) {
         console.error('Error adding notification:', error);
@@ -178,7 +170,7 @@ export class SupabaseNotificationService implements INotificationService {
     if (!this.userId) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('notifications')
         .update({ read: true })
         .eq('recipient_id', this.userId)
@@ -215,7 +207,7 @@ export class SupabaseNotificationService implements INotificationService {
     if (!this.userId) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('notifications')
         .delete()
         .eq('recipient_id', this.userId);

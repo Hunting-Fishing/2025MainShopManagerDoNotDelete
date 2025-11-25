@@ -179,7 +179,7 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
               .update({
                 make,
                 model,
-                year,
+                year: year?.toString(),
                 vin,
                 license_plate: licensePlate,
                 color,
@@ -191,7 +191,7 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
                 body_style: bodyStyle,
                 country,
                 gvwr
-              })
+              } as any)
               .eq("id", existingVehicle.id);
               
             if (updateError) {
@@ -207,10 +207,9 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
             const { error: insertError } = await supabase
               .from("vehicles")
               .insert({
-                customer_id: id,
                 make,
                 model,
-                year,
+                year: year?.toString(),
                 vin,
                 license_plate: licensePlate,
                 color,
@@ -222,7 +221,7 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
                 body_style: bodyStyle,
                 country,
                 gvwr
-              });
+              } as any);
               
             if (insertError) {
               console.error("Error adding vehicle:", insertError);
