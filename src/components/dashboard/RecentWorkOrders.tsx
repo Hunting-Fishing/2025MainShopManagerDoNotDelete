@@ -138,16 +138,27 @@ export function RecentWorkOrders() {
                 onClick={() => handleWorkOrderClick(order.id)}
               >
                 <div className="flex flex-col">
-                  <span className="font-medium group-hover:text-primary transition-colors">
-                    {order.customer}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {order.service}
-                  </span>
-                  {order.equipmentName && (
-                    <span className="text-xs text-muted-foreground mt-0.5">
-                      Unit: {order.equipmentName} {order.assetNumber && `(${order.assetNumber})`}
-                    </span>
+                  {order.equipmentName ? (
+                    <>
+                      <span className="font-semibold group-hover:text-primary transition-colors">
+                        {order.equipmentName} {order.assetNumber && `(${order.assetNumber})`}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {order.customer}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {order.service}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-medium group-hover:text-primary transition-colors">
+                        {order.customer}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {order.service}
+                      </span>
+                    </>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
