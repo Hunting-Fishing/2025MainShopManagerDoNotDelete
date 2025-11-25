@@ -15130,6 +15130,8 @@ export type Database = {
           full_name: string | null
           has_auth_account: boolean | null
           id: string
+          invitation_accepted_at: string | null
+          invitation_sent_at: string | null
           job_title: string | null
           last_name: string | null
           notification_preferences: Json | null
@@ -15146,6 +15148,8 @@ export type Database = {
           full_name?: string | null
           has_auth_account?: boolean | null
           id: string
+          invitation_accepted_at?: string | null
+          invitation_sent_at?: string | null
           job_title?: string | null
           last_name?: string | null
           notification_preferences?: Json | null
@@ -15162,6 +15166,8 @@ export type Database = {
           full_name?: string | null
           has_auth_account?: boolean | null
           id?: string
+          invitation_accepted_at?: string | null
+          invitation_sent_at?: string | null
           job_title?: string | null
           last_name?: string | null
           notification_preferences?: Json | null

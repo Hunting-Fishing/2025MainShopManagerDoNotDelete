@@ -28,3 +28,6 @@ verify_jwt = false
 
 [functions.workflow-engine]
 verify_jwt = false
+
+[functions.invite-team-member]
+verify_jwt = true
