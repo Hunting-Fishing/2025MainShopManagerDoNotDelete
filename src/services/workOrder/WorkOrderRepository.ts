@@ -43,7 +43,30 @@ export class WorkOrderRepository {
 
       console.log('WorkOrderRepository: Basic query successful, found:', basicData?.length || 0, 'work orders');
 
-      // If basic query works, try to enhance with customer data
+      // Fetch equipment data separately to avoid RLS join issues
+      const equipmentIds = [...new Set(
+        basicData?.filter(wo => wo.equipment_id).map(wo => wo.equipment_id) || []
+      )];
+      
+      let equipmentMap = new Map();
+      if (equipmentIds.length > 0) {
+        console.log('WorkOrderRepository: Fetching equipment data for', equipmentIds.length, 'equipment items');
+        const { data: equipment, error: equipmentError } = await supabase
+          .from('equipment_assets')
+          .select('id, name, asset_number')
+          .in('id', equipmentIds);
+          
+        if (equipmentError) {
+          console.warn('WorkOrderRepository: Failed to fetch equipment data:', equipmentError.message);
+        } else {
+          console.log('WorkOrderRepository: Successfully fetched', equipment?.length || 0, 'equipment items');
+          equipment?.forEach(eq => {
+            equipmentMap.set(eq.id, { name: eq.name, asset_number: eq.asset_number });
+          });
+        }
+      }
+
+      // If basic query works, try to enhance with customer and vehicle data
       try {
         const { data: enhancedData, error: enhancedError } = await supabase
           .from('work_orders')
@@ -63,18 +86,18 @@ export class WorkOrderRepository {
               year,
               vin,
               license_plate
-            ),
-            equipment_assets!work_orders_equipment_id_fkey (
-              id,
-              name,
-              asset_number
             )
           `)
           .order('created_at', { ascending: false });
 
         if (!enhancedError && enhancedData) {
           console.log('WorkOrderRepository: Enhanced query successful');
-          return this.transformWorkOrders(enhancedData);
+          // Merge equipment data into enhanced work orders
+          const workOrdersWithEquipment = enhancedData.map(wo => ({
+            ...wo,
+            equipment_assets: wo.equipment_id ? equipmentMap.get(wo.equipment_id) : null
+          }));
+          return this.transformWorkOrders(workOrdersWithEquipment);
         } else {
           console.warn('WorkOrderRepository: Enhanced query failed, using basic data:', enhancedError?.message);
         }
@@ -82,8 +105,13 @@ export class WorkOrderRepository {
         console.warn('WorkOrderRepository: Enhanced query error, using basic data:', enhanceError);
       }
 
-      // Return basic data if enhanced query fails
-      return this.transformWorkOrders(basicData || []);
+      // Return basic data with equipment merged if enhanced query fails
+      const workOrdersWithEquipment = basicData?.map(wo => ({
+        ...wo,
+        equipment_assets: wo.equipment_id ? equipmentMap.get(wo.equipment_id) : null
+      })) || [];
+      
+      return this.transformWorkOrders(workOrdersWithEquipment);
     } catch (error) {
       console.error('WorkOrderRepository: Critical error in findAll:', error);
       throw error;
