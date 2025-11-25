@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { CalendarFilters } from '@/components/calendar/CalendarFilters';
-import { BusinessHoursInfo } from '@/components/calendar/BusinessHoursInfo';
 import { CalendarDayDetailDialog } from '@/components/calendar/CalendarDayDetailDialog';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useBusinessHours } from '@/hooks/useBusinessHours';
@@ -76,33 +75,26 @@ export default function Calendar() {
         setView={setView}
       />
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3">
-          <CalendarFilters
-            technicianFilter={technicianFilter}
-            setTechnicianFilter={setTechnicianFilter}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-          />
-          
-          <CalendarView
-            events={filteredEvents}
-            currentDate={currentDate}
-            view={view}
-            loading={isLoading}
-            shiftChats={shiftChats}
-            businessHours={businessHours}
-            isBusinessDay={isBusinessDay}
-            onDateClick={handleDateClick}
-          />
-        </div>
+      <div className="space-y-4">
+        <CalendarFilters
+          technicianFilter={technicianFilter}
+          setTechnicianFilter={setTechnicianFilter}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          businessHours={businessHours}
+          currentDate={currentDate}
+        />
         
-        <div className="lg:col-span-1">
-          <BusinessHoursInfo 
-            businessHours={businessHours}
-            currentDate={currentDate}
-          />
-        </div>
+        <CalendarView
+          events={filteredEvents}
+          currentDate={currentDate}
+          view={view}
+          loading={isLoading}
+          shiftChats={shiftChats}
+          businessHours={businessHours}
+          isBusinessDay={isBusinessDay}
+          onDateClick={handleDateClick}
+        />
       </div>
 
       <CalendarDayDetailDialog
