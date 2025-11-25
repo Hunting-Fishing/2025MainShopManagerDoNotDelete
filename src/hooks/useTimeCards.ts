@@ -34,7 +34,7 @@ export function useTimeCards(employeeId?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      setTimeCards(data || []);
+      setTimeCards(data as any || []);
     } catch (error: any) {
       console.error('Error fetching time cards:', error);
       toast({

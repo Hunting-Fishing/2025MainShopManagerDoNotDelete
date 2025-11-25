@@ -27,7 +27,7 @@ export function useScheduleCoverage() {
         .order('hour_block');
 
       if (error) throw error;
-      setCoverage(data || []);
+      setCoverage(data as any || []);
     } catch (error: any) {
       console.error('Error fetching schedule coverage:', error);
       toast({

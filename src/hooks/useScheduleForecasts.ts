@@ -34,7 +34,7 @@ export function useScheduleForecasts(forecastType?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      setForecasts(data || []);
+      setForecasts(data as any || []);
     } catch (error: any) {
       console.error('Error fetching forecasts:', error);
       toast({

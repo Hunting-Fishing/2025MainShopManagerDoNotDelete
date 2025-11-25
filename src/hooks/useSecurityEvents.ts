@@ -22,7 +22,7 @@ export function useSecurityEvents() {
         .limit(50);
 
       if (error) throw error;
-      setEvents(data || []);
+      setEvents(data as any || []);
     } catch (error: any) {
       console.error('Error fetching security events:', error);
       toast({

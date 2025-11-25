@@ -48,7 +48,7 @@ export function useAssetAssignments() {
       // shop_id and assigned_by are now auto-populated by database triggers
       const { data, error } = await supabase
         .from('asset_assignments')
-        .insert([input])
+        .insert([input as any])
         .select(`
           *,
           profiles:employee_id(first_name, last_name, email),

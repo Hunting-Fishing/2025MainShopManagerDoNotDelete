@@ -52,7 +52,7 @@ export function useScheduling() {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    setTimeOffRequests(data || []);
+    setTimeOffRequests(data as any || []);
   };
 
   const fetchSchedules = async () => {
@@ -66,7 +66,7 @@ export function useScheduling() {
       .order('day_of_week');
 
     if (error) throw error;
-    setSchedules(data || []);
+    setSchedules(data as any || []);
   };
 
   const fetchPTOBalances = async () => {
@@ -93,13 +93,13 @@ export function useScheduling() {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    setAccommodations(data || []);
+    setAccommodations(data as any || []);
   };
 
   const createTimeOffRequest = async (request: Partial<TimeOffRequest>) => {
     const { data, error } = await supabase
       .from('time_off_requests')
-      .insert([{ ...request, shop_id: shopId }])
+      .insert([{ ...request, shop_id: shopId } as any])
       .select()
       .single();
 
@@ -121,7 +121,7 @@ export function useScheduling() {
   const createSchedule = async (schedule: Partial<WorkScheduleAssignment>) => {
     const { data, error } = await supabase
       .from('work_schedule_assignments')
-      .insert([{ ...schedule, shop_id: shopId }])
+      .insert([{ ...schedule, shop_id: shopId } as any])
       .select()
       .single();
 
