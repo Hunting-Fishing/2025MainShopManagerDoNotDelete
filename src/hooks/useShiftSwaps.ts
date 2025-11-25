@@ -30,7 +30,7 @@ export function useShiftSwaps() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSwapRequests(data || []);
+      setSwapRequests(data as any || []);
     } catch (error: any) {
       console.error('Error fetching swap requests:', error);
       toast({
@@ -47,7 +47,7 @@ export function useShiftSwaps() {
     try {
       const { data: result, error } = await supabase
         .from('shift_swap_requests')
-        .insert([{ ...data, shop_id: shopId }])
+        .insert([{ ...data, shop_id: shopId } as any])
         .select()
         .single();
 

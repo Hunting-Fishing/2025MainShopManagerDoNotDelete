@@ -44,7 +44,7 @@ export function useShiftTemplates() {
     try {
       const { data, error } = await supabase
         .from('shift_templates')
-        .insert([{ ...template, shop_id: shopId }])
+        .insert([{ ...template, shop_id: shopId } as any])
         .select()
         .single();
 

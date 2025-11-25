@@ -47,7 +47,7 @@ export function usePayPeriods() {
     try {
       const { data, error } = await supabase
         .from('pay_periods')
-        .insert([{ ...payPeriod, shop_id: shopId }])
+        .insert([{ ...payPeriod, shop_id: shopId } as any])
         .select()
         .single();
 

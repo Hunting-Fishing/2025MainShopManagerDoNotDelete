@@ -151,7 +151,7 @@ export function useStaffManagement() {
 
       const { data, error } = await supabase
         .from('profiles')
-        .insert([{ ...staffData, shop_id: shopId }])
+        .insert([{ ...staffData, shop_id: shopId } as any])
         .select()
         .single();
 
