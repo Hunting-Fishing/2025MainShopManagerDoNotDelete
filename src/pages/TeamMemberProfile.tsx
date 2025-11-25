@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Briefcase, Building2, Calendar, FileText, Shield, Edit } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Briefcase, Building2, Calendar, FileText, Shield, Edit, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +14,7 @@ import { WorkOrdersTab } from '@/components/team/profile/tabs/WorkOrdersTab';
 import { ActivityTab } from '@/components/team/profile/tabs/ActivityTab';
 import { PermissionsTab } from '@/components/team/profile/tabs/PermissionsTab';
 import { EditProfileTab } from '@/components/team/profile/tabs/EditProfileTab';
+import { CertificationsTab } from '@/components/team/profile/tabs/CertificationsTab';
 
 export default function TeamMemberProfile() {
   const { id } = useParams();
@@ -141,10 +142,11 @@ export default function TeamMemberProfile() {
       
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="certifications">Certifications</TabsTrigger>
           <TabsTrigger value="permissions">Permissions</TabsTrigger>
           <TabsTrigger value="edit">Edit Profile</TabsTrigger>
         </TabsList>
@@ -159,6 +161,10 @@ export default function TeamMemberProfile() {
         
         <TabsContent value="activity">
           <ActivityTab memberId={member.id} />
+        </TabsContent>
+        
+        <TabsContent value="certifications">
+          <CertificationsTab memberId={member.id} memberName={member.name} />
         </TabsContent>
         
         <TabsContent value="permissions">
