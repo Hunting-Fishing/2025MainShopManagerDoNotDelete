@@ -107,10 +107,15 @@ export default function WorkOrders() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-lg mb-2">
+                      <CardTitle className="text-lg mb-1">
                         {workOrder.work_order_number || workOrder.id}
                       </CardTitle>
-                      <p className="text-sm font-medium text-foreground">
+                      {(workOrder.equipment_name || workOrder.customer_name) && (
+                        <p className="text-sm font-semibold text-primary mb-2">
+                          {workOrder.equipment_name || workOrder.customer_name}
+                        </p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
                         {workOrder.description?.substring(0, 50) || 'No description'}
                       </p>
                     </div>
