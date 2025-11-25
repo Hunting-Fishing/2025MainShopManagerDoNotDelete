@@ -1,9 +1,8 @@
-
-import { Filter, RefreshCw } from "lucide-react";
+import { Filter, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { getUniqueTechnicians } from "@/services/workOrder";
-import { statusMap } from "@/types/workOrder"; // Updated import path to consolidated types
+import { statusMap } from "@/types/workOrder";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,12 +18,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { BusinessHoursInfo } from "./BusinessHoursInfo";
+
+interface BusinessHour {
+  day_of_week: number;
+  open_time: string;
+  close_time: string;
+  is_closed: boolean;
+}
 
 interface CalendarFiltersProps {
   technicianFilter: string;
   setTechnicianFilter: (technician: string) => void;
   statusFilter: string[];
   setStatusFilter: (status: string[]) => void;
+  businessHours: BusinessHour[];
+  currentDate: Date;
 }
 
 export function CalendarFilters({
@@ -32,6 +46,8 @@ export function CalendarFilters({
   setTechnicianFilter,
   statusFilter,
   setStatusFilter,
+  businessHours,
+  currentDate,
 }: CalendarFiltersProps) {
   // State to hold technicians once fetched
   const [technicians, setTechnicians] = useState<string[]>([]);
@@ -114,6 +130,21 @@ export function CalendarFilters({
         <RefreshCw className="h-4 w-4" />
         Reset Filters
       </Button>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Business Hours
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 p-0" align="end">
+          <BusinessHoursInfo 
+            businessHours={businessHours} 
+            currentDate={currentDate} 
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
