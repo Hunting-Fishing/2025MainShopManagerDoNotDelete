@@ -1,5 +1,6 @@
-import { Filter, RefreshCw, Clock } from "lucide-react";
+import { Filter, RefreshCw, Clock, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { getMaintenanceTechnicians, getUniqueEquipment } from "@/services/calendar/calendarFilterService";
 import { statusMap } from "@/types/workOrder";
@@ -39,6 +40,8 @@ interface CalendarFiltersProps {
   setStatusFilter: (status: string[]) => void;
   equipmentFilter: string;
   setEquipmentFilter: (equipment: string) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
   businessHours: BusinessHour[];
   currentDate: Date;
 }
@@ -50,6 +53,8 @@ export function CalendarFilters({
   setStatusFilter,
   equipmentFilter,
   setEquipmentFilter,
+  searchQuery,
+  setSearchQuery,
   businessHours,
   currentDate,
 }: CalendarFiltersProps) {
@@ -83,10 +88,31 @@ export function CalendarFilters({
     setTechnicianFilter("all");
     setEquipmentFilter("all");
     setStatusFilter([]);
+    setSearchQuery("");
   };
 
   return (
     <div className="flex flex-wrap items-center gap-3">
+      {/* Search Input */}
+      <div className="relative flex-1 min-w-[240px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Search events, customers, locations..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9 pr-9"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
       <Select
         value={technicianFilter}
         onValueChange={(value) => setTechnicianFilter(value)}
