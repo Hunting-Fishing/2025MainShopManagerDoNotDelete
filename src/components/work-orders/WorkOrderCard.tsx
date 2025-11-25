@@ -29,8 +29,7 @@ export function WorkOrderCard({ wo }: WorkOrderCardProps) {
   const number = wo.work_order_number || wo.id;
   
   // Priority: equipment name > vehicle > customer
-  const equipmentName = (wo as any).equipment_name;
-  const assetIdentifier = equipmentName || vehicle || customer;
+  const assetIdentifier = wo.equipment_name || vehicle || customer || 'No asset assigned';
 
   return (
     <Card className="group relative h-full border border-border bg-card hover:shadow-md hover:shadow-primary/10 transition-all duration-200 rounded-xl overflow-hidden" role="article" aria-labelledby={`wo-title-${wo.id}`}>
@@ -43,7 +42,7 @@ export function WorkOrderCard({ wo }: WorkOrderCardProps) {
               <Hash className="h-4 w-4" />
               <span className="font-medium">{number}</span>
             </div>
-            <div className="text-xs text-muted-foreground pl-6">
+            <div className="text-sm font-medium text-foreground pl-6 mt-1">
               {assetIdentifier}
             </div>
           </div>
