@@ -1,7 +1,7 @@
 import { Filter, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { getUniqueTechnicians } from "@/services/workOrder";
+import { getMaintenanceTechnicians, getUniqueEquipment } from "@/services/calendar/calendarFilterService";
 import { statusMap } from "@/types/workOrder";
 import {
   DropdownMenu,
@@ -37,6 +37,8 @@ interface CalendarFiltersProps {
   setTechnicianFilter: (technician: string) => void;
   statusFilter: string[];
   setStatusFilter: (status: string[]) => void;
+  equipmentFilter: string;
+  setEquipmentFilter: (equipment: string) => void;
   businessHours: BusinessHour[];
   currentDate: Date;
 }
@@ -46,32 +48,40 @@ export function CalendarFilters({
   setTechnicianFilter,
   statusFilter,
   setStatusFilter,
+  equipmentFilter,
+  setEquipmentFilter,
   businessHours,
   currentDate,
 }: CalendarFiltersProps) {
-  // State to hold technicians once fetched
-  const [technicians, setTechnicians] = useState<string[]>([]);
+  // State to hold technicians and equipment once fetched
+  const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
+  const [equipment, setEquipment] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch technicians on component mount
+  // Fetch technicians and equipment on component mount
   useEffect(() => {
-    const loadTechnicians = async () => {
+    const loadFilters = async () => {
       try {
-        const techData = await getUniqueTechnicians();
+        const [techData, equipData] = await Promise.all([
+          getMaintenanceTechnicians(),
+          getUniqueEquipment()
+        ]);
         setTechnicians(techData);
+        setEquipment(equipData);
       } catch (error) {
-        console.error("Error loading technicians:", error);
+        console.error("Error loading filters:", error);
       } finally {
         setIsLoading(false);
       }
     };
     
-    loadTechnicians();
+    loadFilters();
   }, []);
 
   // Reset all filters
   const resetFilters = () => {
     setTechnicianFilter("all");
+    setEquipmentFilter("all");
     setStatusFilter([]);
   };
 
@@ -81,14 +91,31 @@ export function CalendarFilters({
         value={technicianFilter}
         onValueChange={(value) => setTechnicianFilter(value)}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-[200px]">
           <SelectValue placeholder="All Technicians" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-background border-border z-50">
           <SelectItem value="all">All Technicians</SelectItem>
-          {technicians && technicians.map((tech) => (
-            <SelectItem key={tech} value={tech}>
-              {tech}
+          {technicians.map((tech) => (
+            <SelectItem key={tech.id} value={tech.id}>
+              {tech.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={equipmentFilter}
+        onValueChange={(value) => setEquipmentFilter(value)}
+      >
+        <SelectTrigger className="w-[200px]">
+          <SelectValue placeholder="All Equipment" />
+        </SelectTrigger>
+        <SelectContent className="bg-background border-border z-50">
+          <SelectItem value="all">All Equipment</SelectItem>
+          {equipment.map((eq) => (
+            <SelectItem key={eq} value={eq}>
+              {eq}
             </SelectItem>
           ))}
         </SelectContent>
@@ -101,7 +128,7 @@ export function CalendarFilters({
             Status Filter
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="bg-background border-border z-50">
           <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {Object.entries(statusMap).map(([key, value]) => (
