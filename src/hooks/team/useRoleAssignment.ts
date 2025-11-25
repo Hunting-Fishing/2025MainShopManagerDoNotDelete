@@ -20,7 +20,7 @@ export const useRoleAssignment = ({ currentUserName, currentUserId }: RoleAssign
       const { data: roleData, error: roleError } = await supabase
         .from('roles')
         .select('id')
-        .eq('name', roleName.toLowerCase())
+        .eq('name', roleName.toLowerCase() as any) // Cast to match app_role enum
         .single();
       
       if (roleError || !roleData) {

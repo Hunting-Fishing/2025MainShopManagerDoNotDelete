@@ -42,7 +42,10 @@ export function useAuditTrail(filters?: {
       const { data, error } = await query;
 
       if (error) throw error;
-      setAuditLogs(data || []);
+      setAuditLogs(data?.map(log => ({
+        ...log,
+        ip_address: String(log.ip_address || '')
+      })) as any || []); // Cast ip_address to string
     } catch (error: any) {
       console.error('Error fetching audit logs:', error);
       toast({

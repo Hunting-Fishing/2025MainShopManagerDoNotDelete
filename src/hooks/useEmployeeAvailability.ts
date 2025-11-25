@@ -49,7 +49,14 @@ export function useEmployeeAvailability(employeeId?: string) {
     try {
       const { data: result, error } = await supabase
         .from('employee_availability')
-        .insert([{ ...data, shop_id: shopId }])
+        .insert([{ 
+          ...data,
+          employee_id: data.employee_id || '',
+          day_of_week: data.day_of_week ?? 0,
+          available_start: data.available_start || '09:00',
+          available_end: data.available_end || '17:00',
+          shop_id: shopId 
+        }])
         .select()
         .single();
 

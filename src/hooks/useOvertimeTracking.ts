@@ -34,7 +34,7 @@ export function useOvertimeTracking(employeeId?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      setOvertimeData(data || []);
+      setOvertimeData(data as any || []); // Cast to handle status enum mismatch
     } catch (error: any) {
       console.error('Error fetching overtime data:', error);
       toast({

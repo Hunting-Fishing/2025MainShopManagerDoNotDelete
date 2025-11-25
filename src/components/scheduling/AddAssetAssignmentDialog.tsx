@@ -94,7 +94,7 @@ export function AddAssetAssignmentDialog({ open, onOpenChange }: AddAssetAssignm
 
     if (tableName) {
       const { data } = await supabase
-        .from(tableName)
+        .from(tableName as any) // Cast to allow dynamic table selection
         .select(selectFields)
         .order(orderField);
       

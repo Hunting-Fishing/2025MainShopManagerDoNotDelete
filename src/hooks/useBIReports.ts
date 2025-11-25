@@ -45,7 +45,7 @@ export function useBIReports() {
         .limit(20);
 
       if (error) throw error;
-      setExecutions(data || []);
+      setExecutions(data as any || []); // Cast to handle status enum mismatch
     } catch (error: any) {
       console.error('Error fetching report executions:', error);
     }
@@ -58,7 +58,12 @@ export function useBIReports() {
 
       const { data, error } = await supabase
         .from('bi_reports')
-        .insert([{ ...report, created_by: userData.user.id }])
+        .insert([{ 
+          ...report,
+          name: report.name || 'Untitled Report', // Ensure name is provided
+          query_config: report.query_config || {},
+          created_by: userData.user.id 
+        }])
         .select()
         .single();
 

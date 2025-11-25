@@ -49,12 +49,12 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     supabase.from('work_orders').select('id', { count: 'exact', head: true }).eq('status', 'completed').gte('updated_at', today),
     supabase.from('work_orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('inventory_items').select('id', { count: 'exact', head: true }).lt('quantity', 10),
-    supabase.from('invoices').select('total_amount').gte('created_at', thisMonth.toISOString()),
-    supabase.from('invoices').select('total_amount').gte('created_at', lastMonth.toISOString()).lt('created_at', lastMonthEnd.toISOString())
+    supabase.from('invoices').select('total').gte('created_at', thisMonth.toISOString()),
+    supabase.from('invoices').select('total').gte('created_at', lastMonth.toISOString()).lt('created_at', lastMonthEnd.toISOString())
   ]);
 
-  const monthlyRevenue = monthlyRevenueResult.data?.reduce((sum, invoice) => sum + (invoice.total_amount || 0), 0) || 0;
-  const previousMonthRevenue = previousMonthRevenueResult.data?.reduce((sum, invoice) => sum + (invoice.total_amount || 0), 0) || 0;
+  const monthlyRevenue = monthlyRevenueResult.data?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0;
+  const previousMonthRevenue = previousMonthRevenueResult.data?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0;
 
   return {
     totalCustomers: customersResult.count || 0,
