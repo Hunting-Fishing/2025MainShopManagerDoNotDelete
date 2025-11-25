@@ -339,12 +339,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                   {reactions.map(reaction => (
                     <Button 
                       key={reaction.type} 
-                      variant={reaction.userReacted ? "default" : "outline"}
+                      variant={reaction.userReacted ? "secondary" : "outline"}
                       size="xs"
-                      className={cn(
-                        "text-xs h-6 px-2 py-0",
-                        reaction.userReacted ? "bg-blue-100 text-blue-800" : "bg-white"
-                      )}
+                      className="text-xs h-6 px-2 py-0"
                       onClick={() => handleReaction(reaction.type)}
                     >
                       {reaction.type} {reaction.count}
@@ -358,27 +355,27 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 {/* Message actions */}
                 <div className="flex gap-1">
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="xs"
-                    className="text-xs h-6 px-2 py-0 bg-white"
+                    className="text-xs h-6 px-2 py-0 hover:bg-accent"
                     onClick={() => handleReaction('👍')}
                   >
                     <ThumbsUp className="h-3 w-3" />
                   </Button>
                   
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="xs"
-                    className="text-xs h-6 px-2 py-0 bg-white"
+                    className="text-xs h-6 px-2 py-0 hover:bg-accent"
                     onClick={() => handleReaction('❤️')}
                   >
                     <Heart className="h-3 w-3" />
                   </Button>
                   
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="xs"
-                    className="text-xs h-6 px-2 py-0 bg-white"
+                    className="text-xs h-6 px-2 py-0 hover:bg-accent"
                     onClick={() => handleReaction('😊')}
                   >
                     <Smile className="h-3 w-3" />
@@ -389,9 +386,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 {!isCurrentUser && (
                   <>
                     <Button 
-                      variant="outline"
+                      variant="ghost"
                       size="xs"
-                      className="text-xs h-6 px-2 py-0 bg-white"
+                      className="text-xs h-6 px-2 py-0 hover:bg-accent"
                       onClick={handleSaveToWorkOrder}
                       disabled={isSavedToWorkOrder}
                     >
@@ -400,9 +397,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                     </Button>
                     
                     <Button 
-                      variant="outline"
+                      variant="ghost"
                       size="xs"
-                      className="text-xs h-6 px-2 py-0 bg-white"
+                      className="text-xs h-6 px-2 py-0 hover:bg-accent"
                       onClick={handleSaveToVehicleHistory}
                       disabled={isSavedToVehicle}
                     >
@@ -411,9 +408,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                     </Button>
                     
                     <Button 
-                      variant="outline"
+                      variant="ghost"
                       size="xs"
-                      className="text-xs h-6 px-2 py-0 bg-white"
+                      className="text-xs h-6 px-2 py-0 hover:bg-accent"
                       onClick={handleFlagMessage}
                     >
                       <AlertCircle className="h-3 w-3 mr-1" />
@@ -426,9 +423,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 {isCurrentUser && (
                   <>
                     <Button 
-                      variant="outline"
+                      variant="ghost"
                       size="xs"
-                      className="text-xs h-6 px-2 py-0 bg-white"
+                      className="text-xs h-6 px-2 py-0 hover:bg-accent"
                       onClick={handleEdit}
                     >
                       <Edit2 className="h-3 w-3 mr-1" />
@@ -436,9 +433,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                     </Button>
                     
                     <Button 
-                      variant="outline"
+                      variant="ghost"
                       size="xs"
-                      className="text-xs h-6 px-2 py-0 bg-white text-red-500 hover:text-red-700"
+                      className="text-xs h-6 px-2 py-0 hover:bg-destructive/10 text-destructive"
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -447,9 +444,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 
                 {/* Reply button for all messages */}
                 <Button 
-                  variant="outline"
+                  variant="ghost"
                   size="xs"
-                  className="text-xs h-6 px-2 py-0 bg-white"
+                  className="text-xs h-6 px-2 py-0 hover:bg-accent"
                   onClick={() => onReply && onReply(message.id)}
                 >
                   <MessageSquare className="h-3 w-3 mr-1" />
