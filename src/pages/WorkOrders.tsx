@@ -16,6 +16,9 @@ export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [equipmentFilter, setEquipmentFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [customDate, setCustomDate] = useState<string>('');
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -37,6 +40,16 @@ export default function WorkOrders() {
     }
   };
 
+  // Get unique equipment names for filter dropdown
+  const uniqueEquipment = useMemo(() => {
+    const equipment = [...new Set(
+      workOrders
+        .map(wo => wo.equipment_name)
+        .filter(Boolean)
+    )].sort();
+    return equipment;
+  }, [workOrders]);
+
   const filteredWorkOrders = useMemo(() => {
     return workOrders.filter((wo) => {
       // Search filter
@@ -57,16 +70,54 @@ export default function WorkOrders() {
       const matchesPriority = priorityFilter === 'all' || 
         wo.priority?.toLowerCase() === priorityFilter.toLowerCase();
 
-      return matchesSearch && matchesStatus && matchesPriority;
-    });
-  }, [workOrders, searchQuery, statusFilter, priorityFilter]);
+      // Equipment filter
+      const matchesEquipment = equipmentFilter === 'all' || 
+        wo.equipment_name === equipmentFilter;
 
-  const hasActiveFilters = statusFilter !== 'all' || priorityFilter !== 'all' || searchQuery !== '';
+      // Date filter
+      let matchesDate = true;
+      if (dateFilter !== 'all' && wo.created_at) {
+        const woDate = new Date(wo.created_at);
+        const now = new Date();
+        
+        switch (dateFilter) {
+          case 'today':
+            matchesDate = woDate.toDateString() === now.toDateString();
+            break;
+          case 'this_week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            matchesDate = woDate >= weekAgo;
+            break;
+          case 'this_month':
+            matchesDate = woDate.getMonth() === now.getMonth() && 
+                         woDate.getFullYear() === now.getFullYear();
+            break;
+          case 'this_year':
+            matchesDate = woDate.getFullYear() === now.getFullYear();
+            break;
+          case 'custom':
+            if (customDate) {
+              const selectedDate = new Date(customDate);
+              matchesDate = woDate.toDateString() === selectedDate.toDateString();
+            }
+            break;
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesPriority && matchesEquipment && matchesDate;
+    });
+  }, [workOrders, searchQuery, statusFilter, priorityFilter, equipmentFilter, dateFilter, customDate]);
+
+  const hasActiveFilters = statusFilter !== 'all' || priorityFilter !== 'all' || 
+                          equipmentFilter !== 'all' || dateFilter !== 'all' || searchQuery !== '';
 
   const clearFilters = () => {
     setSearchQuery('');
     setStatusFilter('all');
     setPriorityFilter('all');
+    setEquipmentFilter('all');
+    setDateFilter('all');
+    setCustomDate('');
   };
 
   if (loading) {
@@ -120,7 +171,7 @@ export default function WorkOrders() {
       <div className="container mx-auto px-3 sm:px-6 py-6">
         {/* Search and Filters */}
         <div className="mb-6 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col gap-3">
             {/* Search Bar */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -140,35 +191,80 @@ export default function WorkOrders() {
               )}
             </div>
 
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Filter Row */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[160px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Priority Filter */}
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
+              {/* Priority Filter */}
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-full sm:w-[160px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Equipment Filter */}
+              <Select value={equipmentFilter} onValueChange={setEquipmentFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <Wrench className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Equipment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Equipment</SelectItem>
+                  {uniqueEquipment.map((equipment) => (
+                    <SelectItem key={equipment} value={equipment}>
+                      {equipment}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Date Filter */}
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="w-full sm:w-[160px]">
+                  <Clock className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Date" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="this_week">This Week</SelectItem>
+                  <SelectItem value="this_month">This Month</SelectItem>
+                  <SelectItem value="this_year">This Year</SelectItem>
+                  <SelectItem value="custom">Custom Date</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Custom Date Input */}
+              {dateFilter === 'custom' && (
+                <Input
+                  type="date"
+                  value={customDate}
+                  onChange={(e) => setCustomDate(e.target.value)}
+                  className="w-full sm:w-[180px]"
+                />
+              )}
+            </div>
           </div>
 
           {/* Active Filters Summary */}
