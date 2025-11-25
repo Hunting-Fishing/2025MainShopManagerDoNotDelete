@@ -29,6 +29,7 @@ interface ChatPageLayoutProps {
   onViewWorkOrderDetails?: () => void;
   navigateToRoom: (roomId: string) => void;
   onNewChat: () => void;
+  newChatDialog?: React.ReactNode;
 }
 
 export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
@@ -55,7 +56,8 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
   onCloseThread,
   onViewWorkOrderDetails,
   navigateToRoom,
-  onNewChat
+  onNewChat,
+  newChatDialog
 }) => {
   return (
     <div className="space-y-4">
@@ -73,6 +75,7 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
               navigateToRoom(room.id);
             }}
             onNewChat={onNewChat}
+            newChatDialog={newChatDialog}
           />
         </div>
         
