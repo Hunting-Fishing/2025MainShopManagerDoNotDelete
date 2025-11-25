@@ -166,9 +166,15 @@ export function CalendarDay({
         })}
 
         {hiddenEventsCount > 0 && (
-          <div className="text-xs text-slate-500 px-2 relative z-20">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDayClick();
+            }}
+            className="text-xs font-medium text-primary hover:text-primary/80 px-2 py-1 relative z-20 hover:underline transition-colors"
+          >
             + {hiddenEventsCount} more
-          </div>
+          </button>
         )}
       </div>
       
