@@ -14,15 +14,22 @@ interface TeamMemberDetailsProps {
 export function TeamMemberDetails({ member, activeTab }: TeamMemberDetailsProps) {
   console.log("TeamMemberDetails received member:", member);
 
+  // Split name into first and last name for form
+  const nameParts = member.name.split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+
   // Convert member data to form values format for editing
   const initialFormData = {
     id: member.id,
-    name: member.name,
+    firstName,
+    lastName,
     email: member.email,
     phone: member.phone || '',
     jobTitle: member.jobTitle || '',
     department: member.department || '',
     role: member.role,
+    status: member.status === 'Active',
     notes: member.notes || ''
   };
 
@@ -30,9 +37,9 @@ export function TeamMemberDetails({ member, activeTab }: TeamMemberDetailsProps)
     <div className="pt-6">
       {activeTab === "overview" && <OverviewTab member={member} />}
       
-      {activeTab === "permissions" && <PermissionsTab member={member} />}
+      {activeTab === "permissions" && <PermissionsTab memberRole={member.role} />}
       
-      {activeTab === "activity" && <ActivityTab member={member} />}
+      {activeTab === "activity" && <ActivityTab memberId={member.id} />}
       
       {activeTab === "edit" && <EditProfileTab initialData={initialFormData} />}
       

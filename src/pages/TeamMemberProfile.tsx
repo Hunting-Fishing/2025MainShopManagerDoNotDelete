@@ -1,6 +1,6 @@
-import React from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Briefcase, Building2, Calendar, FileText, Shield } from 'lucide-react';
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Mail, Phone, Briefcase, Building2, Calendar, FileText, Shield, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,11 +9,17 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { getInitials } from '@/utils/teamUtils';
+import { OverviewTab } from '@/components/team/profile/tabs/OverviewTab';
+import { WorkOrdersTab } from '@/components/team/profile/tabs/WorkOrdersTab';
+import { ActivityTab } from '@/components/team/profile/tabs/ActivityTab';
+import { PermissionsTab } from '@/components/team/profile/tabs/PermissionsTab';
+import { EditProfileTab } from '@/components/team/profile/tabs/EditProfileTab';
 
 export default function TeamMemberProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { teamMembers, isLoading } = useTeamMembers();
+  const [activeTab, setActiveTab] = useState("overview");
   
   const member = teamMembers.find(m => m.id === id);
   
@@ -120,10 +126,12 @@ export default function TeamMemberProfile() {
               </div>
               
               <div className="flex gap-2">
-                <Button asChild variant="outline">
-                  <Link to={`/team/${member.id}/edit`}>
-                    Edit Profile
-                  </Link>
+                <Button 
+                  variant="outline"
+                  onClick={() => setActiveTab("edit")}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
                 </Button>
               </div>
             </div>
@@ -132,146 +140,46 @@ export default function TeamMemberProfile() {
       </div>
       
       {/* Tabs */}
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="permissions">Permissions</TabsTrigger>
+          <TabsTrigger value="edit">Edit Profile</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Work Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Briefcase className="h-5 w-5" />
-                  Work Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Role</p>
-                  <p className="font-medium">{member.role}</p>
-                </div>
-                <Separator />
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Department</p>
-                  <p className="font-medium flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    {member.department}
-                  </p>
-                </div>
-                {member.joinDate && (
-                  <>
-                    <Separator />
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Join Date</p>
-                      <p className="font-medium flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {new Date(member.joinDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* Performance Stats */}
-            {member.role === "Technician" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Work Performance</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="text-center p-4 bg-primary/5 rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-2">Assigned</p>
-                      <p className="text-3xl font-bold text-primary">{member.workOrders.assigned}</p>
-                    </div>
-                    <div className="text-center p-4 bg-green-500/5 rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-2">Completed</p>
-                      <p className="text-3xl font-bold text-green-600">{member.workOrders.completed}</p>
-                    </div>
-                  </div>
-                  {member.workOrders.assigned > 0 && (
-                    <div className="mt-4">
-                      <p className="text-sm text-muted-foreground mb-2">Completion Rate</p>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div 
-                          className="bg-green-600 h-2 rounded-full transition-all"
-                          style={{ 
-                            width: `${Math.round((member.workOrders.completed / member.workOrders.assigned) * 100)}%` 
-                          }}
-                        />
-                      </div>
-                      <p className="text-sm text-right mt-1 text-muted-foreground">
-                        {Math.round((member.workOrders.completed / member.workOrders.assigned) * 100)}%
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-            
-            {/* Notes */}
-            {member.notes && (
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Notes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{member.notes}</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+        <TabsContent value="overview">
+          <OverviewTab member={member} />
         </TabsContent>
         
         <TabsContent value="work-orders">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">Work order history will be displayed here</p>
-            </CardContent>
-          </Card>
+          <WorkOrdersTab memberId={member.id} />
         </TabsContent>
         
         <TabsContent value="activity">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">Activity timeline will be displayed here</p>
-            </CardContent>
-          </Card>
+          <ActivityTab memberId={member.id} />
         </TabsContent>
         
         <TabsContent value="permissions">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Role Permissions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Current Role</p>
-                  <Badge variant="outline" className="text-base px-3 py-1">
-                    {member.role}
-                  </Badge>
-                </div>
-                <Separator />
-                <p className="text-sm text-muted-foreground">
-                  Permissions are managed at the role level. To modify this user's permissions, 
-                  either change their role or modify the role's permissions in Settings.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <PermissionsTab memberRole={member.role} />
+        </TabsContent>
+
+        <TabsContent value="edit">
+          <EditProfileTab 
+            initialData={{
+              id: member.id,
+              firstName: member.name.split(' ')[0] || '',
+              lastName: member.name.split(' ').slice(1).join(' ') || '',
+              email: member.email,
+              phone: member.phone || '',
+              jobTitle: member.jobTitle || '',
+              department: member.department || '',
+              role: member.role,
+              status: member.status === 'Active',
+              notes: member.notes || ''
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>
