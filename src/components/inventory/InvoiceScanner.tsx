@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { Upload, Loader2, Check, X } from 'lucide-react';
+import { Upload, Loader2, ArrowRight } from 'lucide-react';
 import { useShopId } from '@/hooks/useShopId';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 interface ExtractedProduct {
   part_number: string | null;
@@ -16,17 +17,13 @@ interface ExtractedProduct {
   category: string | null;
 }
 
-interface ProductWithStatus extends ExtractedProduct {
-  added: boolean;
-}
-
 export function InvoiceScanner() {
   const { toast } = useToast();
   const { shopId } = useShopId();
+  const navigate = useNavigate();
   const [isScanning, setIsScanning] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [extractedProducts, setExtractedProducts] = useState<ProductWithStatus[]>([]);
-  const [isAddingProducts, setIsAddingProducts] = useState(false);
+  const [extractedProducts, setExtractedProducts] = useState<ExtractedProduct[]>([]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -77,11 +74,7 @@ export function InvoiceScanner() {
       }
 
       if (data?.products && Array.isArray(data.products)) {
-        const productsWithStatus = data.products.map((p: ExtractedProduct) => ({
-          ...p,
-          added: false
-        }));
-        setExtractedProducts(productsWithStatus);
+        setExtractedProducts(data.products);
         toast({
           title: 'Success',
           description: `Extracted ${data.products.length} products from invoice`
@@ -99,100 +92,20 @@ export function InvoiceScanner() {
     }
   };
 
-  const addToInventory = async (product: ProductWithStatus, index: number) => {
-    if (!shopId) {
-      toast({
-        title: 'Error',
-        description: 'Shop not found',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    try {
-      const { error } = await supabase.from('inventory_items').insert({
-        shop_id: shopId,
-        part_number: product.part_number || `AUTO-${Date.now()}`,
-        name: product.description,
-        quantity: product.quantity,
-        unit_price: product.unit_price,
-        category: product.category || 'General'
-      });
-
-      if (error) throw error;
-
-      // Mark as added
-      setExtractedProducts(prev => 
-        prev.map((p, i) => i === index ? { ...p, added: true } : p)
-      );
-
-      toast({
-        title: 'Success',
-        description: 'Product added to inventory'
-      });
-    } catch (error: any) {
-      console.error('Error adding to inventory:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add product to inventory',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const addAllToInventory = async () => {
-    if (!shopId) {
-      toast({
-        title: 'Error',
-        description: 'Shop not found',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsAddingProducts(true);
-
-    try {
-      const productsToAdd = extractedProducts
-        .filter(p => !p.added)
-        .map(p => ({
-          shop_id: shopId,
-          part_number: p.part_number || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          name: p.description,
-          quantity: p.quantity,
-          unit_price: p.unit_price,
-          category: p.category || 'General'
-        }));
-
-      if (productsToAdd.length === 0) {
-        toast({
-          title: 'Info',
-          description: 'All products have already been added'
-        });
-        return;
+  const openInForm = (product: ExtractedProduct) => {
+    navigate('/inventory/add', {
+      state: {
+        extractedData: {
+          name: product.description,
+          sku: product.part_number || `AUTO-${Date.now()}`,
+          category: product.category || 'General',
+          quantity: product.quantity,
+          unit_price: product.unit_price,
+          cost_per_unit: product.unit_price,
+          status: 'active'
+        }
       }
-
-      const { error } = await supabase.from('inventory_items').insert(productsToAdd);
-
-      if (error) throw error;
-
-      // Mark all as added
-      setExtractedProducts(prev => prev.map(p => ({ ...p, added: true })));
-
-      toast({
-        title: 'Success',
-        description: `Added ${productsToAdd.length} products to inventory`
-      });
-    } catch (error: any) {
-      console.error('Error adding products:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add products to inventory',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsAddingProducts(false);
-    }
+    });
   };
 
   return (
@@ -249,19 +162,6 @@ export function InvoiceScanner() {
               <h3 className="text-lg font-semibold">
                 Extracted Products ({extractedProducts.length})
               </h3>
-              <Button
-                onClick={addAllToInventory}
-                disabled={isAddingProducts || extractedProducts.every(p => p.added)}
-              >
-                {isAddingProducts ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  'Add All to Inventory'
-                )}
-              </Button>
             </div>
 
             <div className="space-y-2">
@@ -276,12 +176,6 @@ export function InvoiceScanner() {
                       {product.category && (
                         <Badge variant="outline">{product.category}</Badge>
                       )}
-                      {product.added && (
-                        <Badge variant="default">
-                          <Check className="h-3 w-3 mr-1" />
-                          Added
-                        </Badge>
-                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-x-4 text-sm text-muted-foreground">
                       {product.part_number && (
@@ -292,15 +186,13 @@ export function InvoiceScanner() {
                       <div>Total: ${product.total_price.toFixed(2)}</div>
                     </div>
                   </div>
-                  {!product.added && (
-                    <Button
-                      size="sm"
-                      onClick={() => addToInventory(product, index)}
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      Add
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => openInForm(product)}
+                  >
+                    Open in Form
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
                 </div>
               ))}
             </div>
