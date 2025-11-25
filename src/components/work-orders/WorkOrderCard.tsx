@@ -27,6 +27,10 @@ export function WorkOrderCard({ wo }: WorkOrderCardProps) {
     typeof wo.vehicle === 'string' ? wo.vehicle : '';
   const customer = wo.customer_name || [wo.customer_first_name, wo.customer_last_name].filter(Boolean).join(' ') || wo.customer || 'Customer';
   const number = wo.work_order_number || wo.id;
+  
+  // Priority: equipment name > vehicle > customer
+  const equipmentName = (wo as any).equipment_name;
+  const assetIdentifier = equipmentName || vehicle || customer;
 
   return (
     <Card className="group relative h-full border border-border bg-card hover:shadow-md hover:shadow-primary/10 transition-all duration-200 rounded-xl overflow-hidden" role="article" aria-labelledby={`wo-title-${wo.id}`}>
@@ -40,7 +44,7 @@ export function WorkOrderCard({ wo }: WorkOrderCardProps) {
               <span className="font-medium">{number}</span>
             </div>
             <div className="text-xs text-muted-foreground pl-6">
-              {vehicle || customer}
+              {assetIdentifier}
             </div>
           </div>
           <Badge variant={getStatusVariant(String(wo.status))} className="capitalize">
