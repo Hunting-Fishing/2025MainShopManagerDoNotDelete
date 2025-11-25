@@ -58,7 +58,7 @@ export async function getMaintenanceRequestEvents(
 
         return {
           id: `maintenance-${request.id}`,
-          title: `${request.request_number}: ${request.title}`,
+          title: `${request.request_number}: ${equipmentName} - ${request.title}`,
           description: request.description,
           start: request.requested_at!,
           end: endTime.toISOString(),
