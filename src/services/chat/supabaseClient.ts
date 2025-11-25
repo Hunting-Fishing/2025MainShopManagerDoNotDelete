@@ -42,7 +42,7 @@ export interface DatabaseChatParticipant {
   joined_at: string;
 }
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 export { supabase };
 
 // Function to upload chat files
