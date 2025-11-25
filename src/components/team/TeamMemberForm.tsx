@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { TeamMemberFormValues, teamMemberFormSchema } from './form/formValidation';
@@ -48,6 +48,20 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
 
   const jobTitle = form.watch('jobTitle');
   const role = form.watch('role');
+  const firstName = form.watch('firstName');
+  const lastName = form.watch('lastName');
+  
+  // Auto-generate email from first and last name for testing
+  useEffect(() => {
+    if (mode === 'create' && firstName && lastName) {
+      const generatedEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@wainwrightmarine.com`;
+      // Only update if email is empty or still matches the old pattern
+      const currentEmail = form.getValues('email');
+      if (!currentEmail || currentEmail.endsWith('@wainwrightmarine.com')) {
+        form.setValue('email', generatedEmail);
+      }
+    }
+  }, [firstName, lastName, mode, form]);
   
   // Auto-detect role from job title
   if (jobTitle && !role && mode === 'create') {
