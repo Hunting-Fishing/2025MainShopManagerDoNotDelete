@@ -13,20 +13,44 @@ export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom
   });
 
   try {
-    // Log current auth session for debugging RLS issues
+    // Validate and recover session before proceeding
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    console.log('[createChatRoom] Auth session before insert:', {
+    
+    console.log('[createChatRoom] Auth session validation:', {
       hasSession: !!session,
       userId: session?.user?.id,
-      sessionError
+      userEmail: session?.user?.email,
+      sessionError: sessionError?.message,
+      expiresAt: session?.expires_at
     });
 
-    // Prepare the room data - only include id if provided
+    // Critical: Verify we have a valid authenticated session
+    if (!session || sessionError) {
+      console.error('[createChatRoom] No valid session found:', {
+        sessionError: sessionError?.message,
+        hasSession: !!session
+      });
+      throw new Error('Authentication required. Please log in and try again.');
+    }
+
+    // Verify session is not expired
+    if (session.expires_at && new Date(session.expires_at * 1000) < new Date()) {
+      console.error('[createChatRoom] Session expired:', {
+        expiresAt: new Date(session.expires_at * 1000),
+        now: new Date()
+      });
+      throw new Error('Your session has expired. Please log in again.');
+    }
+
+    console.log('[createChatRoom] Session validated successfully');
+
+    // Prepare the room data with creator tracking
     const roomData: any = {
       name: params.name,
       type: params.type,
       work_order_id: params.workOrderId,
-      metadata: params.metadata as any
+      metadata: params.metadata as any,
+      created_by: session.user.id  // Track room creator for RLS
     };
     
     // Only add ID if explicitly provided
@@ -34,6 +58,12 @@ export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom
       roomData.id = params.id;
       console.log('[createChatRoom] Using provided room ID:', params.id);
     }
+
+    // Ensure creator is always in participants list
+    const creatorId = session.user.id;
+    const participants = params.participants.includes(creatorId)
+      ? params.participants
+      : [creatorId, ...params.participants];
 
     console.log('[createChatRoom] Inserting room into database');
     
@@ -54,10 +84,10 @@ export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom
     }
     
     console.log('[createChatRoom] Room created successfully:', room.id);
-    console.log('[createChatRoom] Adding participants:', params.participants);
+    console.log('[createChatRoom] Adding participants:', participants);
     
-    // Add participants to the room
-    const participantData = params.participants.map(userId => ({
+    // Add participants to the room (including creator)
+    const participantData = participants.map(userId => ({
       room_id: room.id,
       user_id: userId
     }));

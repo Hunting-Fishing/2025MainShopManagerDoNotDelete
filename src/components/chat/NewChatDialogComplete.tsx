@@ -83,19 +83,32 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
 
     setIsCreating(true);
     try {
-      const participants = [...selectedParticipants, currentUserId];
-      console.log('[NewChatDialog] Creating chat room with participants:', participants);
+      // Verify authentication before attempting to create
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to create a chat room",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Deduplicate participants and ensure current user is included
+      const uniqueParticipants = Array.from(new Set([...selectedParticipants, currentUserId]));
+      console.log('[NewChatDialog] Creating chat room with participants:', uniqueParticipants);
       
       const room = await createChatRoom({
         name: chatName,
         type: chatType,
-        participants,
+        participants: uniqueParticipants,
         metadata: {}
       });
 
       console.log('[NewChatDialog] Chat room created successfully:', room);
       toast({
-        title: "Success",
+        title: "Chat Created",
         description: `${chatName} has been created successfully`,
       });
 
@@ -116,12 +129,22 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
         timestamp: new Date().toISOString()
       });
       
-      const errorMessage = error?.message || 'Unknown error';
-      const errorCode = error?.code || 'NO_CODE';
+      // Map common errors to user-friendly messages
+      let userMessage = error?.message || 'An unexpected error occurred';
+      
+      if (error?.message?.includes('Authentication required')) {
+        userMessage = 'Please log in and try again';
+      } else if (error?.message?.includes('session has expired')) {
+        userMessage = 'Your session expired. Please refresh the page and try again';
+      } else if (error?.code === '42501') {
+        userMessage = 'You do not have permission to create chat rooms';
+      } else if (error?.message?.includes('violates row-level security')) {
+        userMessage = 'Unable to create chat room. Please check your permissions';
+      }
       
       toast({
-        title: "Error Creating Chat",
-        description: `Failed to create chat room: ${errorMessage} (${errorCode})`,
+        title: "Failed to Create Chat",
+        description: userMessage,
         variant: "destructive",
       });
     } finally {

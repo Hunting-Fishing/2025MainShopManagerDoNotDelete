@@ -2413,6 +2413,7 @@ export type Database = {
       chat_rooms: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           is_archived: boolean | null
           is_pinned: boolean | null
@@ -2426,6 +2427,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           is_archived?: boolean | null
           is_pinned?: boolean | null
@@ -2439,6 +2441,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           is_archived?: boolean | null
           is_pinned?: boolean | null
