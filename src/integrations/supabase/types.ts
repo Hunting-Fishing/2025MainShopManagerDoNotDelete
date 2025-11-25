@@ -19352,6 +19352,65 @@ export type Database = {
           },
         ]
       }
+      team_member_certificates: {
+        Row: {
+          certificate_name: string
+          certificate_number: string | null
+          certificate_type: string
+          created_at: string | null
+          document_url: string | null
+          expiry_date: string | null
+          id: string
+          issue_date: string
+          issuing_organization: string
+          notes: string | null
+          profile_id: string
+          status: string | null
+          updated_at: string | null
+          verification_url: string | null
+        }
+        Insert: {
+          certificate_name: string
+          certificate_number?: string | null
+          certificate_type: string
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date: string
+          issuing_organization: string
+          notes?: string | null
+          profile_id: string
+          status?: string | null
+          updated_at?: string | null
+          verification_url?: string | null
+        }
+        Update: {
+          certificate_name?: string
+          certificate_number?: string | null
+          certificate_type?: string
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string
+          issuing_organization?: string
+          notes?: string | null
+          profile_id?: string
+          status?: string | null
+          updated_at?: string | null
+          verification_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_certificates_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_member_certifications: {
         Row: {
           certification_name: string
@@ -19568,6 +19627,65 @@ export type Database = {
             columns: ["team_member_id"]
             isOneToOne: false
             referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_member_training: {
+        Row: {
+          certificate_url: string | null
+          completion_date: string | null
+          created_at: string | null
+          duration_hours: number | null
+          id: string
+          notes: string | null
+          profile_id: string
+          provider: string
+          score: number | null
+          start_date: string
+          status: string | null
+          training_name: string
+          training_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          certificate_url?: string | null
+          completion_date?: string | null
+          created_at?: string | null
+          duration_hours?: number | null
+          id?: string
+          notes?: string | null
+          profile_id: string
+          provider: string
+          score?: number | null
+          start_date: string
+          status?: string | null
+          training_name: string
+          training_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          certificate_url?: string | null
+          completion_date?: string | null
+          created_at?: string | null
+          duration_hours?: number | null
+          id?: string
+          notes?: string | null
+          profile_id?: string
+          provider?: string
+          score?: number | null
+          start_date?: string
+          status?: string | null
+          training_name?: string
+          training_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_training_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
