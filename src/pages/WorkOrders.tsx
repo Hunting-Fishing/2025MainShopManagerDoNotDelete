@@ -1,15 +1,21 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkOrders } from '@/hooks/useWorkOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Clock, AlertTriangle, CheckCircle, Wrench } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Clock, AlertTriangle, CheckCircle, Wrench, Search, Filter, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function WorkOrders() {
   const navigate = useNavigate();
   const { workOrders, loading, error, refetch } = useWorkOrders();
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -29,6 +35,38 @@ export default function WorkOrders() {
       case 'low': return 'text-green-600 bg-green-50 border-green-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
+  };
+
+  const filteredWorkOrders = useMemo(() => {
+    return workOrders.filter((wo) => {
+      // Search filter
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery || 
+        wo.work_order_number?.toLowerCase().includes(searchLower) ||
+        wo.equipment_name?.toLowerCase().includes(searchLower) ||
+        wo.customer_name?.toLowerCase().includes(searchLower) ||
+        wo.customer?.toLowerCase().includes(searchLower) ||
+        wo.description?.toLowerCase().includes(searchLower) ||
+        wo.technician?.toLowerCase().includes(searchLower);
+
+      // Status filter
+      const matchesStatus = statusFilter === 'all' || 
+        wo.status?.toLowerCase() === statusFilter.toLowerCase();
+
+      // Priority filter
+      const matchesPriority = priorityFilter === 'all' || 
+        wo.priority?.toLowerCase() === priorityFilter.toLowerCase();
+
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  }, [workOrders, searchQuery, statusFilter, priorityFilter]);
+
+  const hasActiveFilters = statusFilter !== 'all' || priorityFilter !== 'all' || searchQuery !== '';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setPriorityFilter('all');
   };
 
   if (loading) {
@@ -80,7 +118,94 @@ export default function WorkOrders() {
       </div>
 
       <div className="container mx-auto px-3 sm:px-6 py-6">
-        {workOrders.length === 0 ? (
+        {/* Search and Filters */}
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search Bar */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by work order, equipment, customer, or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Priority Filter */}
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Active Filters Summary */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">
+                Showing {filteredWorkOrders.length} of {workOrders.length} work orders
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-7 px-2"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear filters
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {filteredWorkOrders.length === 0 && workOrders.length > 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <AlertTriangle className="h-16 w-16 text-muted-foreground mb-4" />
+              <p className="text-xl font-semibold text-foreground mb-2">
+                No work orders match your filters
+              </p>
+              <p className="text-muted-foreground mb-4">
+                Try adjusting your search or filters
+              </p>
+              <Button onClick={clearFilters} variant="outline">
+                Clear all filters
+              </Button>
+            </CardContent>
+          </Card>
+        ) : workOrders.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Clock className="h-16 w-16 text-muted-foreground mb-4" />
@@ -98,7 +223,7 @@ export default function WorkOrders() {
           </Card>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {workOrders.map((workOrder) => (
+            {filteredWorkOrders.map((workOrder) => (
               <Card 
                 key={workOrder.id} 
                 className="hover:shadow-lg transition-shadow cursor-pointer"
