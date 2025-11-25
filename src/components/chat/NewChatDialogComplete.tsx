@@ -54,7 +54,15 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
   };
 
   const handleCreateChat = async () => {
+    console.log('[NewChatDialog] Starting chat creation:', {
+      chatName,
+      chatType,
+      participantsCount: selectedParticipants.length,
+      currentUserId
+    });
+
     if (!chatName.trim()) {
+      console.warn('[NewChatDialog] Validation failed: empty chat name');
       toast({
         title: "Error",
         description: "Please enter a chat name",
@@ -64,6 +72,7 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
     }
 
     if (selectedParticipants.length === 0) {
+      console.warn('[NewChatDialog] Validation failed: no participants selected');
       toast({
         title: "Error",
         description: "Please select at least one participant",
@@ -74,13 +83,17 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
 
     setIsCreating(true);
     try {
-      await createChatRoom({
+      const participants = [...selectedParticipants, currentUserId];
+      console.log('[NewChatDialog] Creating chat room with participants:', participants);
+      
+      const room = await createChatRoom({
         name: chatName,
         type: chatType,
-        participants: [...selectedParticipants, currentUserId],
+        participants,
         metadata: {}
       });
 
+      console.log('[NewChatDialog] Chat room created successfully:', room);
       toast({
         title: "Success",
         description: `${chatName} has been created successfully`,
@@ -90,11 +103,25 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
       setChatName('');
       setSelectedParticipants([currentUserId]);
       onChatCreated?.();
-    } catch (error) {
-      console.error('Error creating chat:', error);
+    } catch (error: any) {
+      console.error('[NewChatDialog] Error creating chat:', {
+        error,
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        chatName,
+        chatType,
+        participants: selectedParticipants,
+        timestamp: new Date().toISOString()
+      });
+      
+      const errorMessage = error?.message || 'Unknown error';
+      const errorCode = error?.code || 'NO_CODE';
+      
       toast({
-        title: "Error",
-        description: "Failed to create chat room",
+        title: "Error Creating Chat",
+        description: `Failed to create chat room: ${errorMessage} (${errorCode})`,
         variant: "destructive",
       });
     } finally {
