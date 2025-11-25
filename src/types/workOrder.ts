@@ -118,6 +118,10 @@ export interface WorkOrder {
   // Inventory
   inventoryItems?: WorkOrderInventoryItem[];
   inventory_items?: WorkOrderInventoryItem[];
+  
+  // Equipment
+  equipment_name?: string;
+  asset_number?: string;
 }
 
 // Enhanced form-related types to include all fields being used
