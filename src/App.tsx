@@ -76,6 +76,7 @@ import Timesheet from '@/pages/Timesheet';
 import FeatureRequests from '@/pages/FeatureRequests';
 import EquipmentTracking from '@/pages/EquipmentTracking';
 import EmployeeScheduling from '@/pages/EmployeeScheduling';
+import TrainingOverview from '@/pages/TrainingOverview';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 
 function App() {
@@ -314,6 +315,13 @@ function App() {
                   <Route path="/team/*" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
                       <Team />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Training Overview */}
+                  <Route path="/training-overview" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <TrainingOverview />
                     </ProtectedRoute>
                   } />
                   
