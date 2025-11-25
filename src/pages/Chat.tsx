@@ -3,8 +3,14 @@ import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, Users, Clock, Send } from 'lucide-react';
 import { ChatInterfaceConnected } from '@/components/chat/ChatInterfaceConnected';
+import { useChatStats } from '@/hooks/useChatStats';
+import { useAuthUser } from '@/hooks/useAuthUser';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Chat() {
+  const { userId } = useAuthUser();
+  const { activeChats, onlineMembers, averageResponseTime, messagesToday, loading } = useChatStats(userId || undefined);
+
   return (
     <>
       <Helmet>
@@ -26,7 +32,11 @@ export default function Chat() {
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8</div>
+              {loading ? (
+                <Skeleton className="h-8 w-12" />
+              ) : (
+                <div className="text-2xl font-bold">{activeChats}</div>
+              )}
               <p className="text-xs text-muted-foreground">
                 Ongoing conversations
               </p>
@@ -39,7 +49,11 @@ export default function Chat() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">6</div>
+              {loading ? (
+                <Skeleton className="h-8 w-12" />
+              ) : (
+                <div className="text-2xl font-bold">{onlineMembers}</div>
+              )}
               <p className="text-xs text-muted-foreground">
                 Team members online
               </p>
@@ -52,7 +66,13 @@ export default function Chat() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2.3min</div>
+              {loading ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <div className="text-2xl font-bold">
+                  {averageResponseTime > 0 ? `${averageResponseTime}min` : 'N/A'}
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
                 Average response time
               </p>
@@ -65,7 +85,11 @@ export default function Chat() {
               <Send className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">127</div>
+              {loading ? (
+                <Skeleton className="h-8 w-12" />
+              ) : (
+                <div className="text-2xl font-bold">{messagesToday}</div>
+              )}
               <p className="text-xs text-muted-foreground">
                 Sent today
               </p>

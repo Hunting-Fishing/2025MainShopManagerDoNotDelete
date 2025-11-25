@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { NewChatDialogComplete } from './NewChatDialogComplete';
 
 export function ChatInterfaceConnected() {
   const { user, userId } = useAuthUser();
@@ -104,6 +105,10 @@ export function ChatInterfaceConnected() {
           <p className="text-muted-foreground mb-4">
             Start a new conversation to begin chatting with your team
           </p>
+          <NewChatDialogComplete 
+            currentUserId={userId} 
+            onChatCreated={refreshRooms}
+          />
         </CardContent>
       </Card>
     );
@@ -133,7 +138,14 @@ export function ChatInterfaceConnected() {
       onOpenThread={handleThreadOpen}
       onCloseThread={handleThreadClose}
       navigateToRoom={(roomId) => selectRoom(chatRooms.find(r => r.id === roomId)!)}
-      onNewChat={() => {/* TODO: Implement new chat dialog */}}
+      onNewChat={refreshRooms}
+      newChatDialog={
+        <NewChatDialogComplete 
+          currentUserId={userId} 
+          onChatCreated={refreshRooms}
+          trigger={<Button variant="ghost" size="sm"><UserPlus className="h-5 w-5" /></Button>}
+        />
+      }
     />
   );
 }

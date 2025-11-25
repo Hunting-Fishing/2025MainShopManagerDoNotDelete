@@ -12,13 +12,15 @@ interface ChatSidebarProps {
   selectedRoom: ChatRoom | null;
   onSelectRoom: (room: ChatRoom) => void;
   onNewChat: () => void;
+  newChatDialog?: React.ReactNode;
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   rooms,
   selectedRoom,
   onSelectRoom,
-  onNewChat
+  onNewChat,
+  newChatDialog
 }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
   
@@ -31,9 +33,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Conversations</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onNewChat}>
-            <PlusCircle className="h-5 w-5" />
-          </Button>
+          {newChatDialog || (
+            <Button variant="ghost" size="sm" onClick={onNewChat}>
+              <PlusCircle className="h-5 w-5" />
+            </Button>
+          )}
         </div>
         <div className="relative mt-2">
           <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
