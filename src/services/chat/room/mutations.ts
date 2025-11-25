@@ -6,14 +6,18 @@ import { CreateRoomParams, transformDatabaseRoom } from "./types";
 // Create a new chat room
 export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom> => {
   try {
-    // Prepare the room data
-    const roomData = {
+    // Prepare the room data - only include id if provided
+    const roomData: any = {
       name: params.name,
       type: params.type,
       work_order_id: params.workOrderId,
-      metadata: params.metadata as any,
-      id: params.id // Use custom ID if provided
+      metadata: params.metadata as any
     };
+    
+    // Only add ID if explicitly provided
+    if (params.id) {
+      roomData.id = params.id;
+    }
 
     // Create the room
     const { data: room, error: roomError } = params.id 
