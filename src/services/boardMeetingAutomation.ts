@@ -71,16 +71,23 @@ export class BoardMeetingAutomationService {
     const { data: meeting } = await supabase
       .from('board_meetings')
       .select(`
-        *,
-        board_members(id, email, first_name, last_name)
+        *
       `)
       .eq('id', meetingId)
       .single();
 
-    if (!meeting?.board_members) return;
+    if (!meeting) return;
+
+    // Get board members separately
+    const { data: boardMembers } = await supabase
+      .from('board_members')
+      .select('id, email, first_name, last_name')
+      .eq('shop_id', (meeting as any).shop_id);
+
+    if (!boardMembers) return;
 
     // Create reminder records
-    const reminders = meeting.board_members.map((member: any) => ({
+    const reminders = boardMembers.map((member: any) => ({
       meeting_id: meetingId,
       member_email: member.email,
       reminder_type: type,
@@ -273,14 +280,18 @@ export class BoardMeetingAutomationService {
   static async createActionItems(meetingId: string, actionItems: MeetingAction[]) {
     try {
       const formattedActions = actionItems.map(action => ({
-        ...action,
+        assigned_to: action.assignedTo,
+        due_date: action.dueDate,
+        description: action.description,
+        status: action.status as any,
+        priority: action.priority as any,
         meeting_id: meetingId,
         created_at: new Date().toISOString()
       }));
 
       const { error } = await supabase
         .from('board_meeting_actions')
-        .insert(formattedActions);
+        .insert(formattedActions as any);
 
       if (error) {
         console.error("Error creating action items:", error);
@@ -306,11 +317,11 @@ export class BoardMeetingAutomationService {
 
       const summary = {
         meetingDate: format(new Date(meeting.meeting_date), 'PPP'),
-        attendees: meeting.attendees?.length || 0,
-        absentees: meeting.absent_members?.length || 0,
+        attendees: Array.isArray(meeting.attendees) ? meeting.attendees.length : 0,
+        absentees: Array.isArray(meeting.absent_members) ? meeting.absent_members.length : 0,
         quorumMet: meeting.quorum_met,
-        actionItems: meeting.board_meeting_actions?.length || 0,
-        votesTaken: meeting.votes_taken?.length || 0,
+        actionItems: Array.isArray(meeting.board_meeting_actions) ? meeting.board_meeting_actions.length : 0,
+        votesTaken: Array.isArray(meeting.votes_taken) ? meeting.votes_taken.length : 0,
         nextMeetingDate: meeting.next_meeting_date ? 
           format(new Date(meeting.next_meeting_date), 'PPP') : 'TBD'
       };

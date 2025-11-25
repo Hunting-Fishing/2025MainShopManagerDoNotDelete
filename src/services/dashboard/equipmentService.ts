@@ -12,7 +12,7 @@ export const getEquipmentRecommendations = async (): Promise<EquipmentRecommenda
       .from('equipment_assets')
       .select('*')
       .or('status.eq.maintenance,status.eq.down')
-      .order('next_service_date');
+      .order('created_at', { ascending: false });
       
     if (error) throw error;
     
@@ -20,30 +20,20 @@ export const getEquipmentRecommendations = async (): Promise<EquipmentRecommenda
     
     // Convert to equipment recommendations format
     return data.map(item => {
-      // Determine priority based on equipment status and maintenance date
+      // Determine priority based on equipment status
       let priority: "High" | "Medium" | "Low" = "Medium";
       
-      if (item.status === "out-of-service") {
+      if (item.status === "down") {
         priority = "High";
-      } else if (item.status === "maintenance-required") {
-        // Check if maintenance is overdue
-        const nextMaintenanceDate = item.next_maintenance_date ? new Date(item.next_maintenance_date) : null;
-        const today = new Date();
-        
-        if (nextMaintenanceDate && isAfter(today, nextMaintenanceDate)) {
-          priority = "High";
-        }
+      } else if (item.status === "maintenance") {
+        priority = "Medium";
       }
       
       // Format maintenance date for display
-      const maintenanceDate = item.next_maintenance_date 
-        ? new Date(item.next_maintenance_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        : 'Not scheduled';
+      const maintenanceDate = 'Not scheduled';
       
-      // Determine maintenance type based on equipment data
-      const maintenanceType = item.maintenance_frequency === 'as-needed' 
-        ? 'General Maintenance' 
-        : `${item.maintenance_frequency.charAt(0).toUpperCase()}${item.maintenance_frequency.slice(1)} Service`;
+      // Determine maintenance type
+      const maintenanceType = 'General Maintenance';
       
       return {
         id: item.id,

@@ -113,15 +113,15 @@ export async function createProduct(productData: Partial<ProductData>): Promise<
   const { data, error } = await supabase
     .from('products')
     .insert({
-      title: productData.name || productData.description || 'Untitled Product',
+      name: productData.name || productData.description || 'Untitled Product',
       description: productData.description || '',
       price: productData.price || 0,
       image_url: productData.image_url || '',
       affiliate_link: productData.affiliate_link || '',
-      category_id: 'default', // Provide default category_id
+      category_id: 'default',
       is_approved: true,
       product_type: 'affiliate'
-    })
+    } as any)
     .select()
     .single();
 
