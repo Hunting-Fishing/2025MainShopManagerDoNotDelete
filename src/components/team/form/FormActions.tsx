@@ -22,7 +22,6 @@ export function FormActions({ isSubmitting, mode }: FormActionsProps) {
       <Button 
         type="submit" 
         disabled={isSubmitting}
-        className="bg-esm-blue-600 hover:bg-esm-blue-700"
       >
         {isSubmitting ? (
           "Saving..."
