@@ -14,6 +14,7 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewType>("month");
   const [technicianFilter, setTechnicianFilter] = useState("all");
+  const [equipmentFilter, setEquipmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -22,9 +23,17 @@ export default function Calendar() {
 
   // Filter events based on selected filters
   const filteredEvents = events.filter(event => {
-    // Technician filter
-    if (technicianFilter !== "all" && event.technician !== technicianFilter) {
+    // Technician filter (using technician_id now instead of name)
+    if (technicianFilter !== "all" && event.technician_id !== technicianFilter) {
       return false;
+    }
+    
+    // Equipment filter - check if event has equipment in title or description
+    if (equipmentFilter !== "all") {
+      const eventText = `${event.title} ${event.description || ''}`.toLowerCase();
+      if (!eventText.includes(equipmentFilter.toLowerCase())) {
+        return false;
+      }
     }
     
     // Status filter
@@ -81,6 +90,8 @@ export default function Calendar() {
           setTechnicianFilter={setTechnicianFilter}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
+          equipmentFilter={equipmentFilter}
+          setEquipmentFilter={setEquipmentFilter}
           businessHours={businessHours}
           currentDate={currentDate}
         />
