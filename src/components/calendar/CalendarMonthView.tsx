@@ -7,7 +7,8 @@ import {
   eachDayOfInterval,
   format,
   isSameMonth,
-  isToday
+  isToday,
+  isSameDay
 } from "date-fns";
 import { CalendarDay } from "./CalendarDay";
 import { CalendarEvent } from "@/types/calendar";
@@ -56,9 +57,7 @@ export function CalendarMonthView({
   const getEventsForDay = (date: Date) => {
     return events.filter(event => {
       const eventStart = new Date(event.start);
-      const eventEnd = new Date(event.end);
-      
-      return date >= startOfWeek(eventStart) && date <= endOfWeek(eventEnd);
+      return isSameDay(date, eventStart);
     });
   };
 

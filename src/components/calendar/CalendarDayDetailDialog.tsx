@@ -30,9 +30,16 @@ export function CalendarDayDetailDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            {format(date, "EEEE, MMMM d, yyyy")}
+          <DialogTitle className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5" />
+              {format(date, "EEEE, MMMM d, yyyy")}
+            </div>
+            {events.length > 0 && (
+              <span className="inline-flex items-center justify-center px-3 py-1 text-sm font-semibold rounded-full bg-primary/10 text-primary">
+                {events.length} {events.length === 1 ? 'Job' : 'Jobs'}
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
         
