@@ -140,6 +140,7 @@ export function MobileHeader({
       title: 'Company',
       items: [
         { label: 'Team', icon: Users, path: '/team', requiredPath: '/team' },
+        { label: 'Training Overview', icon: Brain, path: '/training-overview', requiredPath: '/training-overview' },
         { label: 'Company Profile', icon: Building, path: '/company-profile', requiredPath: '/company-profile' },
       ]
     },

@@ -42,7 +42,8 @@ import {
   BarChart3,
   Gauge,
   TrendingDown,
-  Smartphone
+  Smartphone,
+  GraduationCap
 } from 'lucide-react';
 
 export const navigation = [
@@ -224,6 +225,12 @@ export const navigation = [
         href: '/team',
         icon: UserCog,
         description: 'Team management'
+      },
+      {
+        title: 'Training Overview',
+        href: '/training-overview',
+        icon: GraduationCap,
+        description: 'Monitor team certifications and training'
       },
       {
         title: 'Vehicles',
