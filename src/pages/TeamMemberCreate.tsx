@@ -5,12 +5,15 @@ import { TeamMemberForm } from '@/components/team/TeamMemberForm';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useShopId } from '@/hooks/useShopId';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 export default function TeamMemberCreate() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { shopId } = useShopId();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sendInvitation, setSendInvitation] = useState(true);
 
   const handleSubmit = async (formData: any) => {
     if (!shopId) {
@@ -24,10 +27,10 @@ export default function TeamMemberCreate() {
 
     setIsSubmitting(true);
     try {
-      // Generate a UUID for the profile (team members don't need auth accounts immediately)
+      // Generate a UUID for the profile
       const profileId = crypto.randomUUID();
       
-      // Create profile directly (auth user creation would be handled separately via invitation)
+      // Create profile first
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([{
@@ -39,15 +42,66 @@ export default function TeamMemberCreate() {
           job_title: formData.jobTitle,
           department: formData.department,
           shop_id: shopId,
-          has_auth_account: false // Mark as not having auth account yet
+          has_auth_account: false
         }]);
 
       if (profileError) throw profileError;
 
-      toast({
-        title: "Success",
-        description: "Team member created successfully",
-      });
+      // Assign role if provided
+      if (formData.roleId) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([{
+            user_id: profileId,
+            role_id: formData.roleId
+          }]);
+
+        if (roleError) {
+          console.error('Error assigning role:', roleError);
+        }
+      }
+
+      // Send invitation email if checkbox is checked
+      if (sendInvitation) {
+        try {
+          const { error: inviteError } = await supabase.functions.invoke('invite-team-member', {
+            body: {
+              email: formData.email,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              profileId: profileId,
+              roleId: formData.roleId,
+              shopId: shopId
+            }
+          });
+
+          if (inviteError) {
+            console.error('Error sending invitation:', inviteError);
+            toast({
+              title: "Team Member Created",
+              description: "Team member created but invitation email failed to send. You can resend it from the team list.",
+              variant: "default"
+            });
+          } else {
+            toast({
+              title: "Success",
+              description: "Team member created and invitation email sent!",
+            });
+          }
+        } catch (inviteError) {
+          console.error('Error sending invitation:', inviteError);
+          toast({
+            title: "Team Member Created",
+            description: "Team member created but invitation email failed to send.",
+            variant: "default"
+          });
+        }
+      } else {
+        toast({
+          title: "Success",
+          description: "Team member created successfully. No invitation sent.",
+        });
+      }
 
       navigate('/settings/team');
     } catch (error: any) {
@@ -72,6 +126,23 @@ export default function TeamMemberCreate() {
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
           />
+          
+          <div className="flex items-center space-x-2 mt-6 pt-6 border-t">
+            <Checkbox 
+              id="send-invitation" 
+              checked={sendInvitation}
+              onCheckedChange={(checked) => setSendInvitation(checked as boolean)}
+            />
+            <Label 
+              htmlFor="send-invitation"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Send invitation email to allow login access
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2 ml-6">
+            Team member will receive an email with instructions to set their password and access the system.
+          </p>
         </div>
       </div>
     </div>
