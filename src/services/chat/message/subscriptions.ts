@@ -6,6 +6,8 @@ import { transformDatabaseMessage } from "./types";
 
 // Subscribe to new messages in a chat room
 export const subscribeToMessages = (roomId: string, callback: (message: ChatMessage) => void): (() => void) => {
+  console.log('[subscribeToMessages] Setting up subscription for room:', roomId);
+  
   const channel: RealtimeChannel = supabase
     .channel(`room-${roomId}`)
     .on('postgres_changes', {
@@ -14,13 +16,34 @@ export const subscribeToMessages = (roomId: string, callback: (message: ChatMess
       table: 'chat_messages',
       filter: `room_id=eq.${roomId}`
     }, (payload) => {
-      const newMessage = transformDatabaseMessage(payload.new as DatabaseChatMessage);
-      callback(newMessage);
+      try {
+        console.log('[subscribeToMessages] New message received:', {
+          roomId,
+          messageId: payload.new.id,
+          senderId: payload.new.sender_id
+        });
+        
+        const newMessage = transformDatabaseMessage(payload.new as DatabaseChatMessage);
+        callback(newMessage);
+      } catch (error) {
+        console.error('[subscribeToMessages] Error processing new message:', {
+          error,
+          payload,
+          roomId
+        });
+      }
     })
-    .subscribe();
+    .subscribe((status, err) => {
+      console.log('[subscribeToMessages] Subscription status changed:', {
+        roomId,
+        status,
+        error: err
+      });
+    });
   
   // Return unsubscribe function
   return () => {
+    console.log('[subscribeToMessages] Unsubscribing from room:', roomId);
     supabase.removeChannel(channel);
   };
 };

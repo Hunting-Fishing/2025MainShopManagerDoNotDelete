@@ -16,11 +16,19 @@ export const useChatRooms = ({ userId }: UseChatRoomsProps) => {
 
   // Fetch chat rooms
   const fetchChatRooms = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      console.error('[useChatRooms] Cannot fetch rooms: userId is missing');
+      return;
+    }
+    
+    console.log('[useChatRooms] Fetching chat rooms for user:', userId);
     
     try {
       setLoading(true);
+      setError(null);
+      
       const fetchedRooms = await getUserChatRooms(userId);
+      console.log('[useChatRooms] Fetched rooms:', fetchedRooms.length, 'rooms');
       
       // Sort by pin status first, then by most recently updated
       fetchedRooms.sort((a, b) => {
@@ -34,14 +42,24 @@ export const useChatRooms = ({ userId }: UseChatRoomsProps) => {
       
       // Filter out archived rooms unless we're specifically viewing them
       const filteredRooms = fetchedRooms.filter(room => !room.is_archived);
+      console.log('[useChatRooms] After filtering archived:', filteredRooms.length, 'active rooms');
       
       setChatRooms(filteredRooms);
-    } catch (err) {
-      console.error('Failed to load chat rooms:', err);
-      setError('Failed to load chat rooms');
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Unknown error';
+      const errorCode = err?.code || 'NO_CODE';
+      console.error('[useChatRooms] Failed to load chat rooms:', {
+        error: err,
+        message: errorMessage,
+        code: errorCode,
+        userId,
+        timestamp: new Date().toISOString()
+      });
+      
+      setError(`Failed to load chat rooms: ${errorMessage} (${errorCode})`);
       toast({
-        title: "Error",
-        description: "Couldn't load conversations. Please try again.",
+        title: "Error Loading Conversations",
+        description: `Couldn't load conversations: ${errorMessage}. Please try again.`,
         variant: "destructive",
       });
     } finally {
@@ -51,6 +69,8 @@ export const useChatRooms = ({ userId }: UseChatRoomsProps) => {
 
   // Pin a chat room
   const pinRoom = useCallback(async (roomId: string, isPinned: boolean) => {
+    console.log('[useChatRooms] Pinning room:', { roomId, isPinned });
+    
     try {
       await pinChatRoom(roomId, isPinned);
       
@@ -68,17 +88,25 @@ export const useChatRooms = ({ userId }: UseChatRoomsProps) => {
         });
       });
       
+      console.log('[useChatRooms] Successfully pinned/unpinned room:', roomId);
       toast({
         title: isPinned ? "Conversation pinned" : "Conversation unpinned",
         description: isPinned 
           ? "This conversation will stay at the top of your list" 
           : "This conversation has been unpinned",
       });
-    } catch (err) {
-      console.error('Failed to pin/unpin room:', err);
+    } catch (err: any) {
+      console.error('[useChatRooms] Failed to pin/unpin room:', {
+        error: err,
+        roomId,
+        isPinned,
+        message: err?.message,
+        timestamp: new Date().toISOString()
+      });
+      
       toast({
         title: "Error",
-        description: "Failed to update conversation settings.",
+        description: `Failed to update conversation settings: ${err?.message || 'Unknown error'}`,
         variant: "destructive",
       });
     }
@@ -86,6 +114,8 @@ export const useChatRooms = ({ userId }: UseChatRoomsProps) => {
 
   // Archive a chat room
   const archiveRoom = useCallback(async (roomId: string, isArchived: boolean) => {
+    console.log('[useChatRooms] Archiving room:', { roomId, isArchived });
+    
     try {
       await archiveChatRoom(roomId, isArchived);
       
@@ -97,17 +127,25 @@ export const useChatRooms = ({ userId }: UseChatRoomsProps) => {
         fetchChatRooms();
       }
       
+      console.log('[useChatRooms] Successfully archived/unarchived room:', roomId);
       toast({
         title: isArchived ? "Conversation archived" : "Conversation unarchived",
         description: isArchived 
           ? "This conversation has been moved to archives" 
           : "This conversation has been restored",
       });
-    } catch (err) {
-      console.error('Failed to archive/unarchive room:', err);
+    } catch (err: any) {
+      console.error('[useChatRooms] Failed to archive/unarchive room:', {
+        error: err,
+        roomId,
+        isArchived,
+        message: err?.message,
+        timestamp: new Date().toISOString()
+      });
+      
       toast({
         title: "Error",
-        description: "Failed to update conversation settings.",
+        description: `Failed to update conversation settings: ${err?.message || 'Unknown error'}`,
         variant: "destructive",
       });
     }

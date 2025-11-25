@@ -38,23 +38,39 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
 
   // Fetch messages for a selected room
   const fetchMessages = useCallback(async (roomId: string) => {
-    if (!roomId || !userId) return;
+    if (!roomId || !userId) {
+      console.error('[useChatMessages] Cannot fetch messages: missing roomId or userId', { roomId, userId });
+      return;
+    }
+    
+    console.log('[useChatMessages] Fetching messages for room:', roomId);
     
     try {
       setLoading(true);
+      setError(null);
       
       // Fetch messages for the selected room
       const fetchedMessages = await getChatMessages(roomId);
+      console.log('[useChatMessages] Fetched messages:', fetchedMessages.length, 'messages');
       setMessages(fetchedMessages);
       
       // Mark messages as read
       await markMessagesAsRead(roomId, userId);
-    } catch (err) {
-      console.error('Failed to load messages:', err);
-      setError('Failed to load messages');
+      console.log('[useChatMessages] Marked messages as read for room:', roomId);
+    } catch (err: any) {
+      console.error('[useChatMessages] Failed to load messages:', {
+        error: err,
+        roomId,
+        userId,
+        message: err?.message,
+        code: err?.code,
+        timestamp: new Date().toISOString()
+      });
+      
+      setError(`Failed to load messages: ${err?.message || 'Unknown error'}`);
       toast({
-        title: "Error",
-        description: "Couldn't load messages. Please try again.",
+        title: "Error Loading Messages",
+        description: `Couldn't load messages: ${err?.message || 'Unknown error'}. Please try again.`,
         variant: "destructive",
       });
     } finally {
@@ -169,7 +185,20 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
 
   // Send a new text message
   const handleSendMessage = useCallback(async (threadParentId?: string) => {
-    if (!currentRoomId || !newMessageText.trim() || !userId) return;
+    if (!currentRoomId || !newMessageText.trim() || !userId) {
+      console.warn('[useChatMessages] Cannot send message: missing required fields', {
+        currentRoomId,
+        hasMessage: !!newMessageText.trim(),
+        userId
+      });
+      return;
+    }
+    
+    console.log('[useChatMessages] Sending message:', {
+      roomId: currentRoomId,
+      messageLength: newMessageText.length,
+      threadParentId
+    });
     
     try {
       const messageParams: MessageSendParams = {
@@ -183,18 +212,29 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
       };
       
       await sendMessage(messageParams);
+      console.log('[useChatMessages] Message sent successfully');
       
       // Clear typing indicator
       await clearTypingIndicator(currentRoomId, userId);
       
       // Clear the input after sending (the subscription will catch the new message)
       setNewMessageText('');
-    } catch (err) {
-      console.error('Failed to send message:', err);
-      setError('Failed to send message');
+    } catch (err: any) {
+      console.error('[useChatMessages] Failed to send message:', {
+        error: err,
+        roomId: currentRoomId,
+        userId,
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint,
+        timestamp: new Date().toISOString()
+      });
+      
+      setError(`Failed to send message: ${err?.message || 'Unknown error'}`);
       toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
+        title: "Error Sending Message",
+        description: `Failed to send message: ${err?.message || 'Unknown error'}. Please try again.`,
         variant: "destructive",
       });
     }

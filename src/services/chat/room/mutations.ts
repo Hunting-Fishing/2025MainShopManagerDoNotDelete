@@ -5,6 +5,13 @@ import { CreateRoomParams, transformDatabaseRoom } from "./types";
 
 // Create a new chat room
 export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom> => {
+  console.log('[createChatRoom] Starting room creation:', {
+    name: params.name,
+    type: params.type,
+    participantsCount: params.participants.length,
+    hasWorkOrderId: !!params.workOrderId
+  });
+
   try {
     // Prepare the room data - only include id if provided
     const roomData: any = {
@@ -17,14 +24,29 @@ export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom
     // Only add ID if explicitly provided
     if (params.id) {
       roomData.id = params.id;
+      console.log('[createChatRoom] Using provided room ID:', params.id);
     }
 
+    console.log('[createChatRoom] Inserting room into database');
+    
     // Create the room
     const { data: room, error: roomError } = params.id 
       ? await supabase.from('chat_rooms').upsert([roomData]).select().single()
       : await supabase.from('chat_rooms').insert([roomData]).select().single();
     
-    if (roomError) throw roomError;
+    if (roomError) {
+      console.error('[createChatRoom] Room creation failed:', {
+        error: roomError,
+        message: roomError.message,
+        code: roomError.code,
+        details: roomError.details,
+        hint: roomError.hint
+      });
+      throw roomError;
+    }
+    
+    console.log('[createChatRoom] Room created successfully:', room.id);
+    console.log('[createChatRoom] Adding participants:', params.participants);
     
     // Add participants to the room
     const participantData = params.participants.map(userId => ({
@@ -36,11 +58,34 @@ export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom
       .from('chat_participants')
       .upsert(participantData);
     
-    if (participantError) throw participantError;
+    if (participantError) {
+      console.error('[createChatRoom] Participant insertion failed:', {
+        error: participantError,
+        message: participantError.message,
+        code: participantError.code,
+        details: participantError.details,
+        hint: participantError.hint,
+        roomId: room.id,
+        participants: params.participants
+      });
+      throw participantError;
+    }
     
-    return transformDatabaseRoom(room);
-  } catch (error) {
-    console.error("Error creating chat room:", error);
+    console.log('[createChatRoom] Participants added successfully');
+    const transformedRoom = transformDatabaseRoom(room);
+    console.log('[createChatRoom] Room creation complete:', transformedRoom.id);
+    
+    return transformedRoom;
+  } catch (error: any) {
+    console.error('[createChatRoom] Fatal error creating chat room:', {
+      error,
+      message: error?.message,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      params,
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
 };
