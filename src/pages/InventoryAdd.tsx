@@ -1,5 +1,5 @@
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ComprehensiveInventoryForm } from "@/components/inventory/form/ComprehensiveInventoryForm";
 import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
 import { InventoryItemExtended } from "@/types/inventory";
@@ -9,7 +9,11 @@ import { Button } from "@/components/ui/button";
 
 export default function InventoryAdd() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { addItem, isLoading } = useInventoryCrud();
+  
+  // Get pre-filled data from invoice scanner
+  const extractedData = location.state?.extractedData;
 
   const handleSubmit = async (formData: Omit<InventoryItemExtended, "id">) => {
     try {
@@ -60,6 +64,7 @@ export default function InventoryAdd() {
         onSubmit={handleSubmit}
         isLoading={isLoading}
         onCancel={handleCancel}
+        initialData={extractedData}
       />
     </div>
   );
