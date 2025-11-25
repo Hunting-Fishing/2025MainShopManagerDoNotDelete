@@ -8,7 +8,7 @@ import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useBusinessHours } from '@/hooks/useBusinessHours';
 import { CalendarViewType, CalendarEvent } from '@/types/calendar';
 import { Card } from '@/components/ui/card';
-import { isSameDay } from 'date-fns';
+import { isSameDay, isBefore, startOfDay } from 'date-fns';
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -49,6 +49,17 @@ export default function Calendar() {
     ? filteredEvents.filter(event => 
         isSameDay(new Date(event.start), selectedDate)
       )
+    : [];
+
+  // Get carry-over events (past unfinished jobs)
+  const carryOverEvents = selectedDate
+    ? filteredEvents.filter(event => {
+        const eventDate = startOfDay(new Date(event.start));
+        const selected = startOfDay(selectedDate);
+        const isBeforeSelected = isBefore(eventDate, selected);
+        const isNotCompleted = event.status !== 'completed' && event.status !== 'cancelled';
+        return isBeforeSelected && isNotCompleted;
+      })
     : [];
 
   const handleDateClick = (date: Date) => {
@@ -111,6 +122,7 @@ export default function Calendar() {
       <CalendarDayDetailDialog
         date={selectedDate}
         events={selectedDateEvents}
+        carryOverEvents={carryOverEvents}
         isOpen={!!selectedDate}
         onClose={handleCloseDetailDialog}
         onEventClick={handleEventClickFromDetail}
