@@ -88,12 +88,12 @@ export function AddSafetyEquipmentDialog({ open, onOpenChange, onSuccess, parent
       }
 
       const insertData = {
-        equipment_type: formData.equipment_type,
+        equipment_type: formData.equipment_type as any, // Cast to match DB enum type
         name: formData.name,
         asset_number: `SAFE-${Date.now()}`,
         serial_number: formData.serial_number || null,
         location: formData.location,
-        status: formData.status,
+        status: formData.status as any, // Cast to match status enum
         notes: formData.notes || null,
         shop_id: shop_id,
         created_by: user.id,
@@ -102,7 +102,7 @@ export function AddSafetyEquipmentDialog({ open, onOpenChange, onSuccess, parent
           inspection_date: formData.inspection_date || null,
           expiry_date: formData.expiry_date || null,
           quantity: formData.quantity ? parseInt(formData.quantity) : 1,
-        },
+        } as any, // Cast to match Json type
       };
 
       const { error } = await supabase

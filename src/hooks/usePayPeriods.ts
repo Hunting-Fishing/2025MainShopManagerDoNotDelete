@@ -28,7 +28,7 @@ export function usePayPeriods() {
         .order('start_date', { ascending: false });
 
       if (error) throw error;
-      setPayPeriods(data || []);
+      setPayPeriods(data as any || []); // Cast to handle status enum mismatch
     } catch (error: any) {
       console.error('Error fetching pay periods:', error);
       toast({

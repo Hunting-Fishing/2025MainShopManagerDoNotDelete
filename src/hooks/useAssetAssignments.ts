@@ -30,7 +30,7 @@ export function useAssetAssignments() {
         .order('assignment_start', { ascending: true });
 
       if (error) throw error;
-      setAssignments(data || []);
+      setAssignments(data as any || []); // Cast to handle type mismatch
     } catch (error: any) {
       console.error('Error fetching asset assignments:', error);
       toast({

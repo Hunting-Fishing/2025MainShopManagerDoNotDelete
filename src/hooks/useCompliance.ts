@@ -28,7 +28,7 @@ export function useCompliance() {
         .order('violation_date', { ascending: false });
 
       if (error) throw error;
-      setViolations(data || []);
+      setViolations(data as any || []); // Cast to handle severity enum mismatch
     } catch (error: any) {
       console.error('Error fetching compliance violations:', error);
       toast({

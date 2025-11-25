@@ -109,13 +109,13 @@ export function SafetyEquipmentList({ refreshTrigger, parentEquipmentId }: Safet
         'fire_extinguisher', 'life_raft', 'life_ring', 'epirb',
         'survival_suit', 'flare', 'first_aid_kit', 'safety_harness',
         'life_jacket', 'immersion_suit'
-      ];
+      ] as const;
 
       let query = supabase
         .from('equipment_assets')
         .select('*')
         .eq('shop_id', shop_id)
-        .in('equipment_type', safetyTypes);
+        .in('equipment_type', safetyTypes as any); // Cast for enum compatibility
       
       // Filter by parent equipment if specified
       if (parentEquipmentId) {
@@ -126,7 +126,14 @@ export function SafetyEquipmentList({ refreshTrigger, parentEquipmentId }: Safet
 
       if (error) throw error;
 
-      setItems(data || []);
+      // Map data with proper type casting for specifications
+      const mappedItems = (data || []).map(item => ({
+        ...item,
+        equipment_type: item.equipment_type,
+        specifications: item.specifications as SafetyEquipmentItem['specifications']
+      }));
+      
+      setItems(mappedItems);
     } catch (error) {
       console.error('Error loading safety equipment:', error);
     } finally {
