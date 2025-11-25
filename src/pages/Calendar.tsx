@@ -16,6 +16,7 @@ export default function Calendar() {
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [equipmentFilter, setEquipmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const { events, shiftChats, isLoading, error } = useCalendarEvents(currentDate, view);
@@ -23,6 +24,22 @@ export default function Calendar() {
 
   // Filter events based on selected filters
   const filteredEvents = events.filter(event => {
+    // Search filter - check multiple fields
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const searchableText = [
+        event.title,
+        event.description,
+        event.customer,
+        event.location,
+        event.technician
+      ].filter(Boolean).join(' ').toLowerCase();
+      
+      if (!searchableText.includes(query)) {
+        return false;
+      }
+    }
+    
     // Technician filter (using technician_id now instead of name)
     if (technicianFilter !== "all" && event.technician_id !== technicianFilter) {
       return false;
@@ -103,6 +120,8 @@ export default function Calendar() {
           setStatusFilter={setStatusFilter}
           equipmentFilter={equipmentFilter}
           setEquipmentFilter={setEquipmentFilter}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
           businessHours={businessHours}
           currentDate={currentDate}
         />
