@@ -13,6 +13,14 @@ export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom
   });
 
   try {
+    // Log current auth session for debugging RLS issues
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    console.log('[createChatRoom] Auth session before insert:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      sessionError
+    });
+
     // Prepare the room data - only include id if provided
     const roomData: any = {
       name: params.name,
