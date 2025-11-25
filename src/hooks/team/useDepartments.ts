@@ -66,7 +66,16 @@ export function useDepartments() {
           
           setDepartments(insertedData || []);
         } else {
-          setDepartments(data);
+          // Deduplicate by name (keep first occurrence)
+          const uniqueDepartments = data.reduce((acc: Department[], current) => {
+            const exists = acc.find(dept => dept.name === current.name);
+            if (!exists) {
+              acc.push(current);
+            }
+            return acc;
+          }, []);
+          
+          setDepartments(uniqueDepartments);
         }
       } catch (err) {
         console.error('Error fetching departments:', err);
