@@ -148,7 +148,9 @@ export function CalendarDay({
               key={event.id}
               onClick={(e) => {
                 e.stopPropagation();
-                onEventClick(event);
+                // On mobile, clicking an event opens the full day view
+                // This makes it easier to see all events for that day
+                handleDayClick();
               }}
               className={cn(
                 "px-2 py-1 text-xs rounded truncate cursor-pointer relative z-20",
