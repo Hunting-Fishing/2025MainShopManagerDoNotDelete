@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { TeamMember } from "@/types/team";
 import { useFetchProfiles } from './team/useFetchProfiles';
 import { useFetchUserRoles } from './team/useFetchUserRoles';
@@ -154,10 +154,10 @@ export function useTeamMembers() {
       : 'Active';
   }
 
-  const refetch = () => {
+  const refetch = useCallback(() => {
     setIsLoading(true);
     fetchTeamMembers();
-  };
+  }, []);
 
   return { teamMembers, isLoading, error, refetch };
 }
