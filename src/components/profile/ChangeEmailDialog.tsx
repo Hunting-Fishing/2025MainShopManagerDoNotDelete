@@ -18,9 +18,10 @@ interface ChangeEmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentEmail: string;
+  userId: string;
 }
 
-export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEmailDialogProps) {
+export function ChangeEmailDialog({ open, onOpenChange, currentEmail, userId }: ChangeEmailDialogProps) {
   const [newEmail, setNewEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -74,27 +75,16 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
     setIsLoading(true);
 
     try {
-      // Update auth email - this will send a confirmation email
-      const { error: authError } = await supabase.auth.updateUser({
-        email: newEmail,
+      // Call edge function to update email immediately without confirmation
+      const { data, error } = await supabase.functions.invoke('update-user-email', {
+        body: { userId, newEmail }
       });
 
-      if (authError) throw authError;
-
-      // Update profiles table
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ email: newEmail })
-          .eq('id', user.id);
-
-        if (profileError) throw profileError;
-      }
+      if (error) throw error;
 
       toast({
-        title: 'Confirmation Email Sent',
-        description: `A confirmation link has been sent to ${newEmail}. Please check your email and click the link to complete the change.`,
+        title: 'Email Updated',
+        description: 'Your email has been changed successfully.',
       });
 
       // Reset form and close dialog
@@ -128,7 +118,7 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
             Change Email Address
           </DialogTitle>
           <DialogDescription>
-            Enter your new email address. You'll need to confirm it by clicking a link sent to the new email.
+            Enter your new email address. Your email will be updated immediately.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>

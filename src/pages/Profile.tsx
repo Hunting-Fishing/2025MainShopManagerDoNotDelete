@@ -279,6 +279,7 @@ export default function Profile() {
         open={showEmailDialog}
         onOpenChange={setShowEmailDialog}
         currentEmail={userProfile?.email || ''}
+        userId={user?.id || ''}
       />
     </div>
   );
