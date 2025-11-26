@@ -4,7 +4,7 @@ import { Calendar, Download, FileSpreadsheet, BarChart3, RefreshCw } from "lucid
 
 export function DashboardHeader() {
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div className="hidden md:flex flex-col lg:flex-row lg:items-center justify-between gap-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
           Dashboard

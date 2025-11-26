@@ -36,9 +36,10 @@ export default function Dashboard() {
 
 <DashboardHeader />
 
-<div className="flex justify-end">
+<div className="flex justify-end md:hidden">
   <Button
     variant="secondary"
+    size="sm"
     aria-label="Start dashboard tour"
     onClick={() => window.dispatchEvent(new CustomEvent('start-dashboard-tour'))}
   >
