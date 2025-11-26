@@ -183,6 +183,8 @@ export default function EmployeePermissions() {
         module,
         actions: updatedActions,
         created_by: user.id,
+      }, {
+        onConflict: 'user_id,shop_id,module'
       });
 
       if (error) throw error;
