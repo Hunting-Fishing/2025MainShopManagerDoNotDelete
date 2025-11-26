@@ -150,27 +150,27 @@ export default function TeamMemberProfile() {
           <TabsTrigger value="edit" className="text-xs sm:text-sm">Edit Profile</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview">
+        <TabsContent value="overview" className="mt-6">
           <OverviewTab member={member} />
         </TabsContent>
         
-        <TabsContent value="work-orders">
+        <TabsContent value="work-orders" className="mt-6">
           <WorkOrdersTab memberId={member.id} />
         </TabsContent>
         
-        <TabsContent value="activity">
+        <TabsContent value="activity" className="mt-6">
           <ActivityTab memberId={member.id} />
         </TabsContent>
         
-        <TabsContent value="certifications">
+        <TabsContent value="certifications" className="mt-6">
           <CertificationsTab memberId={member.id} memberName={member.name} />
         </TabsContent>
         
-        <TabsContent value="permissions">
+        <TabsContent value="permissions" className="mt-6">
           <PermissionsTab memberRole={member.role} memberId={member.id} />
         </TabsContent>
 
-        <TabsContent value="edit">
+        <TabsContent value="edit" className="mt-6">
           <EditProfileTab 
             initialData={{
               id: member.id,
