@@ -46,9 +46,12 @@ export function HistoryFilters({
             <SelectItem value="create">Create</SelectItem>
             <SelectItem value="update">Update</SelectItem>
             <SelectItem value="delete">Delete</SelectItem>
+            <SelectItem value="role_change">Role Change</SelectItem>
+            <SelectItem value="status_change">Status Change</SelectItem>
+            <SelectItem value="permission">Permission Change</SelectItem>
+            <SelectItem value="navigation_access">Navigation Access</SelectItem>
             <SelectItem value="login">Login</SelectItem>
             <SelectItem value="logout">Logout</SelectItem>
-            <SelectItem value="permission">Permission Change</SelectItem>
             <SelectItem value="flagged">Flagged Only</SelectItem>
           </SelectContent>
         </Select>
