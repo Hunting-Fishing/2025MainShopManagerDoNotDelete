@@ -1,17 +1,46 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { Loader2, Edit2, X } from 'lucide-react';
+import { ChangePasswordDialog } from '@/components/profile/ChangePasswordDialog';
 
 export default function Profile() {
-  const { user, userName } = useAuthUser();
+  const { user } = useAuthUser();
+  const { userProfile, loading, updateProfile } = useUserProfile();
+  const { userRole, isLoading: roleLoading } = useUserRole();
   const navigate = useNavigate();
+  
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    phone: '',
+    jobTitle: ''
+  });
+
+  useEffect(() => {
+    if (userProfile) {
+      setFormData({
+        firstName: userProfile.firstName || '',
+        middleName: userProfile.middleName || '',
+        lastName: userProfile.lastName || '',
+        phone: userProfile.phone || '',
+        jobTitle: userProfile.jobTitle || ''
+      });
+    }
+  }, [userProfile]);
 
   const handleSignOut = async () => {
     try {
@@ -27,6 +56,46 @@ export default function Profile() {
     }
   };
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      const result = await updateProfile(formData);
+      if (result.success) {
+        setIsEditMode(false);
+        toast.success('Profile updated successfully');
+      }
+    } catch (error) {
+      toast.error('Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (userProfile) {
+      setFormData({
+        firstName: userProfile.firstName || '',
+        middleName: userProfile.middleName || '',
+        lastName: userProfile.lastName || '',
+        phone: userProfile.phone || '',
+        jobTitle: userProfile.jobTitle || ''
+      });
+    }
+    setIsEditMode(false);
+  };
+
+  if (loading || roleLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -39,10 +108,58 @@ export default function Profile() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Account Information</CardTitle>
-            <CardDescription>Your account details</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Account Information</CardTitle>
+                <CardDescription>Your personal details</CardDescription>
+              </div>
+              {!isEditMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditMode(true)}
+                >
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  disabled={!isEditMode}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="middleName">Middle Name</Label>
+                <Input
+                  id="middleName"
+                  type="text"
+                  value={formData.middleName}
+                  onChange={(e) => handleInputChange('middleName', e.target.value)}
+                  disabled={!isEditMode}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => handleInputChange('lastName', e.target.value)}
+                disabled={!isEditMode}
+              />
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -50,26 +167,71 @@ export default function Profile() {
                 type="email"
                 value={user?.email || ''}
                 disabled
+                className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <Input
-                id="name"
-                type="text"
-                value={userName || ''}
-                disabled
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                disabled={!isEditMode}
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="jobTitle">Job Title</Label>
+              <Input
+                id="jobTitle"
+                type="text"
+                value={formData.jobTitle}
+                onChange={(e) => handleInputChange('jobTitle', e.target.value)}
+                disabled={!isEditMode}
+              />
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
               <Input
                 id="role"
                 type="text"
-                value="Shop Manager"
+                value={userRole?.displayName || 'User'}
                 disabled
+                className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground">Role is managed by administrators</p>
             </div>
+
+            {isEditMode && (
+              <div className="flex gap-2 pt-4">
+                <Button
+                  onClick={handleSaveProfile}
+                  disabled={isSaving}
+                  className="flex-1"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -79,11 +241,12 @@ export default function Profile() {
             <CardDescription>Manage your account</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setShowPasswordDialog(true)}
+            >
               Change Password
-            </Button>
-            <Button variant="outline" className="w-full">
-              Update Profile
             </Button>
             <Button 
               variant="destructive" 
@@ -95,6 +258,11 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      <ChangePasswordDialog 
+        open={showPasswordDialog}
+        onOpenChange={setShowPasswordDialog}
+      />
     </div>
   );
 }
