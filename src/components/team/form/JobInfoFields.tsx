@@ -1,12 +1,11 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Control } from "react-hook-form";
 import { TeamMemberFormValues } from "./formValidation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
-import { defaultJobTitles, roleJobTitleMap } from "./jobTitleData";
+import { getDepartmentNames, getJobTitlesForDepartment, getSuggestedRole } from "./jobTitleData";
 
 interface JobInfoFieldsProps {
   control: Control<TeamMemberFormValues>;
@@ -21,17 +20,37 @@ export function JobInfoFields({
   availableDepartments,
   isLoading = false 
 }: JobInfoFieldsProps) {
-  const [jobTitles, setJobTitles] = useState<string[]>(defaultJobTitles);
-  const currentRole = control._formValues.role;
+  const [jobTitles, setJobTitles] = useState<string[]>([]);
+  const [suggestedRole, setSuggestedRole] = useState<string | null>(null);
+  const currentDepartment = control._formValues.department;
+  const currentJobTitle = control._formValues.jobTitle;
   
-  // Update job titles when role changes
+  // Update job titles when department changes
   useEffect(() => {
-    if (currentRole && roleJobTitleMap[currentRole]) {
-      setJobTitles(roleJobTitleMap[currentRole]);
+    if (currentDepartment) {
+      const titles = getJobTitlesForDepartment(currentDepartment);
+      setJobTitles(titles);
+      // Clear job title and role when department changes
+      if (control._formValues.jobTitle) {
+        control._formValues.jobTitle = '';
+        control._formValues.role = '';
+      }
     } else {
-      setJobTitles(defaultJobTitles);
+      setJobTitles([]);
     }
-  }, [currentRole]);
+  }, [currentDepartment]);
+  
+  // Auto-suggest role when job title changes
+  useEffect(() => {
+    if (currentDepartment && currentJobTitle) {
+      const suggested = getSuggestedRole(currentDepartment, currentJobTitle);
+      setSuggestedRole(suggested);
+      if (suggested) {
+        // Auto-fill the suggested role
+        control._formValues.role = suggested;
+      }
+    }
+  }, [currentJobTitle, currentDepartment]);
   
   if (isLoading) {
     return (
@@ -47,10 +66,72 @@ export function JobInfoFields({
     <>
       <FormField
         control={control}
+        name="department"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Department / Category</FormLabel>
+            <Select 
+              onValueChange={field.onChange}
+              value={field.value || ""} 
+              defaultValue={field.value}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a department" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {getDepartmentNames().map((dept) => (
+                  <SelectItem key={dept} value={dept}>
+                    {dept}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Select the primary work area or department
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name="jobTitle"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Job Title</FormLabel>
+            <Select 
+              onValueChange={field.onChange} 
+              value={field.value || ""}
+              defaultValue={field.value}
+              disabled={!currentDepartment}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder={currentDepartment ? "Select a job title" : "Select department first"} />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {jobTitles.map((title) => (
+                  <SelectItem key={title} value={title}>
+                    {title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
         name="role"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Role</FormLabel>
+            <FormLabel>Role (Permissions)</FormLabel>
             <Select 
               onValueChange={field.onChange} 
               value={field.value || ""}
@@ -70,66 +151,10 @@ export function JobInfoFields({
               </SelectContent>
             </Select>
             <FormDescription>
-              This will determine the user's permissions in the system
+              {suggestedRole 
+                ? `Suggested based on job title. Determines system permissions.` 
+                : `This will determine the user's permissions in the system`}
             </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={control}
-        name="jobTitle"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Job Title</FormLabel>
-            <Select 
-              onValueChange={field.onChange} 
-              value={field.value || ""}
-              defaultValue={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a job title" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {jobTitles.map((title) => (
-                  <SelectItem key={title} value={title}>
-                    {title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={control}
-        name="department"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Department</FormLabel>
-            <Select 
-              onValueChange={field.onChange}
-              value={field.value || ""} 
-              defaultValue={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a department" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {availableDepartments.map((department) => (
-                  <SelectItem key={department} value={department}>
-                    {department}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <FormMessage />
           </FormItem>
         )}

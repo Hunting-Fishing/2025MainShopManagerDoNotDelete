@@ -1,5 +1,5 @@
 
-import { roleJobTitleMap } from '@/components/team/form/jobTitleData';
+import { departmentCategories } from '@/components/team/form/jobTitleData';
 
 // Define the allowed app role types for type safety
 export type AppRoleType = 'owner' | 'admin' | 'manager' | 'parts_manager' | 'service_advisor' | 'technician' | 'reception' | 'other_staff';
@@ -34,11 +34,12 @@ export function validateRoleValue(roleName: string): AppRoleType {
 export function detectRoleFromJobTitle(jobTitle: string): string | null {
   const normalizedTitle = jobTitle.toLowerCase();
   
-  // Check each role's job titles
-  for (const [role, titles] of Object.entries(roleJobTitleMap)) {
-    for (const title of titles) {
+  // Check each department's job titles and suggested roles
+  for (const [department, config] of Object.entries(departmentCategories)) {
+    const { jobTitles, suggestedRoles } = config;
+    for (const title of jobTitles) {
       if (normalizedTitle.includes(title.toLowerCase())) {
-        return role;
+        return suggestedRoles[title] || null;
       }
     }
   }
