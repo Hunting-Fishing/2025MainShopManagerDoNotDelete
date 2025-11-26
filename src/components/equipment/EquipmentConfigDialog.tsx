@@ -115,8 +115,11 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     'Oil', 'Filter', 'Fluid', 'Battery', 'Belt', 'Tire', 'Coolant', 'Other'
   ]);
 
-  // Media Attachments State
-  const [attachments, setAttachments] = useState<MediaAttachment[]>([]);
+  // Media Attachments State - load from specifications if they exist
+  const [attachments, setAttachments] = useState<MediaAttachment[]>(() => {
+    const existingAttachments = (equipment as any).specifications?.attachments;
+    return Array.isArray(existingAttachments) ? existingAttachments : [];
+  });
 
   // Equipment Service Items State
   const [serviceItems, setServiceItems] = useState<EquipmentServiceItem[]>([]);
@@ -374,11 +377,24 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         };
       }
       
-      // Prepare update data
+      // Include attachments in specifications JSONB
+      const specsWithAttachments = {
+        ...(typeof specsToSave === 'object' && !Array.isArray(specsToSave) ? specsToSave : { items: specsToSave }),
+        attachments: attachments
+      };
+      
+      // Prepare update data - only include valid database columns
       const updates = {
-        ...formData,
-        specifications: specsToSave,
-        attachments: attachments,
+        name: formData.name,
+        model: formData.model,
+        manufacturer: formData.manufacturer,
+        serial_number: formData.serial_number,
+        location: formData.location,
+        status: formData.status,
+        notes: formData.notes,
+        purchase_date: formData.purchase_date || null,
+        purchase_cost: formData.current_value ? parseFloat(formData.current_value.toString()) : null,
+        specifications: specsWithAttachments,
         updated_at: new Date().toISOString()
       };
 
