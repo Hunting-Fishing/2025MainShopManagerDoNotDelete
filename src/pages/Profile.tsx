@@ -9,8 +9,9 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Edit2, X } from 'lucide-react';
+import { Loader2, Edit2, X, Mail, Key, LogOut } from 'lucide-react';
 import { ChangePasswordDialog } from '@/components/profile/ChangePasswordDialog';
+import { ChangeEmailDialog } from '@/components/profile/ChangeEmailDialog';
 
 export default function Profile() {
   const { user } = useAuthUser();
@@ -21,6 +22,7 @@ export default function Profile() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -169,7 +171,6 @@ export default function Profile() {
                 disabled
                 className="bg-muted"
               />
-              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
             </div>
             
             <div className="space-y-2">
@@ -238,30 +239,46 @@ export default function Profile() {
         <Card>
           <CardHeader>
             <CardTitle>Account Actions</CardTitle>
-            <CardDescription>Manage your account</CardDescription>
+            <CardDescription>Manage your account security</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button 
               variant="outline" 
               className="w-full"
+              onClick={() => setShowEmailDialog(true)}
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              Change Email
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full"
               onClick={() => setShowPasswordDialog(true)}
             >
+              <Key className="mr-2 h-4 w-4" />
               Change Password
             </Button>
             <Button 
-              variant="destructive" 
+              variant="outline" 
               className="w-full"
               onClick={handleSignOut}
             >
+              <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </Button>
           </CardContent>
         </Card>
       </div>
 
-      <ChangePasswordDialog 
+      <ChangePasswordDialog
         open={showPasswordDialog}
         onOpenChange={setShowPasswordDialog}
+      />
+      
+      <ChangeEmailDialog
+        open={showEmailDialog}
+        onOpenChange={setShowEmailDialog}
+        currentEmail={userProfile?.email || ''}
       />
     </div>
   );
