@@ -82,21 +82,16 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail, userId }: 
 
       if (error) throw error;
 
-      // Refresh the session to update the UI with new email
-      await supabase.auth.refreshSession();
-
       toast({
         title: 'Email Updated',
-        description: 'Your email has been changed successfully.',
+        description: 'Your email has been changed. Please sign in with your new email.',
       });
 
-      // Reset form and close dialog
-      setNewEmail('');
-      setConfirmEmail('');
-      onOpenChange(false);
+      // Sign out to force re-authentication with new email
+      await supabase.auth.signOut();
       
-      // Reload the page to ensure all components reflect the new email
-      window.location.reload();
+      // Redirect to login page
+      window.location.href = '/login';
     } catch (error) {
       console.error('Error changing email:', error);
       toast({
