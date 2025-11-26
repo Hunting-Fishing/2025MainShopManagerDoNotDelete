@@ -60,9 +60,9 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
       ...compartments,
       {
         number: compartments.length + 1,
-        product_type: 'Diesel',
+        product_type: '',
         capacity: 0,
-        material: 'Aluminum'
+        material: ''
       }
     ];
     onChange({ ...data, compartments: newCompartments });
@@ -106,8 +106,8 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
             <Input
               type="number"
               value={data.gvwr || ''}
-              onChange={(e) => updateField('gvwr', parseInt(e.target.value) || 0)}
-              placeholder="80000"
+              onChange={(e) => updateField('gvwr', parseInt(e.target.value) || undefined)}
+              placeholder="Enter GVWR"
             />
           </div>
           
@@ -116,8 +116,8 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
             <Input
               type="number"
               value={data.unladen_weight || ''}
-              onChange={(e) => updateField('unladen_weight', parseInt(e.target.value) || 0)}
-              placeholder="25000"
+              onChange={(e) => updateField('unladen_weight', parseInt(e.target.value) || undefined)}
+              placeholder="Enter weight"
             />
           </div>
           
@@ -126,8 +126,8 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
             <Input
               type="number"
               value={data.max_payload || ''}
-              onChange={(e) => updateField('max_payload', parseInt(e.target.value) || 0)}
-              placeholder="55000"
+              onChange={(e) => updateField('max_payload', parseInt(e.target.value) || undefined)}
+              placeholder="Enter payload"
             />
           </div>
         </CardContent>
@@ -214,11 +214,11 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
                       <div className="space-y-2">
                         <Label className="text-sm">Product Type</Label>
                         <Select
-                          value={compartment.product_type}
+                          value={compartment.product_type || undefined}
                           onValueChange={(value) => updateCompartment(index, 'product_type', value)}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select product type" />
                           </SelectTrigger>
                           <SelectContent>
                             {PRODUCT_TYPES.map((type) => (
@@ -234,20 +234,20 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
                         <Label className="text-sm">Capacity (gallons)</Label>
                         <Input
                           type="number"
-                          value={compartment.capacity}
-                          onChange={(e) => updateCompartment(index, 'capacity', parseInt(e.target.value) || 0)}
-                          placeholder="2000"
+                          value={compartment.capacity || ''}
+                          onChange={(e) => updateCompartment(index, 'capacity', parseInt(e.target.value) || undefined)}
+                          placeholder=""
                         />
                       </div>
                       
                       <div className="space-y-2">
                         <Label className="text-sm">Material</Label>
                         <Select
-                          value={compartment.material}
+                          value={compartment.material || undefined}
                           onValueChange={(value) => updateCompartment(index, 'material', value)}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select material" />
                           </SelectTrigger>
                           <SelectContent>
                             {MATERIALS.map((material) => (
@@ -285,8 +285,8 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
             <Input
               type="number"
               value={data.num_hose_reels || ''}
-              onChange={(e) => updateField('num_hose_reels', parseInt(e.target.value) || 0)}
-              placeholder="3"
+              onChange={(e) => updateField('num_hose_reels', parseInt(e.target.value) || undefined)}
+              placeholder=""
             />
           </div>
           
@@ -295,15 +295,15 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
             <Input
               type="number"
               value={data.hose_length || ''}
-              onChange={(e) => updateField('hose_length', parseInt(e.target.value) || 0)}
-              placeholder="50"
+              onChange={(e) => updateField('hose_length', parseInt(e.target.value) || undefined)}
+              placeholder=""
             />
           </div>
           
           <div className="space-y-2">
             <Label>Pump Type</Label>
             <Select
-              value={data.pump_type || ''}
+              value={data.pump_type || undefined}
               onValueChange={(value) => updateField('pump_type', value)}
             >
               <SelectTrigger>
@@ -324,8 +324,8 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
             <Input
               type="number"
               value={data.flow_rate_gpm || ''}
-              onChange={(e) => updateField('flow_rate_gpm', parseInt(e.target.value) || 0)}
-              placeholder="100"
+              onChange={(e) => updateField('flow_rate_gpm', parseInt(e.target.value) || undefined)}
+              placeholder=""
             />
           </div>
           
