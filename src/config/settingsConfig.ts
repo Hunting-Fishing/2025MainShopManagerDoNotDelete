@@ -115,7 +115,8 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         icon: LayoutList,
         component: NavigationSettingsTab,
         path: '/settings/navigation',
-        description: 'Configure sidebar visibility and role access'
+        description: 'Configure sidebar visibility and role access',
+        requiredRoles: ['owner', 'manager']
       }
     ]
   },

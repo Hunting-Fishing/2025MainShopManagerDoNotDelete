@@ -8,6 +8,7 @@ export interface SettingsTabConfig {
   component: React.ComponentType;
   path?: string;
   description?: string;
+  requiredRoles?: string[];
 }
 
 export interface SettingsSection {

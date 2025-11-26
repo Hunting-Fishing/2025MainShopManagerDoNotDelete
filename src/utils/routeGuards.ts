@@ -19,6 +19,7 @@ export const routePermissions: RoutePermission[] = [
   { path: '/settings', allowedRoles: ['admin', 'manager', 'owner'] },
   { path: '/settings/role-permissions', requireAdmin: true },
   { path: '/settings/user-permissions', requireAdmin: true },
+  { path: '/settings/navigation', allowedRoles: ['owner', 'manager'] },
   { path: '/reports', allowedRoles: ['admin', 'manager', 'owner'] },
   { path: '/forms', allowedRoles: ['admin', 'manager', 'owner'] },
   { path: '/ai-hub', allowedRoles: ['admin', 'manager', 'owner'] },

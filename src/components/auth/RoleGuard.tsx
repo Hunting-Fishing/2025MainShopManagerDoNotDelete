@@ -21,7 +21,7 @@ export function RoleGuard({
   requireAdmin = false,
   fallback 
 }: RoleGuardProps) {
-  const { isLoading, isAuthenticated, isOwner, isAdmin, error } = useAuthUser();
+  const { isLoading, isAuthenticated, isOwner, isAdmin, isManager, error } = useAuthUser();
 
   if (isLoading) {
     return (
@@ -83,7 +83,7 @@ export function RoleGuard({
       switch (role) {
         case 'owner': return isOwner;
         case 'admin': return isAdmin || isOwner;
-        case 'manager': return isAdmin || isOwner; // For now, treat manager like admin
+        case 'manager': return isManager || isAdmin || isOwner;
         case 'technician': return isAdmin || isOwner; // For now, allow admin/owner access
         case 'service_advisor': return isAdmin || isOwner; // For now, allow admin/owner access
         case 'reception': return isAdmin || isOwner; // For now, allow admin/owner access
