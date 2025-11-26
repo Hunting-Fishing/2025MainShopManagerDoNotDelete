@@ -31,3 +31,6 @@ verify_jwt = false
 
 [functions.invite-team-member]
 verify_jwt = true
+
+[functions.update-user-email]
+verify_jwt = true

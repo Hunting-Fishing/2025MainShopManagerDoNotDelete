@@ -138,12 +138,62 @@ export function useUserProfile() {
     }
   };
 
+  const updateAuthEmail = async (newEmail: string) => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return { success: false, error: 'User not authenticated' };
+    }
+    
+    try {
+      setSavingProfile(true);
+      
+      console.log("Updating auth email to:", newEmail);
+      
+      const { data, error } = await supabase.functions.invoke('update-user-email', {
+        body: { userId, newEmail }
+      });
+      
+      if (error) throw error;
+      
+      // Refresh the profile to get updated email
+      await fetchUserProfile();
+      
+      toast({
+        title: "Email Updated",
+        description: "Your email has been updated successfully.",
+        variant: "default",
+      });
+      
+      return { success: true };
+    } catch (err) {
+      console.error("Error updating auth email:", err);
+      
+      toast({
+        title: "Update Failed",
+        description: "Couldn't update your email. Please try again.",
+        variant: "destructive",
+      });
+      
+      return { 
+        success: false, 
+        error: err instanceof Error ? err.message : 'Unknown error occurred'
+      };
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   return {
     userProfile,
     loading,
     savingProfile,
     error,
     fetchUserProfile,
-    updateProfile
+    updateProfile,
+    updateAuthEmail
   };
 }
