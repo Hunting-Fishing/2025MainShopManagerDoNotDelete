@@ -38,6 +38,8 @@ export function MobileLayout({
         title={title}
         showBack={showBack}
         showSearch={showSearch}
+        showNotifications={true}
+        showMenu={true}
         onSearch={onSearch}
         rightAction={rightAction}
       />
