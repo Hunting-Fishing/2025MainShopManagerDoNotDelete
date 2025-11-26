@@ -20,7 +20,8 @@ import {
   UserCheck,
   LayoutDashboard,
   Lock,
-  UserCog
+  UserCog,
+  LayoutList
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -52,6 +53,7 @@ import { VolunteerManagementTab } from '@/components/settings/VolunteerManagemen
 import { DashboardSettingsTab } from '@/components/settings/DashboardSettingsTab';
 import { RolePermissionsSettingsTab } from '@/components/settings/RolePermissionsSettingsTab';
 import { UserPermissionsSettingsTab } from '@/components/settings/UserPermissionsSettingsTab';
+import { NavigationSettingsTab } from '@/components/settings/NavigationSettingsTab';
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
@@ -106,6 +108,14 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         component: SecurityTab,
         path: '/settings/security',
         description: 'Password and authentication settings'
+      },
+      {
+        id: 'navigation',
+        label: 'Navigation',
+        icon: LayoutList,
+        component: NavigationSettingsTab,
+        path: '/settings/navigation',
+        description: 'Configure sidebar visibility and role access'
       }
     ]
   },

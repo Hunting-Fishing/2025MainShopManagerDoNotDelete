@@ -10,12 +10,14 @@ import { hasRoutePermission } from '@/utils/routeGuards';
 import { getSectionColorScheme } from '@/utils/sectionColors';
 import { SidebarLogo } from './SidebarLogo';
 import { navigation } from './navigation';
+import { useSidebarVisibility } from '@/hooks/useSidebarVisibility';
 
 export function SidebarContent() {
   const location = useLocation();
   const { setIsOpen } = useSidebar();
   const isMobile = useIsMobile();
   const { data: userRoles = [] } = useUserRoles();
+  const { isVisible } = useSidebarVisibility();
 
   const handleLinkClick = (href: string) => {
     console.log('🔗 Sidebar navigation clicked:', href);
@@ -25,11 +27,14 @@ export function SidebarContent() {
     }
   };
 
-  // Use only static navigation - no more database sync issues
-  const filteredNavigation = navigation.map(section => ({
-    ...section,
-    items: section.items.filter(item => hasRoutePermission(item.href, userRoles))
-  })).filter(section => section.items.length > 0);
+  // Filter navigation based on visibility settings and permissions
+  const filteredNavigation = navigation
+    .filter(section => isVisible(section.title)) // Check shop-level and role-based visibility
+    .map(section => ({
+      ...section,
+      items: section.items.filter(item => hasRoutePermission(item.href, userRoles))
+    }))
+    .filter(section => section.items.length > 0);
 
   return (
     <div className="flex h-full flex-col bg-white border-r border-gray-200">
