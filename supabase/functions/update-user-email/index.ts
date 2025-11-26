@@ -35,18 +35,43 @@ serve(async (req) => {
 
     console.log('Updating auth email for user:', userId, 'to:', newEmail);
 
-    // Update auth.users email using Admin API
+    // First, check if the email is already in use by another user
+    const { data: existingUsers, error: checkError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (checkError) {
+      console.error('Error checking existing users:', checkError);
+      throw new Error('Failed to verify email availability');
+    }
+
+    const emailInUse = existingUsers.users.find(
+      user => user.email?.toLowerCase() === newEmail.toLowerCase() && user.id !== userId
+    );
+
+    if (emailInUse) {
+      return new Response(
+        JSON.stringify({ error: 'This email is already in use by another account' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    // Update auth.users email using Admin API with proper flags
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
       { 
         email: newEmail,
-        email_confirm: true // Skip email confirmation
+        email_confirm: true, // Mark email as confirmed
+        ban_duration: 'none' // Ensure user is not banned
       }
     );
 
     if (authError) {
       console.error('Auth update error:', authError);
-      throw authError;
+      
+      // Provide more specific error messages
+      if (authError.message.includes('email')) {
+        throw new Error('Invalid email format or email update not allowed');
+      }
+      throw new Error(`Failed to update email: ${authError.message}`);
     }
 
     console.log('Auth email updated successfully');
@@ -54,7 +79,10 @@ serve(async (req) => {
     // Update profiles table to keep in sync
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .update({ email: newEmail })
+      .update({ 
+        email: newEmail,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', userId);
 
     if (profileError) {
@@ -75,7 +103,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error updating email:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Error updating user' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
