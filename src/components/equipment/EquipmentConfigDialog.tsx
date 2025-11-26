@@ -328,11 +328,13 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
 
       // Insert new items
       if (serviceItems.length > 0) {
-        const itemsToInsert = serviceItems.map(item => ({
-          ...item,
-          equipment_id: equipment.id,
-          id: undefined // Remove id for new inserts
-        }));
+        const itemsToInsert = serviceItems.map(item => {
+          const { id, ...itemWithoutId } = item;
+          return {
+            ...itemWithoutId,
+            equipment_id: equipment.id
+          };
+        });
 
         const { error } = await supabase
           .from('equipment_maintenance_items')
