@@ -141,7 +141,7 @@ export function RecentWorkOrders() {
                   {order.equipmentName ? (
                     <>
                       <span className="font-semibold group-hover:text-primary transition-colors">
-                        {order.equipmentName} {order.assetNumber && `(${order.assetNumber})`}
+                        {order.equipmentName}
                       </span>
                       <span className="text-sm text-muted-foreground">
                         {order.customer}
