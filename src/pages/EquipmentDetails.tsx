@@ -282,6 +282,91 @@ export default function EquipmentDetails() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Trailer Specifications Card */}
+          {(equipment as any).specifications?.trailer && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  🚛 Trailer Specifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">GVWR (Gross Weight)</label>
+                      <p className="mt-1 text-lg font-semibold">
+                        {(equipment as any).specifications.trailer.gvwr 
+                          ? `${(equipment as any).specifications.trailer.gvwr.toLocaleString()} lbs`
+                          : 'N/A'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Front Axle Capacity</label>
+                      <p className="mt-1 text-lg font-semibold">
+                        {(equipment as any).specifications.trailer.front_axle_capacity 
+                          ? `${(equipment as any).specifications.trailer.front_axle_capacity.toLocaleString()} lbs`
+                          : 'N/A'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Rear Axle Capacity</label>
+                      <p className="mt-1 text-lg font-semibold">
+                        {(equipment as any).specifications.trailer.rear_axle_capacity 
+                          ? `${(equipment as any).specifications.trailer.rear_axle_capacity.toLocaleString()} lbs`
+                          : 'N/A'
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Manufacture Year</label>
+                      <p className="mt-1 text-lg font-semibold">
+                        {(equipment as any).specifications.trailer.manufacture_year || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Tire Size</label>
+                        <p className="mt-1 font-medium">
+                          {(equipment as any).specifications.trailer.tire_size || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Rim Size</label>
+                        <p className="mt-1 font-medium">
+                          {(equipment as any).specifications.trailer.rim_size || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Tire PSI</label>
+                        <p className="mt-1 font-medium">
+                          {(equipment as any).specifications.trailer.tire_psi 
+                            ? `${(equipment as any).specifications.trailer.tire_psi} PSI`
+                            : 'N/A'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Number of Axles</label>
+                      <p className="mt-1 text-lg font-semibold">
+                        {(equipment as any).specifications.trailer.num_axles 
+                          ? `${(equipment as any).specifications.trailer.num_axles} Axle${(equipment as any).specifications.trailer.num_axles > 1 ? 's' : ''}`
+                          : 'N/A'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="manuals" className="space-y-4">

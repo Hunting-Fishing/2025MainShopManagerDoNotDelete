@@ -88,6 +88,24 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     current_value: (equipment as any).current_value || 0,
   });
 
+  // Trailer Information State
+  const [trailerData, setTrailerData] = useState({
+    gvwr: ((equipment as any).specifications?.trailer?.gvwr) || '',
+    front_axle_capacity: ((equipment as any).specifications?.trailer?.front_axle_capacity) || '',
+    rear_axle_capacity: ((equipment as any).specifications?.trailer?.rear_axle_capacity) || '',
+    num_axles: ((equipment as any).specifications?.trailer?.num_axles) || '2',
+    tire_size: ((equipment as any).specifications?.trailer?.tire_size) || '',
+    rim_size: ((equipment as any).specifications?.trailer?.rim_size) || '',
+    tire_psi: ((equipment as any).specifications?.trailer?.tire_psi) || '',
+    manufacture_year: ((equipment as any).specifications?.trailer?.manufacture_year) || '',
+  });
+  
+  // Check if this is a trailer (by type or name)
+  const isTrailer = equipment.name?.toLowerCase().includes('trailer') || 
+                    equipment.type?.toLowerCase().includes('trailer') ||
+                    ((equipment as any).specifications?.trailer);
+  const [showTrailerSection, setShowTrailerSection] = useState(isTrailer);
+
   // Specifications State
   const [specifications, setSpecifications] = useState<Specification[]>(() => {
     const specs = (equipment as any).specifications || [];
@@ -330,10 +348,34 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
 
   const handleSave = async () => {
     try {
+      // Prepare trailer specifications if trailer section is shown
+      const equipmentSpecs = Array.isArray(specifications) ? specifications : [];
+      const existingSpecsObj = (equipment as any).specifications || {};
+      
+      let specsToSave: any = equipmentSpecs;
+      
+      // If trailer section is visible, save trailer data in specifications object
+      if (showTrailerSection) {
+        specsToSave = {
+          ...existingSpecsObj,
+          items: equipmentSpecs,
+          trailer: {
+            gvwr: trailerData.gvwr ? parseFloat(trailerData.gvwr.toString()) : null,
+            front_axle_capacity: trailerData.front_axle_capacity ? parseFloat(trailerData.front_axle_capacity.toString()) : null,
+            rear_axle_capacity: trailerData.rear_axle_capacity ? parseFloat(trailerData.rear_axle_capacity.toString()) : null,
+            num_axles: trailerData.num_axles ? parseInt(trailerData.num_axles.toString()) : null,
+            tire_size: trailerData.tire_size || null,
+            rim_size: trailerData.rim_size || null,
+            tire_psi: trailerData.tire_psi ? parseFloat(trailerData.tire_psi.toString()) : null,
+            manufacture_year: trailerData.manufacture_year ? parseInt(trailerData.manufacture_year.toString()) : null,
+          }
+        };
+      }
+      
       // Prepare update data
       const updates = {
         ...formData,
-        specifications: specifications,
+        specifications: specsToSave,
         attachments: attachments,
         updated_at: new Date().toISOString()
       };
@@ -506,6 +548,122 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                 placeholder="Enter any additional notes or comments"
                 rows={4}
               />
+            </div>
+
+            {/* Trailer Information Section */}
+            <div className="space-y-4 pt-6 border-t">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">🚛 Trailer Specifications</h3>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTrailerSection(!showTrailerSection)}
+                >
+                  {showTrailerSection ? 'Hide' : 'Show'}
+                </Button>
+              </div>
+              
+              {showTrailerSection && (
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="gvwr">GVWR (lbs)</Label>
+                        <Input
+                          id="gvwr"
+                          type="number"
+                          value={trailerData.gvwr}
+                          onChange={(e) => setTrailerData({ ...trailerData, gvwr: e.target.value })}
+                          placeholder="12573"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="manufacture_year">Manufacture Year</Label>
+                        <Input
+                          id="manufacture_year"
+                          type="number"
+                          value={trailerData.manufacture_year}
+                          onChange={(e) => setTrailerData({ ...trailerData, manufacture_year: e.target.value })}
+                          placeholder="2007"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="front_axle">Front Axle Capacity (lbs)</Label>
+                        <Input
+                          id="front_axle"
+                          type="number"
+                          value={trailerData.front_axle_capacity}
+                          onChange={(e) => setTrailerData({ ...trailerData, front_axle_capacity: e.target.value })}
+                          placeholder="6338"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="rear_axle">Rear Axle Capacity (lbs)</Label>
+                        <Input
+                          id="rear_axle"
+                          type="number"
+                          value={trailerData.rear_axle_capacity}
+                          onChange={(e) => setTrailerData({ ...trailerData, rear_axle_capacity: e.target.value })}
+                          placeholder="6338"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="num_axles">Number of Axles</Label>
+                        <Select 
+                          value={trailerData.num_axles.toString()} 
+                          onValueChange={(value) => setTrailerData({ ...trailerData, num_axles: value })}
+                        >
+                          <SelectTrigger id="num_axles">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 Axle</SelectItem>
+                            <SelectItem value="2">2 Axles</SelectItem>
+                            <SelectItem value="3">3 Axles</SelectItem>
+                            <SelectItem value="4">4+ Axles</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="tire_psi">Tire PSI</Label>
+                        <Input
+                          id="tire_psi"
+                          type="number"
+                          value={trailerData.tire_psi}
+                          onChange={(e) => setTrailerData({ ...trailerData, tire_psi: e.target.value })}
+                          placeholder="80"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="tire_size">Tire Size</Label>
+                        <Input
+                          id="tire_size"
+                          value={trailerData.tire_size}
+                          onChange={(e) => setTrailerData({ ...trailerData, tire_size: e.target.value })}
+                          placeholder="235/85/R16"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="rim_size">Rim Size</Label>
+                        <Input
+                          id="rim_size"
+                          value={trailerData.rim_size}
+                          onChange={(e) => setTrailerData({ ...trailerData, rim_size: e.target.value })}
+                          placeholder="16X6"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </TabsContent>
 
