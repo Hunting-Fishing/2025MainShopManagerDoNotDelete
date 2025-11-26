@@ -33,6 +33,21 @@ export const formatHistoryRecord = (record: TeamMemberHistoryRecord): string => 
         ? `Updated fields: ${Array.isArray(fields) ? fields.join(', ') : fields}`
         : "Profile was updated";
       break;
+    case "navigation_access_granted":
+      const grantedSections = record.details.sections_granted || [];
+      actionLabel = grantedSections.length > 0
+        ? `Granted navigation access to: ${grantedSections.join(', ')}`
+        : "Granted special navigation access";
+      break;
+    case "navigation_access_revoked":
+      const revokedSections = record.details.sections_revoked || [];
+      actionLabel = revokedSections.length > 0
+        ? `Revoked navigation access to: ${revokedSections.join(', ')}`
+        : "Revoked special navigation access";
+      break;
+    case "navigation_access_reset":
+      actionLabel = "Reset all special navigation access to role defaults";
+      break;
     default:
       actionLabel = `${record.action_type.replace("_", " ")}`;
   }
