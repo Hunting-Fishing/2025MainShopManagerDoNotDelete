@@ -1,5 +1,5 @@
 import React from 'react';
-import { TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Link } from 'react-router-dom';
 import { SettingsSection } from '@/types/settingsConfig';
 
 interface SettingsGroupedTabsListProps {
@@ -40,29 +40,30 @@ export const SettingsGroupedTabsList: React.FC<SettingsGroupedTabsListProps> = (
             )}
           </div>
           
-          <TabsList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 h-auto bg-transparent p-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
             {section.tabs.map((tab) => {
               const Icon = tab.icon;
+              const path = tab.path || `/settings/${tab.id}`;
               return (
-                  <TabsTrigger
-                    key={tab.id}
-                    value={tab.id}
-                    className="flex flex-col items-center justify-center p-4 h-auto text-xs font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm gap-2 hover:bg-muted rounded-lg border border-border data-[state=active]:border-primary"
-                    title={tab.description}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span className="text-center leading-tight">
-                      {highlightMatch(tab.label, searchQuery)}
+                <Link
+                  key={tab.id}
+                  to={path}
+                  className="flex flex-col items-center justify-center p-4 h-auto text-xs font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 gap-2 hover:bg-muted rounded-lg border border-border hover:border-primary hover:shadow-sm"
+                  title={tab.description}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-center leading-tight">
+                    {highlightMatch(tab.label, searchQuery)}
+                  </span>
+                  {searchQuery && tab.description && (
+                    <span className="text-xs text-muted-foreground text-center leading-tight">
+                      {highlightMatch(tab.description, searchQuery)}
                     </span>
-                    {searchQuery && tab.description && (
-                      <span className="text-xs text-muted-foreground text-center leading-tight">
-                        {highlightMatch(tab.description, searchQuery)}
-                      </span>
-                    )}
-                  </TabsTrigger>
+                  )}
+                </Link>
               );
             })}
-          </TabsList>
+          </div>
         </div>
       ))}
     </div>
