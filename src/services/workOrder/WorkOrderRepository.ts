@@ -1,6 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { WorkOrder } from '@/types/workOrder';
+import { recordWorkOrderActivity } from './workOrderActivityService';
 
 export class WorkOrderRepository {
   async findAll(): Promise<WorkOrder[]> {
@@ -238,6 +239,32 @@ export class WorkOrderRepository {
       const transformed = this.transformWorkOrder(data);
       console.log('4. Transformed work order:', transformed);
       
+      // Log activity for work order creation
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', user.id)
+            .single();
+          
+          const userName = profile 
+            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'System'
+            : 'System';
+          
+          await recordWorkOrderActivity(
+            'Work order created',
+            data.id,
+            user.id,
+            userName
+          );
+          console.log('5. Activity logged for work order creation');
+        }
+      } catch (activityError) {
+        console.warn('Failed to log work order creation activity:', activityError);
+      }
+      
       return transformed;
     } catch (error) {
       console.error('=== REPOSITORY CREATE ERROR ===');
@@ -249,6 +276,13 @@ export class WorkOrderRepository {
   async update(id: string, updateData: any): Promise<WorkOrder> {
     try {
       console.log('WorkOrderRepository: Updating work order:', id, 'with data:', updateData);
+      
+      // Get the old work order data to detect changes
+      const { data: oldData } = await supabase
+        .from('work_orders')
+        .select('technician_id')
+        .eq('id', id)
+        .single();
       
       const { data, error } = await supabase
         .from('work_orders')
@@ -267,6 +301,46 @@ export class WorkOrderRepository {
       }
 
       console.log('WorkOrderRepository: Successfully updated work order:', data.id);
+      
+      // Log activity for technician assignment
+      if (updateData.technician_id && oldData?.technician_id !== updateData.technician_id) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('id', user.id)
+              .single();
+            
+            const userName = profile 
+              ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'System'
+              : 'System';
+            
+            // Get technician name
+            const { data: techProfile } = await supabase
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('id', updateData.technician_id)
+              .single();
+            
+            const techName = techProfile 
+              ? `${techProfile.first_name || ''} ${techProfile.last_name || ''}`.trim()
+              : 'Technician';
+            
+            await recordWorkOrderActivity(
+              `Assigned to ${techName}`,
+              id,
+              user.id,
+              userName
+            );
+            console.log('Activity logged for technician assignment');
+          }
+        } catch (activityError) {
+          console.warn('Failed to log technician assignment activity:', activityError);
+        }
+      }
+      
       return this.transformWorkOrder(data);
     } catch (error) {
       console.error('WorkOrderRepository: Error in update:', error);
@@ -281,6 +355,13 @@ export class WorkOrderRepository {
       console.log('🔄 REPOSITORY DEBUG: Status:', status);
       console.log('🔄 REPOSITORY DEBUG: UserID:', userId);
       console.log('🔄 REPOSITORY DEBUG: UserName:', userName);
+      
+      // Get the old status to log the change
+      const { data: oldData } = await supabase
+        .from('work_orders')
+        .select('status')
+        .eq('id', id)
+        .single();
       
       const updateData: any = { 
         status,
@@ -316,6 +397,36 @@ export class WorkOrderRepository {
       }
 
       console.log('🔄 REPOSITORY DEBUG: Successfully updated work order status');
+      
+      // Log activity for status change
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', user.id)
+            .single();
+          
+          const currentUserName = profile 
+            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'System'
+            : 'System';
+          
+          const oldStatus = oldData?.status || 'unknown';
+          const action = `Status changed from ${oldStatus} to ${status}`;
+          
+          await recordWorkOrderActivity(
+            action,
+            id,
+            user.id,
+            currentUserName
+          );
+          console.log('🔄 REPOSITORY DEBUG: Activity logged for status change');
+        }
+      } catch (activityError) {
+        console.warn('Failed to log status change activity:', activityError);
+      }
+      
       const transformed = this.transformWorkOrder(data);
       console.log('🔄 REPOSITORY DEBUG: Transformed result:', transformed);
       return transformed;
