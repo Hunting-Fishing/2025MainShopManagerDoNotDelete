@@ -6,6 +6,7 @@ import { useFetchUserRoles } from './team/useFetchUserRoles';
 import { useTeamDataTransformer } from './team/useTeamDataTransformer';
 import { supabase } from '@/lib/supabase';
 import { getAllWorkOrders } from '@/services/workOrder';
+import { generateUniqueDisplayNames, formatDisplayName } from '@/utils/duplicateNameHandler';
 
 /**
  * Interface for the status change details from team_member_history
@@ -59,6 +60,9 @@ export function useTeamMembers() {
         // Transform the raw data into TeamMember objects
         const mappedMembers = transformData(profiles, userRoles, workOrderData);
         
+        // Generate unique display names for duplicate detection
+        const displayNameMap = generateUniqueDisplayNames(profiles);
+        
         // Fetch additional status information from team_member_history
         const membersWithStatus = await Promise.all(
           mappedMembers.map(async (member) => {
@@ -92,10 +96,14 @@ export function useTeamMembers() {
                 const statusValue = details.new_status || 'Active';
                 const validStatus = validateStatus(statusValue);
                 
+                // Get unique display name
+                const displayInfo = displayNameMap.get(member.id);
+                const displayName = displayInfo ? formatDisplayName(displayInfo) : `${member.first_name} ${member.last_name}`;
+                
                 // Transform to proper TeamMember format
                 return {
                   id: member.id,
-                  name: `${member.first_name} ${member.last_name}`,
+                  name: displayName,
                   email: member.email,
                   phone: member.phone,
                   role: member.job_title || 'Team Member',
@@ -114,10 +122,14 @@ export function useTeamMembers() {
               console.error('Error fetching status for member:', member.id, err);
             }
             
+            // Get unique display name for default case
+            const displayInfo = displayNameMap.get(member.id);
+            const displayName = displayInfo ? formatDisplayName(displayInfo) : `${member.first_name} ${member.last_name}`;
+            
             // Default transformation for members without status history
             return {
               id: member.id,
-              name: `${member.first_name} ${member.last_name}`,
+              name: displayName,
               email: member.email,
               phone: member.phone,
               role: member.job_title || 'Team Member',
