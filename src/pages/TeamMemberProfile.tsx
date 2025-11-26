@@ -141,13 +141,13 @@ export default function TeamMemberProfile() {
       
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="certifications">Certifications</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
-          <TabsTrigger value="edit">Edit Profile</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="work-orders" className="text-xs sm:text-sm">Work Orders</TabsTrigger>
+          <TabsTrigger value="activity" className="text-xs sm:text-sm">Activity</TabsTrigger>
+          <TabsTrigger value="certifications" className="text-xs sm:text-sm">Certifications</TabsTrigger>
+          <TabsTrigger value="permissions" className="text-xs sm:text-sm">Permissions</TabsTrigger>
+          <TabsTrigger value="edit" className="text-xs sm:text-sm">Edit Profile</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
