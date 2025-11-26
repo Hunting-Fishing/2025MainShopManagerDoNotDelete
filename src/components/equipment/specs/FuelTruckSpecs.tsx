@@ -8,9 +8,10 @@ import { Plus, Trash2 } from 'lucide-react';
 
 export interface FuelCompartment {
   number: number;
-  product_type: string;
-  capacity: number;
-  material: string;
+  product_type?: string;
+  capacity?: number;
+  material?: string;
+  last_inspection?: string;
 }
 
 export interface FuelTruckData {
@@ -60,9 +61,9 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
       ...compartments,
       {
         number: compartments.length + 1,
-        product_type: '',
-        capacity: 0,
-        material: ''
+        product_type: undefined,
+        capacity: undefined,
+        material: undefined
       }
     ];
     onChange({ ...data, compartments: newCompartments });
@@ -213,13 +214,13 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div className="space-y-2">
                         <Label className="text-sm">Product Type</Label>
-                        <Select
-                          value={compartment.product_type || undefined}
-                          onValueChange={(value) => updateCompartment(index, 'product_type', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select product type" />
-                          </SelectTrigger>
+                  <Select
+                    value={compartment.product_type && compartment.product_type !== '' ? compartment.product_type : undefined}
+                    onValueChange={(value) => updateCompartment(index, 'product_type', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select product type" />
+                    </SelectTrigger>
                           <SelectContent>
                             {PRODUCT_TYPES.map((type) => (
                               <SelectItem key={type} value={type}>
@@ -234,21 +235,24 @@ export function FuelTruckSpecs({ data, onChange }: FuelTruckSpecsProps) {
                         <Label className="text-sm">Capacity (gallons)</Label>
                         <Input
                           type="number"
-                          value={compartment.capacity || ''}
-                          onChange={(e) => updateCompartment(index, 'capacity', parseInt(e.target.value) || undefined)}
+                          value={compartment.capacity !== undefined ? compartment.capacity : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            updateCompartment(index, 'capacity', val === '' ? undefined : parseInt(val) || undefined);
+                          }}
                           placeholder=""
                         />
                       </div>
                       
                       <div className="space-y-2">
                         <Label className="text-sm">Material</Label>
-                        <Select
-                          value={compartment.material || undefined}
-                          onValueChange={(value) => updateCompartment(index, 'material', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select material" />
-                          </SelectTrigger>
+                  <Select
+                    value={compartment.material && compartment.material !== '' ? compartment.material : undefined}
+                    onValueChange={(value) => updateCompartment(index, 'material', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select material" />
+                    </SelectTrigger>
                           <SelectContent>
                             {MATERIALS.map((material) => (
                               <SelectItem key={material} value={material}>
