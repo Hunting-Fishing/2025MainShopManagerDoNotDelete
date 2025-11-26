@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AddSafetyEquipmentDialog } from './AddSafetyEquipmentDialog';
 import { SafetyEquipmentList } from './SafetyEquipmentList';
+import { FuelTruckSpecs, FuelTruckData } from './specs/FuelTruckSpecs';
 
 interface EquipmentConfigDialogProps {
   open: boolean;
@@ -88,6 +89,11 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     current_value: (equipment as any).current_value || 0,
   });
 
+  // Equipment Type State
+  const [equipmentType, setEquipmentType] = useState<string>(() => {
+    return (equipment as any).equipment_type || 'other';
+  });
+
   // Trailer Information State
   const [trailerData, setTrailerData] = useState({
     gvwr: ((equipment as any).specifications?.trailer?.gvwr) || '',
@@ -98,6 +104,11 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     rim_size: ((equipment as any).specifications?.trailer?.rim_size) || '',
     tire_psi: ((equipment as any).specifications?.trailer?.tire_psi) || '',
     manufacture_year: ((equipment as any).specifications?.trailer?.manufacture_year) || '',
+  });
+  
+  // Fuel Truck Information State
+  const [fuelTruckData, setFuelTruckData] = useState<FuelTruckData>(() => {
+    return (equipment as any).specifications?.fuel_truck || {};
   });
   
   // Check if this is a trailer (by type or name)
@@ -377,6 +388,15 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         };
       }
       
+      // If fuel truck type, save fuel truck data
+      if (equipmentType === 'fuel_truck') {
+        specsToSave = {
+          ...existingSpecsObj,
+          items: equipmentSpecs,
+          fuel_truck: fuelTruckData
+        };
+      }
+      
       // Include attachments in specifications JSONB
       const specsWithAttachments = {
         ...(typeof specsToSave === 'object' && !Array.isArray(specsToSave) ? specsToSave : { items: specsToSave }),
@@ -394,6 +414,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         notes: formData.notes,
         purchase_date: formData.purchase_date || null,
         purchase_cost: formData.current_value ? parseFloat(formData.current_value.toString()) : null,
+        equipment_type: equipmentType,
         specifications: specsWithAttachments,
         updated_at: new Date().toISOString()
       };
@@ -534,6 +555,29 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="equipment_type">Equipment Type</Label>
+                <Select value={equipmentType} onValueChange={(value) => setEquipmentType(value)}>
+                  <SelectTrigger id="equipment_type">
+                    <SelectValue placeholder="Select equipment type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fuel_truck">Fuel Truck</SelectItem>
+                    <SelectItem value="trailer">Trailer</SelectItem>
+                    <SelectItem value="vessel">Vessel/Boat</SelectItem>
+                    <SelectItem value="forklift">Forklift</SelectItem>
+                    <SelectItem value="generator">Generator</SelectItem>
+                    <SelectItem value="pump">Pump</SelectItem>
+                    <SelectItem value="heavy_truck">Heavy Equipment</SelectItem>
+                    <SelectItem value="fleet_vehicle">Fleet Vehicle</SelectItem>
+                    <SelectItem value="saw">Saw/Small Equipment</SelectItem>
+                    <SelectItem value="life_raft">Life Raft</SelectItem>
+                    <SelectItem value="fire_extinguisher">Fire Extinguisher</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="purchase_date">Purchase Date</Label>
                 <Input
                   id="purchase_date"
@@ -567,6 +611,14 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                 rows={4}
               />
             </div>
+
+            {/* Fuel Truck Specifications Section */}
+            {equipmentType === 'fuel_truck' && (
+              <div className="space-y-4 pt-6 border-t">
+                <h3 className="text-lg font-semibold">⛽ Fuel Truck Specifications</h3>
+                <FuelTruckSpecs data={fuelTruckData} onChange={setFuelTruckData} />
+              </div>
+            )}
 
             {/* Trailer Information Section */}
             <div className="space-y-4 pt-6 border-t">
