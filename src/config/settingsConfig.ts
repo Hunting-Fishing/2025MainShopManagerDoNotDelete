@@ -64,6 +64,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Company',
         icon: Building2,
         component: CompanyTab,
+        path: '/settings/company',
         description: 'Manage company information and business hours'
       },
       {
@@ -71,6 +72,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Dashboard',
         icon: LayoutDashboard,
         component: DashboardSettingsTab,
+        path: '/settings/dashboard',
         description: 'Customize dashboard layout and widgets'
       },
       {
@@ -78,6 +80,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Team',
         icon: Users,
         component: TeamTab,
+        path: '/settings/team',
         description: 'Manage team members and permissions'
       },
       {
@@ -85,6 +88,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Branding',
         icon: Palette,
         component: BrandingTab,
+        path: '/settings/branding',
         description: 'Customize your brand appearance'
       },
       {
@@ -92,6 +96,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Notifications',
         icon: Bell,
         component: NotificationsTab,
+        path: '/settings/notifications',
         description: 'Configure notification preferences'
       },
       {
@@ -99,6 +104,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Security',
         icon: Shield,
         component: SecurityTab,
+        path: '/settings/security',
         description: 'Password and authentication settings'
       }
     ]
@@ -113,6 +119,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Work Orders',
         icon: Hash,
         component: WorkOrderManagementTab,
+        path: '/settings/work-orders',
         description: 'Comprehensive work order settings, workflows, and automation'
       },
       {
@@ -120,6 +127,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Inventory',
         icon: Package,
         component: InventorySettingsTab,
+        path: '/settings/inventory',
         description: 'Manage inventory settings and preferences'
       },
       {
@@ -127,6 +135,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'DIY Bay Rates',
         icon: Wrench,
         component: DIYBayRatesTab,
+        path: '/settings/diy-bays',
         description: 'Set rates for DIY bay rentals'
       },
       {
@@ -134,6 +143,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Integrations',
         icon: Link,
         component: IntegrationsTab,
+        path: '/settings/integrations',
         description: 'Connect external services and manage API integrations'
       }
     ]
@@ -148,6 +158,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Non-Profit Settings',
         icon: HandHeart,
         component: NonProfitTab,
+        path: '/settings/nonprofit',
         description: 'Manage non-profit specific features and settings'
       },
       {
@@ -155,6 +166,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Program Management',
         icon: Target,
         component: ProgramManagementTab,
+        path: '/settings/programs',
         description: 'Manage programs, volunteers, grants, and impact measurement'
       },
       {
@@ -162,6 +174,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Volunteer Management',
         icon: UserCheck,
         component: VolunteerManagementTab,
+        path: '/settings/volunteers',
         description: 'Manage volunteers, skills tracking, and assignment workflows'
       },
       {
@@ -169,6 +182,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Grant Management',
         icon: FileText,
         component: GrantManagementTab,
+        path: '/settings/grants',
         description: 'Track grant applications, deadlines, and reporting requirements'
       },
       {
@@ -176,6 +190,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Financial Management',
         icon: Calculator,
         component: FinancialManagementTab,
+        path: '/settings/financial',
         description: 'Budget tracking, financial reporting, and compliance management'
       },
       {
@@ -183,6 +198,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Budget Management',
         icon: Calculator,
         component: BudgetManagementTab,
+        path: '/settings/budget-management',
         description: 'Track budgets, expenses, and financial performance'
       },
       {
@@ -190,6 +206,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Asset Tracking',
         icon: Database,
         component: AssetTrackingTab,
+        path: '/settings/asset-tracking',
         description: 'Track and manage organizational assets and equipment'
       },
       {
@@ -197,6 +214,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Board Meetings',
         icon: Calendar,
         component: BoardMeetingTab,
+        path: '/settings/board-meetings',
         description: 'Manage board meetings, agendas, and minutes'
       },
       {
@@ -204,6 +222,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Compliance',
         icon: Shield,
         component: ComplianceTab,
+        path: '/settings/compliance',
         description: 'Track regulatory compliance requirements and deadlines'
       },
       {
@@ -211,6 +230,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Impact Measurement',
         icon: Target,
         component: ImpactMeasurementTab,
+        path: '/settings/impact',
         description: 'Track and measure your nonprofit\'s community impact'
       },
       {
@@ -218,6 +238,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Raffle Management',
         icon: Ticket,
         component: RaffleManagementTab,
+        path: '/settings/raffles',
         description: 'Create and manage vehicle raffles and ticket sales'
       }
     ]
@@ -232,6 +253,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Public Portal',
         icon: Globe,
         component: PublicPortalTab,
+        path: '/settings/public-portal',
         description: 'Manage public-facing portal and application forms'
       }
     ]
@@ -246,6 +268,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'Role Permissions',
         icon: Shield,
         component: RolePermissionsSettingsTab,
+        path: '/settings/role-permissions',
         description: 'Configure default permissions for each role'
       },
       {
@@ -253,6 +276,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         label: 'User Permissions',
         icon: UserCog,
         component: UserPermissionsSettingsTab,
+        path: '/settings/user-permissions',
         description: 'Override permissions for individual users'
       }
     ]
