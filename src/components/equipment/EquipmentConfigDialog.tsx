@@ -99,7 +99,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     gvwr: ((equipment as any).specifications?.trailer?.gvwr) || '',
     front_axle_capacity: ((equipment as any).specifications?.trailer?.front_axle_capacity) || '',
     rear_axle_capacity: ((equipment as any).specifications?.trailer?.rear_axle_capacity) || '',
-    num_axles: ((equipment as any).specifications?.trailer?.num_axles) || '2',
+    num_axles: ((equipment as any).specifications?.trailer?.num_axles) || '',
     tire_size: ((equipment as any).specifications?.trailer?.tire_size) || '',
     rim_size: ((equipment as any).specifications?.trailer?.rim_size) || '',
     tire_psi: ((equipment as any).specifications?.trailer?.tire_psi) || '',
