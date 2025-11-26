@@ -1,7 +1,8 @@
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, ClipboardList, Wrench } from 'lucide-react';
+import { Edit, Trash2, ClipboardList, Wrench, Calendar } from 'lucide-react';
+import { ToolWarrantyBadge, getWarrantyDaysRemaining } from './ToolWarrantyBadge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -85,6 +86,7 @@ export function ToolCard({ tool, onEdit, onDelete, onCheckout, onMaintenance }: 
                 {tool.condition}
               </Badge>
             )}
+            <ToolWarrantyBadge warrantyExpiry={tool.warranty_expiry} />
           </div>
         </div>
 
@@ -101,6 +103,26 @@ export function ToolCard({ tool, onEdit, onDelete, onCheckout, onMaintenance }: 
               <span>{tool.location}</span>
             </div>
           )}
+          {tool.warranty_expiry && (() => {
+            const daysRemaining = getWarrantyDaysRemaining(tool.warranty_expiry);
+            if (daysRemaining !== null) {
+              return (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    Warranty:
+                  </span>
+                  <span className={daysRemaining < 0 ? 'text-red-600' : daysRemaining <= 30 ? 'text-yellow-600 font-semibold' : ''}>
+                    {daysRemaining < 0 
+                      ? `Expired ${Math.abs(daysRemaining)} days ago`
+                      : `${daysRemaining} days remaining`
+                    }
+                  </span>
+                </div>
+              );
+            }
+            return null;
+          })()}
           {tool.purchase_price && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Value:</span>
