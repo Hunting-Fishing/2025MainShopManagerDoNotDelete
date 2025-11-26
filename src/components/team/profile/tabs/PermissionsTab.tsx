@@ -116,14 +116,80 @@ export function PermissionsTab({ memberRole, memberId }: PermissionsTabProps) {
     }
   });
 
+  // Update all permissions mutation
+  const updateAllPermissionsMutation = useMutation({
+    mutationFn: async ({ module, allEnabled }: { module: string; allEnabled: boolean }) => {
+      if (!memberProfile?.shop_id || !currentUserId) {
+        throw new Error('Missing required data');
+      }
+
+      const updatedActions = {
+        view: allEnabled,
+        create: allEnabled,
+        edit: allEnabled,
+        delete: allEnabled
+      };
+
+      const { error } = await supabase
+        .from('user_permissions')
+        .upsert({
+          user_id: memberId,
+          shop_id: memberProfile.shop_id,
+          module,
+          actions: updatedActions,
+          created_by: currentUserId,
+        }, {
+          onConflict: 'user_id,shop_id,module'
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-permissions', memberId] });
+      toast({
+        title: "Permissions updated",
+        description: "All permissions for this module have been updated",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating permissions",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleTogglePermission = (module: string, action: string, value: boolean) => {
     if (!canEditPermissions) return;
     updatePermissionMutation.mutate({ module, action, value });
   };
 
+  const handleToggleAll = (module: string, allEnabled: boolean) => {
+    if (!canEditPermissions) return;
+    updateAllPermissionsMutation.mutate({ module, allEnabled });
+  };
+
   const getPermissionValue = (moduleId: string, action: string): boolean => {
     const permission = permissions.find(p => p.module === moduleId);
     return permission?.actions[action as keyof typeof permission.actions] || false;
+  };
+
+  const areAllPermissionsEnabled = (moduleId: string): boolean => {
+    const permission = permissions.find(p => p.module === moduleId);
+    if (!permission) return false;
+    return permission.actions.view && 
+           permission.actions.create && 
+           permission.actions.edit && 
+           permission.actions.delete;
+  };
+
+  const areSomePermissionsEnabled = (moduleId: string): boolean => {
+    const permission = permissions.find(p => p.module === moduleId);
+    if (!permission) return false;
+    const { view, create, edit, delete: del } = permission.actions;
+    const enabledCount = [view, create, edit, del].filter(Boolean).length;
+    return enabledCount > 0 && enabledCount < 4;
   };
 
   const PermissionRow = ({ 
@@ -157,11 +223,27 @@ export function PermissionsTab({ memberRole, memberId }: PermissionsTabProps) {
       { key: 'delete', label: 'Delete' }
     ];
 
+    const allEnabled = areAllPermissionsEnabled(module.id);
+    const someEnabled = areSomePermissionsEnabled(module.id);
+
     return (
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">{module.name}</CardTitle>
-          <CardDescription className="text-sm">{module.description}</CardDescription>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg">{module.name}</CardTitle>
+              <CardDescription className="text-sm">{module.description}</CardDescription>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-sm font-medium text-muted-foreground">All</span>
+              <Switch
+                checked={allEnabled}
+                onCheckedChange={(checked) => handleToggleAll(module.id, checked)}
+                disabled={!canEditPermissions}
+                className={someEnabled && !allEnabled ? 'data-[state=unchecked]:bg-amber-500' : ''}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-1">
