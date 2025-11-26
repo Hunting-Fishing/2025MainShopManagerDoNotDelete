@@ -78,6 +78,7 @@ import EquipmentTracking from '@/pages/EquipmentTracking';
 import EmployeeScheduling from '@/pages/EmployeeScheduling';
 import TrainingOverview from '@/pages/TrainingOverview';
 import { GlobalUX } from '@/components/ux/GlobalUX';
+import SetupBrianAuth from '@/pages/SetupBrianAuth';
 
 function App() {
   useEffect(() => {
@@ -92,6 +93,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/about" element={<About />} />
+        <Route path="/setup-brian" element={<SetupBrianAuth />} />
         
         {/* Protected routes */}
         <Route
