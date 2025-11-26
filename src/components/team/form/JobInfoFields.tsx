@@ -4,8 +4,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Control } from "react-hook-form";
 import { TeamMemberFormValues } from "./formValidation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
-import { getDepartmentNames, getJobTitlesForDepartment, getSuggestedRole } from "./jobTitleData";
+import { getDepartmentNames, getJobTitlesForDepartment, getSuggestedRole, roleMetadata } from "./jobTitleData";
+import { Check, X } from "lucide-react";
 
 interface JobInfoFieldsProps {
   control: Control<TeamMemberFormValues>;
@@ -142,17 +144,43 @@ export function JobInfoFields({
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent>
-                {availableRoles.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {role}
-                  </SelectItem>
-                ))}
+              <SelectContent className="max-h-96">
+                {availableRoles.map((role) => {
+                  const roleKey = role.toLowerCase().replace(/ /g, '_');
+                  const metadata = roleMetadata[roleKey];
+                  
+                  return (
+                    <SelectItem key={role} value={role} className="py-3">
+                      <div className="flex flex-col gap-1">
+                        <div className="font-medium">{role}</div>
+                        {metadata && (
+                          <>
+                            <div className="text-xs text-muted-foreground">
+                              {metadata.description}
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {metadata.badges.map((badge) => (
+                                <Badge 
+                                  key={badge} 
+                                  variant="outline" 
+                                  className="text-xs px-1.5 py-0 h-5"
+                                >
+                                  <Check className="h-3 w-3 mr-0.5" />
+                                  {badge}
+                                </Badge>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
             <FormDescription>
               {suggestedRole 
-                ? `Suggested based on job title. Determines system permissions.` 
+                ? `Suggested: ${suggestedRole} - Determines system permissions` 
                 : `This will determine the user's permissions in the system`}
             </FormDescription>
             <FormMessage />
