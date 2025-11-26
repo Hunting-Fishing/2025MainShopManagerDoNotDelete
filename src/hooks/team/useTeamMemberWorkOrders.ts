@@ -52,7 +52,7 @@ export function useTeamMemberWorkOrders(memberId: string) {
             description,
             customer_complaint,
             service_type,
-            customers (
+            customers!fk_work_orders_customer (
               first_name,
               last_name
             )
