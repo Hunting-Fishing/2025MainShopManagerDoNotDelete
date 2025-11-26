@@ -41,6 +41,17 @@ Deno.serve(async (req) => {
 
     console.log('Inviting team member:', { email, firstName, lastName, profileId });
 
+    // Check if profile already exists
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id, user_id')
+      .eq('id', profileId)
+      .single();
+
+    if (!existingProfile) {
+      throw new Error('Profile not found');
+    }
+
     // Send invitation email using Admin API
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       data: {
@@ -60,17 +71,20 @@ Deno.serve(async (req) => {
 
     console.log('Invitation sent successfully:', authData);
 
-    // Update profile with invitation sent timestamp
-    const { error: updateError } = await supabaseAdmin
-      .from('profiles')
-      .update({ 
-        invitation_sent_at: new Date().toISOString() 
-      })
-      .eq('id', profileId);
+    // Link the auth user to the existing profile
+    if (authData.user?.id) {
+      const { error: linkError } = await supabaseAdmin
+        .from('profiles')
+        .update({ 
+          user_id: authData.user.id,
+          has_auth_account: true,
+          invitation_sent_at: new Date().toISOString() 
+        })
+        .eq('id', profileId);
 
-    if (updateError) {
-      console.error('Error updating profile:', updateError);
-      // Don't throw - invitation was sent successfully
+      if (linkError) {
+        console.error('Error linking profile to auth user:', linkError);
+      }
     }
 
     return new Response(
