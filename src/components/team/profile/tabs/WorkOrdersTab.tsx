@@ -133,8 +133,13 @@ export function WorkOrdersTab({ memberId }: WorkOrdersTabProps) {
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <h4 className="font-semibold text-foreground mb-1">{wo.title}</h4>
+                      {wo.equipment_name && (
+                        <p className="text-sm text-muted-foreground mb-1">
+                          <span className="font-medium">Equipment:</span> {wo.equipment_name}
+                        </p>
+                      )}
                       <p className="text-sm text-muted-foreground mb-2">
-                        Customer: {wo.customer_name}
+                        <span className="font-medium">Customer:</span> {wo.customer_name}
                       </p>
                       {wo.description && (
                         <p className="text-sm text-muted-foreground line-clamp-2">{wo.description}</p>
