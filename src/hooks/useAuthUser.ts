@@ -11,6 +11,7 @@ export function useAuthUser() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [isManager, setIsManager] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +39,7 @@ export function useAuthUser() {
       } else {
         setIsAdmin(false);
         setIsOwner(false);
+        setIsManager(false);
       }
       
     } catch (err) {
@@ -148,6 +150,7 @@ export function useAuthUser() {
         
         setIsAdmin(false);
         setIsOwner(false);
+        setIsManager(false);
         setError('Failed to load user permissions');
         return;
       }
@@ -157,12 +160,14 @@ export function useAuthUser() {
       
       setIsAdmin(roleNames.includes('admin'));
       setIsOwner(roleNames.includes('owner'));
+      setIsManager(roleNames.includes('manager'));
       setError(null); // Clear any previous errors
       
     } catch (err) {
       console.error('❌ Error in fetchUserRoles:', err);
       setIsAdmin(false);
       setIsOwner(false);
+      setIsManager(false);
       setError('Failed to load user permissions');
     }
   }, [attemptSessionRecovery, isRecoveryInProgress]);
@@ -181,6 +186,7 @@ export function useAuthUser() {
     isAuthenticated,
     isAdmin,
     isOwner,
+    isManager,
     userId,
     userName,
     error,

@@ -4,11 +4,12 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { LayoutList, Save, ChevronDown, ChevronRight } from 'lucide-react';
+import { LayoutList, Save, ChevronDown, ChevronRight, ShieldX } from 'lucide-react';
 import { navigation } from '@/components/layout/sidebar/navigation';
 import { useSidebarVisibilitySettings, useUpdateSidebarVisibility, SidebarVisibilitySettings } from '@/hooks/useSidebarVisibility';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { RoleGuard } from '@/components/auth/RoleGuard';
 
 const AVAILABLE_ROLES = [
   { value: 'owner', label: 'Owner' },
@@ -24,6 +25,31 @@ const AVAILABLE_ROLES = [
 const ALWAYS_VISIBLE_SECTIONS = ['Dashboard', 'Settings', 'Support'];
 
 export function NavigationSettingsTab() {
+  return (
+    <RoleGuard 
+      allowedRoles={['owner', 'manager']}
+      fallback={
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center space-y-4">
+              <ShieldX className="h-12 w-12 text-muted-foreground mx-auto" />
+              <div>
+                <h3 className="text-lg font-semibold">Access Restricted</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Only Managers and Owners can configure navigation settings.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      }
+    >
+      <NavigationSettingsContent />
+    </RoleGuard>
+  );
+}
+
+function NavigationSettingsContent() {
   const { data: settings, isLoading } = useSidebarVisibilitySettings();
   const updateMutation = useUpdateSidebarVisibility();
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
