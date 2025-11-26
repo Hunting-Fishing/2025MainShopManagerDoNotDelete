@@ -37,7 +37,7 @@ export function TeamMemberDetails({ member, activeTab }: TeamMemberDetailsProps)
     <div className="pt-6">
       {activeTab === "overview" && <OverviewTab member={member} />}
       
-      {activeTab === "permissions" && <PermissionsTab memberRole={member.role} />}
+      {activeTab === "permissions" && <PermissionsTab memberRole={member.role} memberId={member.id} />}
       
       {activeTab === "activity" && <ActivityTab memberId={member.id} />}
       
