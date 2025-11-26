@@ -26,6 +26,7 @@ export function AccountTab() {
   
   const [formData, setFormData] = useState({
     firstName: "",
+    middleName: "",
     lastName: "",
     email: "",
     phone: "",
@@ -39,6 +40,7 @@ export function AccountTab() {
     if (userProfile && !loading) {
       setFormData({
         firstName: userProfile.firstName || "",
+        middleName: userProfile.middleName || "",
         lastName: userProfile.lastName || "",
         email: userProfile.email || "",
         phone: userProfile.phone || "",
@@ -68,6 +70,7 @@ export function AccountTab() {
       
       await updateProfile({
         firstName: formData.firstName,
+        middleName: formData.middleName,
         lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
@@ -94,7 +97,8 @@ export function AccountTab() {
     const { id, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [id === 'company-firstName' ? 'firstName' : 
+      [id === 'company-firstName' ? 'firstName' :
+       id === 'company-middleName' ? 'middleName' :
        id === 'company-lastName' ? 'lastName' : 
        id === 'company-email' ? 'email' : 
        id === 'company-phone' ? 'phone' : 

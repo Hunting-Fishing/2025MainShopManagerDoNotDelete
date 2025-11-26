@@ -6,6 +6,7 @@ import { useToast } from './use-toast';
 
 export interface UserProfile {
   firstName: string;
+  middleName?: string | null;
   lastName: string;
   email: string;
   phone: string | null;
@@ -31,7 +32,7 @@ export function useUserProfile() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('first_name, last_name, email, phone, job_title')
+        .select('first_name, middle_name, last_name, email, phone, job_title')
         .eq('id', userId)
         .single();
         
@@ -43,6 +44,7 @@ export function useUserProfile() {
       
       setUserProfile({
         firstName: data.first_name || '',
+        middleName: data.middle_name || '',
         lastName: data.last_name || '',
         email: data.email || '',
         phone: data.phone || '',
@@ -87,6 +89,7 @@ export function useUserProfile() {
       // Map the camelCase form values to the snake_case database column names
       const updateData: Record<string, any> = {};
       if ('firstName' in profileData) updateData.first_name = profileData.firstName;
+      if ('middleName' in profileData) updateData.middle_name = profileData.middleName;
       if ('lastName' in profileData) updateData.last_name = profileData.lastName;
       if ('email' in profileData) updateData.email = profileData.email;
       if ('phone' in profileData) updateData.phone = profileData.phone;

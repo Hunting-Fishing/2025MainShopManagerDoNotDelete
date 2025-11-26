@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 interface ProfileFormProps {
   formData: {
     firstName: string;
+    middleName: string;
     lastName: string;
     email: string;
     phone: string;
@@ -27,13 +28,23 @@ export function ProfileForm({ formData, onChange, onSubmit, isSaving }: ProfileF
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="company-firstName">First Name</Label>
               <Input
                 id="company-firstName"
                 placeholder="First Name"
                 value={formData.firstName}
+                onChange={onChange}
+                className="bg-white shadow-md rounded-xl border border-gray-100"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="company-middleName">Middle Name <span className="text-muted-foreground text-xs">(Optional)</span></Label>
+              <Input
+                id="company-middleName"
+                placeholder="Middle Name"
+                value={formData.middleName}
                 onChange={onChange}
                 className="bg-white shadow-md rounded-xl border border-gray-100"
               />

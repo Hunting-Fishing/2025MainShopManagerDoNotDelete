@@ -5,6 +5,7 @@
 interface TeamMemberBase {
   id: string;
   first_name?: string;
+  middle_name?: string;
   last_name?: string;
   email: string;
   department?: string;
@@ -50,7 +51,12 @@ export function generateUniqueDisplayNames<T extends TeamMemberBase>(
       groupMembers.forEach((member, index) => {
         const disambiguators: string[] = [];
 
-        // Try email first (most unique)
+        // Try middle initial first (most relevant for name disambiguation)
+        if (member.middle_name && member.middle_name.length > 0) {
+          disambiguators.push(member.middle_name.charAt(0).toUpperCase() + '.');
+        }
+
+        // Try email username (unique identifier)
         if (member.email) {
           const emailUsername = member.email.split('@')[0];
           disambiguators.push(emailUsername);

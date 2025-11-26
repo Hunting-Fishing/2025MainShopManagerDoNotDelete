@@ -37,6 +37,7 @@ export default function TeamMemberCreate() {
           id: profileId,
           email: formData.email,
           first_name: formData.firstName,
+          middle_name: formData.middleName || null,
           last_name: formData.lastName,
           phone: formData.phone,
           job_title: formData.jobTitle,
@@ -68,6 +69,7 @@ export default function TeamMemberCreate() {
             body: {
               email: formData.email,
               firstName: formData.firstName,
+              middleName: formData.middleName || null,
               lastName: formData.lastName,
               profileId: profileId,
               roleId: formData.roleId,

@@ -15134,6 +15134,7 @@ export type Database = {
           invitation_sent_at: string | null
           job_title: string | null
           last_name: string | null
+          middle_name: string | null
           notification_preferences: Json | null
           phone: string | null
           shop_id: string | null
@@ -15152,6 +15153,7 @@ export type Database = {
           invitation_sent_at?: string | null
           job_title?: string | null
           last_name?: string | null
+          middle_name?: string | null
           notification_preferences?: Json | null
           phone?: string | null
           shop_id?: string | null
@@ -15170,6 +15172,7 @@ export type Database = {
           invitation_sent_at?: string | null
           job_title?: string | null
           last_name?: string | null
+          middle_name?: string | null
           notification_preferences?: Json | null
           phone?: string | null
           shop_id?: string | null

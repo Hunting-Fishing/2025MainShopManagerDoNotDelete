@@ -21,6 +21,7 @@ export const updateUserProfile = async (
       .from('profiles')
       .update({
         first_name: values.firstName,
+        middle_name: values.middleName || null,
         last_name: values.lastName,
         email: values.email,
         phone: values.phone || null,
