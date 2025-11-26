@@ -39,8 +39,7 @@ export function useTeamMembers() {
     }
   };
 
-  useEffect(() => {
-    async function fetchTeamMembers() {
+  const fetchTeamMembers = async () => {
       setIsLoading(true);
       setError(null);
       
@@ -141,8 +140,9 @@ export function useTeamMembers() {
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
+  useEffect(() => {
     fetchTeamMembers();
   }, []);
 
@@ -154,5 +154,10 @@ export function useTeamMembers() {
       : 'Active';
   }
 
-  return { teamMembers, isLoading, error };
+  const refetch = () => {
+    setIsLoading(true);
+    fetchTeamMembers();
+  };
+
+  return { teamMembers, isLoading, error, refetch };
 }

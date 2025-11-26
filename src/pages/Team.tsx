@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { TeamContent } from '@/components/team/TeamContent';
 import { TeamHeader } from '@/components/team/TeamHeader';
 import { TeamSearchFilters } from '@/components/team/TeamSearchFilters';
@@ -17,9 +17,17 @@ import { Badge } from '@/components/ui/badge';
  */
 export default function Team() {
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  const location = useLocation();
   
   // Use real team data from the database
-  const { teamMembers, isLoading, error } = useTeamMembers();
+  const { teamMembers, isLoading, error, refetch } = useTeamMembers();
+  
+  // Refetch team members when returning to main team page
+  React.useEffect(() => {
+    if (location.pathname === '/team') {
+      refetch?.();
+    }
+  }, [location.pathname, refetch]);
   
   // Use filtering hook
   const {
