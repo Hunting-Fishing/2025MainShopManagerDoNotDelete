@@ -15,12 +15,16 @@ import { ActivityTab } from '@/components/team/profile/tabs/ActivityTab';
 import { PermissionsTab } from '@/components/team/profile/tabs/PermissionsTab';
 import { EditProfileTab } from '@/components/team/profile/tabs/EditProfileTab';
 import { CertificationsTab } from '@/components/team/profile/tabs/CertificationsTab';
+import { HeaderActions } from '@/components/team/profile/header/HeaderActions';
+import { DeleteMemberDialog } from '@/components/team/profile/DeleteMemberDialog';
+import { useDeleteMember } from '@/components/team/profile/useDeleteMember';
 
 export default function TeamMemberProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { teamMembers, isLoading } = useTeamMembers();
   const [activeTab, setActiveTab] = useState("overview");
+  const { deleteDialogOpen, setDeleteDialogOpen, handleDeleteMember, isDeleting } = useDeleteMember();
   
   const member = teamMembers.find(m => m.id === id);
   
@@ -126,15 +130,10 @@ export default function TeamMemberProfile() {
                 </div>
               </div>
               
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline"
-                  onClick={() => setActiveTab("edit")}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
-              </div>
+              <HeaderActions 
+                onEditClick={() => setActiveTab("edit")}
+                onDeleteClick={() => setDeleteDialogOpen(true)}
+              />
             </div>
           </CardContent>
         </Card>
@@ -188,6 +187,15 @@ export default function TeamMemberProfile() {
           />
         </TabsContent>
       </Tabs>
+
+      <DeleteMemberDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        memberName={member.name}
+        memberId={member.id}
+        onDelete={handleDeleteMember}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
