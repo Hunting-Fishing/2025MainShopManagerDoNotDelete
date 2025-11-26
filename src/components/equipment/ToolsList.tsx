@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Hammer, CheckCircle, AlertCircle, XCircle, Wrench as WrenchIcon, Download, ClipboardList } from 'lucide-react';
+import { Plus, Search, Hammer, CheckCircle, AlertCircle, XCircle, Wrench as WrenchIcon, Download, ClipboardList, ShieldCheck } from 'lucide-react';
+import { getWarrantyStatus } from './ToolWarrantyBadge';
 import { ToolDialog } from './ToolDialog';
 import { ToolCheckoutDialog } from './ToolCheckoutDialog';
 import { ToolMaintenanceDialog } from './ToolMaintenanceDialog';
@@ -39,13 +40,14 @@ export function ToolsList() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [conditionFilter, setConditionFilter] = useState<string>('all');
+  const [warrantyFilter, setWarrantyFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [maintenanceDialogOpen, setMaintenanceDialogOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<any>(null);
 
   const { data: tools, isLoading, refetch } = useQuery({
-    queryKey: ['tools', shopId, categoryFilter, statusFilter, conditionFilter],
+    queryKey: ['tools', shopId, categoryFilter, statusFilter, conditionFilter, warrantyFilter],
     queryFn: async () => {
       if (!shopId) return [];
       
@@ -83,12 +85,23 @@ export function ToolsList() {
     enabled: !!shopId,
   });
 
-  const filteredTools = tools?.filter(tool =>
-    searchQuery === '' ||
-    tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tool.tool_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tool.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTools = tools?.filter(tool => {
+    // Search filter
+    const matchesSearch = searchQuery === '' ||
+      tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tool.tool_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tool.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Warranty filter
+    const warrantyStatus = getWarrantyStatus(tool.warranty_expiry);
+    const matchesWarranty = warrantyFilter === 'all' || 
+      (warrantyFilter === 'active' && warrantyStatus === 'active') ||
+      (warrantyFilter === 'expiring' && warrantyStatus === 'expiring') ||
+      (warrantyFilter === 'expired' && warrantyStatus === 'expired') ||
+      (warrantyFilter === 'none' && warrantyStatus === 'none');
+    
+    return matchesSearch && matchesWarranty;
+  });
 
   const handleEdit = (tool: any) => {
     setSelectedTool(tool);
@@ -152,6 +165,9 @@ export function ToolsList() {
     available: tools?.filter(t => t.status === 'available').length || 0,
     in_use: tools?.filter(t => t.status === 'in_use').length || 0,
     maintenance: tools?.filter(t => t.status === 'maintenance').length || 0,
+    warranty_active: tools?.filter(t => getWarrantyStatus(t.warranty_expiry) === 'active').length || 0,
+    warranty_expiring: tools?.filter(t => getWarrantyStatus(t.warranty_expiry) === 'expiring').length || 0,
+    warranty_expired: tools?.filter(t => getWarrantyStatus(t.warranty_expiry) === 'expired').length || 0,
   };
 
   return (
@@ -180,6 +196,52 @@ export function ToolsList() {
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">Maintenance</p>
             <p className="text-2xl font-bold text-orange-600">{stats.maintenance}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Warranty Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setWarrantyFilter('active')}
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Active Warranties</p>
+                <p className="text-2xl font-bold text-green-600">{stats.warranty_active}</p>
+              </div>
+              <ShieldCheck className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setWarrantyFilter('expiring')}
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Expiring Soon</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.warranty_expiring}</p>
+              </div>
+              <AlertCircle className="h-8 w-8 text-yellow-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setWarrantyFilter('expired')}
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Expired Warranties</p>
+                <p className="text-2xl font-bold text-red-600">{stats.warranty_expired}</p>
+              </div>
+              <XCircle className="h-8 w-8 text-red-600" />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -252,6 +314,18 @@ export function ToolsList() {
                 <SelectItem value="good">Good</SelectItem>
                 <SelectItem value="fair">Fair</SelectItem>
                 <SelectItem value="poor">Poor</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={warrantyFilter} onValueChange={setWarrantyFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Warranty Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Warranties</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="expiring">Expiring Soon</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+                <SelectItem value="none">No Warranty</SelectItem>
               </SelectContent>
             </Select>
           </div>

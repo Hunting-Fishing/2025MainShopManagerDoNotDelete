@@ -36,6 +36,9 @@ export function ToolDialog({ open, onClose, tool }: ToolDialogProps) {
     status: 'available',
     condition: 'good',
     location: '',
+    warranty_duration: '',
+    warranty_expiry: '',
+    warranty_notes: '',
     notes: '',
   });
 
@@ -55,6 +58,9 @@ export function ToolDialog({ open, onClose, tool }: ToolDialogProps) {
         status: tool.status || 'available',
         condition: tool.condition || 'good',
         location: tool.location || '',
+        warranty_duration: tool.warranty_duration || '',
+        warranty_expiry: tool.warranty_expiry || '',
+        warranty_notes: tool.warranty_notes || '',
         notes: tool.notes || '',
       });
     } else {
@@ -72,10 +78,26 @@ export function ToolDialog({ open, onClose, tool }: ToolDialogProps) {
         status: 'available',
         condition: 'good',
         location: '',
+        warranty_duration: '',
+        warranty_expiry: '',
+        warranty_notes: '',
         notes: '',
       });
     }
   }, [tool]);
+
+  // Auto-calculate warranty expiry when purchase date or warranty duration changes
+  useEffect(() => {
+    if (formData.purchase_date && formData.warranty_duration && formData.warranty_duration !== 'lifetime' && formData.warranty_duration !== 'custom') {
+      const purchaseDate = new Date(formData.purchase_date);
+      const months = parseInt(formData.warranty_duration);
+      purchaseDate.setMonth(purchaseDate.getMonth() + months);
+      setFormData(prev => ({
+        ...prev,
+        warranty_expiry: purchaseDate.toISOString().split('T')[0]
+      }));
+    }
+  }, [formData.purchase_date, formData.warranty_duration]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +128,9 @@ export function ToolDialog({ open, onClose, tool }: ToolDialogProps) {
         status: formData.status as any,
         condition: formData.condition as any,
         location: formData.location || null,
+        warranty_duration: formData.warranty_duration || null,
+        warranty_expiry: formData.warranty_expiry || null,
+        warranty_notes: formData.warranty_notes || null,
         notes: formData.notes || null,
         created_by: userData.user.id,
       };
@@ -307,6 +332,56 @@ export function ToolDialog({ open, onClose, tool }: ToolDialogProps) {
             id="location"
             value={formData.location}
             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+          />
+        </div>
+      </div>
+
+      {/* Warranty Section */}
+      <div className="border-t pt-4 space-y-4">
+        <h3 className="font-semibold text-sm">Warranty Information</h3>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="warranty_duration">Warranty Duration</Label>
+            <Select
+              value={formData.warranty_duration}
+              onValueChange={(value) => setFormData({ ...formData, warranty_duration: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select duration" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No Warranty</SelectItem>
+                <SelectItem value="12">12 Months</SelectItem>
+                <SelectItem value="24">24 Months</SelectItem>
+                <SelectItem value="36">36 Months</SelectItem>
+                <SelectItem value="60">60 Months</SelectItem>
+                <SelectItem value="lifetime">Lifetime</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="warranty_expiry">Warranty Expiry Date</Label>
+            <Input
+              id="warranty_expiry"
+              type="date"
+              value={formData.warranty_expiry}
+              onChange={(e) => setFormData({ ...formData, warranty_expiry: e.target.value })}
+              disabled={formData.warranty_duration === 'lifetime'}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="warranty_notes">Warranty Notes</Label>
+          <Textarea
+            id="warranty_notes"
+            value={formData.warranty_notes}
+            onChange={(e) => setFormData({ ...formData, warranty_notes: e.target.value })}
+            placeholder="Terms, conditions, or warranty provider details..."
+            rows={2}
           />
         </div>
       </div>
