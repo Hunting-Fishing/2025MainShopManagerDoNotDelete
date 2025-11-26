@@ -62,8 +62,46 @@ export default function TeamMemberCreate() {
         }
       }
 
-      // Send invitation email if checkbox is checked
-      if (sendInvitation) {
+      // Create auth account with password or send invitation
+      if (formData.password) {
+        // Create user with password directly
+        try {
+          const { error: authError } = await supabase.functions.invoke('invite-team-member', {
+            body: {
+              email: formData.email,
+              firstName: formData.firstName,
+              middleName: formData.middleName || null,
+              lastName: formData.lastName,
+              profileId: profileId,
+              roleId: formData.roleId,
+              shopId: shopId,
+              password: formData.password
+            }
+          });
+
+          if (authError) {
+            console.error('Error creating auth account:', authError);
+            toast({
+              title: "Team Member Created",
+              description: "Team member created but account setup failed.",
+              variant: "default"
+            });
+          } else {
+            toast({
+              title: "Success",
+              description: "Team member created with login access!",
+            });
+          }
+        } catch (error) {
+          console.error('Error creating auth account:', error);
+          toast({
+            title: "Team Member Created",
+            description: "Team member created but account setup failed.",
+            variant: "default"
+          });
+        }
+      } else if (sendInvitation) {
+        // Send invitation email
         try {
           const { error: inviteError } = await supabase.functions.invoke('invite-team-member', {
             body: {
@@ -139,11 +177,11 @@ export default function TeamMemberCreate() {
               htmlFor="send-invitation"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              Send invitation email to allow login access
+              Send invitation email (only if no password is set)
             </Label>
           </div>
           <p className="text-sm text-muted-foreground mt-2 ml-6">
-            Team member will receive an email with instructions to set their password and access the system.
+            If a password is provided above, the user will be created with immediate login access. Otherwise, an invitation email will be sent.
           </p>
         </div>
       </div>

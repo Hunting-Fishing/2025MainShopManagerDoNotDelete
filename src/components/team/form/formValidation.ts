@@ -13,6 +13,7 @@ export const teamMemberFormSchema = z.object({
   department: z.string().min(1, { message: "Please select a department." }),
   status: z.boolean().default(true),
   notes: z.string().optional(),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }).optional(),
 });
 
 export type TeamMemberFormValues = z.infer<typeof teamMemberFormSchema>;
