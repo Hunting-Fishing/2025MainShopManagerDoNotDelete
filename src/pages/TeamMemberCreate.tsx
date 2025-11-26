@@ -66,11 +66,10 @@ export default function TeamMemberCreate() {
       if (formData.password) {
         // Create user with password directly
         try {
-          const { error: authError } = await supabase.functions.invoke('invite-team-member', {
+          const { data, error: authError } = await supabase.functions.invoke('invite-team-member', {
             body: {
               email: formData.email,
               firstName: formData.firstName,
-              middleName: formData.middleName || null,
               lastName: formData.lastName,
               profileId: profileId,
               roleId: formData.roleId,
@@ -79,26 +78,25 @@ export default function TeamMemberCreate() {
             }
           });
 
+          console.log('Auth response:', { data, error: authError });
+
           if (authError) {
             console.error('Error creating auth account:', authError);
             toast({
-              title: "Team Member Created",
-              description: "Team member created but account setup failed.",
-              variant: "default"
+              title: "Error",
+              description: `Account setup failed: ${authError.message}`,
+              variant: "destructive"
             });
+            throw authError;
           } else {
             toast({
               title: "Success",
               description: "Team member created with login access!",
             });
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error creating auth account:', error);
-          toast({
-            title: "Team Member Created",
-            description: "Team member created but account setup failed.",
-            variant: "default"
-          });
+          throw new Error(`Failed to create auth account: ${error.message}`);
         }
       } else if (sendInvitation) {
         // Send invitation email
