@@ -12,6 +12,7 @@ interface InviteRequest {
   profileId: string;
   roleId: string;
   shopId: string;
+  password?: string;
 }
 
 Deno.serve(async (req) => {
@@ -37,9 +38,9 @@ Deno.serve(async (req) => {
       }
     });
 
-    const { email, firstName, lastName, profileId, roleId, shopId } = await req.json() as InviteRequest;
+    const { email, firstName, lastName, profileId, roleId, shopId, password } = await req.json() as InviteRequest;
 
-    console.log('Inviting team member:', { email, firstName, lastName, profileId });
+    console.log('Processing team member:', { email, firstName, lastName, profileId, hasPassword: !!password });
 
     // Check if profile already exists
     const { data: existingProfile } = await supabaseAdmin
@@ -52,24 +53,47 @@ Deno.serve(async (req) => {
       throw new Error('Profile not found');
     }
 
-    // Send invitation email using Admin API
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      data: {
-        first_name: firstName,
-        last_name: lastName,
-        profile_id: profileId,
-        role_id: roleId,
-        shop_id: shopId
-      },
-      redirectTo: `${req.headers.get('origin')}/auth/callback`
-    });
+    let authData;
+    let authError;
 
-    if (authError) {
-      console.error('Error inviting user:', authError);
-      throw authError;
+    if (password) {
+      // Create user with password directly
+      const createResponse = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true, // Auto-confirm email
+        user_metadata: {
+          first_name: firstName,
+          last_name: lastName,
+          profile_id: profileId,
+          role_id: roleId,
+          shop_id: shopId
+        }
+      });
+      authData = createResponse.data;
+      authError = createResponse.error;
+      console.log('User created with password');
+    } else {
+      // Send invitation email using Admin API
+      const inviteResponse = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          profile_id: profileId,
+          role_id: roleId,
+          shop_id: shopId
+        },
+        redirectTo: `${req.headers.get('origin')}/auth/callback`
+      });
+      authData = inviteResponse.data;
+      authError = inviteResponse.error;
+      console.log('Invitation sent successfully');
     }
 
-    console.log('Invitation sent successfully:', authData);
+    if (authError) {
+      console.error('Error with auth operation:', authError);
+      throw authError;
+    }
 
     // Link the auth user to the existing profile
     if (authData.user?.id) {

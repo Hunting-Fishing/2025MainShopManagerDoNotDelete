@@ -87,6 +87,27 @@ export function PersonalInfoFields({ control }: PersonalInfoFieldsProps) {
           </FormItem>
         )}
       />
+
+      <FormField
+        control={control}
+        name="password"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Password <span className="text-muted-foreground text-xs">(Optional)</span></FormLabel>
+            <FormControl>
+              <Input 
+                type="password" 
+                placeholder="Min 6 characters" 
+                {...field} 
+              />
+            </FormControl>
+            <p className="text-xs text-muted-foreground mt-1">
+              Set a password to create immediate login access
+            </p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </>
   );
 }
