@@ -12,6 +12,7 @@ interface WorkOrderSummary {
   due_date: string | null;
   description: string | null;
   customer_name?: string;
+  equipment_name?: string;
 }
 
 interface MaintenanceRequestSummary {
@@ -55,6 +56,11 @@ export function useTeamMemberWorkOrders(memberId: string) {
             customers!fk_work_orders_customer (
               first_name,
               last_name
+            ),
+            equipment_assets!work_orders_equipment_id_fkey (
+              name,
+              model,
+              asset_number
             )
           `)
           .eq('technician_id', memberId)
@@ -72,7 +78,10 @@ export function useTeamMemberWorkOrders(memberId: string) {
           description: wo.description || wo.customer_complaint || null,
           customer_name: wo.customers 
             ? `${(wo.customers as any).first_name || ''} ${(wo.customers as any).last_name || ''}`.trim() || 'Unknown Customer'
-            : 'Unknown Customer'
+            : 'Unknown Customer',
+          equipment_name: wo.equipment_assets
+            ? `${(wo.equipment_assets as any).name || ''} ${(wo.equipment_assets as any).model || ''}`.trim() || null
+            : null
         }));
 
         setWorkOrders(formattedWorkOrders);
