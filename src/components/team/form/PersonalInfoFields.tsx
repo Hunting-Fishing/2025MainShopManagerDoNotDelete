@@ -27,6 +27,20 @@ export function PersonalInfoFields({ control }: PersonalInfoFieldsProps) {
 
       <FormField
         control={control}
+        name="middleName"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Middle Name <span className="text-muted-foreground text-xs">(Optional)</span></FormLabel>
+            <FormControl>
+              <Input placeholder="Michael" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
         name="lastName"
         render={({ field }) => (
           <FormItem>

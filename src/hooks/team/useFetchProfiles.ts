@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 export interface Profile {
   id: string;
   first_name: string;
+  middle_name?: string | null;
   last_name: string;
   email: string;
   phone: string | null;
@@ -34,6 +35,7 @@ export function useFetchProfiles() {
         .select(`
           id,
           first_name,
+          middle_name,
           last_name,
           email,
           phone,
@@ -74,6 +76,7 @@ export function useFetchProfiles() {
         .map(profile => ({
           id: profile.id,
           first_name: profile.first_name || '',
+          middle_name: profile.middle_name || null,
           last_name: profile.last_name || '',
           email: profile.email || '',
           phone: profile.phone || null,
