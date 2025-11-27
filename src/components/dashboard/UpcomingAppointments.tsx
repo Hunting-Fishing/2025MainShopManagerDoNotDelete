@@ -40,11 +40,11 @@ export const UpcomingAppointments: React.FC = () => {
             notes,
             duration,
             status,
-            customers (
+            customers!appointments_customer_id_fkey (
               first_name,
               last_name
             ),
-            vehicles (
+            vehicles!appointments_vehicle_id_fkey (
               year,
               make,
               model
