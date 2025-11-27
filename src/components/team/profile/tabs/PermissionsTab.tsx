@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Lock, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Shield, Lock, Save, Loader2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuthUser } from "@/hooks/useAuthUser";
@@ -14,182 +15,225 @@ import { PERMISSION_MODULES, MODULE_CATEGORIES } from "@/types/permissionModules
 interface PermissionsTabProps {
   memberRole: string;
   memberId: string;
+  memberEmail?: string;
+}
+
+interface PermissionActions {
+  view: boolean;
+  create: boolean;
+  edit: boolean;
+  delete: boolean;
 }
 
 interface UserPermission {
   module: string;
-  actions: {
-    view: boolean;
-    create: boolean;
-    edit: boolean;
-    delete: boolean;
-  };
+  actions: PermissionActions;
 }
 
-export function PermissionsTab({ memberRole, memberId }: PermissionsTabProps) {
+type PendingPermissions = Record<string, PermissionActions>;
+
+export function PermissionsTab({ memberRole, memberId, memberEmail }: PermissionsTabProps) {
   const { userRole } = useUserRole();
   const { userId: currentUserId } = useAuthUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  // Local state for pending changes
+  const [pendingPermissions, setPendingPermissions] = useState<PendingPermissions>({});
+  const [hasChanges, setHasChanges] = useState(false);
+  
   // Check if current user can edit permissions
   const canEditPermissions = userRole?.name === 'owner' || userRole?.name === 'admin';
   
-  // Fetch member's shop_id
-  const { data: memberProfile } = useQuery({
-    queryKey: ['member-profile', memberId],
+  // Fetch member's profile with fallback lookup by email if ID fails
+  const { data: memberProfile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['member-profile-for-permissions', memberId, memberEmail],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First try by ID
+      const { data: byId, error: idError } = await supabase
         .from('profiles')
-        .select('shop_id')
+        .select('id, shop_id, email')
         .eq('id', memberId)
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
-      return data;
+      if (byId) {
+        return byId;
+      }
+      
+      // If not found by ID and we have email, try by email
+      if (memberEmail) {
+        const { data: byEmail, error: emailError } = await supabase
+          .from('profiles')
+          .select('id, shop_id, email')
+          .eq('email', memberEmail)
+          .maybeSingle();
+        
+        if (byEmail) {
+          return byEmail;
+        }
+      }
+      
+      // Still not found - return null
+      return null;
     },
     enabled: !!memberId
   });
 
-  // Fetch member's permissions
-  const { data: permissions = [], isLoading } = useQuery({
-    queryKey: ['user-permissions', memberId, memberProfile?.shop_id],
+  // The actual user ID to use for permissions (handles ID mismatch)
+  const effectiveUserId = memberProfile?.id || memberId;
+  const shopId = memberProfile?.shop_id;
+
+  // Fetch member's permissions using effective user ID
+  const { data: permissions = [], isLoading: isLoadingPermissions } = useQuery({
+    queryKey: ['user-permissions', effectiveUserId, shopId],
     queryFn: async () => {
-      if (!memberProfile?.shop_id) return [];
+      if (!shopId) return [];
       
       const { data, error } = await supabase
         .from('user_permissions')
         .select('module, actions')
-        .eq('user_id', memberId)
-        .eq('shop_id', memberProfile.shop_id);
+        .eq('user_id', effectiveUserId)
+        .eq('shop_id', shopId);
       
       if (error) throw error;
-      return data as UserPermission[];
+      
+      // Map the data to ensure correct types
+      return (data || []).map(item => ({
+        module: item.module,
+        actions: item.actions as unknown as PermissionActions
+      })) as UserPermission[];
     },
-    enabled: !!memberId && !!memberProfile?.shop_id
+    enabled: !!effectiveUserId && !!shopId
   });
 
-  // Update permission mutation
-  const updatePermissionMutation = useMutation({
-    mutationFn: async ({ module, action, value }: { module: string; action: string; value: boolean }) => {
-      if (!memberProfile?.shop_id || !currentUserId) {
+  // Initialize pending permissions from fetched data
+  useEffect(() => {
+    if (permissions.length > 0) {
+      const initial: PendingPermissions = {};
+      permissions.forEach(p => {
+        initial[p.module] = { ...p.actions };
+      });
+      setPendingPermissions(initial);
+      setHasChanges(false);
+    }
+  }, [permissions]);
+
+  // Save all permissions mutation
+  const savePermissionsMutation = useMutation({
+    mutationFn: async () => {
+      if (!shopId || !currentUserId) {
         throw new Error('Missing required data');
       }
 
-      // Find existing permission for this module
-      const existingPermission = permissions.find(p => p.module === module);
-      const currentActions = existingPermission?.actions || { view: false, create: false, edit: false, delete: false };
+      // Get all modules that have pending changes
+      const modulesToSave = Object.entries(pendingPermissions);
       
-      // Update the specific action
-      const updatedActions = {
-        ...currentActions,
-        [action]: value
-      };
+      if (modulesToSave.length === 0) {
+        throw new Error('No changes to save');
+      }
 
-      const { error } = await supabase
-        .from('user_permissions')
-        .upsert({
-          user_id: memberId,
-          shop_id: memberProfile.shop_id,
-          module,
-          actions: updatedActions,
-          created_by: currentUserId,
-        }, {
-          onConflict: 'user_id,shop_id,module'
-        });
+      // Batch upsert all permissions
+      const promises = modulesToSave.map(([module, actions]) => {
+        return supabase
+          .from('user_permissions')
+          .upsert({
+            user_id: effectiveUserId,
+            shop_id: shopId,
+            module,
+            actions: actions as unknown as Record<string, boolean>,
+            created_by: currentUserId,
+          } as any, {
+            onConflict: 'user_id,shop_id,module'
+          });
+      });
 
-      if (error) throw error;
+      const results = await Promise.all(promises);
+      
+      // Check for any errors
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        throw new Error(errors[0].error?.message || 'Failed to save permissions');
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-permissions', memberId] });
+      queryClient.invalidateQueries({ queryKey: ['user-permissions', effectiveUserId] });
+      setHasChanges(false);
       toast({
-        title: "Permission updated",
-        description: "User permissions have been updated successfully",
+        title: "Permissions saved",
+        description: "All permission changes have been saved successfully",
+        variant: "default",
       });
     },
     onError: (error) => {
       toast({
-        title: "Error updating permission",
+        title: "Error saving permissions",
         description: error.message,
         variant: "destructive",
       });
     }
   });
 
-  // Update all permissions mutation
-  const updateAllPermissionsMutation = useMutation({
-    mutationFn: async ({ module, allEnabled }: { module: string; allEnabled: boolean }) => {
-      if (!memberProfile?.shop_id || !currentUserId) {
-        throw new Error('Missing required data');
-      }
+  const handleTogglePermission = useCallback((module: string, action: keyof PermissionActions, value: boolean) => {
+    if (!canEditPermissions) return;
+    
+    setPendingPermissions(prev => {
+      const currentModulePermissions = prev[module] || { view: false, create: false, edit: false, delete: false };
+      return {
+        ...prev,
+        [module]: {
+          ...currentModulePermissions,
+          [action]: value
+        }
+      };
+    });
+    setHasChanges(true);
+  }, [canEditPermissions]);
 
-      const updatedActions = {
+  const handleToggleAll = useCallback((module: string, allEnabled: boolean) => {
+    if (!canEditPermissions) return;
+    
+    setPendingPermissions(prev => ({
+      ...prev,
+      [module]: {
         view: allEnabled,
         create: allEnabled,
         edit: allEnabled,
         delete: allEnabled
-      };
+      }
+    }));
+    setHasChanges(true);
+  }, [canEditPermissions]);
 
-      const { error } = await supabase
-        .from('user_permissions')
-        .upsert({
-          user_id: memberId,
-          shop_id: memberProfile.shop_id,
-          module,
-          actions: updatedActions,
-          created_by: currentUserId,
-        }, {
-          onConflict: 'user_id,shop_id,module'
-        });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-permissions', memberId] });
-      toast({
-        title: "Permissions updated",
-        description: "All permissions for this module have been updated",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error updating permissions",
-        description: error.message,
-        variant: "destructive",
-      });
+  const getPermissionValue = useCallback((moduleId: string, action: keyof PermissionActions): boolean => {
+    // Check pending permissions first (local state)
+    if (pendingPermissions[moduleId]) {
+      return pendingPermissions[moduleId][action] || false;
     }
-  });
-
-  const handleTogglePermission = (module: string, action: string, value: boolean) => {
-    if (!canEditPermissions) return;
-    updatePermissionMutation.mutate({ module, action, value });
-  };
-
-  const handleToggleAll = (module: string, allEnabled: boolean) => {
-    if (!canEditPermissions) return;
-    updateAllPermissionsMutation.mutate({ module, allEnabled });
-  };
-
-  const getPermissionValue = (moduleId: string, action: string): boolean => {
+    // Fallback to fetched permissions
     const permission = permissions.find(p => p.module === moduleId);
-    return permission?.actions[action as keyof typeof permission.actions] || false;
-  };
+    return permission?.actions[action] || false;
+  }, [pendingPermissions, permissions]);
 
-  const areAllPermissionsEnabled = (moduleId: string): boolean => {
-    const permission = permissions.find(p => p.module === moduleId);
-    if (!permission) return false;
-    return permission.actions.view && 
-           permission.actions.create && 
-           permission.actions.edit && 
-           permission.actions.delete;
-  };
+  const areAllPermissionsEnabled = useCallback((moduleId: string): boolean => {
+    const actions = pendingPermissions[moduleId];
+    if (!actions) {
+      const permission = permissions.find(p => p.module === moduleId);
+      if (!permission) return false;
+      return permission.actions.view && permission.actions.create && permission.actions.edit && permission.actions.delete;
+    }
+    return actions.view && actions.create && actions.edit && actions.delete;
+  }, [pendingPermissions, permissions]);
 
-  const areSomePermissionsEnabled = (moduleId: string): boolean => {
-    const permission = permissions.find(p => p.module === moduleId);
-    if (!permission) return false;
-    const { view, create, edit, delete: del } = permission.actions;
+  const areSomePermissionsEnabled = useCallback((moduleId: string): boolean => {
+    const actions = pendingPermissions[moduleId] || permissions.find(p => p.module === moduleId)?.actions;
+    if (!actions) return false;
+    const { view, create, edit, delete: del } = actions;
     const enabledCount = [view, create, edit, del].filter(Boolean).length;
     return enabledCount > 0 && enabledCount < 4;
+  }, [pendingPermissions, permissions]);
+
+  const handleSave = () => {
+    savePermissionsMutation.mutate();
   };
 
   const PermissionRow = ({ 
@@ -199,7 +243,7 @@ export function PermissionsTab({ memberRole, memberId }: PermissionsTabProps) {
   }: { 
     label: string; 
     moduleId: string; 
-    action: string;
+    action: keyof PermissionActions;
   }) => {
     const isAllowed = getPermissionValue(moduleId, action);
     
@@ -216,7 +260,7 @@ export function PermissionsTab({ memberRole, memberId }: PermissionsTabProps) {
   };
 
   const PermissionModuleCard = ({ module }: { module: typeof PERMISSION_MODULES[0] }) => {
-    const actions = [
+    const actions: { key: keyof PermissionActions; label: string }[] = [
       { key: 'view', label: 'View' },
       { key: 'create', label: 'Create' },
       { key: 'edit', label: 'Edit' },
@@ -261,6 +305,8 @@ export function PermissionsTab({ memberRole, memberId }: PermissionsTabProps) {
     );
   };
 
+  const isLoading = isLoadingProfile || isLoadingPermissions;
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -276,13 +322,53 @@ export function PermissionsTab({ memberRole, memberId }: PermissionsTabProps) {
     );
   }
 
+  // Show warning if profile not found
+  if (!memberProfile) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Unable to load permissions. The user profile could not be found. This may be due to a data mismatch.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            <CardTitle>User Permissions</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              <CardTitle>User Permissions</CardTitle>
+            </div>
+            {canEditPermissions && (
+              <Button
+                onClick={handleSave}
+                disabled={!hasChanges || savePermissionsMutation.isPending}
+                className="gap-2"
+              >
+                {savePermissionsMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Permissions
+                    {hasChanges && (
+                      <Badge variant="secondary" className="ml-1 bg-amber-500/20 text-amber-600">
+                        Unsaved
+                      </Badge>
+                    )}
+                  </>
+                )}
+              </Button>
+            )}
           </div>
           <CardDescription>
             Manage what this team member can access and modify in the system
@@ -301,6 +387,15 @@ export function PermissionsTab({ memberRole, memberId }: PermissionsTabProps) {
               <Lock className="h-4 w-4" />
               <AlertDescription>
                 Only Owners and Administrators can modify permissions. You are viewing this user's current permissions.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {hasChanges && canEditPermissions && (
+            <Alert className="border-amber-500/50 bg-amber-500/10">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-600">
+                You have unsaved changes. Click "Save Permissions" to apply them.
               </AlertDescription>
             </Alert>
           )}
@@ -328,6 +423,30 @@ export function PermissionsTab({ memberRole, memberId }: PermissionsTabProps) {
           );
         })}
       </div>
+
+      {/* Sticky Save Button for mobile */}
+      {canEditPermissions && hasChanges && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-50">
+          <Button
+            onClick={handleSave}
+            disabled={savePermissionsMutation.isPending}
+            size="lg"
+            className="shadow-lg gap-2"
+          >
+            {savePermissionsMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Save Permissions
+              </>
+            )}
+          </Button>
+        </div>
+      )}
 
       <Card className="bg-muted/50">
         <CardContent className="pt-6">

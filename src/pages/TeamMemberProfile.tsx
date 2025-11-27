@@ -167,7 +167,7 @@ export default function TeamMemberProfile() {
         </TabsContent>
         
         <TabsContent value="permissions" className="mt-6">
-          <PermissionsTab memberRole={member.role} memberId={member.id} />
+          <PermissionsTab memberRole={member.role} memberId={member.id} memberEmail={member.email} />
         </TabsContent>
 
         <TabsContent value="edit" className="mt-6">
