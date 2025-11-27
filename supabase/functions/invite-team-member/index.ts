@@ -42,15 +42,33 @@ Deno.serve(async (req) => {
 
     console.log('Processing team member:', { email, firstName, lastName, profileId, hasPassword: !!password });
 
-    // Check if profile already exists
-    const { data: existingProfile } = await supabaseAdmin
+    // Check if profile already exists - first by ID, then fall back to email
+    let { data: existingProfile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, user_id')
+      .select('id, user_id, email')
       .eq('id', profileId)
-      .single();
+      .maybeSingle();
+
+    console.log('Profile lookup by id result:', { existingProfile, profileError });
 
     if (!existingProfile) {
-      throw new Error('Profile not found');
+      const { data: profileByEmail, error: emailLookupError } = await supabaseAdmin
+        .from('profiles')
+        .select('id, user_id, email')
+        .ilike('email', email)
+        .maybeSingle();
+
+      console.log('Profile lookup by email result:', { profileByEmail, emailLookupError });
+
+      if (emailLookupError) {
+        throw emailLookupError;
+      }
+
+      if (!profileByEmail) {
+        throw new Error('Profile not found for given id or email');
+      }
+
+      existingProfile = profileByEmail;
     }
 
     let authData;
@@ -95,8 +113,8 @@ Deno.serve(async (req) => {
       throw authError;
     }
 
-    // Link the auth user to the existing profile
-    if (authData.user?.id) {
+    // Link the auth user to the resolved profile
+    if (authData.user?.id && existingProfile?.id) {
       const { error: linkError } = await supabaseAdmin
         .from('profiles')
         .update({ 
@@ -104,7 +122,7 @@ Deno.serve(async (req) => {
           has_auth_account: true,
           invitation_sent_at: new Date().toISOString() 
         })
-        .eq('id', profileId);
+        .eq('id', existingProfile.id);
 
       if (linkError) {
         console.error('Error linking profile to auth user:', linkError);
