@@ -43,6 +43,10 @@ export default function SetupBrianAuth() {
     }
   };
 
+  useEffect(() => {
+    setupAuth();
+  }, []);
+
   return (
     <div className="container mx-auto p-8 max-w-2xl">
       <Card>
@@ -53,12 +57,6 @@ export default function SetupBrianAuth() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {status === 'idle' && (
-            <Button onClick={setupAuth} size="lg">
-              Create Auth Account
-            </Button>
-          )}
-
           {status === 'loading' && (
             <Alert>
               <Loader2 className="h-4 w-4 animate-spin" />
