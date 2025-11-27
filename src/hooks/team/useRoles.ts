@@ -24,7 +24,11 @@ export function useRoles() {
     'service_advisor': 'Service Advisor',
     'technician': 'Technician',
     'reception': 'Reception',
-    'other_staff': 'Other Staff'
+    'other_staff': 'Other Staff',
+    'yard_manager': 'Yard Manager',
+    'mechanic_manager': 'Mechanic Manager',
+    'yard_manager_assistant': 'Yard Manager Assistant',
+    'mechanic_manager_assistant': 'Mechanic Manager Assistant'
   };
 
   useEffect(() => {
