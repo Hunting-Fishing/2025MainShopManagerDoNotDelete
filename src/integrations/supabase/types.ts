@@ -25197,6 +25197,9 @@ export type Database = {
         | "yard"
         | "yard_manager"
         | "welder"
+        | "mechanic_manager"
+        | "yard_manager_assistant"
+        | "mechanic_manager_assistant"
       approval_status: "pending" | "approved" | "rejected"
       equipment_status: "operational" | "maintenance" | "down" | "retired"
       equipment_type:
@@ -25451,6 +25454,9 @@ export const Constants = {
         "yard",
         "yard_manager",
         "welder",
+        "mechanic_manager",
+        "yard_manager_assistant",
+        "mechanic_manager_assistant",
       ],
       approval_status: ["pending", "approved", "rejected"],
       equipment_status: ["operational", "maintenance", "down", "retired"],
