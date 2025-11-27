@@ -5,11 +5,11 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { getIconComponent } from '@/utils/iconMapper';
+import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { hasRoutePermission } from '@/utils/routeGuards';
 import { getSectionColorScheme } from '@/utils/sectionColors';
 import { SidebarLogo } from './SidebarLogo';
-import { navigation } from './navigation';
+import { navigation, NavigationItem } from './navigation';
 import { useSidebarVisibility } from '@/hooks/useSidebarVisibility';
 
 export function SidebarContent() {
@@ -17,6 +17,7 @@ export function SidebarContent() {
   const { setIsOpen } = useSidebar();
   const isMobile = useIsMobile();
   const { data: userRoles = [] } = useUserRoles();
+  const { data: modulePermissions = {}, isLoading: permissionsLoading } = useModulePermissions();
   const { isVisible } = useSidebarVisibility();
 
   const handleLinkClick = (href: string) => {
@@ -27,12 +28,44 @@ export function SidebarContent() {
     }
   };
 
-  // Filter navigation based on visibility settings and permissions
+  /**
+   * Check if user has view permission for a navigation item
+   * - If no permissionModule is specified, item is accessible to all
+   * - If permissionModule is specified, check if user has view permission for that module
+   */
+  const hasModuleViewPermission = (item: NavigationItem): boolean => {
+    // If no permission module specified, allow access
+    if (!item.permissionModule) {
+      return true;
+    }
+    
+    // While loading, hide items that require permissions to prevent flash of unauthorized content
+    if (permissionsLoading) {
+      return false;
+    }
+    
+    // Check if user has view permission for this module
+    const permission = modulePermissions[item.permissionModule];
+    return permission?.view === true;
+  };
+
+  // Filter navigation based on:
+  // 1. Shop-level visibility settings (hidden sections)
+  // 2. Role-based section visibility
+  // 3. Module-based view permissions for individual items
+  // 4. Route-based role permissions (fallback)
   const filteredNavigation = navigation
     .filter(section => isVisible(section.title)) // Check shop-level and role-based visibility
     .map(section => ({
       ...section,
-      items: section.items.filter(item => hasRoutePermission(item.href, userRoles))
+      items: section.items.filter(item => {
+        // First check module-based permissions (primary check)
+        if (!hasModuleViewPermission(item)) {
+          return false;
+        }
+        // Then check route-based role permissions (secondary check)
+        return hasRoutePermission(item.href, userRoles);
+      })
     }))
     .filter(section => section.items.length > 0);
 

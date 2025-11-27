@@ -16,12 +16,10 @@ import {
   Cog,
   HelpCircle,
   ShoppingCart,
-  Building2,
   Truck,
   UserCog,
   FileBarChart,
   Building,
-  MapPin,
   Archive,
   ShoppingBag,
   Boxes,
@@ -45,8 +43,24 @@ import {
   Smartphone,
   GraduationCap
 } from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 
-export const navigation = [
+export interface NavigationItem {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+  description?: string;
+  /** The permission module to check for view access */
+  permissionModule?: string;
+}
+
+export interface NavigationSection {
+  title: string;
+  icon?: LucideIcon;
+  items: NavigationItem[];
+}
+
+export const navigation: NavigationSection[] = [
   {
     title: 'Dashboard',
     items: [
@@ -54,7 +68,8 @@ export const navigation = [
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutDashboard,
-        description: 'Main dashboard overview'
+        description: 'Main dashboard overview',
+        // No permission module - dashboard is accessible to all authenticated users
       },
     ],
   },
@@ -65,7 +80,8 @@ export const navigation = [
         title: 'Customers',
         href: '/customers',
         icon: Users,
-        description: 'Manage customer database'
+        description: 'Manage customer database',
+        permissionModule: 'customers',
       },
     ],
   },
@@ -73,15 +89,15 @@ export const navigation = [
     title: "Inventory",
     icon: Package,
     items: [
-      { title: "Inventory Overview", href: "/inventory", icon: Package, description: "Main inventory overview" },
-      { title: "Service Packages", href: "/service-packages", icon: Boxes, description: "Service templates with parts" },
-      { title: "Asset Work Orders", href: "/work-orders", icon: ClipboardList, description: "Manage maintenance work orders" },
-      { title: "Asset Usage", href: "/asset-usage", icon: Gauge, description: "Track vehicle and equipment usage" },
-      { title: "Consumption Tracking", href: "/consumption-tracking", icon: TrendingDown, description: "Log parts consumption" },
-      { title: "Mobile Scanner", href: "/mobile-inventory", icon: Smartphone, description: "Quick stock adjustments" },
-      { title: "Inventory Analytics", href: "/inventory-analytics", icon: BarChart3, description: "Forecasting & analytics" },
-      { title: "Inventory Manager", href: "/inventory-manager", icon: Settings, description: "Advanced inventory settings" },
-      { title: "Maintenance Planning", href: "/maintenance-planning", icon: Wrench, description: "Predictive maintenance & scheduling" },
+      { title: "Inventory Overview", href: "/inventory", icon: Package, description: "Main inventory overview", permissionModule: 'inventory' },
+      { title: "Service Packages", href: "/service-packages", icon: Boxes, description: "Service templates with parts", permissionModule: 'service_packages' },
+      { title: "Asset Work Orders", href: "/work-orders", icon: ClipboardList, description: "Manage maintenance work orders", permissionModule: 'work_orders' },
+      { title: "Asset Usage", href: "/asset-usage", icon: Gauge, description: "Track vehicle and equipment usage", permissionModule: 'equipment_tracking' },
+      { title: "Consumption Tracking", href: "/consumption-tracking", icon: TrendingDown, description: "Log parts consumption", permissionModule: 'inventory' },
+      { title: "Mobile Scanner", href: "/mobile-inventory", icon: Smartphone, description: "Quick stock adjustments", permissionModule: 'inventory' },
+      { title: "Inventory Analytics", href: "/inventory-analytics", icon: BarChart3, description: "Forecasting & analytics", permissionModule: 'analytics' },
+      { title: "Inventory Manager", href: "/inventory-manager", icon: Settings, description: "Advanced inventory settings", permissionModule: 'inventory' },
+      { title: "Maintenance Planning", href: "/maintenance-planning", icon: Wrench, description: "Predictive maintenance & scheduling", permissionModule: 'maintenance_requests' },
     ],
   },
   {
@@ -91,13 +107,15 @@ export const navigation = [
         title: 'Calendar',
         href: '/calendar',
         icon: Calendar,
-        description: 'Schedule appointments'
+        description: 'Schedule appointments',
+        permissionModule: 'calendar',
       },
       {
         title: 'Service Reminders',
         href: '/service-reminders',
         icon: Bell,
-        description: 'Manage service reminders'
+        description: 'Manage service reminders',
+        permissionModule: 'service_reminders',
       },
     ],
   },
@@ -108,19 +126,22 @@ export const navigation = [
         title: 'Team Chat',
         href: '/chat',
         icon: MessageCircle,
-        description: 'Internal team messaging'
+        description: 'Internal team messaging',
+        permissionModule: 'team_chat',
       },
       {
         title: 'Customer Comms',
         href: '/customer-comms',
         icon: MessageSquare,
-        description: 'SMS templates and communications'
+        description: 'SMS templates and communications',
+        permissionModule: 'customer_communications',
       },
       {
         title: 'Call Logger',
         href: '/call-logger',
         icon: Phone,
-        description: 'Log customer calls'
+        description: 'Log customer calls',
+        permissionModule: 'call_logger',
       },
     ],
   },
@@ -131,31 +152,36 @@ export const navigation = [
         title: 'Email Campaigns',
         href: '/email-campaigns',
         icon: Mail,
-        description: 'Manage email campaigns'
+        description: 'Manage email campaigns',
+        permissionModule: 'email_campaigns',
       },
       {
         title: 'Email Sequences',
         href: '/email-sequences',
         icon: Send,
-        description: 'Automated email workflows'
+        description: 'Automated email workflows',
+        permissionModule: 'marketing',
       },
       {
         title: 'Email Templates',
         href: '/email-templates',
         icon: FileText,
-        description: 'Email template library'
+        description: 'Email template library',
+        permissionModule: 'marketing',
       },
       {
         title: 'SMS Management',
         href: '/sms-management',
         icon: MessagesSquare,
-        description: 'SMS campaigns and bulk messaging'
+        description: 'SMS campaigns and bulk messaging',
+        permissionModule: 'sms_management',
       },
       {
         title: 'SMS Templates',
         href: '/sms-templates',
         icon: MessageSquare,
-        description: 'SMS template library'
+        description: 'SMS template library',
+        permissionModule: 'marketing',
       },
     ],
   },
@@ -166,31 +192,36 @@ export const navigation = [
         title: 'Quotes',
         href: '/quotes',
         icon: FileText,
-        description: 'Manage quotes and estimates'
+        description: 'Manage quotes and estimates',
+        permissionModule: 'quotes',
       },
       {
         title: 'Work Orders',
         href: '/work-orders',
         icon: Wrench,
-        description: 'Manage work orders'
+        description: 'Manage work orders',
+        permissionModule: 'work_orders',
       },
       {
         title: 'Invoices',
         href: '/invoices',
         icon: Receipt,
-        description: 'Manage invoices'
+        description: 'Manage invoices',
+        permissionModule: 'invoices',
       },
       {
         title: 'Service Board',
         href: '/service-board',
         icon: ClipboardList,
-        description: 'Service management board'
+        description: 'Service management board',
+        permissionModule: 'work_orders',
       },
       {
         title: 'Payments',
         href: '/payments',
         icon: ShoppingBag,
-        description: 'Payment processing'
+        description: 'Payment processing',
+        permissionModule: 'payments',
       },
     ],
   },
@@ -201,13 +232,15 @@ export const navigation = [
         title: 'Equipment Management',
         href: '/equipment-management',
         icon: Hammer,
-        description: 'Manage equipment, tools, and maintenance'
+        description: 'Manage equipment, tools, and maintenance',
+        permissionModule: 'equipment_tracking',
       },
       {
         title: 'Maintenance Requests',
         href: '/maintenance-requests',
         icon: AlertCircle,
-        description: 'Track maintenance requests'
+        description: 'Track maintenance requests',
+        permissionModule: 'maintenance_requests',
       },
     ],
   },
@@ -218,31 +251,36 @@ export const navigation = [
         title: 'Company Profile',
         href: '/company-profile',
         icon: Building,
-        description: 'Company information'
+        description: 'Company information',
+        permissionModule: 'settings',
       },
       {
         title: 'Team',
         href: '/team',
         icon: UserCog,
-        description: 'Team management'
+        description: 'Team management',
+        permissionModule: 'team',
       },
       {
         title: 'Training Overview',
         href: '/training-overview',
         icon: GraduationCap,
-        description: 'Monitor team certifications and training'
+        description: 'Monitor team certifications and training',
+        permissionModule: 'team',
       },
       {
         title: 'Vehicles',
         href: '/vehicles',
         icon: Truck,
-        description: 'Fleet management'
+        description: 'Fleet management',
+        permissionModule: 'fleet_management',
       },
       {
         title: 'Documents',
         href: '/documents',
         icon: FileBarChart,
-        description: 'Document management'
+        description: 'Document management',
+        permissionModule: 'documents',
       },
     ],
   },
@@ -253,19 +291,22 @@ export const navigation = [
         title: 'Service Editor',
         href: '/service-editor',
         icon: Cog,
-        description: 'Edit service offerings'
+        description: 'Edit service offerings',
+        permissionModule: 'service_catalog',
       },
       {
         title: 'Service Library',
         href: '/services',
         icon: Star,
-        description: 'Browse service catalog'
+        description: 'Browse service catalog',
+        permissionModule: 'service_catalog',
       },
       {
         title: 'Repair Plans',
         href: '/repair-plans',
         icon: Archive,
-        description: 'Manage repair plans'
+        description: 'Manage repair plans',
+        permissionModule: 'service_packages',
       },
     ],
   },
@@ -276,25 +317,29 @@ export const navigation = [
         title: 'Shopping',
         href: '/shopping',
         icon: Store,
-        description: 'Browse products and tools'
+        description: 'Browse products and tools',
+        permissionModule: 'shopping',
       },
       {
         title: 'Shopping Cart',
         href: '/shopping/cart',
         icon: ShoppingCart,
-        description: 'View cart and checkout'
+        description: 'View cart and checkout',
+        permissionModule: 'shopping',
       },
       {
         title: 'Wishlist',
         href: '/wishlist',
         icon: Heart,
-        description: 'Your saved items'
+        description: 'Your saved items',
+        permissionModule: 'shopping',
       },
       {
         title: 'Orders',
         href: '/orders',
         icon: ShoppingBag,
-        description: 'Order history and tracking'
+        description: 'Order history and tracking',
+        permissionModule: 'orders',
       },
     ],
   },
@@ -305,31 +350,36 @@ export const navigation = [
         title: 'AI Hub',
         href: '/ai-hub',
         icon: Brain,
-        description: 'AI-powered automation & insights'
+        description: 'AI-powered automation & insights',
+        permissionModule: 'analytics',
       },
       {
         title: 'Reports',
         href: '/reports',
         icon: FileBarChart2,
-        description: 'Generate and view reports'
+        description: 'Generate and view reports',
+        permissionModule: 'reports',
       },
       {
         title: 'Forms',
         href: '/forms',
         icon: FormInput,
-        description: 'Create and manage forms'
+        description: 'Create and manage forms',
+        permissionModule: 'reports',
       },
       {
         title: 'Feedback',
         href: '/feedback',
         icon: Star,
-        description: 'Customer feedback & reviews'
+        description: 'Customer feedback & reviews',
+        permissionModule: 'customers',
       },
       {
         title: 'Developer',
         href: '/developer',
         icon: Code,
-        description: 'Developer tools & API'
+        description: 'Developer tools & API',
+        permissionModule: 'developer_tools',
       },
     ],
   },
@@ -340,19 +390,22 @@ export const navigation = [
         title: 'Profile',
         href: '/profile',
         icon: User,
-        description: 'Your profile settings'
+        description: 'Your profile settings',
+        // No permission module - profile is accessible to all authenticated users
       },
       {
         title: 'Notifications',
         href: '/notifications',
         icon: Bell,
-        description: 'Manage notifications'
+        description: 'Manage notifications',
+        // No permission module - notifications is accessible to all authenticated users
       },
       {
         title: 'Settings',
         href: '/settings',
         icon: Settings,
-        description: 'System configuration'
+        description: 'System configuration',
+        permissionModule: 'settings',
       },
     ],
   },
@@ -363,13 +416,15 @@ export const navigation = [
         title: 'Help',
         href: '/help',
         icon: HelpCircle,
-        description: 'Help and documentation'
+        description: 'Help and documentation',
+        // No permission module - help is accessible to all authenticated users
       },
       {
         title: 'Security',
         href: '/security',
         icon: Shield,
-        description: 'Security settings'
+        description: 'Security settings',
+        permissionModule: 'security',
       },
     ],
   },
