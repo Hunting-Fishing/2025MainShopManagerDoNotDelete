@@ -160,7 +160,8 @@ export function useAuthUser() {
       
       setIsAdmin(roleNames.includes('admin'));
       setIsOwner(roleNames.includes('owner'));
-      setIsManager(roleNames.includes('manager'));
+      // Include yard_manager as having manager privileges
+      setIsManager(roleNames.includes('manager') || roleNames.includes('yard_manager'));
       setError(null); // Clear any previous errors
       
     } catch (err) {
