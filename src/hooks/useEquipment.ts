@@ -17,9 +17,34 @@ export function useEquipment() {
     try {
       console.log("Fetching equipment data...");
       
+      // CRITICAL: Ensure auth is ready first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log("No authenticated user, cannot fetch equipment");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Get user's shop_id explicitly from their profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+        
+      if (!profile?.shop_id) {
+        console.log("No shop_id found for user");
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Fetching equipment for shop_id:", profile.shop_id);
+      
+      // Query with explicit shop_id filter to avoid RLS timing issues
       const { data, error } = await supabase
         .from('equipment_assets')
         .select('*')
+        .eq('shop_id', profile.shop_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
