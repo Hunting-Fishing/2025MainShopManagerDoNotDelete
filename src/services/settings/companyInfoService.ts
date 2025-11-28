@@ -67,12 +67,12 @@ async function getShopInfo() {
       throw new Error("No authenticated user found");
     }
     
-    // Get the profile with shop_id
+    // Get the profile with shop_id - handle both patterns
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('shop_id')
-      .eq('id', user.id)
-      .single();
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle();
       
     if (profileError) {
       throw profileError;

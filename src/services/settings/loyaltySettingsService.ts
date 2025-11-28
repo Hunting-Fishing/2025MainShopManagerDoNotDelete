@@ -19,8 +19,8 @@ class LoyaltySettingsService {
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('shop_id')
-      .eq('id', user.id)
-      .single();
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle();
 
     if (error || !profile?.shop_id) {
       throw new Error('Shop not found for user');

@@ -83,12 +83,12 @@ export function EditMaintenanceRequestDialog({
         return;
       }
 
-      // Get user's name from profile
+      // Get user's name from profile - handle both patterns
       const { data: profile } = await supabase
         .from('profiles')
         .select('first_name, last_name')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       const editorName = profile?.first_name && profile?.last_name
         ? `${profile.first_name} ${profile.last_name}`

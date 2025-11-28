@@ -35,12 +35,12 @@ export function ToolCheckoutDialog({ open, onOpenChange, tool, onSuccess }: Tool
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get user profile for shop_id and name
+      // Get user profile for shop_id and name - handle both patterns
       const { data: profile } = await supabase
         .from('profiles')
         .select('shop_id, full_name')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (!profile?.shop_id) throw new Error('Shop ID not found');
 

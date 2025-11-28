@@ -44,8 +44,8 @@ export default function UserPermissionsSettings() {
       const { data: profile } = await supabase
         .from("profiles")
         .select("shop_id")
-        .eq("id", user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (!profile?.shop_id) throw new Error("No shop found");
 
@@ -88,8 +88,8 @@ export default function UserPermissionsSettings() {
       const { data: profile } = await supabase
         .from("profiles")
         .select("shop_id")
-        .eq("id", user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (!profile?.shop_id) throw new Error("No shop found");
 
@@ -126,8 +126,8 @@ export default function UserPermissionsSettings() {
       const { data: profile } = await supabase
         .from("profiles")
         .select("shop_id")
-        .eq("id", user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (!profile?.shop_id) throw new Error("No shop found");
 
@@ -165,8 +165,8 @@ export default function UserPermissionsSettings() {
       const { data: profile } = await supabase
         .from("profiles")
         .select("shop_id")
-        .eq("id", user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (!profile?.shop_id) throw new Error("No shop found");
 
@@ -211,8 +211,8 @@ export default function UserPermissionsSettings() {
       const { data: profile } = await supabase
         .from("profiles")
         .select("shop_id")
-        .eq("id", user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (!profile?.shop_id) throw new Error("No shop found");
 

@@ -95,11 +95,11 @@ export function SafetyEquipmentList({ refreshTrigger, parentEquipmentId }: Safet
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get shop_id from profiles
+      // Get shop_id from profiles - handle both patterns
       const { data: profileData } = await supabase
         .from('profiles')
         .select('shop_id')
-        .eq('id', user.id)
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
         .maybeSingle();
 
       const shop_id = profileData?.shop_id || user.id;

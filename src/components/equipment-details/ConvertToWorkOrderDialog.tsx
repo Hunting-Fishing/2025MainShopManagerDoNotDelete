@@ -61,8 +61,8 @@ export function ConvertToWorkOrderDialog({
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       console.log('🏪 Profile shop_id:', profile?.shop_id);
       if (profileError) {
@@ -159,8 +159,8 @@ export function ConvertToWorkOrderDialog({
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (profileError) {
         console.error('❌ Profile error:', profileError);
