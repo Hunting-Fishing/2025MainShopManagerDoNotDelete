@@ -15,11 +15,12 @@ export function useSidebarVisibilitySettings() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
+      // Handle both profile patterns: id = auth.uid() OR user_id = auth.uid()
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (profileError || !profile?.shop_id) {
         console.error('Error fetching profile:', profileError);
@@ -63,11 +64,12 @@ export function useUpdateSidebarVisibility() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Handle both profile patterns: id = auth.uid() OR user_id = auth.uid()
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (profileError || !profile?.shop_id) {
         throw new Error('No shop ID found');
