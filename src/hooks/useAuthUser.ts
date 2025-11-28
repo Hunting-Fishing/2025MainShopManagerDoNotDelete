@@ -12,6 +12,7 @@ export function useAuthUser() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [isManager, setIsManager] = useState(false);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export function useAuthUser() {
         setIsAdmin(false);
         setIsOwner(false);
         setIsManager(false);
+        setUserRoles([]);
       }
       
     } catch (err) {
@@ -139,6 +141,7 @@ export function useAuthUser() {
         const roleNames = directRoles.map(item => (item.roles as any)?.name).filter(Boolean) as string[];
         console.log('✅ User roles fetched via auth.uid():', roleNames);
         
+        setUserRoles(roleNames);
         setIsAdmin(roleNames.includes('admin'));
         setIsOwner(roleNames.includes('owner'));
         setIsManager(roleNames.includes('manager') || roleNames.includes('yard_manager'));
@@ -167,6 +170,7 @@ export function useAuthUser() {
           const roleNames = profileRoles.map(item => (item.roles as any)?.name).filter(Boolean) as string[];
           console.log('✅ User roles fetched via profile.id:', roleNames);
           
+          setUserRoles(roleNames);
           setIsAdmin(roleNames.includes('admin'));
           setIsOwner(roleNames.includes('owner'));
           setIsManager(roleNames.includes('manager') || roleNames.includes('yard_manager'));
@@ -190,12 +194,14 @@ export function useAuthUser() {
 
       // No roles found via either pattern
       console.warn('⚠️ No roles found for user:', authUserId);
+      setUserRoles([]);
       setIsAdmin(false);
       setIsOwner(false);
       setIsManager(false);
       
     } catch (err) {
       console.error('❌ Error in fetchUserRoles:', err);
+      setUserRoles([]);
       setIsAdmin(false);
       setIsOwner(false);
       setIsManager(false);
@@ -218,6 +224,7 @@ export function useAuthUser() {
     isAdmin,
     isOwner,
     isManager,
+    userRoles,
     userId,
     userName,
     error,

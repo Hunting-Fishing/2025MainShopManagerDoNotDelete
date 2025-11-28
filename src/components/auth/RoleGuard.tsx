@@ -21,7 +21,7 @@ export function RoleGuard({
   requireAdmin = false,
   fallback 
 }: RoleGuardProps) {
-  const { isLoading, isAuthenticated, isOwner, isAdmin, isManager, error } = useAuthUser();
+  const { isLoading, isAuthenticated, isOwner, isAdmin, isManager, userRoles, error } = useAuthUser();
 
   if (isLoading) {
     return (
@@ -72,25 +72,14 @@ export function RoleGuard({
     );
   }
 
-  // Check role-based access
+  // Check role-based access using the actual userRoles array
   const hasAccess = 
     (requireOwner && isOwner) ||
     (requireAdmin && (isAdmin || isOwner)) ||
     (allowedRoles.length === 0) || // No specific roles required
     (isOwner) || // Owners always have access
     (isAdmin) || // Admins have broad access
-    (allowedRoles.some(role => {
-      switch (role) {
-        case 'owner': return isOwner;
-        case 'admin': return isAdmin || isOwner;
-        case 'manager': return isManager || isAdmin || isOwner;
-        case 'technician': return isAdmin || isOwner; // For now, allow admin/owner access
-        case 'service_advisor': return isAdmin || isOwner; // For now, allow admin/owner access
-        case 'reception': return isAdmin || isOwner; // For now, allow admin/owner access
-        case 'inventory_manager': return isAdmin || isOwner; // For now, allow admin/owner access
-        default: return false;
-      }
-    }));
+    (allowedRoles.some(role => userRoles.includes(role))); // Check if user has ANY of the allowed roles
 
   if (!hasAccess) {
     if (fallback) {
