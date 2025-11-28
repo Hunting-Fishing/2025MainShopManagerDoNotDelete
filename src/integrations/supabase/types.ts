@@ -7115,35 +7115,53 @@ export type Database = {
       }
       feedback_responses: {
         Row: {
+          category: string | null
+          comment: string | null
           created_at: string | null
           customer_id: string | null
           form_id: string | null
           id: string
           nps_score: number | null
           overall_rating: number | null
+          responded_at: string | null
+          responded_by: string | null
           response_data: Json
+          response_text: string | null
+          status: string | null
           submitted_at: string | null
           work_order_id: string | null
         }
         Insert: {
+          category?: string | null
+          comment?: string | null
           created_at?: string | null
           customer_id?: string | null
           form_id?: string | null
           id?: string
           nps_score?: number | null
           overall_rating?: number | null
+          responded_at?: string | null
+          responded_by?: string | null
           response_data: Json
+          response_text?: string | null
+          status?: string | null
           submitted_at?: string | null
           work_order_id?: string | null
         }
         Update: {
+          category?: string | null
+          comment?: string | null
           created_at?: string | null
           customer_id?: string | null
           form_id?: string | null
           id?: string
           nps_score?: number | null
           overall_rating?: number | null
+          responded_at?: string | null
+          responded_by?: string | null
           response_data?: Json
+          response_text?: string | null
+          status?: string | null
           submitted_at?: string | null
           work_order_id?: string | null
         }
@@ -7160,6 +7178,13 @@ export type Database = {
             columns: ["form_id"]
             isOneToOne: false
             referencedRelation: "feedback_forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_responses_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

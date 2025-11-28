@@ -69,6 +69,9 @@ import EmailCampaigns from '@/pages/EmailCampaigns';
 import EmailSequences from '@/pages/EmailSequences';
 import EmailTemplates from '@/pages/EmailTemplates';
 import Feedback from '@/pages/Feedback';
+import FeedbackFormsPage from '@/pages/feedback/FeedbackFormsPage';
+import FeedbackFormEditorPage from '@/pages/feedback/FeedbackFormEditorPage';
+import FeedbackAnalyticsPage from '@/pages/feedback/FeedbackAnalyticsPage';
 import DeveloperPortal from '@/pages/DeveloperPortal';
 import SmsManagement from '@/pages/SmsManagement';
 import SmsTemplates from '@/pages/SmsTemplates';
@@ -430,6 +433,26 @@ function App() {
                   
                   {/* Customer Feedback */}
                   <Route path="/feedback" element={<Feedback />} />
+                  <Route path="/feedback/forms" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <FeedbackFormsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/feedback/forms/new" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <FeedbackFormEditorPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/feedback/forms/:formId/edit" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <FeedbackFormEditorPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/feedback/forms/:formId/analytics" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <FeedbackAnalyticsPage />
+                    </ProtectedRoute>
+                  } />
                   
           {/* Feature Requests */}
           <Route path="/feature-requests" element={<FeatureRequests />} />

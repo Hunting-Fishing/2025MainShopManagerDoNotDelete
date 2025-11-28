@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { FeedbackForm, FeedbackQuestion, QuestionType } from '@/types/feedback';
 import { 
   createFeedbackForm, 
@@ -67,9 +68,29 @@ export const FeedbackFormEditor: React.FC = () => {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   
-  // Temporary shop ID and user name (in a real app, this would come from context or auth)
-  const shopId = 'DEFAULT-SHOP-ID';
-  const currentUserName = 'Admin User';
+  const [shopId, setShopId] = useState<string | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string>('');
+
+  // Fetch shop ID and user name from auth
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Get profile with shop_id
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('shop_id, first_name, last_name')
+          .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+          .maybeSingle();
+        
+        if (profile) {
+          setShopId(profile.shop_id);
+          setCurrentUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Admin User');
+        }
+      }
+    };
+    fetchUserData();
+  }, []);
 
   const formMethods = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -247,6 +268,15 @@ export const FeedbackFormEditor: React.FC = () => {
         formData = { ...form, ...values };
       } else {
         // Create new form
+        if (!shopId) {
+          toast({
+            title: 'Error',
+            description: 'Unable to create form. Please try again.',
+            variant: 'destructive',
+          });
+          setSaving(false);
+          return;
+        }
         const newForm = await createFeedbackForm({
           shop_id: shopId,
           title: values.title,
