@@ -49,11 +49,12 @@ export const getDefaultShop = async () => {
     
     if (user) {
       console.log("Checking profile for user:", user.id);
+      // Handle both profile patterns: id = auth.uid() OR user_id = auth.uid()
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
       
       if (!profileError && profile?.shop_id) {
         console.log("Found shop_id in profile:", profile.shop_id);

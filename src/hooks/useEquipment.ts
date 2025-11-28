@@ -25,12 +25,12 @@ export function useEquipment() {
         return;
       }
       
-      // Get user's shop_id explicitly from their profile
+      // Get user's shop_id - handle both profile patterns
       const { data: profile } = await supabase
         .from('profiles')
         .select('shop_id')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
         
       if (!profile?.shop_id) {
         console.log("No shop_id found for user");

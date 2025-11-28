@@ -31,12 +31,12 @@ export const useShopName = () => {
         throw new Error('User not authenticated');
       }
 
-      // Get user's profile to find their shop
+      // Get user's profile to find their shop - handle both patterns
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (profileError || !profile?.shop_id) {
         // Fallback to first shop
