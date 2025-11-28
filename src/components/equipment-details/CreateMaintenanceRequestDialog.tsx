@@ -90,12 +90,12 @@ export function CreateMaintenanceRequestDialog({
         return;
       }
 
-      // Get user's shop_id and name from profile
+      // Get user's shop_id and name from profile - handle both patterns
       const { data: profile } = await supabase
         .from('profiles')
         .select('shop_id, first_name, last_name')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (!profile?.shop_id) {
         toast.error('User profile not found or shop not assigned');

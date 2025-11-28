@@ -53,8 +53,8 @@ export function CompanyTab() {
           const { data: profile } = await supabase
             .from('profiles')
             .select('shop_id')
-            .eq('id', user.id)
-            .single();
+            .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+            .maybeSingle();
           if (profile?.shop_id) {
             setShopId(profile.shop_id);
           }

@@ -35,8 +35,8 @@ export function AppearanceTab({ shopId }: { shopId?: string }) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('shop_id')
-          .eq('id', user.id)
-          .single();
+          .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+          .maybeSingle();
           
         currentShopId = profile?.shop_id;
       }

@@ -254,8 +254,8 @@ export class WorkOrderRepository {
           const { data: profile } = await supabase
             .from('profiles')
             .select('first_name, last_name')
-            .eq('id', user.id)
-            .single();
+            .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+            .maybeSingle();
           
           const userName = profile 
             ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'System'
@@ -318,8 +318,8 @@ export class WorkOrderRepository {
             const { data: profile } = await supabase
               .from('profiles')
               .select('first_name, last_name')
-              .eq('id', user.id)
-              .single();
+              .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+              .maybeSingle();
             
             const userName = profile 
               ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'System'
@@ -413,8 +413,8 @@ export class WorkOrderRepository {
           const { data: profile } = await supabase
             .from('profiles')
             .select('first_name, last_name')
-            .eq('id', user.id)
-            .single();
+            .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+            .maybeSingle();
           
           const currentUserName = profile 
             ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'System'

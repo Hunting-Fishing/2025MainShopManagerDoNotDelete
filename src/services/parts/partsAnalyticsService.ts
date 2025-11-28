@@ -27,7 +27,7 @@ export async function getPartsAnalytics(): Promise<PartsAnalytics> {
     const { data: profile } = await supabase
       .from('profiles')
       .select('shop_id')
-      .eq('id', user.id)
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
       .maybeSingle();
 
     if (!profile?.shop_id) {
@@ -140,7 +140,7 @@ export async function getPartsRevenueBreakdown(): Promise<PartsRevenueBreakdown>
     const { data: profile } = await supabase
       .from('profiles')
       .select('shop_id')
-      .eq('id', user.id)
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
       .maybeSingle();
 
     if (!profile?.shop_id) {

@@ -119,12 +119,12 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
 
           setUploadProgress(10);
           
-          // Get user's shop ID for folder structure
+          // Get user's shop ID for folder structure - handle both patterns
           const { data: profile } = await supabase
             .from('profiles')
             .select('shop_id')
-            .eq('id', user.id)
-            .single();
+            .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+            .maybeSingle();
 
           if (!profile?.shop_id) {
             throw new Error('Shop ID not found');

@@ -70,13 +70,13 @@ export function AddSafetyEquipmentDialog({ open, onOpenChange, onSuccess, parent
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Get shop_id from profiles
+      // Get shop_id from profiles - handle both patterns
       let shop_id = user.id;
       try {
         const result = await supabase
           .from('profiles')
           .select('shop_id')
-          .eq('id', user.id)
+          .or(`id.eq.${user.id},user_id.eq.${user.id}`)
           .maybeSingle();
         
         if (result.data?.shop_id) {

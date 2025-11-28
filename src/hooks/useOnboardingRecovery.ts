@@ -67,12 +67,12 @@ export function useOnboardingRecovery() {
         );
       }
 
-      // Get user's profile to find shop_id
+      // Get user's profile to find shop_id - handle both patterns
       const { data: profile } = await supabase
         .from('profiles')
         .select('shop_id')
-        .eq('id', user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (profile?.shop_id) {
         // Check existing onboarding progress

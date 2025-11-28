@@ -24,7 +24,7 @@ export const createOrder = async (request: CreateOrderRequest): Promise<Order> =
   const { data: profile } = await supabase
     .from('profiles')
     .select('shop_id')
-    .eq('id', user.id)
+    .or(`id.eq.${user.id},user_id.eq.${user.id}`)
     .maybeSingle();
     
   let taxAmount = 0;

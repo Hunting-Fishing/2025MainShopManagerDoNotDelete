@@ -18,8 +18,8 @@ export async function getInventoryItems(): Promise<InventoryItemExtended[]> {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('shop_id')
-      .eq('id', user.id)
-      .single();
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle();
 
     if (profileError || !profile?.shop_id) {
       console.log('No shop_id found for user');
@@ -84,8 +84,8 @@ export async function createInventoryItem(item: Omit<InventoryItemExtended, 'id'
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('shop_id')
-      .eq('id', user.id)
-      .single();
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle();
 
     if (profileError || !profile?.shop_id) {
       throw new Error('No shop_id found for user');
