@@ -341,7 +341,7 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  <Route path="/service-editor" element={
+                  <Route path="/service-editor/*" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
                       <ServiceManagementPage />
                     </ProtectedRoute>
