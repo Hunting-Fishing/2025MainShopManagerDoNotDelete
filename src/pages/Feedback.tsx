@@ -1,10 +1,18 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Star, ThumbsUp, Users } from 'lucide-react';
+import { MessageSquare, Star, ThumbsUp, Users, Loader2 } from 'lucide-react';
 import { FeedbackManager } from '@/components/feedback/FeedbackManager';
+import { useQuery } from '@tanstack/react-query';
+import { calculateFeedbackStats } from '@/services/feedback/feedbackManagerService';
 
 export default function Feedback() {
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['feedback-stats'],
+    queryFn: calculateFeedbackStats,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
   return (
     <>
       <Helmet>
@@ -26,10 +34,18 @@ export default function Feedback() {
               <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">4.8</div>
-              <p className="text-xs text-muted-foreground">
-                Based on 156 reviews
-              </p>
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {stats?.averageRating.toFixed(1) || '0.0'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Based on {stats?.totalResponses || 0} reviews
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
           
@@ -39,10 +55,16 @@ export default function Feedback() {
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">
-                This week
-              </p>
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{stats?.newReviewsThisWeek || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    This week
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
           
@@ -52,10 +74,16 @@ export default function Feedback() {
               <ThumbsUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">89%</div>
-              <p className="text-xs text-muted-foreground">
-                4+ star ratings
-              </p>
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{stats?.positivePercentage || 0}%</div>
+                  <p className="text-xs text-muted-foreground">
+                    4+ star ratings
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
           
@@ -65,10 +93,16 @@ export default function Feedback() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">95%</div>
-              <p className="text-xs text-muted-foreground">
-                Reviews responded to
-              </p>
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{stats?.responseRate || 0}%</div>
+                  <p className="text-xs text-muted-foreground">
+                    Reviews responded to
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

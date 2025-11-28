@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FeedbackFormsList } from '@/components/feedback/FeedbackFormsList';
+import { FeedbackFormsList } from '@/components/feedback/forms/FeedbackFormsList';
 
 export default function FeedbackFormsPage() {
   return (

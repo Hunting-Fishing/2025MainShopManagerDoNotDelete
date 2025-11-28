@@ -10,18 +10,37 @@ import { AlertDialog } from '@/components/ui/alert-dialog';
 import { FeedbackFormCard } from './FeedbackFormCard';
 import { EmptyFormsList } from './EmptyFormsList';
 import { DeleteFormDialog } from './DeleteFormDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 export const FeedbackFormsList: React.FC = () => {
   const [forms, setForms] = useState<FeedbackForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [formToDelete, setFormToDelete] = useState<string | null>(null);
+  const [shopId, setShopId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Temporary shop ID (in a real app, this would come from context or auth)
-  const shopId = 'DEFAULT-SHOP-ID';
+  // Fetch shop ID from user profile
+  useEffect(() => {
+    const fetchShopId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('shop_id')
+          .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+          .maybeSingle();
+        
+        if (profile?.shop_id) {
+          setShopId(profile.shop_id);
+        }
+      }
+    };
+    fetchShopId();
+  }, []);
 
   useEffect(() => {
     const loadForms = async () => {
+      if (!shopId) return;
       setLoading(true);
       const formData = await getFeedbackForms(shopId);
       setForms(formData);
