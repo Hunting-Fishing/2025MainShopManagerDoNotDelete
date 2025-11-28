@@ -120,10 +120,48 @@ export function useAuthUser() {
   }, [handleAuthStateChange]);
 
   // Function to fetch user roles from database with recovery support
-  const fetchUserRoles = useCallback(async (userId: string, retryWithRecovery = true) => {
+  // NOTE: userId param is auth.uid(), but user_roles stores profile.id
+  const fetchUserRoles = useCallback(async (authUserId: string, retryWithRecovery = true) => {
     try {
-      console.log('🔍 Fetching user roles for userId:', userId);
+      console.log('🔍 Fetching user roles for auth.uid():', authUserId);
       
+      // First, get the profile ID using auth.uid() (stored in profiles.user_id column)
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', authUserId)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('❌ Error fetching profile:', profileError);
+        setIsAdmin(false);
+        setIsOwner(false);
+        setIsManager(false);
+        return;
+      }
+
+      // If no profile found by user_id, try by id directly (backward compatibility)
+      let profileId = profileData?.id;
+      if (!profileId) {
+        const { data: fallbackProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', authUserId)
+          .maybeSingle();
+        profileId = fallbackProfile?.id;
+      }
+
+      if (!profileId) {
+        console.warn('⚠️ No profile found for user:', authUserId);
+        setIsAdmin(false);
+        setIsOwner(false);
+        setIsManager(false);
+        return;
+      }
+
+      console.log('🔍 Found profile ID:', profileId, 'fetching roles...');
+      
+      // Now fetch roles using profile.id (which is what user_roles stores)
       const { data, error } = await supabase
         .from('user_roles')
         .select(`
@@ -131,7 +169,7 @@ export function useAuthUser() {
             name
           )
         `)
-        .eq('user_id', userId);
+        .eq('user_id', profileId);
 
       if (error) {
         console.error('❌ Error fetching user roles:', error);
@@ -144,7 +182,7 @@ export function useAuthUser() {
           if (recoveryResult.success) {
             console.log('✅ Session recovered, retrying role fetch...');
             // Retry without recovery to prevent infinite loops
-            return fetchUserRoles(userId, false);
+            return fetchUserRoles(authUserId, false);
           }
         }
         
