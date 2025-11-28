@@ -115,82 +115,82 @@ function App() {
                   
                   {/* Work Management */}
                   <Route path="/work-orders" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <WorkOrders />
                     </ProtectedRoute>
                   } />
                   <Route path="/work-orders/:id" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <WorkOrderDetails />
                     </ProtectedRoute>
                   } />
                   
                   {/* Customer Management */}
                   <Route path="/customers/*" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Customers />
                     </ProtectedRoute>
                   } />
                   
                    {/* Inventory */}
                    <Route path="/inventory/*" element={
-                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'inventory_manager', 'owner']}>
+                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'inventory_manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                        <Inventory />
                      </ProtectedRoute>
                    } />
                    
                    {/* Inventory Analytics */}
                    <Route path="/inventory-analytics" element={
-                     <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                     <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                        <InventoryAnalytics />
                      </ProtectedRoute>
                    } />
                    
                    {/* Inventory Manager */}
                    <Route path="/inventory-manager" element={
-                     <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                     <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                        <InventoryManager />
                      </ProtectedRoute>
                    } />
                    
                     {/* Service Packages */}
                     <Route path="/service-packages" element={
-                      <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                         <ServicePackages />
                       </ProtectedRoute>
                     } />
                     
                     {/* Asset Usage Tracking */}
                     <Route path="/asset-usage" element={
-                      <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                         <AssetUsageTracking />
                       </ProtectedRoute>
                     } />
                     
                     {/* Consumption Tracking */}
                     <Route path="/consumption-tracking" element={
-                      <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                         <ConsumptionTracking />
                       </ProtectedRoute>
                     } />
 
                     {/* Mobile Inventory Scanner */}
                     <Route path="/mobile-inventory" element={
-                      <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                      <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                         <MobileInventory />
                       </ProtectedRoute>
                     } />
 
                     {/* Maintenance Planning */}
                     <Route path="/maintenance-planning" element={
-                      <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                      <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                         <MaintenancePlanning />
                       </ProtectedRoute>
                     } />
                   
                   {/* Analytics */}
                   <Route path="/analytics" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Analytics />
                     </ProtectedRoute>
                   } />
@@ -204,7 +204,7 @@ function App() {
                   
                   {/* Calendar */}
                   <Route path="/calendar" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Calendar />
                     </ProtectedRoute>
                   } />
@@ -228,7 +228,7 @@ function App() {
                   
                   {/* Team Chat */}
                   <Route path="/chat" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Chat />
                     </ProtectedRoute>
                   } />
@@ -264,68 +264,68 @@ function App() {
                   
                   {/* Operations */}
                   <Route path="/quotes" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Quotes />
                     </ProtectedRoute>
                   } />
                   <Route path="/quotes/:id" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <QuoteDetails />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/invoices" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Invoices />
                     </ProtectedRoute>
                   } />
                   <Route path="/invoices/:id" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <InvoiceDetails />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/service-board" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <ServiceBoard />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/payments" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Payments />
                     </ProtectedRoute>
                   } />
                   
                   {/* Company */}
                   <Route path="/company-profile" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <CompanyProfile />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/vehicles" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Equipment />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/documents" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Documents />
                     </ProtectedRoute>
                   } />
                   
                   {/* Team Management */}
                   <Route path="/team/*" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Team />
                     </ProtectedRoute>
                   } />
                   
                   {/* Training Overview */}
                   <Route path="/training-overview" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <TrainingOverview />
                     </ProtectedRoute>
                   } />
@@ -339,24 +339,24 @@ function App() {
                   
                   {/* Services */}
                   <Route path="/services" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <ServiceCatalog />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/service-editor/*" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <ServiceManagementPage />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/repair-plans" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <RepairPlans />
                     </ProtectedRoute>
                   } />
                   <Route path="/repair-plans/:id" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <RepairPlanDetails />
                     </ProtectedRoute>
                   } />
@@ -371,31 +371,31 @@ function App() {
                   
                   {/* Equipment & Tools */}
                   <Route path="/equipment-management" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <EquipmentManagement />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/equipment" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Equipment />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/equipment/:id" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <EquipmentDetails />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/fleet-management" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <FleetManagement />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/maintenance-requests" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <MaintenanceRequests />
                     </ProtectedRoute>
                   } />
@@ -414,19 +414,19 @@ function App() {
                   
                   {/* Reports & Forms */}
                   <Route path="/reports" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Reports />
                     </ProtectedRoute>
                   } />
                   <Route path="/forms" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <FormBuilder />
                     </ProtectedRoute>
                   } />
                   
                   {/* AI & Automation */}
                   <Route path="/ai-hub" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <AIHub />
                     </ProtectedRoute>
                   } />
@@ -459,14 +459,14 @@ function App() {
                   
                   {/* Equipment Tracking */}
                   <Route path="/equipment-tracking" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'deckhand', 'captain', 'mate', 'chief_engineer', 'marine_engineer', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'deckhand', 'captain', 'mate', 'chief_engineer', 'marine_engineer', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <EquipmentTracking />
                     </ProtectedRoute>
                   } />
                   
                   {/* Employee Scheduling */}
                   <Route path="/scheduling" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <EmployeeScheduling />
                     </ProtectedRoute>
                   } />
