@@ -45,16 +45,24 @@ export class WorkOrderRepository {
       console.log('WorkOrderRepository: Basic query successful, found:', basicData?.length || 0, 'work orders');
 
       // Fetch equipment data separately to avoid RLS join issues
+      // Get user's shop_id explicitly for the equipment query
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', authData.user?.id)
+        .single();
+      
       const equipmentIds = [...new Set(
         basicData?.filter(wo => wo.equipment_id).map(wo => wo.equipment_id) || []
       )];
       
       let equipmentMap = new Map();
-      if (equipmentIds.length > 0) {
+      if (equipmentIds.length > 0 && profile?.shop_id) {
         console.log('WorkOrderRepository: Fetching equipment data for', equipmentIds.length, 'equipment items');
         const { data: equipment, error: equipmentError } = await supabase
           .from('equipment_assets')
           .select('id, name, asset_number')
+          .eq('shop_id', profile.shop_id)
           .in('id', equipmentIds);
           
         if (equipmentError) {
