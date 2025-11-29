@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AddSafetyEquipmentDialog } from './AddSafetyEquipmentDialog';
 import { SafetyEquipmentList } from './SafetyEquipmentList';
 import { FuelTruckSpecs, FuelTruckData } from './specs/FuelTruckSpecs';
+import { MaintenanceItemCombobox } from './MaintenanceItemCombobox';
 
 interface EquipmentConfigDialogProps {
   open: boolean;
@@ -972,11 +973,11 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                           {serviceItems.map((item, index) => (
                             <TableRow key={index}>
                               <TableCell>
-                                <Input
+                                <MaintenanceItemCombobox
                                   value={item.item_name}
-                                  onChange={(e) => handleServiceItemChange(index, 'item_name', e.target.value)}
-                                  placeholder="Item name"
-                                  className="h-8"
+                                  onSelect={(value) => handleServiceItemChange(index, 'item_name', value)}
+                                  placeholder="Search item..."
+                                  className="w-full"
                                 />
                               </TableCell>
                               <TableCell>
