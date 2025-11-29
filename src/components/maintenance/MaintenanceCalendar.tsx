@@ -135,7 +135,9 @@ export function MaintenanceCalendar() {
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const calendarStart = startOfWeek(monthStart);
+  const calendarEnd = endOfWeek(monthEnd);
+  const daysInMonth = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getEventsForDate = (date: Date) => {
     return events.filter(event => isSameDay(event.date, date));
