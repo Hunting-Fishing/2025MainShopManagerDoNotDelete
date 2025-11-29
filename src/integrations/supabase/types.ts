@@ -11748,6 +11748,75 @@ export type Database = {
           },
         ]
       }
+      maintenance_interval_tracking: {
+        Row: {
+          average_daily_hours: number | null
+          created_at: string | null
+          equipment_id: string | null
+          id: string
+          interval_hours: number | null
+          interval_name: string
+          interval_type: string
+          is_active: boolean | null
+          last_service_date: string | null
+          last_service_hours: number | null
+          next_service_hours: number | null
+          parts_needed: Json | null
+          predicted_next_service_date: string | null
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          average_daily_hours?: number | null
+          created_at?: string | null
+          equipment_id?: string | null
+          id?: string
+          interval_hours?: number | null
+          interval_name: string
+          interval_type: string
+          is_active?: boolean | null
+          last_service_date?: string | null
+          last_service_hours?: number | null
+          next_service_hours?: number | null
+          parts_needed?: Json | null
+          predicted_next_service_date?: string | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          average_daily_hours?: number | null
+          created_at?: string | null
+          equipment_id?: string | null
+          id?: string
+          interval_hours?: number | null
+          interval_name?: string
+          interval_type?: string
+          is_active?: boolean | null
+          last_service_date?: string | null
+          last_service_hours?: number | null
+          next_service_hours?: number | null
+          parts_needed?: Json | null
+          predicted_next_service_date?: string | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_interval_tracking_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_interval_tracking_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_item_presets: {
         Row: {
           category: string
@@ -24445,6 +24514,10 @@ export type Database = {
           p_fiscal_year: number
           p_shop_id: string
         }
+        Returns: number
+      }
+      calculate_equipment_average_daily_hours: {
+        Args: { p_equipment_id: string }
         Returns: number
       }
       calculate_grant_utilization: {
