@@ -104,17 +104,17 @@ export const navigation: NavigationSection[] = [
     title: 'Scheduling',
     items: [
       {
-        title: 'Calendar',
+        title: 'Service Calendar',
         href: '/calendar',
         icon: Calendar,
-        description: 'Schedule appointments',
+        description: 'Work orders, maintenance & repairs scheduling',
         permissionModule: 'calendar',
       },
       {
         title: 'Staff Scheduling',
         href: '/scheduling',
         icon: UserCog,
-        description: 'Employee schedules and assignments',
+        description: 'Employee schedules & asset assignments',
         permissionModule: 'team',
       },
       {
