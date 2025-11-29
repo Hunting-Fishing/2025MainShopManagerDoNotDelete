@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Loader2 } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { getCalendarEvents, getWorkOrderEvents } from '@/services/calendar/calendarEventService';
+import { getMaintenanceRequestEvents } from '@/services/calendar/maintenanceRequestService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MaintenanceEvent {
   id: string;
@@ -13,42 +16,122 @@ interface MaintenanceEvent {
   priority: 'low' | 'medium' | 'high' | 'critical';
   estimatedDuration: number;
   assetName: string;
+  status?: string;
 }
 
 export function MaintenanceCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [events, setEvents] = useState<MaintenanceEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock events - in real app, fetch from database
-  const events: MaintenanceEvent[] = [
-    {
-      id: '1',
-      title: 'Oil Change',
-      date: new Date(2024, currentDate.getMonth(), 5),
-      type: 'oil_change',
-      priority: 'medium',
-      estimatedDuration: 60,
-      assetName: '2020 Ford F-150',
-    },
-    {
-      id: '2',
-      title: 'Brake Inspection',
-      date: new Date(2024, currentDate.getMonth(), 12),
-      type: 'brake_service',
-      priority: 'high',
-      estimatedDuration: 120,
-      assetName: '2019 Chevy Silverado',
-    },
-    {
-      id: '3',
-      title: 'Tire Rotation',
-      date: new Date(2024, currentDate.getMonth(), 18),
-      type: 'tire_rotation',
-      priority: 'low',
-      estimatedDuration: 45,
-      assetName: 'Fleet Van #3',
-    },
-  ];
+  const fetchEvents = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const monthStart = startOfWeek(startOfMonth(currentDate));
+      const monthEnd = endOfWeek(endOfMonth(currentDate));
+      const startDateStr = format(monthStart, 'yyyy-MM-dd');
+      const endDateStr = format(monthEnd, 'yyyy-MM-dd');
+
+      // Fetch all event types in parallel
+      const [calendarEvents, workOrderEvents, maintenanceRequestEvents] = await Promise.all([
+        getCalendarEvents(startDateStr, endDateStr),
+        getWorkOrderEvents(startDateStr, endDateStr),
+        getMaintenanceRequestEvents(startDateStr, endDateStr)
+      ]);
+
+      // Transform to MaintenanceEvent format
+      const transformedEvents: MaintenanceEvent[] = [];
+
+      // Add calendar events
+      calendarEvents.forEach(event => {
+        transformedEvents.push({
+          id: event.id,
+          title: event.title,
+          date: new Date(event.start_time || event.start),
+          type: event.event_type || 'event',
+          priority: mapPriority(event.priority),
+          estimatedDuration: calculateDuration(event.start_time || event.start, event.end_time || event.end),
+          assetName: event.location || event.customer || 'N/A',
+          status: event.status
+        });
+      });
+
+      // Add work orders
+      workOrderEvents.forEach(event => {
+        transformedEvents.push({
+          id: event.id,
+          title: event.title || event.description || 'Work Order',
+          date: new Date(event.start_time || event.start),
+          type: 'work-order',
+          priority: mapPriority(event.priority),
+          estimatedDuration: calculateDuration(event.start_time || event.start, event.end_time || event.end),
+          assetName: event.customer || event.location || 'N/A',
+          status: event.status
+        });
+      });
+
+      // Add maintenance requests
+      maintenanceRequestEvents.forEach(event => {
+        transformedEvents.push({
+          id: event.id,
+          title: event.title,
+          date: new Date(event.start_time || event.start),
+          type: 'maintenance-request',
+          priority: mapPriority(event.priority),
+          estimatedDuration: calculateDuration(event.start_time || event.start, event.end_time || event.end),
+          assetName: event.location || event.customer || 'N/A',
+          status: event.status
+        });
+      });
+
+      setEvents(transformedEvents);
+    } catch (err) {
+      console.error('Error fetching maintenance events:', err);
+      setError('Failed to load events');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentDate]);
+
+  // Map priority string to expected type
+  function mapPriority(priority?: string): 'low' | 'medium' | 'high' | 'critical' {
+    const p = priority?.toLowerCase();
+    if (p === 'critical' || p === 'urgent') return 'critical';
+    if (p === 'high') return 'high';
+    if (p === 'low') return 'low';
+    return 'medium';
+  }
+
+  // Calculate duration in minutes
+  function calculateDuration(start?: string, end?: string): number {
+    if (!start || !end) return 60;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const diffMs = endDate.getTime() - startDate.getTime();
+    return Math.max(Math.round(diffMs / 60000), 15);
+  }
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  // Realtime updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('maintenance-calendar-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' }, () => fetchEvents())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'work_orders' }, () => fetchEvents())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'maintenance_requests' }, () => fetchEvents())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchEvents]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -60,11 +143,19 @@ export function MaintenanceCalendar() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'bg-red-500';
+      case 'critical': return 'bg-destructive';
       case 'high': return 'bg-orange-500';
       case 'medium': return 'bg-yellow-500';
       case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
+      default: return 'bg-muted';
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'work-order': return 'bg-primary';
+      case 'maintenance-request': return 'bg-orange-500';
+      default: return 'bg-blue-500';
     }
   };
 
@@ -99,54 +190,62 @@ export function MaintenanceCalendar() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-2">
-            {/* Day headers */}
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
-                {day}
-              </div>
-            ))}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-destructive">{error}</div>
+          ) : (
+            <div className="grid grid-cols-7 gap-2">
+              {/* Day headers */}
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
+                  {day}
+                </div>
+              ))}
 
-            {/* Calendar days */}
-            {daysInMonth.map(day => {
-              const dayEvents = getEventsForDate(day);
-              const isToday = isSameDay(day, new Date());
-              const isSelected = selectedDate && isSameDay(day, selectedDate);
+              {/* Calendar days */}
+              {daysInMonth.map(day => {
+                const dayEvents = getEventsForDate(day);
+                const isToday = isSameDay(day, new Date());
+                const isSelected = selectedDate && isSameDay(day, selectedDate);
 
-              return (
-                <button
-                  key={day.toString()}
-                  onClick={() => setSelectedDate(day)}
-                  className={`
-                    min-h-[80px] p-2 rounded-lg border text-left transition-colors
-                    ${!isSameMonth(day, currentDate) ? 'opacity-50' : ''}
-                    ${isToday ? 'border-primary bg-primary/5' : 'border-border'}
-                    ${isSelected ? 'ring-2 ring-primary' : ''}
-                    hover:bg-muted/50
-                  `}
-                >
-                  <div className={`text-sm font-medium mb-1 ${isToday ? 'text-primary' : ''}`}>
-                    {format(day, 'd')}
-                  </div>
-                  <div className="space-y-1">
-                    {dayEvents.slice(0, 2).map(event => (
-                      <div
-                        key={event.id}
-                        className={`text-xs px-1 py-0.5 rounded truncate ${getPriorityColor(event.priority)} text-white`}
-                      >
-                        {event.title}
-                      </div>
-                    ))}
-                    {dayEvents.length > 2 && (
-                      <div className="text-xs text-muted-foreground">
-                        +{dayEvents.length - 2} more
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button
+                    key={day.toString()}
+                    onClick={() => setSelectedDate(day)}
+                    className={`
+                      min-h-[80px] p-2 rounded-lg border text-left transition-colors
+                      ${!isSameMonth(day, currentDate) ? 'opacity-50' : ''}
+                      ${isToday ? 'border-primary bg-primary/5' : 'border-border'}
+                      ${isSelected ? 'ring-2 ring-primary' : ''}
+                      hover:bg-muted/50
+                    `}
+                  >
+                    <div className={`text-sm font-medium mb-1 ${isToday ? 'text-primary' : ''}`}>
+                      {format(day, 'd')}
+                    </div>
+                    <div className="space-y-1">
+                      {dayEvents.slice(0, 2).map(event => (
+                        <div
+                          key={event.id}
+                          className={`text-xs px-1 py-0.5 rounded truncate ${getTypeColor(event.type)} text-white`}
+                        >
+                          {event.title}
+                        </div>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <div className="text-xs text-muted-foreground">
+                          +{dayEvents.length - 2} more
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -166,7 +265,7 @@ export function MaintenanceCalendar() {
                 {getEventsForDate(selectedDate).map(event => (
                   <div key={event.id} className="flex items-start justify-between p-3 border rounded-lg">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h4 className="font-medium">{event.title}</h4>
                         <Badge variant={
                           event.priority === 'critical' ? 'destructive' :
@@ -175,6 +274,14 @@ export function MaintenanceCalendar() {
                         }>
                           {event.priority}
                         </Badge>
+                        <Badge variant="outline" className="capitalize">
+                          {event.type.replace('-', ' ')}
+                        </Badge>
+                        {event.status && (
+                          <Badge variant="outline" className="capitalize">
+                            {event.status}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">{event.assetName}</p>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
