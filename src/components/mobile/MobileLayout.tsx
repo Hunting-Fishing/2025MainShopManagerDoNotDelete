@@ -3,7 +3,6 @@ import { MobileHeader } from './MobileHeader';
 import { MobileNavigation } from './MobileNavigation';
 import { OfflineManager } from './OfflineManager';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { usePWA } from '@/hooks/usePWA';
 import { cn } from '@/lib/utils';
 
@@ -24,12 +23,7 @@ export function MobileLayout({
   onSearch,
   rightAction
 }: MobileLayoutProps) {
-  const isMobile = useIsMobile();
   const { isInstallable, isStandalone } = usePWA();
-
-  if (!isMobile) {
-    return <>{children}</>;
-  }
 
   return (
     <div className="min-h-screen bg-background">
