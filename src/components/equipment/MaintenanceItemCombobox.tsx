@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,6 @@ export function MaintenanceItemCombobox({
   const { presets, isLoading, addPreset, incrementUsage, getSuggestions } = useMaintenanceItemPresets();
   const [suggestions, setSuggestions] = useState<ScoredPreset[]>([]);
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Update suggestions when input changes
   useEffect(() => {
@@ -42,15 +41,17 @@ export function MaintenanceItemCombobox({
     setInputValue(value || '');
   }, [value]);
 
-  const handleSelect = async (selectedValue: string, preset?: ScoredPreset) => {
-    setInputValue(selectedValue);
-    onSelect(selectedValue);
+  const handleSelectPreset = async (preset: ScoredPreset) => {
+    setInputValue(preset.name);
+    onSelect(preset.name);
     setOpen(false);
+    await incrementUsage(preset.id);
+  };
 
-    // Increment usage if selecting a preset
-    if (preset) {
-      await incrementUsage(preset.id);
-    }
+  const handleSelectCustom = (customValue: string) => {
+    setInputValue(customValue);
+    onSelect(customValue);
+    setOpen(false);
   };
 
   const handleAddNew = async () => {
@@ -61,7 +62,9 @@ export function MaintenanceItemCombobox({
     setIsAddingNew(false);
 
     if (newPreset) {
-      handleSelect(newPreset.name, { ...newPreset, similarity: 100 });
+      setInputValue(newPreset.name);
+      onSelect(newPreset.name);
+      setOpen(false);
     }
   };
 
@@ -98,7 +101,6 @@ export function MaintenanceItemCombobox({
       <PopoverContent className="w-[320px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
-            ref={inputRef}
             placeholder={placeholder}
             value={inputValue}
             onValueChange={setInputValue}
@@ -117,11 +119,10 @@ export function MaintenanceItemCombobox({
                 {suggestions.length > 0 && (
                   <CommandGroup heading="Suggestions">
                     {suggestions.map((preset) => (
-                      <CommandItem
+                      <div
                         key={preset.id}
-                        value={preset.name}
-                        onSelect={() => handleSelect(preset.name, preset)}
-                        className="flex items-center justify-between gap-2"
+                        onClick={() => handleSelectPreset(preset)}
+                        className="relative flex cursor-pointer select-none items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                       >
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <Check
@@ -145,17 +146,19 @@ export function MaintenanceItemCombobox({
                             </span>
                           )}
                         </div>
-                      </CommandItem>
+                      </div>
                     ))}
                   </CommandGroup>
                 )}
 
                 {showAddNewOption && (
                   <CommandGroup heading="Custom">
-                    <CommandItem
-                      onSelect={handleAddNew}
-                      className="flex items-center gap-2"
-                      disabled={isAddingNew}
+                    <div
+                      onClick={handleAddNew}
+                      className={cn(
+                        "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                        isAddingNew && "pointer-events-none opacity-50"
+                      )}
                     >
                       {isAddingNew ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -163,14 +166,14 @@ export function MaintenanceItemCombobox({
                         <Plus className="h-4 w-4" />
                       )}
                       <span>Add "{inputValue.trim()}" as new preset</span>
-                    </CommandItem>
-                    <CommandItem
-                      onSelect={() => handleSelect(inputValue.trim())}
-                      className="flex items-center gap-2"
+                    </div>
+                    <div
+                      onClick={() => handleSelectCustom(inputValue.trim())}
+                      className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
                     >
                       <Check className="h-4 w-4 opacity-0" />
                       <span>Use "{inputValue.trim()}" without saving</span>
-                    </CommandItem>
+                    </div>
                   </CommandGroup>
                 )}
               </>
