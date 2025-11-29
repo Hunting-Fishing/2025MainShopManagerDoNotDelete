@@ -24306,6 +24306,7 @@ export type Database = {
         Returns: string
       }
       get_current_user_role: { Args: never; Returns: string }
+      get_current_user_shop_id: { Args: never; Returns: string }
       get_email_processing_schedule: { Args: never; Returns: Json }
       get_inventory_categories: { Args: never; Returns: string[] }
       get_job_line_parts: {
