@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { Engine } from '@/types/engine';
-import { Plus, Search, Edit, Trash2, Fuel } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Fuel, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AddEngineDialog } from './AddEngineDialog';
+import { useEquipmentFilterOptions, formatEquipmentType } from '@/hooks/useEquipmentFilterOptions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,10 +25,16 @@ export function EnginesList() {
   const [engines, setEngines] = useState<Engine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [engineTypeFilter, setEngineTypeFilter] = useState<string>('all');
+  const [fuelTypeFilter, setFuelTypeFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEngine, setEditingEngine] = useState<Engine | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [engineToDelete, setEngineToDelete] = useState<Engine | null>(null);
+
+  const { engineTypes, fuelTypes } = useEquipmentFilterOptions();
+
+  const hasActiveFilters = engineTypeFilter !== 'all' || fuelTypeFilter !== 'all' || searchTerm !== '';
 
   useEffect(() => {
     fetchEngines();
@@ -72,11 +80,21 @@ export function EnginesList() {
     }
   };
 
-  const filteredEngines = engines.filter(engine =>
-    engine.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    engine.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    engine.engine_type?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const clearFilters = () => {
+    setSearchTerm('');
+    setEngineTypeFilter('all');
+    setFuelTypeFilter('all');
+  };
+
+  const filteredEngines = engines.filter(engine => {
+    const matchesSearch = 
+      engine.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      engine.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      engine.engine_type?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesEngineType = engineTypeFilter === 'all' || engine.engine_type === engineTypeFilter;
+    const matchesFuelType = fuelTypeFilter === 'all' || engine.fuel_type === fuelTypeFilter;
+    return matchesSearch && matchesEngineType && matchesFuelType;
+  });
 
   if (isLoading) {
     return (
@@ -100,23 +118,64 @@ export function EnginesList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search engines by manufacturer, model, or type..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search engines by manufacturer, model, or type..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button onClick={() => {
+            setEditingEngine(null);
+            setDialogOpen(true);
+          }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Engine
+          </Button>
         </div>
-        <Button onClick={() => {
-          setEditingEngine(null);
-          setDialogOpen(true);
-        }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Engine
-        </Button>
+        
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          <div className="grid grid-cols-2 sm:flex gap-3 flex-1">
+            <Select value={engineTypeFilter} onValueChange={setEngineTypeFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Engine Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Engine Types</SelectItem>
+                {engineTypes.map(type => (
+                  <SelectItem key={type} value={type}>
+                    {formatEquipmentType(type)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={fuelTypeFilter} onValueChange={setFuelTypeFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Fuel Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Fuel Types</SelectItem>
+                {fuelTypes.map(type => (
+                  <SelectItem key={type} value={type}>
+                    {formatEquipmentType(type)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+              <X className="h-4 w-4 mr-1" />
+              Clear Filters
+            </Button>
+          )}
+        </div>
       </div>
 
       {filteredEngines.length === 0 ? (
@@ -125,9 +184,9 @@ export function EnginesList() {
             <Fuel className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Engines Found</h3>
             <p className="text-muted-foreground mb-4">
-              {searchTerm ? 'No engines match your search.' : 'Start building your engine database.'}
+              {hasActiveFilters ? 'No engines match your filters.' : 'Start building your engine database.'}
             </p>
-            {!searchTerm && (
+            {!hasActiveFilters && (
               <Button onClick={() => setDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add First Engine
@@ -164,7 +223,7 @@ export function EnginesList() {
                         setDeleteDialogOpen(true);
                       }}
                     >
-                      <Trash2 className="h-4 w-4 text-error" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </div>
@@ -240,7 +299,7 @@ export function EnginesList() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-error text-error-foreground hover:bg-error/90">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
