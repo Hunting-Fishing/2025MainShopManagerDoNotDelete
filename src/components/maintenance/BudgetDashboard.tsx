@@ -24,12 +24,21 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, LayoutGrid, Table as TableIcon, BarChart3, Loader2, AlertCircle, DollarSign } from "lucide-react";
+import { 
+  Plus, LayoutGrid, Table as TableIcon, BarChart3, Loader2, AlertCircle, 
+  DollarSign, Users, Fuel, Wrench, Ship, Bell, TrendingUp 
+} from "lucide-react";
 import { useBudgetFilters, MaintenanceBudget } from "@/hooks/useBudgetFilters";
 import { BudgetFiltersBar } from "./BudgetFiltersBar";
 import { BudgetCategoryCards } from "./BudgetCategoryCards";
 import { BudgetAnalyticsCharts } from "./BudgetAnalyticsCharts";
 import { BudgetTable } from "./BudgetTable";
+import { LaborBudgetTracker } from "./LaborBudgetTracker";
+import { FuelBudgetTracker } from "./FuelBudgetTracker";
+import { RepairTrendsCard } from "./RepairTrendsCard";
+import { AssetBudgetView } from "./AssetBudgetView";
+import { BudgetAlerts } from "./BudgetAlerts";
+import { BudgetForecast } from "./BudgetForecast";
 
 export function BudgetDashboard() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -415,8 +424,8 @@ export function BudgetDashboard() {
       ) : (
         /* Main Content Tabs */
         <Tabs defaultValue="overview" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <TabsList>
+          <div className="flex items-center justify-between overflow-x-auto">
+            <TabsList className="flex-wrap h-auto gap-1 p-1">
               <TabsTrigger value="overview" className="gap-2">
                 <LayoutGrid className="h-4 w-4" />
                 Overview
@@ -425,14 +434,34 @@ export function BudgetDashboard() {
                 <TableIcon className="h-4 w-4" />
                 All Budgets
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Analytics
+              <TabsTrigger value="labor" className="gap-2">
+                <Users className="h-4 w-4" />
+                Labor
+              </TabsTrigger>
+              <TabsTrigger value="fuel" className="gap-2">
+                <Fuel className="h-4 w-4" />
+                Fuel
+              </TabsTrigger>
+              <TabsTrigger value="repairs" className="gap-2">
+                <Wrench className="h-4 w-4" />
+                Repairs
+              </TabsTrigger>
+              <TabsTrigger value="assets" className="gap-2">
+                <Ship className="h-4 w-4" />
+                Assets
+              </TabsTrigger>
+              <TabsTrigger value="alerts" className="gap-2">
+                <Bell className="h-4 w-4" />
+                Alerts
+              </TabsTrigger>
+              <TabsTrigger value="forecast" className="gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Forecast
               </TabsTrigger>
             </TabsList>
 
             {/* View Toggle for Budgets Tab */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-4">
               <Button
                 variant={viewMode === 'cards' ? 'default' : 'outline'}
                 size="sm"
@@ -501,9 +530,45 @@ export function BudgetDashboard() {
             />
           </TabsContent>
 
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <BudgetAnalyticsCharts budgets={filteredBudgets} stats={stats} />
+          {/* Labor Tab */}
+          <TabsContent value="labor">
+            <LaborBudgetTracker 
+              laborBudget={stats.laborBudget} 
+              laborSpent={stats.laborSpent} 
+            />
+          </TabsContent>
+
+          {/* Fuel Tab */}
+          <TabsContent value="fuel">
+            <FuelBudgetTracker 
+              fuelBudget={stats.fuelBudget} 
+              fuelSpent={stats.fuelSpent} 
+            />
+          </TabsContent>
+
+          {/* Repairs Tab */}
+          <TabsContent value="repairs">
+            <RepairTrendsCard 
+              partsBudget={stats.partsBudget}
+              partsSpent={stats.partsSpent}
+              externalServicesBudget={0}
+              externalServicesSpent={0}
+            />
+          </TabsContent>
+
+          {/* Assets Tab */}
+          <TabsContent value="assets">
+            <AssetBudgetView budgets={filteredBudgets} />
+          </TabsContent>
+
+          {/* Alerts Tab */}
+          <TabsContent value="alerts">
+            <BudgetAlerts budgets={filteredBudgets} stats={stats} />
+          </TabsContent>
+
+          {/* Forecast Tab */}
+          <TabsContent value="forecast">
+            <BudgetForecast budgets={filteredBudgets} stats={stats} />
           </TabsContent>
         </Tabs>
       )}
