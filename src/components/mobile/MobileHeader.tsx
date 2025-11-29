@@ -5,7 +5,6 @@ import {
   Bell, 
   Search, 
   Menu,
-  X,
   Settings,
   User,
   LogOut,
@@ -27,7 +26,29 @@ import {
   LayoutDashboard,
   UserCircle,
   Hammer,
-  AlertCircle
+  AlertCircle,
+  Phone,
+  Star,
+  Cog,
+  HelpCircle,
+  Shield,
+  Heart,
+  Mail,
+  Send,
+  MessagesSquare,
+  MessageCircle,
+  Archive,
+  FileBarChart,
+  FileBarChart2,
+  FormInput,
+  Code,
+  UserCog,
+  Boxes,
+  Gauge,
+  TrendingDown,
+  Smartphone,
+  GraduationCap,
+  ShoppingBag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,7 +95,8 @@ export function MobileHeader({
     if (path.startsWith('/customers')) return 'Customers';
     if (path.startsWith('/inventory')) return 'Inventory';
     if (path.startsWith('/invoices')) return 'Invoices';
-    if (path.startsWith('/calendar')) return 'Calendar';
+    if (path.startsWith('/calendar')) return 'Service Calendar';
+    if (path.startsWith('/scheduling')) return 'Staff Scheduling';
     if (path.startsWith('/shopping')) return 'Shop';
     if (path.startsWith('/ai')) return 'AI Hub';
     return 'Order Master';
@@ -96,7 +118,7 @@ export function MobileHeader({
     { label: 'Schedule Appointment', icon: Calendar, path: '/calendar', requiredPath: '/calendar' },
   ].filter(item => hasRoutePermission(item.requiredPath, userRoles));
 
-  // Categorized Navigation
+  // Categorized Navigation - Synced with sidebar navigation.ts
   const navigationSections = [
     {
       title: 'Dashboard',
@@ -105,28 +127,59 @@ export function MobileHeader({
       ]
     },
     {
-      title: 'Operations',
-      items: [
-        { label: 'Work Orders', icon: Wrench, path: '/work-orders', requiredPath: '/work-orders' },
-        { label: 'Quotes', icon: FileText, path: '/quotes', requiredPath: '/quotes' },
-        { label: 'Invoices', icon: Receipt, path: '/invoices', requiredPath: '/invoices' },
-        { label: 'Service Board', icon: ClipboardList, path: '/service-board', requiredPath: '/service-board' },
-      ]
-    },
-    {
-      title: 'Customer Management',
+      title: 'Customers',
       items: [
         { label: 'Customers', icon: Users, path: '/customers', requiredPath: '/customers' },
-        { label: 'Calendar', icon: Calendar, path: '/calendar', requiredPath: '/calendar' },
-        { label: 'Communications', icon: MessageSquare, path: '/customer-comms', requiredPath: '/customer-comms' },
       ]
     },
     {
-      title: 'Inventory & Parts',
+      title: 'Inventory',
       items: [
-        { label: 'Inventory', icon: Package, path: '/inventory', requiredPath: '/inventory' },
-        { label: 'Inventory Manager', icon: ClipboardList, path: '/inventory/manager', requiredPath: '/inventory/manager' },
-        { label: 'Orders', icon: Truck, path: '/inventory/orders', requiredPath: '/inventory/orders' },
+        { label: 'Inventory Overview', icon: Package, path: '/inventory', requiredPath: '/inventory' },
+        { label: 'Service Packages', icon: Boxes, path: '/service-packages', requiredPath: '/service-packages' },
+        { label: 'Asset Work Orders', icon: ClipboardList, path: '/work-orders', requiredPath: '/work-orders' },
+        { label: 'Asset Usage', icon: Gauge, path: '/asset-usage', requiredPath: '/asset-usage' },
+        { label: 'Consumption Tracking', icon: TrendingDown, path: '/consumption-tracking', requiredPath: '/consumption-tracking' },
+        { label: 'Mobile Scanner', icon: Smartphone, path: '/mobile-inventory', requiredPath: '/mobile-inventory' },
+        { label: 'Inventory Analytics', icon: BarChart3, path: '/inventory-analytics', requiredPath: '/inventory-analytics' },
+        { label: 'Inventory Manager', icon: Settings, path: '/inventory-manager', requiredPath: '/inventory-manager' },
+        { label: 'Maintenance Planning', icon: Wrench, path: '/maintenance-planning', requiredPath: '/maintenance-planning' },
+      ]
+    },
+    {
+      title: 'Scheduling',
+      items: [
+        { label: 'Service Calendar', icon: Calendar, path: '/calendar', requiredPath: '/calendar' },
+        { label: 'Staff Scheduling', icon: UserCog, path: '/scheduling', requiredPath: '/scheduling' },
+        { label: 'Service Reminders', icon: Bell, path: '/service-reminders', requiredPath: '/service-reminders' },
+      ]
+    },
+    {
+      title: 'Communications',
+      items: [
+        { label: 'Team Chat', icon: MessageCircle, path: '/chat', requiredPath: '/chat' },
+        { label: 'Customer Comms', icon: MessageSquare, path: '/customer-comms', requiredPath: '/customer-comms' },
+        { label: 'Call Logger', icon: Phone, path: '/call-logger', requiredPath: '/call-logger' },
+      ]
+    },
+    {
+      title: 'Marketing',
+      items: [
+        { label: 'Email Campaigns', icon: Mail, path: '/email-campaigns', requiredPath: '/email-campaigns' },
+        { label: 'Email Sequences', icon: Send, path: '/email-sequences', requiredPath: '/email-sequences' },
+        { label: 'Email Templates', icon: FileText, path: '/email-templates', requiredPath: '/email-templates' },
+        { label: 'SMS Management', icon: MessagesSquare, path: '/sms-management', requiredPath: '/sms-management' },
+        { label: 'SMS Templates', icon: MessageSquare, path: '/sms-templates', requiredPath: '/sms-templates' },
+      ]
+    },
+    {
+      title: 'Operations',
+      items: [
+        { label: 'Quotes', icon: FileText, path: '/quotes', requiredPath: '/quotes' },
+        { label: 'Work Orders', icon: Wrench, path: '/work-orders', requiredPath: '/work-orders' },
+        { label: 'Invoices', icon: Receipt, path: '/invoices', requiredPath: '/invoices' },
+        { label: 'Service Board', icon: ClipboardList, path: '/service-board', requiredPath: '/service-board' },
+        { label: 'Payments', icon: ShoppingBag, path: '/payments', requiredPath: '/payments' },
       ]
     },
     {
@@ -139,28 +192,45 @@ export function MobileHeader({
     {
       title: 'Company',
       items: [
-        { label: 'Team', icon: Users, path: '/team', requiredPath: '/team' },
-        { label: 'Training Overview', icon: Brain, path: '/training-overview', requiredPath: '/training-overview' },
         { label: 'Company Profile', icon: Building, path: '/company-profile', requiredPath: '/company-profile' },
+        { label: 'Team', icon: UserCog, path: '/team', requiredPath: '/team' },
+        { label: 'Training Overview', icon: GraduationCap, path: '/training-overview', requiredPath: '/training-overview' },
+        { label: 'Vehicles', icon: Truck, path: '/vehicles', requiredPath: '/vehicles' },
+        { label: 'Documents', icon: FileBarChart, path: '/documents', requiredPath: '/documents' },
+      ]
+    },
+    {
+      title: 'Services',
+      items: [
+        { label: 'Service Editor', icon: Cog, path: '/service-editor', requiredPath: '/service-editor' },
+        { label: 'Service Library', icon: Star, path: '/services', requiredPath: '/services' },
+        { label: 'Repair Plans', icon: Archive, path: '/repair-plans', requiredPath: '/repair-plans' },
       ]
     },
     {
       title: 'Store',
       items: [
-        { label: 'Shopping', icon: ShoppingCart, path: '/shopping', requiredPath: '/shopping' },
-        { label: 'Tools Shop', icon: Store, path: '/tools-shop', requiredPath: '/tools-shop' },
+        { label: 'Shopping', icon: Store, path: '/shopping', requiredPath: '/shopping' },
+        { label: 'Shopping Cart', icon: ShoppingCart, path: '/shopping/cart', requiredPath: '/shopping/cart' },
+        { label: 'Wishlist', icon: Heart, path: '/wishlist', requiredPath: '/wishlist' },
+        { label: 'Orders', icon: ShoppingBag, path: '/orders', requiredPath: '/orders' },
       ]
     },
     {
-      title: 'Reports & Analytics',
+      title: 'Tools',
       items: [
-        { label: 'Reports', icon: BarChart3, path: '/reports', requiredPath: '/reports' },
+        { label: 'AI Hub', icon: Brain, path: '/ai-hub', requiredPath: '/ai-hub' },
+        { label: 'Reports', icon: FileBarChart2, path: '/reports', requiredPath: '/reports' },
+        { label: 'Forms', icon: FormInput, path: '/forms', requiredPath: '/forms' },
+        { label: 'Feedback', icon: Star, path: '/feedback', requiredPath: '/feedback' },
+        { label: 'Developer', icon: Code, path: '/developer', requiredPath: '/developer' },
       ]
     },
     {
-      title: 'Administration',
+      title: 'Support',
       items: [
-        { label: 'AI Hub', icon: Brain, path: '/developer', requiredPath: '/developer' },
+        { label: 'Help', icon: HelpCircle, path: '/help', requiredPath: '/help' },
+        { label: 'Security', icon: Shield, path: '/security', requiredPath: '/security' },
       ]
     }
   ].map(section => ({
@@ -171,6 +241,7 @@ export function MobileHeader({
   // User Profile items
   const profileItems = [
     { label: 'Profile', icon: UserCircle, path: '/profile' },
+    { label: 'Notifications', icon: Bell, path: '/notifications' },
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];
 
@@ -249,7 +320,7 @@ export function MobileHeader({
                   <Menu className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72">
+              <SheetContent side="right" className="w-72 overflow-y-auto">
                 <div className="flex flex-col h-full">
                   {/* User Info */}
                   <div className="border-b border-border pb-4 mb-4">
@@ -292,7 +363,7 @@ export function MobileHeader({
                     )}
 
                     {/* Navigation Sections */}
-                    {navigationSections.map((section, sectionIndex) => (
+                    {navigationSections.map((section) => (
                       <div key={section.title} className="mb-6">
                         <h3 className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                           {section.title}
@@ -302,7 +373,10 @@ export function MobileHeader({
                             <button
                               key={item.path}
                               onClick={() => handleMenuItemClick(item.path)}
-                              className="w-full flex items-center space-x-3 px-3 py-2.5 text-left rounded-md hover:bg-accent transition-colors"
+                              className={cn(
+                                "w-full flex items-center space-x-3 px-3 py-2.5 text-left rounded-md hover:bg-accent transition-colors",
+                                location.pathname === item.path && "bg-accent text-accent-foreground"
+                              )}
                             >
                               <item.icon className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm">{item.label}</span>
@@ -322,7 +396,10 @@ export function MobileHeader({
                           <button
                             key={item.path}
                             onClick={() => handleMenuItemClick(item.path)}
-                            className="w-full flex items-center space-x-3 px-3 py-2.5 text-left rounded-md hover:bg-accent transition-colors"
+                            className={cn(
+                              "w-full flex items-center space-x-3 px-3 py-2.5 text-left rounded-md hover:bg-accent transition-colors",
+                              location.pathname === item.path && "bg-accent text-accent-foreground"
+                            )}
                           >
                             <item.icon className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm">{item.label}</span>
