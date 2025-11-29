@@ -19,13 +19,23 @@ interface PWAHookReturn {
 export function usePWA(): PWAHookReturn {
   const [installPrompt, setInstallPrompt] = useState<PWAInstallPrompt | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [isOffline, setIsOffline] = useState(() => {
+    if (typeof navigator !== 'undefined') {
+      return !navigator.onLine;
+    }
+    return false;
+  });
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
-  // Check if app is running in standalone mode
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                      (window.navigator as any).standalone === true;
+  // Check if app is running in standalone mode - use state to avoid SSR issues
+  const [isStandalone] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+             (window.navigator as any).standalone === true;
+    }
+    return false;
+  });
 
   // Check if app is installable
   const isInstallable = !!installPrompt && !isInstalled && !isStandalone;
