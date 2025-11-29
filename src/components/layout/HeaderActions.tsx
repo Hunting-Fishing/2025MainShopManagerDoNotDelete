@@ -17,7 +17,9 @@ import {
   UserCircle,
   BarChart3,
   Users,
-  Brain
+  Brain,
+  AlertCircle,
+  ClipboardList
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -159,6 +161,18 @@ export function HeaderActions() {
               <DropdownMenuItem onClick={() => navigate('/calendar')}>
                 <Calendar className="mr-2 h-4 w-4" />
                 Schedule Appointment
+              </DropdownMenuItem>
+            )}
+            {hasRoutePermission('/maintenance-requests', userRoles) && (
+              <DropdownMenuItem onClick={() => navigate('/maintenance-requests')}>
+                <AlertCircle className="mr-2 h-4 w-4" />
+                Maintenance Request
+              </DropdownMenuItem>
+            )}
+            {hasRoutePermission('/equipment-tracking', userRoles) && (
+              <DropdownMenuItem onClick={() => navigate('/daily-logs')}>
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Daily Logs
               </DropdownMenuItem>
             )}
           </DropdownMenuGroup>

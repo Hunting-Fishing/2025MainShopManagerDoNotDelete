@@ -80,6 +80,7 @@ import FeatureRequests from '@/pages/FeatureRequests';
 import EquipmentTracking from '@/pages/EquipmentTracking';
 import EmployeeScheduling from '@/pages/EmployeeScheduling';
 import TrainingOverview from '@/pages/TrainingOverview';
+import DailyLogs from '@/pages/DailyLogs';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
 
@@ -397,6 +398,13 @@ function App() {
                   <Route path="/maintenance-requests" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <MaintenanceRequests />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Daily Logs */}
+                  <Route path="/daily-logs" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <DailyLogs />
                     </ProtectedRoute>
                   } />
                   

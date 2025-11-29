@@ -8068,6 +8068,79 @@ export type Database = {
         }
         Relationships: []
       }
+      fuel_entries: {
+        Row: {
+          cost: number | null
+          created_at: string | null
+          entered_by: string | null
+          entry_date: string | null
+          equipment_id: string | null
+          fuel_amount: number
+          fuel_unit: string | null
+          hours_reading: number | null
+          id: string
+          location: string | null
+          notes: string | null
+          odometer_reading: number | null
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string | null
+          entered_by?: string | null
+          entry_date?: string | null
+          equipment_id?: string | null
+          fuel_amount: number
+          fuel_unit?: string | null
+          hours_reading?: number | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          odometer_reading?: number | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string | null
+          entered_by?: string | null
+          entry_date?: string | null
+          equipment_id?: string | null
+          fuel_amount?: number
+          fuel_unit?: string | null
+          hours_reading?: number | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          odometer_reading?: number | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_entries_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_entries_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_entries_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funding_sources: {
         Row: {
           amount_awarded: number | null
@@ -11715,6 +11788,82 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "maintenance_item_presets_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_logs: {
+        Row: {
+          cost: number | null
+          created_at: string | null
+          description: string | null
+          equipment_id: string | null
+          hours_reading: number | null
+          id: string
+          labor_hours: number | null
+          log_date: string | null
+          maintenance_type: string
+          notes: string | null
+          odometer_reading: number | null
+          parts_used: string | null
+          performed_by: string | null
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          equipment_id?: string | null
+          hours_reading?: number | null
+          id?: string
+          labor_hours?: number | null
+          log_date?: string | null
+          maintenance_type: string
+          notes?: string | null
+          odometer_reading?: number | null
+          parts_used?: string | null
+          performed_by?: string | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          equipment_id?: string | null
+          hours_reading?: number | null
+          id?: string
+          labor_hours?: number | null
+          log_date?: string | null
+          maintenance_type?: string
+          notes?: string | null
+          odometer_reading?: number | null
+          parts_used?: string | null
+          performed_by?: string | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_logs_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_logs_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -21141,6 +21290,79 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      trip_logs: {
+        Row: {
+          created_at: string | null
+          destination: string | null
+          driver_name: string | null
+          end_reading: number | null
+          entered_by: string | null
+          equipment_id: string | null
+          id: string
+          notes: string | null
+          purpose: string | null
+          reading_type: string | null
+          shop_id: string | null
+          start_reading: number | null
+          trip_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          destination?: string | null
+          driver_name?: string | null
+          end_reading?: number | null
+          entered_by?: string | null
+          equipment_id?: string | null
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          reading_type?: string | null
+          shop_id?: string | null
+          start_reading?: number | null
+          trip_date?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          destination?: string | null
+          driver_name?: string | null
+          end_reading?: number | null
+          entered_by?: string | null
+          equipment_id?: string | null
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          reading_type?: string | null
+          shop_id?: string | null
+          start_reading?: number | null
+          trip_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_logs_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_logs_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       unified_settings: {
         Row: {
