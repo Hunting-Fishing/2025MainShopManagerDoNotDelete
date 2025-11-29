@@ -115,7 +115,7 @@ export async function getWorkOrderEvents(startDate: string, endDate: string): Pr
       `)
       .not('start_time', 'is', null)
       .lte('start_time', endDateTime)
-      .gte('end_time', startDateTime)
+      .gte('start_time', startDateTime)
       .order('start_time', { ascending: true });
 
     if (error) throw error;
