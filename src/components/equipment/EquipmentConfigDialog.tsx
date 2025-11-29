@@ -961,10 +961,10 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                             <TableHead className="w-[120px]">Type</TableHead>
                             <TableHead className="w-[120px]">Position</TableHead>
                             <TableHead className="w-[200px]">Inventory Item</TableHead>
-                            <TableHead className="w-[100px]">Part #</TableHead>
-                            <TableHead className="w-[80px]">Qty</TableHead>
-                            <TableHead className="w-[100px]">Hours</TableHead>
-                            <TableHead className="w-[100px]">Mileage</TableHead>
+                            <TableHead className="w-[120px]">Part #</TableHead>
+                            <TableHead className="w-[90px]">Qty</TableHead>
+                            <TableHead className="w-[110px]">Hours</TableHead>
+                            <TableHead className="w-[120px]">Mileage</TableHead>
                             <TableHead className="w-[120px]">Calendar</TableHead>
                             <TableHead className="w-[80px]">Critical</TableHead>
                             <TableHead className="w-[60px]"></TableHead>
@@ -1031,7 +1031,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                                   value={item.part_number}
                                   onChange={(e) => handleServiceItemChange(index, 'part_number', e.target.value)}
                                   placeholder="Part #"
-                                  className="h-8"
+                                  className="h-8 min-w-[80px]"
                                 />
                               </TableCell>
                               <TableCell>
@@ -1041,7 +1041,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                                   step="0.1"
                                   value={item.quantity}
                                   onChange={(e) => handleServiceItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                  className="h-8"
+                                  className="h-8 min-w-[60px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 />
                               </TableCell>
                               <TableCell>
@@ -1051,7 +1051,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                                   value={item.hours_interval || ''}
                                   onChange={(e) => handleServiceItemChange(index, 'hours_interval', e.target.value ? parseInt(e.target.value) : null)}
                                   placeholder="hrs"
-                                  className="h-8"
+                                  className="h-8 min-w-[70px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 />
                               </TableCell>
                               <TableCell>
@@ -1061,7 +1061,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                                   value={item.mileage_interval || ''}
                                   onChange={(e) => handleServiceItemChange(index, 'mileage_interval', e.target.value ? parseInt(e.target.value) : null)}
                                   placeholder="mi/km"
-                                  className="h-8"
+                                  className="h-8 min-w-[80px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 />
                               </TableCell>
                               <TableCell>
