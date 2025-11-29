@@ -1,90 +1,58 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, Plus, Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
-
-interface Budget {
-  id: string;
-  budget_name: string;
-  description?: string;
-  budget_period: string;
-  start_date: string;
-  end_date: string;
-  total_budget: number;
-  parts_budget: number;
-  labor_budget: number;
-  external_services_budget: number;
-  total_spent: number;
-  parts_spent: number;
-  labor_spent: number;
-  external_services_spent: number;
-  status: string;
-  created_at: string;
-}
-
-interface BudgetFormData {
-  budget_name: string;
-  description: string;
-  budget_period: string;
-  total_budget: string;
-  parts_budget: string;
-  labor_budget: string;
-  external_services_budget: string;
-}
-
-const initialFormData: BudgetFormData = {
-  budget_name: '',
-  description: '',
-  budget_period: 'quarterly',
-  total_budget: '',
-  parts_budget: '',
-  labor_budget: '',
-  external_services_budget: '0',
-};
-
-function getDateRange(period: string): { start_date: string; end_date: string } {
-  const now = new Date();
-  let start: Date, end: Date;
-  
-  switch (period) {
-    case 'monthly':
-      start = startOfMonth(now);
-      end = endOfMonth(now);
-      break;
-    case 'quarterly':
-      start = startOfQuarter(now);
-      end = endOfQuarter(now);
-      break;
-    case 'yearly':
-      start = startOfYear(now);
-      end = endOfYear(now);
-      break;
-    default:
-      start = startOfQuarter(now);
-      end = endOfQuarter(now);
-  }
-  
-  return {
-    start_date: format(start, 'yyyy-MM-dd'),
-    end_date: format(end, 'yyyy-MM-dd'),
-  };
-}
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, LayoutGrid, Table as TableIcon, BarChart3, Loader2, AlertCircle, DollarSign } from "lucide-react";
+import { useBudgetFilters, MaintenanceBudget } from "@/hooks/useBudgetFilters";
+import { BudgetFiltersBar } from "./BudgetFiltersBar";
+import { BudgetCategoryCards } from "./BudgetCategoryCards";
+import { BudgetAnalyticsCharts } from "./BudgetAnalyticsCharts";
+import { BudgetTable } from "./BudgetTable";
 
 export function BudgetDashboard() {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<BudgetFormData>(initialFormData);
+
+  // Form state for create budget
+  const [formData, setFormData] = useState({
+    budget_name: '',
+    description: '',
+    budget_period: 'monthly',
+    start_date: '',
+    end_date: '',
+    total_budget: '',
+    parts_budget: '',
+    labor_budget: '',
+    external_services_budget: '',
+    safety_budget: '',
+    tools_budget: '',
+    fuel_budget: '',
+    ppe_budget: '',
+  });
 
   // Fetch budgets from database
   const { data: budgets = [], isLoading, error } = useQuery({
@@ -94,57 +62,110 @@ export function BudgetDashboard() {
         .from('maintenance_budgets')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      return data as Budget[];
+      return (data || []) as MaintenanceBudget[];
     },
   });
 
+  // Use filter hook
+  const { filters, filteredBudgets, stats, updateFilter, resetFilters } = useBudgetFilters(budgets);
+
   // Create budget mutation
-  const createBudgetMutation = useMutation({
-    mutationFn: async (data: BudgetFormData) => {
-      const dateRange = getDateRange(data.budget_period);
-      
-      const { data: result, error } = await supabase
-        .from('maintenance_budgets')
-        .insert({
-          budget_name: data.budget_name,
-          description: data.description || null,
-          budget_period: data.budget_period,
-          start_date: dateRange.start_date,
-          end_date: dateRange.end_date,
-          total_budget: parseFloat(data.total_budget) || 0,
-          parts_budget: parseFloat(data.parts_budget) || 0,
-          labor_budget: parseFloat(data.labor_budget) || 0,
-          external_services_budget: parseFloat(data.external_services_budget) || 0,
-          total_spent: 0,
-          parts_spent: 0,
-          labor_spent: 0,
-          external_services_spent: 0,
-          status: 'active',
-        })
-        .select()
-        .single();
-      
+  const createBudget = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase.from('maintenance_budgets').insert({
+        budget_name: data.budget_name,
+        description: data.description || null,
+        budget_period: data.budget_period,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        total_budget: parseFloat(data.total_budget) || 0,
+        parts_budget: parseFloat(data.parts_budget) || 0,
+        labor_budget: parseFloat(data.labor_budget) || 0,
+        external_services_budget: parseFloat(data.external_services_budget) || 0,
+        safety_budget: parseFloat(data.safety_budget) || 0,
+        tools_budget: parseFloat(data.tools_budget) || 0,
+        fuel_budget: parseFloat(data.fuel_budget) || 0,
+        ppe_budget: parseFloat(data.ppe_budget) || 0,
+        total_spent: 0,
+        parts_spent: 0,
+        labor_spent: 0,
+        external_services_spent: 0,
+        safety_spent: 0,
+        tools_spent: 0,
+        fuel_spent: 0,
+        ppe_spent: 0,
+        forecasted_total: 0,
+        status: 'active',
+        created_by: user.id,
+      });
+
       if (error) throw error;
-      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-budgets'] });
-      toast({ title: 'Budget created', description: 'New budget period has been created.' });
-      setCreateDialogOpen(false);
-      setFormData(initialFormData);
+      setIsCreateDialogOpen(false);
+      setFormData({
+        budget_name: '',
+        description: '',
+        budget_period: 'monthly',
+        start_date: '',
+        end_date: '',
+        total_budget: '',
+        parts_budget: '',
+        labor_budget: '',
+        external_services_budget: '',
+        safety_budget: '',
+        tools_budget: '',
+        fuel_budget: '',
+        ppe_budget: '',
+      });
+      toast({
+        title: "Budget Created",
+        description: "Your maintenance budget has been created successfully.",
+      });
     },
     onError: (error) => {
-      toast({ 
-        title: 'Error creating budget', 
-        description: error.message,
-        variant: 'destructive',
+      toast({
+        title: "Error",
+        description: "Failed to create budget. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Error creating budget:', error);
+    },
+  });
+
+  // Delete budget mutation
+  const deleteBudget = useMutation({
+    mutationFn: async (budgetId: string) => {
+      const { error } = await supabase
+        .from('maintenance_budgets')
+        .delete()
+        .eq('id', budgetId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-budgets'] });
+      toast({
+        title: "Budget Deleted",
+        description: "The budget has been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete budget.",
+        variant: "destructive",
       });
     },
   });
 
-  const handleCreateBudget = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!formData.budget_name.trim()) {
       toast({ title: 'Error', description: 'Budget name is required', variant: 'destructive' });
       return;
@@ -153,14 +174,9 @@ export function BudgetDashboard() {
       toast({ title: 'Error', description: 'Total budget must be greater than 0', variant: 'destructive' });
       return;
     }
-    createBudgetMutation.mutate(formData);
+    createBudget.mutate(formData);
   };
 
-  const handleInputChange = (field: keyof BudgetFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -169,7 +185,6 @@ export function BudgetDashboard() {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -181,35 +196,209 @@ export function BudgetDashboard() {
     );
   }
 
-  // Get active budget (most recent)
-  const activeBudget = budgets.find(b => b.status === 'active') || budgets[0];
-  
-  // Calculate percentages only if we have an active budget
-  const totalPercentage = activeBudget && activeBudget.total_budget > 0 
-    ? (activeBudget.total_spent / activeBudget.total_budget) * 100 
-    : 0;
-  const partsPercentage = activeBudget && activeBudget.parts_budget > 0 
-    ? (activeBudget.parts_spent / activeBudget.parts_budget) * 100 
-    : 0;
-  const laborPercentage = activeBudget && activeBudget.labor_budget > 0 
-    ? (activeBudget.labor_spent / activeBudget.labor_budget) * 100 
-    : 0;
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Budget Management</h2>
-          <p className="text-muted-foreground">Track and manage maintenance budgets</p>
+          <h2 className="text-2xl font-bold text-foreground">Budget Management</h2>
+          <p className="text-muted-foreground">
+            Track and manage maintenance budgets across all categories
+          </p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Budget
-        </Button>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create Budget
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Budget</DialogTitle>
+              <DialogDescription>
+                Set up a new maintenance budget with category allocations
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label htmlFor="budget_name">Budget Name *</Label>
+                  <Input
+                    id="budget_name"
+                    value={formData.budget_name}
+                    onChange={(e) => setFormData({ ...formData, budget_name: e.target.value })}
+                    placeholder="Q1 2025 Maintenance Budget"
+                    required
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Budget for fleet and equipment maintenance..."
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="budget_period">Budget Period *</Label>
+                  <Select
+                    value={formData.budget_period}
+                    onValueChange={(value) => setFormData({ ...formData, budget_period: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="total_budget">Total Budget *</Label>
+                  <Input
+                    id="total_budget"
+                    type="number"
+                    value={formData.total_budget}
+                    onChange={(e) => setFormData({ ...formData, total_budget: e.target.value })}
+                    placeholder="50000"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="start_date">Start Date *</Label>
+                  <Input
+                    id="start_date"
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="end_date">End Date *</Label>
+                  <Input
+                    id="end_date"
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Category Allocations */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-foreground">Category Allocations</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="parts_budget">Parts & Materials</Label>
+                    <Input
+                      id="parts_budget"
+                      type="number"
+                      value={formData.parts_budget}
+                      onChange={(e) => setFormData({ ...formData, parts_budget: e.target.value })}
+                      placeholder="10000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="labor_budget">Labor Costs</Label>
+                    <Input
+                      id="labor_budget"
+                      type="number"
+                      value={formData.labor_budget}
+                      onChange={(e) => setFormData({ ...formData, labor_budget: e.target.value })}
+                      placeholder="15000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="safety_budget">Safety & Compliance</Label>
+                    <Input
+                      id="safety_budget"
+                      type="number"
+                      value={formData.safety_budget}
+                      onChange={(e) => setFormData({ ...formData, safety_budget: e.target.value })}
+                      placeholder="5000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="tools_budget">Tools & Equipment</Label>
+                    <Input
+                      id="tools_budget"
+                      type="number"
+                      value={formData.tools_budget}
+                      onChange={(e) => setFormData({ ...formData, tools_budget: e.target.value })}
+                      placeholder="8000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="fuel_budget">Fuels & Lubricants</Label>
+                    <Input
+                      id="fuel_budget"
+                      type="number"
+                      value={formData.fuel_budget}
+                      onChange={(e) => setFormData({ ...formData, fuel_budget: e.target.value })}
+                      placeholder="12000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="ppe_budget">PPE Equipment</Label>
+                    <Input
+                      id="ppe_budget"
+                      type="number"
+                      value={formData.ppe_budget}
+                      onChange={(e) => setFormData({ ...formData, ppe_budget: e.target.value })}
+                      placeholder="3000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="external_services_budget">External Services</Label>
+                    <Input
+                      id="external_services_budget"
+                      type="number"
+                      value={formData.external_services_budget}
+                      onChange={(e) => setFormData({ ...formData, external_services_budget: e.target.value })}
+                      placeholder="7000"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createBudget.isPending}>
+                  {createBudget.isPending ? 'Creating...' : 'Create Budget'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
+      {/* Filters Bar */}
+      <Card>
+        <CardContent className="pt-6">
+          <BudgetFiltersBar
+            filters={filters}
+            onUpdateFilter={updateFilter}
+            onResetFilters={resetFilters}
+            resultCount={filteredBudgets.length}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Category Cards Overview */}
+      <BudgetCategoryCards stats={stats} />
+
       {/* Empty State */}
-      {!activeBudget ? (
+      {budgets.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <DollarSign className="h-12 w-12 text-muted-foreground mb-4" />
@@ -217,209 +406,107 @@ export function BudgetDashboard() {
             <p className="text-muted-foreground text-center mb-4 max-w-md">
               Create your first maintenance budget to start tracking expenses and allocations.
             </p>
-            <Button onClick={() => setCreateDialogOpen(true)}>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Create Your First Budget
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <>
-          {/* Budget Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${activeBudget.total_budget.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  ${activeBudget.total_spent.toLocaleString()} spent ({totalPercentage.toFixed(0)}%)
-                </p>
-                <Progress value={totalPercentage} className="mt-2" />
-              </CardContent>
-            </Card>
+        /* Main Content Tabs */
+        <Tabs defaultValue="overview" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="overview" className="gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="budgets" className="gap-2">
+                <TableIcon className="h-4 w-4" />
+                All Budgets
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+            </TabsList>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Parts Budget</CardTitle>
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${activeBudget.parts_budget.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  ${activeBudget.parts_spent.toLocaleString()} spent ({partsPercentage.toFixed(0)}%)
-                </p>
-                <Progress value={partsPercentage} className="mt-2" />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Labor Budget</CardTitle>
-                <TrendingDown className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${activeBudget.labor_budget.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  ${activeBudget.labor_spent.toLocaleString()} spent ({laborPercentage.toFixed(0)}%)
-                </p>
-                <Progress value={laborPercentage} className="mt-2" />
-              </CardContent>
-            </Card>
+            {/* View Toggle for Budgets Tab */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'cards' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('cards')}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+              >
+                <TableIcon className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
-          {/* Budget Alerts */}
-          {totalPercentage > 80 && (
-            <Card className="border-yellow-200 bg-yellow-50">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-yellow-900">Budget Alert</h4>
-                    <p className="text-sm text-yellow-700">
-                      You've used {totalPercentage.toFixed(0)}% of your total budget. Consider reviewing upcoming maintenance or adjusting budget allocations.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            <BudgetAnalyticsCharts budgets={filteredBudgets} stats={stats} />
+            
+            {/* Quick Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Active Budgets
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold">
+                    {filteredBudgets.filter(b => b.status === 'active').length}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Over Budget
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold text-destructive">
+                    {filteredBudgets.filter(b => b.total_spent > b.total_budget).length}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Avg. Utilization
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold">{stats.utilizationPercent}%</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-          {/* Budget Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Budget Breakdown - {activeBudget.budget_name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">Parts & Materials</h4>
-                    <p className="text-sm text-muted-foreground">Inventory items and consumables</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">${activeBudget.parts_spent.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">of ${activeBudget.parts_budget.toLocaleString()}</p>
-                  </div>
-                </div>
+          {/* All Budgets Tab */}
+          <TabsContent value="budgets">
+            <BudgetTable
+              budgets={filteredBudgets}
+              onDelete={(id) => deleteBudget.mutate(id)}
+            />
+          </TabsContent>
 
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">Labor Costs</h4>
-                    <p className="text-sm text-muted-foreground">Technician hours and services</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">${activeBudget.labor_spent.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">of ${activeBudget.labor_budget.toLocaleString()}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
-                  <div>
-                    <h4 className="font-medium">Remaining Budget</h4>
-                    <p className="text-sm text-muted-foreground">Available for allocation</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-green-600">
-                      ${(activeBudget.total_budget - activeBudget.total_spent).toLocaleString()}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {(100 - totalPercentage).toFixed(0)}% remaining
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </>
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <BudgetAnalyticsCharts budgets={filteredBudgets} stats={stats} />
+          </TabsContent>
+        </Tabs>
       )}
-
-      {/* Create Budget Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create Budget Period</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Budget Name</Label>
-              <Input 
-                placeholder="e.g., Q4 2025 Maintenance Budget" 
-                value={formData.budget_name}
-                onChange={(e) => handleInputChange('budget_name', e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Period</Label>
-                <Select 
-                  value={formData.budget_period}
-                  onValueChange={(value) => handleInputChange('budget_period', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Total Budget ($)</Label>
-                <Input 
-                  type="number" 
-                  placeholder="50000" 
-                  value={formData.total_budget}
-                  onChange={(e) => handleInputChange('total_budget', e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Parts Budget ($)</Label>
-                <Input 
-                  type="number" 
-                  placeholder="30000" 
-                  value={formData.parts_budget}
-                  onChange={(e) => handleInputChange('parts_budget', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Labor Budget ($)</Label>
-                <Input 
-                  type="number" 
-                  placeholder="20000" 
-                  value={formData.labor_budget}
-                  onChange={(e) => handleInputChange('labor_budget', e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea 
-                placeholder="Budget notes and details..." 
-                rows={3} 
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={handleCreateBudget}
-              disabled={createBudgetMutation.isPending}
-            >
-              {createBudgetMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Create Budget
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
