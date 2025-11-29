@@ -5864,6 +5864,100 @@ export type Database = {
           },
         ]
       }
+      equipment_breakdowns: {
+        Row: {
+          breakdown_date: string
+          breakdown_type: string
+          cause: string | null
+          created_at: string | null
+          description: string
+          downtime_hours: number | null
+          equipment_id: string
+          hours_at_breakdown: number | null
+          id: string
+          parts_used: Json | null
+          preventable: boolean | null
+          related_work_order_id: string | null
+          repair_cost: number | null
+          repair_notes: string | null
+          repaired_by: string | null
+          repaired_date: string | null
+          reported_by: string | null
+          root_cause_category: string | null
+          severity: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          breakdown_date?: string
+          breakdown_type: string
+          cause?: string | null
+          created_at?: string | null
+          description: string
+          downtime_hours?: number | null
+          equipment_id: string
+          hours_at_breakdown?: number | null
+          id?: string
+          parts_used?: Json | null
+          preventable?: boolean | null
+          related_work_order_id?: string | null
+          repair_cost?: number | null
+          repair_notes?: string | null
+          repaired_by?: string | null
+          repaired_date?: string | null
+          reported_by?: string | null
+          root_cause_category?: string | null
+          severity: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          breakdown_date?: string
+          breakdown_type?: string
+          cause?: string | null
+          created_at?: string | null
+          description?: string
+          downtime_hours?: number | null
+          equipment_id?: string
+          hours_at_breakdown?: number | null
+          id?: string
+          parts_used?: Json | null
+          preventable?: boolean | null
+          related_work_order_id?: string | null
+          repair_cost?: number | null
+          repair_notes?: string | null
+          repaired_by?: string | null
+          repaired_date?: string | null
+          reported_by?: string | null
+          root_cause_category?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_breakdowns_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_breakdowns_repaired_by_fkey"
+            columns: ["repaired_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_breakdowns_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_future_plans: {
         Row: {
           created_at: string
@@ -11866,12 +11960,15 @@ export type Database = {
       }
       maintenance_logs: {
         Row: {
+          completion_status: string | null
           cost: number | null
           created_at: string | null
           description: string | null
           equipment_id: string | null
+          hours_at_service: number | null
           hours_reading: number | null
           id: string
+          interval_id: string | null
           labor_hours: number | null
           log_date: string | null
           maintenance_type: string
@@ -11879,16 +11976,21 @@ export type Database = {
           odometer_reading: number | null
           parts_used: string | null
           performed_by: string | null
+          scheduled_hours: number | null
           shop_id: string | null
           updated_at: string | null
+          variance_hours: number | null
         }
         Insert: {
+          completion_status?: string | null
           cost?: number | null
           created_at?: string | null
           description?: string | null
           equipment_id?: string | null
+          hours_at_service?: number | null
           hours_reading?: number | null
           id?: string
+          interval_id?: string | null
           labor_hours?: number | null
           log_date?: string | null
           maintenance_type: string
@@ -11896,16 +11998,21 @@ export type Database = {
           odometer_reading?: number | null
           parts_used?: string | null
           performed_by?: string | null
+          scheduled_hours?: number | null
           shop_id?: string | null
           updated_at?: string | null
+          variance_hours?: number | null
         }
         Update: {
+          completion_status?: string | null
           cost?: number | null
           created_at?: string | null
           description?: string | null
           equipment_id?: string | null
+          hours_at_service?: number | null
           hours_reading?: number | null
           id?: string
+          interval_id?: string | null
           labor_hours?: number | null
           log_date?: string | null
           maintenance_type?: string
@@ -11913,8 +12020,10 @@ export type Database = {
           odometer_reading?: number | null
           parts_used?: string | null
           performed_by?: string | null
+          scheduled_hours?: number | null
           shop_id?: string | null
           updated_at?: string | null
+          variance_hours?: number | null
         }
         Relationships: [
           {
@@ -11922,6 +12031,13 @@ export type Database = {
             columns: ["equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_logs_interval_id_fkey"
+            columns: ["interval_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_interval_tracking"
             referencedColumns: ["id"]
           },
           {
@@ -24531,6 +24647,14 @@ export type Database = {
       calculate_job_line_total_with_parts: {
         Args: { job_line_id_param: string }
         Returns: number
+      }
+      calculate_maintenance_completion_status: {
+        Args: {
+          p_current_hours: number
+          p_scheduled_hours: number
+          p_tolerance_percent?: number
+        }
+        Returns: string
       }
       calculate_raffle_revenue: {
         Args: { p_raffle_id: string }
