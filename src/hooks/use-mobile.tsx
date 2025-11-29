@@ -1,23 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    // Initialize with actual window width on first render
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
 
   useEffect(() => {
-    // Check if window is defined (to handle SSR)
     if (typeof window !== 'undefined') {
       const checkIsMobile = () => {
         setIsMobile(window.innerWidth < 768);
       };
 
-      // Initial check
-      checkIsMobile();
-
-      // Add event listener
       window.addEventListener('resize', checkIsMobile);
 
-      // Clean up
       return () => {
         window.removeEventListener('resize', checkIsMobile);
       };
