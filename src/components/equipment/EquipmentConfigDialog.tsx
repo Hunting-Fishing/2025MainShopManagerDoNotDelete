@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -438,6 +438,9 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Configure Equipment - {equipment.name}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Configure equipment settings, specifications, and maintenance items
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="w-full">
@@ -685,13 +688,14 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                       <div className="space-y-2">
                         <Label htmlFor="num_axles">Number of Axles</Label>
                         <Select 
-                          value={trailerData.num_axles.toString()} 
-                          onValueChange={(value) => setTrailerData({ ...trailerData, num_axles: value })}
+                          value={trailerData.num_axles ? trailerData.num_axles.toString() : '_none'} 
+                          onValueChange={(value) => setTrailerData({ ...trailerData, num_axles: value === '_none' ? '' : value })}
                         >
                           <SelectTrigger id="num_axles">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="_none">Select...</SelectItem>
                             <SelectItem value="1">1 Axle</SelectItem>
                             <SelectItem value="2">2 Axles</SelectItem>
                             <SelectItem value="3">3 Axles</SelectItem>
@@ -994,15 +998,15 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                                 </Select>
                               </TableCell>
                               <TableCell>
-                                <Select
-                                  value={item.position}
-                                  onValueChange={(value) => handleServiceItemChange(index, 'position', value)}
+                              <Select
+                                  value={item.position || '_none'}
+                                  onValueChange={(value) => handleServiceItemChange(index, 'position', value === '_none' ? '' : value)}
                                 >
                                   <SelectTrigger className="h-8">
                                     <SelectValue placeholder="Position" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="">None</SelectItem>
+                                    <SelectItem value="_none">None</SelectItem>
                                     <SelectItem value="primary">Primary</SelectItem>
                                     <SelectItem value="secondary">Secondary</SelectItem>
                                     <SelectItem value="left">Left</SelectItem>
@@ -1014,14 +1018,14 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                               </TableCell>
                               <TableCell>
                                 <Select
-                                  value={item.inventory_id || ''}
-                                  onValueChange={(value) => handleServiceItemChange(index, 'inventory_id', value || null)}
+                                  value={item.inventory_id || '_none'}
+                                  onValueChange={(value) => handleServiceItemChange(index, 'inventory_id', value === '_none' ? null : value)}
                                 >
                                   <SelectTrigger className="h-8">
                                     <SelectValue placeholder="Select item" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="">None</SelectItem>
+                                    <SelectItem value="_none">None</SelectItem>
                                     {filteredInventory.map((invItem) => (
                                       <SelectItem key={invItem.id} value={invItem.id}>
                                         {invItem.name} ({invItem.sku})
