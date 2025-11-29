@@ -111,6 +111,13 @@ export const navigation: NavigationSection[] = [
         permissionModule: 'calendar',
       },
       {
+        title: 'Staff Scheduling',
+        href: '/scheduling',
+        icon: UserCog,
+        description: 'Employee schedules and assignments',
+        permissionModule: 'team',
+      },
+      {
         title: 'Service Reminders',
         href: '/service-reminders',
         icon: Bell,

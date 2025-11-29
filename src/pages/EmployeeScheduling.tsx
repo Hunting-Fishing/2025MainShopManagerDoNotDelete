@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, FileText, Settings, UserCog, Package } from 'lucide-react';
+import { Calendar, Clock, FileText, Settings, UserCog, Package, CalendarDays, Bell } from 'lucide-react';
+import { StaffSchedulingCalendar } from '@/components/scheduling/StaffSchedulingCalendar';
 import { ScheduleCalendar } from '@/components/scheduling/ScheduleCalendar';
 import { TimeOffRequests } from '@/components/scheduling/TimeOffRequests';
 import { PTOManagement } from '@/components/scheduling/PTOManagement';
@@ -13,30 +14,35 @@ import { ShiftSwapManager } from '@/components/scheduling/ShiftSwapManager';
 import { ScheduleNotifications } from '@/components/scheduling/ScheduleNotifications';
 
 export default function EmployeeScheduling() {
-  const [activeTab, setActiveTab] = useState('schedule');
+  const [activeTab, setActiveTab] = useState('calendar');
 
   return (
     <>
       <Helmet>
-        <title>Employee Scheduling | ServicePro</title>
+        <title>Staff Scheduling | ServicePro</title>
+        <meta name="description" content="Manage employee schedules, vessel and equipment assignments, time-off requests, and PTO" />
       </Helmet>
 
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Calendar className="h-8 w-8" />
-            Employee Scheduling
+            <CalendarDays className="h-8 w-8" />
+            Staff Scheduling
           </h1>
           <p className="text-muted-foreground mt-2">
-            Manage work schedules, time-off requests, PTO, and accommodations
+            Manage work schedules, asset assignments, time-off requests, and accommodations
           </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-9">
-            <TabsTrigger value="schedule" className="flex items-center gap-2">
+          <TabsList className="flex flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Schedule</span>
+              <span className="hidden sm:inline">Calendar</span>
+            </TabsTrigger>
+            <TabsTrigger value="week-view" className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4" />
+              <span className="hidden sm:inline">Week View</span>
             </TabsTrigger>
             <TabsTrigger value="availability" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
@@ -47,7 +53,7 @@ export default function EmployeeScheduling() {
               <span className="hidden sm:inline">Swaps</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+              <Bell className="h-4 w-4" />
               <span className="hidden sm:inline">Alerts</span>
             </TabsTrigger>
             <TabsTrigger value="assets" className="flex items-center gap-2">
@@ -72,7 +78,11 @@ export default function EmployeeScheduling() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="schedule" className="space-y-4">
+          <TabsContent value="calendar" className="space-y-4">
+            <StaffSchedulingCalendar />
+          </TabsContent>
+
+          <TabsContent value="week-view" className="space-y-4">
             <ScheduleCalendar />
           </TabsContent>
 
