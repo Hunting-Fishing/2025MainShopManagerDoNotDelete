@@ -4,32 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Save, Clock, Gauge } from 'lucide-react';
 import { format } from 'date-fns';
+import { EquipmentHierarchySelector } from './EquipmentHierarchySelector';
+import { MaintenanceCountdown } from './MaintenanceCountdown';
+import { EquipmentNode } from '@/hooks/useEquipmentHierarchy';
 
 export function EngineHoursTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedEquipment, setSelectedEquipment] = useState<string>('');
+  
+  const [selectedParentId, setSelectedParentId] = useState<string>('');
+  const [selectedEquipmentId, setSelectedEquipmentId] = useState<string>('');
+  const [selectedEquipment, setSelectedEquipment] = useState<EquipmentNode | null>(null);
   const [hoursReading, setHoursReading] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
-
-  // Fetch equipment list
-  const { data: equipment, isLoading: loadingEquipment } = useQuery({
-    queryKey: ['equipment-for-logs'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('equipment_assets')
-        .select('id, name, asset_number, current_hours')
-        .order('name');
-      if (error) throw error;
-      return data;
-    }
-  });
 
   // Fetch recent engine hour logs
   const { data: recentLogs, isLoading: loadingLogs } = useQuery({
@@ -69,7 +61,7 @@ export function EngineHoursTab() {
       const { error: logError } = await supabase
         .from('equipment_usage_logs')
         .insert({
-          equipment_id: selectedEquipment,
+          equipment_id: selectedEquipmentId,
           reading_type: 'hours',
           reading_value: parseFloat(hoursReading),
           reading_date: new Date().toISOString(),
@@ -83,7 +75,7 @@ export function EngineHoursTab() {
       const { error: updateError } = await supabase
         .from('equipment_assets')
         .update({ current_hours: parseFloat(hoursReading) })
-        .eq('id', selectedEquipment);
+        .eq('id', selectedEquipmentId);
 
       if (updateError) throw updateError;
     },
@@ -92,11 +84,11 @@ export function EngineHoursTab() {
         title: 'Engine Hours Recorded',
         description: 'The engine hours have been saved successfully.'
       });
-      setSelectedEquipment('');
       setHoursReading('');
       setNotes('');
       queryClient.invalidateQueries({ queryKey: ['recent-engine-hours'] });
-      queryClient.invalidateQueries({ queryKey: ['equipment-for-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-hierarchy'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-intervals'] });
     },
     onError: (error: any) => {
       toast({
@@ -107,43 +99,48 @@ export function EngineHoursTab() {
     }
   });
 
-  const selectedEquipmentData = equipment?.find(e => e.id === selectedEquipment);
+  const handleEquipmentChange = (equipmentId: string, equipment: EquipmentNode | null) => {
+    setSelectedEquipmentId(equipmentId);
+    setSelectedEquipment(equipment);
+  };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <Card>
+    <div className="grid gap-6 lg:grid-cols-3">
+      {/* Main Form */}
+      <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Gauge className="h-5 w-5" />
             Log Engine Hours
           </CardTitle>
           <CardDescription>
-            Record the current engine hours reading for equipment
+            Select vessel/equipment, then log the current hours reading
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="equipment">Equipment</Label>
-            <Select value={selectedEquipment} onValueChange={setSelectedEquipment}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select equipment" />
-              </SelectTrigger>
-              <SelectContent>
-                {equipment?.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.asset_number ? `${item.asset_number} - ` : ''}{item.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <EquipmentHierarchySelector
+            selectedParentId={selectedParentId}
+            selectedEquipmentId={selectedEquipmentId}
+            onParentChange={setSelectedParentId}
+            onEquipmentChange={handleEquipmentChange}
+          />
 
-          {selectedEquipmentData && (
-            <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">Current Hours</p>
-              <p className="text-lg font-semibold">
-                {selectedEquipmentData.current_hours?.toLocaleString() || 0} hrs
-              </p>
+          {selectedEquipment && (
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Current Hours</p>
+                  <p className="text-2xl font-bold">
+                    {selectedEquipment.current_hours?.toLocaleString() || 0} hrs
+                  </p>
+                </div>
+                {selectedEquipment.equipment_type && (
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Type</p>
+                    <p className="font-medium capitalize">{selectedEquipment.equipment_type}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -152,12 +149,18 @@ export function EngineHoursTab() {
             <Input
               id="hours"
               type="number"
-              placeholder="Enter hours reading"
+              placeholder="Enter current hours reading"
               value={hoursReading}
               onChange={(e) => setHoursReading(e.target.value)}
               min="0"
               step="0.1"
+              className="text-lg"
             />
+            {selectedEquipment?.current_hours && hoursReading && (
+              <p className="text-sm text-muted-foreground">
+                +{(parseFloat(hoursReading) - (selectedEquipment.current_hours || 0)).toFixed(1)} hours since last reading
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -173,8 +176,9 @@ export function EngineHoursTab() {
 
           <Button
             onClick={() => submitMutation.mutate()}
-            disabled={!selectedEquipment || !hoursReading || submitMutation.isPending}
+            disabled={!selectedEquipmentId || !hoursReading || submitMutation.isPending}
             className="w-full"
+            size="lg"
           >
             {submitMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -186,46 +190,53 @@ export function EngineHoursTab() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Recent Entries
-          </CardTitle>
-          <CardDescription>
-            Last 10 engine hour entries
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loadingLogs ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : recentLogs && recentLogs.length > 0 ? (
-            <div className="space-y-3">
-              {recentLogs.map((log: any) => (
-                <div key={log.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-sm">
-                      {log.equipment_assets?.name || 'Unknown Equipment'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(log.reading_date), 'MMM d, yyyy h:mm a')}
-                    </p>
+      {/* Right Column - Countdown + Recent */}
+      <div className="space-y-6">
+        {/* Maintenance Countdown */}
+        {selectedEquipmentId && (
+          <MaintenanceCountdown 
+            equipmentId={selectedEquipmentId} 
+            currentHours={selectedEquipment?.current_hours || 0}
+          />
+        )}
+
+        {/* Recent Entries */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Recent Entries
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingLogs ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : recentLogs && recentLogs.length > 0 ? (
+              <div className="space-y-2">
+                {recentLogs.slice(0, 5).map((log: any) => (
+                  <div key={log.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-sm truncate max-w-[120px]">
+                        {log.equipment_assets?.name || 'Unknown'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(log.reading_date), 'MMM d, h:mm a')}
+                      </p>
+                    </div>
+                    <p className="font-semibold text-sm">{log.reading_value?.toLocaleString()} hrs</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{log.reading_value?.toLocaleString()} hrs</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-8">
-              No recent engine hour entries
-            </p>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-4 text-sm">
+                No recent entries
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
