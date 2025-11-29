@@ -73,6 +73,50 @@ export type Database = {
           },
         ]
       }
+      activity_types: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_types_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_analytics: {
         Row: {
           confidence: number | null
@@ -20794,9 +20838,11 @@ export type Database = {
       }
       timesheet_entries: {
         Row: {
+          activity_type_id: string | null
           approved_at: string | null
           approved_by: string | null
           break_minutes: number | null
+          comments: string | null
           created_at: string | null
           employee_id: string
           end_time: string | null
@@ -20804,6 +20850,7 @@ export type Database = {
           is_billable: boolean | null
           is_overtime: boolean | null
           job_code: string | null
+          location: string | null
           notes: string | null
           rejection_reason: string | null
           start_time: string
@@ -20818,9 +20865,11 @@ export type Database = {
           work_order_id: string | null
         }
         Insert: {
+          activity_type_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
           break_minutes?: number | null
+          comments?: string | null
           created_at?: string | null
           employee_id: string
           end_time?: string | null
@@ -20828,6 +20877,7 @@ export type Database = {
           is_billable?: boolean | null
           is_overtime?: boolean | null
           job_code?: string | null
+          location?: string | null
           notes?: string | null
           rejection_reason?: string | null
           start_time: string
@@ -20842,9 +20892,11 @@ export type Database = {
           work_order_id?: string | null
         }
         Update: {
+          activity_type_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
           break_minutes?: number | null
+          comments?: string | null
           created_at?: string | null
           employee_id?: string
           end_time?: string | null
@@ -20852,6 +20904,7 @@ export type Database = {
           is_billable?: boolean | null
           is_overtime?: boolean | null
           job_code?: string | null
+          location?: string | null
           notes?: string | null
           rejection_reason?: string | null
           start_time?: string
@@ -20866,6 +20919,13 @@ export type Database = {
           work_order_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "timesheet_entries_activity_type_id_fkey"
+            columns: ["activity_type_id"]
+            isOneToOne: false
+            referencedRelation: "activity_types"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "timesheet_entries_approved_by_fkey"
             columns: ["approved_by"]
