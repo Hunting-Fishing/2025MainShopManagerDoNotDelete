@@ -18,6 +18,7 @@ import { AddSafetyEquipmentDialog } from './AddSafetyEquipmentDialog';
 import { SafetyEquipmentList } from './SafetyEquipmentList';
 import { FuelTruckSpecs, FuelTruckData } from './specs/FuelTruckSpecs';
 import { MaintenanceItemCombobox } from './MaintenanceItemCombobox';
+import { MaintenanceTypeCombobox } from './MaintenanceTypeCombobox';
 
 interface EquipmentConfigDialogProps {
   open: boolean;
@@ -981,22 +982,12 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                                 />
                               </TableCell>
                               <TableCell>
-                                <Select
+                                <MaintenanceTypeCombobox
                                   value={item.item_type}
-                                  onValueChange={(value) => handleServiceItemChange(index, 'item_type', value)}
-                                >
-                                  <SelectTrigger className="h-8">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="filter">Filter</SelectItem>
-                                    <SelectItem value="oil">Oil</SelectItem>
-                                    <SelectItem value="coolant">Coolant</SelectItem>
-                                    <SelectItem value="belt">Belt</SelectItem>
-                                    <SelectItem value="fluid">Fluid</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  onSelect={(value) => handleServiceItemChange(index, 'item_type', value)}
+                                  placeholder="Select type..."
+                                  className="w-full"
+                                />
                               </TableCell>
                               <TableCell>
                               <Select
