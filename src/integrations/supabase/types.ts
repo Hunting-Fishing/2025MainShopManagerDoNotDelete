@@ -11778,70 +11778,110 @@ export type Database = {
         Row: {
           budget_name: string
           budget_period: string
+          category_id: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
           end_date: string
+          equipment_id: string | null
           external_services_budget: number | null
           external_services_spent: number | null
           forecasted_total: number | null
+          fuel_budget: number | null
+          fuel_spent: number | null
           id: string
           labor_budget: number | null
           labor_spent: number | null
           parts_budget: number | null
           parts_spent: number | null
+          ppe_budget: number | null
+          ppe_spent: number | null
+          safety_budget: number | null
+          safety_spent: number | null
           shop_id: string | null
           start_date: string
           status: string | null
+          tools_budget: number | null
+          tools_spent: number | null
           total_budget: number | null
           total_spent: number | null
           updated_at: string | null
+          vehicle_id: string | null
         }
         Insert: {
           budget_name: string
           budget_period?: string
+          category_id?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           end_date: string
+          equipment_id?: string | null
           external_services_budget?: number | null
           external_services_spent?: number | null
           forecasted_total?: number | null
+          fuel_budget?: number | null
+          fuel_spent?: number | null
           id?: string
           labor_budget?: number | null
           labor_spent?: number | null
           parts_budget?: number | null
           parts_spent?: number | null
+          ppe_budget?: number | null
+          ppe_spent?: number | null
+          safety_budget?: number | null
+          safety_spent?: number | null
           shop_id?: string | null
           start_date: string
           status?: string | null
+          tools_budget?: number | null
+          tools_spent?: number | null
           total_budget?: number | null
           total_spent?: number | null
           updated_at?: string | null
+          vehicle_id?: string | null
         }
         Update: {
           budget_name?: string
           budget_period?: string
+          category_id?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           end_date?: string
+          equipment_id?: string | null
           external_services_budget?: number | null
           external_services_spent?: number | null
           forecasted_total?: number | null
+          fuel_budget?: number | null
+          fuel_spent?: number | null
           id?: string
           labor_budget?: number | null
           labor_spent?: number | null
           parts_budget?: number | null
           parts_spent?: number | null
+          ppe_budget?: number | null
+          ppe_spent?: number | null
+          safety_budget?: number | null
+          safety_spent?: number | null
           shop_id?: string | null
           start_date?: string
           status?: string | null
+          tools_budget?: number | null
+          tools_spent?: number | null
           total_budget?: number | null
           total_spent?: number | null
           updated_at?: string | null
+          vehicle_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "budget_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "maintenance_budgets_shop_id_fkey"
             columns: ["shop_id"]
