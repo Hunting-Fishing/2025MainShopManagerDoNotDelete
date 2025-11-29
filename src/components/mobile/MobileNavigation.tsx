@@ -71,22 +71,21 @@ export function MobileNavigation() {
     },
     {
       id: 'daily-logs',
-      label: 'Daily Logs',
+      label: 'Logs',
       icon: FileText,
       path: '/daily-logs'
     },
     {
-      id: 'work-orders',
-      label: 'Orders',
-      icon: ClipboardList,
-      path: '/work-orders',
-      badge: activeCount
-    },
-    {
       id: 'calendar',
-      label: 'Calendar',
+      label: 'Service',
       icon: Calendar,
       path: '/calendar'
+    },
+    {
+      id: 'staff-scheduling',
+      label: 'Staff',
+      icon: CalendarDays,
+      path: '/scheduling'
     },
     {
       id: 'more',
@@ -100,6 +99,7 @@ export function MobileNavigation() {
     {
       title: 'Operations',
       items: [
+        { id: 'work-orders', label: 'Work Orders', icon: ClipboardList, path: '/work-orders', description: 'Manage work orders' },
         { id: 'equipment', label: 'Equipment', icon: Package, path: '/equipment-management', description: 'Manage equipment & tools' },
         { id: 'maintenance', label: 'Maintenance', icon: Wrench, path: '/maintenance-requests', description: 'Track maintenance requests' },
         { id: 'invoices', label: 'Invoices', icon: Receipt, path: '/invoices', description: 'View and manage invoices' },
@@ -109,7 +109,6 @@ export function MobileNavigation() {
     {
       title: 'Scheduling',
       items: [
-        { id: 'staff-scheduling', label: 'Staff Scheduling', icon: CalendarDays, path: '/scheduling', description: 'Employee schedules & assignments' },
         { id: 'service-reminders', label: 'Service Reminders', icon: Bell, path: '/service-reminders', description: 'Upcoming service alerts' },
       ]
     },
