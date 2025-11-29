@@ -27,7 +27,7 @@ export function useEquipmentFilterOptions(): FilterOptions {
           .select('equipment_type')
           .not('equipment_type', 'is', null);
         
-        const uniqueTypes = [...new Set(typeData?.map(d => d.equipment_type).filter(Boolean))] as string[];
+        const uniqueTypes = [...new Set(typeData?.map(d => d.equipment_type).filter(v => Boolean(v) && String(v).trim() !== ''))] as string[];
         setEquipmentTypes(uniqueTypes.sort());
 
         // Fetch distinct locations
@@ -36,7 +36,7 @@ export function useEquipmentFilterOptions(): FilterOptions {
           .select('location')
           .not('location', 'is', null);
         
-        const uniqueLocations = [...new Set(locationData?.map(d => d.location).filter(Boolean))] as string[];
+        const uniqueLocations = [...new Set(locationData?.map(d => d.location).filter(v => Boolean(v) && String(v).trim() !== ''))] as string[];
         setLocations(uniqueLocations.sort());
 
         // Fetch distinct statuses
@@ -45,7 +45,7 @@ export function useEquipmentFilterOptions(): FilterOptions {
           .select('status')
           .not('status', 'is', null);
         
-        const uniqueStatuses = [...new Set(statusData?.map(d => d.status).filter(Boolean))] as string[];
+        const uniqueStatuses = [...new Set(statusData?.map(d => d.status).filter(v => Boolean(v) && String(v).trim() !== ''))] as string[];
         setStatuses(uniqueStatuses.sort());
 
         // Fetch distinct engine types
@@ -54,7 +54,7 @@ export function useEquipmentFilterOptions(): FilterOptions {
           .select('engine_type')
           .not('engine_type', 'is', null);
         
-        const uniqueEngineTypes = [...new Set(engineTypeData?.map(d => d.engine_type).filter(Boolean))] as string[];
+        const uniqueEngineTypes = [...new Set(engineTypeData?.map(d => d.engine_type).filter(v => Boolean(v) && String(v).trim() !== ''))] as string[];
         setEngineTypes(uniqueEngineTypes.sort());
 
         // Fetch distinct fuel types
@@ -63,7 +63,7 @@ export function useEquipmentFilterOptions(): FilterOptions {
           .select('fuel_type')
           .not('fuel_type', 'is', null);
         
-        const uniqueFuelTypes = [...new Set(fuelTypeData?.map(d => d.fuel_type).filter(Boolean))] as string[];
+        const uniqueFuelTypes = [...new Set(fuelTypeData?.map(d => d.fuel_type).filter(v => Boolean(v) && String(v).trim() !== ''))] as string[];
         setFuelTypes(uniqueFuelTypes.sort());
 
       } catch (error) {
