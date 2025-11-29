@@ -11774,6 +11774,83 @@ export type Database = {
           },
         ]
       }
+      maintenance_budgets: {
+        Row: {
+          budget_name: string
+          budget_period: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_date: string
+          external_services_budget: number | null
+          external_services_spent: number | null
+          forecasted_total: number | null
+          id: string
+          labor_budget: number | null
+          labor_spent: number | null
+          parts_budget: number | null
+          parts_spent: number | null
+          shop_id: string | null
+          start_date: string
+          status: string | null
+          total_budget: number | null
+          total_spent: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          budget_name: string
+          budget_period?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date: string
+          external_services_budget?: number | null
+          external_services_spent?: number | null
+          forecasted_total?: number | null
+          id?: string
+          labor_budget?: number | null
+          labor_spent?: number | null
+          parts_budget?: number | null
+          parts_spent?: number | null
+          shop_id?: string | null
+          start_date: string
+          status?: string | null
+          total_budget?: number | null
+          total_spent?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          budget_name?: string
+          budget_period?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string
+          external_services_budget?: number | null
+          external_services_spent?: number | null
+          forecasted_total?: number | null
+          id?: string
+          labor_budget?: number | null
+          labor_spent?: number | null
+          parts_budget?: number | null
+          parts_spent?: number | null
+          shop_id?: string | null
+          start_date?: string
+          status?: string | null
+          total_budget?: number | null
+          total_spent?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_budgets_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_compliance_tracking: {
         Row: {
           actual_completion_date: string | null
