@@ -900,6 +900,105 @@ export type Database = {
           },
         ]
       }
+      asset_insurance: {
+        Row: {
+          agent_email: string | null
+          agent_name: string | null
+          agent_phone: string | null
+          auto_renew: boolean | null
+          coverage_amount: number | null
+          coverage_description: string | null
+          created_at: string | null
+          created_by: string | null
+          deductible: number | null
+          effective_date: string
+          equipment_id: string | null
+          expiration_date: string
+          id: string
+          insurance_provider: string
+          insurance_type: string
+          notes: string | null
+          payment_frequency: string | null
+          policy_document_url: string | null
+          policy_number: string
+          premium_amount: number
+          renewal_reminder_days: number | null
+          shop_id: string
+          status: string | null
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          agent_email?: string | null
+          agent_name?: string | null
+          agent_phone?: string | null
+          auto_renew?: boolean | null
+          coverage_amount?: number | null
+          coverage_description?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deductible?: number | null
+          effective_date: string
+          equipment_id?: string | null
+          expiration_date: string
+          id?: string
+          insurance_provider: string
+          insurance_type?: string
+          notes?: string | null
+          payment_frequency?: string | null
+          policy_document_url?: string | null
+          policy_number: string
+          premium_amount: number
+          renewal_reminder_days?: number | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          agent_email?: string | null
+          agent_name?: string | null
+          agent_phone?: string | null
+          auto_renew?: boolean | null
+          coverage_amount?: number | null
+          coverage_description?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deductible?: number | null
+          effective_date?: string
+          equipment_id?: string | null
+          expiration_date?: string
+          id?: string
+          insurance_provider?: string
+          insurance_type?: string
+          notes?: string | null
+          payment_frequency?: string | null
+          policy_document_url?: string | null
+          policy_number?: string
+          premium_amount?: number
+          renewal_reminder_days?: number | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_insurance_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_insurance_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_tracking: {
         Row: {
           asset_name: string
@@ -5679,14 +5778,20 @@ export type Database = {
           next_service_date: string | null
           notes: string | null
           parent_equipment_id: string | null
+          plate_number: string | null
           purchase_cost: number | null
           purchase_date: string | null
+          registration_expiry: string | null
+          registration_state: string | null
           serial_number: string | null
           shop_id: string
           specifications: Json | null
           status: Database["public"]["Enums"]["equipment_status"] | null
+          title_number: string | null
+          title_status: string | null
           unit_number: string | null
           updated_at: string | null
+          vin_number: string | null
           year: number | null
         }
         Insert: {
@@ -5709,14 +5814,20 @@ export type Database = {
           next_service_date?: string | null
           notes?: string | null
           parent_equipment_id?: string | null
+          plate_number?: string | null
           purchase_cost?: number | null
           purchase_date?: string | null
+          registration_expiry?: string | null
+          registration_state?: string | null
           serial_number?: string | null
           shop_id: string
           specifications?: Json | null
           status?: Database["public"]["Enums"]["equipment_status"] | null
+          title_number?: string | null
+          title_status?: string | null
           unit_number?: string | null
           updated_at?: string | null
+          vin_number?: string | null
           year?: number | null
         }
         Update: {
@@ -5739,14 +5850,20 @@ export type Database = {
           next_service_date?: string | null
           notes?: string | null
           parent_equipment_id?: string | null
+          plate_number?: string | null
           purchase_cost?: number | null
           purchase_date?: string | null
+          registration_expiry?: string | null
+          registration_state?: string | null
           serial_number?: string | null
           shop_id?: string
           specifications?: Json | null
           status?: Database["public"]["Enums"]["equipment_status"] | null
+          title_number?: string | null
+          title_status?: string | null
           unit_number?: string | null
           updated_at?: string | null
+          vin_number?: string | null
           year?: number | null
         }
         Relationships: [
@@ -11834,6 +11951,8 @@ export type Database = {
           fuel_budget: number | null
           fuel_spent: number | null
           id: string
+          insurance_budget: number | null
+          insurance_spent: number | null
           labor_budget: number | null
           labor_spent: number | null
           parts_budget: number | null
@@ -11867,6 +11986,8 @@ export type Database = {
           fuel_budget?: number | null
           fuel_spent?: number | null
           id?: string
+          insurance_budget?: number | null
+          insurance_spent?: number | null
           labor_budget?: number | null
           labor_spent?: number | null
           parts_budget?: number | null
@@ -11900,6 +12021,8 @@ export type Database = {
           fuel_budget?: number | null
           fuel_spent?: number | null
           id?: string
+          insurance_budget?: number | null
+          insurance_spent?: number | null
           labor_budget?: number | null
           labor_spent?: number | null
           parts_budget?: number | null

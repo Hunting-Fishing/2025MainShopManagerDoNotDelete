@@ -26,9 +26,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Plus, LayoutGrid, Table as TableIcon, BarChart3, Loader2, AlertCircle, 
-  DollarSign, Users, Fuel, Wrench, Ship, Bell, TrendingUp 
+  DollarSign, Users, Fuel, Wrench, Ship, Bell, TrendingUp, Shield 
 } from "lucide-react";
 import { useBudgetFilters, MaintenanceBudget } from "@/hooks/useBudgetFilters";
+import { InsuranceBudgetTracker } from "@/components/insurance/InsuranceBudgetTracker";
+import { useInsurancePolicies } from "@/hooks/useInsurancePolicies";
+import { useInsuranceAnalytics } from "@/hooks/useInsuranceAnalytics";
 import { BudgetFiltersBar } from "./BudgetFiltersBar";
 import { BudgetCategoryCards } from "./BudgetCategoryCards";
 import { BudgetAnalyticsCharts } from "./BudgetAnalyticsCharts";
@@ -45,6 +48,10 @@ export function BudgetDashboard() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Insurance data for the Insurance tab
+  const { policies: insurancePolicies } = useInsurancePolicies();
+  const insuranceAnalytics = useInsuranceAnalytics(insurancePolicies);
 
   // Form state for create budget
   const [formData, setFormData] = useState({
@@ -458,6 +465,10 @@ export function BudgetDashboard() {
                 <TrendingUp className="h-4 w-4" />
                 Forecast
               </TabsTrigger>
+              <TabsTrigger value="insurance" className="gap-2">
+                <Shield className="h-4 w-4" />
+                Insurance
+              </TabsTrigger>
             </TabsList>
 
             {/* View Toggle for Budgets Tab */}
@@ -569,6 +580,14 @@ export function BudgetDashboard() {
           {/* Forecast Tab */}
           <TabsContent value="forecast">
             <BudgetForecast budgets={filteredBudgets} stats={stats} />
+          </TabsContent>
+
+          {/* Insurance Tab */}
+          <TabsContent value="insurance">
+            <InsuranceBudgetTracker 
+              annualPremiumTotal={insuranceAnalytics.annualPremiumTotal}
+              premiumForecast={insuranceAnalytics.premiumForecast}
+            />
           </TabsContent>
         </Tabs>
       )}

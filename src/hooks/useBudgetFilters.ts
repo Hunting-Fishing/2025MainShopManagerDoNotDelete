@@ -30,10 +30,12 @@ export interface MaintenanceBudget {
   tools_budget?: number;
   fuel_budget?: number;
   ppe_budget?: number;
+  insurance_budget?: number;
   safety_spent?: number;
   tools_spent?: number;
   fuel_spent?: number;
   ppe_spent?: number;
+  insurance_spent?: number;
   forecasted_total: number;
   status: string;
   category_id?: string;
@@ -117,6 +119,8 @@ export function useBudgetFilters(budgets: MaintenanceBudget[]) {
         fuelSpent: acc.fuelSpent + Number(budget.fuel_spent || 0),
         ppeBudget: acc.ppeBudget + Number(budget.ppe_budget || 0),
         ppeSpent: acc.ppeSpent + Number(budget.ppe_spent || 0),
+        insuranceBudget: acc.insuranceBudget + Number(budget.insurance_budget || 0),
+        insuranceSpent: acc.insuranceSpent + Number(budget.insurance_spent || 0),
       }),
       {
         totalBudget: 0,
@@ -133,6 +137,8 @@ export function useBudgetFilters(budgets: MaintenanceBudget[]) {
         fuelSpent: 0,
         ppeBudget: 0,
         ppeSpent: 0,
+        insuranceBudget: 0,
+        insuranceSpent: 0,
       }
     );
 

@@ -81,9 +81,9 @@ import EquipmentTracking from '@/pages/EquipmentTracking';
 import EmployeeScheduling from '@/pages/EmployeeScheduling';
 import TrainingOverview from '@/pages/TrainingOverview';
 import DailyLogs from '@/pages/DailyLogs';
+import Insurance from '@/pages/Insurance';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
-
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -469,6 +469,13 @@ function App() {
                   <Route path="/equipment-tracking" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'deckhand', 'captain', 'mate', 'chief_engineer', 'marine_engineer', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <EquipmentTracking />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Insurance Management */}
+                  <Route path="/insurance" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <Insurance />
                     </ProtectedRoute>
                   } />
                   
