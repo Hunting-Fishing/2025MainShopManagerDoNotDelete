@@ -38,10 +38,12 @@ export const routePermissions: RoutePermission[] = [
   
   // Staff accessible routes
   { path: '/work-orders', allowedRoles: ['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
+  { path: '/daily-logs', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
   { path: '/customers', allowedRoles: ['admin', 'manager', 'technician', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner'] },
   { path: '/calendar', allowedRoles: ['admin', 'manager', 'technician', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
   { path: '/analytics', allowedRoles: ['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner'] },
   { path: '/chat', allowedRoles: ['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
+  { path: '/insurance', allowedRoles: ['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner'] },
   
   // Inventory Management
   { path: '/inventory', allowedRoles: ['admin', 'manager', 'technician', 'inventory_manager', 'parts_manager', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },

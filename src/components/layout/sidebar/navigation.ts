@@ -215,6 +215,13 @@ export const navigation: NavigationSection[] = [
         permissionModule: 'work_orders',
       },
       {
+        title: 'Daily Logs',
+        href: '/daily-logs',
+        icon: FileText,
+        description: 'Daily operational logs',
+        permissionModule: 'work_orders',
+      },
+      {
         title: 'Invoices',
         href: '/invoices',
         icon: Receipt,
@@ -245,6 +252,20 @@ export const navigation: NavigationSection[] = [
         href: '/equipment-management',
         icon: Hammer,
         description: 'Manage equipment, tools, and maintenance',
+        permissionModule: 'equipment_tracking',
+      },
+      {
+        title: 'Fleet Management',
+        href: '/fleet-management',
+        icon: Truck,
+        description: 'Manage company vehicles and fleet',
+        permissionModule: 'fleet_management',
+      },
+      {
+        title: 'Equipment Tracking',
+        href: '/equipment-tracking',
+        icon: Package,
+        description: 'Track equipment location and status',
         permissionModule: 'equipment_tracking',
       },
       {
@@ -336,11 +357,24 @@ export const navigation: NavigationSection[] = [
         permissionModule: 'team',
       },
       {
+        title: 'Timesheet',
+        href: '/timesheet',
+        icon: ClipboardList,
+        description: 'Track work hours and attendance',
+      },
+      {
         title: 'Training Overview',
         href: '/training-overview',
         icon: GraduationCap,
         description: 'Monitor team certifications and training',
         permissionModule: 'team',
+      },
+      {
+        title: 'Insurance',
+        href: '/insurance',
+        icon: Shield,
+        description: 'Fleet and equipment insurance',
+        permissionModule: 'insurance',
       },
       {
         title: 'Vehicles',
@@ -421,10 +455,24 @@ export const navigation: NavigationSection[] = [
     title: 'Tools',
     items: [
       {
+        title: 'Technician Portal',
+        href: '/technician-portal',
+        icon: HardHat,
+        description: 'Mobile-first technician interface',
+        permissionModule: 'work_orders',
+      },
+      {
         title: 'AI Hub',
         href: '/ai-hub',
         icon: Brain,
         description: 'AI-powered automation & insights',
+        permissionModule: 'analytics',
+      },
+      {
+        title: 'Analytics',
+        href: '/analytics',
+        icon: BarChart3,
+        description: 'Business analytics and insights',
         permissionModule: 'analytics',
       },
       {
