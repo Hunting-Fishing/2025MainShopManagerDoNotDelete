@@ -96,6 +96,7 @@ import SafetyLiftInspectionNew from '@/pages/SafetyLiftInspectionNew';
 import SafetyDocuments from '@/pages/SafetyDocuments';
 import SafetyCertifications from '@/pages/SafetyCertifications';
 import SafetySchedules from '@/pages/SafetySchedules';
+import TechnicianPortal from '@/pages/TechnicianPortal';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
 function App() {
@@ -349,6 +350,13 @@ function App() {
                   <Route path="/timesheet" element={
                     <ProtectedRoute>
                       <Timesheet />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Technician Portal */}
+                  <Route path="/technician-portal" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <TechnicianPortal />
                     </ProtectedRoute>
                   } />
                   
