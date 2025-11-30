@@ -9,6 +9,7 @@ import { useSafetyCertifications } from '@/hooks/useSafetyCertifications';
 import { AddCertificateDialog } from '@/components/safety/AddCertificateDialog';
 import { TrainingAcknowledgmentsCard } from '@/components/safety/TrainingAcknowledgmentsCard';
 import { TrainingComplianceMatrix } from '@/components/safety/TrainingComplianceMatrix';
+import { TrainingAcknowledgmentDialog } from '@/components/safety/TrainingAcknowledgmentDialog';
 import { 
   Award, 
   AlertTriangle, 
@@ -20,7 +21,8 @@ import {
   Calendar,
   RefreshCw,
   GraduationCap,
-  LayoutGrid
+  LayoutGrid,
+  ClipboardCheck
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, differenceInDays } from 'date-fns';
@@ -41,6 +43,7 @@ export default function SafetyCertifications() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [trainingDialogOpen, setTrainingDialogOpen] = useState(false);
   const [staffOptions, setStaffOptions] = useState<{ id: string; name: string }[]>([]);
   const [viewMode, setViewMode] = useState<'list' | 'by-staff' | 'compliance'>('list');
 
@@ -130,6 +133,10 @@ export default function SafetyCertifications() {
             <Button variant="outline" onClick={refetch}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
+            </Button>
+            <Button variant="secondary" onClick={() => setTrainingDialogOpen(true)}>
+              <ClipboardCheck className="h-4 w-4 mr-2" />
+              Record Training
             </Button>
             <Button onClick={() => setAddDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -321,6 +328,13 @@ export default function SafetyCertifications() {
         onSuccess={refetch}
         staffOptions={staffOptions}
         certificateTypes={certificateTypes}
+      />
+
+      <TrainingAcknowledgmentDialog
+        open={trainingDialogOpen}
+        onOpenChange={setTrainingDialogOpen}
+        onSuccess={refetch}
+        staffOptions={staffOptions}
       />
     </>
   );
