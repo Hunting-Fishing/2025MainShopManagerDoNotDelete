@@ -3926,6 +3926,95 @@ export type Database = {
           },
         ]
       }
+      daily_shop_inspections: {
+        Row: {
+          checklist_items: Json
+          corrective_actions_needed: string | null
+          created_at: string
+          emergency_exits_clear: boolean | null
+          fire_extinguishers_ok: boolean | null
+          first_aid_kit_stocked: boolean | null
+          floor_condition: string | null
+          hazards_identified: string[] | null
+          id: string
+          inspection_date: string
+          inspector_id: string
+          inspector_name: string
+          inspector_signature: string | null
+          lighting_adequate: boolean | null
+          notes: string | null
+          overall_status: string
+          photos: string[] | null
+          ppe_available: boolean | null
+          shift: string | null
+          shop_id: string
+          spill_kit_available: boolean | null
+          tools_condition: string | null
+          updated_at: string
+          ventilation_working: boolean | null
+        }
+        Insert: {
+          checklist_items?: Json
+          corrective_actions_needed?: string | null
+          created_at?: string
+          emergency_exits_clear?: boolean | null
+          fire_extinguishers_ok?: boolean | null
+          first_aid_kit_stocked?: boolean | null
+          floor_condition?: string | null
+          hazards_identified?: string[] | null
+          id?: string
+          inspection_date: string
+          inspector_id: string
+          inspector_name: string
+          inspector_signature?: string | null
+          lighting_adequate?: boolean | null
+          notes?: string | null
+          overall_status: string
+          photos?: string[] | null
+          ppe_available?: boolean | null
+          shift?: string | null
+          shop_id: string
+          spill_kit_available?: boolean | null
+          tools_condition?: string | null
+          updated_at?: string
+          ventilation_working?: boolean | null
+        }
+        Update: {
+          checklist_items?: Json
+          corrective_actions_needed?: string | null
+          created_at?: string
+          emergency_exits_clear?: boolean | null
+          fire_extinguishers_ok?: boolean | null
+          first_aid_kit_stocked?: boolean | null
+          floor_condition?: string | null
+          hazards_identified?: string[] | null
+          id?: string
+          inspection_date?: string
+          inspector_id?: string
+          inspector_name?: string
+          inspector_signature?: string | null
+          lighting_adequate?: boolean | null
+          notes?: string | null
+          overall_status?: string
+          photos?: string[] | null
+          ppe_available?: boolean | null
+          shift?: string | null
+          shop_id?: string
+          spill_kit_available?: boolean | null
+          tools_condition?: string | null
+          updated_at?: string
+          ventilation_working?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_shop_inspections_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       department_submissions: {
         Row: {
           created_at: string
@@ -4877,6 +4966,138 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      dvir_reports: {
+        Row: {
+          brakes_ok: boolean
+          cargo_securement_ok: boolean | null
+          coupling_devices_ok: boolean | null
+          created_at: string
+          defect_photos: string[] | null
+          defects_description: string | null
+          defects_found: boolean
+          driver_id: string
+          driver_name: string
+          driver_signature: string
+          emergency_equipment_ok: boolean
+          exhaust_ok: boolean
+          fluid_levels_ok: boolean
+          horn_ok: boolean
+          id: string
+          inspection_date: string
+          inspection_time: string
+          inspection_type: string
+          lights_ok: boolean
+          mechanic_notes: string | null
+          mechanic_review_date: string | null
+          mechanic_review_required: boolean | null
+          mechanic_reviewed_by: string | null
+          mechanic_signature: string | null
+          mirrors_ok: boolean
+          odometer_reading: number | null
+          repairs_completed: boolean | null
+          repairs_description: string | null
+          shop_id: string
+          steering_ok: boolean
+          tires_ok: boolean
+          updated_at: string
+          vehicle_id: string
+          vehicle_safe_to_operate: boolean
+          windshield_ok: boolean
+          wipers_ok: boolean
+        }
+        Insert: {
+          brakes_ok: boolean
+          cargo_securement_ok?: boolean | null
+          coupling_devices_ok?: boolean | null
+          created_at?: string
+          defect_photos?: string[] | null
+          defects_description?: string | null
+          defects_found?: boolean
+          driver_id: string
+          driver_name: string
+          driver_signature: string
+          emergency_equipment_ok: boolean
+          exhaust_ok: boolean
+          fluid_levels_ok: boolean
+          horn_ok: boolean
+          id?: string
+          inspection_date: string
+          inspection_time: string
+          inspection_type: string
+          lights_ok: boolean
+          mechanic_notes?: string | null
+          mechanic_review_date?: string | null
+          mechanic_review_required?: boolean | null
+          mechanic_reviewed_by?: string | null
+          mechanic_signature?: string | null
+          mirrors_ok: boolean
+          odometer_reading?: number | null
+          repairs_completed?: boolean | null
+          repairs_description?: string | null
+          shop_id: string
+          steering_ok: boolean
+          tires_ok: boolean
+          updated_at?: string
+          vehicle_id: string
+          vehicle_safe_to_operate: boolean
+          windshield_ok: boolean
+          wipers_ok: boolean
+        }
+        Update: {
+          brakes_ok?: boolean
+          cargo_securement_ok?: boolean | null
+          coupling_devices_ok?: boolean | null
+          created_at?: string
+          defect_photos?: string[] | null
+          defects_description?: string | null
+          defects_found?: boolean
+          driver_id?: string
+          driver_name?: string
+          driver_signature?: string
+          emergency_equipment_ok?: boolean
+          exhaust_ok?: boolean
+          fluid_levels_ok?: boolean
+          horn_ok?: boolean
+          id?: string
+          inspection_date?: string
+          inspection_time?: string
+          inspection_type?: string
+          lights_ok?: boolean
+          mechanic_notes?: string | null
+          mechanic_review_date?: string | null
+          mechanic_review_required?: boolean | null
+          mechanic_reviewed_by?: string | null
+          mechanic_signature?: string | null
+          mirrors_ok?: boolean
+          odometer_reading?: number | null
+          repairs_completed?: boolean | null
+          repairs_description?: string | null
+          shop_id?: string
+          steering_ok?: boolean
+          tires_ok?: boolean
+          updated_at?: string
+          vehicle_id?: string
+          vehicle_safe_to_operate?: boolean
+          windshield_ok?: boolean
+          wipers_ok?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dvir_reports_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dvir_reports_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_ab_test_results: {
         Row: {
@@ -11483,6 +11704,129 @@ export type Database = {
           },
         ]
       }
+      lift_hoist_inspections: {
+        Row: {
+          cables_chains_ok: boolean | null
+          capacity_label_visible: boolean | null
+          checklist_items: Json
+          controls_ok: boolean | null
+          corrective_actions: string | null
+          created_at: string
+          deficiencies_found: string[] | null
+          equipment_id: string | null
+          equipment_name: string
+          equipment_type: string
+          floor_anchors_ok: boolean | null
+          hydraulic_system_ok: boolean | null
+          id: string
+          inspection_date: string
+          inspection_type: string
+          inspector_id: string
+          inspector_name: string
+          inspector_signature: string | null
+          location: string | null
+          locked_out: boolean | null
+          lockout_by: string | null
+          lockout_date: string | null
+          lockout_reason: string | null
+          lubrication_ok: boolean | null
+          next_inspection_date: string | null
+          notes: string | null
+          photos: string[] | null
+          safe_for_use: boolean
+          safety_locks_ok: boolean | null
+          serial_number: string | null
+          shop_id: string
+          structural_integrity_ok: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          cables_chains_ok?: boolean | null
+          capacity_label_visible?: boolean | null
+          checklist_items?: Json
+          controls_ok?: boolean | null
+          corrective_actions?: string | null
+          created_at?: string
+          deficiencies_found?: string[] | null
+          equipment_id?: string | null
+          equipment_name: string
+          equipment_type: string
+          floor_anchors_ok?: boolean | null
+          hydraulic_system_ok?: boolean | null
+          id?: string
+          inspection_date: string
+          inspection_type: string
+          inspector_id: string
+          inspector_name: string
+          inspector_signature?: string | null
+          location?: string | null
+          locked_out?: boolean | null
+          lockout_by?: string | null
+          lockout_date?: string | null
+          lockout_reason?: string | null
+          lubrication_ok?: boolean | null
+          next_inspection_date?: string | null
+          notes?: string | null
+          photos?: string[] | null
+          safe_for_use: boolean
+          safety_locks_ok?: boolean | null
+          serial_number?: string | null
+          shop_id: string
+          structural_integrity_ok?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          cables_chains_ok?: boolean | null
+          capacity_label_visible?: boolean | null
+          checklist_items?: Json
+          controls_ok?: boolean | null
+          corrective_actions?: string | null
+          created_at?: string
+          deficiencies_found?: string[] | null
+          equipment_id?: string | null
+          equipment_name?: string
+          equipment_type?: string
+          floor_anchors_ok?: boolean | null
+          hydraulic_system_ok?: boolean | null
+          id?: string
+          inspection_date?: string
+          inspection_type?: string
+          inspector_id?: string
+          inspector_name?: string
+          inspector_signature?: string | null
+          location?: string | null
+          locked_out?: boolean | null
+          lockout_by?: string | null
+          lockout_date?: string | null
+          lockout_reason?: string | null
+          lubrication_ok?: boolean | null
+          next_inspection_date?: string | null
+          notes?: string | null
+          photos?: string[] | null
+          safe_for_use?: boolean
+          safety_locks_ok?: boolean | null
+          serial_number?: string | null
+          shop_id?: string
+          structural_integrity_ok?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lift_hoist_inspections_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lift_hoist_inspections_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_business_hours: {
         Row: {
           break_end_time: string | null
@@ -17414,6 +17758,213 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      safety_documents: {
+        Row: {
+          chemical_name: string | null
+          created_at: string
+          department: string | null
+          description: string | null
+          document_type: string
+          effective_date: string | null
+          expiry_date: string | null
+          file_name: string
+          file_size: number | null
+          file_url: string
+          hazard_classification: string[] | null
+          id: string
+          is_active: boolean | null
+          manufacturer: string | null
+          mime_type: string | null
+          requires_acknowledgment: boolean | null
+          revision_date: string | null
+          shop_id: string
+          storage_location: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string
+          version: string | null
+        }
+        Insert: {
+          chemical_name?: string | null
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          document_type: string
+          effective_date?: string | null
+          expiry_date?: string | null
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          hazard_classification?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer?: string | null
+          mime_type?: string | null
+          requires_acknowledgment?: boolean | null
+          revision_date?: string | null
+          shop_id: string
+          storage_location?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by: string
+          version?: string | null
+        }
+        Update: {
+          chemical_name?: string | null
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          document_type?: string
+          effective_date?: string | null
+          expiry_date?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          hazard_classification?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer?: string | null
+          mime_type?: string | null
+          requires_acknowledgment?: boolean | null
+          revision_date?: string | null
+          shop_id?: string
+          storage_location?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_documents_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_incidents: {
+        Row: {
+          assigned_investigator: string | null
+          corrective_actions: string | null
+          created_at: string
+          description: string
+          equipment_id: string | null
+          id: string
+          incident_date: string
+          incident_time: string | null
+          incident_type: string
+          injured_person_name: string | null
+          injured_person_type: string | null
+          injury_details: string | null
+          investigation_status: string
+          location: string
+          medical_treatment_description: string | null
+          medical_treatment_required: boolean | null
+          osha_report_number: string | null
+          osha_reportable: boolean | null
+          photos: string[] | null
+          preventive_measures: string | null
+          reported_by: string
+          resolved_at: string | null
+          resolved_by: string | null
+          root_cause: string | null
+          severity: string
+          shop_id: string
+          title: string
+          updated_at: string
+          vehicle_id: string | null
+          witnesses: string[] | null
+        }
+        Insert: {
+          assigned_investigator?: string | null
+          corrective_actions?: string | null
+          created_at?: string
+          description: string
+          equipment_id?: string | null
+          id?: string
+          incident_date: string
+          incident_time?: string | null
+          incident_type: string
+          injured_person_name?: string | null
+          injured_person_type?: string | null
+          injury_details?: string | null
+          investigation_status?: string
+          location: string
+          medical_treatment_description?: string | null
+          medical_treatment_required?: boolean | null
+          osha_report_number?: string | null
+          osha_reportable?: boolean | null
+          photos?: string[] | null
+          preventive_measures?: string | null
+          reported_by: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          root_cause?: string | null
+          severity: string
+          shop_id: string
+          title: string
+          updated_at?: string
+          vehicle_id?: string | null
+          witnesses?: string[] | null
+        }
+        Update: {
+          assigned_investigator?: string | null
+          corrective_actions?: string | null
+          created_at?: string
+          description?: string
+          equipment_id?: string | null
+          id?: string
+          incident_date?: string
+          incident_time?: string | null
+          incident_type?: string
+          injured_person_name?: string | null
+          injured_person_type?: string | null
+          injury_details?: string | null
+          investigation_status?: string
+          location?: string
+          medical_treatment_description?: string | null
+          medical_treatment_required?: boolean | null
+          osha_report_number?: string | null
+          osha_reportable?: boolean | null
+          photos?: string[] | null
+          preventive_measures?: string | null
+          reported_by?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          root_cause?: string | null
+          severity?: string
+          shop_id?: string
+          title?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          witnesses?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_incidents_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_incidents_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_incidents_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_searches: {
         Row: {
