@@ -99,9 +99,9 @@ export function TodayInspectionsCard({ inspections, loading }: TodayInspectionsC
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {inspection.hazards_found && inspection.hazards_found.length > 0 && (
+                    {inspection.hazards_identified && inspection.hazards_identified.length > 0 && (
                       <Badge variant="outline" className="bg-amber-500/10 text-amber-600">
-                        {inspection.hazards_found.length} hazard(s)
+                        {inspection.hazards_identified.length} hazard(s)
                       </Badge>
                     )}
                     <Badge 

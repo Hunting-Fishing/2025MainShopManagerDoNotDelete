@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from './useShopId';
 import { useToast } from './use-toast';
-import type { SafetyIncident, IncidentType, IncidentSeverity, InvestigationStatus } from '@/types/safety';
+import type { SafetyIncident, IncidentType, IncidentSeverity, InvestigationStatus, InjuredPersonType } from '@/types/safety';
 
 interface CreateIncidentData {
   incident_date: string;
@@ -15,7 +15,7 @@ interface CreateIncidentData {
   equipment_id?: string;
   vehicle_id?: string;
   injured_person_name?: string;
-  injured_person_type?: string;
+  injured_person_type?: InjuredPersonType;
   injury_details?: string;
   medical_treatment_required?: boolean;
   medical_treatment_description?: string;

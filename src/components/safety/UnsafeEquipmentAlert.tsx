@@ -102,7 +102,7 @@ export function UnsafeEquipmentAlert({ unsafeLifts, loading }: UnsafeEquipmentAl
               </div>
               <div className="text-right">
                 <Badge variant="destructive">
-                  {lift.lockout_required ? 'LOCKOUT' : 'Out of Service'}
+                  {lift.locked_out ? 'LOCKOUT' : 'Out of Service'}
                 </Badge>
                 <p className="text-xs text-muted-foreground mt-1">
                   Since {format(new Date(lift.inspection_date), 'MMM d')}
