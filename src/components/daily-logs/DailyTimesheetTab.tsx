@@ -65,38 +65,50 @@ export function DailyTimesheetTab() {
     try {
       const options: VesselEquipment[] = [];
       
-      // Load vessels (boat inspections as proxy for vessels)
-      const { data: vessels } = await supabase
-        .from('boat_inspections')
-        .select('id, vessel_name, vessel_type')
-        .eq('shop_id', shopId || '')
-        .order('vessel_name');
-      
-      if (vessels) {
-        vessels.forEach(v => {
-          options.push({
-            id: v.id,
-            name: v.vessel_name,
-            type: 'vessel',
-            category: v.vessel_type || 'Vessels'
-          });
-        });
-      }
-
-      // Load equipment
-      const { data: equipment } = await supabase
+      // Load all equipment from equipment_assets (includes vessels, forklifts, trucks, etc.)
+      const { data: equipment, error } = await supabase
         .from('equipment_assets')
-        .select('id, name, equipment_type')
-        .eq('shop_id', shopId || '')
+        .select('id, name, equipment_type, status')
+        .in('status', ['operational', 'maintenance']) // Exclude 'down' equipment
+        .order('equipment_type')
         .order('name');
       
+      if (error) {
+        console.error('Error loading equipment:', error);
+        return;
+      }
+
       if (equipment) {
         equipment.forEach(e => {
+          // Categorize by equipment_type for grouping
+          const equipmentType = e.equipment_type || 'other';
+          const isVessel = equipmentType.toLowerCase().includes('vessel') || 
+                          equipmentType.toLowerCase().includes('boat');
+          
+          // Format category name for display
+          const categoryMap: Record<string, string> = {
+            'vessel': 'Vessels',
+            'boat': 'Vessels',
+            'forklift': 'Forklifts',
+            'heavy_truck': 'Heavy Trucks',
+            'fleet_vehicle': 'Fleet Vehicles',
+            'trailer': 'Trailers',
+            'generator': 'Generators',
+            'pump': 'Pumps',
+            'compressor': 'Compressors',
+            'welder': 'Welders',
+            'crane': 'Cranes',
+            'other': 'Other Equipment'
+          };
+          
+          const category = categoryMap[equipmentType.toLowerCase()] || 
+                          equipmentType.charAt(0).toUpperCase() + equipmentType.slice(1);
+          
           options.push({
             id: e.id,
             name: e.name,
-            type: 'equipment',
-            category: e.equipment_type || 'Equipment'
+            type: isVessel ? 'vessel' : 'equipment',
+            category: category
           });
         });
       }
