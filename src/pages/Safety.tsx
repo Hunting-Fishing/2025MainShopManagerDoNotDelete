@@ -1,19 +1,33 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useSafetyDashboard } from '@/hooks/useSafetyDashboard';
+import { useDailyInspections } from '@/hooks/useDailyInspections';
+import { useDVIR } from '@/hooks/useDVIR';
+import { useLiftInspections } from '@/hooks/useLiftInspections';
 import {
   SafetyDashboardStats,
   RecentIncidentsList,
   TodayInspectionsCard,
   UnsafeEquipmentAlert,
   SafetyQuickActions,
-  CertificationAlertsCard
+  CertificationAlertsCard,
+  InspectionCompletionWidget,
+  TodaysHazardsWidget,
+  FlaggedVehiclesCard,
+  CriticalDefectsCard
 } from '@/components/safety';
 import { Shield, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Safety() {
   const { loading, stats, recentIncidents, todayInspections, unsafeLifts, refetch } = useSafetyDashboard();
+  const { inspections, loading: inspectionsLoading } = useDailyInspections();
+  const { dvirReports, loading: dvirLoading } = useDVIR();
+  const { inspections: liftInspections, loading: liftLoading } = useLiftInspections();
+
+  const handleRefresh = () => {
+    refetch();
+  };
 
   return (
     <>
@@ -36,7 +50,7 @@ export default function Safety() {
           </div>
           <Button 
             variant="outline" 
-            onClick={refetch}
+            onClick={handleRefresh}
             disabled={loading}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -50,16 +64,37 @@ export default function Safety() {
         {/* Quick Actions */}
         <SafetyQuickActions />
 
+        {/* Critical Alerts Row */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <CriticalDefectsCard 
+            liftInspections={liftInspections} 
+            dvirReports={dvirReports} 
+            loading={liftLoading || dvirLoading} 
+          />
+          <FlaggedVehiclesCard 
+            dvirReports={dvirReports} 
+            loading={dvirLoading} 
+          />
+        </div>
+
         {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left Column */}
           <div className="space-y-6">
+            <InspectionCompletionWidget 
+              inspections={inspections} 
+              loading={inspectionsLoading} 
+            />
+            <TodaysHazardsWidget 
+              inspections={inspections} 
+              loading={inspectionsLoading} 
+            />
             <RecentIncidentsList incidents={recentIncidents} loading={loading} />
-            <TodayInspectionsCard inspections={todayInspections} loading={loading} />
           </div>
 
           {/* Right Column */}
           <div className="space-y-6">
+            <TodayInspectionsCard inspections={todayInspections} loading={loading} />
             <UnsafeEquipmentAlert unsafeLifts={unsafeLifts} loading={loading} />
             <CertificationAlertsCard />
           </div>

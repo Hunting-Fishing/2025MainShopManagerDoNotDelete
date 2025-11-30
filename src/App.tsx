@@ -86,6 +86,15 @@ import Safety from '@/pages/Safety';
 import SafetyIncidents from '@/pages/SafetyIncidents';
 import SafetyIncidentNew from '@/pages/SafetyIncidentNew';
 import SafetyIncidentDetails from '@/pages/SafetyIncidentDetails';
+import SafetyInspections from '@/pages/SafetyInspections';
+import SafetyInspectionNew from '@/pages/SafetyInspectionNew';
+import SafetyDVIR from '@/pages/SafetyDVIR';
+import SafetyDVIRNew from '@/pages/SafetyDVIRNew';
+import SafetyLiftInspections from '@/pages/SafetyLiftInspections';
+import SafetyLiftInspectionNew from '@/pages/SafetyLiftInspectionNew';
+import SafetyDocuments from '@/pages/SafetyDocuments';
+import SafetyCertifications from '@/pages/SafetyCertifications';
+import SafetySchedules from '@/pages/SafetySchedules';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
 function App() {
@@ -502,6 +511,51 @@ function App() {
                   <Route path="/safety/incidents/:id" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <SafetyIncidentDetails />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/inspections" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyInspections />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/inspections/new" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyInspectionNew />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/dvir" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyDVIR />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/dvir/new" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyDVIRNew />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/equipment" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyLiftInspections />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/equipment/inspect" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyLiftInspectionNew />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/documents" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyDocuments />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/certifications" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyCertifications />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/schedules" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetySchedules />
                     </ProtectedRoute>
                   } />
                   

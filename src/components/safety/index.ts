@@ -5,3 +5,8 @@ export { UnsafeEquipmentAlert } from './UnsafeEquipmentAlert';
 export { SafetyQuickActions } from './SafetyQuickActions';
 export { CertificationAlertsCard } from './CertificationAlertsCard';
 export { IncidentReportForm } from './IncidentReportForm';
+export { InspectionCompletionWidget } from './InspectionCompletionWidget';
+export { TodaysHazardsWidget } from './TodaysHazardsWidget';
+export { FlaggedVehiclesCard } from './FlaggedVehiclesCard';
+export { CriticalDefectsCard } from './CriticalDefectsCard';
+export { AddCertificateDialog } from './AddCertificateDialog';
