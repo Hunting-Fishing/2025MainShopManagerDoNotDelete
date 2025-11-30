@@ -79,6 +79,16 @@ export const routePermissions: RoutePermission[] = [
   // Documents
   { path: '/documents', allowedRoles: ['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner'] },
   
+  // Safety & Compliance
+  { path: '/safety/certifications', allowedRoles: ['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner'] },
+  { path: '/safety/schedules', allowedRoles: ['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner'] },
+  { path: '/safety/documents', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner'] },
+  { path: '/safety/incidents', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
+  { path: '/safety/inspections', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
+  { path: '/safety/dvir', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
+  { path: '/safety/equipment', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
+  { path: '/safety', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
+  
   // Feedback
   { path: '/feedback', allowedRoles: ['admin', 'manager', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner'] },
   

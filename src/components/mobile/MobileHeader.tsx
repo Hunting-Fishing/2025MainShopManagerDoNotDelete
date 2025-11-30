@@ -48,7 +48,11 @@ import {
   TrendingDown,
   Smartphone,
   GraduationCap,
-  ShoppingBag
+  ShoppingBag,
+  Award,
+  CalendarClock,
+  HardHat,
+  ClipboardCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -197,6 +201,19 @@ export function MobileHeader({
         { label: 'Training Overview', icon: GraduationCap, path: '/training-overview', requiredPath: '/training-overview' },
         { label: 'Vehicles', icon: Truck, path: '/vehicles', requiredPath: '/vehicles' },
         { label: 'Documents', icon: FileBarChart, path: '/documents', requiredPath: '/documents' },
+      ]
+    },
+    {
+      title: 'Safety & Compliance',
+      items: [
+        { label: 'Safety Dashboard', icon: Shield, path: '/safety', requiredPath: '/safety' },
+        { label: 'Incidents', icon: AlertCircle, path: '/safety/incidents', requiredPath: '/safety/incidents' },
+        { label: 'Daily Inspections', icon: ClipboardCheck, path: '/safety/inspections', requiredPath: '/safety/inspections' },
+        { label: 'DVIR Reports', icon: Truck, path: '/safety/dvir', requiredPath: '/safety/dvir' },
+        { label: 'Lift Inspections', icon: Package, path: '/safety/equipment', requiredPath: '/safety/equipment' },
+        { label: 'Certifications', icon: Award, path: '/safety/certifications', requiredPath: '/safety/certifications' },
+        { label: 'Safety Documents', icon: FileText, path: '/safety/documents', requiredPath: '/safety/documents' },
+        { label: 'Schedules & Reminders', icon: CalendarClock, path: '/safety/schedules', requiredPath: '/safety/schedules' },
       ]
     },
     {
