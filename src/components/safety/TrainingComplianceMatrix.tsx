@@ -35,7 +35,8 @@ const REQUIRED_TRAININGS: TrainingType[] = [
   'ppe',
   'fire_safety',
   'emergency_procedures',
-  'lockout_tagout'
+  'lockout_tagout',
+  'whmis'
 ];
 
 export function TrainingComplianceMatrix() {

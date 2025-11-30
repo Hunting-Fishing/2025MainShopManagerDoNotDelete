@@ -22,6 +22,7 @@ export type TrainingType =
   | 'emergency_procedures'
   | 'lockout_tagout'
   | 'confined_space'
+  | 'whmis'
   | 'other';
 
 export type IncidentSeverity = 'minor' | 'moderate' | 'serious' | 'critical';
@@ -265,6 +266,7 @@ export const TRAINING_TYPE_LABELS: Record<TrainingType, string> = {
   emergency_procedures: 'Emergency Procedures',
   lockout_tagout: 'Lockout/Tagout (LOTO)',
   confined_space: 'Confined Space Entry',
+  whmis: 'WHMIS (Hazardous Materials)',
   other: 'Other'
 };
 
