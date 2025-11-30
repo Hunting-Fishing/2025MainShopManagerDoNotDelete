@@ -82,6 +82,7 @@ import EmployeeScheduling from '@/pages/EmployeeScheduling';
 import TrainingOverview from '@/pages/TrainingOverview';
 import DailyLogs from '@/pages/DailyLogs';
 import Insurance from '@/pages/Insurance';
+import Safety from '@/pages/Safety';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
 function App() {
@@ -476,6 +477,18 @@ function App() {
                   <Route path="/insurance" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Insurance />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Safety & Compliance */}
+                  <Route path="/safety" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <Safety />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/*" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <Safety />
                     </ProtectedRoute>
                   } />
                   
