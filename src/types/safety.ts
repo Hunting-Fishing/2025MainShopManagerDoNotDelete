@@ -23,6 +23,8 @@ export type TrainingType =
   | 'lockout_tagout'
   | 'confined_space'
   | 'whmis'
+  | 'forklift'
+  | 'first_aid'
   | 'other';
 
 export type IncidentSeverity = 'minor' | 'moderate' | 'serious' | 'critical';
@@ -267,6 +269,8 @@ export const TRAINING_TYPE_LABELS: Record<TrainingType, string> = {
   lockout_tagout: 'Lockout/Tagout (LOTO)',
   confined_space: 'Confined Space Entry',
   whmis: 'WHMIS (Hazardous Materials)',
+  forklift: 'Forklift Operation',
+  first_aid: 'First Aid/CPR',
   other: 'Other'
 };
 
