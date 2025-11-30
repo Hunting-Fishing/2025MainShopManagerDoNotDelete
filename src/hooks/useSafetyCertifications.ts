@@ -24,7 +24,6 @@ export interface StaffCertificate {
   certificate_type?: {
     name: string;
     description?: string;
-    category?: string;
   };
 }
 
@@ -32,8 +31,8 @@ export interface CertificateType {
   id: string;
   name: string;
   description?: string;
-  category?: string;
-  is_active?: boolean;
+  requires_renewal?: boolean;
+  default_validity_months?: number;
 }
 
 export function useSafetyCertifications() {
@@ -97,12 +96,11 @@ export function useSafetyCertifications() {
     try {
       const { data, error } = await supabase
         .from('staff_certificate_types')
-        .select('*')
-        .eq('is_active', true)
+        .select('id, name, description, requires_renewal, default_validity_months')
         .order('name');
 
       if (error) throw error;
-      setCertificateTypes(data || []);
+      setCertificateTypes((data || []) as CertificateType[]);
     } catch (error: any) {
       console.error('Error fetching certificate types:', error);
     }
