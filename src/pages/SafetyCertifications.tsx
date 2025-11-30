@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useSafetyCertifications } from '@/hooks/useSafetyCertifications';
 import { AddCertificateDialog } from '@/components/safety/AddCertificateDialog';
+import { TrainingAcknowledgmentsCard } from '@/components/safety/TrainingAcknowledgmentsCard';
 import { 
   Award, 
   AlertTriangle, 
@@ -16,7 +17,8 @@ import {
   Search,
   User,
   Calendar,
-  RefreshCw
+  RefreshCw,
+  GraduationCap
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, differenceInDays } from 'date-fns';
@@ -294,6 +296,11 @@ export default function SafetyCertifications() {
             ))}
           </div>
         )}
+
+        {/* Training Records Section */}
+        <div className="mt-6">
+          <TrainingAcknowledgmentsCard limit={5} />
+        </div>
       </div>
 
       <AddCertificateDialog

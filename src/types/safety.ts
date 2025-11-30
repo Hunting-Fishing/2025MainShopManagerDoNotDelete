@@ -277,6 +277,27 @@ export interface SafetySchedule {
   assigned_to?: string;
   reminder_days_before: number;
   notes?: string;
+  vehicle_id?: string;
+  equipment_id?: string;
+  mileage_interval?: number;
+  last_mileage?: number;
+  next_mileage?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Inspection assignment for staff accountability
+export interface InspectionAssignment {
+  id: string;
+  shop_id: string;
+  staff_id: string;
+  schedule_id?: string;
+  inspection_type: string;
+  shift?: 'morning' | 'afternoon' | 'night';
+  assignment_date: string;
+  is_completed: boolean;
+  completed_at?: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
