@@ -34,6 +34,7 @@ const DEFAULT_SCHEDULES: Omit<CreateScheduleData, 'next_due_date'>[] = [
   { schedule_name: 'Quarterly Safety Training', schedule_type: 'training', frequency: 'quarterly', reminder_days_before: 7 },
   { schedule_name: 'Quarterly PPE Inventory', schedule_type: 'ppe_inventory', frequency: 'quarterly', reminder_days_before: 7 },
   { schedule_name: 'Quarterly Ventilation System Check', schedule_type: 'ventilation', frequency: 'quarterly', reminder_days_before: 7 },
+  { schedule_name: 'Quarterly Coolant Flush (Fleet)', schedule_type: 'vehicle_maintenance', frequency: 'quarterly', reminder_days_before: 7 },
   
   // Annual checks
   { schedule_name: 'Annual Lift Certification', schedule_type: 'lift_certification', frequency: 'annual', reminder_days_before: 30 },

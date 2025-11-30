@@ -150,6 +150,10 @@ export type SafetyDocumentType =
   | 'certification'
   | 'manual'
   | 'emergency_plan'
+  | 'torque_spec'
+  | 'wiring_diagram'
+  | 'working_at_height'
+  | 'ev_safety'
   | 'other';
 
 export interface SafetyDocument {

@@ -10,17 +10,21 @@ import { Upload, FileText, X } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import type { SafetyDocumentType } from '@/types/safety';
 
-const DOCUMENT_TYPES: { value: SafetyDocumentType; label: string }[] = [
-  { value: 'sds', label: 'Safety Data Sheet (SDS)' },
-  { value: 'policy', label: 'Policy' },
-  { value: 'procedure', label: 'Procedure' },
-  { value: 'training_material', label: 'Training Material' },
-  { value: 'inspection_form', label: 'Inspection Form' },
-  { value: 'permit', label: 'Permit' },
-  { value: 'certification', label: 'Certification' },
-  { value: 'manual', label: 'Manual' },
-  { value: 'emergency_plan', label: 'Emergency Plan' },
-  { value: 'other', label: 'Other' },
+const DOCUMENT_TYPES: { value: SafetyDocumentType; label: string; category?: string }[] = [
+  { value: 'sds', label: 'Safety Data Sheet (SDS)', category: 'chemical' },
+  { value: 'policy', label: 'Policy', category: 'general' },
+  { value: 'procedure', label: 'Procedure', category: 'general' },
+  { value: 'training_material', label: 'Training Material', category: 'general' },
+  { value: 'inspection_form', label: 'Inspection Form', category: 'general' },
+  { value: 'permit', label: 'Permit', category: 'general' },
+  { value: 'certification', label: 'Certification', category: 'general' },
+  { value: 'manual', label: 'Manual', category: 'general' },
+  { value: 'emergency_plan', label: 'Emergency Plan', category: 'general' },
+  { value: 'torque_spec', label: 'Torque Specifications', category: 'technical' },
+  { value: 'wiring_diagram', label: 'Wiring Diagram', category: 'technical' },
+  { value: 'working_at_height', label: 'Working at Height Procedure', category: 'height_safety' },
+  { value: 'ev_safety', label: 'EV Safety Procedure', category: 'ev' },
+  { value: 'other', label: 'Other', category: 'general' },
 ];
 
 const HAZARD_CLASSES = [
@@ -54,7 +58,10 @@ export function SafetyDocumentUpload({ open, onOpenChange }: SafetyDocumentUploa
     hazard_classification: [] as string[],
     storage_location: '',
     department: '',
-    expiry_date: ''
+    expiry_date: '',
+    vehicle_make: '',
+    vehicle_model: '',
+    equipment_type: ''
   });
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -123,11 +130,16 @@ export function SafetyDocumentUpload({ open, onOpenChange }: SafetyDocumentUploa
       hazard_classification: [],
       storage_location: '',
       department: '',
-      expiry_date: ''
+      expiry_date: '',
+      vehicle_make: '',
+      vehicle_model: '',
+      equipment_type: ''
     });
   };
 
   const isSDS = formData.document_type === 'sds';
+  const isTechnical = ['torque_spec', 'wiring_diagram'].includes(formData.document_type);
+  const isEVSafety = formData.document_type === 'ev_safety';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
