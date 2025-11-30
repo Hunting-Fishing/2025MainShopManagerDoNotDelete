@@ -25,6 +25,7 @@ const navigationCategories = [
     title: 'Operations',
     items: [
       { name: 'Work Orders', href: '/work-orders', requiredPath: '/work-orders' },
+      { name: 'Daily Logs', href: '/daily-logs', requiredPath: '/daily-logs' },
       { name: 'Quotes', href: '/quotes', requiredPath: '/quotes' },
       { name: 'Invoices', href: '/invoices', requiredPath: '/invoices' },
       { name: 'Service Board', href: '/service-board', requiredPath: '/service-board' },
@@ -47,11 +48,28 @@ const navigationCategories = [
     ]
   },
   {
+    title: 'Fleet & Assets',
+    items: [
+      { name: 'Fleet Management', href: '/fleet-management', requiredPath: '/fleet-management' },
+      { name: 'Equipment Tracking', href: '/equipment-tracking', requiredPath: '/equipment-tracking' },
+      { name: 'Insurance', href: '/insurance', requiredPath: '/insurance' },
+    ]
+  },
+  {
     title: 'Company',
     items: [
       { name: 'Team', href: '/team', requiredPath: '/team' },
       { name: 'Company Profile', href: '/company-profile', requiredPath: '/company-profile' },
+      { name: 'Timesheet', href: '/timesheet', requiredPath: '/timesheet' },
       { name: 'Assets & Equipment', href: '/equipment', requiredPath: '/equipment' },
+    ]
+  },
+  {
+    title: 'Safety & Compliance',
+    items: [
+      { name: 'Safety Dashboard', href: '/safety', requiredPath: '/safety' },
+      { name: 'Incidents', href: '/safety/incidents', requiredPath: '/safety/incidents' },
+      { name: 'Certifications', href: '/safety/certifications', requiredPath: '/safety/certifications' },
     ]
   },
   {
@@ -59,6 +77,14 @@ const navigationCategories = [
     items: [
       { name: 'Shopping', href: '/shopping', requiredPath: '/shopping' },
       { name: 'Tools Shop', href: '/tools', requiredPath: '/tools' },
+    ]
+  },
+  {
+    title: 'Tools',
+    items: [
+      { name: 'Technician Portal', href: '/technician-portal', requiredPath: '/technician-portal' },
+      { name: 'Analytics', href: '/analytics', requiredPath: '/analytics' },
+      { name: 'AI Hub', href: '/ai-hub', requiredPath: '/ai-hub' },
     ]
   },
   {

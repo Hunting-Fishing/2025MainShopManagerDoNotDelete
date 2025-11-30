@@ -23,7 +23,11 @@ import {
   Shield,
   AlertTriangle,
   ClipboardCheck,
-  Award
+  Award,
+  HardHat,
+  Clock,
+  MapPin,
+  Brain
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -114,6 +118,7 @@ export function MobileNavigation() {
       title: 'Scheduling',
       items: [
         { id: 'service-reminders', label: 'Service Reminders', icon: Bell, path: '/service-reminders', description: 'Upcoming service alerts' },
+        { id: 'timesheet', label: 'Timesheet', icon: Clock, path: '/timesheet', description: 'Track work hours' },
       ]
     },
     {
@@ -121,7 +126,10 @@ export function MobileNavigation() {
       items: [
         { id: 'customers', label: 'Customers', icon: Users, path: '/customers', description: 'Customer database' },
         { id: 'vehicles', label: 'Vehicles', icon: Truck, path: '/vehicles', description: 'Fleet management' },
+        { id: 'fleet-management', label: 'Fleet Management', icon: Truck, path: '/fleet-management', description: 'Manage company vehicles' },
+        { id: 'equipment-tracking', label: 'Equipment Tracking', icon: MapPin, path: '/equipment-tracking', description: 'Track equipment location' },
         { id: 'inventory', label: 'Inventory', icon: Package, path: '/inventory', description: 'Parts and supplies' },
+        { id: 'insurance', label: 'Insurance', icon: Shield, path: '/insurance', description: 'Fleet & equipment insurance' },
       ]
     },
     {
@@ -140,6 +148,14 @@ export function MobileNavigation() {
         { id: 'safety-dvir', label: 'DVIR Reports', icon: Truck, path: '/safety/dvir', description: 'Vehicle inspection reports' },
         { id: 'safety-equipment', label: 'Lift Inspections', icon: Package, path: '/safety/equipment', description: 'Equipment safety checks' },
         { id: 'safety-certifications', label: 'Certifications', icon: Award, path: '/safety/certifications', description: 'Staff certifications' },
+      ]
+    },
+    {
+      title: 'Tools',
+      items: [
+        { id: 'technician-portal', label: 'Technician Portal', icon: HardHat, path: '/technician-portal', description: 'Mobile technician interface' },
+        { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/analytics', description: 'Business insights' },
+        { id: 'ai-hub', label: 'AI Hub', icon: Brain, path: '/ai-hub', description: 'AI-powered automation' },
       ]
     },
     {
