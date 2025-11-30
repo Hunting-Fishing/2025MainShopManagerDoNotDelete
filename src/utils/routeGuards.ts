@@ -97,6 +97,12 @@ export const routePermissions: RoutePermission[] = [
   // Feedback
   { path: '/feedback', allowedRoles: ['admin', 'manager', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner'] },
   
+  // Scheduling
+  { path: '/scheduling', allowedRoles: ['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner'] },
+  
+  // Call Logger
+  { path: '/call-logger', allowedRoles: ['admin', 'manager', 'service_advisor', 'reception', 'owner'] },
+  
   // Public staff routes (all authenticated users)
   { path: '/dashboard', allowedRoles: [] }, // No specific roles required
   { path: '/help', allowedRoles: [] },
@@ -104,6 +110,11 @@ export const routePermissions: RoutePermission[] = [
   { path: '/profile', allowedRoles: [] },
   { path: '/notifications', allowedRoles: [] },
   { path: '/timesheet', allowedRoles: [] },
+  { path: '/shopping', allowedRoles: [] },
+  { path: '/wishlist', allowedRoles: [] },
+  { path: '/orders', allowedRoles: [] },
+  { path: '/customer-portal', allowedRoles: [] },
+  { path: '/feature-requests', allowedRoles: [] },
 ];
 
 export function hasRoutePermission(path: string, userRoles: string[]): boolean {
