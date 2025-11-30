@@ -26,17 +26,27 @@ const navigationCategories = [
     items: [
       { name: 'Work Orders', href: '/work-orders', requiredPath: '/work-orders' },
       { name: 'Daily Logs', href: '/daily-logs', requiredPath: '/daily-logs' },
+      { name: 'Service Board', href: '/service-board', requiredPath: '/service-board' },
       { name: 'Quotes', href: '/quotes', requiredPath: '/quotes' },
       { name: 'Invoices', href: '/invoices', requiredPath: '/invoices' },
-      { name: 'Service Board', href: '/service-board', requiredPath: '/service-board' },
+      { name: 'Payments', href: '/payments', requiredPath: '/payments' },
+    ]
+  },
+  {
+    title: 'Scheduling',
+    items: [
+      { name: 'Calendar', href: '/calendar', requiredPath: '/calendar' },
+      { name: 'Staff Scheduling', href: '/scheduling', requiredPath: '/scheduling' },
+      { name: 'Service Reminders', href: '/service-reminders', requiredPath: '/service-reminders' },
     ]
   },
   {
     title: 'Customer Management',
     items: [
       { name: 'Customers', href: '/customers', requiredPath: '/customers' },
-      { name: 'Calendar', href: '/calendar', requiredPath: '/calendar' },
+      { name: 'Vehicles', href: '/vehicles', requiredPath: '/vehicles' },
       { name: 'Customer Communications', href: '/customer-comms', requiredPath: '/customer-comms' },
+      { name: 'Call Logger', href: '/call-logger', requiredPath: '/call-logger' },
     ]
   },
   {
@@ -44,15 +54,35 @@ const navigationCategories = [
     items: [
       { name: 'Inventory', href: '/inventory', requiredPath: '/inventory' },
       { name: 'Inventory Manager', href: '/inventory/manager', requiredPath: '/inventory/manager' },
-      { name: 'Orders', href: '/inventory/orders', requiredPath: '/inventory/orders' },
+      { name: 'Purchase Orders', href: '/inventory/orders', requiredPath: '/inventory/orders' },
     ]
   },
   {
     title: 'Fleet & Assets',
     items: [
       { name: 'Fleet Management', href: '/fleet-management', requiredPath: '/fleet-management' },
+      { name: 'Equipment', href: '/equipment', requiredPath: '/equipment' },
       { name: 'Equipment Tracking', href: '/equipment-tracking', requiredPath: '/equipment-tracking' },
+      { name: 'Maintenance Requests', href: '/maintenance-requests', requiredPath: '/maintenance-requests' },
       { name: 'Insurance', href: '/insurance', requiredPath: '/insurance' },
+    ]
+  },
+  {
+    title: 'Services',
+    items: [
+      { name: 'Service Library', href: '/services', requiredPath: '/services' },
+      { name: 'Service Editor', href: '/service-editor', requiredPath: '/service-editor' },
+      { name: 'Repair Plans', href: '/repair-plans', requiredPath: '/repair-plans' },
+    ]
+  },
+  {
+    title: 'Marketing',
+    items: [
+      { name: 'Email Campaigns', href: '/email-campaigns', requiredPath: '/email-campaigns' },
+      { name: 'Email Sequences', href: '/email-sequences', requiredPath: '/email-sequences' },
+      { name: 'Email Templates', href: '/email-templates', requiredPath: '/email-templates' },
+      { name: 'SMS Management', href: '/sms-management', requiredPath: '/sms-management' },
+      { name: 'SMS Templates', href: '/sms-templates', requiredPath: '/sms-templates' },
     ]
   },
   {
@@ -61,7 +91,8 @@ const navigationCategories = [
       { name: 'Team', href: '/team', requiredPath: '/team' },
       { name: 'Company Profile', href: '/company-profile', requiredPath: '/company-profile' },
       { name: 'Timesheet', href: '/timesheet', requiredPath: '/timesheet' },
-      { name: 'Assets & Equipment', href: '/equipment', requiredPath: '/equipment' },
+      { name: 'Training', href: '/training-overview', requiredPath: '/training-overview' },
+      { name: 'Documents', href: '/documents', requiredPath: '/documents' },
     ]
   },
   {
@@ -69,6 +100,8 @@ const navigationCategories = [
     items: [
       { name: 'Safety Dashboard', href: '/safety', requiredPath: '/safety' },
       { name: 'Incidents', href: '/safety/incidents', requiredPath: '/safety/incidents' },
+      { name: 'Daily Inspections', href: '/safety/inspections', requiredPath: '/safety/inspections' },
+      { name: 'DVIR Reports', href: '/safety/dvir', requiredPath: '/safety/dvir' },
       { name: 'Certifications', href: '/safety/certifications', requiredPath: '/safety/certifications' },
     ]
   },
@@ -76,7 +109,8 @@ const navigationCategories = [
     title: 'Store',
     items: [
       { name: 'Shopping', href: '/shopping', requiredPath: '/shopping' },
-      { name: 'Tools Shop', href: '/tools', requiredPath: '/tools' },
+      { name: 'Wishlist', href: '/wishlist', requiredPath: '/wishlist' },
+      { name: 'My Orders', href: '/orders', requiredPath: '/orders' },
     ]
   },
   {
@@ -85,12 +119,21 @@ const navigationCategories = [
       { name: 'Technician Portal', href: '/technician-portal', requiredPath: '/technician-portal' },
       { name: 'Analytics', href: '/analytics', requiredPath: '/analytics' },
       { name: 'AI Hub', href: '/ai-hub', requiredPath: '/ai-hub' },
+      { name: 'Forms', href: '/forms', requiredPath: '/forms' },
+      { name: 'Feedback', href: '/feedback', requiredPath: '/feedback' },
     ]
   },
   {
-    title: 'Reports & Analytics',
+    title: 'Reports',
     items: [
       { name: 'Reports', href: '/reports', requiredPath: '/reports' },
+    ]
+  },
+  {
+    title: 'Support',
+    items: [
+      { name: 'Help', href: '/help', requiredPath: '/help' },
+      { name: 'Feature Requests', href: '/feature-requests', requiredPath: '/feature-requests' },
     ]
   },
   {
