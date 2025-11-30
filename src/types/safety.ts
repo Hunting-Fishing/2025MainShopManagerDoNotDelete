@@ -8,6 +8,20 @@ export type IncidentType =
   | 'equipment_failure' 
   | 'vehicle_incident'
   | 'fire'
+  | 'lifting_injury'
+  | 'ev_battery_hazard'
+  | 'high_pressure_injection'
+  | 'other';
+
+// Training types for safety acknowledgments
+export type TrainingType = 
+  | 'hazard_communication'
+  | 'ppe'
+  | 'fire_safety'
+  | 'equipment_operation'
+  | 'emergency_procedures'
+  | 'lockout_tagout'
+  | 'confined_space'
   | 'other';
 
 export type IncidentSeverity = 'minor' | 'moderate' | 'serious' | 'critical';
@@ -233,8 +247,54 @@ export const INCIDENT_TYPE_LABELS: Record<IncidentType, string> = {
   equipment_failure: 'Equipment Failure',
   vehicle_incident: 'Vehicle Incident',
   fire: 'Fire',
+  lifting_injury: 'Lifting Injury',
+  ev_battery_hazard: 'EV Battery Hazard',
+  high_pressure_injection: 'High Pressure Injection',
   other: 'Other'
 };
+
+export const TRAINING_TYPE_LABELS: Record<TrainingType, string> = {
+  hazard_communication: 'Hazard Communication (HazCom)',
+  ppe: 'Personal Protective Equipment',
+  fire_safety: 'Fire Safety',
+  equipment_operation: 'Equipment Operation',
+  emergency_procedures: 'Emergency Procedures',
+  lockout_tagout: 'Lockout/Tagout (LOTO)',
+  confined_space: 'Confined Space Entry',
+  other: 'Other'
+};
+
+// Safety schedule types
+export interface SafetySchedule {
+  id: string;
+  shop_id: string;
+  schedule_name: string;
+  schedule_type: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
+  is_enabled: boolean;
+  last_completed_date?: string;
+  next_due_date: string;
+  assigned_to?: string;
+  reminder_days_before: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Training acknowledgment
+export interface TrainingAcknowledgment {
+  id: string;
+  shop_id: string;
+  staff_id: string;
+  document_id?: string;
+  training_topic: string;
+  training_type: TrainingType;
+  acknowledged_at: string;
+  expiry_date?: string;
+  signature?: string;
+  notes?: string;
+  created_at: string;
+}
 
 export const SEVERITY_LABELS: Record<IncidentSeverity, string> = {
   minor: 'Minor',
