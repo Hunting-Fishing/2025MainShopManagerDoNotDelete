@@ -41,7 +41,12 @@ import {
   Gauge,
   TrendingDown,
   Smartphone,
-  GraduationCap
+  GraduationCap,
+  AlertTriangle,
+  ClipboardCheck,
+  Award,
+  CalendarClock,
+  HardHat
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -248,6 +253,68 @@ export const navigation: NavigationSection[] = [
         icon: AlertCircle,
         description: 'Track maintenance requests',
         permissionModule: 'maintenance_requests',
+      },
+    ],
+  },
+  {
+    title: 'Safety & Compliance',
+    icon: HardHat,
+    items: [
+      {
+        title: 'Safety Dashboard',
+        href: '/safety',
+        icon: Shield,
+        description: 'Safety overview & metrics',
+        permissionModule: 'safety',
+      },
+      {
+        title: 'Incidents',
+        href: '/safety/incidents',
+        icon: AlertTriangle,
+        description: 'Report and track incidents',
+        permissionModule: 'safety',
+      },
+      {
+        title: 'Daily Inspections',
+        href: '/safety/inspections',
+        icon: ClipboardCheck,
+        description: 'Shop safety inspections',
+        permissionModule: 'safety',
+      },
+      {
+        title: 'DVIR Reports',
+        href: '/safety/dvir',
+        icon: Truck,
+        description: 'Vehicle inspection reports',
+        permissionModule: 'safety',
+      },
+      {
+        title: 'Lift Inspections',
+        href: '/safety/equipment',
+        icon: Wrench,
+        description: 'Equipment safety checks',
+        permissionModule: 'safety',
+      },
+      {
+        title: 'Certifications',
+        href: '/safety/certifications',
+        icon: Award,
+        description: 'Staff certifications & training',
+        permissionModule: 'safety',
+      },
+      {
+        title: 'Safety Documents',
+        href: '/safety/documents',
+        icon: FileText,
+        description: 'SDS, procedures, manuals',
+        permissionModule: 'safety',
+      },
+      {
+        title: 'Schedules & Reminders',
+        href: '/safety/schedules',
+        icon: CalendarClock,
+        description: 'Safety compliance schedules',
+        permissionModule: 'safety',
       },
     ],
   },
