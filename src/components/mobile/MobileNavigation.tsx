@@ -19,7 +19,11 @@ import {
   BarChart3,
   X,
   ChevronRight,
-  CalendarDays
+  CalendarDays,
+  Shield,
+  AlertTriangle,
+  ClipboardCheck,
+  Award
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -125,6 +129,17 @@ export function MobileNavigation() {
       items: [
         { id: 'chat', label: 'Team Chat', icon: MessageSquare, path: '/chat', description: 'Internal messaging' },
         { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications', description: 'View all notifications' },
+      ]
+    },
+    {
+      title: 'Safety & Compliance',
+      items: [
+        { id: 'safety', label: 'Safety Dashboard', icon: Shield, path: '/safety', description: 'Safety overview' },
+        { id: 'safety-incidents', label: 'Incidents', icon: AlertTriangle, path: '/safety/incidents', description: 'Report & track incidents' },
+        { id: 'safety-inspections', label: 'Daily Inspections', icon: ClipboardCheck, path: '/safety/inspections', description: 'Shop safety inspections' },
+        { id: 'safety-dvir', label: 'DVIR Reports', icon: Truck, path: '/safety/dvir', description: 'Vehicle inspection reports' },
+        { id: 'safety-equipment', label: 'Lift Inspections', icon: Package, path: '/safety/equipment', description: 'Equipment safety checks' },
+        { id: 'safety-certifications', label: 'Certifications', icon: Award, path: '/safety/certifications', description: 'Staff certifications' },
       ]
     },
     {
