@@ -1,11 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSafetyReminders } from '@/hooks/useSafetyReminders';
+import { useSafetySchedules, CreateScheduleData } from '@/hooks/useSafetySchedules';
 import { 
   CalendarClock, 
   Bell, 
@@ -16,7 +28,10 @@ import {
   Shield,
   Wrench,
   FileCheck,
-  Award
+  Award,
+  Plus,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, differenceInDays } from 'date-fns';
@@ -47,19 +62,52 @@ const priorityColors: Record<string, string> = {
 export default function SafetySchedules() {
   const navigate = useNavigate();
   const { 
-    loading, 
+    loading: remindersLoading, 
     reminders, 
-    schedules,
     getOverdueReminders,
     getDueTodayReminders,
     getUpcomingReminders,
     getCriticalReminders
   } = useSafetyReminders();
 
+  const {
+    loading: schedulesLoading,
+    schedules,
+    toggleSchedule,
+    markCompleted,
+    createSchedule,
+    deleteSchedule
+  } = useSafetySchedules();
+
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [addingSchedule, setAddingSchedule] = useState(false);
+  const [newSchedule, setNewSchedule] = useState<CreateScheduleData>({
+    schedule_name: '',
+    schedule_type: 'daily_inspection',
+    frequency: 'daily',
+    next_due_date: new Date().toISOString().split('T')[0]
+  });
+
+  const loading = remindersLoading || schedulesLoading;
   const overdue = getOverdueReminders();
   const dueToday = getDueTodayReminders();
   const upcoming = getUpcomingReminders();
   const critical = getCriticalReminders();
+
+  const handleAddSchedule = async () => {
+    if (!newSchedule.schedule_name) return;
+    
+    setAddingSchedule(true);
+    await createSchedule(newSchedule);
+    setAddingSchedule(false);
+    setShowAddDialog(false);
+    setNewSchedule({
+      schedule_name: '',
+      schedule_type: 'daily_inspection',
+      frequency: 'daily',
+      next_due_date: new Date().toISOString().split('T')[0]
+    });
+  };
 
   if (loading) {
     return (
@@ -165,7 +213,7 @@ export default function SafetySchedules() {
               Active Reminders ({reminders.length})
             </TabsTrigger>
             <TabsTrigger value="schedules">
-              Inspection Schedules
+              Inspection Schedules ({schedules.length})
             </TabsTrigger>
           </TabsList>
 
@@ -234,31 +282,69 @@ export default function SafetySchedules() {
 
           <TabsContent value="schedules" className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Inspection Schedules</CardTitle>
-                <CardDescription>
-                  Configure recurring safety inspection schedules
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Inspection Schedules</CardTitle>
+                  <CardDescription>
+                    Configure recurring safety inspection schedules
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setShowAddDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Schedule
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {schedules.map((schedule) => (
-                    <div 
-                      key={schedule.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-4">
-                        <Switch checked={schedule.enabled} />
-                        <div>
-                          <p className="font-medium">{schedule.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {frequencyLabels[schedule.frequency]} • Next: {format(new Date(schedule.nextDue), 'MMM d, yyyy')}
-                          </p>
+                  {schedules.map((schedule) => {
+                    const isDue = new Date(schedule.next_due_date) <= new Date();
+                    
+                    return (
+                      <div 
+                        key={schedule.id}
+                        className={`flex items-center justify-between p-4 border rounded-lg ${
+                          isDue && schedule.is_enabled ? 'border-amber-300 bg-amber-50 dark:bg-amber-950/20' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <Switch 
+                            checked={schedule.is_enabled} 
+                            onCheckedChange={(checked) => toggleSchedule(schedule.id, checked)}
+                          />
+                          <div>
+                            <p className="font-medium">{schedule.schedule_name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {frequencyLabels[schedule.frequency]} • Next: {format(new Date(schedule.next_due_date), 'MMM d, yyyy')}
+                              {schedule.last_completed_date && (
+                                <span className="ml-2">
+                                  • Last: {format(new Date(schedule.last_completed_date), 'MMM d')}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{frequencyLabels[schedule.frequency]}</Badge>
+                          {isDue && schedule.is_enabled && (
+                            <Button 
+                              size="sm" 
+                              onClick={() => markCompleted(schedule.id)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Complete
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteSchedule(schedule.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
                         </div>
                       </div>
-                      <Badge variant="outline">{frequencyLabels[schedule.frequency]}</Badge>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -290,6 +376,91 @@ export default function SafetySchedules() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Add Schedule Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Schedule</DialogTitle>
+            <DialogDescription>
+              Create a new recurring safety schedule
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="schedule_name">Schedule Name *</Label>
+              <Input
+                id="schedule_name"
+                value={newSchedule.schedule_name}
+                onChange={(e) => setNewSchedule(prev => ({ ...prev, schedule_name: e.target.value }))}
+                placeholder="e.g., Weekly Fire Extinguisher Check"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Schedule Type</Label>
+                <Select
+                  value={newSchedule.schedule_type}
+                  onValueChange={(v) => setNewSchedule(prev => ({ ...prev, schedule_type: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily_inspection">Daily Inspection</SelectItem>
+                    <SelectItem value="lift_inspection">Lift/Equipment Inspection</SelectItem>
+                    <SelectItem value="safety_meeting">Safety Meeting</SelectItem>
+                    <SelectItem value="training">Training</SelectItem>
+                    <SelectItem value="fire_safety">Fire Safety</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Frequency</Label>
+                <Select
+                  value={newSchedule.frequency}
+                  onValueChange={(v) => setNewSchedule(prev => ({ ...prev, frequency: v as any }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                    <SelectItem value="annual">Annual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="next_due_date">Next Due Date</Label>
+              <Input
+                id="next_due_date"
+                type="date"
+                value={newSchedule.next_due_date}
+                onChange={(e) => setNewSchedule(prev => ({ ...prev, next_due_date: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddSchedule} disabled={addingSchedule || !newSchedule.schedule_name}>
+              {addingSchedule && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Add Schedule
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

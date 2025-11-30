@@ -17966,6 +17966,112 @@ export type Database = {
           },
         ]
       }
+      safety_schedules: {
+        Row: {
+          assigned_to: string | null
+          created_at: string | null
+          frequency: string
+          id: string
+          is_enabled: boolean | null
+          last_completed_date: string | null
+          next_due_date: string
+          notes: string | null
+          reminder_days_before: number | null
+          schedule_name: string
+          schedule_type: string
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string | null
+          frequency: string
+          id?: string
+          is_enabled?: boolean | null
+          last_completed_date?: string | null
+          next_due_date: string
+          notes?: string | null
+          reminder_days_before?: number | null
+          schedule_name: string
+          schedule_type: string
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string | null
+          frequency?: string
+          id?: string
+          is_enabled?: boolean | null
+          last_completed_date?: string | null
+          next_due_date?: string
+          notes?: string | null
+          reminder_days_before?: number | null
+          schedule_name?: string
+          schedule_type?: string
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_schedules_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_training_acknowledgments: {
+        Row: {
+          acknowledged_at: string | null
+          created_at: string | null
+          document_id: string | null
+          expiry_date: string | null
+          id: string
+          notes: string | null
+          shop_id: string
+          signature: string | null
+          staff_id: string
+          training_topic: string
+          training_type: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          shop_id: string
+          signature?: string | null
+          staff_id: string
+          training_topic: string
+          training_type: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          shop_id?: string
+          signature?: string | null
+          staff_id?: string
+          training_topic?: string
+          training_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_training_acknowledgments_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_searches: {
         Row: {
           created_at: string | null

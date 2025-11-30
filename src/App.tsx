@@ -90,6 +90,7 @@ import SafetyInspections from '@/pages/SafetyInspections';
 import SafetyInspectionNew from '@/pages/SafetyInspectionNew';
 import SafetyDVIR from '@/pages/SafetyDVIR';
 import SafetyDVIRNew from '@/pages/SafetyDVIRNew';
+import SafetyDVIRDetails from '@/pages/SafetyDVIRDetails';
 import SafetyLiftInspections from '@/pages/SafetyLiftInspections';
 import SafetyLiftInspectionNew from '@/pages/SafetyLiftInspectionNew';
 import SafetyDocuments from '@/pages/SafetyDocuments';
@@ -531,6 +532,11 @@ function App() {
                   <Route path="/safety/dvir/new" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <SafetyDVIRNew />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/dvir/:id" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyDVIRDetails />
                     </ProtectedRoute>
                   } />
                   <Route path="/safety/equipment" element={

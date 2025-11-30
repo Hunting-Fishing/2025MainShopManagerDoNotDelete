@@ -1,15 +1,16 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useDVIR } from '@/hooks/useDVIR';
-import { Truck, Plus, CheckCircle, XCircle, Wrench } from 'lucide-react';
+import { Truck, Plus, CheckCircle, XCircle, Wrench, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 
 export default function SafetyDVIR() {
+  const navigate = useNavigate();
   const { loading, dvirReports } = useDVIR();
 
   return (
@@ -53,7 +54,11 @@ export default function SafetyDVIR() {
         ) : (
           <div className="space-y-4">
             {dvirReports.map((report) => (
-              <Card key={report.id}>
+              <Card 
+                key={report.id} 
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => navigate(`/safety/dvir/${report.id}`)}
+              >
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -79,6 +84,7 @@ export default function SafetyDVIR() {
                       <Badge variant={report.vehicle_safe_to_operate ? 'default' : 'destructive'}>
                         {report.vehicle_safe_to_operate ? 'Safe' : 'Not Safe'}
                       </Badge>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
                 </CardContent>
