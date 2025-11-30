@@ -29,24 +29,33 @@ interface TrainingAcknowledgmentDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   staffOptions: { id: string; name: string }[];
+  preSelectedStaffId?: string;
 }
 
 export function TrainingAcknowledgmentDialog({
   open,
   onOpenChange,
   onSuccess,
-  staffOptions
+  staffOptions,
+  preSelectedStaffId
 }: TrainingAcknowledgmentDialogProps) {
   const { toast } = useToast();
   const { shopId } = useShopId();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    staff_id: '',
+    staff_id: preSelectedStaffId || '',
     training_type: '' as TrainingType | '',
     training_topic: '',
     expiry_date: '',
     notes: ''
   });
+
+  // Update staff_id when preSelectedStaffId changes
+  React.useEffect(() => {
+    if (preSelectedStaffId) {
+      setFormData(prev => ({ ...prev, staff_id: preSelectedStaffId }));
+    }
+  }, [preSelectedStaffId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

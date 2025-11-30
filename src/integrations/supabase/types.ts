@@ -9857,6 +9857,59 @@ export type Database = {
           },
         ]
       }
+      inspection_assignments: {
+        Row: {
+          assignment_date: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          inspection_type: string
+          is_completed: boolean | null
+          notes: string | null
+          schedule_id: string | null
+          shift: string | null
+          shop_id: string
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_date: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          inspection_type: string
+          is_completed?: boolean | null
+          notes?: string | null
+          schedule_id?: string | null
+          shift?: string | null
+          shop_id: string
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_date?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          inspection_type?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          schedule_id?: string | null
+          shift?: string | null
+          shop_id?: string
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_assignments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "safety_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_analytics: {
         Row: {
           created_at: string | null
@@ -17970,47 +18023,62 @@ export type Database = {
         Row: {
           assigned_to: string | null
           created_at: string | null
+          equipment_id: string | null
           frequency: string
           id: string
           is_enabled: boolean | null
           last_completed_date: string | null
+          last_mileage: number | null
+          mileage_interval: number | null
           next_due_date: string
+          next_mileage: number | null
           notes: string | null
           reminder_days_before: number | null
           schedule_name: string
           schedule_type: string
           shop_id: string
           updated_at: string | null
+          vehicle_id: string | null
         }
         Insert: {
           assigned_to?: string | null
           created_at?: string | null
+          equipment_id?: string | null
           frequency: string
           id?: string
           is_enabled?: boolean | null
           last_completed_date?: string | null
+          last_mileage?: number | null
+          mileage_interval?: number | null
           next_due_date: string
+          next_mileage?: number | null
           notes?: string | null
           reminder_days_before?: number | null
           schedule_name: string
           schedule_type: string
           shop_id: string
           updated_at?: string | null
+          vehicle_id?: string | null
         }
         Update: {
           assigned_to?: string | null
           created_at?: string | null
+          equipment_id?: string | null
           frequency?: string
           id?: string
           is_enabled?: boolean | null
           last_completed_date?: string | null
+          last_mileage?: number | null
+          mileage_interval?: number | null
           next_due_date?: string
+          next_mileage?: number | null
           notes?: string | null
           reminder_days_before?: number | null
           schedule_name?: string
           schedule_type?: string
           shop_id?: string
           updated_at?: string | null
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -18018,6 +18086,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_schedules_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]

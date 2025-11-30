@@ -11,3 +11,4 @@ export { FlaggedVehiclesCard } from './FlaggedVehiclesCard';
 export { CriticalDefectsCard } from './CriticalDefectsCard';
 export { AddCertificateDialog } from './AddCertificateDialog';
 export { TrainingAcknowledgmentDialog } from './TrainingAcknowledgmentDialog';
+export { TrainingAcknowledgmentsCard } from './TrainingAcknowledgmentsCard';

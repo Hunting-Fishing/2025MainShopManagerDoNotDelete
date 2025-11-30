@@ -15,10 +15,30 @@ export interface CreateScheduleData {
 }
 
 const DEFAULT_SCHEDULES: Omit<CreateScheduleData, 'next_due_date'>[] = [
+  // Daily checks
   { schedule_name: 'Daily Shop Inspection', schedule_type: 'daily_inspection', frequency: 'daily', reminder_days_before: 0 },
-  { schedule_name: 'Weekly Lift/Hoist Check', schedule_type: 'lift_inspection', frequency: 'weekly', reminder_days_before: 1 },
-  { schedule_name: 'Monthly Safety Review', schedule_type: 'safety_meeting', frequency: 'monthly', reminder_days_before: 3 },
-  { schedule_name: 'Quarterly Safety Training', schedule_type: 'training', frequency: 'quarterly', reminder_days_before: 7 }
+  { schedule_name: 'Daily Lift Pre-Use Check', schedule_type: 'lift_daily', frequency: 'daily', reminder_days_before: 0 },
+  
+  // Weekly checks
+  { schedule_name: 'Weekly Lift/Hoist Inspection', schedule_type: 'lift_inspection', frequency: 'weekly', reminder_days_before: 1 },
+  { schedule_name: 'Weekly Eye Wash Station Check', schedule_type: 'eyewash_check', frequency: 'weekly', reminder_days_before: 1 },
+  { schedule_name: 'Weekly First Aid Kit Check', schedule_type: 'first_aid', frequency: 'weekly', reminder_days_before: 1 },
+  
+  // Monthly checks
+  { schedule_name: 'Monthly Fire Extinguisher Inspection', schedule_type: 'fire_extinguisher', frequency: 'monthly', reminder_days_before: 3 },
+  { schedule_name: 'Monthly Safety Review Meeting', schedule_type: 'safety_meeting', frequency: 'monthly', reminder_days_before: 3 },
+  { schedule_name: 'Monthly Spill Kit Inspection', schedule_type: 'spill_kit', frequency: 'monthly', reminder_days_before: 3 },
+  { schedule_name: 'Monthly Emergency Exit Inspection', schedule_type: 'emergency_exit', frequency: 'monthly', reminder_days_before: 3 },
+  
+  // Quarterly checks
+  { schedule_name: 'Quarterly Safety Training', schedule_type: 'training', frequency: 'quarterly', reminder_days_before: 7 },
+  { schedule_name: 'Quarterly PPE Inventory', schedule_type: 'ppe_inventory', frequency: 'quarterly', reminder_days_before: 7 },
+  { schedule_name: 'Quarterly Ventilation System Check', schedule_type: 'ventilation', frequency: 'quarterly', reminder_days_before: 7 },
+  
+  // Annual checks
+  { schedule_name: 'Annual Lift Certification', schedule_type: 'lift_certification', frequency: 'annual', reminder_days_before: 30 },
+  { schedule_name: 'Annual Fire Suppression Inspection', schedule_type: 'fire_suppression', frequency: 'annual', reminder_days_before: 30 },
+  { schedule_name: 'Annual OSHA Compliance Review', schedule_type: 'osha_review', frequency: 'annual', reminder_days_before: 30 }
 ];
 
 export function useSafetySchedules() {

@@ -158,37 +158,97 @@ export function useSafetyReminders() {
 
       setReminders(allReminders);
 
-      // Set default schedules
-      setSchedules([
-        {
-          id: 'daily-shop',
-          name: 'Daily Shop Inspection',
-          frequency: 'daily',
-          nextDue: todayStr,
-          enabled: true
-        },
-        {
-          id: 'weekly-lift',
-          name: 'Weekly Lift/Hoist Check',
-          frequency: 'weekly',
-          nextDue: addDays(today, 7 - today.getDay()).toISOString().split('T')[0],
-          enabled: true
-        },
-        {
-          id: 'monthly-safety',
-          name: 'Monthly Safety Review',
-          frequency: 'monthly',
-          nextDue: format(new Date(today.getFullYear(), today.getMonth() + 1, 1), 'yyyy-MM-dd'),
-          enabled: true
-        },
-        {
-          id: 'quarterly-training',
-          name: 'Quarterly Safety Training',
-          frequency: 'quarterly',
-          nextDue: format(new Date(today.getFullYear(), Math.ceil((today.getMonth() + 1) / 3) * 3, 1), 'yyyy-MM-dd'),
-          enabled: true
+      // Fetch vehicle maintenance reminders
+      const { data: vehicleSchedules } = await (supabase
+        .from('safety_schedules' as any)
+        .select('*, vehicle:vehicles(make, model, license_plate)')
+        .eq('shop_id', shopId)
+        .not('vehicle_id', 'is', null) as any);
+
+      vehicleSchedules?.forEach((schedule: any) => {
+        const dueDate = new Date(schedule.next_due_date);
+        const daysUntil = differenceInDays(dueDate, today);
+        
+        let priority: SafetyReminder['priority'] = 'low';
+        let status: SafetyReminder['status'] = 'upcoming';
+        
+        if (isPast(dueDate)) {
+          priority = 'high';
+          status = 'overdue';
+        } else if (isToday(dueDate)) {
+          priority = 'high';
+          status = 'due_today';
+        } else if (daysUntil <= 7) {
+          priority = 'medium';
         }
-      ]);
+
+        const vehicleInfo = schedule.vehicle ? 
+          `${schedule.vehicle.make} ${schedule.vehicle.model} (${schedule.vehicle.license_plate})` : 
+          'Unknown Vehicle';
+
+        allReminders.push({
+          id: `vehicle-maint-${schedule.id}`,
+          type: 'equipment',
+          title: `Vehicle Maintenance: ${schedule.schedule_name}`,
+          description: `${vehicleInfo} - Due ${format(dueDate, 'MMM d, yyyy')}`,
+          dueDate: schedule.next_due_date,
+          priority,
+          status,
+          entityId: schedule.vehicle_id,
+          entityType: 'vehicle'
+        });
+      });
+
+      // Fetch database schedules
+      const { data: dbSchedules } = await (supabase
+        .from('safety_schedules' as any)
+        .select('*')
+        .eq('shop_id', shopId)
+        .eq('is_enabled', true)
+        .is('vehicle_id', null) as any);
+
+      if (dbSchedules && dbSchedules.length > 0) {
+        setSchedules(dbSchedules.map((s: any) => ({
+          id: s.id,
+          name: s.schedule_name,
+          frequency: s.frequency,
+          lastCompleted: s.last_completed_date,
+          nextDue: s.next_due_date,
+          enabled: s.is_enabled
+        })));
+      } else {
+        // Fallback to defaults
+        setSchedules([
+          {
+            id: 'daily-shop',
+            name: 'Daily Shop Inspection',
+            frequency: 'daily',
+            nextDue: todayStr,
+            enabled: true
+          },
+          {
+            id: 'weekly-lift',
+            name: 'Weekly Lift/Hoist Check',
+            frequency: 'weekly',
+            nextDue: addDays(today, 7 - today.getDay()).toISOString().split('T')[0],
+            enabled: true
+          },
+          {
+            id: 'monthly-safety',
+            name: 'Monthly Safety Review',
+            frequency: 'monthly',
+            nextDue: format(new Date(today.getFullYear(), today.getMonth() + 1, 1), 'yyyy-MM-dd'),
+            enabled: true
+          },
+          {
+            id: 'quarterly-training',
+            name: 'Quarterly Safety Training',
+            frequency: 'quarterly',
+            nextDue: format(new Date(today.getFullYear(), Math.ceil((today.getMonth() + 1) / 3) * 3, 1), 'yyyy-MM-dd'),
+            enabled: true
+          }
+        ]);
+      }
 
     } catch (error) {
       console.error('Error fetching safety reminders:', error);
