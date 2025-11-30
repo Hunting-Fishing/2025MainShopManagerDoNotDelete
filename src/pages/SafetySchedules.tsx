@@ -18,6 +18,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSafetyReminders } from '@/hooks/useSafetyReminders';
 import { useSafetySchedules, CreateScheduleData } from '@/hooks/useSafetySchedules';
+import { useInspectionAssignments } from '@/hooks/useInspectionAssignments';
+import { AssignInspectionDialog } from '@/components/safety/AssignInspectionDialog';
+import { CreateVehicleScheduleDialog } from '@/components/safety/CreateVehicleScheduleDialog';
 import { 
   CalendarClock, 
   Bell, 
@@ -31,7 +34,10 @@ import {
   Award,
   Plus,
   Trash2,
-  Loader2
+  Loader2,
+  UserPlus,
+  Car,
+  Users
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, differenceInDays } from 'date-fns';
@@ -49,7 +55,8 @@ const typeIcons: Record<string, React.ElementType> = {
   inspection: FileCheck,
   certification: Award,
   dvir: Wrench,
-  equipment: Shield
+  equipment: Shield,
+  vehicle_maintenance: Car
 };
 
 const priorityColors: Record<string, string> = {
@@ -76,10 +83,22 @@ export default function SafetySchedules() {
     toggleSchedule,
     markCompleted,
     createSchedule,
-    deleteSchedule
+    deleteSchedule,
+    refetch: refetchSchedules
   } = useSafetySchedules();
 
+  const {
+    loading: assignmentsLoading,
+    assignments,
+    getTodayAssignments,
+    getMissedAssignments,
+    refetch: refetchAssignments
+  } = useInspectionAssignments();
+
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [showVehicleDialog, setShowVehicleDialog] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<{ id: string; name: string } | null>(null);
   const [addingSchedule, setAddingSchedule] = useState(false);
   const [newSchedule, setNewSchedule] = useState<CreateScheduleData>({
     schedule_name: '',
@@ -88,11 +107,17 @@ export default function SafetySchedules() {
     next_due_date: new Date().toISOString().split('T')[0]
   });
 
-  const loading = remindersLoading || schedulesLoading;
+  const loading = remindersLoading || schedulesLoading || assignmentsLoading;
   const overdue = getOverdueReminders();
   const dueToday = getDueTodayReminders();
   const upcoming = getUpcomingReminders();
   const critical = getCriticalReminders();
+  const todayAssignments = getTodayAssignments();
+  const missedAssignments = getMissedAssignments();
+
+  // Filter vehicle maintenance schedules
+  const vehicleSchedules = schedules.filter(s => s.schedule_type === 'vehicle_maintenance' || s.vehicle_id);
+  const regularSchedules = schedules.filter(s => s.schedule_type !== 'vehicle_maintenance' && !s.vehicle_id);
 
   const handleAddSchedule = async () => {
     if (!newSchedule.schedule_name) return;
@@ -107,6 +132,11 @@ export default function SafetySchedules() {
       frequency: 'daily',
       next_due_date: new Date().toISOString().split('T')[0]
     });
+  };
+
+  const handleAssignStaff = (scheduleId: string, scheduleName: string) => {
+    setSelectedSchedule({ id: scheduleId, name: scheduleName });
+    setShowAssignDialog(true);
   };
 
   if (loading) {
@@ -147,7 +177,7 @@ export default function SafetySchedules() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-5">
           <Card className={overdue.length > 0 ? 'border-red-300' : ''}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -188,6 +218,20 @@ export default function SafetySchedules() {
             </CardContent>
           </Card>
 
+          <Card className={missedAssignments.length > 0 ? 'border-red-300' : 'border-green-300'}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Missed</p>
+                  <p className={`text-2xl font-bold ${missedAssignments.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {missedAssignments.length}
+                  </p>
+                </div>
+                <Users className={`h-8 w-8 ${missedAssignments.length > 0 ? 'text-red-500' : 'text-green-500'}`} />
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className={critical.length > 0 ? 'border-red-300' : 'border-green-300'}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -213,7 +257,15 @@ export default function SafetySchedules() {
               Active Reminders ({reminders.length})
             </TabsTrigger>
             <TabsTrigger value="schedules">
-              Inspection Schedules ({schedules.length})
+              Inspection Schedules ({regularSchedules.length})
+            </TabsTrigger>
+            <TabsTrigger value="vehicle">
+              <Car className="h-4 w-4 mr-1" />
+              Vehicle Maintenance ({vehicleSchedules.length})
+            </TabsTrigger>
+            <TabsTrigger value="assignments">
+              <Users className="h-4 w-4 mr-1" />
+              Staff Assignments ({todayAssignments.length})
             </TabsTrigger>
           </TabsList>
 
@@ -289,14 +341,20 @@ export default function SafetySchedules() {
                     Configure recurring safety inspection schedules
                   </CardDescription>
                 </div>
-                <Button onClick={() => setShowAddDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Schedule
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowAssignDialog(true)}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Assign Staff
+                  </Button>
+                  <Button onClick={() => setShowAddDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Schedule
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {schedules.map((schedule) => {
+                  {regularSchedules.map((schedule) => {
                     const isDue = new Date(schedule.next_due_date) <= new Date();
                     
                     return (
@@ -325,6 +383,13 @@ export default function SafetySchedules() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">{frequencyLabels[schedule.frequency]}</Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAssignStaff(schedule.id, schedule.schedule_name)}
+                          >
+                            <UserPlus className="h-4 w-4" />
+                          </Button>
                           {isDue && schedule.is_enabled && (
                             <Button 
                               size="sm" 
@@ -373,6 +438,160 @@ export default function SafetySchedules() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="vehicle" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Car className="h-5 w-5" />
+                    Vehicle Maintenance Schedules
+                  </CardTitle>
+                  <CardDescription>
+                    Time and mileage-based maintenance tracking for fleet vehicles
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setShowVehicleDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Vehicle Schedule
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {vehicleSchedules.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Car className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No vehicle maintenance schedules</p>
+                    <Button variant="outline" className="mt-4" onClick={() => setShowVehicleDialog(true)}>
+                      Create First Schedule
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {vehicleSchedules.map((schedule) => {
+                      const isDue = new Date(schedule.next_due_date) <= new Date();
+                      
+                      return (
+                        <div 
+                          key={schedule.id}
+                          className={`flex items-center justify-between p-4 border rounded-lg ${
+                            isDue && schedule.is_enabled ? 'border-amber-300 bg-amber-50 dark:bg-amber-950/20' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                              <Car className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{schedule.schedule_name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {frequencyLabels[schedule.frequency]} • Due: {format(new Date(schedule.next_due_date), 'MMM d, yyyy')}
+                                {schedule.mileage_interval && schedule.next_mileage && (
+                                  <span className="ml-2">
+                                    • or at {schedule.next_mileage.toLocaleString()} mi
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {schedule.mileage_interval && (
+                              <Badge variant="outline">Every {schedule.mileage_interval.toLocaleString()} mi</Badge>
+                            )}
+                            {isDue && schedule.is_enabled && (
+                              <Button 
+                                size="sm" 
+                                onClick={() => markCompleted(schedule.id)}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Complete
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteSchedule(schedule.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="assignments" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Staff Inspection Assignments
+                  </CardTitle>
+                  <CardDescription>
+                    Track who is responsible for each inspection
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setShowAssignDialog(true)}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  New Assignment
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {/* Today's Assignments */}
+                <div className="mb-6">
+                  <h3 className="font-medium mb-3">Today's Assignments</h3>
+                  {todayAssignments.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No assignments for today</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {todayAssignments.map((assignment) => (
+                        <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <p className="font-medium">{assignment.inspection_type}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {assignment.staff?.first_name} {assignment.staff?.last_name} • {assignment.shift} shift
+                            </p>
+                          </div>
+                          {assignment.is_completed ? (
+                            <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                          ) : (
+                            <Badge variant="secondary">Pending</Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Missed Assignments */}
+                {missedAssignments.length > 0 && (
+                  <div>
+                    <h3 className="font-medium mb-3 text-red-600 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Missed Assignments
+                    </h3>
+                    <div className="space-y-2">
+                      {missedAssignments.map((assignment) => (
+                        <div key={assignment.id} className="flex items-center justify-between p-3 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/10">
+                          <div>
+                            <p className="font-medium">{assignment.inspection_type}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {assignment.staff?.first_name} {assignment.staff?.last_name} • {format(new Date(assignment.assignment_date), 'MMM d')}
+                            </p>
+                          </div>
+                          <Badge variant="destructive">Missed</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
@@ -456,11 +675,30 @@ export default function SafetySchedules() {
             </Button>
             <Button onClick={handleAddSchedule} disabled={addingSchedule || !newSchedule.schedule_name}>
               {addingSchedule && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Add Schedule
+              Create Schedule
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Staff Assignment Dialog */}
+      <AssignInspectionDialog
+        open={showAssignDialog}
+        onOpenChange={setShowAssignDialog}
+        scheduleId={selectedSchedule?.id}
+        scheduleName={selectedSchedule?.name}
+        onAssigned={() => {
+          refetchAssignments();
+          setSelectedSchedule(null);
+        }}
+      />
+
+      {/* Vehicle Schedule Dialog */}
+      <CreateVehicleScheduleDialog
+        open={showVehicleDialog}
+        onOpenChange={setShowVehicleDialog}
+        onCreated={refetchSchedules}
+      />
     </>
   );
 }

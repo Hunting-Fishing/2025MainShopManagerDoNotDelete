@@ -12,3 +12,6 @@ export { CriticalDefectsCard } from './CriticalDefectsCard';
 export { AddCertificateDialog } from './AddCertificateDialog';
 export { TrainingAcknowledgmentDialog } from './TrainingAcknowledgmentDialog';
 export { TrainingAcknowledgmentsCard } from './TrainingAcknowledgmentsCard';
+export { AssignInspectionDialog } from './AssignInspectionDialog';
+export { CreateVehicleScheduleDialog } from './CreateVehicleScheduleDialog';
+export { TrainingComplianceMatrix } from './TrainingComplianceMatrix';

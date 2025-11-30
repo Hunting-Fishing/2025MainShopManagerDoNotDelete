@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useSafetyCertifications } from '@/hooks/useSafetyCertifications';
 import { AddCertificateDialog } from '@/components/safety/AddCertificateDialog';
 import { TrainingAcknowledgmentsCard } from '@/components/safety/TrainingAcknowledgmentsCard';
+import { TrainingComplianceMatrix } from '@/components/safety/TrainingComplianceMatrix';
 import { 
   Award, 
   AlertTriangle, 
@@ -18,7 +19,8 @@ import {
   User,
   Calendar,
   RefreshCw,
-  GraduationCap
+  GraduationCap,
+  LayoutGrid
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, differenceInDays } from 'date-fns';
@@ -40,7 +42,7 @@ export default function SafetyCertifications() {
   const [searchQuery, setSearchQuery] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [staffOptions, setStaffOptions] = useState<{ id: string; name: string }[]>([]);
-  const [viewMode, setViewMode] = useState<'list' | 'by-staff'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'by-staff' | 'compliance'>('list');
 
   const expired = getExpiredCertificates();
   const expiring = getExpiringCertificates(30);
@@ -209,6 +211,14 @@ export default function SafetyCertifications() {
               <User className="h-4 w-4 mr-2" />
               By Staff
             </Button>
+            <Button 
+              variant={viewMode === 'compliance' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('compliance')}
+            >
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Compliance Matrix
+            </Button>
           </div>
         </div>
 
@@ -274,7 +284,7 @@ export default function SafetyCertifications() {
               )}
             </TabsContent>
           </Tabs>
-        ) : (
+        ) : viewMode === 'by-staff' ? (
           <div className="space-y-6">
             {Object.entries(groupByStaff(filteredAll)).map(([staffName, certs]) => (
               <Card key={staffName}>
@@ -295,6 +305,8 @@ export default function SafetyCertifications() {
               </Card>
             ))}
           </div>
+        ) : (
+          <TrainingComplianceMatrix />
         )}
 
         {/* Training Records Section */}
