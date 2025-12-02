@@ -93,7 +93,7 @@ export function useFormSubmissions(workOrderId?: string, customerId?: string, ve
             description
           )
         `)
-        .order('submitted_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (workOrderId) {
         query = query.eq('work_order_id', workOrderId);
