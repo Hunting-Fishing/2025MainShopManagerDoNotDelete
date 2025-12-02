@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Hash, Calendar, CheckSquare, List, Mail, Phone, Upload } from 'lucide-react';
+import { FileText, Hash, Calendar, CheckSquare, List, Mail, Phone, Upload, PenTool } from 'lucide-react';
 import { FormFieldType } from '@/types/formBuilder';
 
 const fieldTypes: { type: FormFieldType; label: string; icon: React.ReactNode }[] = [
@@ -14,6 +14,7 @@ const fieldTypes: { type: FormFieldType; label: string; icon: React.ReactNode }[
   { type: 'radio', label: 'Radio', icon: <CheckSquare className="h-4 w-4" /> },
   { type: 'checkbox', label: 'Checkbox', icon: <CheckSquare className="h-4 w-4" /> },
   { type: 'file', label: 'File Upload', icon: <Upload className="h-4 w-4" /> },
+  { type: 'signature', label: 'Signature', icon: <PenTool className="h-4 w-4" /> },
 ];
 
 export const FieldTypePalette: React.FC = () => {

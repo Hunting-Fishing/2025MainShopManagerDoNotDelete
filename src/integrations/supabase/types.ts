@@ -26814,6 +26814,7 @@ export type Database = {
         | "email"
         | "phone"
         | "file"
+        | "signature"
       job_line_status:
         | "pending"
         | "signed-onto-task"
@@ -27073,6 +27074,7 @@ export const Constants = {
         "email",
         "phone",
         "file",
+        "signature",
       ],
       job_line_status: [
         "pending",
