@@ -59,7 +59,7 @@ import Security from '@/pages/Security';
 import Profile from '@/pages/Profile';
 import Notifications from '@/pages/Notifications';
 import Reports from '@/pages/Reports';
-import FormBuilder from '@/pages/FormBuilder';
+import Forms from '@/pages/Forms';
 import QuoteDetails from '@/pages/QuoteDetails';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import RepairPlanDetails from '@/pages/RepairPlanDetails';
@@ -450,7 +450,7 @@ function App() {
                   } />
                   <Route path="/forms" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
-                      <FormBuilder />
+                      <Forms />
                     </ProtectedRoute>
                   } />
                   

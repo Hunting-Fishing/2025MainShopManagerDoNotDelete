@@ -1,7 +1,20 @@
+// Form Category type
+export interface FormCategory {
+  id: string;
+  name: string;
+  description?: string;
+  created_at: string;
+  count?: number;
+}
 
-import { FormCategory } from './form';
+export interface FormCategoryResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
 
-export type FormFieldType = 
+export type FormFieldType =
   | 'text'
   | 'textarea'
   | 'number'

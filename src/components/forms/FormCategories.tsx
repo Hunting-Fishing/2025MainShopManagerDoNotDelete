@@ -20,7 +20,7 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { FormCategory } from "@/types/form";
+import { FormCategory } from "@/types/formBuilder";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getFormCategories, createFormCategory, updateFormCategory, deleteFormCategory } from "@/services/formCategoryService";
