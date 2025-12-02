@@ -13,6 +13,7 @@ import { WorkOrderActivityTab } from './WorkOrderActivityTab';
 import { WorkOrderNotifications } from '../notifications/WorkOrderNotifications';
 import { WorkOrderDocuments } from '../documents/WorkOrderDocuments';
 import { WorkOrderFormsTab } from '../forms/WorkOrderFormsTab';
+import { WorkOrderInspectionsTab } from '../inspections/WorkOrderInspectionsTab';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -46,7 +47,7 @@ export function WorkOrderDetailsTabs({
   return (
     <div className="modern-tabs-container">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="modern-tabs-list grid w-full grid-cols-7 max-w-6xl mx-auto">
+        <TabsList className="modern-tabs-list grid w-full grid-cols-8 max-w-6xl mx-auto">
           <TabsTrigger value="overview" className="modern-tab-trigger">
             Overview
           </TabsTrigger>
@@ -55,6 +56,9 @@ export function WorkOrderDetailsTabs({
           </TabsTrigger>
           <TabsTrigger value="labor" className="modern-tab-trigger">
             Labor
+          </TabsTrigger>
+          <TabsTrigger value="inspections" className="modern-tab-trigger">
+            Inspections
           </TabsTrigger>
           <TabsTrigger value="forms" className="modern-tab-trigger">
             Forms
@@ -107,6 +111,12 @@ export function WorkOrderDetailsTabs({
               onJobLinesChange={handleJobLinesChange}
               isEditMode={isEditMode}
             />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="inspections" className="mt-8 fade-in">
+          <div className="work-order-content-section">
+            <WorkOrderInspectionsTab workOrder={workOrder} />
           </div>
         </TabsContent>
 

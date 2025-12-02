@@ -46,7 +46,9 @@ import {
   ClipboardCheck,
   Award,
   CalendarClock,
-  HardHat
+  HardHat,
+  Ship,
+  Forklift
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -307,6 +309,20 @@ export const navigation: NavigationSection[] = [
         href: '/safety/dvir',
         icon: Truck,
         description: 'Vehicle inspection reports',
+        permissionModule: 'safety',
+      },
+      {
+        title: 'Vessel Inspections',
+        href: '/safety/vessels',
+        icon: Ship,
+        description: 'Marine vessel pre-trip inspections',
+        permissionModule: 'safety',
+      },
+      {
+        title: 'Forklift Inspections',
+        href: '/safety/equipment/forklift',
+        icon: Forklift,
+        description: 'Forklift safety inspections',
         permissionModule: 'safety',
       },
       {

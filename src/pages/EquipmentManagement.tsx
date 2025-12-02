@@ -15,7 +15,8 @@ import { EquipmentPartsHistory } from '@/components/equipment/EquipmentPartsHist
 import { FuturePlanningList } from '@/components/equipment/FuturePlanningList';
 import { EquipmentManualsLibrary } from '@/components/equipment/EquipmentManualsLibrary';
 import { EnginesList } from '@/components/equipment/EnginesList';
-import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck, Package, Lightbulb, BookOpen, Fuel } from 'lucide-react';
+import { EquipmentInspectionsTab } from '@/components/equipment/EquipmentInspectionsTab';
+import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck, Package, Lightbulb, BookOpen, Fuel, ClipboardCheck } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEquipment } from '@/hooks/useEquipment';
@@ -28,6 +29,7 @@ export default function EquipmentManagement() {
 
   const tabs = [
     { value: 'equipment', label: 'Equipment', icon: Wrench },
+    { value: 'inspections', label: 'Inspections', icon: ClipboardCheck },
     { value: 'engines', label: 'Engines', icon: Fuel },
     { value: 'manuals', label: 'Manuals', icon: BookOpen },
     { value: 'future-planning', label: 'Future Planning', icon: Lightbulb },
@@ -84,7 +86,7 @@ export default function EquipmentManagement() {
             </SelectContent>
           </Select>
         ) : (
-          <TabsList className="grid w-full grid-cols-11 gap-1">
+          <TabsList className="grid w-full grid-cols-12 gap-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -99,6 +101,10 @@ export default function EquipmentManagement() {
 
         <TabsContent value="equipment" className="space-y-4">
           <EquipmentList equipment={equipment} loading={isLoading} onUpdate={refetch} />
+        </TabsContent>
+
+        <TabsContent value="inspections" className="space-y-4">
+          <EquipmentInspectionsTab />
         </TabsContent>
 
         <TabsContent value="engines" className="space-y-4">
