@@ -15,9 +15,10 @@ import { useMaintenanceIntervalTracking } from '@/hooks/useMaintenanceIntervalTr
 import { supabase } from '@/integrations/supabase/client';
 import { ForkliftInspectionItem } from './ForkliftInspectionItem';
 import { ServiceIntervalCountdown } from './ServiceIntervalCountdown';
+import { CompactSignaturePad } from '@/components/signature/CompactSignaturePad';
 import {
   Loader2, Forklift, Gauge, Armchair, Siren, Eye, Wrench, 
-  Battery, Flame, Droplets, Wind, Shield, AlertTriangle
+  Battery, Flame, Droplets, Wind, Shield, AlertTriangle, PenTool
 } from 'lucide-react';
 
 interface EquipmentAsset {
@@ -67,13 +68,35 @@ export function ForkliftInspectionForm() {
     current_hours: string;
     general_notes: string;
     safe_to_operate: boolean;
+    signature_data: string | null;
     [key: string]: any;
   }>({
     inspector_name: '',
     current_hours: '',
     general_notes: '',
     safe_to_operate: true,
+    signature_data: null,
   });
+
+  // Auto-fill inspector name from current user profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
+
+      if (profile && (profile.first_name || profile.last_name)) {
+        const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+        setFormData(prev => ({ ...prev, inspector_name: fullName }));
+      }
+    };
+    fetchUserProfile();
+  }, []);
 
   // Initialize all inspection items with 'good' status
   const [itemStatuses, setItemStatuses] = useState<Record<string, ItemStatus>>(() => {
@@ -166,6 +189,15 @@ export function ForkliftInspectionForm() {
       return;
     }
 
+    if (!formData.signature_data) {
+      toast({
+        variant: 'destructive',
+        title: 'Signature Required',
+        description: 'Please sign the inspection form',
+      });
+      return;
+    }
+
     const inspectionData: Record<string, any> = {
       equipment_id: selectedEquipmentId,
       inspector_name: formData.inspector_name,
@@ -173,6 +205,7 @@ export function ForkliftInspectionForm() {
       general_notes: formData.general_notes || null,
       safe_to_operate: formData.safe_to_operate,
       overall_status: calculateOverallStatus(),
+      signature_data: formData.signature_data,
     };
 
     // Add all status and notes fields
@@ -346,6 +379,19 @@ export function ForkliftInspectionForm() {
               placeholder="Additional observations..."
               value={formData.general_notes}
               onChange={(e) => setFormData(prev => ({ ...prev, general_notes: e.target.value }))}
+            />
+          </div>
+
+          {/* Signature Section */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <PenTool className="h-4 w-4" />
+              Inspector Signature *
+            </Label>
+            <CompactSignaturePad
+              value={formData.signature_data || undefined}
+              onChange={(sig) => setFormData(prev => ({ ...prev, signature_data: sig }))}
+              required
             />
           </div>
 
