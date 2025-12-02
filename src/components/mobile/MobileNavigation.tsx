@@ -182,6 +182,8 @@ export function MobileNavigation() {
         { id: 'safety-incidents', label: 'Incidents', icon: AlertTriangle, path: '/safety/incidents', description: 'Report & track incidents' },
         { id: 'safety-inspections', label: 'Daily Inspections', icon: ClipboardCheck, path: '/safety/inspections', description: 'Shop safety inspections' },
         { id: 'safety-dvir', label: 'DVIR Reports', icon: Truck, path: '/safety/dvir', description: 'Vehicle inspection reports' },
+        { id: 'safety-vessels', label: 'Vessel Inspections', icon: Ship, path: '/safety/vessels', description: 'Marine vessel pre-trip checks' },
+        { id: 'safety-forklift', label: 'Forklift Inspections', icon: HardHat, path: '/safety/equipment/forklift', description: 'Daily forklift safety checks' },
         { id: 'safety-equipment', label: 'Lift Inspections', icon: Package, path: '/safety/equipment', description: 'Equipment safety checks' },
         { id: 'safety-certifications', label: 'Certifications', icon: Award, path: '/safety/certifications', description: 'Staff certifications' },
       ]
