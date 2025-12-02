@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,10 @@ interface EquipmentAsset {
   equipment_type: string;
 }
 
+interface ForkliftInspectionFormProps {
+  workOrderId?: string;
+}
+
 const INSPECTION_ITEMS = [
   { key: 'seat', label: 'Seat', icon: <Armchair className="h-4 w-4" /> },
   { key: 'seatbelt', label: 'Seatbelt', icon: <Shield className="h-4 w-4" /> },
@@ -52,10 +56,15 @@ const INSPECTION_ITEMS = [
   { key: 'fire_extinguisher', label: 'Fire Extinguisher', icon: <Flame className="h-4 w-4" /> },
 ];
 
-export function ForkliftInspectionForm() {
+export function ForkliftInspectionForm({ workOrderId: propWorkOrderId }: ForkliftInspectionFormProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { createInspection, loading: submitting } = useForkliftInspections();
+  
+  // Get workOrderId from props or URL query params
+  const workOrderId = propWorkOrderId || searchParams.get('workOrderId') || undefined;
+  const equipmentIdFromUrl = searchParams.get('equipmentId');
   
   const [equipment, setEquipment] = useState<EquipmentAsset[]>([]);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState('');
@@ -142,6 +151,16 @@ export function ForkliftInspectionForm() {
     fetchEquipment();
   }, []);
 
+  // Auto-select equipment from URL params
+  useEffect(() => {
+    if (equipmentIdFromUrl && equipment.length > 0 && !selectedEquipmentId) {
+      const matchingEquipment = equipment.find(e => e.id === equipmentIdFromUrl);
+      if (matchingEquipment) {
+        setSelectedEquipmentId(equipmentIdFromUrl);
+      }
+    }
+  }, [equipmentIdFromUrl, equipment, selectedEquipmentId]);
+
   // Update current hours when equipment selected
   useEffect(() => {
     if (selectedEquipmentId) {
@@ -206,6 +225,7 @@ export function ForkliftInspectionForm() {
       safe_to_operate: formData.safe_to_operate,
       overall_status: calculateOverallStatus(),
       signature_data: formData.signature_data,
+      work_order_id: workOrderId || null,
     };
 
     // Add all status and notes fields
@@ -228,6 +248,22 @@ export function ForkliftInspectionForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Work Order Link Badge */}
+      {workOrderId && (
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="border-blue-500 text-blue-600">
+                Linked to Work Order
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                This inspection will be associated with work order #{workOrderId.slice(0, 8)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Equipment Selection */}
       <Card>
         <CardHeader>

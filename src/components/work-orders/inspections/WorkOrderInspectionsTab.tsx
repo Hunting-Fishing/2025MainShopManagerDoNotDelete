@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Ship, Forklift, Truck, ClipboardCheck, Plus, ExternalLink, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Ship, Forklift, Truck, ClipboardCheck, ExternalLink, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -16,53 +16,65 @@ interface WorkOrderInspectionsTabProps {
 export function WorkOrderInspectionsTab({ workOrder }: WorkOrderInspectionsTabProps) {
   const navigate = useNavigate();
 
-  // Fetch related inspections for the equipment/vehicle
+  // Get the equipment/vehicle ID - check both vehicle_id and any linked equipment
+  const equipmentId = workOrder.vehicle_id;
+
+  // Fetch related vessel inspections - check both vessel_id and equipment_id columns
   const { data: vesselInspections, isLoading: vesselLoading } = useQuery({
-    queryKey: ['work-order-vessel-inspections', workOrder.vehicle_id],
+    queryKey: ['work-order-vessel-inspections', equipmentId, workOrder.id],
     queryFn: async () => {
-      if (!workOrder.vehicle_id) return [];
+      if (!equipmentId) return [];
+      
+      // Query by vessel_id OR by work_order_id if linked
       const { data, error } = await supabase
         .from('vessel_inspections')
         .select('*')
-        .eq('vessel_id', workOrder.vehicle_id)
+        .or(`vessel_id.eq.${equipmentId},work_order_id.eq.${workOrder.id}`)
         .order('inspection_date', { ascending: false })
         .limit(5);
+      
       if (error) throw error;
       return data || [];
     },
-    enabled: !!workOrder.vehicle_id
+    enabled: !!equipmentId || !!workOrder.id
   });
 
+  // Fetch forklift inspections - check equipment_id
   const { data: forkliftInspections, isLoading: forkliftLoading } = useQuery({
-    queryKey: ['work-order-forklift-inspections', workOrder.vehicle_id],
+    queryKey: ['work-order-forklift-inspections', equipmentId, workOrder.id],
     queryFn: async () => {
-      if (!workOrder.vehicle_id) return [];
+      if (!equipmentId) return [];
+      
       const { data, error } = await supabase
         .from('forklift_inspections')
         .select('*')
-        .eq('equipment_id', workOrder.vehicle_id)
+        .or(`equipment_id.eq.${equipmentId},work_order_id.eq.${workOrder.id}`)
         .order('inspection_date', { ascending: false })
         .limit(5);
+      
       if (error) throw error;
       return data || [];
     },
-    enabled: !!workOrder.vehicle_id
+    enabled: !!equipmentId || !!workOrder.id
   });
 
+  // Fetch DVIR reports
   const { data: dvirReports, isLoading: dvirLoading } = useQuery({
-    queryKey: ['work-order-dvir', workOrder.vehicle_id],
+    queryKey: ['work-order-dvir', equipmentId, workOrder.id],
     queryFn: async () => {
-      if (!workOrder.vehicle_id) return [];
+      if (!equipmentId) return [];
+      
       const { data, error } = await supabase
         .from('dvir_reports')
         .select('*')
-        .eq('vehicle_id', workOrder.vehicle_id)
+        .or(`vehicle_id.eq.${equipmentId},work_order_id.eq.${workOrder.id}`)
         .order('inspection_date', { ascending: false })
         .limit(5);
+      
       if (error) throw error;
       return data || [];
     },
-    enabled: !!workOrder.vehicle_id
+    enabled: !!equipmentId || !!workOrder.id
   });
 
   const inspectionTypes = [
@@ -72,7 +84,7 @@ export function WorkOrderInspectionsTab({ workOrder }: WorkOrderInspectionsTabPr
       icon: Ship,
       color: 'text-cyan-500',
       bgColor: 'bg-cyan-500/10',
-      href: '/safety/vessels',
+      href: `/safety/vessels?workOrderId=${workOrder.id}${equipmentId ? `&equipmentId=${equipmentId}` : ''}`,
       inspections: vesselInspections || [],
       loading: vesselLoading
     },
@@ -82,7 +94,7 @@ export function WorkOrderInspectionsTab({ workOrder }: WorkOrderInspectionsTabPr
       icon: Forklift,
       color: 'text-orange-500',
       bgColor: 'bg-orange-500/10',
-      href: '/safety/equipment/forklift',
+      href: `/safety/equipment/forklift?workOrderId=${workOrder.id}${equipmentId ? `&equipmentId=${equipmentId}` : ''}`,
       inspections: forkliftInspections || [],
       loading: forkliftLoading
     },
@@ -92,7 +104,7 @@ export function WorkOrderInspectionsTab({ workOrder }: WorkOrderInspectionsTabPr
       icon: Truck,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
-      href: '/safety/dvir/new',
+      href: `/safety/dvir/new?workOrderId=${workOrder.id}${equipmentId ? `&vehicleId=${equipmentId}` : ''}`,
       inspections: dvirReports || [],
       loading: dvirLoading
     }
@@ -111,8 +123,27 @@ export function WorkOrderInspectionsTab({ workOrder }: WorkOrderInspectionsTabPr
     return <Badge variant="outline" className="text-emerald-500 border-emerald-500 flex items-center gap-1"><CheckCircle className="h-3 w-3" />Pass</Badge>;
   };
 
+  const hasNoEquipment = !equipmentId;
+
   return (
     <div className="space-y-6">
+      {/* No Equipment Warning */}
+      {hasNoEquipment && (
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-900/20">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-700 dark:text-amber-400">No Equipment Linked</p>
+                <p className="text-sm text-amber-600 dark:text-amber-500">
+                  This work order doesn't have a vehicle or equipment linked. Inspections created will only be associated by work order ID.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -147,7 +178,7 @@ export function WorkOrderInspectionsTab({ workOrder }: WorkOrderInspectionsTabPr
         <CardHeader>
           <CardTitle>Related Inspection History</CardTitle>
           <CardDescription>
-            Recent inspections for this equipment/vehicle
+            Recent inspections for this equipment/vehicle or work order
           </CardDescription>
         </CardHeader>
         <CardContent>

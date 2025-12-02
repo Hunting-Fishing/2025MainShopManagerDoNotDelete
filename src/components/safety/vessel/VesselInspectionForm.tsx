@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { Ship, Anchor, Flame, Settings, Clock, Save, Loader2, User, PenTool } from 'lucide-react';
+import { Ship, Anchor, Flame, Settings, Clock, Save, Loader2, User, PenTool, History } from 'lucide-react';
 import { VesselSelector } from './VesselSelector';
 import { VesselEquipmentTree } from './VesselEquipmentTree';
 import { VesselInspectionItem } from './VesselInspectionItem';
@@ -26,7 +27,18 @@ const EQUIPMENT_ICONS: Record<string, React.ReactNode> = {
   life_raft: <Ship className="h-5 w-5" />,
 };
 
-export function VesselInspectionForm() {
+interface VesselInspectionFormProps {
+  workOrderId?: string;
+}
+
+export function VesselInspectionForm({ workOrderId: propWorkOrderId }: VesselInspectionFormProps) {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
+  // Get workOrderId from props or URL query params
+  const workOrderId = propWorkOrderId || searchParams.get('workOrderId') || undefined;
+  const equipmentIdFromUrl = searchParams.get('equipmentId');
+
   const {
     vessels,
     vesselsLoading,
@@ -49,6 +61,28 @@ export function VesselInspectionForm() {
   const [inspectionItems, setInspectionItems] = useState<Map<string, InspectionItemStatus>>(new Map());
 
   const selectedVessel = vessels?.find(v => v.id === selectedVesselId);
+
+  // Build previous inspection status lookup from lastInspection
+  const previousStatusMap = React.useMemo(() => {
+    const map = new Map<string, string>();
+    if (lastInspection?.vessel_inspection_items) {
+      (lastInspection.vessel_inspection_items as any[]).forEach((item: any) => {
+        const key = `${item.equipment_id || 'vessel'}-${item.item_key}`;
+        map.set(key, item.status);
+      });
+    }
+    return map;
+  }, [lastInspection]);
+
+  // Auto-select vessel from URL params
+  useEffect(() => {
+    if (equipmentIdFromUrl && vessels && !selectedVesselId) {
+      const matchingVessel = vessels.find(v => v.id === equipmentIdFromUrl);
+      if (matchingVessel) {
+        setSelectedVesselId(equipmentIdFromUrl);
+      }
+    }
+  }, [equipmentIdFromUrl, vessels, selectedVesselId, setSelectedVesselId]);
 
   // Auto-fill inspector name from current user profile
   useEffect(() => {
@@ -195,6 +229,7 @@ export function VesselInspectionForm() {
       safeToOperate,
       generalNotes,
       signatureData,
+      workOrderId,
       items
     });
 
@@ -235,11 +270,40 @@ export function VesselInspectionForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Vessel Selection */}
+      {/* Work Order Link Badge */}
+      {workOrderId && (
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="border-blue-500 text-blue-600">
+                Linked to Work Order
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                This inspection will be associated with work order #{workOrderId.slice(0, 8)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Ship className="h-5 w-5" />
-            Vessel Selection
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Ship className="h-5 w-5" />
+              Vessel Selection
+            </div>
+            {selectedVesselId && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/safety/vessels/${selectedVesselId}/history`)}
+              >
+                <History className="h-4 w-4 mr-1" />
+                View History
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -320,18 +384,22 @@ export function VesselInspectionForm() {
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="space-y-3 pt-2">
-                        {items.map(item => (
-                          <VesselInspectionItem
-                            key={item.key}
-                            itemKey={item.itemKey}
-                            itemName={item.itemName}
-                            category={item.category}
-                            status={item.status}
-                            notes={item.notes}
-                            onStatusChange={(status) => updateItemStatus(item.key, status)}
-                            onNotesChange={(notes) => updateItemNotes(item.key, notes)}
-                          />
-                        ))}
+                        {items.map(item => {
+                          const prevKey = `vessel-${item.itemKey}`;
+                          return (
+                            <VesselInspectionItem
+                              key={item.key}
+                              itemKey={item.itemKey}
+                              itemName={item.itemName}
+                              category={item.category}
+                              status={item.status}
+                              notes={item.notes}
+                              previousStatus={previousStatusMap.get(prevKey)}
+                              onStatusChange={(status) => updateItemStatus(item.key, status)}
+                              onNotesChange={(notes) => updateItemNotes(item.key, notes)}
+                            />
+                          );
+                        })}
                       </AccordionContent>
                     </AccordionItem>
                   ))}
@@ -390,18 +458,22 @@ export function VesselInspectionForm() {
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
-                          {categoryItems.map(item => (
-                            <VesselInspectionItem
-                              key={item.key}
-                              itemKey={item.itemKey}
-                              itemName={item.itemName}
-                              category={item.category}
-                              status={item.status}
-                              notes={item.notes}
-                              onStatusChange={(status) => updateItemStatus(item.key, status)}
-                              onNotesChange={(notes) => updateItemNotes(item.key, notes)}
-                            />
-                          ))}
+                          {categoryItems.map(item => {
+                            const prevKey = `${item.equipmentId}-${item.itemKey}`;
+                            return (
+                              <VesselInspectionItem
+                                key={item.key}
+                                itemKey={item.itemKey}
+                                itemName={item.itemName}
+                                category={item.category}
+                                status={item.status}
+                                notes={item.notes}
+                                previousStatus={previousStatusMap.get(prevKey)}
+                                onStatusChange={(status) => updateItemStatus(item.key, status)}
+                                onNotesChange={(notes) => updateItemNotes(item.key, notes)}
+                              />
+                            );
+                          })}
                         </AccordionContent>
                       </AccordionItem>
                     ))}

@@ -44,6 +44,7 @@ export interface VesselInspectionData {
   safeToOperate: boolean;
   generalNotes: string;
   signatureData?: string;
+  workOrderId?: string;
   items: InspectionItemStatus[];
 }
 
@@ -200,7 +201,8 @@ export function useVesselInspection() {
           general_notes: data.generalNotes,
           signature_data: data.signatureData,
           has_concerns: hasConcerns,
-          concern_routed_to: concernRoutedTo
+          concern_routed_to: concernRoutedTo,
+          work_order_id: data.workOrderId || null
         })
         .select()
         .single();
