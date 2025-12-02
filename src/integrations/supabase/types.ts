@@ -8025,6 +8025,207 @@ export type Database = {
           },
         ]
       }
+      forklift_inspections: {
+        Row: {
+          air_filter_notes: string | null
+          air_filter_status: Database["public"]["Enums"]["forklift_item_status"]
+          backup_alarm_notes: string | null
+          backup_alarm_status: Database["public"]["Enums"]["forklift_item_status"]
+          battery_notes: string | null
+          battery_status: Database["public"]["Enums"]["forklift_item_status"]
+          brakes_notes: string | null
+          brakes_status: Database["public"]["Enums"]["forklift_item_status"]
+          chains_notes: string | null
+          chains_status: Database["public"]["Enums"]["forklift_item_status"]
+          concern_acknowledged: boolean | null
+          concern_acknowledged_at: string | null
+          concern_resolution: string | null
+          concern_resolved_at: string | null
+          concern_routed_to: string | null
+          coolant_notes: string | null
+          coolant_status: Database["public"]["Enums"]["forklift_item_status"]
+          created_at: string | null
+          current_hours: number
+          engine_oil_notes: string | null
+          engine_oil_status: Database["public"]["Enums"]["forklift_item_status"]
+          equipment_id: string | null
+          fire_extinguisher_notes: string | null
+          fire_extinguisher_status: Database["public"]["Enums"]["forklift_item_status"]
+          forks_notes: string | null
+          forks_status: Database["public"]["Enums"]["forklift_item_status"]
+          general_notes: string | null
+          has_concerns: boolean
+          horn_notes: string | null
+          horn_status: Database["public"]["Enums"]["forklift_item_status"]
+          hydraulic_leaks_notes: string | null
+          hydraulic_leaks_status: Database["public"]["Enums"]["forklift_item_status"]
+          id: string
+          inspection_date: string
+          inspector_id: string | null
+          inspector_name: string
+          lights_notes: string | null
+          lights_status: Database["public"]["Enums"]["forklift_item_status"]
+          mast_notes: string | null
+          mast_status: Database["public"]["Enums"]["forklift_item_status"]
+          mirrors_notes: string | null
+          mirrors_status: Database["public"]["Enums"]["forklift_item_status"]
+          overall_status: string
+          parking_brake_notes: string | null
+          parking_brake_status: Database["public"]["Enums"]["forklift_item_status"]
+          propane_tank_notes: string | null
+          propane_tank_status: Database["public"]["Enums"]["forklift_item_status"]
+          safe_to_operate: boolean
+          seat_notes: string | null
+          seat_status: Database["public"]["Enums"]["forklift_item_status"]
+          seatbelt_notes: string | null
+          seatbelt_status: Database["public"]["Enums"]["forklift_item_status"]
+          shop_id: string | null
+          signature_data: string | null
+          steering_notes: string | null
+          steering_status: Database["public"]["Enums"]["forklift_item_status"]
+          tires_notes: string | null
+          tires_status: Database["public"]["Enums"]["forklift_item_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          air_filter_notes?: string | null
+          air_filter_status?: Database["public"]["Enums"]["forklift_item_status"]
+          backup_alarm_notes?: string | null
+          backup_alarm_status?: Database["public"]["Enums"]["forklift_item_status"]
+          battery_notes?: string | null
+          battery_status?: Database["public"]["Enums"]["forklift_item_status"]
+          brakes_notes?: string | null
+          brakes_status?: Database["public"]["Enums"]["forklift_item_status"]
+          chains_notes?: string | null
+          chains_status?: Database["public"]["Enums"]["forklift_item_status"]
+          concern_acknowledged?: boolean | null
+          concern_acknowledged_at?: string | null
+          concern_resolution?: string | null
+          concern_resolved_at?: string | null
+          concern_routed_to?: string | null
+          coolant_notes?: string | null
+          coolant_status?: Database["public"]["Enums"]["forklift_item_status"]
+          created_at?: string | null
+          current_hours: number
+          engine_oil_notes?: string | null
+          engine_oil_status?: Database["public"]["Enums"]["forklift_item_status"]
+          equipment_id?: string | null
+          fire_extinguisher_notes?: string | null
+          fire_extinguisher_status?: Database["public"]["Enums"]["forklift_item_status"]
+          forks_notes?: string | null
+          forks_status?: Database["public"]["Enums"]["forklift_item_status"]
+          general_notes?: string | null
+          has_concerns?: boolean
+          horn_notes?: string | null
+          horn_status?: Database["public"]["Enums"]["forklift_item_status"]
+          hydraulic_leaks_notes?: string | null
+          hydraulic_leaks_status?: Database["public"]["Enums"]["forklift_item_status"]
+          id?: string
+          inspection_date?: string
+          inspector_id?: string | null
+          inspector_name: string
+          lights_notes?: string | null
+          lights_status?: Database["public"]["Enums"]["forklift_item_status"]
+          mast_notes?: string | null
+          mast_status?: Database["public"]["Enums"]["forklift_item_status"]
+          mirrors_notes?: string | null
+          mirrors_status?: Database["public"]["Enums"]["forklift_item_status"]
+          overall_status?: string
+          parking_brake_notes?: string | null
+          parking_brake_status?: Database["public"]["Enums"]["forklift_item_status"]
+          propane_tank_notes?: string | null
+          propane_tank_status?: Database["public"]["Enums"]["forklift_item_status"]
+          safe_to_operate?: boolean
+          seat_notes?: string | null
+          seat_status?: Database["public"]["Enums"]["forklift_item_status"]
+          seatbelt_notes?: string | null
+          seatbelt_status?: Database["public"]["Enums"]["forklift_item_status"]
+          shop_id?: string | null
+          signature_data?: string | null
+          steering_notes?: string | null
+          steering_status?: Database["public"]["Enums"]["forklift_item_status"]
+          tires_notes?: string | null
+          tires_status?: Database["public"]["Enums"]["forklift_item_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          air_filter_notes?: string | null
+          air_filter_status?: Database["public"]["Enums"]["forklift_item_status"]
+          backup_alarm_notes?: string | null
+          backup_alarm_status?: Database["public"]["Enums"]["forklift_item_status"]
+          battery_notes?: string | null
+          battery_status?: Database["public"]["Enums"]["forklift_item_status"]
+          brakes_notes?: string | null
+          brakes_status?: Database["public"]["Enums"]["forklift_item_status"]
+          chains_notes?: string | null
+          chains_status?: Database["public"]["Enums"]["forklift_item_status"]
+          concern_acknowledged?: boolean | null
+          concern_acknowledged_at?: string | null
+          concern_resolution?: string | null
+          concern_resolved_at?: string | null
+          concern_routed_to?: string | null
+          coolant_notes?: string | null
+          coolant_status?: Database["public"]["Enums"]["forklift_item_status"]
+          created_at?: string | null
+          current_hours?: number
+          engine_oil_notes?: string | null
+          engine_oil_status?: Database["public"]["Enums"]["forklift_item_status"]
+          equipment_id?: string | null
+          fire_extinguisher_notes?: string | null
+          fire_extinguisher_status?: Database["public"]["Enums"]["forklift_item_status"]
+          forks_notes?: string | null
+          forks_status?: Database["public"]["Enums"]["forklift_item_status"]
+          general_notes?: string | null
+          has_concerns?: boolean
+          horn_notes?: string | null
+          horn_status?: Database["public"]["Enums"]["forklift_item_status"]
+          hydraulic_leaks_notes?: string | null
+          hydraulic_leaks_status?: Database["public"]["Enums"]["forklift_item_status"]
+          id?: string
+          inspection_date?: string
+          inspector_id?: string | null
+          inspector_name?: string
+          lights_notes?: string | null
+          lights_status?: Database["public"]["Enums"]["forklift_item_status"]
+          mast_notes?: string | null
+          mast_status?: Database["public"]["Enums"]["forklift_item_status"]
+          mirrors_notes?: string | null
+          mirrors_status?: Database["public"]["Enums"]["forklift_item_status"]
+          overall_status?: string
+          parking_brake_notes?: string | null
+          parking_brake_status?: Database["public"]["Enums"]["forklift_item_status"]
+          propane_tank_notes?: string | null
+          propane_tank_status?: Database["public"]["Enums"]["forklift_item_status"]
+          safe_to_operate?: boolean
+          seat_notes?: string | null
+          seat_status?: Database["public"]["Enums"]["forklift_item_status"]
+          seatbelt_notes?: string | null
+          seatbelt_status?: Database["public"]["Enums"]["forklift_item_status"]
+          shop_id?: string | null
+          signature_data?: string | null
+          steering_notes?: string | null
+          steering_status?: Database["public"]["Enums"]["forklift_item_status"]
+          tires_notes?: string | null
+          tires_status?: Database["public"]["Enums"]["forklift_item_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forklift_inspections_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forklift_inspections_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_categories: {
         Row: {
           count: number | null
@@ -9906,6 +10107,53 @@ export type Database = {
             columns: ["schedule_id"]
             isOneToOne: false
             referencedRelation: "safety_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_concern_roles: {
+        Row: {
+          assigned_user_id: string | null
+          created_at: string | null
+          equipment_types: string[] | null
+          id: string
+          is_active: boolean | null
+          priority_level: number | null
+          role_description: string | null
+          role_name: string
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_user_id?: string | null
+          created_at?: string | null
+          equipment_types?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          priority_level?: number | null
+          role_description?: string | null
+          role_name: string
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_user_id?: string | null
+          created_at?: string | null
+          equipment_types?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          priority_level?: number | null
+          role_description?: string | null
+          role_name?: string
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_concern_roles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -26803,6 +27051,7 @@ export type Database = {
         | "safety_harness"
         | "life_jacket"
         | "immersion_suit"
+      forklift_item_status: "good" | "attention" | "bad"
       form_field_type:
         | "text"
         | "textarea"
@@ -27063,6 +27312,7 @@ export const Constants = {
         "life_jacket",
         "immersion_suit",
       ],
+      forklift_item_status: ["good", "attention", "bad"],
       form_field_type: [
         "text",
         "textarea",
