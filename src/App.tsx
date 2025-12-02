@@ -94,6 +94,7 @@ import SafetyDVIRNew from '@/pages/SafetyDVIRNew';
 import SafetyDVIRDetails from '@/pages/SafetyDVIRDetails';
 import SafetyLiftInspections from '@/pages/SafetyLiftInspections';
 import ForkliftInspection from '@/pages/ForkliftInspection';
+import VesselInspection from '@/pages/VesselInspection';
 import SafetyLiftInspectionNew from '@/pages/SafetyLiftInspectionNew';
 import SafetyDocuments from '@/pages/SafetyDocuments';
 import SafetyCertifications from '@/pages/SafetyCertifications';
@@ -567,6 +568,11 @@ function App() {
                   <Route path="/safety/equipment/forklift" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <ForkliftInspection />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/vessels" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'boat_manager', 'mechanic_manager', 'owner']}>
+                      <VesselInspection />
                     </ProtectedRoute>
                   } />
                   <Route path="/safety/documents" element={

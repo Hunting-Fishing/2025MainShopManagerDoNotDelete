@@ -6471,6 +6471,51 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment_locations: {
+        Row: {
+          created_at: string | null
+          equipment_id: string
+          id: string
+          location_description: string | null
+          location_name: string
+          parent_equipment_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_id: string
+          id?: string
+          location_description?: string | null
+          location_name: string
+          parent_equipment_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          equipment_id?: string
+          id?: string
+          location_description?: string | null
+          location_name?: string
+          parent_equipment_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_locations_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_locations_parent_equipment_id_fkey"
+            columns: ["parent_equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_maintenance_items: {
         Row: {
           calendar_interval: number | null
@@ -23527,6 +23572,207 @@ export type Database = {
           verified_at?: string | null
         }
         Relationships: []
+      }
+      vessel_inspection_items: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          equipment_id: string | null
+          hours_at_inspection: number | null
+          id: string
+          inspection_id: string
+          item_key: string
+          item_name: string
+          location: string | null
+          notes: string | null
+          photos: string[] | null
+          status: string
+          template_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          equipment_id?: string | null
+          hours_at_inspection?: number | null
+          id?: string
+          inspection_id: string
+          item_key: string
+          item_name: string
+          location?: string | null
+          notes?: string | null
+          photos?: string[] | null
+          status: string
+          template_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          equipment_id?: string | null
+          hours_at_inspection?: number | null
+          id?: string
+          inspection_id?: string
+          item_key?: string
+          item_name?: string
+          location?: string | null
+          notes?: string | null
+          photos?: string[] | null
+          status?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vessel_inspection_items_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessel_inspection_items_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "vessel_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessel_inspection_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "vessel_inspection_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vessel_inspection_templates: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          equipment_type: string
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          item_key: string
+          item_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          equipment_type: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          item_key: string
+          item_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          equipment_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          item_key?: string
+          item_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vessel_inspections: {
+        Row: {
+          concern_acknowledged: boolean | null
+          concern_acknowledged_at: string | null
+          concern_acknowledged_by: string | null
+          created_at: string | null
+          current_hours: number | null
+          general_notes: string | null
+          has_concerns: boolean | null
+          id: string
+          inspection_date: string | null
+          inspector_id: string | null
+          inspector_name: string
+          overall_status: string | null
+          safe_to_operate: boolean | null
+          shop_id: string | null
+          signature_data: string | null
+          updated_at: string | null
+          vessel_id: string
+        }
+        Insert: {
+          concern_acknowledged?: boolean | null
+          concern_acknowledged_at?: string | null
+          concern_acknowledged_by?: string | null
+          created_at?: string | null
+          current_hours?: number | null
+          general_notes?: string | null
+          has_concerns?: boolean | null
+          id?: string
+          inspection_date?: string | null
+          inspector_id?: string | null
+          inspector_name: string
+          overall_status?: string | null
+          safe_to_operate?: boolean | null
+          shop_id?: string | null
+          signature_data?: string | null
+          updated_at?: string | null
+          vessel_id: string
+        }
+        Update: {
+          concern_acknowledged?: boolean | null
+          concern_acknowledged_at?: string | null
+          concern_acknowledged_by?: string | null
+          created_at?: string | null
+          current_hours?: number | null
+          general_notes?: string | null
+          has_concerns?: boolean | null
+          id?: string
+          inspection_date?: string | null
+          inspector_id?: string | null
+          inspector_name?: string
+          overall_status?: string | null
+          safe_to_operate?: boolean | null
+          shop_id?: string | null
+          signature_data?: string | null
+          updated_at?: string | null
+          vessel_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vessel_inspections_concern_acknowledged_by_fkey"
+            columns: ["concern_acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessel_inspections_inspector_id_fkey"
+            columns: ["inspector_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessel_inspections_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessel_inspections_vessel_id_fkey"
+            columns: ["vessel_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       volunteer_assignments: {
         Row: {
