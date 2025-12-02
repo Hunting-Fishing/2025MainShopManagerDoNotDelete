@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Gauge, Route, Fuel, Wrench, Settings, History, Clock } from 'lucide-react';
+import { Gauge, Route, Fuel, Wrench, Settings, History, Clock, ClipboardCheck } from 'lucide-react';
 import { EngineHoursTab } from '@/components/daily-logs/EngineHoursTab';
 import { TripLogsTab } from '@/components/daily-logs/TripLogsTab';
 import { FuelEntryTab } from '@/components/daily-logs/FuelEntryTab';
@@ -8,6 +8,7 @@ import { MaintenancePerformedTab } from '@/components/daily-logs/MaintenancePerf
 import { MaintenanceIntervalSetup } from '@/components/daily-logs/MaintenanceIntervalSetup';
 import { PreviousMaintenanceEntry } from '@/components/daily-logs/PreviousMaintenanceEntry';
 import { DailyTimesheetTab } from '@/components/daily-logs/DailyTimesheetTab';
+import { InspectionsQuickAccess } from '@/components/daily-logs/InspectionsQuickAccess';
 
 export default function DailyLogs() {
   const [activeTab, setActiveTab] = useState('timesheet');
@@ -22,7 +23,7 @@ export default function DailyLogs() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 md:grid-cols-7 h-auto gap-1">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 h-auto gap-1">
           <TabsTrigger 
             value="timesheet" 
             className="flex items-center gap-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -30,6 +31,14 @@ export default function DailyLogs() {
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">Timesheet</span>
             <span className="sm:hidden">Time</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="inspections" 
+            className="flex items-center gap-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            <ClipboardCheck className="h-4 w-4" />
+            <span className="hidden sm:inline">Inspections</span>
+            <span className="sm:hidden">Inspect</span>
           </TabsTrigger>
           <TabsTrigger 
             value="engine-hours" 
@@ -83,6 +92,10 @@ export default function DailyLogs() {
 
         <TabsContent value="timesheet" className="mt-4">
           <DailyTimesheetTab />
+        </TabsContent>
+
+        <TabsContent value="inspections" className="mt-4">
+          <InspectionsQuickAccess />
         </TabsContent>
 
         <TabsContent value="engine-hours" className="mt-4">

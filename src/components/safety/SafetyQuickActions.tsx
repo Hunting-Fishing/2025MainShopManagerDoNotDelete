@@ -8,7 +8,9 @@ import {
   FileText, 
   Award,
   Wrench,
-  Plus
+  Plus,
+  Ship,
+  Forklift
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,6 +24,20 @@ export function SafetyQuickActions() {
       href: '/safety/incidents/new',
       color: 'text-destructive',
       bgColor: 'bg-destructive/10 hover:bg-destructive/20'
+    },
+    {
+      label: 'Vessel Inspection',
+      icon: Ship,
+      href: '/safety/vessels',
+      color: 'text-cyan-500',
+      bgColor: 'bg-cyan-500/10 hover:bg-cyan-500/20'
+    },
+    {
+      label: 'Forklift Inspection',
+      icon: Forklift,
+      href: '/safety/equipment/forklift',
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-500/10 hover:bg-orange-500/20'
     },
     {
       label: 'Daily Inspection',
@@ -69,7 +85,7 @@ export function SafetyQuickActions() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {actions.map((action) => (
             <Button
               key={action.label}
@@ -78,7 +94,7 @@ export function SafetyQuickActions() {
               onClick={() => navigate(action.href)}
             >
               <action.icon className={`h-6 w-6 ${action.color}`} />
-              <span className="text-sm font-medium">{action.label}</span>
+              <span className="text-sm font-medium text-center">{action.label}</span>
             </Button>
           ))}
         </div>
