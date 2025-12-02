@@ -170,6 +170,22 @@ export function useVesselInspection() {
         overallStatus = 'attention';
       }
 
+      // Find concern role to route to if there are concerns (same as forklift)
+      let concernRoutedTo = null;
+      if (hasConcerns && profile?.shop_id) {
+        const { data: roles } = await supabase
+          .from('inspection_concern_roles')
+          .select('assigned_user_id')
+          .eq('shop_id', profile.shop_id)
+          .eq('is_active', true)
+          .order('priority_level', { ascending: true })
+          .limit(1);
+        
+        if (roles && roles.length > 0) {
+          concernRoutedTo = roles[0].assigned_user_id;
+        }
+      }
+
       // Create main inspection record
       const { data: inspection, error: inspectionError } = await supabase
         .from('vessel_inspections')
@@ -183,12 +199,24 @@ export function useVesselInspection() {
           safe_to_operate: data.safeToOperate,
           general_notes: data.generalNotes,
           signature_data: data.signatureData,
-          has_concerns: hasConcerns
+          has_concerns: hasConcerns,
+          concern_routed_to: concernRoutedTo
         })
         .select()
         .single();
 
       if (inspectionError) throw inspectionError;
+
+      // Update vessel's current hours (same as forklift form does)
+      if (data.currentHours !== null) {
+        await supabase
+          .from('equipment_assets')
+          .update({ 
+            current_hours: data.currentHours,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', data.vesselId);
+      }
 
       // Create inspection items
       const itemsToInsert = data.items

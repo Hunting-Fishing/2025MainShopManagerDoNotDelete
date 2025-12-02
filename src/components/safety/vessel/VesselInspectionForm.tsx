@@ -7,13 +7,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { Ship, Anchor, Flame, Settings, Clock, Save, Loader2, User } from 'lucide-react';
+import { Ship, Anchor, Flame, Settings, Clock, Save, Loader2, User, PenTool } from 'lucide-react';
 import { VesselSelector } from './VesselSelector';
 import { VesselEquipmentTree } from './VesselEquipmentTree';
 import { VesselInspectionItem } from './VesselInspectionItem';
 import { EquipmentServiceIntervals } from './EquipmentServiceIntervals';
+import { CompactSignaturePad } from '@/components/signature/CompactSignaturePad';
 import { useVesselInspection, InspectionItemStatus, VesselEquipment } from '@/hooks/useVesselInspection';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const EQUIPMENT_ICONS: Record<string, React.ReactNode> = {
   vessel: <Ship className="h-5 w-5" />,
@@ -43,9 +45,30 @@ export function VesselInspectionForm() {
   const [currentHours, setCurrentHours] = useState<string>('');
   const [safeToOperate, setSafeToOperate] = useState(false);
   const [generalNotes, setGeneralNotes] = useState('');
+  const [signatureData, setSignatureData] = useState<string | null>(null);
   const [inspectionItems, setInspectionItems] = useState<Map<string, InspectionItemStatus>>(new Map());
 
   const selectedVessel = vessels?.find(v => v.id === selectedVesselId);
+
+  // Auto-fill inspector name from current user profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
+
+      if (profile && (profile.first_name || profile.last_name)) {
+        const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+        setInspectorName(fullName);
+      }
+    };
+    fetchUserProfile();
+  }, []);
 
   // Initialize inspection items when vessel or templates change
   useEffect(() => {
@@ -132,11 +155,35 @@ export function VesselInspectionForm() {
       return;
     }
 
+    // Validate required items have a status set
+    const requiredTemplates = templates?.filter(t => t.is_required) || [];
     const items = Array.from(inspectionItems.values());
+    
+    const missingRequiredItems = requiredTemplates.filter(template => {
+      const matchingItem = items.find(item => 
+        item.templateId === template.id && item.status === null
+      );
+      return matchingItem !== undefined;
+    });
+
+    if (missingRequiredItems.length > 0) {
+      toast({ 
+        title: 'Required Items Missing', 
+        description: `Please complete all required inspection items: ${missingRequiredItems.map(t => t.item_name).join(', ')}`, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     const filledItems = items.filter(item => item.status !== null);
 
     if (filledItems.length === 0) {
       toast({ title: 'Error', description: 'Please complete at least one inspection item', variant: 'destructive' });
+      return;
+    }
+
+    if (!signatureData) {
+      toast({ title: 'Signature Required', description: 'Please sign the inspection form', variant: 'destructive' });
       return;
     }
 
@@ -147,6 +194,7 @@ export function VesselInspectionForm() {
       overallStatus: 'pending',
       safeToOperate,
       generalNotes,
+      signatureData,
       items
     });
 
@@ -154,6 +202,7 @@ export function VesselInspectionForm() {
     setInspectorName('');
     setGeneralNotes('');
     setSafeToOperate(false);
+    setSignatureData(null);
     setInspectionItems(new Map());
     setSelectedVesselId(null);
   };
@@ -395,7 +444,20 @@ export function VesselInspectionForm() {
                 />
               </div>
 
-              <Button 
+              {/* Signature Section */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <PenTool className="h-4 w-4" />
+                  Inspector Signature *
+                </Label>
+                <CompactSignaturePad
+                  value={signatureData || undefined}
+                  onChange={setSignatureData}
+                  required
+                />
+              </div>
+
+              <Button
                 type="submit" 
                 className="w-full" 
                 size="lg"
