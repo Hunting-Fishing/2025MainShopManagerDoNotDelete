@@ -4,21 +4,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Plus, X } from 'lucide-react';
-import { FormBuilderField } from '@/types/formBuilder';
+import { Trash2, Plus, X, GitBranch } from 'lucide-react';
+import { FormBuilderField, ConditionalRule } from '@/types/formBuilder';
+import { ConditionalRulesEditor } from './ConditionalRulesEditor';
 
 interface FieldEditorProps {
   field: FormBuilderField;
+  allFields?: FormBuilderField[];
   onUpdate: (updates: Partial<FormBuilderField>) => void;
   onDelete: () => void;
 }
 
 export const FieldEditor: React.FC<FieldEditorProps> = ({
   field,
+  allFields = [],
   onUpdate,
   onDelete
 }) => {
   const [newOption, setNewOption] = useState('');
+  const [showConditionsEditor, setShowConditionsEditor] = useState(false);
+
+  const handleUpdateRules = (rules: ConditionalRule[]) => {
+    onUpdate({ conditionalRules: rules });
+  };
+
+  const rulesCount = field.conditionalRules?.length || 0;
 
   const handleAddOption = () => {
     if (!newOption.trim()) return;
@@ -132,6 +142,15 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({
               <span className="text-xs text-muted-foreground">
                 Type: {field.fieldType}
               </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowConditionsEditor(true)}
+                className="h-6 text-xs"
+              >
+                <GitBranch className="h-3 w-3 mr-1" />
+                Conditions{rulesCount > 0 && ` (${rulesCount})`}
+              </Button>
             </div>
           </div>
 
@@ -139,6 +158,14 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
+
+        <ConditionalRulesEditor
+          open={showConditionsEditor}
+          onOpenChange={setShowConditionsEditor}
+          field={field}
+          allFields={allFields}
+          onUpdateRules={handleUpdateRules}
+        />
       </CardContent>
     </Card>
   );

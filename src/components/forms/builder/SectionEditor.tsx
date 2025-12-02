@@ -11,6 +11,7 @@ import { FieldEditor } from './FieldEditor';
 
 interface SectionEditorProps {
   section: FormBuilderSection;
+  allFields: FormBuilderField[];
   onUpdate: (updates: Partial<FormBuilderSection>) => void;
   onDelete: () => void;
   onAddField: (fieldType: FormFieldType) => void;
@@ -20,6 +21,7 @@ interface SectionEditorProps {
 
 export const SectionEditor: React.FC<SectionEditorProps> = ({
   section,
+  allFields,
   onUpdate,
   onDelete,
   onAddField,
@@ -102,6 +104,7 @@ export const SectionEditor: React.FC<SectionEditorProps> = ({
                 <FieldEditor
                   key={field.id}
                   field={field}
+                  allFields={allFields}
                   onUpdate={(updates) => onUpdateField(field.id, updates)}
                   onDelete={() => onDeleteField(field.id)}
                 />

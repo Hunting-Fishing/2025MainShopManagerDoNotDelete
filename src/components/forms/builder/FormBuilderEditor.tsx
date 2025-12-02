@@ -279,6 +279,7 @@ export const FormBuilderEditor: React.FC<FormBuilderEditorProps> = ({
                 <SectionEditor
                   key={section.id}
                   section={section}
+                  allFields={template.sections.flatMap(s => s.fields)}
                   onUpdate={(updates) => handleUpdateSection(section.id, updates)}
                   onDelete={() => handleDeleteSection(section.id)}
                   onAddField={(fieldType) => handleAddField(section.id, fieldType)}
