@@ -60,6 +60,7 @@ import Profile from '@/pages/Profile';
 import Notifications from '@/pages/Notifications';
 import Reports from '@/pages/Reports';
 import Forms from '@/pages/Forms';
+import FormSubmissions from '@/pages/FormSubmissions';
 import QuoteDetails from '@/pages/QuoteDetails';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import RepairPlanDetails from '@/pages/RepairPlanDetails';
@@ -451,6 +452,11 @@ function App() {
                   <Route path="/forms" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Forms />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/form-submissions" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <FormSubmissions />
                     </ProtectedRoute>
                   } />
                   
