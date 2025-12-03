@@ -280,7 +280,8 @@ export interface SafetySchedule {
   shop_id: string;
   schedule_name: string;
   schedule_type: string;
-  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
+  inspection_type?: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'hours_based';
   is_enabled: boolean;
   last_completed_date?: string;
   next_due_date: string;
@@ -290,6 +291,7 @@ export interface SafetySchedule {
   vehicle_id?: string;
   equipment_id?: string;
   mileage_interval?: number;
+  hours_interval?: number;
   last_mileage?: number;
   next_mileage?: number;
   created_at: string;

@@ -8,9 +8,13 @@ import type { SafetySchedule } from '@/types/safety';
 export interface CreateScheduleData {
   schedule_name: string;
   schedule_type: string;
-  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
+  inspection_type?: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'hours_based';
   next_due_date: string;
   reminder_days_before?: number;
+  hours_interval?: number;
+  equipment_id?: string;
+  vehicle_id?: string;
   notes?: string;
 }
 
