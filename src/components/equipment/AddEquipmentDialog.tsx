@@ -5,16 +5,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { decodeVin, getVinValidationError } from '@/services/vinDecoderService';
+import { Loader2, Search, Car, CheckCircle2 } from 'lucide-react';
 
 interface AddEquipmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+// Equipment types that support VIN decoding
+const VIN_SUPPORTED_TYPES = [
+  'forklift', 'excavator', 'loader', 'dozer', 'crane', 'heavy_truck', 
+  'semi', 'fleet_vehicle', 'courtesy_car', 'rental_vehicle', 'service_vehicle'
+];
+
 export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDecoding, setIsDecoding] = useState(false);
+  const [vinDecoded, setVinDecoded] = useState(false);
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
@@ -28,13 +39,77 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
     purchase_price: '',
     warranty_expiry: '',
     maintenance_interval_days: '',
-    notes: ''
+    notes: '',
+    // Vehicle-specific fields
+    vin_number: '',
+    year: '',
+    engine: '',
+    fuel_type: '',
+    transmission: '',
+    drive_type: '',
+    gvwr: '',
+    plate_number: '',
+    registration_state: '',
+    registration_expiry: ''
   });
+
+  const isVehicleType = VIN_SUPPORTED_TYPES.includes(formData.equipment_type);
+
+  const handleVinDecode = async () => {
+    const vin = formData.vin_number.trim().toUpperCase();
+    
+    // Validate VIN
+    const validationError = getVinValidationError(vin);
+    if (validationError) {
+      toast({
+        title: "Invalid VIN",
+        description: validationError,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDecoding(true);
+    try {
+      const result = await decodeVin(vin);
+      
+      if (result) {
+        setFormData(prev => ({
+          ...prev,
+          vin_number: vin,
+          year: result.year?.toString() || prev.year,
+          manufacturer: result.make || prev.manufacturer,
+          model: result.model || prev.model,
+          engine: result.engine || prev.engine,
+          fuel_type: result.fuel_type || prev.fuel_type,
+          transmission: result.transmission || result.transmission_type || prev.transmission,
+          drive_type: result.drive_type || prev.drive_type,
+          gvwr: result.gvwr || prev.gvwr,
+          // Auto-generate name if empty
+          name: prev.name || `${result.year || ''} ${result.make || ''} ${result.model || ''}`.trim()
+        }));
+        
+        setVinDecoded(true);
+        toast({
+          title: "VIN Decoded",
+          description: `Found: ${result.year} ${result.make} ${result.model}`,
+        });
+      }
+    } catch (error) {
+      console.error('VIN decode error:', error);
+      toast({
+        title: "Decode Failed",
+        description: error instanceof Error ? error.message : "Unable to decode VIN",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDecoding(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!formData.name || !formData.equipment_type) {
       toast({
         title: "Validation Error",
@@ -47,41 +122,19 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
     setIsSubmitting(true);
 
     try {
-      console.log('Starting equipment submission...', { name: formData.name, type: formData.equipment_type });
-      
-      // Get current user
       const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        console.error('User auth error:', userError);
-        throw new Error(`Authentication error: ${userError.message}`);
-      }
-      
-      if (!userData.user) {
-        throw new Error('You must be logged in to add equipment');
-      }
-      
-      console.log('User authenticated:', userData.user.id);
+      if (userError) throw new Error(`Authentication error: ${userError.message}`);
+      if (!userData.user) throw new Error('You must be logged in to add equipment');
 
-      // Get current user's shop_id from profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
         .eq('id', userData.user.id)
         .maybeSingle();
 
-      if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        throw new Error(`Failed to fetch user profile: ${profileError.message}`);
-      }
+      if (profileError) throw new Error(`Failed to fetch user profile: ${profileError.message}`);
+      if (!profile?.shop_id) throw new Error('No shop associated with your account.');
 
-      if (!profile?.shop_id) {
-        console.error('No shop_id found in profile:', profile);
-        throw new Error('No shop associated with your account. Please contact support.');
-      }
-      
-      console.log('Shop ID found:', profile.shop_id);
-
-      // Generate asset number
       const assetNumber = `AST-${Date.now()}`;
       
       const equipmentData = {
@@ -93,6 +146,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         manufacturer: formData.manufacturer || null,
         model: formData.model || null,
         serial_number: formData.serial_number || null,
+        year: formData.year ? parseInt(formData.year) : null,
         location: formData.location || null,
         purchase_date: formData.purchase_date || null,
         purchase_cost: formData.purchase_price ? parseFloat(formData.purchase_price) : null,
@@ -101,22 +155,28 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         current_mileage: 0,
         maintenance_intervals: [],
         notes: formData.notes || null,
-        created_by: userData.user.id
+        created_by: userData.user.id,
+        // Vehicle-specific fields
+        vin_number: formData.vin_number || null,
+        plate_number: formData.plate_number || null,
+        registration_state: formData.registration_state || null,
+        registration_expiry: formData.registration_expiry || null,
+        // Store additional vehicle specs in specifications JSONB
+        specifications: isVehicleType ? {
+          engine: formData.engine || null,
+          fuel_type: formData.fuel_type || null,
+          transmission: formData.transmission || null,
+          drive_type: formData.drive_type || null,
+          gvwr: formData.gvwr || null
+        } : null
       };
       
-      console.log('Inserting equipment data:', equipmentData);
-      
-      const { data: insertedData, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('equipment_assets')
         .insert([equipmentData])
         .select();
 
-      if (insertError) {
-        console.error('Database insert error:', insertError);
-        throw new Error(`Database error: ${insertError.message}`);
-      }
-      
-      console.log('Equipment inserted successfully:', insertedData);
+      if (insertError) throw new Error(`Database error: ${insertError.message}`);
 
       toast({
         title: "Success!",
@@ -125,29 +185,20 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
 
       // Reset form
       setFormData({
-        name: '',
-        model: '',
-        manufacturer: '',
-        serial_number: '',
-        equipment_type: '',
-        unit_number: '',
-        location: '',
-        purchase_date: '',
-        purchase_price: '',
-        warranty_expiry: '',
-        maintenance_interval_days: '',
-        notes: ''
+        name: '', model: '', manufacturer: '', serial_number: '', equipment_type: '',
+        unit_number: '', location: '', purchase_date: '', purchase_price: '',
+        warranty_expiry: '', maintenance_interval_days: '', notes: '',
+        vin_number: '', year: '', engine: '', fuel_type: '', transmission: '',
+        drive_type: '', gvwr: '', plate_number: '', registration_state: '', registration_expiry: ''
       });
-      
-      // Close dialog and trigger refresh
+      setVinDecoded(false);
       onOpenChange(false);
 
     } catch (error) {
       console.error('Error adding equipment:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
         title: "Failed to Add Equipment",
-        description: errorMessage,
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
         variant: "destructive",
       });
     } finally {
@@ -165,20 +216,13 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Equipment Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="equipment_type">Type *</Label>
               <Select 
                 value={formData.equipment_type} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, equipment_type: value }))}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, equipment_type: value }));
+                  setVinDecoded(false);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select equipment type" />
@@ -211,11 +255,93 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="manufacturer">Manufacturer</Label>
+              <Label htmlFor="name">Equipment Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder={vinDecoded ? "Auto-filled from VIN" : "e.g., Shop Forklift #1"}
+                required
+              />
+            </div>
+          </div>
+
+          {/* VIN Decoder Section - Show for vehicle types */}
+          {isVehicleType && (
+            <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
+              <div className="flex items-center gap-2">
+                <Car className="h-5 w-5 text-primary" />
+                <span className="font-medium">VIN Decoder</span>
+                {vinDecoded && (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Decoded
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    id="vin_number"
+                    value={formData.vin_number}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, vin_number: e.target.value.toUpperCase() }));
+                      setVinDecoded(false);
+                    }}
+                    placeholder="Enter 17-character VIN"
+                    maxLength={17}
+                    className="font-mono uppercase"
+                  />
+                </div>
+                <Button 
+                  type="button" 
+                  onClick={handleVinDecode}
+                  disabled={isDecoding || formData.vin_number.length < 17}
+                  variant="secondary"
+                >
+                  {isDecoding ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-1" />
+                      Decode
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Works with automotive, heavy trucks, forklifts, excavators, and most equipment with standard VINs
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Year field - show for vehicle types */}
+            {isVehicleType && (
+              <div className="space-y-2">
+                <Label htmlFor="year">Year</Label>
+                <Input
+                  id="year"
+                  type="number"
+                  min="1900"
+                  max={new Date().getFullYear() + 2}
+                  value={formData.year}
+                  onChange={(e) => setFormData(prev => ({ ...prev, year: e.target.value }))}
+                  placeholder="e.g., 2023"
+                  className={vinDecoded && formData.year ? "border-green-200 bg-green-50" : ""}
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="manufacturer">{isVehicleType ? 'Make' : 'Manufacturer'}</Label>
               <Input
                 id="manufacturer"
                 value={formData.manufacturer}
                 onChange={(e) => setFormData(prev => ({ ...prev, manufacturer: e.target.value }))}
+                placeholder={isVehicleType ? "e.g., Toyota, Caterpillar" : "e.g., Snap-on, Milwaukee"}
+                className={vinDecoded && formData.manufacturer ? "border-green-200 bg-green-50" : ""}
               />
             </div>
 
@@ -225,8 +351,23 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                 id="model"
                 value={formData.model}
                 onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
+                className={vinDecoded && formData.model ? "border-green-200 bg-green-50" : ""}
               />
             </div>
+
+            {/* Engine field - show for vehicle types */}
+            {isVehicleType && (
+              <div className="space-y-2">
+                <Label htmlFor="engine">Engine</Label>
+                <Input
+                  id="engine"
+                  value={formData.engine}
+                  onChange={(e) => setFormData(prev => ({ ...prev, engine: e.target.value }))}
+                  placeholder="e.g., 5.7L V8, Diesel 6.7L"
+                  className={vinDecoded && formData.engine ? "border-green-200 bg-green-50" : ""}
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="serial_number">Serial Number</Label>
@@ -247,13 +388,49 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
               />
             </div>
 
+            {/* Vehicle registration fields */}
+            {isVehicleType && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="plate_number">License Plate</Label>
+                  <Input
+                    id="plate_number"
+                    value={formData.plate_number}
+                    onChange={(e) => setFormData(prev => ({ ...prev, plate_number: e.target.value.toUpperCase() }))}
+                    className="uppercase"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fuel_type">Fuel Type</Label>
+                  <Select 
+                    value={formData.fuel_type} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, fuel_type: value }))}
+                  >
+                    <SelectTrigger className={vinDecoded && formData.fuel_type ? "border-green-200 bg-green-50" : ""}>
+                      <SelectValue placeholder="Select fuel type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gasoline">Gasoline</SelectItem>
+                      <SelectItem value="diesel">Diesel</SelectItem>
+                      <SelectItem value="electric">Electric</SelectItem>
+                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                      <SelectItem value="propane">Propane/LPG</SelectItem>
+                      <SelectItem value="natural_gas">Natural Gas</SelectItem>
+                      <SelectItem value="flex_fuel">Flex Fuel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
               <Input
                 id="location"
                 value={formData.location}
                 onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="e.g., Bay 1, Storage Room"
+                placeholder="e.g., Bay 1, Yard, Storage"
               />
             </div>
 
@@ -288,17 +465,6 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                 onChange={(e) => setFormData(prev => ({ ...prev, warranty_expiry: e.target.value }))}
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="maintenance_interval_days">Maintenance Interval (Days)</Label>
-              <Input
-                id="maintenance_interval_days"
-                type="number"
-                value={formData.maintenance_interval_days}
-                onChange={(e) => setFormData(prev => ({ ...prev, maintenance_interval_days: e.target.value }))}
-                placeholder="e.g., 90, 180, 365"
-              />
-            </div>
           </div>
 
           <div className="space-y-2">
@@ -312,21 +478,21 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             />
           </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting || !formData.name || !formData.equipment_type}>
-                {isSubmitting ? (
-                  <>
-                    <span className="mr-2">Adding...</span>
-                    <span className="animate-spin">⏳</span>
-                  </>
-                ) : (
-                  'Add Equipment'
-                )}
-              </Button>
-            </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting || !formData.name || !formData.equipment_type}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Equipment'
+              )}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
