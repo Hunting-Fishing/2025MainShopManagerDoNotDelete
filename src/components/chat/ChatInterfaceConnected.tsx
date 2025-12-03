@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useChat } from '@/hooks/useChat';
 import { useChatNotifications } from '@/hooks/useChatNotifications';
@@ -9,6 +9,7 @@ import { MessageSquare, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { NewChatDialogComplete } from './NewChatDialogComplete';
+import { ChatRoom } from '@/types/chat';
 
 export function ChatInterfaceConnected() {
   const { user, userId } = useAuthUser();
@@ -34,6 +35,7 @@ export function ChatInterfaceConnected() {
     handleSendFileMessage,
     handlePinRoom,
     handleArchiveRoom,
+    handleDeleteRoom,
     flagMessage,
     handleEditMessage,
     isTyping,
@@ -52,6 +54,12 @@ export function ChatInterfaceConnected() {
 
   // Set up real-time notifications
   useChatNotifications({ userId: userId || '' });
+
+  // Handle new chat creation - auto-select the new room
+  const handleChatCreated = useCallback((room: ChatRoom) => {
+    refreshRooms();
+    selectRoom(room);
+  }, [refreshRooms, selectRoom]);
 
   // Handle keyboard events for typing indicator
   useEffect(() => {
@@ -107,7 +115,7 @@ export function ChatInterfaceConnected() {
           </p>
           <NewChatDialogComplete 
             currentUserId={userId} 
-            onChatCreated={refreshRooms}
+            onChatCreated={handleChatCreated}
           />
         </CardContent>
       </Card>
@@ -131,6 +139,7 @@ export function ChatInterfaceConnected() {
       onEditMessage={handleEditMessage}
       onPinRoom={handlePinRoom}
       onArchiveRoom={handleArchiveRoom}
+      onDeleteRoom={handleDeleteRoom}
       isTyping={isTyping}
       typingUsers={typingUsers}
       threadMessages={threadMessages}
@@ -142,7 +151,7 @@ export function ChatInterfaceConnected() {
       newChatDialog={
         <NewChatDialogComplete 
           currentUserId={userId} 
-          onChatCreated={refreshRooms}
+          onChatCreated={handleChatCreated}
           trigger={<Button variant="ghost" size="sm"><UserPlus className="h-5 w-5" /></Button>}
         />
       }

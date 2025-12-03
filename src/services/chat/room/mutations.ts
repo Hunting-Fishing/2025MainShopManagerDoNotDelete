@@ -157,3 +157,35 @@ export const archiveChatRoom = async (roomId: string, isArchived: boolean): Prom
     throw error;
   }
 };
+
+// Delete a chat room and its messages/participants
+export const deleteChatRoom = async (roomId: string): Promise<void> => {
+  try {
+    // Delete participants first (foreign key constraint)
+    const { error: participantsError } = await supabase
+      .from('chat_participants')
+      .delete()
+      .eq('room_id', roomId);
+    
+    if (participantsError) throw participantsError;
+
+    // Delete messages
+    const { error: messagesError } = await supabase
+      .from('chat_messages')
+      .delete()
+      .eq('room_id', roomId);
+    
+    if (messagesError) throw messagesError;
+
+    // Delete the room
+    const { error: roomError } = await supabase
+      .from('chat_rooms')
+      .delete()
+      .eq('id', roomId);
+    
+    if (roomError) throw roomError;
+  } catch (error) {
+    console.error("Error deleting chat room:", error);
+    throw error;
+  }
+};

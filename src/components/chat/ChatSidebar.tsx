@@ -3,15 +3,17 @@ import React from 'react';
 import { ChatRoom } from '@/types/chat';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MessageCircle, SearchIcon } from 'lucide-react';
+import { PlusCircle, MessageCircle, SearchIcon, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { formatDistanceToNow } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface ChatSidebarProps {
   rooms: ChatRoom[];
   selectedRoom: ChatRoom | null;
   onSelectRoom: (room: ChatRoom) => void;
   onNewChat: () => void;
+  onDeleteRoom?: (roomId: string) => void;
   newChatDialog?: React.ReactNode;
 }
 
@@ -20,6 +22,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   selectedRoom,
   onSelectRoom,
   onNewChat,
+  onDeleteRoom,
   newChatDialog
 }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -59,7 +62,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             {filteredRooms.map(room => (
               <div
                 key={room.id}
-                className={`flex items-center px-4 py-3 transition-colors cursor-pointer hover:bg-slate-100 ${
+                className={`flex items-center px-4 py-3 transition-colors cursor-pointer hover:bg-slate-100 group ${
                   selectedRoom?.id === room.id ? 'bg-slate-100' : ''
                 }`}
                 onClick={() => onSelectRoom(room)}
@@ -99,6 +102,37 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     )}
                   </div>
                 </div>
+                {onDeleteRoom && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="opacity-0 group-hover:opacity-100 ml-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{room.name}"? This will permanently delete all messages and cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => onDeleteRoom(room.id)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             ))}
           </div>

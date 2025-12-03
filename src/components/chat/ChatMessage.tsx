@@ -254,10 +254,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         )}
         
         <div className={cn(
-          "rounded-lg px-3 py-2 break-words",
+          "rounded-2xl px-4 py-2 break-words",
           isCurrentUser 
-            ? "bg-primary text-primary-foreground" 
-            : "bg-slate-200 text-slate-900"
+            ? "bg-green-500 text-white" 
+            : "bg-gray-200 text-gray-900"
         )}>
           {/* If it's a file message, render the appropriate component */}
           {fileInfo ? (

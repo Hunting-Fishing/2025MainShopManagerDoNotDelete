@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ChatRoom } from '@/types/chat';
-import { getUserChatRooms, pinChatRoom, archiveChatRoom } from '@/services/chat';
+import { getUserChatRooms, pinChatRoom, archiveChatRoom, deleteChatRoom } from '@/services/chat';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -190,12 +190,44 @@ export const useChatRooms = ({ userId }: UseChatRoomsProps) => {
     };
   }, [userId, fetchChatRooms]);
 
+  // Delete a chat room
+  const deleteRoom = useCallback(async (roomId: string) => {
+    console.log('[useChatRooms] Deleting room:', roomId);
+    
+    try {
+      await deleteChatRoom(roomId);
+      
+      // Update local state - remove from list
+      setChatRooms(prevRooms => prevRooms.filter(room => room.id !== roomId));
+      
+      console.log('[useChatRooms] Successfully deleted room:', roomId);
+      toast({
+        title: "Conversation deleted",
+        description: "The conversation has been permanently deleted",
+      });
+    } catch (err: any) {
+      console.error('[useChatRooms] Failed to delete room:', {
+        error: err,
+        roomId,
+        message: err?.message,
+        timestamp: new Date().toISOString()
+      });
+      
+      toast({
+        title: "Error",
+        description: `Failed to delete conversation: ${err?.message || 'Unknown error'}`,
+        variant: "destructive",
+      });
+    }
+  }, []);
+
   return {
     chatRooms,
     loading,
     error,
     refreshRooms: fetchChatRooms,
     pinRoom,
-    archiveRoom
+    archiveRoom,
+    deleteRoom
   };
 };

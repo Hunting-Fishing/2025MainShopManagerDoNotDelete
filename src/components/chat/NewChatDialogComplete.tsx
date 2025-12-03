@@ -14,7 +14,7 @@ import { generateUniqueDisplayNames, formatDisplayName } from '@/utils/duplicate
 
 interface NewChatDialogCompleteProps {
   currentUserId: string;
-  onChatCreated?: () => void;
+  onChatCreated?: (room: import('@/types/chat').ChatRoom) => void;
   trigger?: React.ReactNode;
 }
 
@@ -56,16 +56,29 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
     }
   };
 
+  // Filter to only show company domain emails and dedupe by email
+  const filteredProfiles = useMemo(() => {
+    const seen = new Set<string>();
+    return profiles.filter(p => {
+      // Only show wainwrightmarine.com emails
+      if (!p.email.endsWith('@wainwrightmarine.com')) return false;
+      // Dedupe by email
+      if (seen.has(p.email)) return false;
+      seen.add(p.email);
+      return true;
+    });
+  }, [profiles]);
+
   // Generate unique display names to handle duplicates
   const displayNameMap = useMemo(() => {
-    const membersForDisplay = profiles.map(p => ({
+    const membersForDisplay = filteredProfiles.map(p => ({
       id: p.id,
       first_name: p.first_name || p.full_name?.split(' ')[0],
       last_name: p.last_name || p.full_name?.split(' ').slice(1).join(' '),
       email: p.email,
     }));
     return generateUniqueDisplayNames(membersForDisplay);
-  }, [profiles]);
+  }, [filteredProfiles]);
 
   const getDisplayName = (profile: Profile): string => {
     const displayInfo = displayNameMap.get(profile.id);
@@ -137,7 +150,7 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
       setOpen(false);
       setChatName('');
       setSelectedParticipants([currentUserId]);
-      onChatCreated?.();
+      onChatCreated?.(room);
     } catch (error: any) {
       console.error('[NewChatDialog] Error creating chat:', {
         error,
@@ -255,7 +268,7 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
           <div className="grid gap-2">
             <Label>Select Participants</Label>
             <ScrollArea className="h-[200px] border rounded-md p-4">
-              {profiles.map(profile => (
+              {filteredProfiles.map(profile => (
                 <div key={profile.id} className="flex items-center space-x-2 mb-3">
                   <Checkbox
                     id={profile.id}
@@ -270,7 +283,7 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
                   </label>
                 </div>
               ))}
-              {profiles.length === 0 && (
+              {filteredProfiles.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center">No team members found</p>
               )}
             </ScrollArea>

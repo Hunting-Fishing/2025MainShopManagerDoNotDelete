@@ -18,6 +18,7 @@ interface ChatPageLayoutProps {
   onSendFileMessage?: (fileUrl: string, threadParentId?: string) => void;
   onPinRoom?: () => void;
   onArchiveRoom?: () => void;
+  onDeleteRoom?: (roomId: string) => void;
   onFlagMessage?: (messageId: string, reason: string) => void;
   onEditMessage?: (messageId: string, content: string) => void;
   isTyping?: boolean;
@@ -46,6 +47,7 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
   onSendFileMessage,
   onPinRoom,
   onArchiveRoom,
+  onDeleteRoom,
   onFlagMessage,
   onEditMessage,
   isTyping,
@@ -75,6 +77,7 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
               navigateToRoom(room.id);
             }}
             onNewChat={onNewChat}
+            onDeleteRoom={onDeleteRoom}
             newChatDialog={newChatDialog}
           />
         </div>
@@ -92,6 +95,7 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
             onSendFileMessage={onSendFileMessage}
             onPinRoom={onPinRoom}
             onArchiveRoom={onArchiveRoom}
+            onDeleteRoom={currentRoom ? () => onDeleteRoom?.(currentRoom.id) : undefined}
             onFlagMessage={onFlagMessage}
             onEditMessage={onEditMessage}
             isTyping={isTyping}
