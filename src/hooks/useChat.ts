@@ -19,7 +19,8 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     error: roomsError,
     refreshRooms,
     pinRoom,
-    archiveRoom
+    archiveRoom,
+    deleteRoom
   } = useChatRooms({ userId });
 
   const {
@@ -66,6 +67,14 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     }
   }, [currentRoom, archiveRoom]);
 
+  // Delete a room
+  const handleDeleteRoom = useCallback((roomId: string) => {
+    deleteRoom(roomId);
+    if (currentRoom?.id === roomId) {
+      setCurrentRoom(null);
+    }
+  }, [deleteRoom, currentRoom]);
+
   return {
     chatRooms,
     currentRoom,
@@ -80,6 +89,7 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     handleSendFileMessage,
     handlePinRoom,
     handleArchiveRoom,
+    handleDeleteRoom,
     flagMessage,
     handleEditMessage,
     isTyping,

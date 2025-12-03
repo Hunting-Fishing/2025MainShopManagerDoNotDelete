@@ -4,7 +4,8 @@ import { ChatRoom, ChatMessage as ChatMessageType } from '@/types/chat';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Info, Users, MoreVertical, MessageSquare } from 'lucide-react';
+import { Send, Info, Users, MoreVertical, MessageSquare, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ChatMessage } from './ChatMessage';
 import { AudioRecorder } from './AudioRecorder';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,6 +30,7 @@ interface ChatWindowProps {
   onEditMessage?: (messageId: string, content: string) => void;
   onPinRoom?: () => void;
   onArchiveRoom?: () => void;
+  onDeleteRoom?: () => void;
   isTyping?: boolean;
   typingUsers?: {id: string, name: string}[];
   threadMessages?: {[key: string]: ChatMessageType[]};
@@ -53,6 +55,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onEditMessage,
   onPinRoom,
   onArchiveRoom,
+  onDeleteRoom,
   isTyping = false,
   typingUsers = [],
   threadMessages = {},
@@ -219,6 +222,36 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               <DropdownMenuItem onClick={() => {/* Add search functionality */}}>
                 Search in Conversation
               </DropdownMenuItem>
+              {onDeleteRoom && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem 
+                      className="text-destructive focus:text-destructive"
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Conversation
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{room?.name}"? This will permanently delete all messages and cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={onDeleteRoom}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

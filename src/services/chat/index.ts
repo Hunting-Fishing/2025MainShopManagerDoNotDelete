@@ -21,7 +21,8 @@ export {
 export {
   createChatRoom,
   pinChatRoom,
-  archiveChatRoom
+  archiveChatRoom,
+  deleteChatRoom
 } from './room/mutations';
 
 export {
