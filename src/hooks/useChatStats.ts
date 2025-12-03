@@ -30,11 +30,12 @@ export const useChatStats = (userId?: string) => {
           .eq('is_archived', false);
 
         // Get online members count (profiles who have been active in last 15 minutes)
+        // Note: using updated_at as proxy since last_seen column doesn't exist
         const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
         const { count: onlineMembersCount } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true })
-          .gte('last_seen', fifteenMinutesAgo);
+          .gte('updated_at', fifteenMinutesAgo);
 
         // Get messages today
         const today = new Date();
