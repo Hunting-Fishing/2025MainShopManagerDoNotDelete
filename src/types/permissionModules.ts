@@ -49,9 +49,23 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     category: 'operations'
   },
   {
+    id: 'insurance',
+    name: 'Insurance',
+    description: 'Fleet and equipment insurance management',
+    category: 'operations'
+  },
+  {
     id: 'maintenance_requests',
     name: 'Maintenance Requests',
     description: 'View and manage maintenance requests',
+    category: 'operations'
+  },
+  
+  // Safety & Compliance
+  {
+    id: 'safety',
+    name: 'Safety & Compliance',
+    description: 'Safety inspections, incidents, certifications, and compliance',
     category: 'operations'
   },
   
