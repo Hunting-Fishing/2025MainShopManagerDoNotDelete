@@ -390,7 +390,7 @@ export const navigation: NavigationSection[] = [
         href: '/insurance',
         icon: Shield,
         description: 'Fleet and equipment insurance',
-        permissionModule: 'insurance',
+        permissionModule: 'fleet_management',
       },
       {
         title: 'Vehicles',

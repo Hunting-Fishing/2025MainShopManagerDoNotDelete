@@ -102,7 +102,13 @@ const navigationCategories = [
       { name: 'Incidents', href: '/safety/incidents', requiredPath: '/safety/incidents' },
       { name: 'Daily Inspections', href: '/safety/inspections', requiredPath: '/safety/inspections' },
       { name: 'DVIR Reports', href: '/safety/dvir', requiredPath: '/safety/dvir' },
+      { name: 'Vessel Inspections', href: '/safety/vessels', requiredPath: '/safety/vessels' },
+      { name: 'Forklift Inspections', href: '/safety/equipment/forklift', requiredPath: '/safety/equipment/forklift' },
+      { name: 'Lift Inspections', href: '/safety/equipment', requiredPath: '/safety/equipment' },
       { name: 'Certifications', href: '/safety/certifications', requiredPath: '/safety/certifications' },
+      { name: 'Safety Documents', href: '/safety/documents', requiredPath: '/safety/documents' },
+      { name: 'Schedules', href: '/safety/schedules', requiredPath: '/safety/schedules' },
+      { name: 'Analytics', href: '/safety/analytics', requiredPath: '/safety/analytics' },
     ]
   },
   {
