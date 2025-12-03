@@ -6000,6 +6000,7 @@ export type Database = {
           notes: string | null
           parent_equipment_id: string | null
           plate_number: string | null
+          profile_image_url: string | null
           purchase_cost: number | null
           purchase_date: string | null
           qr_code: string | null
@@ -6038,6 +6039,7 @@ export type Database = {
           notes?: string | null
           parent_equipment_id?: string | null
           plate_number?: string | null
+          profile_image_url?: string | null
           purchase_cost?: number | null
           purchase_date?: string | null
           qr_code?: string | null
@@ -6076,6 +6078,7 @@ export type Database = {
           notes?: string | null
           parent_equipment_id?: string | null
           plate_number?: string | null
+          profile_image_url?: string | null
           purchase_cost?: number | null
           purchase_date?: string | null
           qr_code?: string | null

@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { decodeVin, getVinValidationError } from '@/services/vinDecoderService';
+import { uploadEquipmentProfileImage } from '@/services/equipment/equipmentImageService';
+import { EquipmentImageUpload } from './EquipmentImageUpload';
 import { Loader2, Search, Car, CheckCircle2 } from 'lucide-react';
 
 interface AddEquipmentDialogProps {
@@ -26,6 +28,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDecoding, setIsDecoding] = useState(false);
   const [vinDecoded, setVinDecoded] = useState(false);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
@@ -137,6 +140,17 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
 
       const assetNumber = `AST-${Date.now()}`;
       
+      // Upload profile image if selected
+      let profileImageUrl: string | null = null;
+      if (profileImage) {
+        try {
+          profileImageUrl = await uploadEquipmentProfileImage(profileImage, assetNumber);
+        } catch (imgError) {
+          console.error('Image upload error:', imgError);
+          // Continue without image - don't block equipment creation
+        }
+      }
+      
       const equipmentData = {
         shop_id: profile.shop_id,
         equipment_type: formData.equipment_type as any,
@@ -156,6 +170,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         maintenance_intervals: [],
         notes: formData.notes || null,
         created_by: userData.user.id,
+        profile_image_url: profileImageUrl,
         // Vehicle-specific fields
         vin_number: formData.vin_number || null,
         plate_number: formData.plate_number || null,
@@ -192,6 +207,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         drive_type: '', gvwr: '', plate_number: '', registration_state: '', registration_expiry: ''
       });
       setVinDecoded(false);
+      setProfileImage(null);
       onOpenChange(false);
 
     } catch (error) {
@@ -214,6 +230,22 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Profile Image Upload */}
+          <div className="flex items-start gap-4 pb-2 border-b">
+            <EquipmentImageUpload
+              onImageSelect={setProfileImage}
+              onImageRemove={() => setProfileImage(null)}
+              isUploading={isSubmitting}
+              size="lg"
+            />
+            <div className="flex-1 pt-2">
+              <p className="text-sm font-medium">Equipment Photo</p>
+              <p className="text-xs text-muted-foreground">
+                Add a photo to easily identify this equipment. JPG, PNG or WebP, max 5MB.
+              </p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="equipment_type">Type *</Label>

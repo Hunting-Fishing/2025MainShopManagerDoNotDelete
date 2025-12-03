@@ -21,6 +21,7 @@ export interface Equipment {
   maintenance_schedules?: any;
   work_order_history?: any;
   notes?: string;
+  profile_image_url?: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
