@@ -5,12 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Search, AlertTriangle, CheckCircle, Clock, Wrench, Loader2, Trash2, X } from 'lucide-react';
+import { Search, AlertTriangle, CheckCircle, Clock, Wrench, Loader2, Trash2, X, ImageIcon } from 'lucide-react';
 import { Equipment } from '@/types/equipment';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useEquipmentFilterOptions, formatEquipmentType } from '@/hooks/useEquipmentFilterOptions';
+
+const getEquipmentIcon = (category: string) => {
+  // Return appropriate icon based on category
+  return <Wrench className="h-6 w-6 text-muted-foreground" />;
+};
 
 interface EquipmentListProps {
   equipment: Equipment[];
@@ -169,7 +174,23 @@ export function EquipmentList({ equipment, loading, onUpdate }: EquipmentListPro
             {filteredEquipment.map((item) => (
               <Card key={item.id} className="p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center gap-4">
+                    {/* Profile Image Thumbnail */}
+                    <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border">
+                      {item.profile_image_url ? (
+                        <img 
+                          src={item.profile_image_url} 
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          {getEquipmentIcon(item.category)}
+                        </div>
+                      )}
+                    </div>
+                    
                     <div className="flex items-center space-x-2">
                       {getStatusIcon(item.status)}
                       <div>
