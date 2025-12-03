@@ -84,6 +84,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     model: equipment.model || '',
     manufacturer: equipment.manufacturer || '',
     serial_number: equipment.serial_number || '',
+    unit_number: (equipment as any).unit_number || '',
     location: equipment.location || '',
     status: equipment.status || 'operational',
     notes: equipment.notes || '',
@@ -411,6 +412,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         model: formData.model,
         manufacturer: formData.manufacturer,
         serial_number: formData.serial_number,
+        unit_number: formData.unit_number || null,
         location: formData.location,
         status: formData.status,
         notes: formData.notes,
@@ -500,6 +502,16 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Enter equipment name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="unit_number">Unit #</Label>
+                <Input
+                  id="unit_number"
+                  value={formData.unit_number}
+                  onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
+                  placeholder="e.g., FL 2"
                 />
               </div>
 
