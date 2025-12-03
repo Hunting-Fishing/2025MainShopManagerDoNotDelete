@@ -90,6 +90,15 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     notes: equipment.notes || '',
     purchase_date: equipment.purchase_date || '',
     current_value: (equipment as any).current_value || 0,
+    // Vehicle fields
+    vin_number: (equipment as any).vin_number || '',
+    engine_id: (equipment as any).engine_id || '',
+    year: (equipment as any).year?.toString() || '',
+    plate_number: (equipment as any).plate_number || '',
+    registration_state: (equipment as any).registration_state || '',
+    registration_expiry: (equipment as any).registration_expiry || '',
+    title_number: (equipment as any).title_number || '',
+    title_status: (equipment as any).title_status || '',
   });
 
   // Equipment Type State
@@ -420,7 +429,16 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         purchase_cost: formData.current_value ? parseFloat(formData.current_value.toString()) : null,
         equipment_type: equipmentType,
         specifications: specsWithAttachments,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // Vehicle fields
+        vin_number: formData.vin_number || null,
+        engine_id: formData.engine_id || null,
+        year: formData.year ? parseInt(formData.year) : null,
+        plate_number: formData.plate_number || null,
+        registration_state: formData.registration_state || null,
+        registration_expiry: formData.registration_expiry || null,
+        title_number: formData.title_number || null,
+        title_status: formData.title_status || null,
       };
 
       // Save service items first
@@ -628,6 +646,95 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                 rows={4}
               />
             </div>
+
+            {/* Vehicle Information Section - shown for vehicle types */}
+            {['fuel_truck', 'heavy_truck', 'fleet_vehicle', 'semi', 'service_vehicle', 'rental_vehicle', 'courtesy_car'].includes(equipmentType) && (
+              <div className="space-y-4 pt-6 border-t">
+                <h3 className="text-lg font-semibold">🚛 Vehicle Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="vin_number">VIN Number</Label>
+                    <Input 
+                      id="vin_number"
+                      value={formData.vin_number}
+                      onChange={(e) => setFormData({ ...formData, vin_number: e.target.value.toUpperCase() })}
+                      placeholder="17-character VIN"
+                      maxLength={17}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="year">Year</Label>
+                    <Input 
+                      id="year"
+                      type="number"
+                      value={formData.year}
+                      onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                      placeholder="e.g., 2021"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="engine_id">Engine ID</Label>
+                    <Input 
+                      id="engine_id"
+                      value={formData.engine_id}
+                      onChange={(e) => setFormData({ ...formData, engine_id: e.target.value })}
+                      placeholder="Engine serial/ID"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="plate_number">Plate Number</Label>
+                    <Input 
+                      id="plate_number"
+                      value={formData.plate_number}
+                      onChange={(e) => setFormData({ ...formData, plate_number: e.target.value.toUpperCase() })}
+                      placeholder="License plate"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="registration_state">Registration State</Label>
+                    <Input 
+                      id="registration_state"
+                      value={formData.registration_state}
+                      onChange={(e) => setFormData({ ...formData, registration_state: e.target.value.toUpperCase() })}
+                      placeholder="e.g., FL, TX"
+                      maxLength={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="registration_expiry">Registration Expiry</Label>
+                    <Input 
+                      id="registration_expiry"
+                      type="date"
+                      value={formData.registration_expiry?.split('T')[0] || ''}
+                      onChange={(e) => setFormData({ ...formData, registration_expiry: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="title_number">Title Number</Label>
+                    <Input 
+                      id="title_number"
+                      value={formData.title_number}
+                      onChange={(e) => setFormData({ ...formData, title_number: e.target.value })}
+                      placeholder="Vehicle title #"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="title_status">Title Status</Label>
+                    <Select value={formData.title_status} onValueChange={(value) => setFormData({ ...formData, title_status: value })}>
+                      <SelectTrigger id="title_status">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="clean">Clean</SelectItem>
+                        <SelectItem value="salvage">Salvage</SelectItem>
+                        <SelectItem value="rebuilt">Rebuilt</SelectItem>
+                        <SelectItem value="lienholder">Lienholder</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Fuel Truck Specifications Section */}
             {equipmentType === 'fuel_truck' && (
