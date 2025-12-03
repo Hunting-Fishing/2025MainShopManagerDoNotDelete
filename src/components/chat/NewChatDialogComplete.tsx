@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { createChatRoom } from '@/services/chat';
 import { supabase } from '@/integrations/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { generateUniqueDisplayNames, formatDisplayName } from '@/utils/duplicateNameHandler';
 
 interface NewChatDialogCompleteProps {
   currentUserId: string;
@@ -20,6 +21,8 @@ interface NewChatDialogCompleteProps {
 interface Profile {
   id: string;
   full_name: string | null;
+  first_name?: string;
+  last_name?: string;
   email: string;
 }
 
@@ -43,7 +46,7 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email')
+        .select('id, full_name, first_name, last_name, email')
         .neq('id', currentUserId);
       
       if (error) throw error;
@@ -51,6 +54,25 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
     } catch (error) {
       console.error('Error fetching profiles:', error);
     }
+  };
+
+  // Generate unique display names to handle duplicates
+  const displayNameMap = useMemo(() => {
+    const membersForDisplay = profiles.map(p => ({
+      id: p.id,
+      first_name: p.first_name || p.full_name?.split(' ')[0],
+      last_name: p.last_name || p.full_name?.split(' ').slice(1).join(' '),
+      email: p.email,
+    }));
+    return generateUniqueDisplayNames(membersForDisplay);
+  }, [profiles]);
+
+  const getDisplayName = (profile: Profile): string => {
+    const displayInfo = displayNameMap.get(profile.id);
+    if (displayInfo) {
+      return formatDisplayName(displayInfo);
+    }
+    return profile.full_name || profile.email;
   };
 
   const handleCreateChat = async () => {
@@ -244,7 +266,7 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
                     htmlFor={profile.id}
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                   >
-                    {profile.full_name || profile.email}
+                    {getDisplayName(profile)}
                   </label>
                 </div>
               ))}
@@ -255,7 +277,7 @@ export function NewChatDialogComplete({ currentUserId, onChatCreated, trigger }:
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleCreateChat} disabled={isCreating || !chatName}>
+          <Button type="button" onClick={handleCreateChat} disabled={isCreating || !chatName.trim()}>
             {getChatIcon()}
             <span className="ml-2">
               {isCreating ? 'Creating...' : 'Create Chat'}
