@@ -6002,6 +6002,8 @@ export type Database = {
           plate_number: string | null
           purchase_cost: number | null
           purchase_date: string | null
+          qr_code: string | null
+          qr_code_generated_at: string | null
           registration_expiry: string | null
           registration_state: string | null
           serial_number: string | null
@@ -6038,6 +6040,8 @@ export type Database = {
           plate_number?: string | null
           purchase_cost?: number | null
           purchase_date?: string | null
+          qr_code?: string | null
+          qr_code_generated_at?: string | null
           registration_expiry?: string | null
           registration_state?: string | null
           serial_number?: string | null
@@ -6074,6 +6078,8 @@ export type Database = {
           plate_number?: string | null
           purchase_cost?: number | null
           purchase_date?: string | null
+          qr_code?: string | null
+          qr_code_generated_at?: string | null
           registration_expiry?: string | null
           registration_state?: string | null
           serial_number?: string | null
@@ -10206,6 +10212,139 @@ export type Database = {
           },
         ]
       }
+      inspection_reminders: {
+        Row: {
+          acknowledged: boolean | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
+          id: string
+          reminder_date: string
+          schedule_id: string
+          sent: boolean | null
+          sent_at: string | null
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          id?: string
+          reminder_date: string
+          schedule_id: string
+          sent?: boolean | null
+          sent_at?: string | null
+        }
+        Update: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          id?: string
+          reminder_date?: string
+          schedule_id?: string
+          sent?: boolean | null
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_reminders_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_reminders_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_schedules: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          equipment_id: string | null
+          frequency: string
+          frequency_value: number | null
+          hours_interval: number | null
+          id: string
+          inspection_type: string
+          is_active: boolean | null
+          last_inspection_date: string | null
+          next_due_date: string | null
+          notes: string | null
+          reminder_days_before: number | null
+          schedule_name: string
+          shop_id: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          equipment_id?: string | null
+          frequency: string
+          frequency_value?: number | null
+          hours_interval?: number | null
+          id?: string
+          inspection_type: string
+          is_active?: boolean | null
+          last_inspection_date?: string | null
+          next_due_date?: string | null
+          notes?: string | null
+          reminder_days_before?: number | null
+          schedule_name: string
+          shop_id: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          equipment_id?: string | null
+          frequency?: string
+          frequency_value?: number | null
+          hours_interval?: number | null
+          id?: string
+          inspection_type?: string
+          is_active?: boolean | null
+          last_inspection_date?: string | null
+          next_due_date?: string | null
+          notes?: string | null
+          reminder_days_before?: number | null
+          schedule_name?: string
+          shop_id?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_schedules_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_schedules_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_schedules_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_service_alerts: {
         Row: {
           acknowledged_at: string | null
@@ -10268,6 +10407,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inspection_work_order_rules: {
+        Row: {
+          assign_to_role: string | null
+          auto_create_work_order: boolean | null
+          created_at: string
+          id: string
+          include_photos: boolean | null
+          inspection_type: string
+          is_active: boolean | null
+          notes_template: string | null
+          shop_id: string
+          trigger_status: string
+          updated_at: string
+          work_order_priority: string | null
+        }
+        Insert: {
+          assign_to_role?: string | null
+          auto_create_work_order?: boolean | null
+          created_at?: string
+          id?: string
+          include_photos?: boolean | null
+          inspection_type: string
+          is_active?: boolean | null
+          notes_template?: string | null
+          shop_id: string
+          trigger_status: string
+          updated_at?: string
+          work_order_priority?: string | null
+        }
+        Update: {
+          assign_to_role?: string | null
+          auto_create_work_order?: boolean | null
+          created_at?: string
+          id?: string
+          include_photos?: boolean | null
+          inspection_type?: string
+          is_active?: boolean | null
+          notes_template?: string | null
+          shop_id?: string
+          trigger_status?: string
+          updated_at?: string
+          work_order_priority?: string | null
+        }
+        Relationships: []
       }
       integration_analytics: {
         Row: {
@@ -23518,6 +23702,8 @@ export type Database = {
           model: string
           notes: string | null
           owner_type: string
+          qr_code: string | null
+          qr_code_generated_at: string | null
           transmission: string | null
           transmission_type: string | null
           trim: string | null
@@ -23548,6 +23734,8 @@ export type Database = {
           model: string
           notes?: string | null
           owner_type?: string
+          qr_code?: string | null
+          qr_code_generated_at?: string | null
           transmission?: string | null
           transmission_type?: string | null
           trim?: string | null
@@ -23578,6 +23766,8 @@ export type Database = {
           model?: string
           notes?: string | null
           owner_type?: string
+          qr_code?: string | null
+          qr_code_generated_at?: string | null
           transmission?: string | null
           transmission_type?: string | null
           trim?: string | null
