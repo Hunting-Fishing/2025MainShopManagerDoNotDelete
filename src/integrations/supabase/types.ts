@@ -8108,6 +8108,7 @@ export type Database = {
           inspection_date: string
           inspector_id: string | null
           inspector_name: string
+          item_photos: Json | null
           lights_notes: string | null
           lights_status: Database["public"]["Enums"]["forklift_item_status"]
           mast_notes: string | null
@@ -8169,6 +8170,7 @@ export type Database = {
           inspection_date?: string
           inspector_id?: string | null
           inspector_name: string
+          item_photos?: Json | null
           lights_notes?: string | null
           lights_status?: Database["public"]["Enums"]["forklift_item_status"]
           mast_notes?: string | null
@@ -8230,6 +8232,7 @@ export type Database = {
           inspection_date?: string
           inspector_id?: string | null
           inspector_name?: string
+          item_photos?: Json | null
           lights_notes?: string | null
           lights_status?: Database["public"]["Enums"]["forklift_item_status"]
           mast_notes?: string | null
@@ -10199,6 +10202,69 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_service_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string | null
+          current_hours: number | null
+          due_date: string | null
+          due_hours: number | null
+          equipment_id: string | null
+          id: string
+          is_acknowledged: boolean | null
+          priority: string | null
+          service_item: string
+          updated_at: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string | null
+          current_hours?: number | null
+          due_date?: string | null
+          due_hours?: number | null
+          equipment_id?: string | null
+          id?: string
+          is_acknowledged?: boolean | null
+          priority?: string | null
+          service_item: string
+          updated_at?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string | null
+          current_hours?: number | null
+          due_date?: string | null
+          due_hours?: number | null
+          equipment_id?: string | null
+          id?: string
+          is_acknowledged?: boolean | null
+          priority?: string | null
+          service_item?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_service_alerts_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_service_alerts_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
             referencedColumns: ["id"]
           },
         ]
@@ -23585,6 +23651,7 @@ export type Database = {
           item_name: string
           location: string | null
           notes: string | null
+          photo_urls: string[] | null
           photos: string[] | null
           status: string
           template_id: string | null
@@ -23600,6 +23667,7 @@ export type Database = {
           item_name: string
           location?: string | null
           notes?: string | null
+          photo_urls?: string[] | null
           photos?: string[] | null
           status: string
           template_id?: string | null
@@ -23615,6 +23683,7 @@ export type Database = {
           item_name?: string
           location?: string | null
           notes?: string | null
+          photo_urls?: string[] | null
           photos?: string[] | null
           status?: string
           template_id?: string | null

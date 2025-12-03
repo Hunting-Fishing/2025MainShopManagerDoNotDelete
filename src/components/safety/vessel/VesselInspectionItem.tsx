@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, AlertTriangle, XCircle, MinusCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { InspectionPhotoUpload } from '../shared/InspectionPhotoUpload';
 
 type ItemStatus = 'good' | 'attention' | 'bad' | 'na' | null;
 
@@ -14,9 +15,11 @@ interface VesselInspectionItemProps {
   category: string;
   status: ItemStatus;
   notes: string;
+  photos?: string[];
   previousStatus?: string | null;
   onStatusChange: (status: ItemStatus) => void;
   onNotesChange: (notes: string) => void;
+  onPhotosChange?: (photos: string[]) => void;
 }
 
 const STATUS_CONFIG = {
@@ -52,9 +55,11 @@ export function VesselInspectionItem({
   category,
   status,
   notes,
+  photos = [],
   previousStatus,
   onStatusChange,
-  onNotesChange
+  onNotesChange,
+  onPhotosChange
 }: VesselInspectionItemProps) {
   const [isNotesOpen, setIsNotesOpen] = React.useState(!!notes || status === 'attention' || status === 'bad');
 
@@ -115,12 +120,12 @@ export function VesselInspectionItem({
         })}
       </div>
 
-      {/* Notes section */}
+      {/* Notes & Photos section */}
       <Collapsible open={isNotesOpen} onOpenChange={setIsNotesOpen}>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="w-full justify-between">
             <span className="text-sm text-muted-foreground">
-              {notes ? 'Notes added' : 'Add notes'}
+              {notes || photos.length > 0 ? `Notes${photos.length > 0 ? ` & ${photos.length} photo(s)` : ''}` : 'Add notes/photos'}
             </span>
             {isNotesOpen ? (
               <ChevronUp className="h-4 w-4" />
@@ -129,13 +134,20 @@ export function VesselInspectionItem({
             )}
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="pt-2">
+        <CollapsibleContent className="pt-2 space-y-3">
           <Textarea
             placeholder="Add notes about this item..."
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}
             rows={2}
           />
+          {onPhotosChange && (
+            <InspectionPhotoUpload
+              photos={photos}
+              onPhotosChange={onPhotosChange}
+              maxPhotos={3}
+            />
+          )}
         </CollapsibleContent>
       </Collapsible>
     </div>

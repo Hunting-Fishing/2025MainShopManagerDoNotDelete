@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Ship, CheckCircle, AlertTriangle, XCircle, Clock, User, FileText } from 'lucide-react';
 import { format } from 'date-fns';
+import { InspectionPdfExport } from '@/components/safety/shared/InspectionPdfExport';
 
 export default function VesselInspectionHistoryPage() {
   const { vesselId } = useParams<{ vesselId: string }>();
@@ -148,7 +149,26 @@ export default function VesselInspectionHistoryPage() {
                           )}
                         </div>
                       </div>
-                      {getStatusBadge(inspection)}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(inspection)}
+                        <InspectionPdfExport
+                          inspectionId={inspection.id}
+                          inspectionDate={inspection.inspection_date}
+                          inspectorName={inspection.inspector_name}
+                          vesselName={vessel?.name || 'Vessel'}
+                          overallStatus={inspection.overall_status || 'pass'}
+                          safeToOperate={inspection.safe_to_operate}
+                          currentHours={inspection.current_hours}
+                          generalNotes={inspection.general_notes}
+                          signatureData={inspection.signature_data}
+                          items={inspection.vessel_inspection_items?.map((item: any) => ({
+                            itemName: item.item_name,
+                            category: item.category || 'General',
+                            status: item.status,
+                            notes: item.notes || ''
+                          })) || []}
+                        />
+                      </div>
                     </div>
 
                     {/* Items Summary */}

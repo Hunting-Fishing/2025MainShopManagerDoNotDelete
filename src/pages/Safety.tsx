@@ -1,5 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useNavigate } from 'react-router-dom';
 import { useSafetyDashboard } from '@/hooks/useSafetyDashboard';
 import { useDailyInspections } from '@/hooks/useDailyInspections';
 import { useDVIR } from '@/hooks/useDVIR';
@@ -16,10 +17,12 @@ import {
   FlaggedVehiclesCard,
   CriticalDefectsCard
 } from '@/components/safety';
-import { Shield, RefreshCw } from 'lucide-react';
+import { ServiceAlertsPanel } from '@/components/safety/dashboard/ServiceAlertsPanel';
+import { Shield, RefreshCw, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Safety() {
+  const navigate = useNavigate();
   const { loading, stats, recentIncidents, todayInspections, unsafeLifts, refetch } = useSafetyDashboard();
   const { inspections, loading: inspectionsLoading } = useDailyInspections();
   const { dvirReports, loading: dvirLoading } = useDVIR();
@@ -55,6 +58,13 @@ export default function Safety() {
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
+          </Button>
+          <Button 
+            variant="default"
+            onClick={() => navigate('/safety/analytics')}
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
           </Button>
         </div>
 
@@ -94,6 +104,7 @@ export default function Safety() {
 
           {/* Right Column */}
           <div className="space-y-6">
+            <ServiceAlertsPanel />
             <TodayInspectionsCard inspections={todayInspections} loading={loading} />
             <UnsafeEquipmentAlert unsafeLifts={unsafeLifts} loading={loading} />
             <CertificationAlertsCard />
