@@ -27432,6 +27432,7 @@ export type Database = {
         | "safety_harness"
         | "life_jacket"
         | "immersion_suit"
+        | "fuel_truck"
       forklift_item_status: "good" | "attention" | "bad"
       form_field_type:
         | "text"
@@ -27692,6 +27693,7 @@ export const Constants = {
         "safety_harness",
         "life_jacket",
         "immersion_suit",
+        "fuel_truck",
       ],
       forklift_item_status: ["good", "attention", "bad"],
       form_field_type: [
