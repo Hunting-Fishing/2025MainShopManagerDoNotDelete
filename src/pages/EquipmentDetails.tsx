@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen } from 'lucide-react';
+import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { getEquipmentById, updateEquipmentStatus, type EquipmentDetails } from '@/services/equipment/equipmentService';
 import { MaintenanceIntervals } from '@/components/equipment/MaintenanceIntervals';
@@ -436,22 +436,83 @@ export default function EquipmentDetails() {
               <CardTitle>Technical Specifications</CardTitle>
             </CardHeader>
             <CardContent>
-              {Object.keys(equipment.specifications).length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(equipment.specifications).map(([key, value]) => (
-                    <div key={key}>
-                      <label className="text-sm font-medium text-muted-foreground capitalize">
-                        {key.replace(/_/g, ' ')}
-                      </label>
-                      <p className="mt-1">{value}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">
-                  No specifications available
-                </p>
-              )}
+              {(() => {
+                const specs = equipment.specifications || {};
+                // Filter out nested objects/arrays - only show primitive values
+                const simpleSpecs = Object.entries(specs).filter(([key, value]) => 
+                  typeof value !== 'object' || value === null
+                );
+                const attachments = Array.isArray((specs as any)?.attachments) ? (specs as any).attachments : [];
+                const items = Array.isArray((specs as any)?.items) ? (specs as any).items : [];
+                const hasContent = simpleSpecs.length > 0 || attachments.length > 0 || items.length > 0;
+
+                if (!hasContent) {
+                  return (
+                    <p className="text-center text-muted-foreground py-8">
+                      No specifications available
+                    </p>
+                  );
+                }
+
+                return (
+                  <div className="space-y-6">
+                    {/* Simple key-value specifications */}
+                    {simpleSpecs.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {simpleSpecs.map(([key, value]) => (
+                          <div key={key}>
+                            <label className="text-sm font-medium text-muted-foreground capitalize">
+                              {key.replace(/_/g, ' ')}
+                            </label>
+                            <p className="mt-1">{String(value)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Items specifications */}
+                    {items.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-3">Specification Items</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {items.map((item: any, idx: number) => (
+                            <div key={idx} className="border rounded-lg p-3">
+                              <p className="font-medium">{item.spec_name || item.item_name || 'Item'}</p>
+                              {item.spec_type && <p className="text-sm text-muted-foreground">{item.spec_type}</p>}
+                              {item.quantity && <p className="text-sm">Qty: {item.quantity} {item.unit || ''}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Attachments section */}
+                    {attachments.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-3">Media Attachments</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {attachments.map((att: any, idx: number) => (
+                            <div key={idx} className="border rounded-lg p-2 text-center">
+                              {att.type === 'image' ? (
+                                <img 
+                                  src={att.url} 
+                                  alt={att.name || 'Attachment'} 
+                                  className="w-full h-24 object-cover rounded mb-2"
+                                />
+                              ) : (
+                                <div className="w-full h-24 bg-muted flex items-center justify-center rounded mb-2">
+                                  <FileText className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                              )}
+                              <p className="text-xs truncate">{att.name || 'File'}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
