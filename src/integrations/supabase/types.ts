@@ -10212,139 +10212,6 @@ export type Database = {
           },
         ]
       }
-      inspection_reminders: {
-        Row: {
-          acknowledged: boolean | null
-          acknowledged_at: string | null
-          acknowledged_by: string | null
-          created_at: string
-          id: string
-          reminder_date: string
-          schedule_id: string
-          sent: boolean | null
-          sent_at: string | null
-        }
-        Insert: {
-          acknowledged?: boolean | null
-          acknowledged_at?: string | null
-          acknowledged_by?: string | null
-          created_at?: string
-          id?: string
-          reminder_date: string
-          schedule_id: string
-          sent?: boolean | null
-          sent_at?: string | null
-        }
-        Update: {
-          acknowledged?: boolean | null
-          acknowledged_at?: string | null
-          acknowledged_by?: string | null
-          created_at?: string
-          id?: string
-          reminder_date?: string
-          schedule_id?: string
-          sent?: boolean | null
-          sent_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inspection_reminders_acknowledged_by_fkey"
-            columns: ["acknowledged_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inspection_reminders_schedule_id_fkey"
-            columns: ["schedule_id"]
-            isOneToOne: false
-            referencedRelation: "inspection_schedules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      inspection_schedules: {
-        Row: {
-          assigned_to: string | null
-          created_at: string
-          equipment_id: string | null
-          frequency: string
-          frequency_value: number | null
-          hours_interval: number | null
-          id: string
-          inspection_type: string
-          is_active: boolean | null
-          last_inspection_date: string | null
-          next_due_date: string | null
-          notes: string | null
-          reminder_days_before: number | null
-          schedule_name: string
-          shop_id: string
-          updated_at: string
-          vehicle_id: string | null
-        }
-        Insert: {
-          assigned_to?: string | null
-          created_at?: string
-          equipment_id?: string | null
-          frequency: string
-          frequency_value?: number | null
-          hours_interval?: number | null
-          id?: string
-          inspection_type: string
-          is_active?: boolean | null
-          last_inspection_date?: string | null
-          next_due_date?: string | null
-          notes?: string | null
-          reminder_days_before?: number | null
-          schedule_name: string
-          shop_id: string
-          updated_at?: string
-          vehicle_id?: string | null
-        }
-        Update: {
-          assigned_to?: string | null
-          created_at?: string
-          equipment_id?: string | null
-          frequency?: string
-          frequency_value?: number | null
-          hours_interval?: number | null
-          id?: string
-          inspection_type?: string
-          is_active?: boolean | null
-          last_inspection_date?: string | null
-          next_due_date?: string | null
-          notes?: string | null
-          reminder_days_before?: number | null
-          schedule_name?: string
-          shop_id?: string
-          updated_at?: string
-          vehicle_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inspection_schedules_assigned_to_fkey"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inspection_schedules_equipment_id_fkey"
-            columns: ["equipment_id"]
-            isOneToOne: false
-            referencedRelation: "equipment_assets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inspection_schedules_vehicle_id_fkey"
-            columns: ["vehicle_id"]
-            isOneToOne: false
-            referencedRelation: "vehicles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       inspection_service_alerts: {
         Row: {
           acknowledged_at: string | null
@@ -18568,7 +18435,9 @@ export type Database = {
           created_at: string | null
           equipment_id: string | null
           frequency: string
+          hours_interval: number | null
           id: string
+          inspection_type: string | null
           is_enabled: boolean | null
           last_completed_date: string | null
           last_mileage: number | null
@@ -18588,7 +18457,9 @@ export type Database = {
           created_at?: string | null
           equipment_id?: string | null
           frequency: string
+          hours_interval?: number | null
           id?: string
+          inspection_type?: string | null
           is_enabled?: boolean | null
           last_completed_date?: string | null
           last_mileage?: number | null
@@ -18608,7 +18479,9 @@ export type Database = {
           created_at?: string | null
           equipment_id?: string | null
           frequency?: string
+          hours_interval?: number | null
           id?: string
+          inspection_type?: string | null
           is_enabled?: boolean | null
           last_completed_date?: string | null
           last_mileage?: number | null

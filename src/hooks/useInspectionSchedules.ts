@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use useSafetySchedules instead. This hook is kept for backward compatibility
+ * and now queries the consolidated safety_schedules table.
+ */
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from './useShopId';
@@ -36,6 +40,9 @@ export interface CreateScheduleData {
   notes?: string;
 }
 
+/**
+ * @deprecated Use useSafetySchedules instead
+ */
 export function useInspectionSchedules() {
   const { shopId } = useShopId();
   const { toast } = useToast();
@@ -53,14 +60,25 @@ export function useInspectionSchedules() {
     
     setLoading(true);
     try {
+      // Now using consolidated safety_schedules table
       const { data, error } = await (supabase
-        .from('inspection_schedules' as any)
+        .from('safety_schedules' as any)
         .select('*')
         .eq('shop_id', shopId)
         .order('next_due_date', { ascending: true }) as any);
 
       if (error) throw error;
-      setSchedules((data || []) as InspectionSchedule[]);
+      
+      // Map to InspectionSchedule interface for backward compatibility
+      const mapped = (data || []).map((s: any) => ({
+        ...s,
+        inspection_type: s.inspection_type || s.schedule_type,
+        frequency_value: 1,
+        is_active: s.is_enabled,
+        last_inspection_date: s.last_completed_date,
+      }));
+      
+      setSchedules(mapped as InspectionSchedule[]);
     } catch (error: any) {
       console.error('Error fetching inspection schedules:', error);
       toast({
@@ -77,15 +95,23 @@ export function useInspectionSchedules() {
     if (!shopId) return null;
     
     try {
-      // Calculate next due date based on frequency
       const nextDueDate = calculateNextDueDate(data.frequency, data.frequency_value || 1);
 
       const { data: schedule, error } = await (supabase
-        .from('inspection_schedules' as any)
+        .from('safety_schedules' as any)
         .insert({
           shop_id: shopId,
-          next_due_date: nextDueDate.toISOString(),
-          ...data
+          schedule_name: data.schedule_name,
+          schedule_type: data.inspection_type,
+          inspection_type: data.inspection_type,
+          frequency: data.frequency,
+          hours_interval: data.hours_interval,
+          equipment_id: data.equipment_id,
+          vehicle_id: data.vehicle_id,
+          reminder_days_before: data.reminder_days_before || 1,
+          notes: data.notes,
+          next_due_date: nextDueDate.toISOString().split('T')[0],
+          is_enabled: true
         })
         .select()
         .single() as any);
@@ -113,7 +139,7 @@ export function useInspectionSchedules() {
   const updateSchedule = async (id: string, updates: Partial<CreateScheduleData>) => {
     try {
       const { error } = await (supabase
-        .from('inspection_schedules' as any)
+        .from('safety_schedules' as any)
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id) as any);
 
@@ -134,7 +160,7 @@ export function useInspectionSchedules() {
   const deleteSchedule = async (id: string) => {
     try {
       const { error } = await (supabase
-        .from('inspection_schedules' as any)
+        .from('safety_schedules' as any)
         .delete()
         .eq('id', id) as any);
 
@@ -160,10 +186,10 @@ export function useInspectionSchedules() {
     
     try {
       const { error } = await (supabase
-        .from('inspection_schedules' as any)
+        .from('safety_schedules' as any)
         .update({
-          last_inspection_date: new Date().toISOString(),
-          next_due_date: nextDueDate.toISOString(),
+          last_completed_date: new Date().toISOString().split('T')[0],
+          next_due_date: nextDueDate.toISOString().split('T')[0],
           updated_at: new Date().toISOString()
         })
         .eq('id', scheduleId) as any);

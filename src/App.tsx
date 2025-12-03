@@ -97,7 +97,6 @@ import ForkliftInspection from '@/pages/ForkliftInspection';
 import VesselInspection from '@/pages/VesselInspection';
 import VesselInspectionHistoryPage from '@/pages/VesselInspectionHistoryPage';
 import InspectionAnalytics from '@/pages/InspectionAnalytics';
-import InspectionScheduling from '@/pages/InspectionScheduling';
 import SafetyLiftInspectionNew from '@/pages/SafetyLiftInspectionNew';
 import SafetyDocuments from '@/pages/SafetyDocuments';
 import SafetyCertifications from '@/pages/SafetyCertifications';
@@ -588,11 +587,8 @@ function App() {
                       <InspectionAnalytics />
                     </ProtectedRoute>
                   } />
-                  <Route path="/safety/scheduling" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'boat_manager', 'mechanic_manager', 'owner']}>
-                      <InspectionScheduling />
-                    </ProtectedRoute>
-                  } />
+                  {/* Redirect old scheduling route to consolidated schedules page */}
+                  <Route path="/safety/scheduling" element={<Navigate to="/safety/schedules" replace />} />
                   <Route path="/safety/documents" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <SafetyDocuments />

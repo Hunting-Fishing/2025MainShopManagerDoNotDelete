@@ -180,7 +180,7 @@ export function MobileNavigation() {
       items: [
         { id: 'safety', label: 'Safety Dashboard', icon: Shield, path: '/safety', description: 'Safety overview' },
         { id: 'safety-analytics', label: 'Analytics', icon: BarChart3, path: '/safety/analytics', description: 'Inspection trends & alerts' },
-        { id: 'safety-scheduling', label: 'Scheduling', icon: Calendar, path: '/safety/scheduling', description: 'Recurring schedules & QR codes' },
+        { id: 'safety-scheduling', label: 'Schedules', icon: Calendar, path: '/safety/schedules', description: 'Schedules, QR codes & auto rules' },
         { id: 'safety-incidents', label: 'Incidents', icon: AlertTriangle, path: '/safety/incidents', description: 'Report & track incidents' },
         { id: 'safety-inspections', label: 'Daily Inspections', icon: ClipboardCheck, path: '/safety/inspections', description: 'Shop safety inspections' },
         { id: 'safety-dvir', label: 'DVIR Reports', icon: Truck, path: '/safety/dvir', description: 'Vehicle inspection reports' },

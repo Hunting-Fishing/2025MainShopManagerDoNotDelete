@@ -21,6 +21,9 @@ import { useSafetySchedules, CreateScheduleData } from '@/hooks/useSafetySchedul
 import { useInspectionAssignments } from '@/hooks/useInspectionAssignments';
 import { AssignInspectionDialog } from '@/components/safety/AssignInspectionDialog';
 import { CreateVehicleScheduleDialog } from '@/components/safety/CreateVehicleScheduleDialog';
+import { QRCodeScanner } from '@/components/safety/qr/QRCodeScanner';
+import { AutoWorkOrderRulesPanel } from '@/components/safety/workorder/AutoWorkOrderRulesPanel';
+import { OfflineStatusBar } from '@/components/safety/offline/OfflineStatusBar';
 import { 
   CalendarClock, 
   Bell, 
@@ -37,7 +40,9 @@ import {
   Loader2,
   UserPlus,
   Car,
-  Users
+  Users,
+  QrCode,
+  Settings
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, differenceInDays } from 'date-fns';
@@ -48,7 +53,8 @@ const frequencyLabels: Record<string, string> = {
   weekly: 'Weekly',
   monthly: 'Monthly',
   quarterly: 'Quarterly',
-  annual: 'Annual'
+  annual: 'Annual',
+  hours_based: 'Hours-Based'
 };
 
 const typeIcons: Record<string, React.ElementType> = {
@@ -170,10 +176,13 @@ export default function SafetySchedules() {
               Track inspections, certifications, and compliance deadlines
             </p>
           </div>
-          <Button onClick={() => navigate('/safety')}>
-            <Shield className="h-4 w-4 mr-2" />
-            Back to Safety Dashboard
-          </Button>
+          <div className="flex items-center gap-3">
+            <OfflineStatusBar />
+            <Button onClick={() => navigate('/safety')}>
+              <Shield className="h-4 w-4 mr-2" />
+              Back to Safety Dashboard
+            </Button>
+          </div>
         </div>
 
         {/* Summary Stats */}
@@ -252,7 +261,7 @@ export default function SafetySchedules() {
         </div>
 
         <Tabs defaultValue="reminders" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="reminders">
               Active Reminders ({reminders.length})
             </TabsTrigger>
@@ -266,6 +275,14 @@ export default function SafetySchedules() {
             <TabsTrigger value="assignments">
               <Users className="h-4 w-4 mr-1" />
               Staff Assignments ({todayAssignments.length})
+            </TabsTrigger>
+            <TabsTrigger value="qr">
+              <QrCode className="h-4 w-4 mr-1" />
+              Scan QR
+            </TabsTrigger>
+            <TabsTrigger value="rules">
+              <Settings className="h-4 w-4 mr-1" />
+              Auto Rules
             </TabsTrigger>
           </TabsList>
 
@@ -592,6 +609,31 @@ export default function SafetySchedules() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* QR Code Scanner Tab */}
+          <TabsContent value="qr" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="h-5 w-5" />
+                  QR Code Scanner
+                </CardTitle>
+                <CardDescription>
+                  Scan equipment or vehicle QR codes to quickly start inspections
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="max-w-md mx-auto">
+                  <QRCodeScanner />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Auto Work Order Rules Tab */}
+          <TabsContent value="rules" className="space-y-4">
+            <AutoWorkOrderRulesPanel />
           </TabsContent>
         </Tabs>
       </div>
