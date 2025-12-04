@@ -2954,6 +2954,140 @@ export type Database = {
           },
         ]
       }
+      contact_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          address: string | null
+          category_id: string | null
+          city: string | null
+          company_name: string | null
+          contact_type: string
+          country: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          fax: string | null
+          first_name: string | null
+          id: string
+          is_active: boolean | null
+          is_favorite: boolean | null
+          job_title: string | null
+          last_name: string | null
+          mobile: string | null
+          notes: string | null
+          phone: string | null
+          profile_image_url: string | null
+          shop_id: string
+          state: string | null
+          tags: string[] | null
+          updated_at: string
+          website: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          category_id?: string | null
+          city?: string | null
+          company_name?: string | null
+          contact_type?: string
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          fax?: string | null
+          first_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_favorite?: boolean | null
+          job_title?: string | null
+          last_name?: string | null
+          mobile?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_image_url?: string | null
+          shop_id: string
+          state?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          category_id?: string | null
+          city?: string | null
+          company_name?: string | null
+          contact_type?: string
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          fax?: string | null
+          first_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_favorite?: boolean | null
+          job_title?: string | null
+          last_name?: string | null
+          mobile?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_image_url?: string | null
+          shop_id?: string
+          state?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "contact_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversion_audit: {
         Row: {
           conversion_notes: string | null
@@ -18078,6 +18212,80 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      resources: {
+        Row: {
+          access_count: number | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_favorite: boolean | null
+          last_accessed_at: string | null
+          name: string
+          notes: string | null
+          resource_type: string
+          shop_id: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          updated_at: string
+          url: string | null
+          username: string | null
+        }
+        Insert: {
+          access_count?: number | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_favorite?: boolean | null
+          last_accessed_at?: string | null
+          name: string
+          notes?: string | null
+          resource_type?: string
+          shop_id: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          url?: string | null
+          username?: string | null
+        }
+        Update: {
+          access_count?: number | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_favorite?: boolean | null
+          last_accessed_at?: string | null
+          name?: string
+          notes?: string | null
+          resource_type?: string
+          shop_id?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          url?: string | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "contact_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       review_helpfulness: {
         Row: {

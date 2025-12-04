@@ -37,6 +37,7 @@ import ServiceBoard from '@/pages/ServiceBoard';
 import Payments from '@/pages/Payments';
 import CompanyProfile from '@/pages/CompanyProfile';
 import Documents from '@/pages/Documents';
+import Contacts from '@/pages/Contacts';
 import ServiceCatalog from '@/pages/ServiceCatalog';
 import RepairPlans from '@/pages/RepairPlans';
 import Login from '@/pages/Login';
@@ -334,6 +335,13 @@ function App() {
                   <Route path="/documents" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Documents />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Contacts & Resources */}
+                  <Route path="/contacts" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <Contacts />
                     </ProtectedRoute>
                   } />
                   
