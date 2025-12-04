@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export type ItemStatus = 'good' | 'attention' | 'bad';
+export type ItemStatus = 'good' | 'attention' | 'bad' | 'na' | null;
 export type OverallStatus = 'pass' | 'pass_with_concerns' | 'fail';
 
 export interface ForkliftInspection {
