@@ -107,16 +107,17 @@ export function ForkliftInspectionForm({ workOrderId: propWorkOrderId }: Forklif
     fetchUserProfile();
   }, []);
 
-  // Initialize all inspection items with 'good' status
+  // Initialize all inspection items with null status (no selection)
   const [itemStatuses, setItemStatuses] = useState<Record<string, ItemStatus>>(() => {
     const initial: Record<string, ItemStatus> = {};
     INSPECTION_ITEMS.forEach(item => {
-      initial[item.key] = 'good';
+      initial[item.key] = null;
     });
     return initial;
   });
 
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
+  const [itemPhotos, setItemPhotos] = useState<Record<string, string[]>>({});
 
   // Fetch forklift equipment
   useEffect(() => {
@@ -173,8 +174,8 @@ export function ForkliftInspectionForm({ workOrderId: propWorkOrderId }: Forklif
 
   const handleStatusChange = (key: string, status: ItemStatus) => {
     setItemStatuses(prev => ({ ...prev, [key]: status }));
-    // Clear notes if status is good
-    if (status === 'good') {
+    // Clear notes and photos if status is good or na
+    if (status === 'good' || status === 'na') {
       setItemNotes(prev => {
         const newNotes = { ...prev };
         delete newNotes[key];
@@ -187,7 +188,11 @@ export function ForkliftInspectionForm({ workOrderId: propWorkOrderId }: Forklif
     setItemNotes(prev => ({ ...prev, [key]: notes }));
   };
 
-  const hasConcerns = Object.values(itemStatuses).some(status => status !== 'good');
+  const handlePhotosChange = (key: string, photos: string[]) => {
+    setItemPhotos(prev => ({ ...prev, [key]: photos }));
+  };
+
+  const hasConcerns = Object.values(itemStatuses).some(status => status !== 'good' && status !== 'na' && status !== null);
   const hasBadItems = Object.values(itemStatuses).some(status => status === 'bad');
 
   const calculateOverallStatus = () => {
@@ -195,6 +200,9 @@ export function ForkliftInspectionForm({ workOrderId: propWorkOrderId }: Forklif
     if (hasConcerns) return 'pass_with_concerns';
     return 'pass';
   };
+
+  // Check if all items have been inspected
+  const allItemsInspected = Object.values(itemStatuses).every(status => status !== null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,6 +212,15 @@ export function ForkliftInspectionForm({ workOrderId: propWorkOrderId }: Forklif
         variant: 'destructive',
         title: 'Missing Required Fields',
         description: 'Please fill in all required fields',
+      });
+      return;
+    }
+
+    if (!allItemsInspected) {
+      toast({
+        variant: 'destructive',
+        title: 'Incomplete Inspection',
+        description: 'Please inspect all items before submitting',
       });
       return;
     }
@@ -226,11 +243,12 @@ export function ForkliftInspectionForm({ workOrderId: propWorkOrderId }: Forklif
       overall_status: calculateOverallStatus(),
       signature_data: formData.signature_data,
       work_order_id: workOrderId || null,
+      item_photos: itemPhotos, // Store all item photos as JSONB
     };
 
     // Add all status and notes fields
     INSPECTION_ITEMS.forEach(item => {
-      inspectionData[`${item.key}_status`] = itemStatuses[item.key];
+      inspectionData[`${item.key}_status`] = itemStatuses[item.key] || 'na';
       if (itemNotes[item.key]) {
         inspectionData[`${item.key}_notes`] = itemNotes[item.key];
       }
@@ -358,7 +376,8 @@ export function ForkliftInspectionForm({ workOrderId: propWorkOrderId }: Forklif
             Tap the status button for each item: 
             <span className="text-green-600 font-medium"> Green = Good</span>, 
             <span className="text-amber-600 font-medium"> Yellow = Needs Attention</span>, 
-            <span className="text-red-600 font-medium"> Red = Bad</span>
+            <span className="text-red-600 font-medium"> Red = Bad</span>,
+            <span className="text-gray-500 font-medium"> Gray = N/A</span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -369,8 +388,10 @@ export function ForkliftInspectionForm({ workOrderId: propWorkOrderId }: Forklif
               itemKey={item.key}
               value={itemStatuses[item.key]}
               notes={itemNotes[item.key]}
+              photos={itemPhotos[item.key] || []}
               onChange={handleStatusChange}
               onNotesChange={handleNotesChange}
+              onPhotosChange={handlePhotosChange}
               icon={item.icon}
             />
           ))}

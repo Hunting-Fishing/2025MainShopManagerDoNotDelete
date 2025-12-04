@@ -27433,7 +27433,7 @@ export type Database = {
         | "life_jacket"
         | "immersion_suit"
         | "fuel_truck"
-      forklift_item_status: "good" | "attention" | "bad"
+      forklift_item_status: "good" | "attention" | "bad" | "na"
       form_field_type:
         | "text"
         | "textarea"
@@ -27695,7 +27695,7 @@ export const Constants = {
         "immersion_suit",
         "fuel_truck",
       ],
-      forklift_item_status: ["good", "attention", "bad"],
+      forklift_item_status: ["good", "attention", "bad", "na"],
       form_field_type: [
         "text",
         "textarea",
