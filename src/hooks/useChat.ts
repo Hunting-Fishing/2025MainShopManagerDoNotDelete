@@ -48,8 +48,8 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     currentRoomId: currentRoom?.id || null 
   });
 
-  // Select a chat room
-  const selectRoom = useCallback(async (room: ChatRoom) => {
+  // Select a chat room (or null to deselect for mobile back navigation)
+  const selectRoom = useCallback(async (room: ChatRoom | null) => {
     setCurrentRoom(room);
   }, []);
 
