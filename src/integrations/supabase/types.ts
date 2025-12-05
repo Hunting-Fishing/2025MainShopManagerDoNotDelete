@@ -21276,6 +21276,223 @@ export type Database = {
         }
         Relationships: []
       }
+      task_activities: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          is_note: boolean | null
+          notes: string | null
+          task_id: string
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          is_note?: boolean | null
+          notes?: string | null
+          task_id: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          is_note?: boolean | null
+          notes?: string | null
+          task_id?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_activities_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_by_name: string | null
+          assignee_id: string
+          assignee_name: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          task_id: string
+          unassigned_at: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_by_name?: string | null
+          assignee_id: string
+          assignee_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          task_id: string
+          unassigned_at?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_by_name?: string | null
+          assignee_id?: string
+          assignee_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          task_id?: string
+          unassigned_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_parts: {
+        Row: {
+          added_by: string | null
+          added_by_name: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          part_name: string
+          part_number: string | null
+          quantity: number | null
+          task_id: string
+          total_cost: number | null
+          unit_cost: number | null
+        }
+        Insert: {
+          added_by?: string | null
+          added_by_name?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          part_name: string
+          part_number?: string | null
+          quantity?: number | null
+          task_id: string
+          total_cost?: number | null
+          unit_cost?: number | null
+        }
+        Update: {
+          added_by?: string | null
+          added_by_name?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          part_name?: string
+          part_number?: string | null
+          quantity?: number | null
+          task_id?: string
+          total_cost?: number | null
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_parts_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_parts_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_time_entries: {
+        Row: {
+          created_at: string | null
+          duration: number | null
+          employee_id: string | null
+          employee_name: string | null
+          end_time: string | null
+          id: string
+          notes: string | null
+          start_time: string | null
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration?: number | null
+          employee_id?: string | null
+          employee_name?: string | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          start_time?: string | null
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration?: number | null
+          employee_id?: string | null
+          employee_name?: string | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          start_time?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_time_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_time_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_documents: {
         Row: {
           confirmation_number: string | null
