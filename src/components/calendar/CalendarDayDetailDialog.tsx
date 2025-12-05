@@ -1,8 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { CalendarEvent } from "@/types/calendar";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, MapPin, User, AlertCircle } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, User, AlertCircle, Plus, CheckSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { priorityMap } from "@/utils/workOrders";
 
@@ -13,6 +14,7 @@ interface CalendarDayDetailDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onEventClick: (event: CalendarEvent) => void;
+  onAddTask?: (date: Date) => void;
 }
 
 export function CalendarDayDetailDialog({
@@ -21,9 +23,14 @@ export function CalendarDayDetailDialog({
   carryOverEvents = [],
   isOpen,
   onClose,
-  onEventClick
+  onEventClick,
+  onAddTask
 }: CalendarDayDetailDialogProps) {
   if (!date) return null;
+
+  // Separate tasks from other events
+  const tasks = events.filter(e => e.type === 'task' || e.event_type === 'task');
+  const jobs = events.filter(e => e.type !== 'task' && e.event_type !== 'task');
 
   const sortedEvents = [...events].sort((a, b) => {
     return new Date(a.start).getTime() - new Date(b.start).getTime();
@@ -127,9 +134,14 @@ export function CalendarDayDetailDialog({
               {format(date, "EEEE, MMMM d, yyyy")}
             </div>
             <div className="flex items-center gap-2">
-              {events.length > 0 && (
+              {jobs.length > 0 && (
                 <span className="inline-flex items-center justify-center px-3 py-1 text-sm font-semibold rounded-full bg-primary/10 text-primary">
-                  {events.length} {events.length === 1 ? 'Job' : 'Jobs'}
+                  {jobs.length} {jobs.length === 1 ? 'Job' : 'Jobs'}
+                </span>
+              )}
+              {tasks.length > 0 && (
+                <span className="inline-flex items-center justify-center px-3 py-1 text-sm font-semibold rounded-full bg-purple-100 text-purple-800">
+                  {tasks.length} {tasks.length === 1 ? 'Task' : 'Tasks'}
                 </span>
               )}
               {carryOverEvents.length > 0 && (
@@ -137,17 +149,34 @@ export function CalendarDayDetailDialog({
                   {carryOverEvents.length} Overdue
                 </span>
               )}
+              {onAddTask && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => onAddTask(date)}
+                  className="gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Task
+                </Button>
+              )}
             </div>
           </DialogTitle>
         </DialogHeader>
         
         <Tabs defaultValue="all" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="all">
-              All Jobs ({events.length})
+              Jobs ({jobs.length})
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="relative">
+              Tasks ({tasks.length})
+              {tasks.length > 0 && (
+                <CheckSquare className="ml-1 h-3 w-3" />
+              )}
             </TabsTrigger>
             <TabsTrigger value="carryover" className="relative">
-              Carry Over ({carryOverEvents.length})
+              Overdue ({carryOverEvents.length})
               {carryOverEvents.length > 0 && (
                 <span className="absolute -top-1 -right-1 h-2 w-2 bg-orange-500 rounded-full" />
               )}
@@ -155,12 +184,34 @@ export function CalendarDayDetailDialog({
           </TabsList>
           
           <TabsContent value="all" className="flex-1 overflow-y-auto space-y-3 pr-2 mt-4">
-            {sortedEvents.length === 0 ? (
+            {jobs.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No events scheduled for this day
+                No jobs scheduled for this day
               </div>
             ) : (
-              sortedEvents.map((event) => renderEventCard(event))
+              jobs.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map((event) => renderEventCard(event))
+            )}
+          </TabsContent>
+
+          <TabsContent value="tasks" className="flex-1 overflow-y-auto space-y-3 pr-2 mt-4">
+            {tasks.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckSquare className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
+                <p className="font-medium">No tasks for this day</p>
+                {onAddTask && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-3"
+                    onClick={() => onAddTask(date)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add a task
+                  </Button>
+                )}
+              </div>
+            ) : (
+              tasks.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map((event) => renderEventCard(event))
             )}
           </TabsContent>
           

@@ -4,6 +4,7 @@ import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { CalendarFilters } from '@/components/calendar/CalendarFilters';
 import { CalendarDayDetailDialog } from '@/components/calendar/CalendarDayDetailDialog';
+import { AddTaskDialog } from '@/components/calendar/AddTaskDialog';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useBusinessHours } from '@/hooks/useBusinessHours';
 import { CalendarViewType, CalendarEvent } from '@/types/calendar';
@@ -18,6 +19,8 @@ export default function Calendar() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
+  const [taskDialogDate, setTaskDialogDate] = useState<Date | undefined>(undefined);
 
   const { events, shiftChats, isLoading, error } = useCalendarEvents(currentDate, view);
   const { businessHours, isBusinessDay } = useBusinessHours();
@@ -92,6 +95,16 @@ export default function Calendar() {
     setSelectedDate(null);
   };
 
+  const handleAddTask = (date?: Date) => {
+    setTaskDialogDate(date || currentDate);
+    setShowAddTaskDialog(true);
+    setSelectedDate(null); // Close day detail dialog if open
+  };
+
+  const handleTaskCreated = () => {
+    // Events will auto-refresh via useCalendarEvents hook
+  };
+
   if (error) {
     return (
       <div className="w-full p-6">
@@ -110,6 +123,7 @@ export default function Calendar() {
         setCurrentDate={setCurrentDate}
         view={view}
         setView={setView}
+        onAddTask={() => handleAddTask()}
       />
       
       <div className="space-y-4">
@@ -145,6 +159,14 @@ export default function Calendar() {
         isOpen={!!selectedDate}
         onClose={handleCloseDetailDialog}
         onEventClick={handleEventClickFromDetail}
+        onAddTask={handleAddTask}
+      />
+
+      <AddTaskDialog
+        isOpen={showAddTaskDialog}
+        onClose={() => setShowAddTaskDialog(false)}
+        selectedDate={taskDialogDate}
+        onTaskCreated={handleTaskCreated}
       />
     </div>
   );
