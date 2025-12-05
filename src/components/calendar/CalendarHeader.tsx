@@ -1,7 +1,7 @@
 
 import { format, addMonths, addWeeks, addDays, subMonths, subWeeks, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { CalendarViewType } from "@/types/calendar";
 
 interface CalendarHeaderProps {
@@ -9,13 +9,15 @@ interface CalendarHeaderProps {
   setCurrentDate: (date: Date) => void;
   view: CalendarViewType;
   setView: (view: CalendarViewType) => void;
+  onAddTask?: () => void;
 }
 
 export function CalendarHeader({ 
   currentDate, 
   setCurrentDate, 
   view, 
-  setView 
+  setView,
+  onAddTask
 }: CalendarHeaderProps) {
   const navigatePrevious = () => {
     if (view === "month") {
@@ -50,6 +52,12 @@ export function CalendarHeader({
         </p>
       </div>
       <div className="flex items-center space-x-2">
+        {onAddTask && (
+          <Button onClick={onAddTask} size="sm" className="gap-1">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Add Task</span>
+          </Button>
+        )}
         <div className="flex items-center rounded-md border bg-background p-1">
           <Button
             variant={view === "month" ? "default" : "ghost"}
