@@ -3907,6 +3907,95 @@ export type Database = {
           },
         ]
       }
+      customer_uploaded_forms: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          customer_id: string | null
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string | null
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_uploaded_forms_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "form_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_uploaded_forms_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_uploaded_forms_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_uploaded_forms_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -8907,8 +8996,10 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          is_digitized: boolean | null
           is_published: boolean | null
           name: string
+          source_document_url: string | null
           updated_at: string | null
           version: number | null
         }
@@ -8918,8 +9009,10 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_digitized?: boolean | null
           is_published?: boolean | null
           name: string
+          source_document_url?: string | null
           updated_at?: string | null
           version?: number | null
         }
@@ -8929,8 +9022,10 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_digitized?: boolean | null
           is_published?: boolean | null
           name?: string
+          source_document_url?: string | null
           updated_at?: string | null
           version?: number | null
         }
