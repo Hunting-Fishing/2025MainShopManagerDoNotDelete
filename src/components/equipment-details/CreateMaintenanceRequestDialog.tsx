@@ -161,11 +161,12 @@ export function CreateMaintenanceRequestDialog({
       const maxAttempts = 3;
       let attempts = 0;
       let insertError: any = null;
+      let insertSuccess = false;
 
       while (attempts < maxAttempts) {
         const requestNumber = await generateRequestNumber(profile.shop_id);
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('maintenance_requests')
           .insert({
             request_number: requestNumber,
@@ -181,16 +182,24 @@ export function CreateMaintenanceRequestDialog({
             requested_by: user.id,
             requested_by_name: submitterName,
             attachments: attachments
-          });
+          })
+          .select('id')
+          .single();
 
-        if (!error) {
-          // Success - exit loop
-          insertError = null;
+        if (data && !error) {
+          // True success - we got data back
+          insertSuccess = true;
+          break;
+        }
+
+        if (!data && !error) {
+          // RLS silently blocked the insert - no data returned but no error
+          insertError = new Error('Permission denied - unable to create request');
           break;
         }
 
         // Check if it's a duplicate key error (code 23505)
-        if (error.code === '23505' && attempts < maxAttempts - 1) {
+        if (error?.code === '23505' && attempts < maxAttempts - 1) {
           attempts++;
           continue;
         }
@@ -200,6 +209,7 @@ export function CreateMaintenanceRequestDialog({
       }
 
       if (insertError) throw insertError;
+      if (!insertSuccess) throw new Error('Failed to create maintenance request');
 
       toast.success('Maintenance request submitted successfully');
       onSuccess();
@@ -220,10 +230,12 @@ export function CreateMaintenanceRequestDialog({
       setReportedByType('employee');
     } catch (error: any) {
       console.error('Error creating maintenance request:', error);
-      if (error.code === '23505') {
+      if (error.message?.includes('Permission denied')) {
+        toast.error('You don\'t have permission to create requests for this shop');
+      } else if (error.code === '23505') {
         toast.error('Request number conflict - please try again');
       } else {
-        toast.error('Failed to submit maintenance request');
+        toast.error(error.message || 'Failed to submit maintenance request');
       }
     } finally {
       setLoading(false);
