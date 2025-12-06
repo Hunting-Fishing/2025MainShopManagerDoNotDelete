@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen, FileText } from 'lucide-react';
+import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen, FileText, MapPin, Gauge, Hash, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { getEquipmentById, updateEquipmentStatus, type EquipmentDetails } from '@/services/equipment/equipmentService';
 import { MaintenanceIntervals } from '@/components/equipment/MaintenanceIntervals';
@@ -12,6 +12,19 @@ import { EquipmentWorkRequests } from '@/components/equipment-details/EquipmentW
 import { EquipmentConfigDialog } from '@/components/equipment/EquipmentConfigDialog';
 import { SafetyEquipmentList } from '@/components/equipment/SafetyEquipmentList';
 import { EquipmentManuals } from '@/components/equipment/EquipmentManuals';
+
+// Helper to check if equipment is a vehicle type
+const isVehicleType = (type?: string): boolean => {
+  if (!type) return false;
+  const vehicleTypes = ['fuel_truck', 'heavy_truck', 'semi_truck', 'fleet_vehicle', 'service_vehicle', 'forklift', 'excavator', 'trailer', 'boat', 'vessel'];
+  return vehicleTypes.includes(type);
+};
+
+// Format equipment type for display
+const formatEquipmentType = (type?: string): string => {
+  if (!type) return 'Equipment';
+  return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+};
 
 export default function EquipmentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -55,11 +68,11 @@ export default function EquipmentDetails() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'operational': return 'bg-green-100 text-green-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'down': return 'bg-red-100 text-red-800';
-      case 'repair': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'operational': return 'bg-green-500/10 text-green-600 border-green-500/20';
+      case 'maintenance': return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20';
+      case 'down': return 'bg-red-500/10 text-red-600 border-red-500/20';
+      case 'repair': return 'bg-orange-500/10 text-orange-600 border-orange-500/20';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -70,15 +83,15 @@ export default function EquipmentDetails() {
           <Button variant="ghost" onClick={() => navigate('/equipment')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="animate-pulse bg-gray-200 h-8 w-64 rounded"></div>
+          <div className="animate-pulse bg-muted h-8 w-64 rounded"></div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map(i => (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
             <Card key={i}>
-              <CardContent className="p-6">
-                <div className="animate-pulse space-y-4">
-                  <div className="bg-gray-200 h-4 w-full rounded"></div>
-                  <div className="bg-gray-200 h-4 w-3/4 rounded"></div>
+              <CardContent className="p-4">
+                <div className="animate-pulse space-y-3">
+                  <div className="bg-muted h-4 w-full rounded"></div>
+                  <div className="bg-muted h-4 w-3/4 rounded"></div>
                 </div>
               </CardContent>
             </Card>
@@ -106,17 +119,45 @@ export default function EquipmentDetails() {
     );
   }
 
+  const showVehicleInfo = isVehicleType(equipment.equipment_type);
+
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
+      {/* Header with Profile Image */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={() => navigate('/equipment')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
+          
+          {/* Profile Image */}
+          {equipment.profile_image_url ? (
+            <img 
+              src={equipment.profile_image_url} 
+              alt={equipment.name}
+              className="h-16 w-16 rounded-lg object-cover border"
+            />
+          ) : (
+            <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center border">
+              <Truck className="h-8 w-8 text-muted-foreground" />
+            </div>
+          )}
+          
           <div>
-            <h1 className="text-2xl font-bold">{equipment.name}</h1>
-            <p className="text-muted-foreground">{equipment.type || equipment.category} - {equipment.model}</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">{equipment.name}</h1>
+              {equipment.unit_number && (
+                <Badge variant="outline" className="text-xs">
+                  Unit #{equipment.unit_number}
+                </Badge>
+              )}
+            </div>
+            <p className="text-muted-foreground">
+              {formatEquipmentType(equipment.equipment_type)}
+              {equipment.manufacturer && ` • ${equipment.manufacturer}`}
+              {equipment.model && ` ${equipment.model}`}
+              {equipment.year && ` (${equipment.year})`}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -130,15 +171,17 @@ export default function EquipmentDetails() {
         </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${equipment.currentStatus === 'operational' ? 'bg-green-500/10' : equipment.currentStatus === 'maintenance' ? 'bg-yellow-500/10' : 'bg-red-500/10'}`}>
+                <CheckCircle className={`h-5 w-5 ${equipment.currentStatus === 'operational' ? 'text-green-600' : equipment.currentStatus === 'maintenance' ? 'text-yellow-600' : 'text-red-600'}`} />
+              </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
-                <p className="font-medium capitalize">{equipment.currentStatus}</p>
+                <p className="font-semibold capitalize">{equipment.currentStatus}</p>
               </div>
             </div>
           </CardContent>
@@ -146,14 +189,20 @@ export default function EquipmentDetails() {
         
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Gauge className="h-5 w-5 text-blue-600" />
+              </div>
               <div>
-                <p className="text-sm text-muted-foreground">Last Maintenance</p>
-                <p className="font-medium">
-                  {equipment.maintenanceRecords[0]?.date 
-                    ? new Date(equipment.maintenanceRecords[0].date).toLocaleDateString()
-                    : 'Never'
+                <p className="text-sm text-muted-foreground">
+                  {equipment.current_hours ? 'Hours' : equipment.current_mileage ? 'Mileage' : 'Usage'}
+                </p>
+                <p className="font-semibold">
+                  {equipment.current_hours 
+                    ? `${equipment.current_hours.toLocaleString()} hrs`
+                    : equipment.current_mileage 
+                      ? `${equipment.current_mileage.toLocaleString()} mi`
+                      : 'N/A'
                   }
                 </p>
               </div>
@@ -163,11 +212,13 @@ export default function EquipmentDetails() {
         
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <MapPin className="h-5 w-5 text-purple-600" />
+              </div>
               <div>
                 <p className="text-sm text-muted-foreground">Location</p>
-                <p className="font-medium">{equipment.location}</p>
+                <p className="font-semibold">{equipment.location || 'Unknown'}</p>
               </div>
             </div>
           </CardContent>
@@ -175,9 +226,19 @@ export default function EquipmentDetails() {
         
         <Card>
           <CardContent className="p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Assigned To</p>
-              <p className="font-medium">{equipment.assignedTo || 'Unassigned'}</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-orange-500/10">
+                <Calendar className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Next Service</p>
+                <p className="font-semibold">
+                  {equipment.next_service_date 
+                    ? new Date(equipment.next_service_date).toLocaleDateString()
+                    : 'Not scheduled'
+                  }
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -185,7 +246,7 @@ export default function EquipmentDetails() {
 
       {/* Details Tabs */}
       <Tabs defaultValue="details" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="manuals">
             <BookOpen className="h-4 w-4 mr-2" />
@@ -208,19 +269,175 @@ export default function EquipmentDetails() {
         </TabsList>
 
         <TabsContent value="details" className="space-y-4">
+          {/* Equipment Information Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Equipment Information</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Hash className="h-5 w-5" />
+                Equipment Information
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Serial Number</label>
-                  <p className="mt-1">{equipment.serial_number || 'N/A'}</p>
+                  <label className="text-sm font-medium text-muted-foreground">Equipment Type</label>
+                  <p className="mt-1 font-medium">{formatEquipmentType(equipment.equipment_type)}</p>
                 </div>
                 <div>
+                  <label className="text-sm font-medium text-muted-foreground">Unit Number</label>
+                  <p className="mt-1 font-medium">{equipment.unit_number || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Asset Number</label>
+                  <p className="mt-1 font-medium">{equipment.asset_number || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Manufacturer</label>
+                  <p className="mt-1 font-medium">{equipment.manufacturer || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Model</label>
+                  <p className="mt-1 font-medium">{equipment.model || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Year</label>
+                  <p className="mt-1 font-medium">{equipment.year || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Serial Number</label>
+                  <p className="mt-1 font-medium">{equipment.serial_number || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Department</label>
+                  <p className="mt-1 font-medium">{equipment.department || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Assigned To</label>
+                  <p className="mt-1 font-medium">{equipment.assignedTo || 'Unassigned'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Vehicle Information Card - Only show for vehicle types */}
+          {showVehicleInfo && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Vehicle Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">VIN</label>
+                    <p className="mt-1 font-medium font-mono text-sm">{equipment.vin_number || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Engine ID</label>
+                    <p className="mt-1 font-medium">{equipment.engine_id || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">License Plate</label>
+                    <p className="mt-1 font-medium">{equipment.plate_number || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Registration State</label>
+                    <p className="mt-1 font-medium">{equipment.registration_state || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Registration Expiry</label>
+                    <p className="mt-1 font-medium">
+                      {equipment.registration_expiry 
+                        ? new Date(equipment.registration_expiry).toLocaleDateString()
+                        : 'N/A'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Title Number</label>
+                    <p className="mt-1 font-medium">{equipment.title_number || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Title Status</label>
+                    <p className="mt-1 font-medium capitalize">{equipment.title_status || 'N/A'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Usage & Location Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Usage & Location
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Location</label>
+                  <p className="mt-1 font-medium">{equipment.location || 'Unknown'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Current Hours</label>
+                  <p className="mt-1 font-medium">
+                    {equipment.current_hours ? `${equipment.current_hours.toLocaleString()} hrs` : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Current Mileage</label>
+                  <p className="mt-1 font-medium">
+                    {equipment.current_mileage ? `${equipment.current_mileage.toLocaleString()} mi` : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Status</label>
+                  <Badge className={`mt-1 ${getStatusColor(equipment.currentStatus)}`}>
+                    {equipment.currentStatus}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Last Service Date</label>
+                  <p className="mt-1 font-medium">
+                    {equipment.last_service_date 
+                      ? new Date(equipment.last_service_date).toLocaleDateString()
+                      : 'Never'
+                    }
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Next Service Date</label>
+                  <p className="mt-1 font-medium">
+                    {equipment.next_service_date 
+                      ? new Date(equipment.next_service_date).toLocaleDateString()
+                      : 'Not scheduled'
+                    }
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Purchase & Value Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Purchase & Value
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <div>
                   <label className="text-sm font-medium text-muted-foreground">Purchase Date</label>
-                  <p className="mt-1">
+                  <p className="mt-1 font-medium">
                     {equipment.purchase_date 
                       ? new Date(equipment.purchase_date).toLocaleDateString()
                       : 'N/A'
@@ -228,17 +445,17 @@ export default function EquipmentDetails() {
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Warranty Expiry</label>
-                  <p className="mt-1">
-                    {equipment.warranty_expiry_date 
-                      ? new Date(equipment.warranty_expiry_date).toLocaleDateString()
+                  <label className="text-sm font-medium text-muted-foreground">Purchase Cost</label>
+                  <p className="mt-1 font-medium">
+                    {equipment.purchase_cost 
+                      ? `$${equipment.purchase_cost.toLocaleString()}`
                       : 'N/A'
                     }
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Current Value</label>
-                  <p className="mt-1">
+                  <p className="mt-1 font-medium">
                     {equipment.current_value 
                       ? `$${equipment.current_value.toLocaleString()}`
                       : 'N/A'
@@ -247,20 +464,30 @@ export default function EquipmentDetails() {
                 </div>
               </div>
               
-              {equipment.description && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Description</label>
-                  <p className="mt-1">{equipment.description}</p>
+              {equipment.notes && (
+                <div className="mt-6">
+                  <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                  <p className="mt-1 text-foreground">{equipment.notes}</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
 
-              <div className="flex gap-2 pt-4">
+          {/* Status Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
                 <Button 
                   onClick={() => handleStatusUpdate('operational')}
                   disabled={equipment.currentStatus === 'operational'}
                   variant="outline"
                   size="sm"
+                  className="border-green-500/30 hover:bg-green-500/10"
                 >
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
                   Mark Operational
                 </Button>
                 <Button 
@@ -268,7 +495,9 @@ export default function EquipmentDetails() {
                   disabled={equipment.currentStatus === 'maintenance'}
                   variant="outline"
                   size="sm"
+                  className="border-yellow-500/30 hover:bg-yellow-500/10"
                 >
+                  <Wrench className="h-4 w-4 mr-2 text-yellow-600" />
                   Mark for Maintenance
                 </Button>
                 <Button 
@@ -276,7 +505,9 @@ export default function EquipmentDetails() {
                   disabled={equipment.currentStatus === 'down'}
                   variant="outline"
                   size="sm"
+                  className="border-red-500/30 hover:bg-red-500/10"
                 >
+                  <AlertTriangle className="h-4 w-4 mr-2 text-red-600" />
                   Mark Down
                 </Button>
               </div>
