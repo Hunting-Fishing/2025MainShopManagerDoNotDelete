@@ -11,7 +11,6 @@ interface TeamMemberGridProps {
 
 export function TeamMemberGrid({ members, getInitials }: TeamMemberGridProps) {
   const navigate = useNavigate();
-  console.log("Grid received members:", members.length);
   
   return (
     <div className="space-y-4">
@@ -34,7 +33,7 @@ export function TeamMemberGrid({ members, getInitials }: TeamMemberGridProps) {
           />
         ))}
         {members.length === 0 && (
-          <div className="col-span-3 p-8 text-center text-slate-500 bg-white rounded-lg border border-slate-200">
+          <div className="col-span-3 p-8 text-center text-muted-foreground bg-card rounded-lg border border-border">
             No team members found matching your filters.
           </div>
         )}
