@@ -77,6 +77,23 @@ export function CreateMaintenanceRequestDialog({
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const generateRequestNumber = async (shopId: string): Promise<string> => {
+    // Get max request number for this specific shop
+    const { data: requests } = await supabase
+      .from('maintenance_requests')
+      .select('request_number')
+      .eq('shop_id', shopId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    const lastNumber = requests?.[0]?.request_number;
+    const nextNumber = lastNumber 
+      ? parseInt(lastNumber.replace('MR-', '')) + 1 
+      : 1001;
+
+    return `MR-${nextNumber.toString().padStart(4, '0')}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -87,6 +104,7 @@ export function CreateMaintenanceRequestDialog({
       
       if (!user) {
         toast.error('You must be logged in to submit a request');
+        setLoading(false);
         return;
       }
 
@@ -99,22 +117,9 @@ export function CreateMaintenanceRequestDialog({
 
       if (!profile?.shop_id) {
         toast.error('User profile not found or shop not assigned');
+        setLoading(false);
         return;
       }
-
-      // Get next request number
-      const { data: lastRequest } = await supabase
-        .from('maintenance_requests')
-        .select('request_number')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      const nextNumber = lastRequest?.request_number 
-        ? parseInt(lastRequest.request_number.replace('MR-', '')) + 1 
-        : 1001;
-
-      const requestNumber = `MR-${nextNumber.toString().padStart(4, '0')}`;
 
       // Get submitter name from profile
       const submitterName = profile.first_name && profile.last_name
@@ -128,7 +133,7 @@ export function CreateMaintenanceRequestDialog({
           const fileExt = file.name.split('.').pop();
           const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           
-          const { error: uploadError, data } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('maintenance-attachments')
             .upload(fileName, file);
 
@@ -152,26 +157,49 @@ export function CreateMaintenanceRequestDialog({
         }
       }
 
-      // Create maintenance request
-      const { error } = await supabase
-        .from('maintenance_requests')
-        .insert({
-          request_number: requestNumber,
-          shop_id: profile.shop_id,
-          equipment_id: equipmentId,
-          title: formData.title,
-          description: formData.description,
-          reported_by_person: formData.reported_by_person || null,
-          priority: formData.priority,
-          request_type: formData.request_type,
-          status: 'pending',
-          requested_at: new Date().toISOString(),
-          requested_by: user.id,
-          requested_by_name: submitterName,
-          attachments: attachments
-        });
+      // Retry logic for race conditions on request number
+      const maxAttempts = 3;
+      let attempts = 0;
+      let insertError: any = null;
 
-      if (error) throw error;
+      while (attempts < maxAttempts) {
+        const requestNumber = await generateRequestNumber(profile.shop_id);
+
+        const { error } = await supabase
+          .from('maintenance_requests')
+          .insert({
+            request_number: requestNumber,
+            shop_id: profile.shop_id,
+            equipment_id: equipmentId,
+            title: formData.title,
+            description: formData.description,
+            reported_by_person: formData.reported_by_person || null,
+            priority: formData.priority,
+            request_type: formData.request_type,
+            status: 'pending',
+            requested_at: new Date().toISOString(),
+            requested_by: user.id,
+            requested_by_name: submitterName,
+            attachments: attachments
+          });
+
+        if (!error) {
+          // Success - exit loop
+          insertError = null;
+          break;
+        }
+
+        // Check if it's a duplicate key error (code 23505)
+        if (error.code === '23505' && attempts < maxAttempts - 1) {
+          attempts++;
+          continue;
+        }
+
+        insertError = error;
+        break;
+      }
+
+      if (insertError) throw insertError;
 
       toast.success('Maintenance request submitted successfully');
       onSuccess();
@@ -190,9 +218,13 @@ export function CreateMaintenanceRequestDialog({
       });
       setFiles([]);
       setReportedByType('employee');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating maintenance request:', error);
-      toast.error('Failed to submit maintenance request');
+      if (error.code === '23505') {
+        toast.error('Request number conflict - please try again');
+      } else {
+        toast.error('Failed to submit maintenance request');
+      }
     } finally {
       setLoading(false);
     }
