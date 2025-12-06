@@ -9,7 +9,7 @@ import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useBusinessHours } from '@/hooks/useBusinessHours';
 import { CalendarViewType, CalendarEvent } from '@/types/calendar';
 import { Card } from '@/components/ui/card';
-import { isSameDay, isBefore, startOfDay } from 'date-fns';
+import { isSameDay } from 'date-fns';
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -22,7 +22,7 @@ export default function Calendar() {
   const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
   const [taskDialogDate, setTaskDialogDate] = useState<Date | undefined>(undefined);
 
-  const { events, shiftChats, isLoading, error } = useCalendarEvents(currentDate, view);
+  const { events, shiftChats, overdueEvents, isLoading, error } = useCalendarEvents(currentDate, view);
   const { businessHours, isBusinessDay } = useBusinessHours();
 
   // Filter events based on selected filters
@@ -71,16 +71,8 @@ export default function Calendar() {
       )
     : [];
 
-  // Get carry-over events (past unfinished jobs)
-  const carryOverEvents = selectedDate
-    ? filteredEvents.filter(event => {
-        const eventDate = startOfDay(new Date(event.start));
-        const selected = startOfDay(selectedDate);
-        const isBeforeSelected = isBefore(eventDate, selected);
-        const isNotCompleted = event.status !== 'completed' && event.status !== 'cancelled';
-        return isBeforeSelected && isNotCompleted;
-      })
-    : [];
+  // Use overdue events from hook (fetched separately regardless of date range)
+  const carryOverEvents = selectedDate ? overdueEvents : [];
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);

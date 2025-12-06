@@ -282,3 +282,103 @@ export async function deleteCalendarEvent(id: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Fetch ALL overdue work orders (past due, not completed/cancelled/invoiced)
+ * This fetches regardless of date range to ensure overdue items always show
+ */
+export async function getOverdueWorkOrders(): Promise<CalendarEvent[]> {
+  try {
+    const today = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select(`
+        id,
+        description,
+        status,
+        start_time,
+        end_time,
+        customer_id,
+        technician_id,
+        vehicle_id
+      `)
+      .not('start_time', 'is', null)
+      .lt('start_time', today)
+      .not('status', 'in', '("completed","cancelled","invoiced")')
+      .order('start_time', { ascending: true });
+
+    if (error) throw error;
+
+    // Format the work orders as calendar events
+    const overdueEvents = await Promise.all(
+      data.map(async (wo) => {
+        // Get customer name
+        let customer = "Unknown Customer";
+        if (wo.customer_id) {
+          const { data: customerData } = await supabase
+            .from('customers')
+            .select('first_name, last_name')
+            .eq('id', wo.customer_id)
+            .single();
+          
+          if (customerData) {
+            customer = `${customerData.first_name} ${customerData.last_name}`;
+          }
+        }
+        
+        // Get technician name
+        let technician = "Unassigned";
+        if (wo.technician_id) {
+          const { data: technicianData } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', wo.technician_id)
+            .single();
+          
+          if (technicianData) {
+            technician = `${technicianData.first_name} ${technicianData.last_name}`;
+          }
+        }
+
+        // Get location
+        let location = "";
+        if (wo.vehicle_id) {
+          const { data: vehicleData } = await supabase
+            .from('vehicles')
+            .select('make, model')
+            .eq('id', wo.vehicle_id)
+            .single();
+          
+          if (vehicleData) {
+            location = `${vehicleData.make} ${vehicleData.model}`;
+          }
+        }
+
+        return {
+          id: wo.id,
+          title: wo.description || 'Work Order',
+          description: wo.description,
+          start: wo.start_time,
+          end: wo.end_time || wo.start_time,
+          allDay: false,
+          location,
+          workOrderId: wo.id,
+          type: 'work-order',
+          status: wo.status,
+          priority: 'medium',
+          customer,
+          technician,
+          assignedTo: technician,
+          start_time: wo.start_time,
+          end_time: wo.end_time || wo.start_time
+        };
+      })
+    );
+
+    return overdueEvents;
+  } catch (error) {
+    handleApiError(error, "Failed to fetch overdue work orders");
+    return [];
+  }
+}

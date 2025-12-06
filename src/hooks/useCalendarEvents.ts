@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { CalendarEvent } from '@/types/calendar';
-import { getCalendarEvents, getWorkOrderEvents } from '@/services/calendar/calendarEventService';
+import { getCalendarEvents, getWorkOrderEvents, getOverdueWorkOrders } from '@/services/calendar/calendarEventService';
 import { getShiftChats } from '@/services/calendar/shiftChatService';
 import { getMaintenanceRequestEvents } from '@/services/calendar/maintenanceRequestService';
 import { ChatRoom } from '@/types/chat';
@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'day') {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [overdueEvents, setOverdueEvents] = useState<CalendarEvent[]>([]);
   const [shiftChats, setShiftChats] = useState<ChatRoom[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,12 +37,13 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
 
-      // Fetch calendar events (DB + work orders + maintenance requests + shift chats)
-      const [calendarEvents, workOrderEvents, maintenanceRequestEvents, shiftChatsData] = await Promise.all([
+      // Fetch calendar events (DB + work orders + maintenance requests + shift chats + overdue)
+      const [calendarEvents, workOrderEvents, maintenanceRequestEvents, shiftChatsData, overdueWorkOrders] = await Promise.all([
         getCalendarEvents(startDateStr, endDateStr),
         getWorkOrderEvents(startDateStr, endDateStr),
         getMaintenanceRequestEvents(startDateStr, endDateStr),
-        getShiftChats(startDateStr, endDateStr)
+        getShiftChats(startDateStr, endDateStr),
+        getOverdueWorkOrders()
       ]);
 
       // Format shift chats as ChatRoom objects for the calendar
@@ -90,6 +92,7 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
 
       setEvents(formattedEvents);
       setShiftChats(formattedShiftChats);
+      setOverdueEvents(overdueWorkOrders);
     } catch (err) {
       console.error('Error fetching calendar data:', err);
       setError('Failed to load calendar data. Please try again.');
@@ -125,5 +128,5 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
     };
   }, [fetchCalendarData]);
 
-  return { events, shiftChats, isLoading, error };
+  return { events, shiftChats, overdueEvents, isLoading, error };
 }
