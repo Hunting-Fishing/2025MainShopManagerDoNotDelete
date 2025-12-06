@@ -19,6 +19,9 @@ import { SafetyEquipmentList } from './SafetyEquipmentList';
 import { FuelTruckSpecs, FuelTruckData } from './specs/FuelTruckSpecs';
 import { MaintenanceItemCombobox } from './MaintenanceItemCombobox';
 import { MaintenanceTypeCombobox } from './MaintenanceTypeCombobox';
+import { EquipmentCategorySelector } from './EquipmentCategorySelector';
+import { getCategoryForType } from '@/types/equipmentCategory';
+import { useEquipmentCategories } from '@/hooks/useEquipmentCategories';
 
 interface EquipmentConfigDialogProps {
   open: boolean;
@@ -105,6 +108,13 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
   const [equipmentType, setEquipmentType] = useState<string>(() => {
     return (equipment as any).equipment_type || 'other';
   });
+
+  // Category State
+  const { categories } = useEquipmentCategories();
+  const [categoryId, setCategoryId] = useState<string>(() => {
+    return (equipment as any).category_id || '';
+  });
+  const [categoryName, setCategoryName] = useState<string>('');
 
   // Trailer Information State
   const [trailerData, setTrailerData] = useState({
@@ -428,6 +438,7 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         purchase_date: formData.purchase_date || null,
         purchase_cost: formData.current_value ? parseFloat(formData.current_value.toString()) : null,
         equipment_type: equipmentType,
+        category_id: categoryId || null,
         specifications: specsWithAttachments,
         updated_at: new Date().toISOString(),
         // Vehicle fields
@@ -589,27 +600,16 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="equipment_type">Equipment Type</Label>
-                <Select value={equipmentType} onValueChange={(value) => setEquipmentType(value)}>
-                  <SelectTrigger id="equipment_type">
-                    <SelectValue placeholder="Select equipment type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fuel_truck">Fuel Truck</SelectItem>
-                    <SelectItem value="trailer">Trailer</SelectItem>
-                    <SelectItem value="vessel">Vessel/Boat</SelectItem>
-                    <SelectItem value="forklift">Forklift</SelectItem>
-                    <SelectItem value="generator">Generator</SelectItem>
-                    <SelectItem value="pump">Pump</SelectItem>
-                    <SelectItem value="heavy_truck">Heavy Equipment</SelectItem>
-                    <SelectItem value="fleet_vehicle">Fleet Vehicle</SelectItem>
-                    <SelectItem value="saw">Saw/Small Equipment</SelectItem>
-                    <SelectItem value="life_raft">Life Raft</SelectItem>
-                    <SelectItem value="fire_extinguisher">Fire Extinguisher</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="col-span-2">
+                <EquipmentCategorySelector
+                  categoryId={categoryId}
+                  equipmentType={equipmentType}
+                  onCategoryChange={(id, name) => {
+                    setCategoryId(id);
+                    setCategoryName(name);
+                  }}
+                  onTypeChange={(value) => setEquipmentType(value)}
+                />
               </div>
 
               <div className="space-y-2">

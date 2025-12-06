@@ -6205,6 +6205,7 @@ export type Database = {
         Row: {
           asset_number: string
           assigned_to: string | null
+          category_id: string | null
           created_at: string | null
           created_by: string
           current_hours: number | null
@@ -6244,6 +6245,7 @@ export type Database = {
         Insert: {
           asset_number: string
           assigned_to?: string | null
+          category_id?: string | null
           created_at?: string | null
           created_by: string
           current_hours?: number | null
@@ -6283,6 +6285,7 @@ export type Database = {
         Update: {
           asset_number?: string
           assigned_to?: string | null
+          category_id?: string | null
           created_at?: string | null
           created_by?: string
           current_hours?: number | null
@@ -6325,6 +6328,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_assets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_categories"
             referencedColumns: ["id"]
           },
           {
@@ -6568,6 +6578,47 @@ export type Database = {
             columns: ["reported_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          shop_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          shop_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_categories_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]

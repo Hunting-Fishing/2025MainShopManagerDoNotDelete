@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { decodeVin, getVinValidationError } from '@/services/vinDecoderService';
 import { uploadEquipmentProfileImage } from '@/services/equipment/equipmentImageService';
 import { EquipmentImageUpload } from './EquipmentImageUpload';
+import { EquipmentCategorySelector } from './EquipmentCategorySelector';
 import { Loader2, Search, Car, CheckCircle2 } from 'lucide-react';
 
 interface AddEquipmentDialogProps {
@@ -21,7 +22,8 @@ interface AddEquipmentDialogProps {
 // Equipment types that support VIN decoding
 const VIN_SUPPORTED_TYPES = [
   'forklift', 'excavator', 'loader', 'dozer', 'crane', 'heavy_truck', 
-  'semi', 'fleet_vehicle', 'courtesy_car', 'rental_vehicle', 'service_vehicle'
+  'semi', 'fleet_vehicle', 'courtesy_car', 'rental_vehicle', 'service_vehicle',
+  'flat_deck', 'fuel_truck', 'roll_on_roll_off', 'transport', 'skid_steer'
 ];
 
 export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogProps) {
@@ -29,6 +31,8 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
   const [isDecoding, setIsDecoding] = useState(false);
   const [vinDecoded, setVinDecoded] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [categoryId, setCategoryId] = useState('');
+  const [categoryName, setCategoryName] = useState('');
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
@@ -154,6 +158,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
       const equipmentData = {
         shop_id: profile.shop_id,
         equipment_type: formData.equipment_type as any,
+        category_id: categoryId || null,
         asset_number: assetNumber,
         unit_number: formData.unit_number || null,
         name: formData.name,
@@ -208,6 +213,8 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
       });
       setVinDecoded(false);
       setProfileImage(null);
+      setCategoryId('');
+      setCategoryName('');
       onOpenChange(false);
 
     } catch (error) {
@@ -246,45 +253,21 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             </div>
           </div>
 
+          {/* Category and Type Selection */}
+          <EquipmentCategorySelector
+            categoryId={categoryId}
+            equipmentType={formData.equipment_type}
+            onCategoryChange={(id, name) => {
+              setCategoryId(id);
+              setCategoryName(name);
+            }}
+            onTypeChange={(value) => {
+              setFormData(prev => ({ ...prev, equipment_type: value }));
+              setVinDecoded(false);
+            }}
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="equipment_type">Type *</Label>
-              <Select 
-                value={formData.equipment_type} 
-                onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, equipment_type: value }));
-                  setVinDecoded(false);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select equipment type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="diagnostic">Diagnostic Equipment</SelectItem>
-                  <SelectItem value="lifting">Lifting Equipment</SelectItem>
-                  <SelectItem value="air_tools">Air Tools</SelectItem>
-                  <SelectItem value="hand_tools">Hand Tools</SelectItem>
-                  <SelectItem value="electrical">Electrical Equipment</SelectItem>
-                  <SelectItem value="generator">Generator</SelectItem>
-                  <SelectItem value="forklift">Forklift</SelectItem>
-                  <SelectItem value="excavator">Excavator</SelectItem>
-                  <SelectItem value="loader">Loader</SelectItem>
-                  <SelectItem value="dozer">Dozer</SelectItem>
-                  <SelectItem value="crane">Crane</SelectItem>
-                  <SelectItem value="heavy_truck">Heavy Truck</SelectItem>
-                  <SelectItem value="vessel">Vessel</SelectItem>
-                  <SelectItem value="outboard">Outboard Motor</SelectItem>
-                  <SelectItem value="marine">Marine</SelectItem>
-                  <SelectItem value="semi">Semi</SelectItem>
-                  <SelectItem value="small_engine">Small Engine</SelectItem>
-                  <SelectItem value="fleet_vehicle">Fleet Vehicle</SelectItem>
-                  <SelectItem value="courtesy_car">Courtesy Car</SelectItem>
-                  <SelectItem value="rental_vehicle">Rental Vehicle</SelectItem>
-                  <SelectItem value="service_vehicle">Service Vehicle</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="name">Equipment Name *</Label>
