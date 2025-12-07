@@ -24753,6 +24753,176 @@ export type Database = {
           },
         ]
       }
+      voyage_communication_logs: {
+        Row: {
+          call_type: string | null
+          channel: string | null
+          communication_time: string
+          contact_station: string | null
+          created_at: string | null
+          direction: string | null
+          id: string
+          message_summary: string | null
+          voyage_id: string
+        }
+        Insert: {
+          call_type?: string | null
+          channel?: string | null
+          communication_time?: string
+          contact_station?: string | null
+          created_at?: string | null
+          direction?: string | null
+          id?: string
+          message_summary?: string | null
+          voyage_id: string
+        }
+        Update: {
+          call_type?: string | null
+          channel?: string | null
+          communication_time?: string
+          contact_station?: string | null
+          created_at?: string | null
+          direction?: string | null
+          id?: string
+          message_summary?: string | null
+          voyage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voyage_communication_logs_voyage_id_fkey"
+            columns: ["voyage_id"]
+            isOneToOne: false
+            referencedRelation: "voyage_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voyage_logs: {
+        Row: {
+          activity_log: Json | null
+          arrival_datetime: string | null
+          barge_name: string | null
+          cargo_description: string | null
+          cargo_weight: number | null
+          cargo_weight_unit: string | null
+          confirmed_at: string | null
+          created_at: string | null
+          crew_members: Json | null
+          departure_datetime: string
+          destination_location: string
+          engine_hours_end: number | null
+          engine_hours_start: number | null
+          entered_by: string | null
+          fuel_end: number | null
+          fuel_start: number | null
+          fuel_unit: string | null
+          has_incidents: boolean | null
+          id: string
+          incidents: Json | null
+          master_name: string
+          master_signature: string | null
+          notes: string | null
+          origin_location: string
+          pre_departure_checklist: Json | null
+          pre_departure_completed: boolean | null
+          shop_id: string | null
+          updated_at: string | null
+          vessel_id: string | null
+          voyage_number: string
+          voyage_status: string | null
+          voyage_type: string | null
+          waypoints: Json | null
+          weather_conditions: Json | null
+        }
+        Insert: {
+          activity_log?: Json | null
+          arrival_datetime?: string | null
+          barge_name?: string | null
+          cargo_description?: string | null
+          cargo_weight?: number | null
+          cargo_weight_unit?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          crew_members?: Json | null
+          departure_datetime: string
+          destination_location: string
+          engine_hours_end?: number | null
+          engine_hours_start?: number | null
+          entered_by?: string | null
+          fuel_end?: number | null
+          fuel_start?: number | null
+          fuel_unit?: string | null
+          has_incidents?: boolean | null
+          id?: string
+          incidents?: Json | null
+          master_name: string
+          master_signature?: string | null
+          notes?: string | null
+          origin_location: string
+          pre_departure_checklist?: Json | null
+          pre_departure_completed?: boolean | null
+          shop_id?: string | null
+          updated_at?: string | null
+          vessel_id?: string | null
+          voyage_number: string
+          voyage_status?: string | null
+          voyage_type?: string | null
+          waypoints?: Json | null
+          weather_conditions?: Json | null
+        }
+        Update: {
+          activity_log?: Json | null
+          arrival_datetime?: string | null
+          barge_name?: string | null
+          cargo_description?: string | null
+          cargo_weight?: number | null
+          cargo_weight_unit?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          crew_members?: Json | null
+          departure_datetime?: string
+          destination_location?: string
+          engine_hours_end?: number | null
+          engine_hours_start?: number | null
+          entered_by?: string | null
+          fuel_end?: number | null
+          fuel_start?: number | null
+          fuel_unit?: string | null
+          has_incidents?: boolean | null
+          id?: string
+          incidents?: Json | null
+          master_name?: string
+          master_signature?: string | null
+          notes?: string | null
+          origin_location?: string
+          pre_departure_checklist?: Json | null
+          pre_departure_completed?: boolean | null
+          shop_id?: string | null
+          updated_at?: string | null
+          vessel_id?: string | null
+          voyage_number?: string
+          voyage_status?: string | null
+          voyage_type?: string | null
+          waypoints?: Json | null
+          weather_conditions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voyage_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voyage_logs_vessel_id_fkey"
+            columns: ["vessel_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warranty_terms: {
         Row: {
           created_at: string | null
