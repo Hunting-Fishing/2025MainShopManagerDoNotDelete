@@ -6,7 +6,7 @@ import { Ship, Clock, MapPin, AlertTriangle, ChevronRight, Users, Package } from
 import { VoyageLog, VOYAGE_TYPE_LABELS } from '@/types/voyage';
 import { format, formatDistanceStrict } from 'date-fns';
 import { useVoyageLogs } from '@/hooks/useVoyageLogs';
-
+import { VoyagePdfExport } from './VoyagePdfExport';
 export function VoyageHistoryList() {
   const { voyageLogs, isLoading } = useVoyageLogs();
 
@@ -123,9 +123,12 @@ function VoyageCard({ voyage }: { voyage: VoyageLog }) {
             )}
           </div>
 
-          <Button variant="ghost" size="icon" className="shrink-0">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            <VoyagePdfExport voyage={voyage} />
+            <Button variant="ghost" size="icon">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
