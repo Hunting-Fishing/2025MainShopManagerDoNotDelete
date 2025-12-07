@@ -246,27 +246,29 @@ export default function EquipmentDetails() {
 
       {/* Details Tabs */}
       <Tabs defaultValue="details" className="space-y-4">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="manuals">
-            <BookOpen className="h-4 w-4 mr-2" />
-            Manuals
-          </TabsTrigger>
-          <TabsTrigger value="safety">
-            <ShieldCheck className="h-4 w-4 mr-2" />
-            Safety
-          </TabsTrigger>
-          <TabsTrigger value="work-requests">
-            <ClipboardList className="h-4 w-4 mr-2" />
-            Work Requests
-          </TabsTrigger>
-          <TabsTrigger value="intervals">
-            <Wrench className="h-4 w-4 mr-2" />
-            Maintenance Intervals
-          </TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance History</TabsTrigger>
-          <TabsTrigger value="specifications">Specifications</TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto pb-2">
+          <TabsList className="inline-flex h-auto min-w-max gap-1 p-1">
+            <TabsTrigger value="details" className="whitespace-nowrap">Details</TabsTrigger>
+            <TabsTrigger value="manuals" className="whitespace-nowrap gap-2">
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">Manuals</span>
+            </TabsTrigger>
+            <TabsTrigger value="safety" className="whitespace-nowrap gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">Safety</span>
+            </TabsTrigger>
+            <TabsTrigger value="work-requests" className="whitespace-nowrap gap-2">
+              <ClipboardList className="h-4 w-4" />
+              <span className="hidden sm:inline">Work Requests</span>
+            </TabsTrigger>
+            <TabsTrigger value="intervals" className="whitespace-nowrap gap-2">
+              <Wrench className="h-4 w-4" />
+              <span className="hidden sm:inline">Intervals</span>
+            </TabsTrigger>
+            <TabsTrigger value="maintenance" className="whitespace-nowrap">History</TabsTrigger>
+            <TabsTrigger value="specifications" className="whitespace-nowrap">Specs</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="details" className="space-y-4">
           {/* Equipment Information Card */}

@@ -22,6 +22,8 @@ import { MaintenanceTypeCombobox } from './MaintenanceTypeCombobox';
 import { EquipmentCategorySelector } from './EquipmentCategorySelector';
 import { getCategoryForType } from '@/types/equipmentCategory';
 import { useEquipmentCategories } from '@/hooks/useEquipmentCategories';
+import { EquipmentImageUpload } from './EquipmentImageUpload';
+import { uploadEquipmentProfileImage, deleteEquipmentProfileImage, updateEquipmentProfileImageUrl } from '@/services/equipment/equipmentImageService';
 
 interface EquipmentConfigDialogProps {
   open: boolean;
@@ -80,6 +82,8 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
   const [uploading, setUploading] = useState(false);
   const [safetyDialogOpen, setSafetyDialogOpen] = useState(false);
   const [safetyRefreshTrigger, setSafetyRefreshTrigger] = useState(0);
+  const [profileImageUploading, setProfileImageUploading] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>((equipment as any).profile_image_url || null);
   
   // Basic Info State
   const [formData, setFormData] = useState({
@@ -523,7 +527,50 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
           </div>
 
           <TabsContent value="basic" className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
+            {/* Profile Image Upload */}
+            <div className="flex items-start gap-6 pb-4 border-b">
+              <EquipmentImageUpload
+                imageUrl={profileImageUrl}
+                onImageSelect={async (file) => {
+                  try {
+                    setProfileImageUploading(true);
+                    const url = await uploadEquipmentProfileImage(file, equipment.id);
+                    await updateEquipmentProfileImageUrl(equipment.id, url);
+                    setProfileImageUrl(url);
+                    toast.success('Profile image uploaded');
+                  } catch (error: any) {
+                    toast.error(error.message || 'Failed to upload image');
+                  } finally {
+                    setProfileImageUploading(false);
+                  }
+                }}
+                onImageRemove={async () => {
+                  try {
+                    setProfileImageUploading(true);
+                    if (profileImageUrl) {
+                      await deleteEquipmentProfileImage(profileImageUrl);
+                    }
+                    await updateEquipmentProfileImageUrl(equipment.id, null);
+                    setProfileImageUrl(null);
+                    toast.success('Profile image removed');
+                  } catch (error: any) {
+                    toast.error(error.message || 'Failed to remove image');
+                  } finally {
+                    setProfileImageUploading(false);
+                  }
+                }}
+                isUploading={profileImageUploading}
+                size="lg"
+              />
+              <div className="flex-1">
+                <Label className="text-sm font-medium">Equipment Photo</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Add a photo to help quickly identify this equipment. Max 5MB, JPG/PNG/WebP.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Equipment Name *</Label>
                 <Input
@@ -587,10 +634,10 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger id="status">
+                  <SelectTrigger id="status" className="bg-background">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border">
                     <SelectItem value="operational">Operational</SelectItem>
                     <SelectItem value="maintenance">Maintenance</SelectItem>
                     <SelectItem value="down">Down</SelectItem>
