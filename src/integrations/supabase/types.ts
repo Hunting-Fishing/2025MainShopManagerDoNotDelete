@@ -27132,6 +27132,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_latest_security_finding: { Args: never; Returns: Json }
       get_latest_system_metrics: {
         Args: never
         Returns: {
@@ -27269,6 +27270,7 @@ export type Database = {
           template_data: Json
         }[]
       }
+      get_security_audit_history: { Args: never; Returns: Json }
       get_setting_safe: {
         Args: { p_category: string; p_key: string; p_shop_id: string }
         Returns: Json

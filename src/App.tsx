@@ -106,6 +106,7 @@ import TechnicianPortal from '@/pages/TechnicianPortal';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
 import Onboarding from '@/pages/Onboarding';
+import SecurityAudit from '@/pages/SecurityAudit';
 
 function App() {
   useEffect(() => {
@@ -224,6 +225,13 @@ function App() {
                   <Route path="/settings/*" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
                       <Settings />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Security Audit - Admin Only */}
+                  <Route path="/security-audit" element={
+                    <ProtectedRoute allowedRoles={['admin', 'owner']}>
+                      <SecurityAudit />
                     </ProtectedRoute>
                   } />
                   

@@ -52,14 +52,14 @@ export function SecurityAuditDashboard() {
   const { data: latestAudit, isLoading } = useQuery({
     queryKey: ['security-audit-latest'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_latest_security_finding') as { data: SecurityFinding | null, error: any };
+      // Use type assertion to bypass strict RPC typing for new functions
+      const { data, error } = await (supabase.rpc as any)('get_latest_security_finding');
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching audit:', error);
         return null;
       }
-      return data;
+      return data as SecurityFinding | null;
     }
   });
 
@@ -67,14 +67,13 @@ export function SecurityAuditDashboard() {
   const { data: auditHistory } = useQuery({
     queryKey: ['security-audit-history'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_security_audit_history') as { data: any[] | null, error: any };
+      const { data, error } = await (supabase.rpc as any)('get_security_audit_history');
       
       if (error) {
         console.error('Error fetching history:', error);
         return [];
       }
-      return data || [];
+      return (data || []) as any[];
     }
   });
 
