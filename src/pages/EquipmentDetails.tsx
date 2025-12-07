@@ -175,32 +175,32 @@ export default function EquipmentDetails() {
       </div>
 
       {/* Quick Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${equipment.currentStatus === 'operational' ? 'bg-green-500/10' : equipment.currentStatus === 'maintenance' ? 'bg-yellow-500/10' : 'bg-red-500/10'}`}>
-                <CheckCircle className={`h-5 w-5 ${equipment.currentStatus === 'operational' ? 'text-green-600' : equipment.currentStatus === 'maintenance' ? 'text-yellow-600' : 'text-red-600'}`} />
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className={`p-1.5 sm:p-2 rounded-lg shrink-0 ${equipment.currentStatus === 'operational' ? 'bg-green-500/10' : equipment.currentStatus === 'maintenance' ? 'bg-yellow-500/10' : 'bg-red-500/10'}`}>
+                <CheckCircle className={`h-4 w-4 sm:h-5 sm:w-5 ${equipment.currentStatus === 'operational' ? 'text-green-600' : equipment.currentStatus === 'maintenance' ? 'text-yellow-600' : 'text-red-600'}`} />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <p className="font-semibold capitalize">{equipment.currentStatus}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Status</p>
+                <p className="font-semibold capitalize text-sm sm:text-base truncate">{equipment.currentStatus}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Gauge className="h-5 w-5 text-blue-600" />
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/10 shrink-0">
+                <Gauge className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {equipment.current_hours ? 'Hours' : equipment.current_mileage ? 'Mileage' : 'Usage'}
                 </p>
-                <p className="font-semibold">
+                <p className="font-semibold text-sm sm:text-base truncate">
                   {equipment.current_hours 
                     ? `${equipment.current_hours.toLocaleString()} hrs`
                     : equipment.current_mileage 
@@ -214,28 +214,28 @@ export default function EquipmentDetails() {
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <MapPin className="h-5 w-5 text-purple-600" />
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-purple-500/10 shrink-0">
+                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Location</p>
-                <p className="font-semibold">{equipment.location || 'Unknown'}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Location</p>
+                <p className="font-semibold text-sm sm:text-base truncate">{equipment.location || 'Unknown'}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-orange-500/10">
-                <Calendar className="h-5 w-5 text-orange-600" />
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-orange-500/10 shrink-0">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Next Service</p>
-                <p className="font-semibold">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Next Service</p>
+                <p className="font-semibold text-sm sm:text-base truncate">
                   {equipment.next_service_date 
                     ? new Date(equipment.next_service_date).toLocaleDateString()
                     : 'Not scheduled'
