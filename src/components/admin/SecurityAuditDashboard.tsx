@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Shield, ShieldAlert, ShieldCheck, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Shield, ShieldAlert, ShieldCheck, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -48,19 +48,18 @@ export function SecurityAuditDashboard() {
   const queryClient = useQueryClient();
   const [isRunningAudit, setIsRunningAudit] = useState(false);
 
-  // Fetch latest audit results
+  // Fetch latest audit results using raw query since table is new
   const { data: latestAudit, isLoading } = useQuery({
     queryKey: ['security-audit-latest'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('rls_security_findings')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .rpc('get_latest_security_finding') as { data: SecurityFinding | null, error: any };
       
-      if (error && error.code !== 'PGRST116') throw error;
-      return data as SecurityFinding | null;
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching audit:', error);
+        return null;
+      }
+      return data;
     }
   });
 
@@ -69,13 +68,13 @@ export function SecurityAuditDashboard() {
     queryKey: ['security-audit-history'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('rls_security_findings')
-        .select('id, audit_timestamp, critical_count, warning_count, info_count, qual_true_count')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .rpc('get_security_audit_history') as { data: any[] | null, error: any };
       
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching history:', error);
+        return [];
+      }
+      return data || [];
     }
   });
 
@@ -217,7 +216,7 @@ export function SecurityAuditDashboard() {
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <Badge variant={getSeverityColor(finding.severity)}>
+                        <Badge variant={getSeverityColor(finding.severity) as any}>
                           {finding.severity}
                         </Badge>
                         <span className="font-mono text-sm font-medium">
@@ -264,7 +263,7 @@ export function SecurityAuditDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {auditHistory.map((audit) => (
+              {auditHistory.map((audit: any) => (
                 <div 
                   key={audit.id}
                   className="flex items-center justify-between p-2 rounded border bg-muted/50"
