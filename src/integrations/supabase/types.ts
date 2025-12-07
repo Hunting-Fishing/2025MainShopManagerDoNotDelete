@@ -18465,6 +18465,42 @@ export type Database = {
           },
         ]
       }
+      rls_security_findings: {
+        Row: {
+          audit_timestamp: string
+          created_at: string
+          critical_count: number
+          findings: Json | null
+          id: string
+          info_count: number
+          qual_true_count: number
+          tables_without_rls: string[] | null
+          warning_count: number
+        }
+        Insert: {
+          audit_timestamp: string
+          created_at?: string
+          critical_count?: number
+          findings?: Json | null
+          id?: string
+          info_count?: number
+          qual_true_count?: number
+          tables_without_rls?: string[] | null
+          warning_count?: number
+        }
+        Update: {
+          audit_timestamp?: string
+          created_at?: string
+          critical_count?: number
+          findings?: Json | null
+          id?: string
+          info_count?: number
+          qual_true_count?: number
+          tables_without_rls?: string[] | null
+          warning_count?: number
+        }
+        Relationships: []
+      }
       role_audit_log: {
         Row: {
           action: Database["public"]["Enums"]["role_action_type"]
@@ -27190,6 +27226,16 @@ export type Database = {
               error: true
             } & "Could not choose the best candidate function between: public.get_product_stats(p_product_id => text), public.get_product_stats(p_product_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"[]
           }
+      get_qual_true_policies: {
+        Args: never
+        Returns: {
+          command: string
+          policy_name: string
+          qual: string
+          table_name: string
+          table_schema: string
+        }[]
+      }
       get_recently_viewed_products:
         | {
             Args: {
@@ -27226,6 +27272,19 @@ export type Database = {
       get_setting_safe: {
         Args: { p_category: string; p_key: string; p_shop_id: string }
         Returns: Json
+      }
+      get_tables_with_shop_id: {
+        Args: never
+        Returns: {
+          table_name: string
+        }[]
+      }
+      get_tables_without_rls: {
+        Args: never
+        Returns: {
+          table_name: string
+          table_schema: string
+        }[]
       }
       get_upcoming_filing_deadlines: {
         Args: { days_ahead?: number }
