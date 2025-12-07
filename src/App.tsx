@@ -105,6 +105,8 @@ import SafetySchedules from '@/pages/SafetySchedules';
 import TechnicianPortal from '@/pages/TechnicianPortal';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
+import Onboarding from '@/pages/Onboarding';
+
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -119,6 +121,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/about" element={<About />} />
         <Route path="/setup-brian" element={<SetupBrianAuth />} />
+        <Route path="/onboarding" element={<Onboarding />} />
         
         {/* Protected routes */}
         <Route

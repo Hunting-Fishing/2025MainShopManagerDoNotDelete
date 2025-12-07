@@ -3,6 +3,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { RoleGuard } from './RoleGuard';
+import { ShopGuard } from './ShopGuard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -72,12 +73,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   return (
-    <RoleGuard
-      allowedRoles={finalAllowedRoles}
-      requireOwner={requireOwner}
-      requireAdmin={requireAdmin}
-    >
-      {children}
-    </RoleGuard>
+    <ShopGuard>
+      <RoleGuard
+        allowedRoles={finalAllowedRoles}
+        requireOwner={requireOwner}
+        requireAdmin={requireAdmin}
+      >
+        {children}
+      </RoleGuard>
+    </ShopGuard>
   );
 };
