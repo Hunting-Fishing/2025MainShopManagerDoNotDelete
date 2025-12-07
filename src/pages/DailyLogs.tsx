@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Gauge, Route, Fuel, Wrench, Settings, History, Clock, ClipboardCheck } from 'lucide-react';
+import { Gauge, Route, Fuel, Wrench, Settings, History, Clock, ClipboardCheck, Ship } from 'lucide-react';
 import { EngineHoursTab } from '@/components/daily-logs/EngineHoursTab';
 import { TripLogsTab } from '@/components/daily-logs/TripLogsTab';
 import { FuelEntryTab } from '@/components/daily-logs/FuelEntryTab';
@@ -9,6 +9,7 @@ import { MaintenanceIntervalSetup } from '@/components/daily-logs/MaintenanceInt
 import { PreviousMaintenanceEntry } from '@/components/daily-logs/PreviousMaintenanceEntry';
 import { DailyTimesheetTab } from '@/components/daily-logs/DailyTimesheetTab';
 import { InspectionsQuickAccess } from '@/components/daily-logs/InspectionsQuickAccess';
+import { VoyageLogsTab } from '@/components/daily-logs/voyage/VoyageLogsTab';
 
 export default function DailyLogs() {
   const [activeTab, setActiveTab] = useState('timesheet');
@@ -18,12 +19,12 @@ export default function DailyLogs() {
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Daily Logs</h1>
         <p className="text-muted-foreground">
-          Record engine hours, trips, fuel entries, and maintenance with smart countdown tracking
+          Record engine hours, trips, fuel entries, voyage logs, and maintenance with smart countdown tracking
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 h-auto gap-1">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-9 h-auto gap-1">
           <TabsTrigger 
             value="timesheet" 
             className="flex items-center gap-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -39,6 +40,14 @@ export default function DailyLogs() {
             <ClipboardCheck className="h-4 w-4" />
             <span className="hidden sm:inline">Inspections</span>
             <span className="sm:hidden">Inspect</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="voyage-logs" 
+            className="flex items-center gap-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            <Ship className="h-4 w-4" />
+            <span className="hidden sm:inline">Voyage Logs</span>
+            <span className="sm:hidden">Voyage</span>
           </TabsTrigger>
           <TabsTrigger 
             value="engine-hours" 
@@ -96,6 +105,10 @@ export default function DailyLogs() {
 
         <TabsContent value="inspections" className="mt-4">
           <InspectionsQuickAccess />
+        </TabsContent>
+
+        <TabsContent value="voyage-logs" className="mt-4">
+          <VoyageLogsTab />
         </TabsContent>
 
         <TabsContent value="engine-hours" className="mt-4">
