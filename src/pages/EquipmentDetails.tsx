@@ -124,9 +124,10 @@ export default function EquipmentDetails() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header with Profile Image */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4">
+        {/* Top row: Back button, image, equipment info */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate('/equipment')}>
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/equipment')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           
@@ -135,24 +136,24 @@ export default function EquipmentDetails() {
             <img 
               src={equipment.profile_image_url} 
               alt={equipment.name}
-              className="h-16 w-16 rounded-lg object-cover border"
+              className="h-14 w-14 md:h-16 md:w-16 rounded-lg object-cover border shrink-0"
             />
           ) : (
-            <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center border">
-              <Truck className="h-8 w-8 text-muted-foreground" />
+            <div className="h-14 w-14 md:h-16 md:w-16 rounded-lg bg-muted flex items-center justify-center border shrink-0">
+              <Truck className="h-7 w-7 md:h-8 md:w-8 text-muted-foreground" />
             </div>
           )}
           
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{equipment.name}</h1>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-bold truncate">{equipment.name}</h1>
               {equipment.unit_number && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs shrink-0">
                   Unit #{equipment.unit_number}
                 </Badge>
               )}
             </div>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm truncate">
               {formatEquipmentType(equipment.equipment_type)}
               {equipment.manufacturer && ` • ${equipment.manufacturer}`}
               {equipment.model && ` ${equipment.model}`}
@@ -160,7 +161,9 @@ export default function EquipmentDetails() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        
+        {/* Second row: Status + Actions */}
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge className={getStatusColor(equipment.currentStatus)}>
             {equipment.currentStatus}
           </Badge>
