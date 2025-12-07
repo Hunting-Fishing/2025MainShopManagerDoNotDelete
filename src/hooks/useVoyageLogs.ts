@@ -65,29 +65,27 @@ export function useVoyageLogs() {
         .eq('user_id', user?.id)
         .single();
 
-      const insertData = {
-        voyage_number: voyageNumber,
-        shop_id: profile?.shop_id,
-        entered_by: user?.id,
-        voyage_status: 'in_progress' as const,
-        departure_datetime: voyage.departure_datetime,
-        origin_location: voyage.origin_location,
-        destination_location: voyage.destination_location,
-        master_name: voyage.master_name,
-        vessel_id: voyage.vessel_id,
-        voyage_type: voyage.voyage_type,
-        cargo_description: voyage.cargo_description,
-        barge_name: voyage.barge_name,
-        cargo_weight: voyage.cargo_weight,
-        engine_hours_start: voyage.engine_hours_start,
-        fuel_start: voyage.fuel_start,
-        crew_members: voyage.crew_members as unknown as Record<string, unknown>,
-        activity_log: voyage.activity_log as unknown as Record<string, unknown>
-      };
-
       const { data, error } = await supabase
         .from('voyage_logs')
-        .insert(insertData)
+        .insert({
+          voyage_number: voyageNumber,
+          shop_id: profile?.shop_id,
+          entered_by: user?.id,
+          voyage_status: 'in_progress' as const,
+          departure_datetime: voyage.departure_datetime,
+          origin_location: voyage.origin_location,
+          destination_location: voyage.destination_location,
+          master_name: voyage.master_name,
+          vessel_id: voyage.vessel_id,
+          voyage_type: voyage.voyage_type,
+          cargo_description: voyage.cargo_description,
+          barge_name: voyage.barge_name,
+          cargo_weight: voyage.cargo_weight,
+          engine_hours_start: voyage.engine_hours_start,
+          fuel_start: voyage.fuel_start,
+          crew_members: JSON.parse(JSON.stringify(voyage.crew_members || [])),
+          activity_log: JSON.parse(JSON.stringify(voyage.activity_log || []))
+        })
         .select()
         .single();
 
@@ -104,15 +102,20 @@ export function useVoyageLogs() {
   });
 
   const updateVoyageMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<VoyageLog> & { id: string }) => {
-      const updateData = {
-        ...updates,
-        activity_log: updates.activity_log as unknown as Record<string, unknown>,
-        incidents: updates.incidents as unknown as Record<string, unknown>
-      };
+    mutationFn: async ({ id, activity_log, incidents, ...updates }: Partial<VoyageLog> & { id: string }) => {
+      const updatePayload: Record<string, unknown> = { ...updates };
+      
+      if (activity_log !== undefined) {
+        updatePayload.activity_log = JSON.parse(JSON.stringify(activity_log));
+      }
+      if (incidents !== undefined) {
+        updatePayload.incidents = JSON.parse(JSON.stringify(incidents));
+        updatePayload.has_incidents = incidents.length > 0;
+      }
+
       const { data, error } = await supabase
         .from('voyage_logs')
-        .update(updateData)
+        .update(updatePayload)
         .eq('id', id)
         .select()
         .single();
