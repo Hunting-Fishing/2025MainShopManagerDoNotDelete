@@ -9,23 +9,11 @@ import {
   BookmarkPlus, 
   Trash2, 
   Star,
-  Filter
+  Filter,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface FilterPreset {
-  id: string;
-  name: string;
-  filters: {
-    search: string;
-    category: string[];
-    status: string[];
-    supplier: string;
-    location: string;
-  };
-  isDefault?: boolean;
-  created: Date;
-}
+import { useFilterPresets, FilterPreset } from '@/hooks/inventory/useFilterPresets';
 
 interface FilterPresetsManagerProps {
   currentFilters: {
@@ -39,54 +27,13 @@ interface FilterPresetsManagerProps {
   className?: string;
 }
 
-// Mock data - in a real app, this would come from a backend/local storage
-const mockPresets: FilterPreset[] = [
-  {
-    id: '1',
-    name: 'Low Stock Items',
-    filters: {
-      search: '',
-      category: [],
-      status: ['low_stock'],
-      supplier: '',
-      location: ''
-    },
-    isDefault: true,
-    created: new Date('2024-01-15')
-  },
-  {
-    id: '2',
-    name: 'Electronics',
-    filters: {
-      search: '',
-      category: ['Electronics'],
-      status: ['active'],
-      supplier: '',
-      location: ''
-    },
-    created: new Date('2024-01-20')
-  },
-  {
-    id: '3',
-    name: 'Warehouse A Items',
-    filters: {
-      search: '',
-      category: [],
-      status: ['active'],
-      supplier: '',
-      location: 'Warehouse A'
-    },
-    created: new Date('2024-01-25')
-  }
-];
-
 export function FilterPresetsManager({ 
   currentFilters, 
   onApplyPreset, 
   className 
 }: FilterPresetsManagerProps) {
   const { toast } = useToast();
-  const [presets, setPresets] = useState<FilterPreset[]>(mockPresets);
+  const { presets, isLoading, addPreset, deletePreset, setDefaultPreset } = useFilterPresets();
   const [isOpen, setIsOpen] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [presetName, setPresetName] = useState('');
@@ -107,14 +54,7 @@ export function FilterPresetsManager({
       return;
     }
 
-    const newPreset: FilterPreset = {
-      id: Date.now().toString(),
-      name: presetName.trim(),
-      filters: { ...currentFilters },
-      created: new Date()
-    };
-
-    setPresets(prev => [...prev, newPreset]);
+    const newPreset = addPreset(presetName, currentFilters);
     setPresetName('');
     setShowSaveDialog(false);
     
@@ -122,15 +62,26 @@ export function FilterPresetsManager({
       title: "Preset saved",
       description: `Filter preset "${newPreset.name}" has been saved`,
     });
-  }, [presetName, currentFilters, toast]);
+  }, [presetName, currentFilters, addPreset, toast]);
 
-  const handleDeletePreset = useCallback((presetId: string, presetName: string) => {
-    setPresets(prev => prev.filter(p => p.id !== presetId));
-    toast({
-      title: "Preset deleted",
-      description: `Filter preset "${presetName}" has been deleted`,
-    });
-  }, [toast]);
+  const handleDeletePreset = useCallback((presetId: string, presetName: string, isDefault?: boolean) => {
+    if (isDefault) {
+      toast({
+        title: "Cannot delete",
+        description: "Default presets cannot be deleted",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const success = deletePreset(presetId);
+    if (success) {
+      toast({
+        title: "Preset deleted",
+        description: `Filter preset "${presetName}" has been deleted`,
+      });
+    }
+  }, [deletePreset, toast]);
 
   const handleApplyPreset = useCallback((preset: FilterPreset) => {
     onApplyPreset(preset);
@@ -141,6 +92,14 @@ export function FilterPresetsManager({
     });
   }, [onApplyPreset, toast]);
 
+  const handleSetDefault = useCallback((presetId: string, presetName: string) => {
+    setDefaultPreset(presetId);
+    toast({
+      title: "Default updated",
+      description: `"${presetName}" is now your default preset`,
+    });
+  }, [setDefaultPreset, toast]);
+
   const getPresetDescription = (preset: FilterPreset) => {
     const parts = [];
     if (preset.filters.search) parts.push(`Search: "${preset.filters.search}"`);
@@ -149,6 +108,14 @@ export function FilterPresetsManager({
     if (preset.filters.supplier) parts.push(`Supplier: ${preset.filters.supplier}`);
     if (preset.filters.location) parts.push(`Location: ${preset.filters.location}`);
     return parts.join(', ') || 'No filters';
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return '';
+    }
   };
 
   return (
@@ -202,6 +169,7 @@ export function FilterPresetsManager({
                       if (e.key === 'Enter') handleSavePreset();
                       if (e.key === 'Escape') setShowSaveDialog(false);
                     }}
+                    autoFocus
                   />
                 </div>
                 <div className="flex gap-2">
@@ -215,7 +183,10 @@ export function FilterPresetsManager({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowSaveDialog(false)}
+                    onClick={() => {
+                      setShowSaveDialog(false);
+                      setPresetName('');
+                    }}
                   >
                     Cancel
                   </Button>
@@ -225,7 +196,12 @@ export function FilterPresetsManager({
           )}
           
           <div className="max-h-64 overflow-y-auto">
-            {presets.length === 0 ? (
+            {isLoading ? (
+              <div className="p-8 text-center text-muted-foreground">
+                <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+                <p className="text-sm mt-2">Loading presets...</p>
+              </div>
+            ) : presets.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 <Filter className="mx-auto h-8 w-8 mb-2 opacity-50" />
                 <p className="text-sm">No saved presets</p>
@@ -252,21 +228,40 @@ export function FilterPresetsManager({
                         {getPresetDescription(preset)}
                       </p>
                       <p className="text-xs text-muted-foreground/70 mt-1">
-                        {preset.created.toLocaleDateString()}
+                        {formatDate(preset.created)}
                       </p>
                     </div>
                     
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeletePreset(preset.id, preset.name);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      {!preset.isDefault && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSetDefault(preset.id, preset.name);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 text-muted-foreground hover:text-yellow-500"
+                          title="Set as default"
+                        >
+                          <Star className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {!preset.isDefault && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePreset(preset.id, preset.name, preset.isDefault);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                          title="Delete preset"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
