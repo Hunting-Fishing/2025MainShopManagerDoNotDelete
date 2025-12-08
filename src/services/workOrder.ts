@@ -19,15 +19,14 @@ export const deleteWorkOrder = (id: string) => workOrderService.deleteWorkOrder(
 // Missing functions that components are trying to import
 export const getWorkOrdersByCustomerId = (customerId: string) => workOrderService.getWorkOrdersByCustomer(customerId);
 
-// Placeholder functions for parts (to be implemented later)
-export const updateWorkOrderPart = async (partId: string, data: any) => {
-  console.warn('updateWorkOrderPart not implemented yet');
-  return null;
-};
-
-export const deleteWorkOrderPart = async (partId: string) => {
-  console.warn('deleteWorkOrderPart not implemented yet');
-};
+// Re-export parts functions from the proper service
+export { 
+  updateWorkOrderPart, 
+  deleteWorkOrderPart,
+  createWorkOrderPart,
+  getWorkOrderParts,
+  getJobLineParts
+} from './workOrder/workOrderPartsService';
 
 // Placeholder function for technicians
 export const getUniqueTechnicians = async (): Promise<string[]> => {
