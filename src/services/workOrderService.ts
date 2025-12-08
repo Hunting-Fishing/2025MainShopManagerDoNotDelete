@@ -2,6 +2,11 @@
 import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 import { supabase } from "@/lib/supabase";
 import { mapFromDbWorkOrder, mapTimeEntryFromDb, mapInventoryItemFromDb } from "@/utils/supabaseMappers";
+import { 
+  triggerWorkflowOnWorkOrderCreate, 
+  triggerWorkflowOnWorkOrderStatusUpdate, 
+  triggerWorkflowOnWorkOrderComplete 
+} from "@/services/workflows/workflowEventService";
 
 /**
  * Create a new work order
@@ -35,7 +40,14 @@ export async function createWorkOrder(newWorkOrder: Partial<WorkOrder>): Promise
       await addInventoryItemsToWorkOrder(data[0].id, newWorkOrder.inventoryItems);
     }
 
-    return await getWorkOrderById(data[0].id);
+    const createdWorkOrder = await getWorkOrderById(data[0].id);
+    
+    // Trigger workflow for work order creation
+    triggerWorkflowOnWorkOrderCreate(createdWorkOrder).catch(err => 
+      console.error('Workflow trigger failed:', err)
+    );
+    
+    return createdWorkOrder;
   } catch (error) {
     console.error('Error in createWorkOrder:', error);
     throw error;
@@ -103,6 +115,10 @@ export async function getWorkOrderById(id: string): Promise<WorkOrder> {
  */
 export async function updateWorkOrder(id: string, updates: Partial<WorkOrder>): Promise<WorkOrder> {
   try {
+    // Get current work order to detect status changes
+    const currentWorkOrder = await getWorkOrderById(id);
+    const oldStatus = currentWorkOrder.status;
+    
     // Map properties to match database column names
     const workOrderData = {
       customer: updates.customer,
@@ -132,7 +148,23 @@ export async function updateWorkOrder(id: string, updates: Partial<WorkOrder>): 
       await addInventoryItemsToWorkOrder(id, updates.inventoryItems);
     }
 
-    return await getWorkOrderById(id);
+    const updatedWorkOrder = await getWorkOrderById(id);
+    
+    // Trigger workflow on status change
+    if (updates.status && updates.status !== oldStatus) {
+      triggerWorkflowOnWorkOrderStatusUpdate(updatedWorkOrder, oldStatus).catch(err => 
+        console.error('Workflow trigger failed:', err)
+      );
+      
+      // Check if completed
+      if (updates.status === 'completed') {
+        triggerWorkflowOnWorkOrderComplete(updatedWorkOrder).catch(err => 
+          console.error('Workflow trigger failed:', err)
+        );
+      }
+    }
+    
+    return updatedWorkOrder;
   } catch (error) {
     console.error('Error in updateWorkOrder:', error);
     throw error;

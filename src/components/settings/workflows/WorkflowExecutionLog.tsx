@@ -9,11 +9,11 @@ import {
   Clock, 
   Play, 
   RefreshCw,
-  Filter,
-  Calendar
+  RotateCcw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkflowExecution } from '@/hooks/workflows/useWorkflowExecution';
 
 interface WorkflowExecution {
   id: string;
@@ -34,6 +34,7 @@ export function WorkflowExecutionLog() {
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { toast } = useToast();
+  const { retryExecution, isExecuting } = useWorkflowExecution();
 
   const fetchExecutions = async () => {
     try {
@@ -186,6 +187,18 @@ export function WorkflowExecutionLog() {
                     <Badge className={getStatusColor(execution.execution_status)}>
                       {execution.execution_status}
                     </Badge>
+                    
+                    {execution.execution_status === 'failed' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => retryExecution(execution.id)}
+                        disabled={isExecuting}
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" />
+                        Retry
+                      </Button>
+                    )}
                     
                     <div className="text-right text-sm">
                       <div className="text-muted-foreground">
