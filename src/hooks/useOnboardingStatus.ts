@@ -1,21 +1,30 @@
-
 import { useState, useEffect } from 'react';
+import { useShopData } from '@/hooks/useShopData';
 
 interface OnboardingStatus {
   isComplete: boolean;
-  currentStep?: string;
+  currentStep: number;
 }
 
 export function useOnboardingStatus() {
-  const [status, setStatus] = useState<OnboardingStatus>({ isComplete: true });
-  const [loading, setLoading] = useState(false);
+  const { shopData, loading: shopLoading } = useShopData();
+  const [status, setStatus] = useState<OnboardingStatus>({ isComplete: true, currentStep: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // For now, consider onboarding complete
-    // This can be enhanced later with actual onboarding logic
-    setStatus({ isComplete: true });
-    setLoading(false);
-  }, []);
+    if (!shopLoading) {
+      if (shopData) {
+        setStatus({
+          isComplete: shopData.onboarding_completed ?? false,
+          currentStep: shopData.setup_step ?? 0
+        });
+      } else {
+        // No shop data means user needs to complete initial onboarding
+        setStatus({ isComplete: false, currentStep: 0 });
+      }
+      setLoading(false);
+    }
+  }, [shopData, shopLoading]);
 
   return { status, loading };
 }

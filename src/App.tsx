@@ -106,6 +106,7 @@ import TechnicianPortal from '@/pages/TechnicianPortal';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
 import Onboarding from '@/pages/Onboarding';
+import ShopSetup from '@/pages/ShopSetup';
 import SecurityAudit from '@/pages/SecurityAudit';
 import ResetPassword from '@/pages/ResetPassword';
 
@@ -125,6 +126,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/setup-brian" element={<SetupBrianAuth />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/shop-setup" element={<ShopSetup />} />
         
         {/* Protected routes */}
         <Route

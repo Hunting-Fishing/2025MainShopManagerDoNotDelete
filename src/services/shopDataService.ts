@@ -17,6 +17,7 @@ export interface ShopData {
   logo_url?: string;
   onboarding_completed?: boolean;
   setup_step?: number;
+  onboarding_data?: Record<string, any>;
 }
 
 export interface CompanyInfo {
