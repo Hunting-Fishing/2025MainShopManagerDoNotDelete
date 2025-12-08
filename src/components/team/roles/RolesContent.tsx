@@ -13,7 +13,7 @@ interface RolesContentProps {
   onEditRole: (role: any) => void;
   onDeleteRole: (role: any) => void;
   onDuplicateRole: (role: any) => void;
-  onReorderRole: (roleId: string, direction: 'up' | 'down') => boolean;
+  onReorderRole: (roleId: string, direction: 'up' | 'down') => Promise<boolean> | boolean;
 }
 
 export function RolesContent({

@@ -7,7 +7,7 @@ interface RolesGridProps {
   onEditRole: (role: any) => void;
   onDeleteRole: (role: any) => void;
   onDuplicateRole: (role: any) => void;
-  onReorderRole: (roleId: string, direction: 'up' | 'down') => boolean;
+  onReorderRole: (roleId: string, direction: 'up' | 'down') => Promise<boolean> | boolean;
 }
 
 export function RolesGrid({ roles, onEditRole, onDeleteRole, onDuplicateRole, onReorderRole }: RolesGridProps) {

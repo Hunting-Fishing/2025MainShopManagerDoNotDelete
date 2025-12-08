@@ -10,6 +10,7 @@ export interface DatabaseRole {
   is_default: boolean;
   created_at: string;
   updated_at: string;
+  display_order: number;
   member_count: number;
   members: {
     user_id: string;
@@ -42,11 +43,12 @@ export function useRoles() {
           is_default,
           created_at,
           updated_at,
+          display_order,
           user_roles (
             user_id
           )
         `)
-        .order('name');
+        .order('display_order');
 
       if (rolesError) {
         throw rolesError;
@@ -88,6 +90,7 @@ export function useRoles() {
       // Transform the data with profile information
       const transformedRoles = rolesData?.map(role => ({
         ...role,
+        display_order: role.display_order || 0,
         member_count: role.user_roles?.length || 0,
         members: role.user_roles?.map(ur => {
           const profile = profilesMap.get(ur.user_id);
@@ -222,6 +225,57 @@ export function useRoles() {
     }
   };
 
+  const reorderRole = async (roleId: string, direction: 'up' | 'down') => {
+    try {
+      // Find the role and its neighbor
+      const sortedRoles = [...roles].sort((a, b) => a.display_order - b.display_order);
+      const currentIndex = sortedRoles.findIndex(r => r.id === roleId);
+      
+      if (currentIndex === -1) return false;
+      
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      if (targetIndex < 0 || targetIndex >= sortedRoles.length) {
+        return false;
+      }
+      
+      const currentRole = sortedRoles[currentIndex];
+      const targetRole = sortedRoles[targetIndex];
+      
+      // Swap display_order values
+      const { error: error1 } = await supabase
+        .from('roles')
+        .update({ display_order: targetRole.display_order })
+        .eq('id', currentRole.id);
+        
+      if (error1) throw error1;
+      
+      const { error: error2 } = await supabase
+        .from('roles')
+        .update({ display_order: currentRole.display_order })
+        .eq('id', targetRole.id);
+        
+      if (error2) throw error2;
+      
+      await fetchRoles();
+      
+      toast({
+        title: "Role order updated",
+        description: `Role moved ${direction}`,
+      });
+      
+      return true;
+    } catch (err) {
+      console.error('Error reordering role:', err);
+      toast({
+        title: "Error",
+        description: "Failed to reorder role",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchRoles();
 
@@ -269,6 +323,7 @@ export function useRoles() {
     refetch: fetchRoles,
     createRole,
     updateRole,
-    deleteRole
+    deleteRole,
+    reorderRole
   };
 }
