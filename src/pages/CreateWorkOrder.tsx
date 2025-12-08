@@ -38,11 +38,11 @@ const CreateWorkOrder = () => {
       .map(([key, value]) => [key, decodeURIComponent(value as string)])
   );
 
-  console.log('Pre-populated data from URL:', cleanedData);
+  
 
   const handleCreateWorkOrder = async (workOrderData: any) => {
     try {
-      console.log('Creating work order with data:', workOrderData);
+      
       
       const newWorkOrder = await createWorkOrder(workOrderData);
       
