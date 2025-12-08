@@ -12,12 +12,26 @@ import { Separator } from "@/components/ui/separator";
 import { userSecurityService, UserSession, User2FA } from "@/services/user/userSecurityService";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useNavigate } from "react-router-dom";
 
 export function SecurityTab() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [twoFAStatus, setTwoFAStatus] = useState<User2FA | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [securitySettings, setSecuritySettings] = useState<any>(null);
   
@@ -206,6 +220,34 @@ export function SecurityTab() {
         description: "Failed to terminate sessions",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      const result = await userSecurityService.deleteAccount();
+      if (result.success) {
+        toast({
+          title: "Account Deactivated",
+          description: "Your account has been deactivated. You will be signed out."
+        });
+        navigate('/login');
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to delete account",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete account",
+        variant: "destructive"
+      });
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -404,15 +446,37 @@ export function SecurityTab() {
           <CardDescription>Irreversible and destructive actions</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-red-200 bg-red-50 p-4">
-            <h4 className="text-sm font-medium text-red-800">Delete Account</h4>
-            <p className="mt-1 text-sm text-red-600">
+          <div className="rounded-md border border-destructive/20 bg-destructive/5 p-4">
+            <h4 className="text-sm font-medium text-destructive">Delete Account</h4>
+            <p className="mt-1 text-sm text-muted-foreground">
               Once you delete your account, there is no going back. This action is permanent.
             </p>
             <div className="mt-4">
-              <Button variant="destructive" size="sm">
-                Delete Account
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" disabled={deletingAccount}>
+                    {deletingAccount ? 'Deleting...' : 'Delete Account'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently deactivate your account
+                      and remove your access to the system. You will be signed out immediately.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteAccount}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Yes, delete my account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </CardContent>

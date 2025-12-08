@@ -268,24 +268,41 @@ export const userSecurityService = {
   // Account Management
   async deleteAccount(): Promise<{ success: boolean; error?: string }> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return { success: false, error: 'No user logged in' };
+      }
+
       // Log account deletion attempt
       await this.logSecurityEvent('account_deletion_requested', 'auth.users', {
-        action: 'User requested account deletion'
+        action: 'User requested account deletion',
+        user_id: user.id
       });
 
-      // Note: In a real implementation, you might want to soft delete
-      // or have a more complex account deletion process
-      const { error } = await supabase.auth.admin.deleteUser(
-        (await supabase.auth.getUser()).data.user?.id || ''
-      );
+      // Soft delete: Mark user profile as deleted and deactivate
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
 
-      if (error) {
-        return { success: false, error: error.message };
+      if (profileError) {
+        console.error('Error deactivating profile:', profileError);
+      }
+
+      // Sign out the user
+      const { error: signOutError } = await supabase.auth.signOut();
+      
+      if (signOutError) {
+        return { success: false, error: signOutError.message };
       }
 
       return { success: true };
     } catch (error) {
-      return { success: false, error: 'Failed to delete account' };
+      console.error('Failed to delete account:', error);
+      return { success: false, error: 'Failed to delete account. Please contact support.' };
     }
   },
 
