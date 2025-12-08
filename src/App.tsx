@@ -107,6 +107,7 @@ import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
 import Onboarding from '@/pages/Onboarding';
 import SecurityAudit from '@/pages/SecurityAudit';
+import ResetPassword from '@/pages/ResetPassword';
 
 function App() {
   useEffect(() => {
@@ -120,6 +121,7 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/about" element={<About />} />
         <Route path="/setup-brian" element={<SetupBrianAuth />} />
         <Route path="/onboarding" element={<Onboarding />} />
