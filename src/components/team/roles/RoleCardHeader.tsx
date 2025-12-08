@@ -10,7 +10,7 @@ interface RoleCardHeaderProps {
   onEdit: (role: any) => void;
   onDelete: (role: any) => void;
   onDuplicate: (role: any) => void;
-  onReorder: (roleId: string, direction: 'up' | 'down') => boolean;
+  onReorder: (roleId: string, direction: 'up' | 'down') => Promise<boolean> | boolean;
   isFirst: boolean;
   isLast: boolean;
 }

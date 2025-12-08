@@ -13,13 +13,13 @@ const transformDatabaseRoleToUIRole = (dbRole: DatabaseRole) => ({
   permissions: dbRole.permissions as PermissionSet,
   createdAt: dbRole.created_at,
   updatedAt: dbRole.updated_at,
-  priority: 1, // Default priority for sorting
+  priority: dbRole.display_order || 1,
   memberCount: dbRole.member_count,
   members: dbRole.members
 });
 
 export function useTeamRolesPage() {
-  const { roles: dbRoles, loading, createRole, updateRole, deleteRole } = useRoles();
+  const { roles: dbRoles, loading, createRole, updateRole, deleteRole, reorderRole } = useRoles();
   const { assignRole, removeUserFromRole } = useRoleAssignments();
 
   // Transform database roles to UI format
@@ -157,13 +157,8 @@ export function useTeamRolesPage() {
     }
   };
 
-  const handleReorderRole = (roleId: string, direction: 'up' | 'down') => {
-    // For now, return false as reordering would require additional database logic
-    toast({
-      title: "Info",
-      description: "Role reordering is not yet implemented",
-    });
-    return false;
+  const handleReorderRole = async (roleId: string, direction: 'up' | 'down') => {
+    return await reorderRole(roleId, direction);
   };
 
   const handleImportRoles = (importedRoles: any[]) => {
