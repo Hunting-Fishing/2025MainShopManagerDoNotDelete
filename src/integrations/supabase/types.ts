@@ -27347,20 +27347,6 @@ export type Database = {
       }
       get_popular_products:
         | {
-            Args: { limit_count?: number }
-            Returns: {
-              average_rating: number
-              id: string
-              image_url: string
-              name: string
-              order_count: number
-              popularity_score: number
-              price: number
-              title: string
-              view_count: number
-            }[]
-          }
-        | {
             Args: { days_back?: number; result_limit?: number }
             Returns: {
               average_rating: number
@@ -27374,6 +27360,20 @@ export type Database = {
               product_name: string
               review_count: number
               save_count: number
+              view_count: number
+            }[]
+          }
+        | {
+            Args: { limit_count?: number }
+            Returns: {
+              average_rating: number
+              id: string
+              image_url: string
+              name: string
+              order_count: number
+              popularity_score: number
+              price: number
+              title: string
               view_count: number
             }[]
           }
@@ -27477,8 +27477,8 @@ export type Database = {
         Returns: Json
       }
       get_user_shop_id:
-        | { Args: { user_id: string }; Returns: string }
         | { Args: never; Returns: string }
+        | { Args: { user_id: string }; Returns: string }
       get_user_shop_id_secure: { Args: { user_uuid: string }; Returns: string }
       get_work_order_inventory_items: {
         Args: { work_order_id: string }
@@ -27652,15 +27652,15 @@ export type Database = {
       }
       has_permission:
         | {
-            Args: { permission_module: string; user_id_param: string }
-            Returns: boolean
-          }
-        | {
             Args: {
               act: Database["public"]["Enums"]["permission_type"]
               res: Database["public"]["Enums"]["resource_type"]
               user_id: string
             }
+            Returns: boolean
+          }
+        | {
+            Args: { permission_module: string; user_id_param: string }
             Returns: boolean
           }
       has_permission_for_action: {
@@ -27672,7 +27672,6 @@ export type Database = {
         Returns: boolean
       }
       has_role:
-        | { Args: { role_name: string; user_id: string }; Returns: boolean }
         | {
             Args: {
               role: Database["public"]["Enums"]["app_role"]
@@ -27680,6 +27679,7 @@ export type Database = {
             }
             Returns: boolean
           }
+        | { Args: { role_name: string; user_id: string }; Returns: boolean }
       increment_campaign_clicks: {
         Args: { campaign_id: string }
         Returns: undefined
@@ -27782,7 +27782,6 @@ export type Database = {
               p_status?: string
               p_supplier_cost: number
               p_supplier_name: string
-              p_supplier_suggested_retail_price: number
               p_warranty_duration?: string
               p_work_order_id: string
             }
@@ -27812,6 +27811,7 @@ export type Database = {
               p_status?: string
               p_supplier_cost: number
               p_supplier_name: string
+              p_supplier_suggested_retail_price: number
               p_warranty_duration?: string
               p_work_order_id: string
             }
@@ -27996,8 +27996,8 @@ export type Database = {
       track_product_interaction:
         | {
             Args: {
-              p_category: string
-              p_interaction_type: string
+              p_category?: string
+              p_interaction_type?: string
               p_metadata?: Json
               p_product_id: string
               p_product_name: string
@@ -28008,8 +28008,8 @@ export type Database = {
           }
         | {
             Args: {
-              p_category?: string
-              p_interaction_type?: string
+              p_category: string
+              p_interaction_type: string
               p_metadata?: Json
               p_product_id: string
               p_product_name: string
@@ -28051,6 +28051,51 @@ export type Database = {
       update_work_order_part:
         | {
             Args: {
+              p_customer_price: number
+              p_id: string
+              p_invoice_number: string
+              p_markup_percentage: number
+              p_notes: string
+              p_part_name: string
+              p_part_number: string
+              p_part_type: string
+              p_po_line: string
+              p_quantity: number
+              p_retail_price: number
+              p_supplier_cost: number
+              p_supplier_name: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_category?: string
+              p_core_charge_amount?: number
+              p_core_charge_applied?: boolean
+              p_customer_price: number
+              p_id: string
+              p_install_date?: string
+              p_installed_by?: string
+              p_invoice_number: string
+              p_is_stock_item?: boolean
+              p_is_taxable?: boolean
+              p_markup_percentage: number
+              p_notes: string
+              p_part_name: string
+              p_part_number: string
+              p_part_type: string
+              p_po_line: string
+              p_quantity: number
+              p_retail_price: number
+              p_status?: string
+              p_supplier_cost: number
+              p_supplier_name: string
+              p_warranty_duration?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
               p_category?: string
               p_core_charge_amount?: number
               p_core_charge_applied?: boolean
@@ -28074,51 +28119,6 @@ export type Database = {
               p_supplier_name: string
               p_supplier_suggested_retail_price: number
               p_warranty_duration?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_category?: string
-              p_core_charge_amount?: number
-              p_core_charge_applied?: boolean
-              p_customer_price: number
-              p_id: string
-              p_install_date?: string
-              p_installed_by?: string
-              p_invoice_number: string
-              p_is_stock_item?: boolean
-              p_is_taxable?: boolean
-              p_markup_percentage: number
-              p_notes: string
-              p_part_name: string
-              p_part_number: string
-              p_part_type: string
-              p_po_line: string
-              p_quantity: number
-              p_retail_price: number
-              p_status?: string
-              p_supplier_cost: number
-              p_supplier_name: string
-              p_warranty_duration?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_customer_price: number
-              p_id: string
-              p_invoice_number: string
-              p_markup_percentage: number
-              p_notes: string
-              p_part_name: string
-              p_part_number: string
-              p_part_type: string
-              p_po_line: string
-              p_quantity: number
-              p_retail_price: number
-              p_supplier_cost: number
-              p_supplier_name: string
             }
             Returns: string
           }

@@ -25,25 +25,72 @@ export function EditMaintenanceRequestDialog({
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [existingAttachments, setExistingAttachments] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
+  const [reportedByType, setReportedByType] = useState<'employee' | 'other'>('employee');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     reported_by_person: '',
+    reported_by_employee_id: '',
     priority: 'medium',
     request_type: 'repair',
     change_summary: ''
   });
 
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .order('first_name');
+
+      if (error) throw error;
+
+      const employeeList = data?.map(emp => ({
+        id: emp.id,
+        name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unnamed Employee'
+      })) || [];
+
+      setEmployees(employeeList);
+      return employeeList;
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      return [];
+    }
+  };
+
   // Load request data when dialog opens
   useEffect(() => {
     if (open && request) {
-      setFormData({
-        title: request.title || '',
-        description: request.description || '',
-        reported_by_person: request.reported_by_person || '',
-        priority: request.priority || 'medium',
-        request_type: request.request_type || 'repair',
-        change_summary: ''
+      fetchEmployees().then(employeeList => {
+        // Check if the reported_by_person matches an employee name
+        const matchingEmployee = employeeList.find(
+          emp => emp.name.toLowerCase() === (request.reported_by_person || '').toLowerCase()
+        );
+
+        if (matchingEmployee) {
+          setReportedByType('employee');
+          setFormData({
+            title: request.title || '',
+            description: request.description || '',
+            reported_by_person: matchingEmployee.name,
+            reported_by_employee_id: matchingEmployee.id,
+            priority: request.priority || 'medium',
+            request_type: request.request_type || 'repair',
+            change_summary: ''
+          });
+        } else {
+          setReportedByType(request.reported_by_person ? 'other' : 'employee');
+          setFormData({
+            title: request.title || '',
+            description: request.description || '',
+            reported_by_person: request.reported_by_person || '',
+            reported_by_employee_id: '',
+            priority: request.priority || 'medium',
+            request_type: request.request_type || 'repair',
+            change_summary: ''
+          });
+        }
       });
       setExistingAttachments(request.attachments || []);
       setFiles([]);
@@ -216,13 +263,60 @@ export function EditMaintenanceRequestDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reported_by_person">Reported By</Label>
-            <Input
-              id="reported_by_person"
-              value={formData.reported_by_person}
-              onChange={(e) => setFormData({ ...formData, reported_by_person: e.target.value })}
-              placeholder="e.g., John - Forklift Operator"
-            />
+            <Label>Reported By (Optional)</Label>
+            <Select
+              value={reportedByType}
+              onValueChange={(value: 'employee' | 'other') => {
+                setReportedByType(value);
+                setFormData({ 
+                  ...formData, 
+                  reported_by_person: '',
+                  reported_by_employee_id: ''
+                });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="employee">Employee</SelectItem>
+                <SelectItem value="other">Other (Non-Employee)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {reportedByType === 'employee' ? (
+              <Select
+                value={formData.reported_by_employee_id}
+                onValueChange={(value) => {
+                  const employee = employees.find(e => e.id === value);
+                  setFormData({ 
+                    ...formData, 
+                    reported_by_employee_id: value,
+                    reported_by_person: employee?.name || ''
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                value={formData.reported_by_person}
+                onChange={(e) => setFormData({ ...formData, reported_by_person: e.target.value })}
+                placeholder="e.g., John - Visitor, Customer Name, etc."
+              />
+            )}
+            <p className="text-xs text-muted-foreground">
+              Person who initially noticed the problem
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
