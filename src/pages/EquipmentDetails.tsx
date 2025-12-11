@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen, FileText, MapPin, Gauge, Hash, Truck, ListTodo, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen, FileText, MapPin, Gauge, Hash, Truck, ListTodo, ShoppingCart, FolderOpen, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { getEquipmentById, updateEquipmentStatus, type EquipmentDetails } from '@/services/equipment/equipmentService';
 import { MaintenanceIntervals } from '@/components/equipment/MaintenanceIntervals';
@@ -14,6 +14,8 @@ import { SafetyEquipmentList } from '@/components/equipment/SafetyEquipmentList'
 import { EquipmentManuals } from '@/components/equipment/EquipmentManuals';
 import { EquipmentTasks } from '@/components/equipment-details/EquipmentTasks';
 import { EquipmentSupplyOrders } from '@/components/equipment-details/EquipmentSupplyOrders';
+import { EquipmentDocuments } from '@/components/equipment-details/EquipmentDocuments';
+import { RecurringTasksPanel } from '@/components/equipment-details/RecurringTasksPanel';
 
 // Helper to check if equipment is a vehicle type
 const isVehicleType = (type?: string): boolean => {
@@ -254,6 +256,10 @@ export default function EquipmentDetails() {
         <div className="w-full overflow-x-auto pb-2">
           <TabsList className="inline-flex h-auto min-w-max gap-1 p-1">
             <TabsTrigger value="details" className="whitespace-nowrap">Details</TabsTrigger>
+            <TabsTrigger value="documents" className="whitespace-nowrap gap-2">
+              <FolderOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">Documents</span>
+            </TabsTrigger>
             <TabsTrigger value="manuals" className="whitespace-nowrap gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">Manuals</span>
@@ -269,6 +275,10 @@ export default function EquipmentDetails() {
             <TabsTrigger value="tasks" className="whitespace-nowrap gap-2">
               <ListTodo className="h-4 w-4" />
               <span className="hidden sm:inline">Tasks</span>
+            </TabsTrigger>
+            <TabsTrigger value="recurring" className="whitespace-nowrap gap-2">
+              <RefreshCw className="h-4 w-4" />
+              <span className="hidden sm:inline">Recurring</span>
             </TabsTrigger>
             <TabsTrigger value="orders" className="whitespace-nowrap gap-2">
               <ShoppingCart className="h-4 w-4" />
@@ -630,8 +640,22 @@ export default function EquipmentDetails() {
           />
         </TabsContent>
 
+        <TabsContent value="documents" className="space-y-4">
+          <EquipmentDocuments 
+            equipmentId={id!} 
+            shopId={equipment.shop_id}
+          />
+        </TabsContent>
+
         <TabsContent value="tasks" className="space-y-4">
           <EquipmentTasks 
+            equipmentId={id!} 
+            shopId={equipment.shop_id}
+          />
+        </TabsContent>
+
+        <TabsContent value="recurring" className="space-y-4">
+          <RecurringTasksPanel 
             equipmentId={id!} 
             shopId={equipment.shop_id}
           />

@@ -51,6 +51,7 @@ import SignatureDemo from '@/pages/SignatureDemo';
 import EquipmentManagement from '@/pages/EquipmentManagement';
 import Equipment from '@/pages/Equipment';
 import EquipmentDetails from '@/pages/EquipmentDetails';
+import EquipmentDashboard from '@/pages/EquipmentDashboard';
 import FleetManagement from '@/pages/FleetManagement';
 import MaintenanceRequests from '@/pages/MaintenanceRequests';
 import ShoppingCartPage from '@/pages/ShoppingCart';
@@ -442,6 +443,12 @@ function App() {
                   <Route path="/fleet-management" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <FleetManagement />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/equipment/dashboard" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <EquipmentDashboard />
                     </ProtectedRoute>
                   } />
                   
