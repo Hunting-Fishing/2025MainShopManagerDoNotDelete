@@ -1,0 +1,289 @@
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+
+interface CreateEquipmentTaskDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  equipmentId: string;
+  shopId?: string;
+  task?: any | null;
+  onSuccess: () => void;
+}
+
+const TASK_TYPES = [
+  { value: 'general', label: 'General' },
+  { value: 'cleaning', label: 'Cleaning' },
+  { value: 'inspection', label: 'Inspection' },
+  { value: 'preparation', label: 'Preparation' },
+  { value: 'maintenance_prep', label: 'Maintenance Prep' },
+];
+
+const PRIORITIES = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'urgent', label: 'Urgent' },
+];
+
+interface TeamMember {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+}
+
+export function CreateEquipmentTaskDialog({ 
+  open, 
+  onOpenChange, 
+  equipmentId, 
+  shopId,
+  task,
+  onSuccess 
+}: CreateEquipmentTaskDialogProps) {
+  const [loading, setLoading] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    task_type: 'general',
+    priority: 'medium',
+    assigned_to: '',
+    due_date: '',
+    estimated_hours: '',
+    notes: '',
+  });
+
+  useEffect(() => {
+    if (open) {
+      loadTeamMembers();
+      if (task) {
+        setFormData({
+          title: task.title || '',
+          description: task.description || '',
+          task_type: task.task_type || 'general',
+          priority: task.priority || 'medium',
+          assigned_to: task.assigned_to || '',
+          due_date: task.due_date ? task.due_date.split('T')[0] : '',
+          estimated_hours: task.estimated_hours?.toString() || '',
+          notes: task.notes || '',
+        });
+      } else {
+        setFormData({
+          title: '',
+          description: '',
+          task_type: 'general',
+          priority: 'medium',
+          assigned_to: '',
+          due_date: '',
+          estimated_hours: '',
+          notes: '',
+        });
+      }
+    }
+  }, [open, task]);
+
+  const loadTeamMembers = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, email')
+      .order('first_name');
+    setTeamMembers(data || []);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title.trim()) {
+      toast.error('Please enter a task title');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const assignee = teamMembers.find(m => m.id === formData.assigned_to);
+      const assigneeName = assignee 
+        ? `${assignee.first_name || ''} ${assignee.last_name || ''}`.trim() || assignee.email
+        : null;
+
+      const taskData = {
+        equipment_id: equipmentId,
+        shop_id: shopId,
+        title: formData.title.trim(),
+        description: formData.description.trim() || null,
+        task_type: formData.task_type,
+        priority: formData.priority,
+        assigned_to: formData.assigned_to || null,
+        assigned_to_name: assigneeName,
+        due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
+        estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : null,
+        notes: formData.notes.trim() || null,
+      };
+
+      if (task) {
+        const { error } = await supabase
+          .from('equipment_tasks')
+          .update(taskData)
+          .eq('id', task.id);
+        if (error) throw error;
+        toast.success('Task updated');
+      } else {
+        const { error } = await supabase
+          .from('equipment_tasks')
+          .insert(taskData);
+        if (error) throw error;
+        toast.success('Task created');
+      }
+
+      onSuccess();
+    } catch (error) {
+      console.error('Error saving task:', error);
+      toast.error('Failed to save task');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{task ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="title">Task Title *</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="Enter task title"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Describe the task..."
+              rows={3}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Task Type</Label>
+              <Select 
+                value={formData.task_type} 
+                onValueChange={(v) => setFormData({ ...formData, task_type: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TASK_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Priority</Label>
+              <Select 
+                value={formData.priority} 
+                onValueChange={(v) => setFormData({ ...formData, priority: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label>Assign To</Label>
+            <Select 
+              value={formData.assigned_to} 
+              onValueChange={(v) => setFormData({ ...formData, assigned_to: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select team member" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Unassigned</SelectItem>
+                {teamMembers.map(member => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.first_name || member.last_name 
+                      ? `${member.first_name || ''} ${member.last_name || ''}`.trim()
+                      : member.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="due_date">Due Date</Label>
+              <Input
+                id="due_date"
+                type="date"
+                value={formData.due_date}
+                onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="estimated_hours">Estimated Hours</Label>
+              <Input
+                id="estimated_hours"
+                type="number"
+                step="0.5"
+                min="0"
+                value={formData.estimated_hours}
+                onChange={(e) => setFormData({ ...formData, estimated_hours: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Additional notes..."
+              rows={2}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {task ? 'Update Task' : 'Create Task'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

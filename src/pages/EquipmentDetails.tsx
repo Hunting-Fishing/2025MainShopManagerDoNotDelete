@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen, FileText, MapPin, Gauge, Hash, Truck } from 'lucide-react';
+import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen, FileText, MapPin, Gauge, Hash, Truck, ListTodo, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import { getEquipmentById, updateEquipmentStatus, type EquipmentDetails } from '@/services/equipment/equipmentService';
 import { MaintenanceIntervals } from '@/components/equipment/MaintenanceIntervals';
@@ -12,6 +12,8 @@ import { EquipmentWorkRequests } from '@/components/equipment-details/EquipmentW
 import { EquipmentConfigDialog } from '@/components/equipment/EquipmentConfigDialog';
 import { SafetyEquipmentList } from '@/components/equipment/SafetyEquipmentList';
 import { EquipmentManuals } from '@/components/equipment/EquipmentManuals';
+import { EquipmentTasks } from '@/components/equipment-details/EquipmentTasks';
+import { EquipmentSupplyOrders } from '@/components/equipment-details/EquipmentSupplyOrders';
 
 // Helper to check if equipment is a vehicle type
 const isVehicleType = (type?: string): boolean => {
@@ -263,6 +265,14 @@ export default function EquipmentDetails() {
             <TabsTrigger value="work-requests" className="whitespace-nowrap gap-2">
               <ClipboardList className="h-4 w-4" />
               <span className="hidden sm:inline">Work Requests</span>
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="whitespace-nowrap gap-2">
+              <ListTodo className="h-4 w-4" />
+              <span className="hidden sm:inline">Tasks</span>
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="whitespace-nowrap gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              <span className="hidden sm:inline">Orders</span>
             </TabsTrigger>
             <TabsTrigger value="intervals" className="whitespace-nowrap gap-2">
               <Wrench className="h-4 w-4" />
