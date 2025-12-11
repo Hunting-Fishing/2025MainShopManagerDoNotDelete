@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 interface CreateEquipmentTaskDialogProps {
   open: boolean;
@@ -31,6 +32,16 @@ const PRIORITIES = [
   { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' },
   { value: 'urgent', label: 'Urgent' },
+];
+
+const RECURRENCE_PATTERNS = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'biweekly', label: 'Every 2 Weeks' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'quarterly', label: 'Quarterly' },
+  { value: 'yearly', label: 'Yearly' },
+  { value: 'hours_based', label: 'Hours Based' },
 ];
 
 interface TeamMember {
@@ -59,6 +70,10 @@ export function CreateEquipmentTaskDialog({
     due_date: '',
     estimated_hours: '',
     notes: '',
+    is_recurring: false,
+    recurrence_pattern: 'weekly',
+    recurrence_interval: '1',
+    recurrence_end_date: '',
   });
 
   useEffect(() => {
@@ -74,6 +89,10 @@ export function CreateEquipmentTaskDialog({
           due_date: task.due_date ? task.due_date.split('T')[0] : '',
           estimated_hours: task.estimated_hours?.toString() || '',
           notes: task.notes || '',
+          is_recurring: task.is_recurring || false,
+          recurrence_pattern: task.recurrence_pattern || 'weekly',
+          recurrence_interval: task.recurrence_interval?.toString() || '1',
+          recurrence_end_date: task.recurrence_end_date ? task.recurrence_end_date.split('T')[0] : '',
         });
       } else {
         setFormData({
@@ -85,6 +104,10 @@ export function CreateEquipmentTaskDialog({
           due_date: '',
           estimated_hours: '',
           notes: '',
+          is_recurring: false,
+          recurrence_pattern: 'weekly',
+          recurrence_interval: '1',
+          recurrence_end_date: '',
         });
       }
     }
@@ -112,7 +135,7 @@ export function CreateEquipmentTaskDialog({
         ? `${assignee.first_name || ''} ${assignee.last_name || ''}`.trim() || assignee.email
         : null;
 
-      const taskData = {
+      const taskData: any = {
         equipment_id: equipmentId,
         shop_id: shopId,
         title: formData.title.trim(),
@@ -124,7 +147,16 @@ export function CreateEquipmentTaskDialog({
         due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
         estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : null,
         notes: formData.notes.trim() || null,
+        is_recurring: formData.is_recurring,
       };
+
+      if (formData.is_recurring) {
+        taskData.recurrence_pattern = formData.recurrence_pattern;
+        taskData.recurrence_interval = parseInt(formData.recurrence_interval) || 1;
+        taskData.recurrence_end_date = formData.recurrence_end_date 
+          ? new Date(formData.recurrence_end_date).toISOString() 
+          : null;
+      }
 
       if (task) {
         const { error } = await supabase
@@ -260,6 +292,67 @@ export function CreateEquipmentTaskDialog({
                 placeholder="0"
               />
             </div>
+          </div>
+
+          {/* Recurring Task Section */}
+          <div className="border rounded-lg p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="is_recurring" className="cursor-pointer">Make this a recurring task</Label>
+              </div>
+              <Switch
+                id="is_recurring"
+                checked={formData.is_recurring}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_recurring: checked })}
+              />
+            </div>
+
+            {formData.is_recurring && (
+              <div className="space-y-4 pt-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Recurrence Pattern</Label>
+                    <Select 
+                      value={formData.recurrence_pattern} 
+                      onValueChange={(v) => setFormData({ ...formData, recurrence_pattern: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RECURRENCE_PATTERNS.map(p => (
+                          <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="recurrence_interval">
+                      {formData.recurrence_pattern === 'hours_based' ? 'Every N Hours' : 'Interval'}
+                    </Label>
+                    <Input
+                      id="recurrence_interval"
+                      type="number"
+                      min="1"
+                      value={formData.recurrence_interval}
+                      onChange={(e) => setFormData({ ...formData, recurrence_interval: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="recurrence_end_date">End Date (Optional)</Label>
+                  <Input
+                    id="recurrence_end_date"
+                    type="date"
+                    value={formData.recurrence_end_date}
+                    onChange={(e) => setFormData({ ...formData, recurrence_end_date: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

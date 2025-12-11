@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, ListTodo, Play, CheckCircle, AlertCircle, Clock, User, Calendar, Filter, MoreVertical, Trash2, Edit } from 'lucide-react';
+import { Plus, ListTodo, Play, CheckCircle, AlertCircle, Clock, User, Calendar, Filter, MoreVertical, Trash2, Edit, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { CreateEquipmentTaskDialog } from './CreateEquipmentTaskDialog';
 import {
@@ -41,6 +41,8 @@ interface EquipmentTask {
   actual_hours: number | null;
   notes: string | null;
   created_at: string;
+  is_recurring: boolean | null;
+  recurrence_pattern: string | null;
 }
 
 interface EquipmentTasksProps {
@@ -257,6 +259,12 @@ export function EquipmentTasks({ equipmentId, shopId }: EquipmentTasksProps) {
                         <Badge variant="outline" className="capitalize">
                           {task.task_type.replace('_', ' ')}
                         </Badge>
+                        {task.is_recurring && (
+                          <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/20">
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                            Recurring
+                          </Badge>
+                        )}
                       </div>
                       
                       {task.description && (
