@@ -72,34 +72,37 @@ export function AddAssetAssignmentDialog({ open, onOpenChange }: AddAssetAssignm
   };
 
   const fetchAssets = async () => {
-    let tableName = '';
-    let selectFields = 'id, name';
-    let orderField = 'name';
+    let data: any[] = [];
     
     switch (formData.asset_type) {
       case 'equipment':
-        tableName = 'equipment_assets';
+        // Get all equipment except vessels (vessels have their own case)
+        const { data: equipmentData } = await supabase
+          .from('equipment_assets')
+          .select('id, name')
+          .neq('equipment_type', 'vessel')
+          .order('name');
+        data = equipmentData || [];
         break;
       case 'vessel':
-        tableName = 'boat_inspections';
-        selectFields = 'id, vessel_name as name';
-        orderField = 'vessel_name';
+        // Get vessels from equipment_assets where equipment_type = 'vessel'
+        const { data: vesselData } = await supabase
+          .from('equipment_assets')
+          .select('id, name')
+          .eq('equipment_type', 'vessel')
+          .order('name');
+        data = vesselData || [];
         break;
       case 'vehicle':
-        tableName = 'vehicles';
-        selectFields = 'id, make, model, year';
-        orderField = 'make';
+        const { data: vehicleData } = await supabase
+          .from('vehicles')
+          .select('id, make, model, year')
+          .order('make');
+        data = vehicleData || [];
         break;
     }
 
-    if (tableName) {
-      const { data } = await supabase
-        .from(tableName as any) // Cast to allow dynamic table selection
-        .select(selectFields)
-        .order(orderField);
-      
-      setAssets(data || []);
-    }
+    setAssets(data);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
