@@ -7362,6 +7362,248 @@ export type Database = {
           },
         ]
       }
+      equipment_supply_order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          inventory_item_id: string | null
+          item_category: string | null
+          item_name: string
+          notes: string | null
+          order_id: string
+          quantity: number | null
+          received_quantity: number | null
+          sku: string | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          item_category?: string | null
+          item_name: string
+          notes?: string | null
+          order_id: string
+          quantity?: number | null
+          received_quantity?: number | null
+          sku?: string | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          item_category?: string | null
+          item_name?: string
+          notes?: string | null
+          order_id?: string
+          quantity?: number | null
+          received_quantity?: number | null
+          sku?: string | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_supply_order_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_supply_order_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_supply_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_supply_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_supply_orders: {
+        Row: {
+          created_at: string | null
+          equipment_id: string
+          expected_delivery: string | null
+          id: string
+          notes: string | null
+          order_date: string | null
+          order_number: string | null
+          requested_by: string | null
+          requested_by_name: string | null
+          shop_id: string | null
+          status: string | null
+          supplier: string | null
+          total_estimated_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_id: string
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string | null
+          order_number?: string | null
+          requested_by?: string | null
+          requested_by_name?: string | null
+          shop_id?: string | null
+          status?: string | null
+          supplier?: string | null
+          total_estimated_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          equipment_id?: string
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string | null
+          order_number?: string | null
+          requested_by?: string | null
+          requested_by_name?: string | null
+          shop_id?: string | null
+          status?: string | null
+          supplier?: string | null
+          total_estimated_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_supply_orders_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_supply_orders_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_supply_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_tasks: {
+        Row: {
+          actual_hours: number | null
+          assigned_to: string | null
+          assigned_to_name: string | null
+          attachments: Json | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          equipment_id: string
+          estimated_hours: number | null
+          id: string
+          notes: string | null
+          priority: string | null
+          shop_id: string | null
+          status: string | null
+          task_type: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_hours?: number | null
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          attachments?: Json | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          equipment_id: string
+          estimated_hours?: number | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          shop_id?: string | null
+          status?: string | null
+          task_type?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_hours?: number | null
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          attachments?: Json | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          equipment_id?: string
+          estimated_hours?: number | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          shop_id?: string | null
+          status?: string | null
+          task_type?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_tasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_tasks_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_tasks_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_usage_logs: {
         Row: {
           created_at: string | null
@@ -27237,6 +27479,10 @@ export type Database = {
           p_target_id: string
           p_type: string
         }
+        Returns: string
+      }
+      generate_equipment_order_number: {
+        Args: { p_shop_id: string }
         Returns: string
       }
       generate_quote_number: { Args: { p_shop_id?: string }; Returns: string }
