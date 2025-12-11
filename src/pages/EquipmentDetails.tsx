@@ -630,6 +630,20 @@ export default function EquipmentDetails() {
           />
         </TabsContent>
 
+        <TabsContent value="tasks" className="space-y-4">
+          <EquipmentTasks 
+            equipmentId={id!} 
+            shopId={equipment.shop_id}
+          />
+        </TabsContent>
+
+        <TabsContent value="orders" className="space-y-4">
+          <EquipmentSupplyOrders 
+            equipmentId={id!} 
+            shopId={equipment.shop_id}
+          />
+        </TabsContent>
+
         <TabsContent value="intervals" className="space-y-4">
           <MaintenanceIntervals equipmentId={id!} />
         </TabsContent>
