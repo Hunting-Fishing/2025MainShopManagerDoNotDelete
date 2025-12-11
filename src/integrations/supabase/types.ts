@@ -6623,6 +6623,82 @@ export type Database = {
           },
         ]
       }
+      equipment_documents: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          document_type: string | null
+          equipment_id: string
+          expiry_date: string | null
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          name: string
+          shop_id: string
+          updated_at: string | null
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          document_type?: string | null
+          equipment_id: string
+          expiry_date?: string | null
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          name: string
+          shop_id: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          document_type?: string | null
+          equipment_id?: string
+          expiry_date?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          name?: string
+          shop_id?: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_documents_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_documents_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_future_plans: {
         Row: {
           created_at: string
@@ -7218,6 +7294,101 @@ export type Database = {
           },
         ]
       }
+      equipment_recurring_task_templates: {
+        Row: {
+          assigned_to: string | null
+          assigned_to_name: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          equipment_id: string
+          estimated_hours: number | null
+          hours_interval: number | null
+          id: string
+          is_active: boolean | null
+          last_generated_at: string | null
+          next_generation_at: string | null
+          priority: string | null
+          recurrence_interval: number | null
+          recurrence_pattern: string
+          shop_id: string
+          task_type: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          equipment_id: string
+          estimated_hours?: number | null
+          hours_interval?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_generated_at?: string | null
+          next_generation_at?: string | null
+          priority?: string | null
+          recurrence_interval?: number | null
+          recurrence_pattern: string
+          shop_id: string
+          task_type?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          equipment_id?: string
+          estimated_hours?: number | null
+          hours_interval?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_generated_at?: string | null
+          next_generation_at?: string | null
+          priority?: string | null
+          recurrence_interval?: number | null
+          recurrence_pattern?: string
+          shop_id?: string
+          task_type?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_recurring_task_templates_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_recurring_task_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_recurring_task_templates_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_recurring_task_templates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_reports: {
         Row: {
           approval_status: Database["public"]["Enums"]["approval_status"] | null
@@ -7514,8 +7685,14 @@ export type Database = {
           equipment_id: string
           estimated_hours: number | null
           id: string
+          is_recurring: boolean | null
+          next_occurrence_date: string | null
           notes: string | null
+          parent_task_id: string | null
           priority: string | null
+          recurrence_end_date: string | null
+          recurrence_interval: number | null
+          recurrence_pattern: string | null
           shop_id: string | null
           status: string | null
           task_type: string | null
@@ -7536,8 +7713,14 @@ export type Database = {
           equipment_id: string
           estimated_hours?: number | null
           id?: string
+          is_recurring?: boolean | null
+          next_occurrence_date?: string | null
           notes?: string | null
+          parent_task_id?: string | null
           priority?: string | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
           shop_id?: string | null
           status?: string | null
           task_type?: string | null
@@ -7558,8 +7741,14 @@ export type Database = {
           equipment_id?: string
           estimated_hours?: number | null
           id?: string
+          is_recurring?: boolean | null
+          next_occurrence_date?: string | null
           notes?: string | null
+          parent_task_id?: string | null
           priority?: string | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
           shop_id?: string | null
           status?: string | null
           task_type?: string | null
@@ -7593,6 +7782,13 @@ export type Database = {
             columns: ["equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_tasks"
             referencedColumns: ["id"]
           },
           {
