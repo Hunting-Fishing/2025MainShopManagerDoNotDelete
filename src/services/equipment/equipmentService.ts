@@ -36,6 +36,7 @@ export interface EquipmentDetails extends Equipment {
   department?: string;
   last_service_date?: string;
   next_service_date?: string;
+  shop_id?: string;
 }
 
 export async function getEquipmentById(id: string): Promise<EquipmentDetails | null> {
