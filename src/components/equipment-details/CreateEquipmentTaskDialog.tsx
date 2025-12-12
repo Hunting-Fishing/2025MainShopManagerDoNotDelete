@@ -61,6 +61,7 @@ export function CreateEquipmentTaskDialog({
 }: CreateEquipmentTaskDialogProps) {
   const [loading, setLoading] = useState(false);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [currentUserShopId, setCurrentUserShopId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -79,6 +80,7 @@ export function CreateEquipmentTaskDialog({
   useEffect(() => {
     if (open) {
       loadTeamMembers();
+      loadCurrentUserShopId();
       if (task) {
         setFormData({
           title: task.title || '',
@@ -113,6 +115,20 @@ export function CreateEquipmentTaskDialog({
     }
   }, [open, task]);
 
+  const loadCurrentUserShopId = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+      if (profile?.shop_id) {
+        setCurrentUserShopId(profile.shop_id);
+      }
+    }
+  };
+
   const loadTeamMembers = async () => {
     const { data } = await supabase
       .from('profiles')
@@ -128,6 +144,13 @@ export function CreateEquipmentTaskDialog({
       return;
     }
 
+    // Use the current user's shop_id if available, fallback to prop
+    const effectiveShopId = currentUserShopId || shopId;
+    if (!effectiveShopId) {
+      toast.error('Unable to determine shop. Please try again.');
+      return;
+    }
+
     setLoading(true);
     try {
       const assignee = teamMembers.find(m => m.id === formData.assigned_to);
@@ -137,7 +160,7 @@ export function CreateEquipmentTaskDialog({
 
       const taskData: any = {
         equipment_id: equipmentId,
-        shop_id: shopId,
+        shop_id: effectiveShopId,
         title: formData.title.trim(),
         description: formData.description.trim() || null,
         task_type: formData.task_type,
