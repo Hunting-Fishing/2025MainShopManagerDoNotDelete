@@ -17675,6 +17675,358 @@ export type Database = {
           },
         ]
       }
+      project_budget_snapshots: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          forecasted_total: number | null
+          id: string
+          notes: string | null
+          phase_data: Json | null
+          project_id: string | null
+          snapshot_date: string | null
+          snapshot_type: string | null
+          total_budget: number | null
+          total_committed: number | null
+          total_spent: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          forecasted_total?: number | null
+          id?: string
+          notes?: string | null
+          phase_data?: Json | null
+          project_id?: string | null
+          snapshot_date?: string | null
+          snapshot_type?: string | null
+          total_budget?: number | null
+          total_committed?: number | null
+          total_spent?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          forecasted_total?: number | null
+          id?: string
+          notes?: string | null
+          phase_data?: Json | null
+          project_id?: string | null
+          snapshot_date?: string | null
+          snapshot_type?: string | null
+          total_budget?: number | null
+          total_committed?: number | null
+          total_spent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_budget_snapshots_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_budgets: {
+        Row: {
+          actual_end_date: string | null
+          actual_spent: number | null
+          actual_start_date: string | null
+          approval_threshold: number | null
+          approved_at: string | null
+          approved_budget: number | null
+          approved_by: string | null
+          committed_amount: number | null
+          contingency_amount: number | null
+          contingency_percent: number | null
+          created_at: string | null
+          created_by: string | null
+          current_budget: number | null
+          customer_id: string | null
+          description: string | null
+          equipment_id: string | null
+          forecasted_total: number | null
+          id: string
+          original_budget: number
+          planned_end_date: string | null
+          planned_start_date: string | null
+          priority: string | null
+          project_code: string | null
+          project_name: string
+          project_type: string | null
+          requires_approval: boolean | null
+          shop_id: string
+          status: string | null
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          actual_end_date?: string | null
+          actual_spent?: number | null
+          actual_start_date?: string | null
+          approval_threshold?: number | null
+          approved_at?: string | null
+          approved_budget?: number | null
+          approved_by?: string | null
+          committed_amount?: number | null
+          contingency_amount?: number | null
+          contingency_percent?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          current_budget?: number | null
+          customer_id?: string | null
+          description?: string | null
+          equipment_id?: string | null
+          forecasted_total?: number | null
+          id?: string
+          original_budget?: number
+          planned_end_date?: string | null
+          planned_start_date?: string | null
+          priority?: string | null
+          project_code?: string | null
+          project_name: string
+          project_type?: string | null
+          requires_approval?: boolean | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          actual_end_date?: string | null
+          actual_spent?: number | null
+          actual_start_date?: string | null
+          approval_threshold?: number | null
+          approved_at?: string | null
+          approved_budget?: number | null
+          approved_by?: string | null
+          committed_amount?: number | null
+          contingency_amount?: number | null
+          contingency_percent?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          current_budget?: number | null
+          customer_id?: string | null
+          description?: string | null
+          equipment_id?: string | null
+          forecasted_total?: number | null
+          id?: string
+          original_budget?: number
+          planned_end_date?: string | null
+          planned_start_date?: string | null
+          priority?: string | null
+          project_code?: string | null
+          project_name?: string
+          project_type?: string | null
+          requires_approval?: boolean | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: []
+      }
+      project_change_orders: {
+        Row: {
+          amount_change: number
+          approved_at: string | null
+          approved_by: string | null
+          change_order_number: string | null
+          created_at: string | null
+          description: string | null
+          documents: Json | null
+          id: string
+          new_budget: number | null
+          original_budget: number | null
+          project_id: string | null
+          reason: string
+          rejection_reason: string | null
+          requested_at: string | null
+          requested_by: string | null
+          status: string | null
+        }
+        Insert: {
+          amount_change: number
+          approved_at?: string | null
+          approved_by?: string | null
+          change_order_number?: string | null
+          created_at?: string | null
+          description?: string | null
+          documents?: Json | null
+          id?: string
+          new_budget?: number | null
+          original_budget?: number | null
+          project_id?: string | null
+          reason: string
+          rejection_reason?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount_change?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          change_order_number?: string | null
+          created_at?: string | null
+          description?: string | null
+          documents?: Json | null
+          id?: string
+          new_budget?: number | null
+          original_budget?: number | null
+          project_id?: string | null
+          reason?: string
+          rejection_reason?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_change_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_cost_items: {
+        Row: {
+          actual_spent: number | null
+          budgeted_amount: number | null
+          category: string
+          committed_amount: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          notes: string | null
+          phase_id: string | null
+          project_id: string | null
+          purchase_order_number: string | null
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          actual_spent?: number | null
+          budgeted_amount?: number | null
+          category: string
+          committed_amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          notes?: string | null
+          phase_id?: string | null
+          project_id?: string | null
+          purchase_order_number?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          actual_spent?: number | null
+          budgeted_amount?: number | null
+          category?: string
+          committed_amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          notes?: string | null
+          phase_id?: string | null
+          project_id?: string | null
+          purchase_order_number?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_cost_items_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_cost_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_phases: {
+        Row: {
+          actual_end: string | null
+          actual_spent: number | null
+          actual_start: string | null
+          created_at: string | null
+          depends_on_phase_id: string | null
+          description: string | null
+          id: string
+          percent_complete: number | null
+          phase_budget: number | null
+          phase_name: string
+          phase_order: number | null
+          planned_end: string | null
+          planned_start: string | null
+          project_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_spent?: number | null
+          actual_start?: string | null
+          created_at?: string | null
+          depends_on_phase_id?: string | null
+          description?: string | null
+          id?: string
+          percent_complete?: number | null
+          phase_budget?: number | null
+          phase_name: string
+          phase_order?: number | null
+          planned_end?: string | null
+          planned_start?: string | null
+          project_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actual_end?: string | null
+          actual_spent?: number | null
+          actual_start?: string | null
+          created_at?: string | null
+          depends_on_phase_id?: string | null
+          description?: string | null
+          id?: string
+          percent_complete?: number | null
+          phase_budget?: number | null
+          phase_name?: string
+          phase_order?: number | null
+          planned_end?: string | null
+          planned_start?: string | null
+          project_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_phases_depends_on_phase_id_fkey"
+            columns: ["depends_on_phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_phases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pto_balances: {
         Row: {
           created_at: string | null
