@@ -166,16 +166,10 @@ export function PlannerResourceSidebar({ onClose }: PlannerResourceSidebarProps)
                   'cursor-grab active:cursor-grabbing hover:bg-muted/50 transition-colors'
                 )}
               >
-                <div className="flex items-start gap-2">
+              <div className="flex items-start gap-2">
                   <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{wo.title}</p>
-                    {wo.customer && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {wo.customer.company_name ||
-                          `${wo.customer.first_name} ${wo.customer.last_name}`}
-                      </p>
-                    )}
                     <div className="flex items-center gap-2 mt-1">
                       <Badge
                         variant="outline"

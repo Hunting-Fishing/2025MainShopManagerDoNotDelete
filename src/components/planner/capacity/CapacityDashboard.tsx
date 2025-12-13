@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { useStaffForPlanner, useWorkOrdersForPlanner, useEquipmentForPlanner } from '@/hooks/usePlannerData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Wrench, Ship, AlertTriangle, TrendingUp, Clock } from 'lucide-react';
+import { Users, Wrench, AlertTriangle, TrendingUp, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ResourceCapacity } from '@/types/planner';
@@ -25,7 +24,7 @@ export function CapacityDashboard() {
 
     return staff.map((s) => {
       const assignedWOs = workOrders.filter((wo) => {
-        if (wo.assigned_technician?.id !== s.id) return false;
+        if (wo.technician_id !== s.id) return false;
         if (!wo.start_time) return false;
         
         const startDate = parseISO(wo.start_time);
@@ -87,6 +86,21 @@ export function CapacityDashboard() {
         return <Badge className="bg-amber-500 text-xs">Busy</Badge>;
       default:
         return <Badge variant="secondary" className="text-xs">Available</Badge>;
+    }
+  };
+
+  const getEquipmentStatusBadge = (status: string | null) => {
+    switch (status) {
+      case 'operational':
+        return <Badge variant="secondary" className="mt-1 text-xs">Operational</Badge>;
+      case 'maintenance':
+        return <Badge className="mt-1 text-xs bg-amber-500">Maintenance</Badge>;
+      case 'down':
+        return <Badge variant="destructive" className="mt-1 text-xs">Down</Badge>;
+      case 'retired':
+        return <Badge variant="outline" className="mt-1 text-xs">Retired</Badge>;
+      default:
+        return <Badge variant="secondary" className="mt-1 text-xs">Available</Badge>;
     }
   };
 
@@ -182,11 +196,12 @@ export function CapacityDashboard() {
                         {getStatusBadge(resource.status)}
                       </div>
                       <div className="flex items-center gap-2">
-                        <Progress
-                          value={resource.utilizationPercent}
-                          className="h-2 flex-1"
-                          indicatorClassName={getUtilizationColor(resource.utilizationPercent)}
-                        />
+                        <div className="h-2 flex-1 bg-secondary rounded-full overflow-hidden">
+                          <div 
+                            className={cn("h-full transition-all", getUtilizationColor(resource.utilizationPercent))}
+                            style={{ width: `${Math.min(resource.utilizationPercent, 100)}%` }}
+                          />
+                        </div>
                         <span className="text-sm text-muted-foreground w-12 text-right">
                           {Math.round(resource.utilizationPercent)}%
                         </span>
@@ -221,12 +236,7 @@ export function CapacityDashboard() {
               >
                 <Wrench className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p className="font-medium text-sm truncate">{eq.name}</p>
-                <Badge
-                  variant={eq.status === 'available' ? 'secondary' : 'outline'}
-                  className="mt-1 text-xs"
-                >
-                  {eq.status || 'Available'}
-                </Badge>
+                {getEquipmentStatusBadge(eq.status)}
               </div>
             ))}
             {(!equipment || equipment.length === 0) && (

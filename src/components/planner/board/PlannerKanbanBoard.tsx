@@ -38,20 +38,18 @@ export function PlannerKanbanBoard() {
       item_type: 'work_order' as const,
       title: wo.title || 'Untitled Work Order',
       work_order_id: wo.id,
-      employee_id: wo.assigned_technician?.id,
+      employee_id: wo.technician_id || undefined,
       priority: wo.priority as any,
       status: wo.status as any,
       column_id: mapStatusToColumn(wo.status),
-      start_date: wo.start_time,
-      end_date: wo.end_time,
-      duration_hours: wo.estimated_hours,
+      start_date: wo.start_time || undefined,
+      end_date: wo.end_time || undefined,
+      duration_hours: wo.estimated_hours || undefined,
       work_order: {
         id: wo.id,
         title: wo.title,
         status: wo.status,
-        customer: wo.customer,
       },
-      employee: wo.assigned_technician,
     }));
 
     return [...plannerItems, ...workOrderItems];
