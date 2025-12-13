@@ -61,6 +61,7 @@ import Security from '@/pages/Security';
 import Profile from '@/pages/Profile';
 import Notifications from '@/pages/Notifications';
 import Reports from '@/pages/Reports';
+import Projects from '@/pages/Projects';
 import Forms from '@/pages/Forms';
 import FormSubmissions from '@/pages/FormSubmissions';
 import QuoteDetails from '@/pages/QuoteDetails';
@@ -332,6 +333,13 @@ function App() {
                   <Route path="/payments" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Payments />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Project Budgets */}
+                  <Route path="/projects" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <Projects />
                     </ProtectedRoute>
                   } />
                   
