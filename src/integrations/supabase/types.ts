@@ -16497,6 +16497,234 @@ export type Database = {
         }
         Relationships: []
       }
+      planner_board_columns: {
+        Row: {
+          board_id: string
+          color: string | null
+          column_key: string
+          column_name: string
+          column_order: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          shop_id: string
+          updated_at: string | null
+          wip_limit: number | null
+        }
+        Insert: {
+          board_id?: string
+          color?: string | null
+          column_key: string
+          column_name: string
+          column_order?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          shop_id: string
+          updated_at?: string | null
+          wip_limit?: number | null
+        }
+        Update: {
+          board_id?: string
+          color?: string | null
+          column_key?: string
+          column_name?: string
+          column_order?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          shop_id?: string
+          updated_at?: string | null
+          wip_limit?: number | null
+        }
+        Relationships: []
+      }
+      planner_board_items: {
+        Row: {
+          board_type: string
+          color: string | null
+          column_id: string | null
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          depends_on: string[] | null
+          duration_hours: number | null
+          employee_id: string | null
+          end_date: string | null
+          equipment_id: string | null
+          height: number | null
+          id: string
+          inventory_item_id: string | null
+          is_locked: boolean | null
+          item_type: string
+          position_x: number | null
+          position_y: number | null
+          priority: string | null
+          row_id: string | null
+          shop_id: string
+          start_date: string | null
+          status: string | null
+          swimlane_resource_id: string | null
+          swimlane_resource_type: string | null
+          title: string
+          updated_at: string | null
+          vehicle_id: string | null
+          width: number | null
+          work_order_id: string | null
+          z_index: number | null
+        }
+        Insert: {
+          board_type?: string
+          color?: string | null
+          column_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          depends_on?: string[] | null
+          duration_hours?: number | null
+          employee_id?: string | null
+          end_date?: string | null
+          equipment_id?: string | null
+          height?: number | null
+          id?: string
+          inventory_item_id?: string | null
+          is_locked?: boolean | null
+          item_type?: string
+          position_x?: number | null
+          position_y?: number | null
+          priority?: string | null
+          row_id?: string | null
+          shop_id: string
+          start_date?: string | null
+          status?: string | null
+          swimlane_resource_id?: string | null
+          swimlane_resource_type?: string | null
+          title: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+          width?: number | null
+          work_order_id?: string | null
+          z_index?: number | null
+        }
+        Update: {
+          board_type?: string
+          color?: string | null
+          column_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          depends_on?: string[] | null
+          duration_hours?: number | null
+          employee_id?: string | null
+          end_date?: string | null
+          equipment_id?: string | null
+          height?: number | null
+          id?: string
+          inventory_item_id?: string | null
+          is_locked?: boolean | null
+          item_type?: string
+          position_x?: number | null
+          position_y?: number | null
+          priority?: string | null
+          row_id?: string | null
+          shop_id?: string
+          start_date?: string | null
+          status?: string | null
+          swimlane_resource_id?: string | null
+          swimlane_resource_type?: string | null
+          title?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+          width?: number | null
+          work_order_id?: string | null
+          z_index?: number | null
+        }
+        Relationships: []
+      }
+      planner_preferences: {
+        Row: {
+          created_at: string | null
+          default_view: string | null
+          id: string
+          kanban_columns_visible: string[] | null
+          shop_id: string
+          show_weekends: boolean | null
+          swimlane_mode: string | null
+          timeline_zoom: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          default_view?: string | null
+          id?: string
+          kanban_columns_visible?: string[] | null
+          shop_id: string
+          show_weekends?: boolean | null
+          swimlane_mode?: string | null
+          timeline_zoom?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          default_view?: string | null
+          id?: string
+          kanban_columns_visible?: string[] | null
+          shop_id?: string
+          show_weekends?: boolean | null
+          swimlane_mode?: string | null
+          timeline_zoom?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      planner_swimlanes: {
+        Row: {
+          board_id: string
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          is_collapsed: boolean | null
+          resource_id: string | null
+          resource_name: string | null
+          resource_type: string
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          board_id?: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_collapsed?: boolean | null
+          resource_id?: string | null
+          resource_name?: string | null
+          resource_type: string
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          board_id?: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_collapsed?: boolean | null
+          resource_id?: string | null
+          resource_name?: string | null
+          resource_type?: string
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       portal_settings: {
         Row: {
           application_forms_enabled: boolean | null
