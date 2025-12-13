@@ -111,6 +111,7 @@ import Onboarding from '@/pages/Onboarding';
 import ShopSetup from '@/pages/ShopSetup';
 import SecurityAudit from '@/pages/SecurityAudit';
 import ResetPassword from '@/pages/ResetPassword';
+import Planner from '@/pages/Planner';
 
 function App() {
   useEffect(() => {
@@ -245,6 +246,13 @@ function App() {
                   <Route path="/calendar" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Calendar />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Planner */}
+                  <Route path="/planner" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <Planner />
                     </ProtectedRoute>
                   } />
                   
