@@ -1,21 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useShopId } from '@/hooks/useShopId';
 import { PlannerBoardItem, PlannerBoardColumn, PlannerSwimlane, PlannerPreferences } from '@/types/planner';
 import { toast } from 'sonner';
 
 export function usePlannerColumns(boardId: string = 'default') {
-  const { profile } = useAuth();
+  const { shopId } = useShopId();
   
   return useQuery({
-    queryKey: ['planner-columns', boardId, profile?.shop_id],
+    queryKey: ['planner-columns', boardId, shopId],
     queryFn: async () => {
-      if (!profile?.shop_id) return [];
+      if (!shopId) return [];
       
       const { data, error } = await supabase
         .from('planner_board_columns')
         .select('*')
-        .eq('shop_id', profile.shop_id)
+        .eq('shop_id', shopId)
         .eq('board_id', boardId)
         .eq('is_active', true)
         .order('column_order');
@@ -23,22 +23,22 @@ export function usePlannerColumns(boardId: string = 'default') {
       if (error) throw error;
       return data as PlannerBoardColumn[];
     },
-    enabled: !!profile?.shop_id,
+    enabled: !!shopId,
   });
 }
 
 export function usePlannerItems(boardType?: string, columnId?: string) {
-  const { profile } = useAuth();
+  const { shopId } = useShopId();
   
   return useQuery({
-    queryKey: ['planner-items', boardType, columnId, profile?.shop_id],
+    queryKey: ['planner-items', boardType, columnId, shopId],
     queryFn: async () => {
-      if (!profile?.shop_id) return [];
+      if (!shopId) return [];
       
       let query = supabase
         .from('planner_board_items')
         .select('*')
-        .eq('shop_id', profile.shop_id);
+        .eq('shop_id', shopId);
       
       if (boardType) {
         query = query.eq('board_type', boardType);
@@ -53,22 +53,22 @@ export function usePlannerItems(boardType?: string, columnId?: string) {
       if (error) throw error;
       return data as PlannerBoardItem[];
     },
-    enabled: !!profile?.shop_id,
+    enabled: !!shopId,
   });
 }
 
 export function usePlannerSwimlanes(boardId: string = 'default') {
-  const { profile } = useAuth();
+  const { shopId } = useShopId();
   
   return useQuery({
-    queryKey: ['planner-swimlanes', boardId, profile?.shop_id],
+    queryKey: ['planner-swimlanes', boardId, shopId],
     queryFn: async () => {
-      if (!profile?.shop_id) return [];
+      if (!shopId) return [];
       
       const { data, error } = await supabase
         .from('planner_swimlanes')
         .select('*')
-        .eq('shop_id', profile.shop_id)
+        .eq('shop_id', shopId)
         .eq('board_id', boardId)
         .eq('is_active', true)
         .order('display_order');
@@ -76,17 +76,17 @@ export function usePlannerSwimlanes(boardId: string = 'default') {
       if (error) throw error;
       return data as PlannerSwimlane[];
     },
-    enabled: !!profile?.shop_id,
+    enabled: !!shopId,
   });
 }
 
 export function useWorkOrdersForPlanner() {
-  const { profile } = useAuth();
+  const { shopId } = useShopId();
   
   return useQuery({
-    queryKey: ['work-orders-planner', profile?.shop_id],
+    queryKey: ['work-orders-planner', shopId],
     queryFn: async () => {
-      if (!profile?.shop_id) return [];
+      if (!shopId) return [];
       
       const { data, error } = await supabase
         .from('work_orders')
@@ -99,9 +99,9 @@ export function useWorkOrdersForPlanner() {
           end_time,
           estimated_hours,
           customer_id,
-          assigned_technician
+          technician_id
         `)
-        .eq('shop_id', profile.shop_id)
+        .eq('shop_id', shopId)
         .not('status', 'eq', 'completed')
         .order('start_time', { ascending: true });
       
@@ -111,68 +111,101 @@ export function useWorkOrdersForPlanner() {
         title: wo.description || 'Untitled',
       }));
     },
-    enabled: !!profile?.shop_id,
+    enabled: !!shopId,
   });
 }
 
 export function useStaffForPlanner() {
-  const { profile } = useAuth();
+  const { shopId } = useShopId();
   
   return useQuery({
-    queryKey: ['staff-planner', profile?.shop_id],
+    queryKey: ['staff-planner', shopId],
     queryFn: async () => {
-      if (!profile?.shop_id) return [];
+      if (!shopId) return [] as Array<{id: string; first_name: string | null; last_name: string | null; email: string | null; job_title: string | null; avatar_url: string | null}>;
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email, job_title')
-        .eq('shop_id', profile.shop_id)
-        .eq('is_active', true)
-        .order('first_name');
+      const query = supabase.from('profiles').select('id, first_name, last_name, email, job_title');
+      const result = await query.eq('shop_id', shopId).eq('is_active', true).order('first_name');
       
-      if (error) throw error;
-      return (data || []).map(s => ({ ...s, avatar_url: null }));
+      if (result.error) throw result.error;
+      return (result.data || []).map((s) => ({ 
+        id: s.id,
+        first_name: s.first_name,
+        last_name: s.last_name,
+        email: s.email,
+        job_title: s.job_title,
+        avatar_url: null as string | null
+      }));
     },
-    enabled: !!profile?.shop_id,
+    enabled: !!shopId,
   });
 }
 
 export function useEquipmentForPlanner() {
-  const { profile } = useAuth();
+  const { shopId } = useShopId();
   
   return useQuery({
-    queryKey: ['equipment-planner', profile?.shop_id],
+    queryKey: ['equipment-planner', shopId],
     queryFn: async () => {
-      if (!profile?.shop_id) return [];
+      if (!shopId) return [] as Array<{id: string; name: string; equipment_type: string | null; status: string | null; unit_number: string | null}>;
       
-      const { data, error } = await supabase
-        .from('equipment_assets')
-        .select('id, name, equipment_type, status, unit_number')
-        .eq('shop_id', profile.shop_id)
-        .eq('is_active', true)
-        .order('name');
+      const query = supabase.from('equipment_assets').select('id, name, equipment_type, status, unit_number');
+      const result = await query.eq('shop_id', shopId).eq('is_active', true).order('name');
       
-      if (error) throw error;
-      return data;
+      if (result.error) throw result.error;
+      return (result.data || []).map((e) => ({
+        id: e.id,
+        name: e.name,
+        equipment_type: e.equipment_type,
+        status: e.status,
+        unit_number: e.unit_number
+      }));
     },
-    enabled: !!profile?.shop_id,
+    enabled: !!shopId,
   });
 }
 
 export function usePlannerMutations() {
   const queryClient = useQueryClient();
-  const { profile } = useAuth();
+  const { shopId } = useShopId();
   
   const createItem = useMutation({
     mutationFn: async (item: Partial<PlannerBoardItem>) => {
-      if (!profile?.shop_id) throw new Error('No shop ID');
+      if (!shopId) throw new Error('No shop ID');
+      
+      const { data: userData } = await supabase.auth.getUser();
       
       const { data, error } = await supabase
         .from('planner_board_items')
         .insert({
-          ...item,
-          shop_id: profile.shop_id,
-          created_by: profile.id,
+          title: item.title || 'Untitled',
+          board_type: item.board_type || 'kanban',
+          item_type: item.item_type || 'task',
+          content: item.content,
+          position_x: item.position_x,
+          position_y: item.position_y,
+          width: item.width,
+          height: item.height,
+          color: item.color,
+          column_id: item.column_id,
+          row_id: item.row_id,
+          swimlane_resource_type: item.swimlane_resource_type,
+          swimlane_resource_id: item.swimlane_resource_id,
+          work_order_id: item.work_order_id,
+          employee_id: item.employee_id,
+          equipment_id: item.equipment_id,
+          vehicle_id: item.vehicle_id,
+          customer_id: item.customer_id,
+          inventory_item_id: item.inventory_item_id,
+          start_date: item.start_date,
+          end_date: item.end_date,
+          duration_hours: item.duration_hours,
+          depends_on: item.depends_on,
+          priority: item.priority,
+          status: item.status,
+          z_index: item.z_index,
+          is_locked: item.is_locked,
+          shop_id: shopId,
+          created_by: userData.user?.id,
         })
         .select()
         .single();

@@ -46,14 +46,15 @@ export function ResourceTimeline() {
       return (staff || []).map((s) => ({
         id: s.id,
         name: `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.email || 'Unknown',
-        avatar: s.avatar_url,
-        subtitle: s.job_title,
+        avatar: s.avatar_url || undefined,
+        subtitle: s.job_title || undefined,
       }));
     } else if (resourceType === 'equipment') {
       return (equipment || []).map((e) => ({
         id: e.id,
         name: e.name,
-        subtitle: e.equipment_type,
+        avatar: undefined,
+        subtitle: e.equipment_type || undefined,
       }));
     }
     return [];
@@ -64,7 +65,7 @@ export function ResourceTimeline() {
     return (workOrders || [])
       .filter((wo) => {
         if (resourceType === 'employee') {
-          return wo.assigned_technician?.id === resourceId;
+          return wo.technician_id === resourceId;
         }
         return false;
       })
@@ -75,7 +76,6 @@ export function ResourceTimeline() {
         endDate: wo.end_time ? new Date(wo.end_time) : null,
         status: wo.status,
         priority: wo.priority,
-        customer: wo.customer,
       }))
       .filter((t) => t.startDate);
   };
@@ -279,12 +279,6 @@ export function ResourceTimeline() {
                             <TooltipContent>
                               <div className="space-y-1">
                                 <p className="font-medium">{task.title}</p>
-                                {task.customer && (
-                                  <p className="text-xs text-muted-foreground">
-                                    {task.customer.company_name ||
-                                      `${task.customer.first_name} ${task.customer.last_name}`}
-                                  </p>
-                                )}
                                 <p className="text-xs">
                                   {format(task.startDate!, 'MMM d, h:mm a')}
                                   {task.endDate && ` - ${format(task.endDate, 'h:mm a')}`}
