@@ -218,6 +218,8 @@ export function useBudgetData(fiscalYear?: number, period?: 'month' | 'quarter' 
 
     if (error) throw error;
     await fetchData();
+  };
+
   const updateEntry = async (id: string, data: Partial<BudgetEntry>) => {
     const { error } = await supabase
       .from('budget_entries')
