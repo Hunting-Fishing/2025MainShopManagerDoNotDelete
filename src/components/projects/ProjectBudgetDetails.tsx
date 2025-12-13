@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Edit, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, CheckCircle, XCircle, Plus, Users, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,12 +17,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useProjectDetails } from '@/hooks/useProjectBudgets';
 import { useProjectBudgets } from '@/hooks/useProjectBudgets';
+import { useProjectResources } from '@/hooks/useProjectResources';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { PROJECT_STATUSES, PROJECT_TYPES } from '@/types/projectBudget';
 import { PhaseList } from './PhaseList';
 import { CostItemList } from './CostItemList';
 import { ChangeOrderList } from './ChangeOrderList';
+import { ProjectResourcesList } from './ProjectResourcesList';
 import { CreatePhaseDialog } from './CreatePhaseDialog';
 import { CreateCostItemDialog } from './CreateCostItemDialog';
 import { CreateChangeOrderDialog } from './CreateChangeOrderDialog';
@@ -35,6 +37,7 @@ interface ProjectBudgetDetailsProps {
 
 export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetailsProps) {
   const { project, phases, costItems, changeOrders, isLoading } = useProjectDetails(projectId);
+  const { resources } = useProjectResources(projectId);
   const { approveProject, deleteProject, updateProject } = useProjectBudgets();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPhaseDialog, setShowPhaseDialog] = useState(false);
@@ -214,6 +217,10 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
           <TabsTrigger value="phases">
             Phases ({phases?.length || 0})
           </TabsTrigger>
+          <TabsTrigger value="resources">
+            <Users className="h-4 w-4 mr-1" />
+            Resources ({resources?.length || 0})
+          </TabsTrigger>
           <TabsTrigger value="costs">
             Cost Items ({costItems?.length || 0})
           </TabsTrigger>
@@ -235,8 +242,12 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
                 Add Phase
               </Button>
             </div>
-            <PhaseList phases={phases || []} projectId={projectId} />
+          <PhaseList phases={phases || []} projectId={projectId} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="resources">
+          <ProjectResourcesList projectId={projectId} phases={phases} />
         </TabsContent>
 
         <TabsContent value="costs">

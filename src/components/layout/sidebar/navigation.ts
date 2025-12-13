@@ -49,7 +49,8 @@ import {
   HardHat,
   Ship,
   Forklift,
-  Kanban
+  Kanban,
+  FolderKanban
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -138,6 +139,13 @@ export const navigation: NavigationSection[] = [
         icon: Bell,
         description: 'Manage service reminders',
         permissionModule: 'service_reminders',
+      },
+      {
+        title: 'Projects',
+        href: '/projects',
+        icon: FolderKanban,
+        description: 'Multi-year project planning & budgets',
+        permissionModule: 'work_orders',
       },
     ],
   },
