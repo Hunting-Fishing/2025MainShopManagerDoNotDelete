@@ -7,7 +7,8 @@ import { PerformanceTabContent } from '@/components/reports/tabs/PerformanceTabC
 import { InventoryTabContent } from '@/components/reports/tabs/InventoryTabContent';
 import { CustomTabContent } from '@/components/reports/tabs/CustomTabContent';
 import { CustomerReportTab } from '@/components/reports/CustomerReportTab';
-import { CustomReportBuilder } from '@/components/reports/CustomReportBuilder';
+import { BudgetDashboard } from '@/components/reports/budget/BudgetDashboard';
+import { PeriodEndReport } from '@/components/reports/period-end/PeriodEndReport';
 import { useReportData } from '@/hooks/useReportData';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ReportConfig } from '@/types/reports';
@@ -48,9 +49,11 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="summary" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
           <TabsTrigger value="summary">Summary</TabsTrigger>
           <TabsTrigger value="financials">Financials</TabsTrigger>
+          <TabsTrigger value="budget">Budget</TabsTrigger>
+          <TabsTrigger value="period">Period Reports</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
           <TabsTrigger value="customers">Customers</TabsTrigger>
@@ -102,6 +105,14 @@ export default function Reports() {
           ) : (
             <FinancialsTabContent salesData={[]} />
           )}
+        </TabsContent>
+
+        <TabsContent value="budget" className="space-y-6">
+          <BudgetDashboard />
+        </TabsContent>
+
+        <TabsContent value="period" className="space-y-6">
+          <PeriodEndReport />
         </TabsContent>
 
         <TabsContent value="performance" className="space-y-6">
