@@ -123,11 +123,16 @@ export function useStaffForPlanner() {
     queryFn: async () => {
       if (!shopId) return [] as Array<{id: string; first_name: string | null; last_name: string | null; email: string | null; job_title: string | null; avatar_url: string | null}>;
       
-      const query = supabase.from('profiles').select('id, first_name, last_name, email, job_title');
-      const result = await query.eq('shop_id', shopId).eq('is_active', true).order('first_name');
+      const client = supabase as any;
+      const result = await client
+        .from('profiles')
+        .select('id, first_name, last_name, email, job_title')
+        .eq('shop_id', shopId)
+        .eq('is_active', true)
+        .order('first_name');
       
       if (result.error) throw result.error;
-      return (result.data || []).map((s) => ({ 
+      return (result.data || []).map((s: any) => ({ 
         id: s.id,
         first_name: s.first_name,
         last_name: s.last_name,
@@ -148,11 +153,16 @@ export function useEquipmentForPlanner() {
     queryFn: async () => {
       if (!shopId) return [] as Array<{id: string; name: string; equipment_type: string | null; status: string | null; unit_number: string | null}>;
       
-      const query = supabase.from('equipment_assets').select('id, name, equipment_type, status, unit_number');
-      const result = await query.eq('shop_id', shopId).eq('is_active', true).order('name');
+      const client = supabase as any;
+      const result = await client
+        .from('equipment_assets')
+        .select('id, name, equipment_type, status, unit_number')
+        .eq('shop_id', shopId)
+        .eq('is_active', true)
+        .order('name');
       
       if (result.error) throw result.error;
-      return (result.data || []).map((e) => ({
+      return (result.data || []).map((e: any) => ({
         id: e.id,
         name: e.name,
         equipment_type: e.equipment_type,
