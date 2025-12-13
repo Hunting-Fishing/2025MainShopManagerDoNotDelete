@@ -48,7 +48,8 @@ import {
   CalendarClock,
   HardHat,
   Ship,
-  Forklift
+  Forklift,
+  Kanban
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -110,6 +111,13 @@ export const navigation: NavigationSection[] = [
   {
     title: 'Scheduling',
     items: [
+      {
+        title: 'Planner',
+        href: '/planner',
+        icon: Kanban,
+        description: 'Visual planning board for work & resources',
+        permissionModule: 'work_orders',
+      },
       {
         title: 'Service Calendar',
         href: '/calendar',
