@@ -47,7 +47,8 @@ import {
   User,
   Lock,
   HelpCircle,
-  DollarSign
+  DollarSign,
+  Kanban
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -137,6 +138,7 @@ export function MobileNavigation() {
     {
       title: 'Scheduling',
       items: [
+        { id: 'planner', label: 'Planner', icon: Kanban, path: '/planner', description: 'Visual planning board' },
         { id: 'service-reminders', label: 'Service Reminders', icon: Bell, path: '/service-reminders', description: 'Upcoming service alerts' },
         { id: 'timesheet', label: 'Timesheet', icon: Clock, path: '/timesheet', description: 'Track work hours' },
         { id: 'staff-scheduling', label: 'Staff Scheduling', icon: CalendarDays, path: '/scheduling', description: 'Manage staff schedules' },
