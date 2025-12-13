@@ -18188,10 +18188,13 @@ export type Database = {
           actual_end: string | null
           actual_spent: number | null
           actual_start: string | null
+          color: string | null
           created_at: string | null
           depends_on_phase_id: string | null
           description: string | null
           id: string
+          is_milestone: boolean | null
+          milestone_date: string | null
           percent_complete: number | null
           phase_budget: number | null
           phase_name: string
@@ -18206,10 +18209,13 @@ export type Database = {
           actual_end?: string | null
           actual_spent?: number | null
           actual_start?: string | null
+          color?: string | null
           created_at?: string | null
           depends_on_phase_id?: string | null
           description?: string | null
           id?: string
+          is_milestone?: boolean | null
+          milestone_date?: string | null
           percent_complete?: number | null
           phase_budget?: number | null
           phase_name: string
@@ -18224,10 +18230,13 @@ export type Database = {
           actual_end?: string | null
           actual_spent?: number | null
           actual_start?: string | null
+          color?: string | null
           created_at?: string | null
           depends_on_phase_id?: string | null
           description?: string | null
           id?: string
+          is_milestone?: boolean | null
+          milestone_date?: string | null
           percent_complete?: number | null
           phase_budget?: number | null
           phase_name?: string
@@ -18248,6 +18257,96 @@ export type Database = {
           },
           {
             foreignKeyName: "project_phases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_resource_assignments: {
+        Row: {
+          actual_cost: number | null
+          actual_hours: number | null
+          allocation_percent: number | null
+          assigned_by: string | null
+          created_at: string | null
+          end_date: string | null
+          hourly_rate: number | null
+          id: string
+          is_full_time: boolean | null
+          notes: string | null
+          phase_id: string | null
+          planned_cost: number | null
+          planned_hours: number | null
+          project_id: string
+          resource_id: string
+          resource_name: string | null
+          resource_type: string
+          role: string | null
+          shop_id: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actual_cost?: number | null
+          actual_hours?: number | null
+          allocation_percent?: number | null
+          assigned_by?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_full_time?: boolean | null
+          notes?: string | null
+          phase_id?: string | null
+          planned_cost?: number | null
+          planned_hours?: number | null
+          project_id: string
+          resource_id: string
+          resource_name?: string | null
+          resource_type: string
+          role?: string | null
+          shop_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actual_cost?: number | null
+          actual_hours?: number | null
+          allocation_percent?: number | null
+          assigned_by?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_full_time?: boolean | null
+          notes?: string | null
+          phase_id?: string | null
+          planned_cost?: number | null
+          planned_hours?: number | null
+          project_id?: string
+          resource_id?: string
+          resource_name?: string | null
+          resource_type?: string
+          role?: string | null
+          shop_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_resource_assignments_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_resource_assignments_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "project_budgets"

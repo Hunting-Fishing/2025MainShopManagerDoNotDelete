@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, DollarSign, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
+import { Plus, DollarSign, TrendingUp, Clock, AlertTriangle, GanttChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,6 +8,7 @@ import { ProjectBudgetCard } from './ProjectBudgetCard';
 import { CreateProjectDialog } from './CreateProjectDialog';
 import { ProjectBudgetDetails } from './ProjectBudgetDetails';
 import { ApprovalQueue } from './ApprovalQueue';
+import { MultiYearTimeline } from './MultiYearTimeline';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 
@@ -111,6 +112,10 @@ export function ProjectBudgetDashboard() {
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All Projects</TabsTrigger>
+          <TabsTrigger value="timeline">
+            <GanttChart className="h-4 w-4 mr-1" />
+            Timeline
+          </TabsTrigger>
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="approvals" className="relative">
             Approvals
@@ -145,6 +150,12 @@ export function ProjectBudgetDashboard() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="timeline" className="space-y-4">
+          <div className="h-[600px]">
+            <MultiYearTimeline onProjectSelect={setSelectedProjectId} />
+          </div>
         </TabsContent>
 
         <TabsContent value="active" className="space-y-4">
