@@ -100,6 +100,10 @@ export const routePermissions: RoutePermission[] = [
   // Scheduling
   { path: '/scheduling', allowedRoles: ['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner'] },
   
+  // Planning
+  { path: '/planner', allowedRoles: ['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner'] },
+  { path: '/projects', allowedRoles: ['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner'] },
+  
   // Call Logger
   { path: '/call-logger', allowedRoles: ['admin', 'manager', 'service_advisor', 'reception', 'owner'] },
   

@@ -120,6 +120,13 @@ const navigationCategories = [
     ]
   },
   {
+    title: 'Planning',
+    items: [
+      { name: 'Planner', href: '/planner', requiredPath: '/planner' },
+      { name: 'Projects', href: '/projects', requiredPath: '/projects' },
+    ]
+  },
+  {
     title: 'Tools',
     items: [
       { name: 'Technician Portal', href: '/technician-portal', requiredPath: '/technician-portal' },
