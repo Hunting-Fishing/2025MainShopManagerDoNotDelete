@@ -49,6 +49,9 @@ export interface ProjectPhase {
   percent_complete: number;
   status: string;
   depends_on_phase_id: string | null;
+  color: string | null;
+  is_milestone: boolean;
+  milestone_date: string | null;
   created_at: string;
   updated_at: string;
 }
