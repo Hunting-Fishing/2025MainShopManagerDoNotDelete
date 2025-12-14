@@ -2,11 +2,14 @@ import { useMemo } from 'react';
 import { useStaffForPlanner, useWorkOrdersForPlanner, useEquipmentForPlanner } from '@/hooks/usePlannerData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Wrench, AlertTriangle, TrendingUp, Clock } from 'lucide-react';
+import { Users, Wrench, AlertTriangle, TrendingUp, Clock, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ResourceCapacity } from '@/types/planner';
 import { startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
+import { useAllProjectResources } from '@/hooks/useProjectResources';
+import { ProjectResourceAssignment } from '@/types/projectResource';
+import { Progress } from '@/components/ui/progress';
 
 const WEEKLY_HOURS = 40; // Standard work week
 
@@ -14,6 +17,7 @@ export function CapacityDashboard() {
   const { data: staff } = useStaffForPlanner();
   const { data: workOrders } = useWorkOrdersForPlanner();
   const { data: equipment } = useEquipmentForPlanner();
+  const { resources: projectResources } = useAllProjectResources();
 
   // Calculate staff capacity
   const staffCapacity = useMemo((): ResourceCapacity[] => {
@@ -70,6 +74,47 @@ export function CapacityDashboard() {
 
     return { overloaded, busy, available, avgUtilization, totalScheduled, totalAvailable };
   }, [staffCapacity]);
+
+  interface ProjectSummary {
+    projectId: string;
+    projectName?: string;
+    employees: any[];
+    equipment: any[];
+    totalPlannedHours: number;
+    totalActualHours: number;
+  }
+
+  // Group project resources by project
+  const projectResourcesSummary = useMemo((): ProjectSummary[] => {
+    if (!projectResources || !Array.isArray(projectResources)) return [];
+
+    const grouped: Record<string, ProjectSummary> = {};
+    
+    (projectResources as any[]).forEach((res) => {
+      const projectId = res.project_id;
+      if (!grouped[projectId]) {
+        grouped[projectId] = {
+          projectId,
+          projectName: res.project?.project_name,
+          employees: [],
+          equipment: [],
+          totalPlannedHours: 0,
+          totalActualHours: 0,
+        };
+      }
+      
+      if (res.resource_type === 'employee') {
+        grouped[projectId].employees.push(res);
+      } else {
+        grouped[projectId].equipment.push(res);
+      }
+      
+      grouped[projectId].totalPlannedHours += res.planned_hours || 0;
+      grouped[projectId].totalActualHours += res.actual_hours || 0;
+    });
+
+    return Object.values(grouped);
+  }, [projectResources]);
 
   const getUtilizationColor = (percent: number) => {
     if (percent >= 100) return 'bg-red-500';
@@ -245,6 +290,71 @@ export function CapacityDashboard() {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Project Resources */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FolderKanban className="h-5 w-5" />
+            Project Resource Allocation
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {projectResourcesSummary.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No project resource assignments
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {projectResourcesSummary.map((project) => {
+                const progressPercent = project.totalPlannedHours > 0 
+                  ? Math.min((project.totalActualHours / project.totalPlannedHours) * 100, 100) 
+                  : 0;
+                
+                return (
+                  <div
+                    key={project.projectId}
+                    className="p-4 rounded-lg border border-border bg-card hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <FolderKanban className="h-4 w-4 text-primary" />
+                        <span className="font-medium">Project {project.projectId.slice(0, 8)}</span>
+                      </div>
+                      <Badge variant="outline">
+                        {project.employees.length} Staff · {project.equipment.length} Equipment
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Hours Progress</span>
+                        <span>{project.totalActualHours}h / {project.totalPlannedHours}h</span>
+                      </div>
+                      <Progress value={progressPercent} className="h-2" />
+                    </div>
+
+                    {project.employees.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {project.employees.slice(0, 5).map((emp) => (
+                          <Badge key={emp.id} variant="secondary" className="text-xs">
+                            {emp.resource_name || 'Staff'} · {emp.planned_hours}h
+                          </Badge>
+                        ))}
+                        {project.employees.length > 5 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{project.employees.length - 5} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
