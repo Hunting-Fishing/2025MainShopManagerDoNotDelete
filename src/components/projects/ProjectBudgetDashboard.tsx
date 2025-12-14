@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, DollarSign, TrendingUp, Clock, AlertTriangle, GanttChart } from 'lucide-react';
+import { Plus, DollarSign, TrendingUp, Clock, AlertTriangle, GanttChart, Users, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +9,8 @@ import { CreateProjectDialog } from './CreateProjectDialog';
 import { ProjectBudgetDetails } from './ProjectBudgetDetails';
 import { ApprovalQueue } from './ApprovalQueue';
 import { MultiYearTimeline } from './MultiYearTimeline';
+import { ResourceUtilizationChart } from './ResourceUtilizationChart';
+import { ProjectCapacityPanel } from './ProjectCapacityPanel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 
@@ -116,6 +118,14 @@ export function ProjectBudgetDashboard() {
             <GanttChart className="h-4 w-4 mr-1" />
             Timeline
           </TabsTrigger>
+          <TabsTrigger value="capacity">
+            <BarChart3 className="h-4 w-4 mr-1" />
+            Capacity
+          </TabsTrigger>
+          <TabsTrigger value="resources">
+            <Users className="h-4 w-4 mr-1" />
+            Resources
+          </TabsTrigger>
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="approvals" className="relative">
             Approvals
@@ -156,6 +166,14 @@ export function ProjectBudgetDashboard() {
           <div className="h-[600px]">
             <MultiYearTimeline onProjectSelect={setSelectedProjectId} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="capacity" className="space-y-4">
+          <ProjectCapacityPanel onProjectClick={setSelectedProjectId} />
+        </TabsContent>
+
+        <TabsContent value="resources" className="space-y-4">
+          <ResourceUtilizationChart />
         </TabsContent>
 
         <TabsContent value="active" className="space-y-4">
