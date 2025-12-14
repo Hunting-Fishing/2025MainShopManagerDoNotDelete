@@ -18265,6 +18265,120 @@ export type Database = {
           },
         ]
       }
+      project_milestone_notifications: {
+        Row: {
+          acknowledged: boolean | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string | null
+          id: string
+          notification_type: string
+          phase_id: string
+          project_id: string
+          scheduled_for: string
+          sent: boolean | null
+          sent_at: string | null
+          shop_id: string
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string | null
+          id?: string
+          notification_type: string
+          phase_id: string
+          project_id: string
+          scheduled_for: string
+          sent?: boolean | null
+          sent_at?: string | null
+          shop_id: string
+        }
+        Update: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string | null
+          id?: string
+          notification_type?: string
+          phase_id?: string
+          project_id?: string
+          scheduled_for?: string
+          sent?: boolean | null
+          sent_at?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_milestone_notifications_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_milestone_notifications_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_milestone_notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_notification_preferences: {
+        Row: {
+          created_at: string | null
+          email_notifications: boolean | null
+          id: string
+          in_app_notifications: boolean | null
+          notify_on_completion: boolean | null
+          notify_on_overdue: boolean | null
+          reminder_days: number[] | null
+          shop_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_notifications?: boolean | null
+          id?: string
+          in_app_notifications?: boolean | null
+          notify_on_completion?: boolean | null
+          notify_on_overdue?: boolean | null
+          reminder_days?: number[] | null
+          shop_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_notifications?: boolean | null
+          id?: string
+          in_app_notifications?: boolean | null
+          notify_on_completion?: boolean | null
+          notify_on_overdue?: boolean | null
+          reminder_days?: number[] | null
+          shop_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_phases: {
         Row: {
           actual_end: string | null
@@ -18277,6 +18391,7 @@ export type Database = {
           id: string
           is_milestone: boolean | null
           milestone_date: string | null
+          notification_enabled: boolean | null
           percent_complete: number | null
           phase_budget: number | null
           phase_name: string
@@ -18284,6 +18399,7 @@ export type Database = {
           planned_end: string | null
           planned_start: string | null
           project_id: string | null
+          reminder_days: number[] | null
           status: string | null
           updated_at: string | null
         }
@@ -18298,6 +18414,7 @@ export type Database = {
           id?: string
           is_milestone?: boolean | null
           milestone_date?: string | null
+          notification_enabled?: boolean | null
           percent_complete?: number | null
           phase_budget?: number | null
           phase_name: string
@@ -18305,6 +18422,7 @@ export type Database = {
           planned_end?: string | null
           planned_start?: string | null
           project_id?: string | null
+          reminder_days?: number[] | null
           status?: string | null
           updated_at?: string | null
         }
@@ -18319,6 +18437,7 @@ export type Database = {
           id?: string
           is_milestone?: boolean | null
           milestone_date?: string | null
+          notification_enabled?: boolean | null
           percent_complete?: number | null
           phase_budget?: number | null
           phase_name?: string
@@ -18326,6 +18445,7 @@ export type Database = {
           planned_end?: string | null
           planned_start?: string | null
           project_id?: string | null
+          reminder_days?: number[] | null
           status?: string | null
           updated_at?: string | null
         }

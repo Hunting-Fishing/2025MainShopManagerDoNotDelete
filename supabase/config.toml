@@ -36,3 +36,6 @@ verify_jwt = true
 
 [functions.rls-audit]
 verify_jwt = true
+
+[functions.process-milestone-notifications]
+verify_jwt = false
