@@ -22,6 +22,7 @@ import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { PROJECT_STATUSES, PROJECT_TYPES } from '@/types/projectBudget';
 import { PhaseList } from './PhaseList';
+import { PhaseTimeline } from './PhaseTimeline';
 import { CostItemList } from './CostItemList';
 import { ChangeOrderList } from './ChangeOrderList';
 import { ProjectResourcesList } from './ProjectResourcesList';
@@ -236,13 +237,18 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
 
         <TabsContent value="phases">
           <div className="space-y-4">
+            <PhaseTimeline 
+              phases={phases || []} 
+              projectStart={project.planned_start_date || undefined}
+              projectEnd={project.planned_end_date || undefined}
+            />
             <div className="flex justify-end">
               <Button onClick={() => setShowPhaseDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Phase
               </Button>
             </div>
-          <PhaseList phases={phases || []} projectId={projectId} />
+            <PhaseList phases={phases || []} projectId={projectId} />
           </div>
         </TabsContent>
 
