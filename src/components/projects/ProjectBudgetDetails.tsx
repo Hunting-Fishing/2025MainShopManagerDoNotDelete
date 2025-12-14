@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Edit, Trash2, CheckCircle, XCircle, Plus, Users, Wrench } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, CheckCircle, XCircle, Plus, Users, Wrench, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,9 +27,11 @@ import { EarnedValueAnalysis } from './EarnedValueAnalysis';
 import { CostItemList } from './CostItemList';
 import { ChangeOrderList } from './ChangeOrderList';
 import { ProjectResourcesList } from './ProjectResourcesList';
+import { BudgetSnapshotList } from './BudgetSnapshotList';
 import { CreatePhaseDialog } from './CreatePhaseDialog';
 import { CreateCostItemDialog } from './CreateCostItemDialog';
 import { CreateChangeOrderDialog } from './CreateChangeOrderDialog';
+import { CreateSnapshotDialog } from './CreateSnapshotDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProjectBudgetDetailsProps {
@@ -38,13 +40,14 @@ interface ProjectBudgetDetailsProps {
 }
 
 export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetailsProps) {
-  const { project, phases, costItems, changeOrders, isLoading } = useProjectDetails(projectId);
+  const { project, phases, costItems, changeOrders, snapshots, isLoading, createSnapshot } = useProjectDetails(projectId);
   const { resources } = useProjectResources(projectId);
   const { approveProject, deleteProject, updateProject } = useProjectBudgets();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPhaseDialog, setShowPhaseDialog] = useState(false);
   const [showCostItemDialog, setShowCostItemDialog] = useState(false);
   const [showChangeOrderDialog, setShowChangeOrderDialog] = useState(false);
+  const [showSnapshotDialog, setShowSnapshotDialog] = useState(false);
 
   if (isLoading || !project) {
     return (
@@ -237,6 +240,10 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="snapshots">
+            <History className="h-4 w-4 mr-1" />
+            Snapshots ({snapshots?.length || 0})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="phases">
@@ -287,6 +294,14 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
             <ChangeOrderList changeOrders={changeOrders || []} projectId={projectId} />
           </div>
         </TabsContent>
+
+        <TabsContent value="snapshots">
+          <BudgetSnapshotList 
+            snapshots={snapshots || []}
+            onCreateSnapshot={() => setShowSnapshotDialog(true)}
+            isCreating={createSnapshot.isPending}
+          />
+        </TabsContent>
       </Tabs>
 
       {/* Dialogs */}
@@ -309,6 +324,13 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
         onOpenChange={setShowChangeOrderDialog}
         projectId={projectId}
         currentBudget={budget}
+      />
+
+      <CreateSnapshotDialog
+        open={showSnapshotDialog}
+        onOpenChange={setShowSnapshotDialog}
+        onSubmit={(data) => createSnapshot.mutate({ snapshot_type: data.snapshot_type, notes: data.notes })}
+        isLoading={createSnapshot.isPending}
       />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

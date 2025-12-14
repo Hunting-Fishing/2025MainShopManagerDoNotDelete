@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { ProjectBudget, ProjectPhase, ProjectCostItem, ProjectChangeOrder } from '@/types/projectBudget';
+import type { ProjectBudget, ProjectPhase, ProjectCostItem, ProjectChangeOrder, ProjectBudgetSnapshot } from '@/types/projectBudget';
 
 export function useProjectBudgets() {
   const queryClient = useQueryClient();
@@ -214,6 +214,23 @@ export function useProjectDetails(projectId: string | undefined) {
 
       if (error) throw error;
       return data as ProjectChangeOrder[];
+    },
+    enabled: !!projectId,
+  });
+
+  const { data: snapshots } = useQuery({
+    queryKey: ['project-snapshots', projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      
+      const { data, error } = await supabase
+        .from('project_budget_snapshots')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('snapshot_date', { ascending: false });
+
+      if (error) throw error;
+      return data as ProjectBudgetSnapshot[];
     },
     enabled: !!projectId,
   });
@@ -432,11 +449,56 @@ export function useProjectDetails(projectId: string | undefined) {
     },
   });
 
+  // Snapshot mutations
+  const createSnapshot = useMutation({
+    mutationFn: async ({ snapshot_type, notes }: { snapshot_type: string; notes?: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Capture current phase data
+      const phaseData = phases?.map(p => ({
+        id: p.id,
+        name: p.phase_name,
+        budget: p.phase_budget,
+        spent: p.actual_spent,
+        percent_complete: p.percent_complete,
+        status: p.status,
+      }));
+
+      const { data, error } = await supabase
+        .from('project_budget_snapshots')
+        .insert({
+          project_id: projectId,
+          snapshot_date: new Date().toISOString(),
+          snapshot_type,
+          total_budget: project?.current_budget || project?.original_budget,
+          total_committed: project?.committed_amount,
+          total_spent: project?.actual_spent,
+          forecasted_total: project?.forecasted_total,
+          phase_data: phaseData,
+          notes,
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-snapshots', projectId] });
+      toast.success('Budget snapshot created');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create snapshot: ${error.message}`);
+    },
+  });
+
   return {
     project,
     phases,
     costItems,
     changeOrders,
+    snapshots,
     isLoading,
     createPhase,
     updatePhase,
@@ -447,5 +509,6 @@ export function useProjectDetails(projectId: string | undefined) {
     createChangeOrder,
     approveChangeOrder,
     rejectChangeOrder,
+    createSnapshot,
   };
 }
