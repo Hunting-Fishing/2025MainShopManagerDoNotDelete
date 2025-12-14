@@ -207,6 +207,48 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
         </Card>
       </div>
 
+      {/* Time Summary */}
+      {resources && resources.length > 0 && (() => {
+        const totalPlannedHours = resources.reduce((acc, r) => acc + (r.planned_hours || 0), 0);
+        const totalActualHours = resources.reduce((acc, r) => acc + (r.actual_hours || 0), 0);
+        const totalPlannedCost = resources.reduce((acc, r) => acc + (r.planned_cost || 0), 0);
+        const totalActualCost = resources.reduce((acc, r) => acc + (r.actual_cost || 0), 0);
+        const timeVariance = totalPlannedHours > 0 ? ((totalActualHours - totalPlannedHours) / totalPlannedHours) * 100 : 0;
+        const costVariance = totalPlannedCost > 0 ? ((totalActualCost - totalPlannedCost) / totalPlannedCost) * 100 : 0;
+        const isTimeOver = timeVariance > 0;
+        const isCostOver = costVariance > 0;
+
+        return (
+          <Card className="bg-muted/30">
+            <CardContent className="py-3">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Time:</span>
+                    <span className={`font-medium ${isTimeOver ? 'text-destructive' : 'text-green-600'}`}>
+                      {totalActualHours}h / {totalPlannedHours}h
+                    </span>
+                    <Badge variant={isTimeOver ? 'destructive' : 'secondary'} className="text-xs">
+                      {isTimeOver ? '+' : ''}{timeVariance.toFixed(1)}%
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Labor Cost:</span>
+                    <span className={`font-medium ${isCostOver ? 'text-destructive' : 'text-green-600'}`}>
+                      {formatCurrency(totalActualCost)} / {formatCurrency(totalPlannedCost)}
+                    </span>
+                    <Badge variant={isCostOver ? 'destructive' : 'secondary'} className="text-xs">
+                      {isCostOver ? '+' : ''}{costVariance.toFixed(1)}%
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Timeline */}
       {(project.planned_start_date || project.planned_end_date) && (
         <Card>

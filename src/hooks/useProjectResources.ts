@@ -6,7 +6,7 @@ import type { ProjectResourceAssignment, ResourceType } from '@/types/projectRes
 export function useProjectResources(projectId?: string) {
   const queryClient = useQueryClient();
 
-  const { data: resources, isLoading } = useQuery({
+  const { data: resources, isLoading, refetch } = useQuery({
     queryKey: ['project-resources', projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -115,6 +115,7 @@ export function useProjectResources(projectId?: string) {
     staffResources,
     equipmentResources,
     isLoading,
+    refetch,
     createResource,
     updateResource,
     deleteResource,

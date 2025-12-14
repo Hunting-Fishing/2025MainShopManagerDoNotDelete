@@ -1,7 +1,17 @@
 // Project Resource Assignment Types
+import type { Json } from '@/integrations/supabase/types';
 
 export type ResourceType = 'employee' | 'equipment' | 'vessel' | 'vehicle';
 export type ResourceAssignmentStatus = 'planned' | 'active' | 'completed' | 'cancelled';
+
+export interface TimeEntry {
+  id: string;
+  date: string;
+  hours: number;
+  notes?: string | null;
+  logged_by?: string;
+  logged_at: string;
+}
 
 export interface ProjectResourceAssignment {
   id: string;
@@ -20,6 +30,9 @@ export interface ProjectResourceAssignment {
   // Actual
   actual_hours: number;
   actual_cost: number;
+  
+  // Time Entries
+  time_entries: Json | null;
   
   // Scheduling
   start_date: string | null;
