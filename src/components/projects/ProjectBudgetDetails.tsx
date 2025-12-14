@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Edit, Trash2, CheckCircle, XCircle, Plus, Users, Wrench, History, FileDown, Paperclip, MessageSquare, Save } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, CheckCircle, XCircle, Plus, Users, Wrench, History, FileDown, Paperclip, MessageSquare, Save, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,8 @@ import { ProjectCsvExport } from './ProjectCsvExport';
 import { SaveAsTemplateDialog } from './SaveAsTemplateDialog';
 import { ProjectActivityFeed } from './ProjectActivityFeed';
 import { ProjectAttachments } from './ProjectAttachments';
+import { MilestoneNotificationSettings } from './MilestoneNotificationSettings';
+import { UpcomingMilestones } from './UpcomingMilestones';
 
 interface ProjectBudgetDetailsProps {
   projectId: string;
@@ -310,6 +312,10 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
             <MessageSquare className="h-4 w-4 mr-1" />
             Activity
           </TabsTrigger>
+          <TabsTrigger value="notifications">
+            <Bell className="h-4 w-4 mr-1" />
+            Notifications
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="phases">
@@ -383,6 +389,13 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
 
         <TabsContent value="activity">
           <ProjectActivityFeed projectId={projectId} />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <UpcomingMilestones />
+            <MilestoneNotificationSettings />
+          </div>
         </TabsContent>
       </Tabs>
 
