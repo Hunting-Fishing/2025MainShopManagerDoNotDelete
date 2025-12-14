@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { PROJECT_STATUSES, PROJECT_TYPES } from '@/types/projectBudget';
 import { PhaseList } from './PhaseList';
 import { PhaseTimeline } from './PhaseTimeline';
+import { EarnedValueAnalysis } from './EarnedValueAnalysis';
 import { CostItemList } from './CostItemList';
 import { ChangeOrderList } from './ChangeOrderList';
 import { ProjectResourcesList } from './ProjectResourcesList';
@@ -218,6 +219,9 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
           <TabsTrigger value="phases">
             Phases ({phases?.length || 0})
           </TabsTrigger>
+          <TabsTrigger value="analysis">
+            EV Analysis
+          </TabsTrigger>
           <TabsTrigger value="resources">
             <Users className="h-4 w-4 mr-1" />
             Resources ({resources?.length || 0})
@@ -250,6 +254,10 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
             </div>
             <PhaseList phases={phases || []} projectId={projectId} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="analysis">
+          <EarnedValueAnalysis project={project} phases={phases || []} />
         </TabsContent>
 
         <TabsContent value="resources">
