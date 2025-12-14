@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Edit, Trash2, CheckCircle, XCircle, Plus, Users, Wrench, History } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, CheckCircle, XCircle, Plus, Users, Wrench, History, FileDown, Paperclip, MessageSquare, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,11 @@ import { CreateCostItemDialog } from './CreateCostItemDialog';
 import { CreateChangeOrderDialog } from './CreateChangeOrderDialog';
 import { CreateSnapshotDialog } from './CreateSnapshotDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProjectPdfExport } from './ProjectPdfExport';
+import { ProjectCsvExport } from './ProjectCsvExport';
+import { SaveAsTemplateDialog } from './SaveAsTemplateDialog';
+import { ProjectActivityFeed } from './ProjectActivityFeed';
+import { ProjectAttachments } from './ProjectAttachments';
 
 interface ProjectBudgetDetailsProps {
   projectId: string;
@@ -49,6 +54,7 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
   const [showCostItemDialog, setShowCostItemDialog] = useState(false);
   const [showChangeOrderDialog, setShowChangeOrderDialog] = useState(false);
   const [showSnapshotDialog, setShowSnapshotDialog] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
 
   if (isLoading || !project) {
     return (
@@ -121,7 +127,13 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
             <p className="text-muted-foreground">{typeConfig?.label || project.project_type}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ProjectPdfExport project={{...project, phases, cost_items: costItems, change_orders: changeOrders}} />
+          <ProjectCsvExport project={{...project, phases, cost_items: costItems, change_orders: changeOrders}} />
+          <Button variant="outline" size="sm" onClick={() => setShowTemplateDialog(true)}>
+            <Save className="h-4 w-4 mr-2" />
+            Save Template
+          </Button>
           {project.status === 'planning' && project.requires_approval && (
             <Button onClick={handleApprove} className="bg-green-600 hover:bg-green-700">
               <CheckCircle className="h-4 w-4 mr-2" />
@@ -248,6 +260,14 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
             <History className="h-4 w-4 mr-1" />
             Snapshots ({snapshots?.length || 0})
           </TabsTrigger>
+          <TabsTrigger value="attachments">
+            <Paperclip className="h-4 w-4 mr-1" />
+            Files
+          </TabsTrigger>
+          <TabsTrigger value="activity">
+            <MessageSquare className="h-4 w-4 mr-1" />
+            Activity
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="phases">
@@ -314,6 +334,14 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
             isCreating={createSnapshot.isPending}
           />
         </TabsContent>
+
+        <TabsContent value="attachments">
+          <ProjectAttachments projectId={projectId} />
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <ProjectActivityFeed projectId={projectId} />
+        </TabsContent>
       </Tabs>
 
       {/* Dialogs */}
@@ -343,6 +371,12 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
         onOpenChange={setShowSnapshotDialog}
         onSubmit={(data) => createSnapshot.mutate({ snapshot_type: data.snapshot_type, notes: data.notes })}
         isLoading={createSnapshot.isPending}
+      />
+
+      <SaveAsTemplateDialog
+        project={{...project, phases, cost_items: costItems, change_orders: changeOrders}}
+        open={showTemplateDialog}
+        onOpenChange={setShowTemplateDialog}
       />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

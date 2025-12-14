@@ -220,6 +220,7 @@ export function MobileNavigation() {
     {
       title: 'Tools',
       items: [
+        { id: 'projects', label: 'Projects', icon: ClipboardList, path: '/projects', description: 'Project planning & budgets' },
         { id: 'technician-portal', label: 'Technician Portal', icon: HardHat, path: '/technician-portal', description: 'Mobile technician interface' },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/analytics', description: 'Business insights' },
         { id: 'ai-hub', label: 'AI Hub', icon: Brain, path: '/ai-hub', description: 'AI-powered automation' },

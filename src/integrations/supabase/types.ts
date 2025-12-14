@@ -17903,6 +17903,88 @@ export type Database = {
           },
         ]
       }
+      project_activities: {
+        Row: {
+          activity_type: string
+          content: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          project_id: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          project_id: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          project_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_activities_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_attachments: {
+        Row: {
+          category: string | null
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          project_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          project_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          project_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_attachments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_budget_snapshots: {
         Row: {
           created_at: string | null
@@ -18287,6 +18369,7 @@ export type Database = {
           shop_id: string | null
           start_date: string | null
           status: string | null
+          time_entries: Json | null
           updated_at: string | null
         }
         Insert: {
@@ -18311,6 +18394,7 @@ export type Database = {
           shop_id?: string | null
           start_date?: string | null
           status?: string | null
+          time_entries?: Json | null
           updated_at?: string | null
         }
         Update: {
@@ -18335,6 +18419,7 @@ export type Database = {
           shop_id?: string | null
           start_date?: string | null
           status?: string | null
+          time_entries?: Json | null
           updated_at?: string | null
         }
         Relationships: [
@@ -18353,6 +18438,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          shop_id: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          shop_id: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          shop_id?: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       pto_balances: {
         Row: {
