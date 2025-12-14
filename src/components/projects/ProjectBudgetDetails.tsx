@@ -24,6 +24,7 @@ import { PROJECT_STATUSES, PROJECT_TYPES } from '@/types/projectBudget';
 import { PhaseList } from './PhaseList';
 import { PhaseTimeline } from './PhaseTimeline';
 import { EarnedValueAnalysis } from './EarnedValueAnalysis';
+import { CriticalPathAnalysis } from './CriticalPathAnalysis';
 import { CostItemList } from './CostItemList';
 import { ChangeOrderList } from './ChangeOrderList';
 import { ProjectResourcesList } from './ProjectResourcesList';
@@ -225,6 +226,9 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
           <TabsTrigger value="analysis">
             EV Analysis
           </TabsTrigger>
+          <TabsTrigger value="critical-path">
+            Critical Path
+          </TabsTrigger>
           <TabsTrigger value="resources">
             <Users className="h-4 w-4 mr-1" />
             Resources ({resources?.length || 0})
@@ -265,6 +269,14 @@ export function ProjectBudgetDetails({ projectId, onBack }: ProjectBudgetDetails
 
         <TabsContent value="analysis">
           <EarnedValueAnalysis project={project} phases={phases || []} />
+        </TabsContent>
+
+        <TabsContent value="critical-path">
+          <CriticalPathAnalysis 
+            phases={phases || []} 
+            projectStart={project.planned_start_date || undefined}
+            projectEnd={project.planned_end_date || undefined}
+          />
         </TabsContent>
 
         <TabsContent value="resources">
