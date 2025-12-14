@@ -18,12 +18,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, Wrench, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Users, Wrench, Trash2, Clock, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import type { ResourceType } from '@/types/projectResource';
 import type { ProjectPhase } from '@/types/projectBudget';
+import { TimeEntryDialog } from './TimeEntryDialog';
+import { ResourceTimeEntries } from './ResourceTimeEntries';
+import type { TimeEntry } from '@/types/projectResource';
+import type { Json } from '@/integrations/supabase/types';
+
+// Helper function to parse time entries from JSON
+function parseTimeEntries(entries: Json | null): TimeEntry[] {
+  if (!entries || !Array.isArray(entries)) return [];
+  return entries.map((e: any) => ({
+    id: e.id || '',
+    date: e.date || '',
+    hours: e.hours || 0,
+    notes: e.notes || null,
+    logged_by: e.logged_by,
+    logged_at: e.logged_at || '',
+  }));
+}
 
 interface ProjectResourcesListProps {
   projectId: string;
@@ -33,8 +55,10 @@ interface ProjectResourcesListProps {
 export function ProjectResourcesList({ projectId, phases }: ProjectResourcesListProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [resourceTypeToAdd, setResourceTypeToAdd] = useState<ResourceType>('employee');
+  const [timeEntryResource, setTimeEntryResource] = useState<{id: string; name: string; rate: number} | null>(null);
+  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   
-  const { resources, staffResources, equipmentResources, createResource, deleteResource, isLoading } = useProjectResources(projectId);
+  const { resources, staffResources, equipmentResources, createResource, deleteResource, isLoading, refetch } = useProjectResources(projectId);
   const { data: staff } = useStaffForPlanner();
   const { data: equipment } = useEquipmentForPlanner();
 
@@ -94,17 +118,53 @@ export function ProjectResourcesList({ projectId, phases }: ProjectResourcesList
     }
   };
 
+  const toggleEntries = (id: string) => {
+    const newExpanded = new Set(expandedEntries);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedEntries(newExpanded);
+  };
+
+  const getVarianceColor = (actual: number, planned: number) => {
+    if (planned === 0) return 'text-muted-foreground';
+    const percent = (actual / planned) * 100;
+    if (percent <= 100) return 'text-green-600';
+    if (percent <= 110) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const getVarianceBadge = (actual: number, planned: number) => {
+    if (planned === 0) return null;
+    const percent = ((actual / planned) * 100).toFixed(0);
+    const isOver = actual > planned;
+    return (
+      <Badge 
+        variant={isOver ? 'destructive' : 'secondary'} 
+        className="text-xs ml-2"
+      >
+        {isOver && <AlertTriangle className="h-3 w-3 mr-1" />}
+        {percent}%
+      </Badge>
+    );
+  };
+
   const totalPlannedCost = resources?.reduce((acc, r) => acc + (r.planned_cost || 0), 0) || 0;
   const totalPlannedHours = resources?.reduce((acc, r) => acc + (r.planned_hours || 0), 0) || 0;
+  const totalActualHours = resources?.reduce((acc, r) => acc + (r.actual_hours || 0), 0) || 0;
+  const totalActualCost = resources?.reduce((acc, r) => acc + (r.actual_cost || 0), 0) || 0;
+  const timeVariance = totalPlannedHours > 0 ? ((totalActualHours - totalPlannedHours) / totalPlannedHours) * 100 : 0;
 
   return (
     <div className="space-y-4">
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold">{resources?.length || 0}</div>
-            <p className="text-sm text-muted-foreground">Resources Assigned</p>
+            <p className="text-sm text-muted-foreground">Resources</p>
           </CardContent>
         </Card>
         <Card>
@@ -115,8 +175,24 @@ export function ProjectResourcesList({ projectId, phases }: ProjectResourcesList
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold">${totalPlannedCost.toLocaleString()}</div>
-            <p className="text-sm text-muted-foreground">Planned Cost</p>
+            <div className={`text-2xl font-bold ${getVarianceColor(totalActualHours, totalPlannedHours)}`}>
+              {totalActualHours}h
+            </div>
+            <p className="text-sm text-muted-foreground">Actual Hours</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className={`text-2xl font-bold ${timeVariance > 10 ? 'text-red-600' : timeVariance > 0 ? 'text-yellow-600' : 'text-green-600'}`}>
+              {timeVariance > 0 ? '+' : ''}{timeVariance.toFixed(1)}%
+            </div>
+            <p className="text-sm text-muted-foreground">Time Variance</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold">${totalActualCost.toLocaleString()}</div>
+            <p className="text-sm text-muted-foreground">Actual Cost</p>
           </CardContent>
         </Card>
       </div>
@@ -138,30 +214,71 @@ export function ProjectResourcesList({ projectId, phases }: ProjectResourcesList
             <p className="text-sm text-muted-foreground text-center py-4">No staff assigned</p>
           ) : (
             <div className="space-y-2">
-              {staffResources.map((resource) => (
-                <div key={resource.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Users className="h-4 w-4 text-primary" />
+              {staffResources.map((resource) => {
+                const entries = parseTimeEntries(resource.time_entries);
+                const isExpanded = expandedEntries.has(resource.id);
+                
+                return (
+                  <Collapsible key={resource.id} open={isExpanded} onOpenChange={() => toggleEntries(resource.id)}>
+                    <div className="border border-border rounded-lg">
+                      <div className="flex items-center justify-between p-3">
+                        <div className="flex items-center gap-3">
+                          <CollapsibleTrigger asChild>
+                            <button className="p-1 hover:bg-muted rounded">
+                              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </button>
+                          </CollapsibleTrigger>
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Users className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{resource.resource_name}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {resource.role && <span>{resource.role}</span>}
+                              <span className={getVarianceColor(resource.actual_hours || 0, resource.planned_hours || 0)}>
+                                {resource.actual_hours || 0}h / {resource.planned_hours}h
+                              </span>
+                              {getVarianceBadge(resource.actual_hours || 0, resource.planned_hours || 0)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setTimeEntryResource({
+                              id: resource.id,
+                              name: resource.resource_name || '',
+                              rate: resource.hourly_rate || 0,
+                            })}
+                          >
+                            <Clock className="h-4 w-4 mr-1" />
+                            Log Time
+                          </Button>
+                          <Badge variant="secondary" className="text-xs">
+                            ${(resource.actual_cost || 0).toLocaleString()}
+                          </Badge>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(resource.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                      <CollapsibleContent>
+                        <div className="px-3 pb-3 pt-0 border-t">
+                          <div className="pt-3">
+                            <ResourceTimeEntries
+                              assignmentId={resource.id}
+                              entries={entries}
+                              hourlyRate={resource.hourly_rate || 0}
+                              onUpdate={() => refetch()}
+                            />
+                          </div>
+                        </div>
+                      </CollapsibleContent>
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{resource.resource_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {resource.role && <span className="mr-2">{resource.role}</span>}
-                        {resource.planned_hours}h planned • {resource.allocation_percent}% allocation
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      ${resource.planned_cost?.toLocaleString() || 0}
-                    </Badge>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(resource.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                  </Collapsible>
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -347,6 +464,18 @@ export function ProjectResourcesList({ projectId, phases }: ProjectResourcesList
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Time Entry Dialog */}
+      {timeEntryResource && (
+        <TimeEntryDialog
+          assignmentId={timeEntryResource.id}
+          resourceName={timeEntryResource.name}
+          hourlyRate={timeEntryResource.rate}
+          open={!!timeEntryResource}
+          onOpenChange={(open) => !open && setTimeEntryResource(null)}
+          onSuccess={() => refetch()}
+        />
+      )}
     </div>
   );
 }

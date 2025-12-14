@@ -29,8 +29,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
 import { useProjectBudgets } from '@/hooks/useProjectBudgets';
 import { PROJECT_TYPES } from '@/types/projectBudget';
+import { ProjectTemplateSelector } from './ProjectTemplateSelector';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { FileText, X } from 'lucide-react';
 
 const formSchema = z.object({
   project_name: z.string().min(1, 'Project name is required'),
@@ -47,6 +53,24 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+interface ProjectTemplate {
+  id: string;
+  name: string;
+  project_type?: string;
+  priority?: string;
+  contingency_percent?: number;
+  requires_approval?: boolean;
+  approval_threshold?: number;
+  template_data?: {
+    phases?: Array<{
+      phase_name: string;
+      phase_order: number;
+      planned_budget?: number;
+      description?: string;
+    }>;
+  };
+}
+
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +79,9 @@ interface CreateProjectDialogProps {
 export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogProps) {
   const { createProject } = useProjectBudgets();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTemplateSheet, setShowTemplateSheet] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
+  const [pendingPhases, setPendingPhases] = useState<ProjectTemplate['template_data']['phases']>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -72,16 +99,66 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     },
   });
 
+  const handleTemplateSelect = (template: ProjectTemplate) => {
+    setSelectedTemplate(template);
+    
+    // Pre-populate form fields from template
+    if (template.project_type) form.setValue('project_type', template.project_type);
+    if (template.priority) form.setValue('priority', template.priority);
+    if (template.contingency_percent !== undefined) form.setValue('contingency_percent', template.contingency_percent);
+    if (template.requires_approval !== undefined) form.setValue('requires_approval', template.requires_approval);
+    if (template.approval_threshold !== undefined) form.setValue('approval_threshold', template.approval_threshold);
+    
+    // Store phases for later creation
+    if (template.template_data?.phases) {
+      setPendingPhases(template.template_data.phases);
+    }
+    
+    setShowTemplateSheet(false);
+    toast.success(`Template "${template.name}" applied`);
+  };
+
+  const clearTemplate = () => {
+    setSelectedTemplate(null);
+    setPendingPhases([]);
+  };
+
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
       const contingencyAmount = (data.original_budget * data.contingency_percent) / 100;
-      await createProject.mutateAsync({
+      const newProject = await createProject.mutateAsync({
         ...data,
         contingency_amount: contingencyAmount,
         current_budget: data.original_budget + contingencyAmount,
       });
+
+      // Auto-create phases from template if any
+      if (pendingPhases && pendingPhases.length > 0 && newProject?.id) {
+        const phasesToInsert = pendingPhases.map(phase => ({
+          project_id: newProject.id,
+          phase_name: phase.phase_name,
+          phase_order: phase.phase_order,
+          planned_budget: phase.planned_budget || 0,
+          description: phase.description || null,
+          status: 'pending',
+        }));
+
+        const { error: phaseError } = await supabase
+          .from('project_phases')
+          .insert(phasesToInsert);
+
+        if (phaseError) {
+          console.error('Failed to create template phases:', phaseError);
+          toast.error('Project created but failed to add template phases');
+        } else {
+          toast.success(`Created project with ${phasesToInsert.length} phases from template`);
+        }
+      }
+
       form.reset();
+      setSelectedTemplate(null);
+      setPendingPhases([]);
       onOpenChange(false);
     } finally {
       setIsSubmitting(false);
@@ -92,10 +169,44 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
-          <DialogDescription>
-            Set up a new project budget with phases and cost tracking
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle>Create New Project</DialogTitle>
+              <DialogDescription>
+                Set up a new project budget with phases and cost tracking
+              </DialogDescription>
+            </div>
+            <Sheet open={showTemplateSheet} onOpenChange={setShowTemplateSheet}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Use Template
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[400px] sm:w-[540px]">
+                <SheetHeader>
+                  <SheetTitle>Select Template</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  <ProjectTemplateSelector onSelect={handleTemplateSelect} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+          
+          {selectedTemplate && (
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary" className="flex items-center gap-1">
+                From: {selectedTemplate.name}
+                <button onClick={clearTemplate} className="ml-1 hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+              {pendingPhases && pendingPhases.length > 0 && (
+                <Badge variant="outline">{pendingPhases.length} phases</Badge>
+              )}
+            </div>
+          )}
         </DialogHeader>
 
         <Form {...form}>

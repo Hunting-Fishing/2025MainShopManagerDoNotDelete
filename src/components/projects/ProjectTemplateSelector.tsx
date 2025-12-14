@@ -27,7 +27,7 @@ interface Template {
 
 interface ProjectTemplateSelectorProps {
   onSelect: (templateData: any) => void;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export const ProjectTemplateSelector = ({ onSelect, onClose }: ProjectTemplateSelectorProps) => {
@@ -92,9 +92,11 @@ export const ProjectTemplateSelector = ({ onSelect, onClose }: ProjectTemplateSe
         <p className="text-sm text-muted-foreground">
           Create a project and save it as a template to reuse its structure.
         </p>
-        <Button variant="outline" onClick={onClose} className="mt-4">
-          Close
-        </Button>
+        {onClose && (
+          <Button variant="outline" onClick={onClose} className="mt-4">
+            Close
+          </Button>
+        )}
       </div>
     );
   }
@@ -154,11 +156,13 @@ export const ProjectTemplateSelector = ({ onSelect, onClose }: ProjectTemplateSe
         ))}
       </div>
 
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-      </div>
+      {onClose && (
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+        </div>
+      )}
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
