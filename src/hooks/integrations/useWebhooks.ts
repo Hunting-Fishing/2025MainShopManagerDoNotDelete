@@ -236,13 +236,21 @@ export function useWebhooks() {
         data: { message: 'This is a test webhook from your system' }
       };
 
-      // Simulate webhook test
-      setTimeout(() => {
-        toast({
-          title: 'Test Sent',
-          description: 'Test webhook delivered successfully'
-        });
-      }, 1000);
+      // Call the webhook URL directly for testing
+      const response = await fetch(endpoint.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(endpoint.secret_key ? { 'X-Webhook-Secret': endpoint.secret_key } : {})
+        },
+        body: JSON.stringify(testPayload),
+        mode: 'no-cors' // Allow cross-origin requests for webhook testing
+      });
+
+      toast({
+        title: 'Test Sent',
+        description: 'Test webhook request sent to endpoint'
+      });
 
     } catch (error) {
       console.error('Error testing webhook:', error);
