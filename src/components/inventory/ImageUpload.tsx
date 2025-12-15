@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ImageWithProgress {
   dataUrl: string;
@@ -24,41 +25,50 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUplo
     images.map(img => ({ dataUrl: img, progress: 100, uploading: false }))
   );
 
-  const simulateImageUpload = async (file: File, tempIndex: number) => {
-    const startTime = Date.now();
-    const fileSize = file.size;
-    
-    for (let progress = 0; progress <= 100; progress += 10) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const elapsed = (Date.now() - startTime) / 1000;
-      const speed = (fileSize * (progress / 100)) / elapsed;
-      const remaining = ((fileSize - (fileSize * (progress / 100))) / speed);
-      
-      const timeRemaining = remaining > 60 
-        ? `${Math.ceil(remaining / 60)}m ${Math.ceil(remaining % 60)}s`
-        : `${Math.ceil(remaining)}s`;
-      
-      setImagesWithProgress(prev => 
-        prev.map((img, idx) => 
-          idx === tempIndex 
-            ? { ...img, progress, timeRemaining: progress < 100 ? timeRemaining : undefined }
-            : img
-        )
-      );
+  const uploadImageToStorage = async (file: File, tempIndex: number) => {
+    // Update progress to show upload starting
+    setImagesWithProgress(prev => 
+      prev.map((img, idx) => 
+        idx === tempIndex ? { ...img, progress: 10 } : img
+      )
+    );
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `inventory/${fileName}`;
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('product_images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Upload error:', error);
+      setImagesWithProgress(prev => prev.filter((_, idx) => idx !== tempIndex));
+      toast({
+        title: "Upload Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
     }
-    
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImagesWithProgress(prev => 
-        prev.map((img, idx) => 
-          idx === tempIndex 
-            ? { ...img, dataUrl: reader.result as string, uploading: false }
-            : img
-        )
-      );
-    };
-    reader.readAsDataURL(file);
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('product_images')
+      .getPublicUrl(filePath);
+
+    // Update with final URL
+    setImagesWithProgress(prev => 
+      prev.map((img, idx) => 
+        idx === tempIndex 
+          ? { ...img, dataUrl: publicUrl, progress: 100, uploading: false }
+          : img
+      )
+    );
   };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -81,7 +91,7 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUplo
     setImagesWithProgress(prev => [...prev, ...newImagesWithProgress]);
     
     acceptedFiles.forEach((file, index) => {
-      simulateImageUpload(file, startIndex + index);
+      uploadImageToStorage(file, startIndex + index);
     });
 
     toast({

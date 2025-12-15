@@ -10,6 +10,7 @@ import ManufacturersGrid from '@/components/affiliate/ManufacturersGrid';
 import { useQuery } from '@tanstack/react-query';
 import { categories } from '@/data/toolCategories';
 import { manufacturers } from '@/data/manufacturers';
+import { supabase } from '@/integrations/supabase/client';
 
 // Convert the categories dictionary to an array format for display
 const categoryList = Object.keys(categories).map((name, id) => ({
@@ -23,41 +24,66 @@ const categoryList = Object.keys(categories).map((name, id) => ({
 const AffiliateTool = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch featured tools data
+  // Fetch featured tools from database
   const { data: featuredTools, isLoading: isFeaturedLoading } = useQuery({
     queryKey: ['featuredTools'],
     queryFn: async () => {
-      try {
-        // In a real app, this would be an API call to fetch featured tools
-        // For now, we're simulating a delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Return an empty array for now
-        // In a real implementation, this would be data from the API
-        return [];
-      } catch (error) {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, title, description, image_url, price, affiliate_link')
+        .eq('is_featured', true)
+        .eq('is_approved', true)
+        .limit(8);
+      
+      if (error) {
         console.error("Error fetching featured tools:", error);
         throw error;
       }
+      
+      // Map to AffiliateProduct format
+      return (data || []).map(p => ({
+        id: p.id,
+        name: p.title || '',
+        description: p.description || '',
+        imageUrl: p.image_url || '',
+        retailPrice: p.price || 0,
+        affiliateUrl: p.affiliate_link || '',
+        category: 'Tools',
+        tier: 'economy' as const,
+        manufacturer: '',
+      }));
     },
   });
 
-  // Fetch best selling tools data
+  // Fetch best selling tools from database
   const { data: bestSellingTools, isLoading: isBestSellingLoading } = useQuery({
     queryKey: ['bestSellingTools'],
     queryFn: async () => {
-      try {
-        // In a real app, this would be an API call to fetch best selling tools
-        // For now, we're simulating a delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Return an empty array for now
-        // In a real implementation, this would be data from the API
-        return [];
-      } catch (error) {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, title, description, image_url, price, affiliate_link')
+        .eq('is_bestseller', true)
+        .eq('is_approved', true)
+        .limit(8);
+      
+      if (error) {
         console.error("Error fetching best selling tools:", error);
         throw error;
       }
+      
+      // Map to AffiliateProduct format
+      return (data || []).map(p => ({
+        id: p.id,
+        name: p.title || '',
+        description: p.description || '',
+        imageUrl: p.image_url || '',
+        retailPrice: p.price || 0,
+        affiliateUrl: p.affiliate_link || '',
+        category: 'Tools',
+        tier: 'economy' as const,
+        manufacturer: '',
+        bestSeller: true,
+      }));
     },
   });
   

@@ -30,20 +30,18 @@ export function LaborBudgetTracker({ laborBudget, laborSpent }: LaborBudgetTrack
   const isOverBudget = laborSpent > laborBudget;
   const isNearLimit = utilizationPercent >= 80 && utilizationPercent < 100;
 
-  // Mock data for demonstration - in production this would come from analytics
-  const weeklyLaborData = [
-    { week: 'Week 1', regular: 320, overtime: 24, cost: 12800 },
-    { week: 'Week 2', regular: 340, overtime: 16, cost: 13200 },
-    { week: 'Week 3', regular: 360, overtime: 32, cost: 14400 },
-    { week: 'Week 4', regular: 320, overtime: 8, cost: 12200 },
-  ];
+  // Calculate weekly labor data from analytics (aggregate from analytics records)
+  const weeklyLaborData = analytics.length > 0 
+    ? analytics.slice(0, 4).map((a, i) => ({
+        week: `Week ${i + 1}`,
+        regular: Number(a.regular_hours || 0),
+        overtime: Number(a.overtime_hours || 0),
+        cost: Number(a.total_labor_cost || 0)
+      }))
+    : [{ week: 'Current', regular: Math.round(laborSpent * 0.9), overtime: Math.round(laborSpent * 0.1), cost: laborSpent }];
 
-  const employeeCostData = [
-    { name: 'Tech A', hours: 160, cost: 6400 },
-    { name: 'Tech B', hours: 152, cost: 5700 },
-    { name: 'Tech C', hours: 168, cost: 6720 },
-    { name: 'Tech D', hours: 144, cost: 5400 },
-  ];
+  // Employee cost data would need a separate query - using empty for now if no data
+  const employeeCostData: { name: string; hours: number; cost: number }[] = [];
 
   return (
     <div className="space-y-6">
