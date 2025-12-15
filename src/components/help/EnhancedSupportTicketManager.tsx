@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,14 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Ticket, Plus, User, AlertCircle, Clock, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-interface TicketCategory {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  sla_hours: number;
-}
+import { useQuery } from '@tanstack/react-query';
 
 interface SupportTicket {
   id: string;
@@ -22,90 +15,52 @@ interface SupportTicket {
   description: string;
   status: string;
   priority: string;
-  customer_name: string;
+  user_id: string;
   created_at: string;
-  category?: TicketCategory;
 }
 
 export const EnhancedSupportTicketManager: React.FC = () => {
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [categories, setCategories] = useState<TicketCategory[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchTicketsAndCategories();
-  }, []);
-
-  const fetchTicketsAndCategories = async () => {
-    try {
-      // Fetch categories
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('support_ticket_categories' as any)
+  const { data: tickets = [], isLoading } = useQuery({
+    queryKey: ['support-tickets', statusFilter, priorityFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from('support_tickets')
         .select('*')
-        .eq('is_active', true)
-        .order('name');
+        .order('created_at', { ascending: false });
 
-      if (categoriesError) throw categoriesError;
-      setCategories((categoriesData as any) || []);
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+      if (priorityFilter !== 'all') {
+        query = query.eq('priority', priorityFilter);
+      }
 
-      // For now, use mock tickets since we don't have a support_tickets table yet
-      const mockTickets: SupportTicket[] = [
-        {
-          id: '1',
-          ticket_number: 'TKT-2024-001000',
-          subject: 'Cannot access work order reports',
-          description: 'Unable to access the reports section of the application. Getting a blank screen when clicking on Reports.',
-          status: 'open',
-          priority: 'high',
-          customer_name: 'John Smith',
-          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          category: (categoriesData as any)?.find((cat: any) => cat.name === 'Technical Issues')
-        },
-        {
-          id: '2',
-          ticket_number: 'TKT-2024-001001',
-          subject: 'Billing discrepancy on invoice',
-          description: 'There appears to be an error in the calculation of taxes on my last invoice.',
-          status: 'in_progress',
-          priority: 'medium',
-          customer_name: 'Sarah Johnson',
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          category: (categoriesData as any)?.find((cat: any) => cat.name === 'Account & Billing')
-        },
-        {
-          id: '3',
-          ticket_number: 'TKT-2024-001002',
-          subject: 'Feature request: Bulk operations',
-          description: 'Would like to request a bulk edit feature for work orders to update multiple orders at once.',
-          status: 'open',
-          priority: 'low',
-          customer_name: 'Mike Wilson',
-          created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          category: (categoriesData as any)?.find((cat: any) => cat.name === 'Feature Requests')
-        }
-      ];
-      
-      setTickets(mockTickets);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load support tickets",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      const { data, error } = await query;
 
-  const filteredTickets = tickets.filter(ticket => {
-    if (statusFilter !== 'all' && ticket.status !== statusFilter) return false;
-    if (priorityFilter !== 'all' && ticket.priority !== priorityFilter) return false;
-    return true;
+      if (error) {
+        console.error('Error fetching tickets:', error);
+        throw error;
+      }
+
+      return (data || []).map(ticket => ({
+        id: ticket.id,
+        ticket_number: `TKT-${ticket.id.slice(0, 8).toUpperCase()}`,
+        subject: ticket.subject,
+        description: ticket.description || '',
+        status: ticket.status || 'open',
+        priority: ticket.priority || 'medium',
+        user_id: ticket.user_id,
+        created_at: ticket.created_at,
+      })) as SupportTicket[];
+    },
+    staleTime: 30 * 1000,
   });
+
+  const filteredTickets = tickets;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -159,7 +114,7 @@ export const EnhancedSupportTicketManager: React.FC = () => {
     return `${diffInDays} days ago`;
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -205,7 +160,6 @@ export const EnhancedSupportTicketManager: React.FC = () => {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-48">
@@ -249,18 +203,9 @@ export const EnhancedSupportTicketManager: React.FC = () => {
                   <p className="text-muted-foreground">{ticket.description}</p>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <User className="h-4 w-4" />
-                      {ticket.customer_name}
-                    </div>
-                    <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       {formatTimeAgo(ticket.created_at)}
                     </div>
-                    {ticket.category && (
-                      <Badge variant="outline" style={{ borderColor: ticket.category.color }}>
-                        {ticket.category.name}
-                      </Badge>
-                    )}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -277,7 +222,7 @@ export const EnhancedSupportTicketManager: React.FC = () => {
         ))}
       </div>
 
-      {filteredTickets.length === 0 && !loading && (
+      {filteredTickets.length === 0 && !isLoading && (
         <Card>
           <CardContent className="text-center py-8">
             <Ticket className="h-12 w-12 mx-auto text-muted-foreground mb-4" />

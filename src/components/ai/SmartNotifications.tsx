@@ -6,6 +6,7 @@ import { Bell, AlertTriangle, Info, CheckCircle, X, Brain } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface SmartNotification {
   id: string;
@@ -21,90 +22,92 @@ interface SmartNotification {
 }
 
 export const SmartNotifications = () => {
-  const [notifications, setNotifications] = useState<SmartNotification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<string>('all');
 
-  const fetchNotifications = async () => {
-    try {
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ['smart-notifications'],
+    queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) return [];
 
-      // Since smart_notifications table doesn't exist yet, we'll simulate it
-      // In a real implementation, this would query the smart_notifications table
-      const mockNotifications: SmartNotification[] = [
-        {
-          id: '1',
-          title: 'Inventory Alert',
-          message: 'Low stock detected for brake pads. Only 3 units remaining.',
-          priority: 'high',
-          type: 'warning',
-          user_id: user.id,
-          created_at: new Date().toISOString(),
-          read: false,
-          ai_generated: true,
-          metadata: { item: 'brake_pads', quantity: 3 }
-        },
-        {
-          id: '2',
-          title: 'Revenue Opportunity',
-          message: 'Customer John Smith is due for oil change service based on mileage.',
-          priority: 'medium',
-          type: 'info',
-          user_id: user.id,
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          read: false,
-          ai_generated: true,
-          metadata: { customer: 'John Smith', service: 'oil_change' }
-        },
-        {
-          id: '3',
-          title: 'Performance Insight',
-          message: 'Your team completed 25% more work orders this week compared to last week.',
-          priority: 'low',
-          type: 'success',
-          user_id: user.id,
-          created_at: new Date(Date.now() - 7200000).toISOString(),
-          read: true,
-          ai_generated: true,
-          metadata: { improvement: '25%', metric: 'work_orders' }
-        }
-      ];
+      const { data, error } = await supabase
+        .from('smart_notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      setNotifications(mockNotifications);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        throw error;
+      }
+
+      return (data || []).map(n => ({
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        priority: n.priority as 'low' | 'medium' | 'high' | 'urgent',
+        type: n.type as 'info' | 'warning' | 'error' | 'success',
+        user_id: n.user_id,
+        created_at: n.created_at,
+        read: n.read,
+        ai_generated: n.ai_generated,
+        metadata: n.metadata,
+      })) as SmartNotification[];
+    },
+    staleTime: 30 * 1000, // 30 seconds
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from('smart_notifications')
+        .update({ read: true, read_at: new Date().toISOString() })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+      return notificationId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['smart-notifications'] });
+    },
+    onError: (error) => {
+      console.error('Error marking notification as read:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch smart notifications",
+        description: "Failed to mark notification as read",
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  });
 
-  const markAsRead = async (notificationId: string) => {
-    setNotifications(prev => prev.map(notif => 
-      notif.id === notificationId 
-        ? { ...notif, read: true }
-        : notif
-    ));
-    
-    // In real implementation, update the database
-    // await supabase.from('smart_notifications').update({ read: true }).eq('id', notificationId);
-  };
+  const dismissMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from('smart_notifications')
+        .delete()
+        .eq('id', notificationId);
 
-  const dismissNotification = async (notificationId: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
-    
-    // In real implementation, delete from database or mark as dismissed
-    // await supabase.from('smart_notifications').delete().eq('id', notificationId);
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
+      if (error) throw error;
+      return notificationId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['smart-notifications'] });
+      toast({
+        title: "Dismissed",
+        description: "Notification has been dismissed",
+      });
+    },
+    onError: (error) => {
+      console.error('Error dismissing notification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to dismiss notification",
+        variant: "destructive"
+      });
+    }
+  });
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -145,7 +148,7 @@ export const SmartNotifications = () => {
       case 'low':
         return 'text-green-600 bg-green-50 border-green-200';
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'text-muted-foreground bg-muted border-border';
     }
   };
 
@@ -199,7 +202,6 @@ export const SmartNotifications = () => {
           AI-powered notifications to keep you informed about important business events
         </CardDescription>
         
-        {/* Filter Buttons */}
         <div className="flex gap-2 flex-wrap pt-2">
           {filterOptions.map((option) => (
             <Button
@@ -265,7 +267,8 @@ export const SmartNotifications = () => {
                       <Button 
                         size="sm" 
                         variant="ghost"
-                        onClick={() => markAsRead(notification.id)}
+                        onClick={() => markAsReadMutation.mutate(notification.id)}
+                        disabled={markAsReadMutation.isPending}
                       >
                         Mark Read
                       </Button>
@@ -273,7 +276,8 @@ export const SmartNotifications = () => {
                     <Button 
                       size="sm" 
                       variant="ghost"
-                      onClick={() => dismissNotification(notification.id)}
+                      onClick={() => dismissMutation.mutate(notification.id)}
+                      disabled={dismissMutation.isPending}
                     >
                       <X className="w-4 h-4" />
                     </Button>
