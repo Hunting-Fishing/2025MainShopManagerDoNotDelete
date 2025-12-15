@@ -45,45 +45,5 @@ export interface DatabaseChatParticipant {
 import { supabase } from '@/integrations/supabase/client';
 export { supabase };
 
-// Function to upload chat files
-export const uploadChatFile = async (roomId: string, file: File): Promise<any> => {
-  try {
-    // Create a unique file path using roomId and timestamp
-    const timestamp = new Date().getTime();
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${timestamp}-${file.name.replace(/\s+/g, '_')}`;
-    const filePath = `chat/${roomId}/${fileName}`;
-    
-    // For this implementation, we'll create a temporary URL
-    // In a real app, you would upload the file to Supabase storage
-    const url = URL.createObjectURL(file);
-    
-    // Determine file type
-    let type: 'image' | 'video' | 'audio' | 'file' | 'document' = 'file';
-    if (file.type.startsWith('image/')) {
-      type = 'image';
-    } else if (file.type.startsWith('video/')) {
-      type = 'video';
-    } else if (file.type.startsWith('audio/')) {
-      type = 'audio';
-    } else if (
-      file.type === 'application/pdf' || 
-      file.type === 'application/msword' ||
-      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ) {
-      type = 'document';
-    }
-    
-    // Return file info
-    return {
-      url,
-      type,
-      name: file.name,
-      size: file.size,
-      contentType: file.type
-    };
-  } catch (error) {
-    console.error('Error uploading file:', error);
-    throw new Error('File upload failed');
-  }
-};
+// Re-export the uploadChatFile from the proper upload service that uses Supabase Storage
+export { uploadChatFile } from './file/uploadService';
