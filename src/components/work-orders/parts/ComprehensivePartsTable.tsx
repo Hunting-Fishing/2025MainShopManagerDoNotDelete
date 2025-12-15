@@ -16,8 +16,10 @@ import {
 import { Package, Plus, Edit, Trash2, AlertCircle } from 'lucide-react';
 import { AddPartButton } from './AddPartButton';
 import { EnhancedPartRow } from './EnhancedPartRow';
+import { EditPartDialog } from './EditPartDialog';
 import { partStatusMap } from '@/types/workOrderPart';
 import { toast } from 'sonner';
+import { updateWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 
 interface ComprehensivePartsTableProps {
   workOrderId: string;
@@ -35,29 +37,36 @@ export function ComprehensivePartsTable({
   isEditMode = false
 }: ComprehensivePartsTableProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [editingPart, setEditingPart] = useState<WorkOrderPart | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  console.log('ComprehensivePartsTable render:', { 
-    workOrderId, 
-    partsCount: parts.length, 
-    jobLinesCount: jobLines.length,
-    isEditMode 
-  });
+  const handlePartEdit = (part: WorkOrderPart) => {
+    setEditingPart(part);
+    setIsEditDialogOpen(true);
+  };
 
-  const handlePartEdit = async (part: WorkOrderPart) => {
-    console.log('Editing part:', part);
-    // This would open an edit dialog - for now just log
-    toast.info('Edit functionality will be implemented');
+  const handleSavePart = async (partId: string, updates: Partial<WorkOrderPart>) => {
+    try {
+      setIsProcessing(true);
+      await updateWorkOrderPart(partId, updates);
+      toast.success('Part updated successfully');
+      await onPartsChange();
+      setIsEditDialogOpen(false);
+      setEditingPart(null);
+    } catch (error) {
+      console.error('Error updating part:', error);
+      toast.error('Failed to update part');
+      throw error;
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handlePartDelete = async (partId: string) => {
     try {
       setIsProcessing(true);
-      console.log('Deleting part:', partId);
-      
-      // Import the delete function
       const { deleteWorkOrderPart } = await import('@/services/workOrder/workOrderPartsService');
       await deleteWorkOrderPart(partId);
-      
       toast.success('Part deleted successfully');
       await onPartsChange();
     } catch (error) {
@@ -69,7 +78,6 @@ export function ComprehensivePartsTable({
   };
 
   const handlePartAdded = async () => {
-    console.log('Part added, refreshing data...');
     await onPartsChange();
   };
 
@@ -195,6 +203,18 @@ export function ComprehensivePartsTable({
           </div>
         </div>
       </CardContent>
+
+      {/* Edit Part Dialog */}
+      <EditPartDialog
+        part={editingPart}
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setEditingPart(null);
+        }}
+        onSave={handleSavePart}
+        isLoading={isProcessing}
+      />
     </Card>
   );
 }

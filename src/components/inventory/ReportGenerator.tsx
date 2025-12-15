@@ -6,6 +6,8 @@ import { useInventoryAnalytics } from '@/hooks/inventory/useInventoryAnalytics';
 import { Download, FileText, BarChart3, TrendingUp } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import * as XLSX from 'xlsx';
 
 interface ReportConfig {
   type: 'summary' | 'detailed' | 'analytics' | 'valuation';
@@ -27,32 +29,85 @@ export function ReportGenerator() {
     setIsGenerating(true);
     
     try {
-      // Simulate report generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Create mock report data
+      // Fetch real inventory data from Supabase
+      const { data: inventoryItems, error } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+
       const reportData = {
         title: `Inventory ${config.type} Report`,
         generatedAt: new Date().toISOString(),
-        dateRange: config.dateRange,
+        totalItems: inventoryItems?.length || 0,
+        totalValue: inventoryItems?.reduce((sum, item) => sum + (item.unit_price || 0) * (item.quantity || 0), 0) || 0,
+        lowStockItems: inventoryItems?.filter(item => (item.quantity || 0) <= (item.reorder_point || 0)).length || 0,
+        items: inventoryItems || [],
         ...analytics
       };
 
-      // Mock file creation
-      const blob = new Blob([JSON.stringify(reportData, null, 2)], { 
-        type: 'application/json' 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `inventory-${config.type}-report.${config.format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if (config.format === 'xlsx') {
+        // Generate Excel file
+        const worksheetData = inventoryItems?.map(item => ({
+          'Name': item.name,
+          'SKU': item.sku || '',
+          'Category': item.category || '',
+          'Quantity': item.quantity || 0,
+          'Reorder Point': item.reorder_point || 0,
+          'Unit Price': item.unit_price || 0,
+          'Total Value': (item.quantity || 0) * (item.unit_price || 0),
+          'Location': item.location || ''
+        })) || [];
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(worksheetData);
+        XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+        XLSX.writeFile(wb, `inventory-${config.type}-report.xlsx`);
+      } else if (config.format === 'csv') {
+        // Generate CSV
+        const csvRows = [
+          ['Name', 'SKU', 'Category', 'Quantity', 'Reorder Point', 'Unit Price', 'Total Value', 'Location'].join(','),
+          ...(inventoryItems?.map(item => [
+            `"${item.name}"`,
+            `"${item.sku || ''}"`,
+            `"${item.category || ''}"`,
+            item.quantity || 0,
+            item.reorder_point || 0,
+            item.unit_price || 0,
+            (item.quantity || 0) * (item.unit_price || 0),
+            `"${item.location || ''}"`
+          ].join(',')) || [])
+        ];
+        
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `inventory-${config.type}-report.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        // Generate PDF-style JSON for now (can be enhanced with jsPDF)
+        const blob = new Blob([JSON.stringify(reportData, null, 2)], { 
+          type: 'application/json' 
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `inventory-${config.type}-report.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
 
       toast.success('Report generated successfully');
     } catch (error) {
+      console.error('Error generating report:', error);
       toast.error('Failed to generate report');
     } finally {
       setIsGenerating(false);
