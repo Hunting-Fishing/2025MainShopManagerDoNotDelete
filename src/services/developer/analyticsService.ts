@@ -144,11 +144,23 @@ class AnalyticsService {
 
   async getUserActivityData(): Promise<ChartData[]> {
     try {
-      // Mock user activity data
+      // Get real user data from profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, created_at');
+      
+      const totalUsers = profiles?.length || 0;
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const newUsers = profiles?.filter(p => 
+        new Date(p.created_at) > thirtyDaysAgo
+      ).length || 0;
+      
       return [
-        { name: 'Active Users', value: 45 },
-        { name: 'New Users', value: 12 },
-        { name: 'Returning Users', value: 33 },
+        { name: 'Active Users', value: totalUsers },
+        { name: 'New Users', value: newUsers },
+        { name: 'Returning Users', value: Math.max(0, totalUsers - newUsers) },
       ];
     } catch (error) {
       console.error('Error fetching user activity data:', error);

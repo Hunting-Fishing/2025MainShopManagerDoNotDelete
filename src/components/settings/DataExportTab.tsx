@@ -8,6 +8,20 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Download, Calendar, Code, FileText } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useShopId } from "@/hooks/useShopId";
+import { saveAs } from "file-saver";
+
+const TABLE_MAP: Record<string, string> = {
+  customers: 'customers',
+  vehicles: 'vehicles',
+  work_orders: 'work_orders',
+  invoices: 'invoices',
+  inventory: 'inventory_items',
+  team_members: 'profiles',
+  feedback: 'work_order_feedback',
+  communications: 'communications'
+};
 
 export function DataExportTab() {
   const [exportType, setExportType] = useState<string>("all");
@@ -24,6 +38,7 @@ export function DataExportTab() {
     communications: false
   });
   const { toast } = useToast();
+  const { shopId } = useShopId();
 
   const toggleCheck = (tableName: string) => {
     setCheckedTables(prev => ({
@@ -32,18 +47,72 @@ export function DataExportTab() {
     }));
   };
 
+  const exportTableToCSV = (data: any[], tableName: string): string => {
+    if (!data || data.length === 0) return '';
+    const headers = Object.keys(data[0]);
+    const csvRows = [headers.join(',')];
+    data.forEach(row => {
+      csvRows.push(headers.map(h => {
+        const val = row[h];
+        if (val === null || val === undefined) return '';
+        const str = String(val);
+        return str.includes(',') || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
+      }).join(','));
+    });
+    return csvRows.join('\n');
+  };
+
   const handleExport = async () => {
+    if (!shopId) {
+      toast({ title: "Error", description: "No shop selected", variant: "destructive" });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      // In a real implementation, this would call an API to generate the export
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const tablesToExport = exportType === 'all' 
+        ? Object.keys(checkedTables) 
+        : Object.entries(checkedTables).filter(([_, checked]) => checked).map(([name]) => name);
+      
+      let allData: Record<string, any[]> = {};
+      
+      for (const tableKey of tablesToExport) {
+        const dbTable = TABLE_MAP[tableKey];
+        if (!dbTable) continue;
+        
+        const { data, error } = await supabase
+          .from(dbTable as any)
+          .select('*')
+          .eq('shop_id', shopId)
+          .limit(10000);
+        
+        if (!error && data) {
+          allData[tableKey] = data;
+        }
+      }
+      
+      if (exportFormat === 'csv') {
+        // Export each table as separate CSV
+        for (const [tableName, data] of Object.entries(allData)) {
+          if (data.length > 0) {
+            const csv = exportTableToCSV(data, tableName);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, `${tableName}-export-${new Date().toISOString().split('T')[0]}.csv`);
+          }
+        }
+      } else {
+        // Export as JSON
+        const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+        saveAs(blob, `data-export-${new Date().toISOString().split('T')[0]}.json`);
+      }
       
       toast({
-        title: "Export Started",
-        description: "Your data export is being processed. You'll receive a notification when it's ready to download.",
+        title: "Export Complete",
+        description: `Exported ${Object.keys(allData).length} tables successfully.`,
       });
     } catch (error) {
+      console.error('Export error:', error);
       toast({
         title: "Export Failed",
         description: "There was an error processing your export request.",

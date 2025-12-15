@@ -8,6 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, X, Download, Eye, Save, BarChart3, TrendingUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
+import { useShopId } from '@/hooks/useShopId';
+import { useToast } from '@/hooks/use-toast';
+import { saveAs } from 'file-saver';
 
 interface ReportField {
   id: string;
@@ -35,6 +39,9 @@ export function CustomReportBuilder() {
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [filters, setFilters] = useState<ReportFilter[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [reportData, setReportData] = useState<any[]>([]);
+  const { shopId } = useShopId();
+  const { toast } = useToast();
 
   const addField = (fieldId: string) => {
     if (!selectedFields.includes(fieldId)) {
@@ -47,9 +54,62 @@ export function CustomReportBuilder() {
   };
 
   const generateReport = async () => {
+    if (!shopId || selectedFields.length === 0) {
+      toast({ title: "Error", description: "Please select at least one field", variant: "destructive" });
+      return;
+    }
+    
     setIsGenerating(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsGenerating(false);
+    try {
+      // Query work orders with customer info
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select(`
+          id, work_order_number, total_cost, created_at, status,
+          customers(first_name, last_name),
+          profiles:technician_id(first_name, last_name)
+        `)
+        .eq('shop_id', shopId)
+        .limit(500);
+      
+      if (error) throw error;
+      
+      // Transform data based on selected fields
+      const transformedData = (data || []).map(wo => ({
+        customer_name: wo.customers ? `${(wo.customers as any).first_name} ${(wo.customers as any).last_name}` : 'N/A',
+        work_order_number: wo.work_order_number || wo.id,
+        total_cost: wo.total_cost || 0,
+        created_date: wo.created_at ? new Date(wo.created_at).toLocaleDateString() : 'N/A',
+        technician_name: wo.profiles ? `${(wo.profiles as any).first_name} ${(wo.profiles as any).last_name}` : 'Unassigned',
+        status: wo.status
+      }));
+      
+      setReportData(transformedData);
+      toast({ title: "Report Generated", description: `Found ${transformedData.length} records` });
+    } catch (error) {
+      console.error('Report generation error:', error);
+      toast({ title: "Error", description: "Failed to generate report", variant: "destructive" });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const exportReport = () => {
+    if (reportData.length === 0) return;
+    
+    const headers = selectedFields.map(f => availableFields.find(af => af.id === f)?.name || f);
+    const csvRows = [headers.join(',')];
+    reportData.forEach(row => {
+      csvRows.push(selectedFields.map(f => {
+        const val = row[f];
+        if (val === null || val === undefined) return '';
+        const str = String(val);
+        return str.includes(',') ? `"${str}"` : str;
+      }).join(','));
+    });
+    
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `${reportName || 'custom-report'}-${new Date().toISOString().split('T')[0]}.csv`);
   };
 
   return (
