@@ -116,7 +116,7 @@ class BusinessConstantsService {
   }
 
   /**
-   * Admin function to manage business constants (placeholder for future unified table)
+   * Admin function to manage business constants using existing tables
    */
   async upsertConstant(
     category: string,
@@ -129,8 +129,24 @@ class BusinessConstantsService {
       isActive?: boolean;
     }
   ): Promise<void> {
-    // This will be implemented when we have the unified table
-    console.warn('upsertConstant not yet implemented - waiting for unified table migration');
+    try {
+      if (category === 'business_types') {
+        const { error } = await supabase
+          .from('business_types')
+          .upsert({ value: key, label }, { onConflict: 'value' });
+        if (error) throw error;
+      } else if (category === 'industries') {
+        const { error } = await supabase
+          .from('business_industries')
+          .upsert({ value: key, label }, { onConflict: 'value' });
+        if (error) throw error;
+      } else {
+        console.warn(`Category "${category}" not supported for upsert`);
+      }
+    } catch (error) {
+      console.error('Error upserting constant:', error);
+      throw new Error('Failed to upsert constant');
+    }
   }
 }
 

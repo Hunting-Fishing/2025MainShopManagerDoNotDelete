@@ -5,6 +5,8 @@ import { ServiceMainCategory } from '@/types/service';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileSpreadsheet, Download, Eye, EyeOff } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 interface ServiceHierarchyExcelViewProps {
   categories: ServiceMainCategory[];
@@ -22,7 +24,29 @@ export function ServiceHierarchyExcelView({ categories, onDownload }: ServiceHie
     if (onDownload) {
       onDownload();
     } else {
-      console.log('Download functionality not implemented');
+      // Generate Excel from categories data
+      const rows: any[] = [];
+      categories.forEach(category => {
+        category.subcategories.forEach(subcategory => {
+          subcategory.jobs.forEach(job => {
+            rows.push({
+              Category: category.name,
+              Subcategory: subcategory.name,
+              'Service Name': job.name,
+              Description: job.description || '',
+              Price: job.price ? `$${job.price}` : 'N/A',
+              'Est. Time (min)': job.estimatedTime || 'N/A'
+            });
+          });
+        });
+      });
+      
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Services');
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, `service-hierarchy-${new Date().toISOString().split('T')[0]}.xlsx`);
     }
   };
 

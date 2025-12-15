@@ -1,6 +1,8 @@
 
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface InventoryReportItem {
   Name: string;
@@ -90,9 +92,44 @@ export const exportToCSV = (data: InventoryReportItem[], filename: string): void
   }
 };
 
-// PDF Export function (placeholder - would typically use a library like jsPDF)
+// PDF Export function using jsPDF
 export const exportToPDF = (data: InventoryReportItem[], filename: string): void => {
-  // Placeholder for PDF generation functionality
-  console.log('PDF export requested for:', data, filename);
-  alert('PDF export functionality is not yet implemented.');
+  try {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text('Inventory Report', 14, 22);
+    
+    // Add date
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 30);
+    
+    // Prepare table data
+    const headers = ['Name', 'SKU', 'Category', 'Price', 'Qty', 'Status'];
+    const tableData = data.map(item => [
+      item.Name || '',
+      item.SKU || '',
+      item.Category || '',
+      typeof item.Price === 'number' ? `$${item.Price.toFixed(2)}` : item.Price || '',
+      item.Quantity?.toString() || '',
+      item.Status || ''
+    ]);
+    
+    // Add table using autoTable
+    (doc as any).autoTable({
+      head: [headers],
+      body: tableData,
+      startY: 40,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [66, 139, 202] },
+      alternateRowStyles: { fillColor: [245, 245, 245] }
+    });
+    
+    // Save the PDF
+    doc.save(`${filename}.pdf`);
+  } catch (error) {
+    console.error('Error exporting to PDF:', error);
+    throw error;
+  }
 };
