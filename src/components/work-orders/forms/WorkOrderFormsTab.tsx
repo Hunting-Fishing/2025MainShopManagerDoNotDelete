@@ -2,13 +2,16 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, FileText, RefreshCw } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Plus, FileText, RefreshCw, Eye, Calendar, User } from 'lucide-react';
 import { FormSelector } from '@/components/forms/FormSelector';
 import { FormDialog } from '@/components/forms/FormDialog';
 import { WorkOrderFormsList } from './WorkOrderFormsList';
 import { useFormSubmissions } from '@/hooks/useFormsByCategory';
 import { FormBuilderTemplate } from '@/types/formBuilder';
 import { WorkOrder } from '@/types/workOrder';
+import { format } from 'date-fns';
 
 interface WorkOrderFormsTabProps {
   workOrder: WorkOrder;
@@ -18,6 +21,7 @@ export function WorkOrderFormsTab({ workOrder }: WorkOrderFormsTabProps) {
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<FormBuilderTemplate | null>(null);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [viewSubmission, setViewSubmission] = useState<any>(null);
 
   const { submissions, loading, refetch } = useFormSubmissions(
     workOrder.id,
@@ -35,8 +39,7 @@ export function WorkOrderFormsTab({ workOrder }: WorkOrderFormsTabProps) {
   };
 
   const handleViewSubmission = (submission: any) => {
-    // TODO: Implement view submission modal
-    console.log('View submission:', submission);
+    setViewSubmission(submission);
   };
 
   return (
@@ -153,6 +156,60 @@ export function WorkOrderFormsTab({ workOrder }: WorkOrderFormsTabProps) {
         vehicleId={workOrder.vehicle_id}
         onSubmitSuccess={handleFormSubmitSuccess}
       />
+
+      {/* View Submission Dialog */}
+      <Dialog open={!!viewSubmission} onOpenChange={(open) => !open && setViewSubmission(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Form Submission Details
+            </DialogTitle>
+          </DialogHeader>
+          {viewSubmission && (
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-4 pr-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Submitted:</span>
+                    <span>{format(new Date(viewSubmission.submitted_at || viewSubmission.created_at), 'PPp')}</span>
+                  </div>
+                  {viewSubmission.submitted_by_name && (
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">By:</span>
+                      <span>{viewSubmission.submitted_by_name}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3">Form Responses</h4>
+                  <div className="space-y-3">
+                    {viewSubmission.form_data && typeof viewSubmission.form_data === 'object' ? (
+                      Object.entries(viewSubmission.form_data).map(([key, value]: [string, any]) => (
+                        <div key={key} className="bg-muted/50 rounded-lg p-3">
+                          <p className="text-sm font-medium text-muted-foreground capitalize">
+                            {key.replace(/_/g, ' ')}
+                          </p>
+                          <p className="mt-1">
+                            {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : 
+                             typeof value === 'object' ? JSON.stringify(value, null, 2) : 
+                             String(value) || '—'}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground">No form data available</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

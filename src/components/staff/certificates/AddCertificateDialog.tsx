@@ -1,29 +1,51 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useStaffCertificates } from '@/hooks/useStaffCertificates';
+import { useStaffCertificates, StaffCertificate } from '@/hooks/useStaffCertificates';
 
 interface AddCertificateDialogProps {
   staffId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editCertificate?: StaffCertificate | null;
 }
 
-export function AddCertificateDialog({ staffId, open, onOpenChange }: AddCertificateDialogProps) {
-  const { certificateTypes, addCertificate, isAdding } = useStaffCertificates();
-  const [formData, setFormData] = useState({
-    certificate_type_id: '',
-    certificate_number: '',
-    issue_date: '',
-    expiry_date: '',
-    training_date: '',
-    issuing_authority: '',
-    notes: '',
-  });
+const defaultFormData = {
+  certificate_type_id: '',
+  certificate_number: '',
+  issue_date: '',
+  expiry_date: '',
+  training_date: '',
+  issuing_authority: '',
+  notes: '',
+};
+
+export function AddCertificateDialog({ staffId, open, onOpenChange, editCertificate }: AddCertificateDialogProps) {
+  const { certificateTypes, addCertificate, updateCertificate, isAdding, isUpdating } = useStaffCertificates();
+  const [formData, setFormData] = useState(defaultFormData);
+
+  const isEditMode = !!editCertificate;
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editCertificate && open) {
+      setFormData({
+        certificate_type_id: editCertificate.certificate_type_id || '',
+        certificate_number: editCertificate.certificate_number || '',
+        issue_date: editCertificate.issue_date || '',
+        expiry_date: editCertificate.expiry_date || '',
+        training_date: editCertificate.training_date || '',
+        issuing_authority: editCertificate.issuing_authority || '',
+        notes: editCertificate.notes || '',
+      });
+    } else if (!open) {
+      setFormData(defaultFormData);
+    }
+  }, [editCertificate, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,29 +54,33 @@ export function AddCertificateDialog({ staffId, open, onOpenChange }: AddCertifi
       return;
     }
 
-    addCertificate({
-      staff_id: staffId,
-      certificate_type_id: formData.certificate_type_id,
-      certificate_number: formData.certificate_number || null,
-      issue_date: formData.issue_date,
-      expiry_date: formData.expiry_date || null,
-      training_date: formData.training_date || null,
-      issuing_authority: formData.issuing_authority || null,
-      status: 'active',
-      notes: formData.notes || null,
-      document_url: null,
-    });
+    if (isEditMode && editCertificate) {
+      updateCertificate({
+        id: editCertificate.id,
+        certificate_type_id: formData.certificate_type_id,
+        certificate_number: formData.certificate_number || null,
+        issue_date: formData.issue_date,
+        expiry_date: formData.expiry_date || null,
+        training_date: formData.training_date || null,
+        issuing_authority: formData.issuing_authority || null,
+        notes: formData.notes || null,
+      });
+    } else {
+      addCertificate({
+        staff_id: staffId,
+        certificate_type_id: formData.certificate_type_id,
+        certificate_number: formData.certificate_number || null,
+        issue_date: formData.issue_date,
+        expiry_date: formData.expiry_date || null,
+        training_date: formData.training_date || null,
+        issuing_authority: formData.issuing_authority || null,
+        status: 'active',
+        notes: formData.notes || null,
+        document_url: null,
+      });
+    }
 
-    // Reset form and close
-    setFormData({
-      certificate_type_id: '',
-      certificate_number: '',
-      issue_date: '',
-      expiry_date: '',
-      training_date: '',
-      issuing_authority: '',
-      notes: '',
-    });
+    setFormData(defaultFormData);
     onOpenChange(false);
   };
 
@@ -62,9 +88,11 @@ export function AddCertificateDialog({ staffId, open, onOpenChange }: AddCertifi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Certificate</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Certificate' : 'Add Certificate'}</DialogTitle>
           <DialogDescription>
-            Add a new certificate or training record for this staff member
+            {isEditMode 
+              ? 'Update the certificate details below'
+              : 'Add a new certificate or training record for this staff member'}
           </DialogDescription>
         </DialogHeader>
 
@@ -158,8 +186,10 @@ export function AddCertificateDialog({ staffId, open, onOpenChange }: AddCertifi
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isAdding}>
-              {isAdding ? 'Adding...' : 'Add Certificate'}
+            <Button type="submit" disabled={isAdding || isUpdating}>
+              {isAdding || isUpdating 
+                ? (isEditMode ? 'Updating...' : 'Adding...') 
+                : (isEditMode ? 'Update Certificate' : 'Add Certificate')}
             </Button>
           </div>
         </form>

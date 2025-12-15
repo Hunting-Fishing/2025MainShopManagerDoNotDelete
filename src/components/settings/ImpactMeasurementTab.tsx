@@ -18,6 +18,11 @@ import { ImpactMeasurementEntryDialog } from '@/components/forms/ImpactMeasureme
 import { ImpactMeasurementList } from '@/components/forms/ImpactMeasurementList';
 import { Program, ImpactMeasurementData, CreateImpactMeasurementData } from '@/types/nonprofit';
 
+interface EditMeasurementState {
+  open: boolean;
+  measurement: ImpactMeasurementData | null;
+}
+
 export const ImpactMeasurementTab = () => {
   const { toast } = useToast();
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -34,6 +39,7 @@ export const ImpactMeasurementTab = () => {
     environmentalMetrics: []
   });
   const [loading, setLoading] = useState(true);
+  const [editState, setEditState] = useState<EditMeasurementState>({ open: false, measurement: null });
 
   useEffect(() => {
     loadData();
@@ -78,11 +84,32 @@ export const ImpactMeasurementTab = () => {
   const metalRecycled = realAnalytics.metalRecycled || 0;
 
   const handleEditMeasurement = (measurement: any) => {
-    // TODO: Implement edit functionality
-    toast({
-      title: "Edit Measurement",
-      description: "Edit functionality will be implemented in the next phase",
-    });
+    // Find the original measurement data
+    const originalMeasurement = impactMeasurements.find(m => m.id === measurement.id);
+    if (originalMeasurement) {
+      setEditState({ open: true, measurement: originalMeasurement });
+    }
+  };
+
+  const handleUpdateMeasurement = async (updatedData: Partial<ImpactMeasurementData>) => {
+    if (!editState.measurement) return;
+    
+    try {
+      await nonprofitApi.updateImpactMeasurement(editState.measurement.id, updatedData);
+      await loadData();
+      setEditState({ open: false, measurement: null });
+      toast({
+        title: "Success",
+        description: "Impact measurement updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating measurement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update measurement",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteMeasurement = async (id: string) => {
