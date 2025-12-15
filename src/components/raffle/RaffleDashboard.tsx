@@ -45,6 +45,24 @@ export function RaffleDashboard({ onCreateRaffle, onEditRaffle, onViewTickets }:
     }
   };
 
+  const launchRaffle = async (raffle: Raffle) => {
+    try {
+      await RaffleService.updateRaffle(raffle.id, { status: 'active' });
+      toast({
+        title: 'Raffle Launched',
+        description: `"${raffle.title}" is now active and accepting ticket sales.`,
+      });
+      loadData(); // Refresh data
+    } catch (error) {
+      console.error('Error launching raffle:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to launch raffle. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -217,13 +235,7 @@ export function RaffleDashboard({ onCreateRaffle, onEditRaffle, onViewTickets }:
                       Edit Raffle
                     </Button>
                     {raffle.status === 'draft' && (
-                      <Button size="sm" onClick={() => {
-                        // TODO: Launch raffle functionality
-                        toast({
-                          title: 'Launch Raffle',
-                          description: 'Launch raffle functionality coming soon',
-                        });
-                      }}>
+                      <Button size="sm" onClick={() => launchRaffle(raffle)}>
                         Launch
                       </Button>
                     )}

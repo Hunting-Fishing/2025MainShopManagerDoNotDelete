@@ -21,53 +21,6 @@ interface HelpSearchEngineProps {
   onResultClick?: (result: SearchResult) => void;
 }
 
-const mockSearchResults: SearchResult[] = [
-  {
-    id: '1',
-    title: 'How to create a new work order',
-    description: 'Step-by-step guide to creating and managing work orders in the system.',
-    category: 'tutorial',
-    tags: ['work-orders', 'getting-started', 'basic'],
-    url: '/help/tutorials/work-orders',
-    relevance: 95
-  },
-  {
-    id: '2',
-    title: 'Customer management best practices',
-    description: 'Learn how to effectively manage customer relationships and data.',
-    category: 'guide',
-    tags: ['customers', 'crm', 'best-practices'],
-    url: '/help/guides/customer-management',
-    relevance: 87
-  },
-  {
-    id: '3',
-    title: 'Setting up inventory tracking',
-    description: 'Configure inventory management and tracking systems.',
-    category: 'tutorial',
-    tags: ['inventory', 'setup', 'configuration'],
-    url: '/help/tutorials/inventory-setup',
-    relevance: 82
-  },
-  {
-    id: '4',
-    title: 'Common login issues',
-    description: 'Troubleshoot authentication and login problems.',
-    category: 'faq',
-    tags: ['login', 'authentication', 'troubleshooting'],
-    url: '/help/faq/login-issues',
-    relevance: 78
-  },
-  {
-    id: '5',
-    title: 'Video: Dashboard overview',
-    description: 'Visual walkthrough of the main dashboard features.',
-    category: 'video',
-    tags: ['dashboard', 'overview', 'video'],
-    url: '/help/videos/dashboard-overview',
-    relevance: 75
-  }
-];
 
 const getCategoryIcon = (category: string) => {
   switch (category) {

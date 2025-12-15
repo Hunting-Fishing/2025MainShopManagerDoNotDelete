@@ -61,7 +61,7 @@ import { toast } from '@/hooks/use-toast';
 import { IntegratedServiceSelector } from '@/components/work-orders/fields/services/IntegratedServiceSelector';
 import { ComprehensiveQuotePartsSelector } from './ComprehensiveQuotePartsSelector';
 import { useQuoteTaxCalculations } from '@/hooks/useQuoteTaxCalculations';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useShopId } from '@/hooks/useShopId';
 
 interface EnhancedCreateQuoteDialogProps {
   children: React.ReactNode;
@@ -91,7 +91,7 @@ export function EnhancedCreateQuoteDialog({
   const { customers, loading: customersLoading } = useCustomers();
   const { vehicles, loading: vehiclesLoading } = useVehicles(selectedCustomerId);
   const { sectors, isRefreshing: servicesLoading } = useServiceData();
-  const { userProfile } = useUserProfile();
+  const { shopId } = useShopId();
   
   // Get customer data for tax calculations
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
@@ -132,7 +132,7 @@ export function EnhancedCreateQuoteDialog({
   const taxCalculations = useQuoteTaxCalculations({
     items: quoteItems,
     customer: selectedCustomer,
-    shopId: undefined // TODO: Get shop_id from userProfile when available
+    shopId: shopId || undefined
   });
 
   // Calculate totals using centralized tax system
