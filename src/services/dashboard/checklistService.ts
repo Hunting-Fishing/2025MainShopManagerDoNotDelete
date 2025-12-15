@@ -4,23 +4,40 @@ import { ChecklistStat } from "@/types/dashboard";
 
 export const getChecklistStats = async (): Promise<ChecklistStat[]> => {
   try {
-    // For now, return mock data since we don't have checklist functionality implemented
-    // In a real implementation, this would query work order checklists
-    const { data: workOrders } = await supabase
-      .from('work_orders')
-      .select('id')
+    // Query real checklist data from work_order_checklists
+    const { data: checklists, error } = await supabase
+      .from('work_order_checklists')
+      .select(`
+        id,
+        work_order_id,
+        completion_percentage,
+        checklist_items:checklist_items(id, is_required, is_completed)
+      `)
       .limit(10);
 
-    if (!workOrders) return [];
+    if (error) {
+      console.error("Error fetching checklists:", error);
+      return [];
+    }
 
-    // Generate mock checklist data
-    return workOrders.map(order => ({
-      work_order_id: order.id,
-      checklist_id: `checklist-${order.id}`,
-      requiredItems: Math.floor(Math.random() * 10) + 5,
-      completedRequiredItems: Math.floor(Math.random() * 8) + 2,
-      completionRate: Math.floor(Math.random() * 40) + 60 // 60-100%
-    }));
+    if (!checklists) return [];
+
+    // Calculate stats from real data
+    return checklists.map(checklist => {
+      const items = checklist.checklist_items || [];
+      const requiredItems = items.filter((i: any) => i.is_required).length;
+      const completedRequiredItems = items.filter((i: any) => i.is_required && i.is_completed).length;
+      const completionRate = checklist.completion_percentage || 
+        (requiredItems > 0 ? Math.round((completedRequiredItems / requiredItems) * 100) : 0);
+
+      return {
+        work_order_id: checklist.work_order_id,
+        checklist_id: checklist.id,
+        requiredItems,
+        completedRequiredItems,
+        completionRate
+      };
+    });
   } catch (error) {
     console.error("Error fetching checklist stats:", error);
     return [];

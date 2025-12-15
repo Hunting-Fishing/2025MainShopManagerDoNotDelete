@@ -51,8 +51,11 @@ export function MobileSettingsPanel({
   };
 
   const getStorageUsage = () => {
-    // Simulate storage usage calculation
-    return Math.floor(Math.random() * 500) + 100; // MB
+    // Estimate based on settings - actual storage depends on cached data
+    const baseUsage = 50; // Base app data in MB
+    const cacheMultiplier = settings.offlineSync ? 3 : 1;
+    const qualityMultiplier = settings.cameraQuality === 'high' ? 2 : settings.cameraQuality === 'medium' ? 1.5 : 1;
+    return Math.round(baseUsage * cacheMultiplier * qualityMultiplier);
   };
 
   const getCameraQualityDescription = (quality: string) => {
