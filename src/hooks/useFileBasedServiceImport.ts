@@ -21,15 +21,20 @@ export const useFileBasedServiceImport = () => {
         throw new Error('Database connection failed. Please check your connection and try again.');
       }
       
-      // For now, we'll implement a basic import process
-      // This will be expanded when the actual service processing is implemented
-      
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Process each file
+      for (const file of files) {
+        const fileName = file instanceof File ? file.name : (file as StorageFile).name;
+        console.log(`Processing file: ${fileName}`);
+        
+        // Process the file using the excel processor if it's from storage
+        if (!(file instanceof File) && (file as StorageFile).path) {
+          await processExcelFileFromStorage((file as StorageFile).path || fileName, 'default');
+        }
+      }
       
       toast({
         title: "Import Successful",
-        description: `Successfully imported ${files.length} file(s) to live database.`,
+        description: `Successfully processed ${files.length} file(s).`,
         variant: "default",
       });
       
