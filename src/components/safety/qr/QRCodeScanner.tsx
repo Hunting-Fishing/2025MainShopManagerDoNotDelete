@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Camera, X, QrCode, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import jsQR from 'jsqr';
 
 interface QRCodeScannerProps {
   onScan?: (data: QRScanResult) => void;
@@ -56,7 +57,7 @@ export function QRCodeScanner({ onScan }: QRCodeScannerProps) {
     setScanning(false);
   };
 
-  const scanFrame = () => {
+  const scanFrame = useCallback(() => {
     if (!scanning || !videoRef.current || !canvasRef.current) return;
     
     const video = videoRef.current;
@@ -72,12 +73,34 @@ export function QRCodeScanner({ onScan }: QRCodeScannerProps) {
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
 
-    // In a real implementation, you would use a QR code detection library
-    // like jsQR or ZXing. For now, we'll simulate detection.
-    // This is a placeholder - replace with actual QR detection.
+    // Use jsQR library for real QR code detection
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'dontInvert',
+    });
+
+    if (code) {
+      try {
+        // Parse QR code data (expected format: JSON with type, id, inspection, app)
+        const result = JSON.parse(code.data) as QRScanResult;
+        handleScanResult(result);
+        return; // Stop scanning after successful read
+      } catch (e) {
+        // If not valid JSON, try URL format
+        const url = new URL(code.data);
+        const type = url.searchParams.get('type') as 'equipment' | 'vehicle';
+        const id = url.searchParams.get('id');
+        const inspection = url.searchParams.get('inspection');
+        
+        if (type && id && inspection) {
+          handleScanResult({ type, id, inspection, app: 'shop-safety' });
+          return;
+        }
+      }
+    }
     
     requestAnimationFrame(scanFrame);
-  };
+  }, [scanning]);
 
   // Simulate QR scan for demo purposes
   const simulateScan = () => {

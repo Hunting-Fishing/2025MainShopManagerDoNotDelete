@@ -6,18 +6,25 @@ import { defaultPermissions, permissionPresets } from "@/data/permissionPresets"
 import { PermissionModuleCard } from "./permissions/PermissionModuleCard";
 import { PermissionPresetButtons } from "./permissions/PermissionPresetButtons";
 import { ResponsiveGrid } from "@/components/ui/responsive-grid";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+import type { Json } from "@/integrations/supabase/types";
 
 interface TeamPermissionsProps {
+  memberId?: string;
   memberRole: string;
   initialPermissions?: PermissionSet;
   onChange?: (permissions: PermissionSet) => void;
 }
 
 export function TeamPermissions({ 
+  memberId,
   memberRole, 
   initialPermissions, 
   onChange 
 }: TeamPermissionsProps) {
+  const [saving, setSaving] = useState(false);
+  
   // Get the appropriate permissions for the role, with fallbacks
   const getInitialPermissions = (): PermissionSet => {
     // If initialPermissions are provided, use those
@@ -72,18 +79,68 @@ export function TeamPermissions({
     }
   };
 
-  // Save permissions (in a real app, this would save to backend)
-  const savePermissions = () => {
-    console.log("Saving permissions:", permissions);
+  // Save permissions to database
+  const savePermissions = async () => {
+    if (!memberId) {
+      toast({
+        title: "Cannot save permissions",
+        description: "No member ID provided",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    // Simulate API call delay
-    setTimeout(() => {
+    setSaving(true);
+    
+    try {
+      // Get current user and shop_id
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user?.id)
+        .single();
+      
+      if (!profile?.shop_id) {
+        throw new Error('Shop ID not found');
+      }
+      
+      // Delete existing permissions for this user
+      await supabase
+        .from('user_permissions')
+        .delete()
+        .eq('user_id', memberId);
+      
+      // Insert permissions per module
+      const permissionEntries = Object.entries(permissions).map(([module, actions]) => ({
+        user_id: memberId,
+        shop_id: profile.shop_id,
+        module,
+        actions: actions as Json,
+        created_by: user?.id,
+      }));
+      
+      const { error } = await supabase
+        .from('user_permissions')
+        .insert(permissionEntries);
+      
+      if (error) throw error;
+      
       toast({
         title: "Permissions saved successfully",
-        description: "User permissions have been updated successfully",
+        description: "User permissions have been updated",
         variant: "success",
       });
-    }, 500);
+    } catch (error: any) {
+      console.error('Failed to save permissions:', error);
+      toast({
+        title: "Failed to save permissions",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -122,8 +179,10 @@ export function TeamPermissions({
       <div className="flex justify-end">
         <Button 
           onClick={savePermissions}
+          disabled={saving || !memberId}
           className="bg-esm-blue-600 hover:bg-esm-blue-700"
         >
+          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           Save Permissions
         </Button>
       </div>

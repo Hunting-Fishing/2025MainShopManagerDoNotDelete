@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OfflineData {
   id: string;
@@ -124,22 +125,52 @@ export function useOfflineStorage() {
   };
 
   const syncSingleItem = async (item: OfflineData) => {
-    // This would implement the actual sync logic with your backend
-    // For now, we'll simulate the sync process
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     switch (item.type) {
       case 'work_order':
-        console.log('Syncing work order:', item.data);
-        // Implement work order sync
+        if (item.data.id) {
+          // Update existing work order
+          const { error } = await supabase
+            .from('work_orders')
+            .update(item.data)
+            .eq('id', item.data.id);
+          if (error) throw error;
+        } else {
+          // Create new work order
+          const { error } = await supabase
+            .from('work_orders')
+            .insert(item.data);
+          if (error) throw error;
+        }
         break;
+        
       case 'inventory':
-        console.log('Syncing inventory:', item.data);
-        // Implement inventory sync
+        if (item.data.id) {
+          const { error } = await supabase
+            .from('inventory_items')
+            .update(item.data)
+            .eq('id', item.data.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('inventory_items')
+            .insert(item.data);
+          if (error) throw error;
+        }
         break;
+        
       case 'customer':
-        console.log('Syncing customer:', item.data);
-        // Implement customer sync
+        if (item.data.id) {
+          const { error } = await supabase
+            .from('customers')
+            .update(item.data)
+            .eq('id', item.data.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('customers')
+            .insert(item.data);
+          if (error) throw error;
+        }
         break;
     }
   };
