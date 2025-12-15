@@ -1,12 +1,14 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useShopId } from "@/hooks/useShopId";
+import type { Json } from "@/integrations/supabase/types";
 
 const COST_RANGES = [
   { min: 0, max: 5, label: "$0 - $5" },
@@ -29,17 +31,41 @@ const SUPPLIERS = [
   { id: "local", name: "Local Vendors" },
 ];
 
+const DEFAULT_MARKUPS = COST_RANGES.map((range) => ({
+  ...range,
+  markup: range.min < 50 ? "35" : range.min < 200 ? "30" : range.min < 500 ? "25" : "20",
+}));
+
 export function InventoryMarkupTab() {
   const [selectedSupplier, setSelectedSupplier] = useState("all");
-  const [markupRates, setMarkupRates] = useState(
-    COST_RANGES.map((range) => ({
-      ...range,
-      markup: range.min < 50 ? "35" : range.min < 200 ? "30" : range.min < 500 ? "25" : "20",
-    }))
-  );
+  const [markupRates, setMarkupRates] = useState(DEFAULT_MARKUPS);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const { toast } = useToast();
+  const { shopId } = useShopId();
+
+  // Load saved markup rates on mount
+  useEffect(() => {
+    const loadMarkupRates = async () => {
+      if (!shopId) return;
+      
+      const { data } = await supabase
+        .from('company_settings')
+        .select('settings_value')
+        .eq('shop_id', shopId)
+        .eq('settings_key', 'inventory_markup')
+        .single();
+      
+      if (data?.settings_value) {
+        const savedSettings = data.settings_value as { markupRates?: typeof DEFAULT_MARKUPS };
+        if (savedSettings.markupRates) {
+          setMarkupRates(savedSettings.markupRates);
+        }
+      }
+    };
+    
+    loadMarkupRates();
+  }, [shopId]);
 
   const handleMarkupChange = (index: number, value: string) => {
     const newRates = [...markupRates];
@@ -50,17 +76,38 @@ export function InventoryMarkupTab() {
 
   const handleSupplierChange = (value: string) => {
     setSelectedSupplier(value);
-    // In a real app, we would load the markup rates for the selected supplier
-    // For now, we'll just simulate it
     setHasChanges(false);
   };
 
   const handleSave = async () => {
+    if (!shopId) return;
     setSaving(true);
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Check if setting exists
+      const { data: existing } = await supabase
+        .from('company_settings')
+        .select('id')
+        .eq('shop_id', shopId)
+        .eq('settings_key', 'inventory_markup')
+        .single();
+      
+      if (existing) {
+        const { error } = await supabase
+          .from('company_settings')
+          .update({ settings_value: { markupRates, selectedSupplier } as unknown as Json })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('company_settings')
+          .insert({
+            shop_id: shopId,
+            settings_key: 'inventory_markup',
+            settings_value: { markupRates, selectedSupplier } as unknown as Json
+          });
+        if (error) throw error;
+      }
       
       toast({
         title: "Success",
@@ -70,6 +117,7 @@ export function InventoryMarkupTab() {
       
       setHasChanges(false);
     } catch (error) {
+      console.error('Error saving markup rates:', error);
       toast({
         title: "Error",
         description: "Failed to update markup rates. Please try again.",

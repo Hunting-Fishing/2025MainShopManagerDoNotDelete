@@ -59,24 +59,38 @@ export function useStaffManagement() {
         return;
       }
 
-      // Fetch profiles filtered by shop_id
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          job_title,
-          department,
-          created_at,
-          updated_at,
-          shop_id
-        `)
-        .eq('shop_id', shopId);
+      // Fetch profiles and time-off requests in parallel
+      const today = new Date().toISOString().split('T')[0];
+      
+      const [profilesResult, leaveResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            job_title,
+            department,
+            created_at,
+            updated_at,
+            shop_id
+          `)
+          .eq('shop_id', shopId),
+        supabase
+          .from('time_off_requests')
+          .select('employee_id')
+          .eq('shop_id', shopId)
+          .eq('status', 'approved')
+          .lte('start_date', today)
+          .gte('end_date', today)
+      ]);
 
-      if (profilesError) throw profilesError;
+      if (profilesResult.error) throw profilesResult.error;
+      
+      const profilesData = profilesResult.data;
+      const onLeaveIds = new Set(leaveResult.data?.map(r => r.employee_id) || []);
 
       // Fetch user roles for each profile
       const profileIds = profilesData?.map(p => p.id) || [];
@@ -105,11 +119,11 @@ export function useStaffManagement() {
 
         setStaff(staffWithRoles);
 
-        // Calculate stats (treating all profiles as active)
+        // Calculate stats with real leave data
         const totalStaff = staffWithRoles.length;
-        const activeToday = staffWithRoles.length; // All are considered active
-        const onLeave = 0; // TODO: Implement leave tracking
-        const pendingReviews = 0; // TODO: Implement review tracking
+        const onLeave = onLeaveIds.size;
+        const activeToday = totalStaff - onLeave;
+        const pendingReviews = 0; // No review tracking table yet
 
         setStats({
           totalStaff,
