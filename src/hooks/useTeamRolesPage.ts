@@ -161,11 +161,42 @@ export function useTeamRolesPage() {
     return await reorderRole(roleId, direction);
   };
 
-  const handleImportRoles = (importedRoles: any[]) => {
-    toast({
-      title: "Info", 
-      description: "Role importing is not yet implemented",
-    });
+  const handleImportRoles = async (importedRoles: any[]) => {
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const role of importedRoles) {
+        try {
+          // Skip if role already exists by name
+          const existingRole = dbRoles.find(r => r.name.toLowerCase() === role.name?.toLowerCase());
+          if (existingRole) {
+            errorCount++;
+            continue;
+          }
+          
+          await createRole(
+            role.name || 'Imported Role',
+            role.description || '',
+            role.permissions || {}
+          );
+          successCount++;
+        } catch {
+          errorCount++;
+        }
+      }
+      
+      toast({
+        title: "Import Complete",
+        description: `Successfully imported ${successCount} role(s). ${errorCount > 0 ? `${errorCount} skipped (duplicates or errors).` : ''}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Import Failed",
+        description: "Failed to import roles. Please check the file format.",
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
