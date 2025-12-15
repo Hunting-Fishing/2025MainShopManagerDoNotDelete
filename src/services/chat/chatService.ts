@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ChatRoom, ChatMessage, ChatParticipant } from '@/types/chat';
 
-export async function getChatRooms(): Promise<ChatRoom[]> {
+export async function getChatRooms(currentUserId?: string): Promise<ChatRoom[]> {
   const { data, error } = await supabase
     .from('chat_rooms')
     .select(`
@@ -11,7 +11,8 @@ export async function getChatRooms(): Promise<ChatRoom[]> {
         content,
         created_at,
         sender_name,
-        message_type
+        message_type,
+        is_read
       )
     `)
     .order('updated_at', { ascending: false });
@@ -21,29 +22,48 @@ export async function getChatRooms(): Promise<ChatRoom[]> {
     throw error;
   }
 
-  return (data || []).map(room => ({
-    ...room,
-    type: room.type as 'direct' | 'group' | 'work_order',
-    metadata: room.metadata as any,
-    last_message: room.chat_messages?.[0] ? {
-      ...room.chat_messages[0],
-      room_id: room.id,
-      sender_id: 'unknown',
-      is_read: false,
-      message_type: room.chat_messages[0].message_type as any,
-      is_edited: false,
-      is_flagged: false,
-      thread_count: 0,
-      edited_at: null,
-      file_url: null,
-      flag_reason: null,
-      metadata: null,
-      original_content: null,
-      reply_to_id: null,
-      thread_parent_id: null
-    } : undefined,
-    unread_count: 0 // TODO: Calculate actual unread count
+  // Calculate unread counts per room
+  const roomsWithUnread = await Promise.all((data || []).map(async (room) => {
+    let unreadCount = 0;
+    
+    if (currentUserId && room.chat_messages) {
+      // Count messages not sent by current user that are unread
+      const { count } = await supabase
+        .from('chat_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('room_id', room.id)
+        .neq('sender_id', currentUserId)
+        .eq('is_read', false);
+      
+      unreadCount = count || 0;
+    }
+
+    return {
+      ...room,
+      type: room.type as 'direct' | 'group' | 'work_order',
+      metadata: room.metadata as any,
+      last_message: room.chat_messages?.[0] ? {
+        ...room.chat_messages[0],
+        room_id: room.id,
+        sender_id: 'unknown',
+        is_read: false,
+        message_type: room.chat_messages[0].message_type as any,
+        is_edited: false,
+        is_flagged: false,
+        thread_count: 0,
+        edited_at: null,
+        file_url: null,
+        flag_reason: null,
+        metadata: null,
+        original_content: null,
+        reply_to_id: null,
+        thread_parent_id: null
+      } : undefined,
+      unread_count: unreadCount
+    };
   }));
+
+  return roomsWithUnread;
 }
 
 export async function getChatMessages(roomId: string): Promise<ChatMessage[]> {
