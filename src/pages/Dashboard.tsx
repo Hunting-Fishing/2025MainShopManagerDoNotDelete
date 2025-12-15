@@ -10,6 +10,7 @@ import { DashboardTour } from '@/components/onboarding/DashboardTour';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { LowStockAlerts } from '@/components/inventory/LowStockAlerts';
 import { ServiceDueDashboard } from '@/components/inventory/ServiceDueDashboard';
+import { UpcomingMilestones } from '@/components/projects/UpcomingMilestones';
 import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
@@ -80,6 +81,11 @@ export default function Dashboard() {
           <h2 id="service-due-heading" className="sr-only">Upcoming service schedule</h2>
           <ServiceDueDashboard />
         </article>
+      </section>
+
+      <section aria-labelledby="milestones-heading">
+        <h2 id="milestones-heading" className="sr-only">Upcoming project milestones</h2>
+        <UpcomingMilestones limit={5} />
       </section>
     </main>
   );
