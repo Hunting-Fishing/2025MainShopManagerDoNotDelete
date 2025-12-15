@@ -2,7 +2,7 @@
 import { WorkOrderRepository } from './WorkOrderRepository';
 import { WorkOrder, WorkOrderFormValues } from '@/types/workOrder';
 import { supabase } from '@/lib/supabase';
-
+import { triggerWorkflowOnWorkOrderCreate, triggerWorkflowOnWorkOrderStatusUpdate, triggerWorkflowOnWorkOrderComplete } from '@/services/workflows/workflowEventService';
 export class WorkOrderService {
   private repository: WorkOrderRepository;
 
@@ -48,6 +48,14 @@ export class WorkOrderService {
         console.log('4. Saving job lines:', formData.jobLines.length);
         await this.saveJobLines(result.id, formData.jobLines);
         console.log('5. Job lines saved successfully');
+      }
+      
+      // Trigger workflow automation for new work order
+      try {
+        console.log('6. Triggering workflow for new work order');
+        await triggerWorkflowOnWorkOrderCreate(result);
+      } catch (workflowError) {
+        console.warn('Workflow trigger failed (non-blocking):', workflowError);
       }
       
       return result;
@@ -121,8 +129,24 @@ export class WorkOrderService {
       console.log('🔄 SERVICE DEBUG: UserID:', userId);
       console.log('🔄 SERVICE DEBUG: UserName:', userName);
       
+      // Get current work order to know old status
+      const currentWorkOrder = await this.repository.findById(id);
+      const oldStatus = currentWorkOrder?.status || 'unknown';
+      
       const result = await this.repository.updateStatus(id, status, userId, userName);
       console.log('🔄 SERVICE DEBUG: Repository returned:', result);
+      
+      // Trigger workflow automation for status change
+      try {
+        if (status === 'completed') {
+          await triggerWorkflowOnWorkOrderComplete(result);
+        } else {
+          await triggerWorkflowOnWorkOrderStatusUpdate(result, oldStatus);
+        }
+      } catch (workflowError) {
+        console.warn('Workflow trigger failed (non-blocking):', workflowError);
+      }
+      
       return result;
     } catch (error) {
       console.error('🔄 SERVICE DEBUG: Error updating work order status:', error);

@@ -1,14 +1,44 @@
 import { supabase } from '@/integrations/supabase/client';
 
+interface FeatureRequestNotification {
+  id: string;
+  feature_request_id: string;
+  notification_type: string;
+  recipient_type: string;
+  recipient_email: string | null;
+  notification_data: any;
+  sent: boolean;
+  sent_at: string | null;
+  error_message: string | null;
+  created_at: string;
+  shop_id: string;
+}
+
+interface WebhookLog {
+  id: string;
+  shop_id: string;
+  webhook_type: string;
+  webhook_url: string;
+  payload: any;
+  response_status: number | null;
+  response_body: string | null;
+  success: boolean;
+  error_message: string | null;
+  created_at: string;
+}
+
 export class FeatureRequestNotificationService {
   /**
    * Process pending notifications by sending them via edge function
    */
   static async processPendingNotifications() {
     try {
-      // Mock notifications for now - tables not yet available in Supabase types
-      const notifications: any[] = [];
-      const error = null;
+      const { data: notifications, error } = await supabase
+        .from('feature_request_notifications')
+        .select('*')
+        .eq('sent', false)
+        .order('created_at', { ascending: true })
+        .limit(50);
 
       if (error) {
         console.error('Error fetching notifications:', error);
@@ -21,12 +51,28 @@ export class FeatureRequestNotificationService {
           const { error: functionError } = await supabase.functions.invoke(
             'send-feature-request-notification',
             {
-              body: { notification_id: (notification as any).id }
+              body: { notification_id: notification.id }
             }
           );
 
           if (functionError) {
             console.error('Error sending notification:', functionError);
+            // Update notification with error
+            await supabase
+              .from('feature_request_notifications')
+              .update({ 
+                error_message: functionError.message 
+              })
+              .eq('id', notification.id);
+          } else {
+            // Mark as sent
+            await supabase
+              .from('feature_request_notifications')
+              .update({ 
+                sent: true, 
+                sent_at: new Date().toISOString() 
+              })
+              .eq('id', notification.id);
           }
         } catch (error) {
           console.error('Error invoking notification function:', error);
@@ -35,6 +81,39 @@ export class FeatureRequestNotificationService {
     } catch (error) {
       console.error('Error processing notifications:', error);
     }
+  }
+
+  /**
+   * Create a new notification for a feature request
+   */
+  static async createNotification(params: {
+    featureRequestId: string;
+    notificationType: 'new_request' | 'status_change' | 'comment_added' | 'vote_milestone';
+    recipientType: 'admin' | 'submitter' | 'voter';
+    recipientEmail?: string;
+    notificationData?: any;
+    shopId: string;
+  }) {
+    const { data, error } = await supabase
+      .from('feature_request_notifications')
+      .insert({
+        feature_request_id: params.featureRequestId,
+        notification_type: params.notificationType,
+        recipient_type: params.recipientType,
+        recipient_email: params.recipientEmail,
+        notification_data: params.notificationData || {},
+        shop_id: params.shopId,
+        sent: false
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating notification:', error);
+      throw error;
+    }
+
+    return data;
   }
 
   /**
@@ -87,39 +166,74 @@ export class FeatureRequestNotificationService {
   /**
    * Get notification history for admin dashboard
    */
-  static async getNotificationHistory(limit = 50) {
-    // Mock data for now - tables not yet available
-    const data: any[] = [];
-    const error = null;
+  static async getNotificationHistory(limit = 50): Promise<FeatureRequestNotification[]> {
+    const { data, error } = await supabase
+      .from('feature_request_notifications')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error) {
       console.error('Error fetching notification history:', error);
       return [];
     }
 
-    return data || [];
+    return (data || []) as FeatureRequestNotification[];
   }
 
   /**
    * Get webhook logs for monitoring
    */
-  static async getWebhookLogs(limit = 100) {
-    // Mock data for now - tables not yet available
-    const data: any[] = [];
-    const error = null;
+  static async getWebhookLogs(limit = 100): Promise<WebhookLog[]> {
+    const { data, error } = await supabase
+      .from('webhook_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error) {
       console.error('Error fetching webhook logs:', error);
       return [];
     }
 
-    return data || [];
+    return (data || []) as WebhookLog[];
+  }
+
+  /**
+   * Log a webhook delivery attempt
+   */
+  static async logWebhookDelivery(params: {
+    shopId: string;
+    webhookType: 'slack' | 'discord' | 'custom';
+    webhookUrl: string;
+    payload: any;
+    responseStatus?: number;
+    responseBody?: string;
+    success: boolean;
+    errorMessage?: string;
+  }) {
+    const { error } = await supabase
+      .from('webhook_logs')
+      .insert({
+        shop_id: params.shopId,
+        webhook_type: params.webhookType,
+        webhook_url: params.webhookUrl,
+        payload: params.payload,
+        response_status: params.responseStatus,
+        response_body: params.responseBody,
+        success: params.success,
+        error_message: params.errorMessage
+      });
+
+    if (error) {
+      console.error('Error logging webhook:', error);
+    }
   }
 
   /**
    * Test webhook by sending a test notification
    */
-  static async testWebhook(webhookUrl: string, type: 'slack' | 'discord') {
+  static async testWebhook(webhookUrl: string, type: 'slack' | 'discord', shopId?: string) {
     try {
       const testPayload = type === 'slack' 
         ? {
@@ -143,18 +257,34 @@ export class FeatureRequestNotificationService {
         body: JSON.stringify(testPayload)
       });
 
-      // Mock logging for now - tables not yet available
-      console.log('Test webhook result:', {
-        webhook_type: type,
-        webhook_url: webhookUrl,
-        payload: { test: true },
-        response_status: response.status,
-        success: response.ok
-      });
+      // Log the test result if shopId provided
+      if (shopId) {
+        await this.logWebhookDelivery({
+          shopId,
+          webhookType: type,
+          webhookUrl,
+          payload: { test: true },
+          responseStatus: response.status,
+          success: response.ok,
+          errorMessage: response.ok ? undefined : `HTTP ${response.status}`
+        });
+      }
 
       return response.ok;
     } catch (error) {
       console.error('Webhook test failed:', error);
+      
+      if (shopId) {
+        await this.logWebhookDelivery({
+          shopId,
+          webhookType: type,
+          webhookUrl,
+          payload: { test: true },
+          success: false,
+          errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+      
       return false;
     }
   }
