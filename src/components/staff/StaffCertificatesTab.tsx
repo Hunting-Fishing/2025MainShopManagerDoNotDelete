@@ -12,9 +12,15 @@ interface StaffCertificatesTabProps {
   staffId: string;
 }
 
+interface EditCertificateState {
+  open: boolean;
+  certificate: any | null;
+}
+
 export function StaffCertificatesTab({ staffId }: StaffCertificatesTabProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const { certificates, isLoading, deleteCertificate } = useStaffCertificates(staffId);
+  const [editState, setEditState] = useState<EditCertificateState>({ open: false, certificate: null });
+  const { certificates, isLoading, deleteCertificate, updateCertificate } = useStaffCertificates(staffId);
 
   const getStatusBadge = (status: string, expiryDate: string | null) => {
     if (status === 'expired') {
@@ -146,9 +152,7 @@ export function StaffCertificatesTab({ staffId }: StaffCertificatesTabProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      // TODO: Implement edit
-                    }}
+                    onClick={() => setEditState({ open: true, certificate: cert })}
                   >
                     Edit
                   </Button>
@@ -175,6 +179,16 @@ export function StaffCertificatesTab({ staffId }: StaffCertificatesTabProps) {
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
       />
+
+      {/* Edit Certificate Dialog - reuses AddCertificateDialog with editMode */}
+      {editState.certificate && (
+        <AddCertificateDialog
+          staffId={staffId}
+          open={editState.open}
+          onOpenChange={(open) => !open && setEditState({ open: false, certificate: null })}
+          editCertificate={editState.certificate}
+        />
+      )}
     </div>
   );
 }
