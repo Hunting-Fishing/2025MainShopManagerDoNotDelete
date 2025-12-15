@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 interface BookingPermission {
   id: string;
@@ -26,9 +28,39 @@ export function BookingPermissionsManager() {
   const loadBookingPermissions = async () => {
     try {
       setIsLoading(true);
-      // This would typically fetch from your API/database
-      // For now, showing placeholder data structure
-      setPermissions([]);
+      
+      // Fetch shops and their booking settings from company_settings
+      const { data: shops, error: shopsError } = await supabase
+        .from('shops')
+        .select('id, name');
+
+      if (shopsError) throw shopsError;
+
+      if (shops && shops.length > 0) {
+        // Fetch booking permission settings for each shop
+        const { data: settings, error: settingsError } = await supabase
+          .from('company_settings')
+          .select('shop_id, settings_key, settings_value')
+          .in('shop_id', shops.map(s => s.id))
+          .eq('settings_key', 'booking_permissions');
+
+        if (settingsError) throw settingsError;
+
+        const permissionsList: BookingPermission[] = shops.map(shop => {
+          const shopSettings = settings?.find(s => s.shop_id === shop.id);
+          const settingsData = (shopSettings?.settings_value as Record<string, unknown>) || {};
+          
+          return {
+            id: shop.id,
+            shop_name: shop.name,
+            allow_online_booking: (settingsData.allow_online_booking as boolean) ?? true,
+            allow_customer_portal: (settingsData.allow_customer_portal as boolean) ?? true,
+            require_approval: (settingsData.require_approval as boolean) ?? false
+          };
+        });
+
+        setPermissions(permissionsList);
+      }
     } catch (error) {
       console.error('Error fetching booking permissions:', error);
       toast({
@@ -43,8 +75,42 @@ export function BookingPermissionsManager() {
 
   const updatePermission = async (shopId: string, field: string, value: boolean) => {
     try {
-      // API call would go here
-      console.log(`Updating ${field} for shop ${shopId} to ${value}`);
+      // Get current settings first
+      const { data: existing } = await supabase
+        .from('company_settings')
+        .select('settings_value')
+        .eq('shop_id', shopId)
+        .eq('settings_key', 'booking_permissions')
+        .maybeSingle();
+
+      const currentSettings = (existing?.settings_value as Record<string, unknown>) || {};
+      const newSettings = JSON.parse(JSON.stringify({ ...currentSettings, [field]: value }));
+
+      if (existing) {
+        const { error } = await supabase
+          .from('company_settings')
+          .update({
+            settings_value: newSettings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('shop_id', shopId)
+          .eq('settings_key', 'booking_permissions');
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('company_settings')
+          .insert([{
+            shop_id: shopId,
+            settings_key: 'booking_permissions',
+            settings_value: newSettings
+          }]);
+        if (error) throw error;
+      }
+
+      // Update local state
+      setPermissions(prev => prev.map(p => 
+        p.id === shopId ? { ...p, [field]: value } : p
+      ));
       
       toast({
         title: "Success",
@@ -67,12 +133,8 @@ export function BookingPermissionsManager() {
           <CardTitle>Booking Permissions</CardTitle>
           <CardDescription>Loading booking permissions...</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="animate-pulse h-4 bg-gray-200 rounded"></div>
-            <div className="animate-pulse h-4 bg-gray-200 rounded"></div>
-            <div className="animate-pulse h-4 bg-gray-200 rounded"></div>
-          </div>
+        <CardContent className="flex justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
     );
@@ -89,15 +151,15 @@ export function BookingPermissionsManager() {
       <CardContent>
         {permissions.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500">No shops configured yet</p>
-            <p className="text-sm text-gray-400 mt-2">
+            <p className="text-muted-foreground">No shops configured yet</p>
+            <p className="text-sm text-muted-foreground mt-2">
               Shops will appear here once they are set up in your organization
             </p>
           </div>
         ) : (
           <div className="space-y-6">
             {permissions.map((permission) => (
-              <div key={permission.id} className="border rounded-lg p-4">
+              <div key={permission.id} className="border border-border rounded-lg p-4">
                 <h4 className="font-medium mb-4">{permission.shop_name}</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
