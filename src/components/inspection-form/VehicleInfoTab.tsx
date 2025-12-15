@@ -8,14 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Search } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
-import { VehicleBodyStyle } from "@/types/vehicle";
-
-interface VinDecodeResult {
-  make: string;
-  model: string;
-  year: string | number;
-  trim?: string;
-}
+import { VehicleBodyStyle, VinDecodeResult } from "@/types/vehicle";
+import { decodeVin, getVinValidationError } from "@/services/vinDecoderService";
 
 interface VehicleInfoTabProps {
   vehicleInfo: {
@@ -61,10 +55,11 @@ export function VehicleInfoTab({
   const handleDecodeVin = async () => {
     const vin = vehicleInfo.vin?.trim();
     
-    if (!vin || vin.length !== 17) {
+    const validationError = getVinValidationError(vin);
+    if (validationError) {
       toast({
         title: "Invalid VIN",
-        description: "Please enter a valid 17-character VIN",
+        description: validationError,
         variant: "destructive",
       });
       return;
@@ -73,36 +68,36 @@ export function VehicleInfoTab({
     setDecodingVin(true);
 
     try {
-      // This would normally be an API call to a VIN decoding service
-      // For now, we'll simulate it with a timeout
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Use the real VIN decoder service
+      const decodedInfo = await decodeVin(vin);
 
-      // Simulate a response
-      const decodedInfo: VinDecodeResult = {
-        make: "Toyota",
-        model: "Camry",
-        year: "2019",
-        trim: "SE"
-      };
+      if (decodedInfo) {
+        // Update the vehicle info with the decoded data
+        onVehicleInfoChange({
+          ...vehicleInfo,
+          make: decodedInfo.make || vehicleInfo.make,
+          model: decodedInfo.model || vehicleInfo.model,
+          year: decodedInfo.year?.toString() || vehicleInfo.year,
+          bodyStyle: (decodedInfo.body_style as VehicleBodyStyle) || vehicleInfo.bodyStyle,
+        });
 
-      // Update the vehicle info with the decoded data
-      onVehicleInfoChange({
-        ...vehicleInfo,
-        make: decodedInfo.make,
-        model: decodedInfo.model,
-        year: decodedInfo.year.toString()
-      });
-
-      toast({
-        title: "VIN Decoded",
-        description: `${decodedInfo.year} ${decodedInfo.make} ${decodedInfo.model} ${decodedInfo.trim || ''}`,
-      });
+        toast({
+          title: "VIN Decoded",
+          description: `${decodedInfo.year || ''} ${decodedInfo.make || ''} ${decodedInfo.model || ''} ${decodedInfo.trim || ''}`.trim(),
+        });
+      } else {
+        toast({
+          title: "Decode Failed",
+          description: "Could not decode VIN. Please enter vehicle details manually.",
+          variant: "destructive",
+        });
+      }
 
     } catch (err) {
       console.error("Error decoding VIN:", err);
       toast({
         title: "Error",
-        description: "Failed to decode VIN. Please check the VIN and try again.",
+        description: err instanceof Error ? err.message : "Failed to decode VIN. Please check the VIN and try again.",
         variant: "destructive",
       });
     } finally {

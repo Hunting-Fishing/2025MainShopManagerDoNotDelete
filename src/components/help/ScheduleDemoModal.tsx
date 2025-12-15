@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar, Clock, Video } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ScheduleDemoModalProps {
   isOpen: boolean;
@@ -33,8 +34,17 @@ export function ScheduleDemoModal({ isOpen, onClose }: ScheduleDemoModalProps) {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Insert demo request into support_tickets table
+      const { error } = await supabase
+        .from('support_tickets')
+        .insert({
+          subject: `Demo Request: ${formData.demoType} - ${formData.name}`,
+          description: `Name: ${formData.name}\nEmail: ${formData.email}\nCompany: ${formData.company}\nPhone: ${formData.phone}\nPreferred Date: ${formData.preferredDate}\nPreferred Time: ${formData.preferredTime}\nNotes: ${formData.notes}`,
+          priority: 'medium',
+          status: 'open',
+        });
+
+      if (error) throw error;
       
       toast({
         title: "Demo Scheduled",
@@ -53,6 +63,7 @@ export function ScheduleDemoModal({ isOpen, onClose }: ScheduleDemoModalProps) {
         notes: ''
       });
     } catch (error) {
+      console.error('Failed to schedule demo:', error);
       toast({
         title: "Error",
         description: "Failed to schedule demo. Please try again.",

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Phone, MessageCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ContactSupportModalProps {
   isOpen: boolean;
@@ -31,8 +32,17 @@ export function ContactSupportModal({ isOpen, onClose }: ContactSupportModalProp
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Insert support ticket into database
+      const { error } = await supabase
+        .from('support_tickets')
+        .insert({
+          subject: `${formData.subject} - ${formData.name} (${formData.email})`,
+          description: formData.description,
+          priority: formData.priority,
+          status: 'open',
+        });
+
+      if (error) throw error;
       
       toast({
         title: "Support Request Submitted",
@@ -49,6 +59,7 @@ export function ContactSupportModal({ isOpen, onClose }: ContactSupportModalProp
         contactMethod: 'email'
       });
     } catch (error) {
+      console.error('Failed to submit support request:', error);
       toast({
         title: "Error",
         description: "Failed to submit support request. Please try again.",

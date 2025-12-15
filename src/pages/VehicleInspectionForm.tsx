@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +10,8 @@ import { VehicleInfoTab } from "@/components/inspection-form/VehicleInfoTab";
 import { DamageAssessmentTab } from "@/components/inspection-form/DamageAssessmentTab";
 import { AdditionalNotesTab } from "@/components/inspection-form/AdditionalNotesTab";
 import { VehicleBodyStyle } from "@/types/vehicle";
+import { supabase } from "@/integrations/supabase/client";
+import { useShopId } from "@/hooks/useShopId";
 
 interface InspectionFormData {
   vin: string;
@@ -29,6 +31,7 @@ interface VehicleInspectionFormProps {
 export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFormProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { shopId } = useShopId();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<InspectionFormData>({
     vin: "",
@@ -63,7 +66,36 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Get current user for inspector name
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user?.id)
+        .single();
+
+      const inspectorName = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Unknown';
+
+      // Insert inspection into boat_inspections table (used for general vehicle inspections)
+      const { error } = await supabase
+        .from('boat_inspections')
+        .insert({
+          vessel_name: `${formData.year} ${formData.make} ${formData.model}`.trim() || 'Unknown Vehicle',
+          vessel_type: formData.bodyStyle,
+          registration_number: formData.licensePlate,
+          inspector_name: inspectorName,
+          inspector_id: user?.id,
+          inspection_date: new Date().toISOString(),
+          overall_condition: 'good',
+          inspection_items: {
+            vin: formData.vin,
+            mileage: formData.mileage,
+            color: formData.color,
+          },
+          shop_id: shopId,
+        });
+
+      if (error) throw error;
 
       toast({
         title: "Inspection Submitted",
