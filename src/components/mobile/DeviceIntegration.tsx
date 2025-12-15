@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useDeviceCapabilities } from '@/hooks/useDeviceCapabilities';
 import { useCamera } from '@/hooks/useCamera';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { BarcodeScanner } from '@/components/inventory/BarcodeScanner';
 import { cn } from '@/lib/utils';
 
 interface DeviceIntegrationProps {
@@ -35,6 +36,7 @@ export function DeviceIntegration({
 }: DeviceIntegrationProps) {
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedPhotos, setCapturedPhotos] = useState<File[]>([]);
+  const [scannerOpen, setScannerOpen] = useState(false);
   
   const { 
     hasCamera, 
@@ -75,10 +77,13 @@ export function DeviceIntegration({
     }
   };
 
-  const handleBarcodeScanner = async () => {
-    // Would implement barcode scanning using WebRTC or device camera
-    // For now, this is a placeholder
-    console.log('Barcode scanner not implemented yet');
+  const handleBarcodeScanner = () => {
+    setScannerOpen(true);
+  };
+
+  const handleBarcodeScan = (code: string) => {
+    onBarcodeScanned?.(code);
+    setScannerOpen(false);
   };
 
   const handleShare = async () => {
@@ -212,6 +217,13 @@ export function DeviceIntegration({
           </CardContent>
         </Card>
       )}
+
+      {/* Barcode Scanner Dialog */}
+      <BarcodeScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleBarcodeScan}
+      />
     </div>
   );
 }
