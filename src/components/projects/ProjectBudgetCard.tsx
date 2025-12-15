@@ -10,9 +10,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { formatCurrency } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isPast, addDays, isWithinInterval } from 'date-fns';
 import type { ProjectBudget } from '@/types/projectBudget';
 import { PROJECT_STATUSES, PROJECT_TYPES } from '@/types/projectBudget';
+import { MilestoneAlertBadge } from './MilestoneAlertBadge';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProjectBudgetCardProps {
   project: ProjectBudget;
