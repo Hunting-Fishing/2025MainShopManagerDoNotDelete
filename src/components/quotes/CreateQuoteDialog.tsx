@@ -15,7 +15,7 @@ import { QuoteItemFormValues, QUOTE_ITEM_TYPES } from '@/types/quote';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from '@/hooks/use-toast';
 import { useQuoteTaxCalculations } from '@/hooks/useQuoteTaxCalculations';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useShopId } from '@/hooks/useShopId';
 interface CreateQuoteDialogProps {
   children: React.ReactNode;
   onSuccess?: (quoteId: string) => void;
@@ -44,7 +44,7 @@ export function CreateQuoteDialog({
   }]);
   const { customers, loading: customersLoading } = useCustomers();
   const { vehicles, loading: vehiclesLoading } = useVehicles(selectedCustomerId);
-  const { userProfile } = useUserProfile();
+  const { shopId } = useShopId();
   
   // Get customer data for tax calculations
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
@@ -69,7 +69,7 @@ export function CreateQuoteDialog({
   const taxCalculations = useQuoteTaxCalculations({
     items: quoteItems,
     customer: selectedCustomer,
-    shopId: undefined // TODO: Get shop_id from userProfile when available
+    shopId: shopId || undefined
   });
 
   // Calculate totals using centralized tax system
