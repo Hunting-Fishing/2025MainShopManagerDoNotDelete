@@ -100,10 +100,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     await onSubmit(data);
   };
   
-  // Placeholder for save draft functionality
+  // Save draft to localStorage
   const handleSaveDraft = () => {
-    console.log("Saving as draft:", form.getValues());
-    // Implement actual save draft logic here
+    const draftData = form.getValues();
+    const draftKey = customerId ? `customer-draft-${customerId}` : `customer-draft-new`;
+    localStorage.setItem(draftKey, JSON.stringify({
+      data: draftData,
+      savedAt: new Date().toISOString()
+    }));
+    console.log("Draft saved:", draftKey);
   };
 
   return (

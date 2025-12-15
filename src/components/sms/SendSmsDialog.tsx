@@ -64,10 +64,6 @@ export const SendSmsDialog: React.FC<SendSmsDialogProps> = ({
     setIsSending(true);
     
     try {
-      // In a real implementation, this would call a Supabase Edge Function
-      // that connects to Twilio or another SMS provider
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
       const { sendSms } = await import('@/hooks/useSmsTemplates');
       
       await sendSms(
