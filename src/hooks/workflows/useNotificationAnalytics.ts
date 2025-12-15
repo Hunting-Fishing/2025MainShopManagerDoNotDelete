@@ -102,7 +102,7 @@ export function useNotificationAnalytics() {
 
         return {
           date: dateStr,
-          sent: Math.floor(dayDeliveries.length * Math.random() * 1.5),
+          sent: dayDeliveries.length,
           delivered: dayDeliveries.filter(d => d.status === 'delivered').length,
           opened: dayDeliveries.filter(d => d.status === 'opened').length,
           clicked: dayDeliveries.filter(d => d.status === 'clicked').length,
