@@ -184,7 +184,7 @@ export default function SafetyCorrectiveActions() {
                 action={action}
                 onEdit={() => handleEdit(action)}
                 onDelete={() => deleteAction(action.id)}
-                onStatusChange={(status) => updateAction(action.id, { status })}
+                onStatusChange={(status) => updateAction(action.id, { status: status as 'open' | 'in_progress' | 'completed' | 'verified' | 'closed' })}
               />
             ))
           )}
