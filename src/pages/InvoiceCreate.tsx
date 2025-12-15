@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { createInvoice } from '@/services/invoiceService';
 import { useTaxSettings } from '@/hooks/useTaxSettings';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useShopId } from '@/hooks/useShopId';
 import { calculateTax } from '@/utils/taxCalculations';
 import { 
   FileText, 
@@ -58,7 +59,8 @@ export default function InvoiceCreate() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<InvoiceFormData>(defaultFormData);
   const { userProfile } = useUserProfile();
-  const { taxSettings, loading: taxSettingsLoading } = useTaxSettings(undefined); // TODO: Get shop_id when available
+  const { shopId } = useShopId();
+  const { taxSettings, loading: taxSettingsLoading } = useTaxSettings(shopId || undefined);
 
   const updateFormData = (field: keyof Omit<InvoiceFormData, 'lineItems'>, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -158,7 +160,7 @@ export default function InvoiceCreate() {
         description: `Invoice ${formData.invoiceNumber}`,
         payment_method: null,
         work_order_id: null,
-        created_by: 'current-user' // Should be from auth context
+        created_by: userProfile?.email || 'unknown'
       };
 
       const newInvoice = await createInvoice(invoiceData);

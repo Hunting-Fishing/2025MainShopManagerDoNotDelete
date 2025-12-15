@@ -24,6 +24,7 @@ import { Percent, DollarSign, Tag } from 'lucide-react';
 import { DiscountType, ApplyDiscountRequest } from '@/types/discount';
 import { getDiscountTypesByCategory } from '@/services/discountService';
 import { toast } from 'sonner';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface ApplyDiscountDialogProps {
   children: React.ReactNode;
@@ -51,6 +52,7 @@ export function ApplyDiscountDialog({
   });
   const [useCustom, setUseCustom] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { userProfile } = useUserProfile();
 
   useEffect(() => {
     if (open) {
@@ -95,7 +97,7 @@ export function ApplyDiscountDialog({
           discount_type: customDiscount.type,
           discount_value: customDiscount.value,
           reason: customDiscount.reason,
-          created_by: 'current-user' // TODO: Get from auth context
+          created_by: userProfile?.email || 'unknown'
         };
       } else {
         if (!selectedDiscountType) {
@@ -109,7 +111,7 @@ export function ApplyDiscountDialog({
           discount_type: selectedDiscountType.discount_type,
           discount_value: selectedDiscountType.default_value,
           reason: `Applied ${selectedDiscountType.name}`,
-          created_by: 'current-user' // TODO: Get from auth context
+          created_by: userProfile?.email || 'unknown'
         };
       }
 

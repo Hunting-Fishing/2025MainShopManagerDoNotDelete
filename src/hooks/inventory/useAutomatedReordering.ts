@@ -36,9 +36,40 @@ export function useAutomatedReordering() {
   const { items } = useInventoryData();
   const [reorderSettings, setReorderSettings] = useState<ReorderSettings>({});
 
+  // Fetch usage history for average calculation
+  const { data: usageHistory = [] } = useQuery({
+    queryKey: ['inventory-usage-history'],
+    queryFn: async () => {
+      // Get recent inventory transactions to calculate usage
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { data, error } = await supabase
+        .from('inventory_transactions')
+        .select('inventory_item_id, quantity, transaction_type, created_at')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .in('transaction_type', ['sale', 'usage', 'adjustment']);
+      
+      if (error) {
+        console.error('Error fetching usage history:', error);
+        return [];
+      }
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Calculate reorder alerts from live inventory data
   const reorderAlerts = useMemo((): ReorderAlert[] => {
     if (!items.length) return [];
+
+    // Calculate average daily usage per item from transaction history
+    const usageByItem = usageHistory.reduce((acc: Record<string, number>, tx: any) => {
+      const itemId = tx.inventory_item_id;
+      if (!acc[itemId]) acc[itemId] = 0;
+      acc[itemId] += Math.abs(Number(tx.quantity) || 0);
+      return acc;
+    }, {});
 
     return items
       .filter(item => {
@@ -49,8 +80,10 @@ export function useAutomatedReordering() {
       .map(item => {
         const currentStock = Number(item.quantity) || 0;
         const reorderPoint = Number(item.reorder_point) || 0;
-        const averageUsage = Math.random() * 10 + 5; // TODO: Calculate from usage history
-        const daysUntilStockout = currentStock / averageUsage;
+        // Calculate average daily usage from 30-day history, fallback to estimate
+        const totalUsage = usageByItem[item.id] || 0;
+        const averageUsage = totalUsage > 0 ? totalUsage / 30 : Math.max(1, reorderPoint * 0.1);
+        const daysUntilStockout = averageUsage > 0 ? currentStock / averageUsage : 999;
         
         const priority: 'high' | 'medium' | 'low' = currentStock === 0 ? 'high' : 
                         currentStock <= reorderPoint * 0.5 ? 'high' :
@@ -67,7 +100,7 @@ export function useAutomatedReordering() {
           reorderPoint,
           suggestedQuantity: Math.ceil(reorderPoint * 2 - currentStock),
           priority,
-          averageUsage,
+          averageUsage: Math.round(averageUsage * 100) / 100,
           estimatedStockoutDate: estimatedStockoutDate.toISOString().split('T')[0]
         };
       })
@@ -75,7 +108,7 @@ export function useAutomatedReordering() {
         const priorityOrder = { high: 3, medium: 2, low: 1 };
         return priorityOrder[b.priority] - priorityOrder[a.priority];
       });
-  }, [items]);
+  }, [items, usageHistory]);
 
   // Fetch auto-reorder rules from database
   const {
