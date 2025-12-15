@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SimpleSearchResult {
   id: string;
   title: string;
   type: string;
   content: string;
+  category?: string;
 }
 
 interface HelpSearchProps {
@@ -21,43 +23,59 @@ export const HelpSearch: React.FC<HelpSearchProps> = ({ className = '' }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SimpleSearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
 
-  const handleSearch = (searchQuery: string) => {
+  const handleSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
       setShowResults(false);
       return;
     }
 
-    // Mock search results for now
-    const mockResults: SimpleSearchResult[] = [
-      {
-        id: '1',
-        title: 'Getting Started Guide',
-        type: 'article',
-        content: 'Learn the basics of using the platform...'
-      },
-      {
-        id: '2', 
-        title: 'Troubleshooting Common Issues',
-        type: 'article',
-        content: 'Solutions to frequently encountered problems...'
-      },
-      {
-        id: '3',
-        title: 'User Manual PDF',
-        type: 'resource',
-        content: 'Complete user documentation in PDF format...'
-      }
-    ].filter(item => 
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.content.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('help_articles')
+        .select('id, title, summary, category, content')
+        .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%,summary.ilike.%${searchQuery}%`)
+        .eq('status', 'published')
+        .limit(10);
 
-    setResults(mockResults);
-    setShowResults(true);
+      if (error) {
+        console.error('Error searching help articles:', error);
+        setResults([]);
+        return;
+      }
+
+      const searchResults: SimpleSearchResult[] = (data || []).map(article => ({
+        id: article.id,
+        title: article.title,
+        type: 'article',
+        content: article.summary || article.content?.slice(0, 100) + '...' || '',
+        category: article.category,
+      }));
+
+      setResults(searchResults);
+      setShowResults(true);
+    } catch (error) {
+      console.error('Search error:', error);
+      setResults([]);
+    } finally {
+      setIsSearching(false);
+    }
   };
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (query.trim()) {
+        handleSearch(query);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +106,7 @@ export const HelpSearch: React.FC<HelpSearchProps> = ({ className = '' }) => {
             placeholder="Search help articles and resources..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setShowResults(true)}
+            onFocus={() => query && setShowResults(true)}
             className="pl-10 pr-10"
           />
           {query && (
@@ -108,7 +126,11 @@ export const HelpSearch: React.FC<HelpSearchProps> = ({ className = '' }) => {
       {showResults && (
         <Card className="absolute top-full left-0 right-0 mt-2 z-50 max-h-96 overflow-y-auto">
           <CardContent className="p-4">
-            {query && results.length === 0 ? (
+            {isSearching ? (
+              <div className="text-center py-4 text-muted-foreground">
+                Searching...
+              </div>
+            ) : query && results.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 No results found for "{query}"
               </div>
@@ -130,9 +152,16 @@ export const HelpSearch: React.FC<HelpSearchProps> = ({ className = '' }) => {
                           {result.content}
                         </p>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {result.type}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {result.type}
+                        </Badge>
+                        {result.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {result.category}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

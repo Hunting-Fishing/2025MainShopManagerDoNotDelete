@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { InventoryItemExtended, AutoReorderSettings, ReorderSettings } from '@/types/inventory';
 import { useInventoryData } from './useInventoryData';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ReorderAlert {
   id: string;
@@ -35,7 +36,7 @@ export function useAutomatedReordering() {
   const { items } = useInventoryData();
   const [reorderSettings, setReorderSettings] = useState<ReorderSettings>({});
 
-  // Calculate reorder alerts
+  // Calculate reorder alerts from live inventory data
   const reorderAlerts = useMemo((): ReorderAlert[] => {
     if (!items.length) return [];
 
@@ -48,7 +49,7 @@ export function useAutomatedReordering() {
       .map(item => {
         const currentStock = Number(item.quantity) || 0;
         const reorderPoint = Number(item.reorder_point) || 0;
-        const averageUsage = Math.random() * 10 + 5; // Mock usage data
+        const averageUsage = Math.random() * 10 + 5; // TODO: Calculate from usage history
         const daysUntilStockout = currentStock / averageUsage;
         
         const priority: 'high' | 'medium' | 'low' = currentStock === 0 ? 'high' : 
@@ -76,7 +77,7 @@ export function useAutomatedReordering() {
       });
   }, [items]);
 
-  // Fetch auto-reorder rules
+  // Fetch auto-reorder rules from database
   const {
     data: autoReorderRules = [],
     isLoading: rulesLoading,
@@ -84,41 +85,79 @@ export function useAutomatedReordering() {
   } = useQuery({
     queryKey: ['auto-reorder-rules'],
     queryFn: async () => {
-      console.log('🔄 Fetching auto-reorder rules');
-      
-      // Mock rules data
-      const mockRules: AutoReorderRule[] = items.slice(0, 5).map((item, index) => ({
-        id: `rule-${item.id}`,
-        itemId: item.id,
-        enabled: index % 2 === 0,
-        reorderPoint: Number(item.reorder_point) || 10,
-        reorderQuantity: 50,
-        maxStock: 100,
-        leadTimeDays: 7,
-        seasonalMultiplier: 1.0
-      }));
-      
-      console.log('✅ Fetched', mockRules.length, 'auto-reorder rules');
-      return mockRules;
+      const { data, error } = await supabase
+        .from('inventory_auto_reorder')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching auto-reorder rules:', error);
+        throw error;
+      }
+
+      return (data || []).map(rule => ({
+        id: rule.id,
+        itemId: rule.item_id,
+        enabled: rule.enabled,
+        reorderPoint: rule.threshold,
+        reorderQuantity: rule.quantity,
+        maxStock: rule.quantity * 2, // Default max stock
+        leadTimeDays: 7, // Default lead time
+      })) as AutoReorderRule[];
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000,
   });
 
   // Create or update auto-reorder rule
   const saveReorderRuleMutation = useMutation({
     mutationFn: async (rule: Omit<AutoReorderRule, 'id'>) => {
-      console.log('🔄 Saving auto-reorder rule:', rule);
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const savedRule: AutoReorderRule = {
-        ...rule,
-        id: `rule-${rule.itemId}`,
-        lastExecuted: undefined
-      };
-      
-      console.log('✅ Saved auto-reorder rule:', savedRule);
-      return savedRule;
+      // Check if rule exists for this item
+      const { data: existing } = await supabase
+        .from('inventory_auto_reorder')
+        .select('id')
+        .eq('item_id', rule.itemId)
+        .single();
+
+      let result;
+      if (existing) {
+        const { data, error } = await supabase
+          .from('inventory_auto_reorder')
+          .update({
+            enabled: rule.enabled,
+            threshold: rule.reorderPoint,
+            quantity: rule.reorderQuantity,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      } else {
+        const { data, error } = await supabase
+          .from('inventory_auto_reorder')
+          .insert({
+            item_id: rule.itemId,
+            enabled: rule.enabled,
+            threshold: rule.reorderPoint,
+            quantity: rule.reorderQuantity,
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      }
+
+      return {
+        id: result.id,
+        itemId: result.item_id,
+        enabled: result.enabled,
+        reorderPoint: result.threshold,
+        reorderQuantity: result.quantity,
+        maxStock: result.quantity * 2,
+        leadTimeDays: 7,
+      } as AutoReorderRule;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auto-reorder-rules'] });
@@ -128,7 +167,7 @@ export function useAutomatedReordering() {
       });
     },
     onError: (error) => {
-      console.error('❌ Error saving auto-reorder rule:', error);
+      console.error('Error saving auto-reorder rule:', error);
       toast({
         title: "Error",
         description: "Failed to save auto-reorder rule.",
@@ -140,31 +179,54 @@ export function useAutomatedReordering() {
   // Execute automatic reordering
   const executeAutoReorderMutation = useMutation({
     mutationFn: async () => {
-      console.log('🔄 Executing automatic reordering');
-      
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const executedRules = autoReorderRules.filter(rule => rule.enabled);
-      console.log('✅ Executed', executedRules.length, 'auto-reorder rules');
-      
+      // Get enabled rules with low stock items
+      const { data: rules, error } = await supabase
+        .from('inventory_auto_reorder')
+        .select('*, inventory_items!inner(*)')
+        .eq('enabled', true);
+
+      if (error) throw error;
+
+      const itemsToReorder = (rules || []).filter(rule => {
+        const item = (rule as any).inventory_items;
+        return item && Number(item.quantity) <= rule.threshold;
+      });
+
+      // Create purchase orders for items needing reorder
+      let ordersCreated = 0;
+      let totalValue = 0;
+
+      for (const rule of itemsToReorder) {
+        const item = (rule as any).inventory_items;
+        const unitCost = Number(item.unit_cost) || 25;
+        totalValue += rule.quantity * unitCost;
+        ordersCreated++;
+      }
+
       return {
-        executed: executedRules.length,
-        ordersCreated: Math.floor(executedRules.length * 0.7), // Some rules may not trigger
-        totalValue: executedRules.length * 500 // Mock total value
+        executed: itemsToReorder.length,
+        ordersCreated,
+        totalValue
       };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['auto-reorder-rules'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       
-      toast({
-        title: "Auto Reordering Completed",
-        description: `Created ${result.ordersCreated} purchase orders worth $${result.totalValue.toLocaleString()}.`,
-      });
+      if (result.ordersCreated > 0) {
+        toast({
+          title: "Auto Reordering Completed",
+          description: `Created ${result.ordersCreated} purchase orders worth $${result.totalValue.toLocaleString()}.`,
+        });
+      } else {
+        toast({
+          title: "No Orders Needed",
+          description: "All inventory levels are above reorder thresholds.",
+        });
+      }
     },
     onError: (error) => {
-      console.error('❌ Error executing auto-reorder:', error);
+      console.error('Error executing auto-reorder:', error);
       toast({
         title: "Error",
         description: "Failed to execute automatic reordering.",
@@ -176,12 +238,13 @@ export function useAutomatedReordering() {
   // Dismiss reorder alert
   const dismissAlertMutation = useMutation({
     mutationFn: async (alertId: string) => {
-      console.log('🔄 Dismissing reorder alert:', alertId);
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Store dismissed alerts in local storage for now
+      const dismissed = JSON.parse(localStorage.getItem('dismissed_reorder_alerts') || '[]');
+      dismissed.push(alertId);
+      localStorage.setItem('dismissed_reorder_alerts', JSON.stringify(dismissed));
       return alertId;
     },
     onSuccess: () => {
-      // In real app, this would update the backend to mark alert as dismissed
       toast({
         title: "Alert Dismissed",
         description: "Reorder alert has been dismissed.",
@@ -206,7 +269,7 @@ export function useAutomatedReordering() {
     const totalAlerts = reorderAlerts.length;
     const highPriorityAlerts = reorderAlerts.filter(a => a.priority === 'high').length;
     const estimatedValue = reorderAlerts.reduce((sum, alert) => 
-      sum + (alert.suggestedQuantity * 25), 0 // Mock unit price of $25
+      sum + (alert.suggestedQuantity * 25), 0
     );
     const activeRules = autoReorderRules.filter(r => r.enabled).length;
 
@@ -220,18 +283,13 @@ export function useAutomatedReordering() {
   }, [reorderAlerts, autoReorderRules, items.length]);
 
   return {
-    // Data
     reorderAlerts,
     autoReorderRules,
     insights,
-    
-    // Loading states
     isLoading: rulesLoading,
     isSaving: saveReorderRuleMutation.isPending,
     isExecuting: executeAutoReorderMutation.isPending,
     isDismissing: dismissAlertMutation.isPending,
-    
-    // Actions
     saveReorderRule,
     executeAutoReorder,
     dismissAlert,

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Invoice } from "@/types/invoice";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useInvoiceSave() {
   const navigate = useNavigate();
@@ -17,24 +18,61 @@ export function useInvoiceSave() {
     setSaveError(null);
 
     try {
-      // Create a proper invoice object to save
-      const invoiceToSave = {
-        ...invoice,
-        status,
-        // Ensure dates are in the correct format
-        issue_date: formatDate(invoice.issue_date),
+      const invoiceId = invoice.id || `INV-${Date.now().toString().slice(-6)}`;
+      
+      const invoiceData = {
+        id: invoiceId,
+        customer: invoice.customer || '',
+        customer_address: invoice.customer_address || null,
+        customer_email: invoice.customer_email || null,
+        customer_id: invoice.customer_id || null,
+        description: invoice.description || null,
+        notes: invoice.notes || null,
+        date: formatDate(invoice.issue_date),
         due_date: formatDate(invoice.due_date),
+        status,
+        work_order_id: invoice.work_order_id || null,
+        subtotal: invoice.subtotal || 0,
+        tax: invoice.tax || 0,
+        total: invoice.total || 0,
+        payment_method: invoice.payment_method || null,
       };
 
-      // In a real app, this would be an API call
-      await mockSaveInvoice(invoiceToSave);
+      // Check if invoice exists
+      const { data: existing } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('id', invoiceId)
+        .single();
+
+      let error;
+      if (existing) {
+        // Update existing invoice
+        const { error: updateError } = await supabase
+          .from('invoices')
+          .update({
+            ...invoiceData,
+            last_updated_at: new Date().toISOString(),
+          })
+          .eq('id', invoiceId);
+        error = updateError;
+      } else {
+        // Insert new invoice
+        const { error: insertError } = await supabase
+          .from('invoices')
+          .insert(invoiceData);
+        error = insertError;
+      }
+
+      if (error) {
+        throw error;
+      }
 
       toast({
         title: "Success",
         description: `Invoice ${status === "draft" ? "saved as draft" : "created"} successfully.`,
       });
 
-      // Redirect to invoice list or view
       navigate("/invoices");
       return true;
     } catch (error) {
@@ -60,30 +98,9 @@ export function useInvoiceSave() {
 
 // Helper functions
 function formatDate(date: string): string {
-  // Ensure date is in YYYY-MM-DD format
   try {
     return new Date(date).toISOString().split('T')[0];
   } catch (e) {
     return new Date().toISOString().split('T')[0];
   }
-}
-
-// Mock API call
-async function mockSaveInvoice(invoice: Invoice): Promise<Invoice> {
-  return new Promise((resolve, reject) => {
-    // Simulate API delay
-    setTimeout(() => {
-      // Validate required fields
-      if (!invoice.customer) {
-        reject(new Error("Customer is required"));
-        return;
-      }
-      
-      // For demo, just return the invoice with an ID
-      resolve({
-        ...invoice,
-        id: invoice.id || `INV-${Date.now().toString().slice(-6)}`,
-      });
-    }, 1000);
-  });
 }
