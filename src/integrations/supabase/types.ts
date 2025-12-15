@@ -8045,6 +8045,63 @@ export type Database = {
           },
         ]
       }
+      feature_request_notifications: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          feature_request_id: string | null
+          id: string
+          notification_data: Json | null
+          notification_type: string
+          recipient_email: string | null
+          recipient_type: string
+          sent: boolean | null
+          sent_at: string | null
+          shop_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          feature_request_id?: string | null
+          id?: string
+          notification_data?: Json | null
+          notification_type: string
+          recipient_email?: string | null
+          recipient_type: string
+          sent?: boolean | null
+          sent_at?: string | null
+          shop_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          feature_request_id?: string | null
+          id?: string
+          notification_data?: Json | null
+          notification_type?: string
+          recipient_email?: string | null
+          recipient_type?: string
+          sent?: boolean | null
+          sent_at?: string | null
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_request_notifications_feature_request_id_fkey"
+            columns: ["feature_request_id"]
+            isOneToOne: false
+            referencedRelation: "feature_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_request_notifications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_request_status_history: {
         Row: {
           change_reason: string | null
@@ -26419,6 +26476,53 @@ export type Database = {
             columns: ["integration_id"]
             isOneToOne: false
             referencedRelation: "shop_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          payload: Json | null
+          response_body: string | null
+          response_status: number | null
+          shop_id: string | null
+          success: boolean | null
+          webhook_type: string
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          response_body?: string | null
+          response_status?: number | null
+          shop_id?: string | null
+          success?: boolean | null
+          webhook_type: string
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          response_body?: string | null
+          response_status?: number | null
+          shop_id?: string | null
+          success?: boolean | null
+          webhook_type?: string
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]

@@ -219,17 +219,17 @@ export function WorkOrderWorkflowTab() {
         <h2 className="text-xl font-semibold">Work Order Workflow & Automation</h2>
       </div>
 
-      {/* Coming Soon Banner */}
-      <Card className="border-primary/20 bg-primary/5">
+      {/* Workflow Status Info */}
+      <Card className="border-green-500/20 bg-green-500/5">
         <CardContent className="pt-6">
           <div className="flex items-start gap-3">
-            <div className="rounded-full p-2 bg-primary/10">
-              <Clock className="h-5 w-5 text-primary" />
+            <div className="rounded-full p-2 bg-green-500/10">
+              <CheckCircle className="h-5 w-5 text-green-600" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-lg mb-1">Workflow Execution Engine Coming Soon</h3>
+              <h3 className="font-semibold text-lg mb-1">Workflow Engine Active</h3>
               <p className="text-sm text-muted-foreground">
-                The automated workflow execution engine is currently under development. You can configure your workflow rules now, and they will automatically activate once the execution engine is deployed.
+                The workflow automation engine is active. Configure your rules below to automate work order processing, notifications, and status updates based on triggers.
               </p>
             </div>
           </div>
