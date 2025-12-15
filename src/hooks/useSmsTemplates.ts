@@ -22,26 +22,25 @@ export const useSmsTemplates = (enabled = true) => {
   });
 };
 
+// SMS sending - Coming Soon (requires Twilio integration)
 export const sendSms = async (
   customerId: string, 
   phoneNumber: string, 
   message: string, 
   templateId?: string
 ) => {
-  // In a real implementation, this would call a Supabase Edge Function
-  // that connects to Twilio or another SMS provider
-  await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-  
-  // Log to SMS logs table
+  // Log the attempt to SMS logs table with pending status
   const { error } = await supabase.from('sms_logs').insert({
     customer_id: customerId,
     phone_number: phoneNumber,
     message: message,
     template_id: templateId || null,
-    status: 'sent' // In a real implementation, this would be set by the response
+    status: 'pending' // SMS sending coming soon - requires Twilio integration
   });
   
   if (error) throw error;
   
-  return { success: true };
+  // TODO: Implement edge function for Twilio integration
+  // Coming Soon - SMS will be queued and sent when Twilio is configured
+  return { success: true, message: 'SMS queued - sending coming soon' };
 };
