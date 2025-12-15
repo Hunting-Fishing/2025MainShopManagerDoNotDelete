@@ -109,6 +109,10 @@ const navigationCategories = [
       { name: 'Safety Documents', href: '/safety/documents', requiredPath: '/safety/documents' },
       { name: 'Schedules', href: '/safety/schedules', requiredPath: '/safety/schedules' },
       { name: 'Analytics', href: '/safety/analytics', requiredPath: '/safety/analytics' },
+      { name: 'Reports', href: '/safety/reports', requiredPath: '/safety/reports' },
+      { name: 'Corrective Actions', href: '/safety/corrective-actions', requiredPath: '/safety/corrective-actions' },
+      { name: 'Near Miss', href: '/safety/near-miss', requiredPath: '/safety/near-miss' },
+      { name: 'Training', href: '/safety/training', requiredPath: '/safety/training' },
     ]
   },
   {

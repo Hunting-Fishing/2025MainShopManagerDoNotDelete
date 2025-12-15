@@ -105,6 +105,10 @@ import SafetyLiftInspectionNew from '@/pages/SafetyLiftInspectionNew';
 import SafetyDocuments from '@/pages/SafetyDocuments';
 import SafetyCertifications from '@/pages/SafetyCertifications';
 import SafetySchedules from '@/pages/SafetySchedules';
+import SafetyReports from '@/pages/SafetyReports';
+import SafetyCorrectiveActions from '@/pages/SafetyCorrectiveActions';
+import SafetyNearMiss from '@/pages/SafetyNearMiss';
+import SafetyTraining from '@/pages/SafetyTraining';
 import TechnicianPortal from '@/pages/TechnicianPortal';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
@@ -654,6 +658,26 @@ function App() {
                   <Route path="/safety/schedules" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <SafetySchedules />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/reports" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyReports />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/corrective-actions" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyCorrectiveActions />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/near-miss" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyNearMiss />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/training" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyTraining />
                     </ProtectedRoute>
                   } />
                   
