@@ -15,7 +15,15 @@ interface Props {
 }
 
 export function CorrectiveActionDialog({ open, onOpenChange, action, onSave }: Props) {
-  const [formData, setFormData] = React.useState({
+  const [formData, setFormData] = React.useState<{
+    title: string;
+    description: string;
+    action_type: 'corrective' | 'preventive';
+    priority: 'low' | 'medium' | 'high' | 'critical';
+    due_date: string;
+    root_cause: string;
+    preventive_measures: string;
+  }>({
     title: '',
     description: '',
     action_type: 'corrective',
@@ -57,13 +65,13 @@ export function CorrectiveActionDialog({ open, onOpenChange, action, onSave }: P
           <div><Label>Description</Label><Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} /></div>
           <div className="grid grid-cols-2 gap-4">
             <div><Label>Type</Label>
-              <Select value={formData.action_type} onValueChange={v => setFormData({...formData, action_type: v})}>
+              <Select value={formData.action_type} onValueChange={v => setFormData({...formData, action_type: v as 'corrective' | 'preventive'})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="corrective">Corrective</SelectItem><SelectItem value="preventive">Preventive</SelectItem></SelectContent>
               </Select>
             </div>
             <div><Label>Priority</Label>
-              <Select value={formData.priority} onValueChange={v => setFormData({...formData, priority: v})}>
+              <Select value={formData.priority} onValueChange={v => setFormData({...formData, priority: v as 'low' | 'medium' | 'high' | 'critical'})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="low">Low</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="high">High</SelectItem><SelectItem value="critical">Critical</SelectItem></SelectContent>
               </Select>

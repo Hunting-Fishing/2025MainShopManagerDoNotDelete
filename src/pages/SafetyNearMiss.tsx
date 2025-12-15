@@ -175,7 +175,7 @@ export default function SafetyNearMiss() {
                 key={report.id}
                 report={report}
                 onEdit={() => handleEdit(report)}
-                onStatusChange={(status) => updateReport(report.id, { status })}
+                onStatusChange={(status) => updateReport(report.id, { status: status as 'reported' | 'reviewed' | 'action_required' | 'closed' })}
               />
             ))
           )}

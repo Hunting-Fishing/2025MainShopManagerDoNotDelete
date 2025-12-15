@@ -16,7 +16,14 @@ interface Props {
 }
 
 export function NearMissReportDialog({ open, onOpenChange, report, onSave }: Props) {
-  const [formData, setFormData] = React.useState({
+  const [formData, setFormData] = React.useState<{
+    description: string;
+    location: string;
+    potential_severity: 'minor' | 'moderate' | 'serious' | 'catastrophic';
+    category: string;
+    immediate_actions_taken: string;
+    is_anonymous: boolean;
+  }>({
     description: '',
     location: '',
     potential_severity: 'minor',
@@ -36,7 +43,7 @@ export function NearMissReportDialog({ open, onOpenChange, report, onSave }: Pro
         is_anonymous: report.is_anonymous || false
       });
     } else {
-      setFormData({ description: '', location: '', potential_severity: 'minor', category: '', immediate_actions_taken: '', is_anonymous: false });
+      setFormData({ description: '', location: '', potential_severity: 'minor' as const, category: '', immediate_actions_taken: '', is_anonymous: false });
     }
   }, [report]);
 
@@ -56,7 +63,7 @@ export function NearMissReportDialog({ open, onOpenChange, report, onSave }: Pro
           <div><Label>Location</Label><Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="Where did this occur?" /></div>
           <div className="grid grid-cols-2 gap-4">
             <div><Label>Potential Severity</Label>
-              <Select value={formData.potential_severity} onValueChange={v => setFormData({...formData, potential_severity: v})}>
+              <Select value={formData.potential_severity} onValueChange={v => setFormData({...formData, potential_severity: v as 'minor' | 'moderate' | 'serious' | 'catastrophic'})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="minor">Minor</SelectItem><SelectItem value="moderate">Moderate</SelectItem><SelectItem value="serious">Serious</SelectItem><SelectItem value="catastrophic">Catastrophic</SelectItem></SelectContent>
               </Select>

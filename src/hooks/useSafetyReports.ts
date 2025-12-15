@@ -132,9 +132,9 @@ export function useSafetyReports(dateRange?: { start: Date; end: Date }) {
   };
 
   const fetchInspectionMetrics = async () => {
-    // Use safety_inspections table instead
+    // Use vessel_inspections table as primary inspection data source
     const { data, error } = await supabase
-      .from('safety_inspections')
+      .from('vessel_inspections')
       .select('*')
       .eq('shop_id', shopId)
       .gte('inspection_date', startDate.toISOString())
@@ -143,7 +143,7 @@ export function useSafetyReports(dateRange?: { start: Date; end: Date }) {
     if (error) throw error;
 
     const inspections = data || [];
-    const passed = inspections.filter((i: any) => i.status === 'passed' || i.overall_status === 'safe').length;
+    const passed = inspections.filter((i: any) => i.overall_status === 'safe' || i.overall_status === 'passed').length;
     
     setInspectionMetrics({
       totalInspections: inspections.length,
