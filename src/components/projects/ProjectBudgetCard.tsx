@@ -33,6 +33,40 @@ export function ProjectBudgetCard({ project, onClick }: ProjectBudgetCardProps) 
   const statusConfig = PROJECT_STATUSES.find(s => s.value === project.status);
   const typeConfig = PROJECT_TYPES.find(t => t.value === project.project_type);
 
+  // Fetch milestone alerts for this project
+  const { data: milestoneAlerts } = useQuery({
+    queryKey: ['project-milestone-alerts', project.id],
+    queryFn: async () => {
+      const today = new Date();
+      const sevenDaysFromNow = addDays(today, 7);
+
+      const { data, error } = await supabase
+        .from('project_phases')
+        .select('id, planned_end, status')
+        .eq('project_id', project.id)
+        .neq('status', 'completed')
+        .not('planned_end', 'is', null);
+
+      if (error) throw error;
+
+      let overdueCount = 0;
+      let approachingCount = 0;
+
+      (data || []).forEach((phase) => {
+        if (!phase.planned_end) return;
+        const endDate = new Date(phase.planned_end);
+        
+        if (isPast(endDate) && phase.status !== 'completed') {
+          overdueCount++;
+        } else if (isWithinInterval(endDate, { start: today, end: sevenDaysFromNow })) {
+          approachingCount++;
+        }
+      });
+
+      return { overdueCount, approachingCount };
+    },
+  });
+
   return (
     <Card 
       className="cursor-pointer hover:shadow-md transition-shadow"
@@ -49,7 +83,15 @@ export function ProjectBudgetCard({ project, onClick }: ProjectBudgetCardProps) 
                 {statusConfig?.label || project.status}
               </Badge>
             </div>
-            <h3 className="font-semibold text-foreground line-clamp-1">{project.project_name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-foreground line-clamp-1">{project.project_name}</h3>
+              {milestoneAlerts && (
+                <MilestoneAlertBadge 
+                  overdueCount={milestoneAlerts.overdueCount} 
+                  approachingCount={milestoneAlerts.approachingCount} 
+                />
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">{typeConfig?.label || project.project_type}</p>
           </div>
           <DropdownMenu>
