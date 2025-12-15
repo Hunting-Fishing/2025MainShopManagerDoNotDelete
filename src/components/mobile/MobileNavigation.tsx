@@ -190,6 +190,10 @@ export function MobileNavigation() {
         { id: 'safety-forklift', label: 'Forklift Inspections', icon: HardHat, path: '/safety/equipment/forklift', description: 'Daily forklift safety checks' },
         { id: 'safety-equipment', label: 'Lift Inspections', icon: Package, path: '/safety/equipment', description: 'Equipment safety checks' },
         { id: 'safety-certifications', label: 'Certifications', icon: Award, path: '/safety/certifications', description: 'Staff certifications' },
+        { id: 'safety-reports', label: 'Reports', icon: FileText, path: '/safety/reports', description: 'Safety reports & compliance' },
+        { id: 'safety-corrective-actions', label: 'Corrective Actions', icon: ClipboardCheck, path: '/safety/corrective-actions', description: 'CAPA tracking' },
+        { id: 'safety-near-miss', label: 'Near Miss', icon: AlertTriangle, path: '/safety/near-miss', description: 'Near miss reporting' },
+        { id: 'safety-training', label: 'Training', icon: GraduationCap, path: '/safety/training', description: 'Safety training' },
       ]
     },
     {

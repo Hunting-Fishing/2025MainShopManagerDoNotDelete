@@ -214,6 +214,10 @@ export function MobileHeader({
         { label: 'Certifications', icon: Award, path: '/safety/certifications', requiredPath: '/safety/certifications' },
         { label: 'Safety Documents', icon: FileText, path: '/safety/documents', requiredPath: '/safety/documents' },
         { label: 'Schedules & Reminders', icon: CalendarClock, path: '/safety/schedules', requiredPath: '/safety/schedules' },
+        { label: 'Reports', icon: FileText, path: '/safety/reports', requiredPath: '/safety/reports' },
+        { label: 'Corrective Actions', icon: ClipboardCheck, path: '/safety/corrective-actions', requiredPath: '/safety/corrective-actions' },
+        { label: 'Near Miss', icon: AlertCircle, path: '/safety/near-miss', requiredPath: '/safety/near-miss' },
+        { label: 'Training', icon: GraduationCap, path: '/safety/training', requiredPath: '/safety/training' },
       ]
     },
     {
