@@ -28,7 +28,6 @@ export const emailProviderService = {
 
   async createEmailProviderSettings(settings: Partial<EmailProviderSettings>): Promise<EmailProviderSettings | null> {
     try {
-      // Ensure required fields are present
       const completeSettings = {
         provider: settings.provider || 'smtp',
         shop_id: settings.shop_id,
@@ -86,14 +85,61 @@ export const emailProviderService = {
     }
   },
 
-  async testEmailConnection(settings: EmailProviderSettings): Promise<boolean> {
+  async testEmailConnection(settings: EmailProviderSettings): Promise<{ success: boolean; message: string }> {
     try {
-      // In a real app, this would call an edge function to test the connection
-      // For now, we'll just simulate a successful test
-      return true;
+      // Validate required fields based on provider
+      if (settings.provider === 'smtp') {
+        if (!settings.smtp_host || !settings.smtp_port) {
+          return { success: false, message: 'SMTP host and port are required' };
+        }
+        if (!settings.smtp_username || !settings.smtp_password) {
+          return { success: false, message: 'SMTP credentials are required' };
+        }
+      } else if (['sendgrid', 'mailgun', 'ses'].includes(settings.provider)) {
+        if (!settings.api_key) {
+          return { success: false, message: 'API key is required for this provider' };
+        }
+      }
+
+      if (!settings.from_email) {
+        return { success: false, message: 'From email address is required' };
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(settings.from_email)) {
+        return { success: false, message: 'Invalid from email address format' };
+      }
+
+      // In production, this would call an edge function to actually test the connection
+      // For now, we perform validation and return success if all fields are valid
+      
+      // Simulate a brief delay as if testing connection
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Check if we can at least verify the settings are saved
+      if (settings.id) {
+        const { data, error } = await supabase
+          .from("email_provider_settings")
+          .select("id")
+          .eq("id", settings.id)
+          .single();
+
+        if (error || !data) {
+          return { success: false, message: 'Settings not found in database' };
+        }
+      }
+
+      return { 
+        success: true, 
+        message: `Configuration validated for ${settings.provider.toUpperCase()}. Note: Full connection test requires an edge function.` 
+      };
     } catch (error) {
       console.error("Failed to test email connection:", error);
-      return false;
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Connection test failed' 
+      };
     }
   }
 };
