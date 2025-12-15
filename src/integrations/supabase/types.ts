@@ -3121,6 +3121,100 @@ export type Database = {
         }
         Relationships: []
       }
+      corrective_actions: {
+        Row: {
+          action_type: string
+          assigned_to: string | null
+          completed_date: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          effectiveness_review: string | null
+          id: string
+          preventive_measures: string | null
+          priority: string
+          root_cause: string | null
+          shop_id: string
+          source_id: string | null
+          source_type: string | null
+          status: string
+          title: string
+          updated_at: string
+          verification_notes: string | null
+          verified_by: string | null
+          verified_date: string | null
+        }
+        Insert: {
+          action_type?: string
+          assigned_to?: string | null
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          effectiveness_review?: string | null
+          id?: string
+          preventive_measures?: string | null
+          priority?: string
+          root_cause?: string | null
+          shop_id: string
+          source_id?: string | null
+          source_type?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          verification_notes?: string | null
+          verified_by?: string | null
+          verified_date?: string | null
+        }
+        Update: {
+          action_type?: string
+          assigned_to?: string | null
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          effectiveness_review?: string | null
+          id?: string
+          preventive_measures?: string | null
+          priority?: string
+          root_cause?: string | null
+          shop_id?: string
+          source_id?: string | null
+          source_type?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          verification_notes?: string | null
+          verified_by?: string | null
+          verified_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrective_actions_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_activities: {
         Row: {
           action: string
@@ -14875,6 +14969,94 @@ export type Database = {
         }
         Relationships: []
       }
+      near_miss_reports: {
+        Row: {
+          category: string | null
+          contributing_factors: string[] | null
+          created_at: string
+          description: string
+          id: string
+          immediate_actions_taken: string | null
+          is_anonymous: boolean | null
+          linked_corrective_action_id: string | null
+          location: string | null
+          potential_severity: string
+          report_date: string
+          report_number: string | null
+          reported_by: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          contributing_factors?: string[] | null
+          created_at?: string
+          description: string
+          id?: string
+          immediate_actions_taken?: string | null
+          is_anonymous?: boolean | null
+          linked_corrective_action_id?: string | null
+          location?: string | null
+          potential_severity?: string
+          report_date?: string
+          report_number?: string | null
+          reported_by?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          contributing_factors?: string[] | null
+          created_at?: string
+          description?: string
+          id?: string
+          immediate_actions_taken?: string | null
+          is_anonymous?: boolean | null
+          linked_corrective_action_id?: string | null
+          location?: string | null
+          potential_severity?: string
+          report_date?: string
+          report_number?: string | null
+          reported_by?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "near_miss_reports_linked_corrective_action_id_fkey"
+            columns: ["linked_corrective_action_id"]
+            isOneToOne: false
+            referencedRelation: "corrective_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "near_miss_reports_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "near_miss_reports_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nonprofit_analytics: {
         Row: {
           created_at: string | null
@@ -24891,6 +25073,133 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      training_assignments: {
+        Row: {
+          assigned_by: string | null
+          assigned_date: string
+          certificate_url: string | null
+          completed_date: string | null
+          course_id: string
+          created_at: string
+          due_date: string | null
+          employee_id: string
+          expiry_date: string | null
+          id: string
+          notes: string | null
+          passed: boolean | null
+          score: number | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_date?: string
+          certificate_url?: string | null
+          completed_date?: string | null
+          course_id: string
+          created_at?: string
+          due_date?: string | null
+          employee_id: string
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          passed?: boolean | null
+          score?: number | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_date?: string
+          certificate_url?: string | null
+          completed_date?: string | null
+          course_id?: string
+          created_at?: string
+          due_date?: string | null
+          employee_id?: string
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          passed?: boolean | null
+          score?: number | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "training_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_courses: {
+        Row: {
+          category: string | null
+          course_code: string | null
+          course_name: string
+          created_at: string
+          description: string | null
+          duration_hours: number | null
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          provider: string | null
+          recertification_months: number | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          course_code?: string | null
+          course_name: string
+          created_at?: string
+          description?: string | null
+          duration_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          provider?: string | null
+          recertification_months?: number | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          course_code?: string | null
+          course_name?: string
+          created_at?: string
+          description?: string | null
+          duration_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          provider?: string | null
+          recertification_months?: number | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       transaction_allocations: {
         Row: {
