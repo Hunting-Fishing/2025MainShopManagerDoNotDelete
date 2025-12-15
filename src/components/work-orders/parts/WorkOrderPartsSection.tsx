@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Package, Plus, GripVertical } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditPartDialog } from './EditPartDialog';
+import { AddPartDialog } from './AddPartDialog';
 import { StatusBadge } from '../shared/StatusBadge';
 import { 
   AlertDialog, 
@@ -270,10 +271,11 @@ export function WorkOrderPartsSection({
     }
   };
 
-  const handleAddPart = async () => {
+  const handlePartAdded = () => {
+    // Refresh the parts list - onAdd callback will handle the refresh
     if (onAdd) {
-      // For now, just show a placeholder - we'll implement a proper add form later
-      console.log('Add part functionality will be implemented');
+      // The AddPartDialog handles creation via createWorkOrderPart service
+      // So we just need to trigger a refresh
     }
     setShowAddForm(false);
   };
@@ -368,6 +370,17 @@ export function WorkOrderPartsSection({
             <p className="text-sm">Use the "Add Part" button to add parts directly to this work order</p>
           </div>
         </CardContent>
+      )}
+
+      {/* Add Part Dialog */}
+      {workOrderId && (
+        <AddPartDialog
+          open={showAddForm}
+          onOpenChange={setShowAddForm}
+          workOrderId={workOrderId}
+          jobLines={[]}
+          onPartAdded={handlePartAdded}
+        />
       )}
     </Card>
   );

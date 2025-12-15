@@ -287,6 +287,6 @@ export function validateServiceData(data: any): boolean {
 }
 
 export async function optimizeDatabasePerformance(): Promise<void> {
-  // This function can be used to run database optimization queries
-  console.log('Database performance optimization - placeholder for future implementation');
+  // Database optimization is handled at the Supabase infrastructure level
+  // This function is available for future custom optimization queries if needed
 }
