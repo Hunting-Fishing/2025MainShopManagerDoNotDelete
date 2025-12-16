@@ -17241,6 +17241,213 @@ export type Database = {
         }
         Relationships: []
       }
+      ppe_assignments: {
+        Row: {
+          assigned_by: string | null
+          assigned_date: string
+          condition: string | null
+          created_at: string
+          employee_id: string
+          expiry_date: string | null
+          id: string
+          last_inspection_date: string | null
+          next_inspection_date: string | null
+          notes: string | null
+          ppe_item_id: string
+          quantity: number
+          return_condition: string | null
+          returned_date: string | null
+          serial_number: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_date?: string
+          condition?: string | null
+          created_at?: string
+          employee_id: string
+          expiry_date?: string | null
+          id?: string
+          last_inspection_date?: string | null
+          next_inspection_date?: string | null
+          notes?: string | null
+          ppe_item_id: string
+          quantity?: number
+          return_condition?: string | null
+          returned_date?: string | null
+          serial_number?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_date?: string
+          condition?: string | null
+          created_at?: string
+          employee_id?: string
+          expiry_date?: string | null
+          id?: string
+          last_inspection_date?: string | null
+          next_inspection_date?: string | null
+          notes?: string | null
+          ppe_item_id?: string
+          quantity?: number
+          return_condition?: string | null
+          returned_date?: string | null
+          serial_number?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ppe_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ppe_assignments_ppe_item_id_fkey"
+            columns: ["ppe_item_id"]
+            isOneToOne: false
+            referencedRelation: "ppe_inventory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ppe_inspections: {
+        Row: {
+          action_required: string | null
+          action_taken: string | null
+          assignment_id: string
+          condition_rating: string
+          created_at: string
+          findings: string | null
+          id: string
+          inspection_date: string
+          inspector_id: string | null
+          inspector_name: string
+          next_inspection_date: string | null
+          passed: boolean
+          photos: string[] | null
+          shop_id: string
+        }
+        Insert: {
+          action_required?: string | null
+          action_taken?: string | null
+          assignment_id: string
+          condition_rating: string
+          created_at?: string
+          findings?: string | null
+          id?: string
+          inspection_date?: string
+          inspector_id?: string | null
+          inspector_name: string
+          next_inspection_date?: string | null
+          passed: boolean
+          photos?: string[] | null
+          shop_id: string
+        }
+        Update: {
+          action_required?: string | null
+          action_taken?: string | null
+          assignment_id?: string
+          condition_rating?: string
+          created_at?: string
+          findings?: string | null
+          id?: string
+          inspection_date?: string
+          inspector_id?: string | null
+          inspector_name?: string
+          next_inspection_date?: string | null
+          passed?: boolean
+          photos?: string[] | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ppe_inspections_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "ppe_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ppe_inspections_inspector_id_fkey"
+            columns: ["inspector_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ppe_inventory: {
+        Row: {
+          category: string
+          certification_required: boolean | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expiry_tracking: boolean | null
+          id: string
+          inspection_frequency_days: number | null
+          is_active: boolean | null
+          manufacturer: string | null
+          minimum_stock_level: number | null
+          model_number: string | null
+          name: string
+          quantity_in_stock: number
+          shop_id: string
+          storage_location: string | null
+          unit_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          certification_required?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expiry_tracking?: boolean | null
+          id?: string
+          inspection_frequency_days?: number | null
+          is_active?: boolean | null
+          manufacturer?: string | null
+          minimum_stock_level?: number | null
+          model_number?: string | null
+          name: string
+          quantity_in_stock?: number
+          shop_id: string
+          storage_location?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          certification_required?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expiry_tracking?: boolean | null
+          id?: string
+          inspection_frequency_days?: number | null
+          is_active?: boolean | null
+          manufacturer?: string | null
+          minimum_stock_level?: number | null
+          model_number?: string | null
+          name?: string
+          quantity_in_stock?: number
+          shop_id?: string
+          storage_location?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       preferred_technician_history: {
         Row: {
           change_date: string

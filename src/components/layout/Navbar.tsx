@@ -115,6 +115,7 @@ const navigationCategories = [
       { name: 'Training', href: '/safety/training', requiredPath: '/safety/training' },
       { name: 'Meetings', href: '/safety/meetings', requiredPath: '/safety/meetings' },
       { name: 'JSA', href: '/safety/jsa', requiredPath: '/safety/jsa' },
+      { name: 'PPE Management', href: '/safety/ppe', requiredPath: '/safety/ppe' },
     ]
   },
   {
