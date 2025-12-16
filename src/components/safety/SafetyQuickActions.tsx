@@ -10,7 +10,9 @@ import {
   Wrench,
   Plus,
   Ship,
-  Forklift
+  Forklift,
+  GraduationCap,
+  BarChart3
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -24,6 +26,13 @@ export function SafetyQuickActions() {
       href: '/safety/incidents/new',
       color: 'text-destructive',
       bgColor: 'bg-destructive/10 hover:bg-destructive/20'
+    },
+    {
+      label: 'Near Miss',
+      icon: AlertTriangle,
+      href: '/safety/near-miss',
+      color: 'text-yellow-500',
+      bgColor: 'bg-yellow-500/10 hover:bg-yellow-500/20'
     },
     {
       label: 'Vessel Inspection',
@@ -54,25 +63,32 @@ export function SafetyQuickActions() {
       bgColor: 'bg-blue-500/10 hover:bg-blue-500/20'
     },
     {
-      label: 'Lift Inspection',
-      icon: Wrench,
-      href: '/safety/equipment/inspect',
-      color: 'text-amber-500',
-      bgColor: 'bg-amber-500/10 hover:bg-amber-500/20'
+      label: 'Corrective Action',
+      icon: ClipboardCheck,
+      href: '/safety/corrective-actions',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-600/10 hover:bg-orange-600/20'
     },
     {
-      label: 'Safety Documents',
-      icon: FileText,
-      href: '/safety/documents',
-      color: 'text-emerald-500',
-      bgColor: 'bg-emerald-500/10 hover:bg-emerald-500/20'
+      label: 'Training',
+      icon: GraduationCap,
+      href: '/safety/training',
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-500/10 hover:bg-purple-500/20'
+    },
+    {
+      label: 'Reports',
+      icon: BarChart3,
+      href: '/safety/reports',
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-500/10 hover:bg-indigo-500/20'
     },
     {
       label: 'Certifications',
       icon: Award,
       href: '/safety/certifications',
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10 hover:bg-purple-500/20'
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-500/10 hover:bg-emerald-500/20'
     }
   ];
 
@@ -85,7 +101,7 @@ export function SafetyQuickActions() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {actions.map((action) => (
             <Button
               key={action.label}
