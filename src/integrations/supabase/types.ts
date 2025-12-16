@@ -12933,6 +12933,220 @@ export type Database = {
           },
         ]
       }
+      job_safety_analyses: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          date_performed: string
+          emergency_procedures: string | null
+          id: string
+          job_description: string | null
+          job_title: string
+          jsa_number: string
+          location: string | null
+          overall_risk_level: string | null
+          rejection_reason: string | null
+          required_ppe: string[] | null
+          shop_id: string
+          special_precautions: string | null
+          status: string
+          supervisor_id: string | null
+          supervisor_name: string | null
+          template_id: string | null
+          updated_at: string
+          work_order_id: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_performed?: string
+          emergency_procedures?: string | null
+          id?: string
+          job_description?: string | null
+          job_title: string
+          jsa_number: string
+          location?: string | null
+          overall_risk_level?: string | null
+          rejection_reason?: string | null
+          required_ppe?: string[] | null
+          shop_id: string
+          special_precautions?: string | null
+          status?: string
+          supervisor_id?: string | null
+          supervisor_name?: string | null
+          template_id?: string | null
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_performed?: string
+          emergency_procedures?: string | null
+          id?: string
+          job_description?: string | null
+          job_title?: string
+          jsa_number?: string
+          location?: string | null
+          overall_risk_level?: string | null
+          rejection_reason?: string | null
+          required_ppe?: string[] | null
+          shop_id?: string
+          special_precautions?: string | null
+          status?: string
+          supervisor_id?: string | null
+          supervisor_name?: string | null
+          template_id?: string | null
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_safety_analyses_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_safety_analyses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_safety_analyses_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_safety_analyses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "jsa_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_safety_analyses_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jsa_hazards: {
+        Row: {
+          control_measures: string[] | null
+          created_at: string
+          hazard_description: string
+          id: string
+          jsa_id: string
+          likelihood: number
+          residual_risk_level: string | null
+          responsible_person: string | null
+          risk_score: number | null
+          severity: number
+          step_number: number
+          task_step: string
+        }
+        Insert: {
+          control_measures?: string[] | null
+          created_at?: string
+          hazard_description: string
+          id?: string
+          jsa_id: string
+          likelihood?: number
+          residual_risk_level?: string | null
+          responsible_person?: string | null
+          risk_score?: number | null
+          severity?: number
+          step_number: number
+          task_step: string
+        }
+        Update: {
+          control_measures?: string[] | null
+          created_at?: string
+          hazard_description?: string
+          id?: string
+          jsa_id?: string
+          likelihood?: number
+          residual_risk_level?: string | null
+          responsible_person?: string | null
+          risk_score?: number | null
+          severity?: number
+          step_number?: number
+          task_step?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jsa_hazards_jsa_id_fkey"
+            columns: ["jsa_id"]
+            isOneToOne: false
+            referencedRelation: "job_safety_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jsa_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          default_hazards: Json | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          job_category: string | null
+          name: string
+          required_ppe: string[] | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          default_hazards?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          job_category?: string | null
+          name: string
+          required_ppe?: string[] | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          default_hazards?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          job_category?: string | null
+          name?: string
+          required_ppe?: string[] | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jsa_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       labor_cost_analytics: {
         Row: {
           average_hourly_rate: number | null

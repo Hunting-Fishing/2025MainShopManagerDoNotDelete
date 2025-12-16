@@ -195,6 +195,7 @@ export function MobileNavigation() {
         { id: 'safety-near-miss', label: 'Near Miss', icon: AlertTriangle, path: '/safety/near-miss', description: 'Near miss reporting' },
         { id: 'safety-training', label: 'Training', icon: GraduationCap, path: '/safety/training', description: 'Safety training' },
         { id: 'safety-meetings', label: 'Meetings', icon: Users, path: '/safety/meetings', description: 'Toolbox talks & meetings' },
+        { id: 'safety-jsa', label: 'JSA', icon: ClipboardCheck, path: '/safety/jsa', description: 'Job Safety Analysis' },
       ]
     },
     {
