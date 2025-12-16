@@ -327,6 +327,13 @@ export const navigation: NavigationSection[] = [
         description: 'Tire inventory and lifecycle tracking',
         permissionModule: 'fleet_management',
       },
+      {
+        title: 'Accounting Integration',
+        href: '/accounting-integration',
+        icon: Receipt,
+        description: 'QuickBooks, Sage, and journal entries',
+        permissionModule: 'fleet_management',
+      },
     ],
   },
   {
