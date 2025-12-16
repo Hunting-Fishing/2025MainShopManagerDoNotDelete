@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Plus, Search, RefreshCw, AlertTriangle, TrendingUp, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Eye, Plus, Search, RefreshCw, AlertTriangle, TrendingUp, Clock, BarChart3 } from 'lucide-react';
 import { useNearMissReports, NearMissReport } from '@/hooks/useNearMissReports';
 import { NearMissReportDialog } from '@/components/safety/near-miss/NearMissReportDialog';
 import { NearMissCard } from '@/components/safety/near-miss/NearMissCard';
+import { NearMissTrendChart } from '@/components/safety/near-miss/NearMissTrendChart';
 
 export default function SafetyNearMiss() {
   const { loading, reports, totalThisMonth, pendingReview, createReport, updateReport, refetch } = useNearMissReports();
@@ -112,74 +114,91 @@ export default function SafetyNearMiss() {
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search reports..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="reported">Reported</SelectItem>
-                  <SelectItem value="reviewed">Reviewed</SelectItem>
-                  <SelectItem value="action_required">Action Required</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Severity" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Severities</SelectItem>
-                  <SelectItem value="minor">Minor</SelectItem>
-                  <SelectItem value="moderate">Moderate</SelectItem>
-                  <SelectItem value="serious">Serious</SelectItem>
-                  <SelectItem value="catastrophic">Catastrophic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tabs for Reports and Analytics */}
+        <Tabs defaultValue="reports" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Reports List */}
-        <div className="space-y-4">
-          {loading ? (
+          <TabsContent value="reports" className="space-y-4">
+            {/* Filters */}
             <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                Loading near miss reports...
+              <CardContent className="pt-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search reports..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="reported">Reported</SelectItem>
+                      <SelectItem value="reviewed">Reviewed</SelectItem>
+                      <SelectItem value="action_required">Action Required</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={severityFilter} onValueChange={setSeverityFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Severity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Severities</SelectItem>
+                      <SelectItem value="minor">Minor</SelectItem>
+                      <SelectItem value="moderate">Moderate</SelectItem>
+                      <SelectItem value="serious">Serious</SelectItem>
+                      <SelectItem value="catastrophic">Catastrophic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
-          ) : filteredReports.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No near miss reports found
-              </CardContent>
-            </Card>
-          ) : (
-            filteredReports.map(report => (
-              <NearMissCard
-                key={report.id}
-                report={report}
-                onEdit={() => handleEdit(report)}
-                onStatusChange={(status) => updateReport(report.id, { status: status as 'reported' | 'reviewed' | 'action_required' | 'closed' })}
-              />
-            ))
-          )}
-        </div>
+
+            {/* Reports List */}
+            <div className="space-y-4">
+              {loading ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    Loading near miss reports...
+                  </CardContent>
+                </Card>
+              ) : filteredReports.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    No near miss reports found
+                  </CardContent>
+                </Card>
+              ) : (
+                filteredReports.map(report => (
+                  <NearMissCard
+                    key={report.id}
+                    report={report}
+                    onEdit={() => handleEdit(report)}
+                    onStatusChange={(status) => updateReport(report.id, { status: status as 'reported' | 'reviewed' | 'action_required' | 'closed' })}
+                  />
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <NearMissTrendChart reports={reports} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <NearMissReportDialog
