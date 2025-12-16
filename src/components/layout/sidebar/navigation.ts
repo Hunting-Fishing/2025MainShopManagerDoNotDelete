@@ -397,6 +397,20 @@ export const navigation: NavigationSection[] = [
         description: 'Training courses & assignments',
         permissionModule: 'safety',
       },
+      {
+        title: 'Contractor Safety',
+        href: '/safety/contractors',
+        icon: HardHat,
+        description: 'Contractor compliance & access',
+        permissionModule: 'safety',
+      },
+      {
+        title: 'Safety Rewards',
+        href: '/safety/rewards',
+        icon: Award,
+        description: 'Points & gamification',
+        permissionModule: 'safety',
+      },
     ],
   },
   {

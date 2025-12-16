@@ -112,6 +112,8 @@ import SafetyTraining from '@/pages/SafetyTraining';
 import SafetyMeetings from '@/pages/SafetyMeetings';
 import SafetyJSA from '@/pages/SafetyJSA';
 import SafetyPPE from '@/pages/SafetyPPE';
+import SafetyContractors from '@/pages/SafetyContractors';
+import SafetyGamification from '@/pages/SafetyGamification';
 import TechnicianPortal from '@/pages/TechnicianPortal';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
@@ -696,6 +698,16 @@ function App() {
                   <Route path="/safety/ppe" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <SafetyPPE />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/contractors" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyContractors />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/rewards" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyGamification />
                     </ProtectedRoute>
                   } />
                   
