@@ -17376,11 +17376,15 @@ export type Database = {
           employee_id: string
           expiry_date: string | null
           id: string
+          in_service_date: string | null
           last_inspection_date: string | null
           next_inspection_date: string | null
           notes: string | null
+          out_of_service_date: string | null
+          out_of_service_reason: string | null
           ppe_item_id: string
           quantity: number
+          replacement_item_id: string | null
           return_condition: string | null
           returned_date: string | null
           serial_number: string | null
@@ -17396,11 +17400,15 @@ export type Database = {
           employee_id: string
           expiry_date?: string | null
           id?: string
+          in_service_date?: string | null
           last_inspection_date?: string | null
           next_inspection_date?: string | null
           notes?: string | null
+          out_of_service_date?: string | null
+          out_of_service_reason?: string | null
           ppe_item_id: string
           quantity?: number
+          replacement_item_id?: string | null
           return_condition?: string | null
           returned_date?: string | null
           serial_number?: string | null
@@ -17416,11 +17424,15 @@ export type Database = {
           employee_id?: string
           expiry_date?: string | null
           id?: string
+          in_service_date?: string | null
           last_inspection_date?: string | null
           next_inspection_date?: string | null
           notes?: string | null
+          out_of_service_date?: string | null
+          out_of_service_reason?: string | null
           ppe_item_id?: string
           quantity?: number
+          replacement_item_id?: string | null
           return_condition?: string | null
           returned_date?: string | null
           serial_number?: string | null
@@ -17438,6 +17450,99 @@ export type Database = {
           },
           {
             foreignKeyName: "ppe_assignments_ppe_item_id_fkey"
+            columns: ["ppe_item_id"]
+            isOneToOne: false
+            referencedRelation: "ppe_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ppe_assignments_replacement_item_id_fkey"
+            columns: ["replacement_item_id"]
+            isOneToOne: false
+            referencedRelation: "ppe_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ppe_history: {
+        Row: {
+          assignment_id: string | null
+          condition_after: string | null
+          condition_before: string | null
+          created_at: string
+          employee_id: string | null
+          event_date: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          new_status: string | null
+          notes: string | null
+          performed_by: string | null
+          performed_by_name: string | null
+          ppe_item_id: string | null
+          previous_status: string | null
+          shop_id: string
+        }
+        Insert: {
+          assignment_id?: string | null
+          condition_after?: string | null
+          condition_before?: string | null
+          created_at?: string
+          employee_id?: string | null
+          event_date?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          ppe_item_id?: string | null
+          previous_status?: string | null
+          shop_id: string
+        }
+        Update: {
+          assignment_id?: string | null
+          condition_after?: string | null
+          condition_before?: string | null
+          created_at?: string
+          employee_id?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          ppe_item_id?: string | null
+          previous_status?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ppe_history_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "ppe_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ppe_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ppe_history_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ppe_history_ppe_item_id_fkey"
             columns: ["ppe_item_id"]
             isOneToOne: false
             referencedRelation: "ppe_inventory"
