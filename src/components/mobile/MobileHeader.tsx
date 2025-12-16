@@ -220,6 +220,7 @@ export function MobileHeader({
         { label: 'Training', icon: GraduationCap, path: '/safety/training', requiredPath: '/safety/training' },
         { label: 'Meetings', icon: Users, path: '/safety/meetings', requiredPath: '/safety/meetings' },
         { label: 'JSA', icon: ClipboardCheck, path: '/safety/jsa', requiredPath: '/safety/jsa' },
+        { label: 'PPE Management', icon: HardHat, path: '/safety/ppe', requiredPath: '/safety/ppe' },
       ]
     },
     {

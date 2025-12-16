@@ -98,6 +98,7 @@ export const routePermissions: RoutePermission[] = [
   { path: '/safety/training', allowedRoles: ['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner'] },
   { path: '/safety/meetings', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
   { path: '/safety/jsa', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
+  { path: '/safety/ppe', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
   { path: '/safety', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'yard_manager_assistant', 'mechanic_manager_assistant', 'owner'] },
   
   // Feedback
