@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ClipboardCheck, Plus, Search, RefreshCw, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ClipboardCheck, Plus, Search, RefreshCw, AlertCircle, Clock, CheckCircle2, BarChart3 } from 'lucide-react';
 import { useCorrectiveActions, CorrectiveAction } from '@/hooks/useCorrectiveActions';
 import { CorrectiveActionDialog } from '@/components/safety/corrective-actions/CorrectiveActionDialog';
 import { CorrectiveActionCard } from '@/components/safety/corrective-actions/CorrectiveActionCard';
+import { CorrectiveActionAnalytics } from '@/components/safety/corrective-actions/CorrectiveActionAnalytics';
 import { format } from 'date-fns';
 
 export default function SafetyCorrectiveActions() {
@@ -119,76 +121,93 @@ export default function SafetyCorrectiveActions() {
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search actions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="verified">Verified</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tabs for Actions and Analytics */}
+        <Tabs defaultValue="actions" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="actions">Actions</TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Actions List */}
-        <div className="space-y-4">
-          {loading ? (
+          <TabsContent value="actions" className="space-y-4">
+            {/* Filters */}
             <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                Loading corrective actions...
+              <CardContent className="pt-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search actions..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="verified">Verified</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Priorities</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
-          ) : filteredActions.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No corrective actions found
-              </CardContent>
-            </Card>
-          ) : (
-            filteredActions.map(action => (
-              <CorrectiveActionCard
-                key={action.id}
-                action={action}
-                onEdit={() => handleEdit(action)}
-                onDelete={() => deleteAction(action.id)}
-                onStatusChange={(status) => updateAction(action.id, { status: status as 'open' | 'in_progress' | 'completed' | 'verified' | 'closed' })}
-              />
-            ))
-          )}
-        </div>
+
+            {/* Actions List */}
+            <div className="space-y-4">
+              {loading ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    Loading corrective actions...
+                  </CardContent>
+                </Card>
+              ) : filteredActions.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    No corrective actions found
+                  </CardContent>
+                </Card>
+              ) : (
+                filteredActions.map(action => (
+                  <CorrectiveActionCard
+                    key={action.id}
+                    action={action}
+                    onEdit={() => handleEdit(action)}
+                    onDelete={() => deleteAction(action.id)}
+                    onStatusChange={(status) => updateAction(action.id, { status: status as 'open' | 'in_progress' | 'completed' | 'verified' | 'closed' })}
+                  />
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <CorrectiveActionAnalytics actions={actions} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <CorrectiveActionDialog
