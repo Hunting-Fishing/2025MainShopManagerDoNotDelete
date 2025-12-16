@@ -194,6 +194,7 @@ export function MobileNavigation() {
         { id: 'safety-corrective-actions', label: 'Corrective Actions', icon: ClipboardCheck, path: '/safety/corrective-actions', description: 'CAPA tracking' },
         { id: 'safety-near-miss', label: 'Near Miss', icon: AlertTriangle, path: '/safety/near-miss', description: 'Near miss reporting' },
         { id: 'safety-training', label: 'Training', icon: GraduationCap, path: '/safety/training', description: 'Safety training' },
+        { id: 'safety-meetings', label: 'Meetings', icon: Users, path: '/safety/meetings', description: 'Toolbox talks & meetings' },
       ]
     },
     {
