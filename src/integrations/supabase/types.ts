@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_mappings: {
+        Row: {
+          created_at: string
+          external_account_id: string
+          external_account_name: string | null
+          id: string
+          integration_id: string
+          internal_account_id: string | null
+          internal_category: string | null
+          is_default: boolean | null
+          mapping_type: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          external_account_id: string
+          external_account_name?: string | null
+          id?: string
+          integration_id: string
+          internal_account_id?: string | null
+          internal_category?: string | null
+          is_default?: boolean | null
+          mapping_type: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          external_account_id?: string
+          external_account_name?: string | null
+          id?: string
+          integration_id?: string
+          internal_account_id?: string | null
+          internal_category?: string | null
+          is_default?: boolean | null
+          mapping_type?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_mappings_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_mappings_internal_account_id_fkey"
+            columns: ["internal_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounting_integrations: {
+        Row: {
+          auto_sync_enabled: boolean | null
+          connection_status: string
+          created_at: string
+          credentials: Json | null
+          id: string
+          integration_type: string
+          last_sync_at: string | null
+          last_sync_error: string | null
+          last_sync_status: string | null
+          settings: Json | null
+          shop_id: string
+          sync_frequency: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_sync_enabled?: boolean | null
+          connection_status?: string
+          created_at?: string
+          credentials?: Json | null
+          id?: string
+          integration_type: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          settings?: Json | null
+          shop_id: string
+          sync_frequency?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_sync_enabled?: boolean | null
+          connection_status?: string
+          created_at?: string
+          credentials?: Json | null
+          id?: string
+          integration_type?: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          settings?: Json | null
+          shop_id?: string
+          sync_frequency?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       accounting_streams: {
         Row: {
           account_code: string
@@ -69,6 +174,68 @@ export type Database = {
             columns: ["parent_account_id"]
             isOneToOne: false
             referencedRelation: "accounting_streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounting_sync_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          error_details: Json | null
+          id: string
+          integration_id: string
+          records_failed: number | null
+          records_processed: number | null
+          records_succeeded: number | null
+          shop_id: string
+          started_at: string
+          status: string
+          sync_direction: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          error_details?: Json | null
+          id?: string
+          integration_id: string
+          records_failed?: number | null
+          records_processed?: number | null
+          records_succeeded?: number | null
+          shop_id: string
+          started_at?: string
+          status: string
+          sync_direction: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          error_details?: Json | null
+          id?: string
+          integration_id?: string
+          records_failed?: number | null
+          records_processed?: number | null
+          records_succeeded?: number | null
+          shop_id?: string
+          started_at?: string
+          status?: string
+          sync_direction?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_sync_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_integrations"
             referencedColumns: ["id"]
           },
         ]
@@ -2484,6 +2651,71 @@ export type Database = {
             columns: ["certificate_id"]
             isOneToOne: false
             referencedRelation: "staff_certificates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chart_of_accounts: {
+        Row: {
+          account_code: string
+          account_name: string
+          account_subtype: string | null
+          account_type: string
+          created_at: string
+          description: string | null
+          external_account_id: string | null
+          external_account_name: string | null
+          id: string
+          is_active: boolean | null
+          is_system_account: boolean | null
+          normal_balance: string | null
+          parent_account_id: string | null
+          shop_id: string
+          tax_line: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_code: string
+          account_name: string
+          account_subtype?: string | null
+          account_type: string
+          created_at?: string
+          description?: string | null
+          external_account_id?: string | null
+          external_account_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_account?: boolean | null
+          normal_balance?: string | null
+          parent_account_id?: string | null
+          shop_id: string
+          tax_line?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_code?: string
+          account_name?: string
+          account_subtype?: string | null
+          account_type?: string
+          created_at?: string
+          description?: string | null
+          external_account_id?: string | null
+          external_account_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_account?: boolean | null
+          normal_balance?: string | null
+          parent_account_id?: string | null
+          shop_id?: string
+          tax_line?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_of_accounts_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -9277,6 +9509,68 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          end_date: string
+          fiscal_month: number | null
+          fiscal_quarter: number | null
+          fiscal_year: number
+          id: string
+          is_closed: boolean | null
+          period_name: string
+          period_type: string
+          retained_earnings_entry_id: string | null
+          shop_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          end_date: string
+          fiscal_month?: number | null
+          fiscal_quarter?: number | null
+          fiscal_year: number
+          id?: string
+          is_closed?: boolean | null
+          period_name: string
+          period_type: string
+          retained_earnings_entry_id?: string | null
+          shop_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          end_date?: string
+          fiscal_month?: number | null
+          fiscal_quarter?: number | null
+          fiscal_year?: number
+          id?: string
+          is_closed?: boolean | null
+          period_name?: string
+          period_type?: string
+          retained_earnings_entry_id?: string | null
+          shop_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_periods_retained_earnings_entry_id_fkey"
+            columns: ["retained_earnings_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_reports: {
         Row: {
           end_date: string | null
@@ -13898,6 +14192,149 @@ export type Database = {
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          entry_date: string
+          entry_number: string
+          entry_type: string
+          external_sync_error: string | null
+          external_sync_id: string | null
+          external_sync_status: string | null
+          id: string
+          is_posted: boolean | null
+          is_reversed: boolean | null
+          posted_at: string | null
+          posted_by: string | null
+          reference_id: string | null
+          reference_type: string | null
+          reversed_by_entry_id: string | null
+          shop_id: string
+          source_document: string | null
+          total_credits: number | null
+          total_debits: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_date: string
+          entry_number: string
+          entry_type: string
+          external_sync_error?: string | null
+          external_sync_id?: string | null
+          external_sync_status?: string | null
+          id?: string
+          is_posted?: boolean | null
+          is_reversed?: boolean | null
+          posted_at?: string | null
+          posted_by?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          reversed_by_entry_id?: string | null
+          shop_id: string
+          source_document?: string | null
+          total_credits?: number | null
+          total_debits?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_date?: string
+          entry_number?: string
+          entry_type?: string
+          external_sync_error?: string | null
+          external_sync_id?: string | null
+          external_sync_status?: string | null
+          id?: string
+          is_posted?: boolean | null
+          is_reversed?: boolean | null
+          posted_at?: string | null
+          posted_by?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          reversed_by_entry_id?: string | null
+          shop_id?: string
+          source_document?: string | null
+          total_credits?: number | null
+          total_debits?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_reversed_by_entry_id_fkey"
+            columns: ["reversed_by_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_lines: {
+        Row: {
+          account_id: string
+          created_at: string
+          credit_amount: number | null
+          customer_id: string | null
+          debit_amount: number | null
+          department_id: string | null
+          description: string | null
+          id: string
+          journal_entry_id: string
+          line_order: number | null
+          project_id: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          credit_amount?: number | null
+          customer_id?: string | null
+          debit_amount?: number | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          journal_entry_id: string
+          line_order?: number | null
+          project_id?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          credit_amount?: number | null
+          customer_id?: string | null
+          debit_amount?: number | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          journal_entry_id?: string
+          line_order?: number | null
+          project_id?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -20976,6 +21413,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      recurring_journal_templates: {
+        Row: {
+          auto_post: boolean | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          frequency: string
+          id: string
+          is_active: boolean | null
+          last_run_date: string | null
+          next_run_date: string | null
+          shop_id: string
+          template_lines: Json
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          auto_post?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          last_run_date?: string | null
+          next_run_date?: string | null
+          shop_id: string
+          template_lines?: Json
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          auto_post?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          last_run_date?: string | null
+          next_run_date?: string | null
+          shop_id?: string
+          template_lines?: Json
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       referral_sources: {
         Row: {

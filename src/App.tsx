@@ -91,6 +91,7 @@ import FuelManagement from '@/pages/FuelManagement';
 import Warranties from '@/pages/Warranties';
 import DriverManagement from '@/pages/DriverManagement';
 import TireManagement from '@/pages/TireManagement';
+import AccountingIntegration from '@/pages/AccountingIntegration';
 import Safety from '@/pages/Safety';
 import SafetyIncidents from '@/pages/SafetyIncidents';
 import SafetyIncidentNew from '@/pages/SafetyIncidentNew';
@@ -627,6 +628,11 @@ function App() {
                   <Route path="/tire-management" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <TireManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/accounting-integration" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <AccountingIntegration />
                     </ProtectedRoute>
                   } />
                   
