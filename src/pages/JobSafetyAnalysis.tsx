@@ -12,7 +12,7 @@ import { useJSA } from '@/hooks/useJSA';
 import { format } from 'date-fns';
 
 export default function JobSafetyAnalysis() {
-  const { templates, records, isLoading, createTemplate, createRecord, updateRecordStatus, calculateRiskScore } = useJSA();
+  const { templates, records, isLoading, createTemplate, createRecord, updateRecordStatus } = useJSA();
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [recordDialogOpen, setRecordDialogOpen] = useState(false);
 
