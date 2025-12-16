@@ -22,6 +22,8 @@ import { CorrectiveActionsWidget } from '@/components/safety/dashboard/Correctiv
 import { NearMissWidget } from '@/components/safety/dashboard/NearMissWidget';
 import { TrainingComplianceWidget } from '@/components/safety/dashboard/TrainingComplianceWidget';
 import { ComplianceScoreWidget } from '@/components/safety/dashboard/ComplianceScoreWidget';
+import { EquipmentHealthWidget } from '@/components/safety/dashboard/EquipmentHealthWidget';
+import { UpcomingInspectionsWidget } from '@/components/safety/dashboard/UpcomingInspectionsWidget';
 import { Shield, RefreshCw, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -100,9 +102,10 @@ export default function Safety() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-3">
           {/* Left Column */}
           <div className="space-y-6">
+            <EquipmentHealthWidget />
             <InspectionCompletionWidget 
               inspections={inspections} 
               loading={inspectionsLoading} 
@@ -111,13 +114,18 @@ export default function Safety() {
               inspections={inspections} 
               loading={inspectionsLoading} 
             />
+          </div>
+
+          {/* Middle Column */}
+          <div className="space-y-6">
+            <UpcomingInspectionsWidget />
             <RecentIncidentsList incidents={recentIncidents} loading={loading} />
+            <TodayInspectionsCard inspections={todayInspections} loading={loading} />
           </div>
 
           {/* Right Column */}
           <div className="space-y-6">
             <ServiceAlertsPanel />
-            <TodayInspectionsCard inspections={todayInspections} loading={loading} />
             <UnsafeEquipmentAlert unsafeLifts={unsafeLifts} loading={loading} />
             <CertificationAlertsCard />
           </div>
