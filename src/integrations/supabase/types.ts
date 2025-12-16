@@ -1104,6 +1104,109 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_warranties: {
+        Row: {
+          claim_phone: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          coverage_description: string | null
+          created_at: string
+          created_by: string | null
+          deductible: number | null
+          document_url: string | null
+          end_date: string
+          equipment_id: string | null
+          hours_limit: number | null
+          id: string
+          is_active: boolean | null
+          manufacturer: string | null
+          mileage_limit: number | null
+          notes: string | null
+          policy_number: string | null
+          shop_id: string
+          start_date: string
+          updated_at: string
+          vehicle_id: string | null
+          warranty_name: string
+          warranty_type: string
+        }
+        Insert: {
+          claim_phone?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          coverage_description?: string | null
+          created_at?: string
+          created_by?: string | null
+          deductible?: number | null
+          document_url?: string | null
+          end_date: string
+          equipment_id?: string | null
+          hours_limit?: number | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer?: string | null
+          mileage_limit?: number | null
+          notes?: string | null
+          policy_number?: string | null
+          shop_id: string
+          start_date: string
+          updated_at?: string
+          vehicle_id?: string | null
+          warranty_name: string
+          warranty_type: string
+        }
+        Update: {
+          claim_phone?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          coverage_description?: string | null
+          created_at?: string
+          created_by?: string | null
+          deductible?: number | null
+          document_url?: string | null
+          end_date?: string
+          equipment_id?: string | null
+          hours_limit?: number | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer?: string | null
+          mileage_limit?: number | null
+          notes?: string | null
+          policy_number?: string | null
+          shop_id?: string
+          start_date?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          warranty_name?: string
+          warranty_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_warranties_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_warranties_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_warranties_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_work_orders: {
         Row: {
           asset_id: string
@@ -9797,6 +9900,168 @@ export type Database = {
         }
         Relationships: []
       }
+      fuel_budgets: {
+        Row: {
+          alert_threshold_percent: number | null
+          budget_amount: number
+          budget_period: string
+          created_at: string
+          created_by: string | null
+          equipment_id: string | null
+          fiscal_year: number | null
+          id: string
+          is_active: boolean | null
+          month: number | null
+          notes: string | null
+          quarter: number | null
+          shop_id: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          alert_threshold_percent?: number | null
+          budget_amount: number
+          budget_period: string
+          created_at?: string
+          created_by?: string | null
+          equipment_id?: string | null
+          fiscal_year?: number | null
+          id?: string
+          is_active?: boolean | null
+          month?: number | null
+          notes?: string | null
+          quarter?: number | null
+          shop_id: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          alert_threshold_percent?: number | null
+          budget_amount?: number
+          budget_period?: string
+          created_at?: string
+          created_by?: string | null
+          equipment_id?: string | null
+          fiscal_year?: number | null
+          id?: string
+          is_active?: boolean | null
+          month?: number | null
+          notes?: string | null
+          quarter?: number | null
+          shop_id?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_budgets_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_budgets_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_cards: {
+        Row: {
+          assigned_employee_id: string | null
+          assigned_equipment_id: string | null
+          assigned_vehicle_id: string | null
+          card_number: string
+          created_at: string
+          created_by: string | null
+          credit_limit: number | null
+          current_balance: number | null
+          expiry_date: string | null
+          id: string
+          notes: string | null
+          pin_hash: string | null
+          provider: string
+          shop_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_employee_id?: string | null
+          assigned_equipment_id?: string | null
+          assigned_vehicle_id?: string | null
+          card_number: string
+          created_at?: string
+          created_by?: string | null
+          credit_limit?: number | null
+          current_balance?: number | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          pin_hash?: string | null
+          provider: string
+          shop_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_employee_id?: string | null
+          assigned_equipment_id?: string | null
+          assigned_vehicle_id?: string | null
+          card_number?: string
+          created_at?: string
+          created_by?: string | null
+          credit_limit?: number | null
+          current_balance?: number | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          pin_hash?: string | null
+          provider?: string
+          shop_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_cards_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_cards_assigned_equipment_id_fkey"
+            columns: ["assigned_equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_cards_assigned_vehicle_id_fkey"
+            columns: ["assigned_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_cards_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_entries: {
         Row: {
           cost: number | null
@@ -9805,12 +10070,16 @@ export type Database = {
           entry_date: string | null
           equipment_id: string | null
           fuel_amount: number
+          fuel_card_id: string | null
+          fuel_station_id: string | null
           fuel_unit: string | null
           hours_reading: number | null
           id: string
           location: string | null
+          mpg_calculated: number | null
           notes: string | null
           odometer_reading: number | null
+          receipt_image_url: string | null
           shop_id: string | null
           updated_at: string | null
         }
@@ -9821,12 +10090,16 @@ export type Database = {
           entry_date?: string | null
           equipment_id?: string | null
           fuel_amount: number
+          fuel_card_id?: string | null
+          fuel_station_id?: string | null
           fuel_unit?: string | null
           hours_reading?: number | null
           id?: string
           location?: string | null
+          mpg_calculated?: number | null
           notes?: string | null
           odometer_reading?: number | null
+          receipt_image_url?: string | null
           shop_id?: string | null
           updated_at?: string | null
         }
@@ -9837,12 +10110,16 @@ export type Database = {
           entry_date?: string | null
           equipment_id?: string | null
           fuel_amount?: number
+          fuel_card_id?: string | null
+          fuel_station_id?: string | null
           fuel_unit?: string | null
           hours_reading?: number | null
           id?: string
           location?: string | null
+          mpg_calculated?: number | null
           notes?: string | null
           odometer_reading?: number | null
+          receipt_image_url?: string | null
           shop_id?: string | null
           updated_at?: string | null
         }
@@ -9862,6 +10139,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fuel_entries_fuel_card_id_fkey"
+            columns: ["fuel_card_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_entries_fuel_station_id_fkey"
+            columns: ["fuel_station_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_stations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fuel_entries_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
@@ -9869,6 +10160,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fuel_stations: {
+        Row: {
+          accepted_card_types: string[] | null
+          address: string | null
+          city: string | null
+          created_at: string
+          id: string
+          is_preferred: boolean | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          notes: string | null
+          phone: string | null
+          shop_id: string
+          state: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          accepted_card_types?: string[] | null
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_preferred?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          shop_id: string
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          accepted_card_types?: string[] | null
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_preferred?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          shop_id?: string
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: []
       }
       funding_sources: {
         Row: {
@@ -16694,6 +17039,130 @@ export type Database = {
             columns: ["part_id"]
             isOneToOne: false
             referencedRelation: "work_order_parts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      part_warranties: {
+        Row: {
+          coverage_description: string | null
+          created_at: string
+          created_by: string | null
+          document_url: string | null
+          equipment_id: string | null
+          expiry_date: string
+          id: string
+          installed_date: string
+          inventory_item_id: string | null
+          manufacturer: string | null
+          notes: string | null
+          part_name: string
+          part_number: string | null
+          purchase_price: number | null
+          serial_number: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string
+          vehicle_id: string | null
+          warranty_hours: number | null
+          warranty_miles: number | null
+          warranty_months: number | null
+          warranty_value: number | null
+          work_order_id: string | null
+        }
+        Insert: {
+          coverage_description?: string | null
+          created_at?: string
+          created_by?: string | null
+          document_url?: string | null
+          equipment_id?: string | null
+          expiry_date: string
+          id?: string
+          installed_date: string
+          inventory_item_id?: string | null
+          manufacturer?: string | null
+          notes?: string | null
+          part_name: string
+          part_number?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+          warranty_hours?: number | null
+          warranty_miles?: number | null
+          warranty_months?: number | null
+          warranty_value?: number | null
+          work_order_id?: string | null
+        }
+        Update: {
+          coverage_description?: string | null
+          created_at?: string
+          created_by?: string | null
+          document_url?: string | null
+          equipment_id?: string | null
+          expiry_date?: string
+          id?: string
+          installed_date?: string
+          inventory_item_id?: string | null
+          manufacturer?: string | null
+          notes?: string | null
+          part_name?: string
+          part_number?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+          warranty_hours?: number | null
+          warranty_miles?: number | null
+          warranty_months?: number | null
+          warranty_value?: number | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "part_warranties_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "part_warranties_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "part_warranties_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "part_warranties_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_stock_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "part_warranties_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "part_warranties_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -27668,6 +28137,125 @@ export type Database = {
             columns: ["vessel_id"]
             isOneToOne: false
             referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_claims: {
+        Row: {
+          amount_approved: number | null
+          amount_claimed: number
+          asset_warranty_id: string | null
+          claim_date: string
+          claim_number: string
+          contact_name: string | null
+          created_at: string
+          created_by: string | null
+          denial_reason: string | null
+          documents: string[] | null
+          failure_date: string | null
+          hours_at_failure: number | null
+          id: string
+          issue_description: string
+          labor_cost: number | null
+          mileage_at_failure: number | null
+          notes: string | null
+          part_warranty_id: string | null
+          parts_cost: number | null
+          reference_number: string | null
+          repair_description: string | null
+          resolved_date: string | null
+          shop_id: string
+          status: string | null
+          submitted_date: string | null
+          updated_at: string
+          work_order_id: string | null
+        }
+        Insert: {
+          amount_approved?: number | null
+          amount_claimed: number
+          asset_warranty_id?: string | null
+          claim_date?: string
+          claim_number: string
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          denial_reason?: string | null
+          documents?: string[] | null
+          failure_date?: string | null
+          hours_at_failure?: number | null
+          id?: string
+          issue_description: string
+          labor_cost?: number | null
+          mileage_at_failure?: number | null
+          notes?: string | null
+          part_warranty_id?: string | null
+          parts_cost?: number | null
+          reference_number?: string | null
+          repair_description?: string | null
+          resolved_date?: string | null
+          shop_id: string
+          status?: string | null
+          submitted_date?: string | null
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Update: {
+          amount_approved?: number | null
+          amount_claimed?: number
+          asset_warranty_id?: string | null
+          claim_date?: string
+          claim_number?: string
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          denial_reason?: string | null
+          documents?: string[] | null
+          failure_date?: string | null
+          hours_at_failure?: number | null
+          id?: string
+          issue_description?: string
+          labor_cost?: number | null
+          mileage_at_failure?: number | null
+          notes?: string | null
+          part_warranty_id?: string | null
+          parts_cost?: number | null
+          reference_number?: string | null
+          repair_description?: string | null
+          resolved_date?: string | null
+          shop_id?: string
+          status?: string | null
+          submitted_date?: string | null
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_claims_asset_warranty_id_fkey"
+            columns: ["asset_warranty_id"]
+            isOneToOne: false
+            referencedRelation: "asset_warranties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_part_warranty_id_fkey"
+            columns: ["part_warranty_id"]
+            isOneToOne: false
+            referencedRelation: "part_warranties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]
