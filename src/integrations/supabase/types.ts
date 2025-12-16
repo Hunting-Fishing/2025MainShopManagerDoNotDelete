@@ -5513,6 +5513,393 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_assignments: {
+        Row: {
+          assignment_date: string
+          created_at: string | null
+          driver_id: string
+          end_date: string | null
+          equipment_id: string | null
+          id: string
+          is_primary: boolean | null
+          notes: string | null
+          shop_id: string
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          assignment_date: string
+          created_at?: string | null
+          driver_id: string
+          end_date?: string | null
+          equipment_id?: string | null
+          id?: string
+          is_primary?: boolean | null
+          notes?: string | null
+          shop_id: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          assignment_date?: string
+          created_at?: string | null
+          driver_id?: string
+          end_date?: string | null
+          equipment_id?: string | null
+          id?: string
+          is_primary?: boolean | null
+          notes?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_assignments_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "driver_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_assignments_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_assignments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_hours_of_service: {
+        Row: {
+          certified_at: string | null
+          certified_by: string | null
+          created_at: string | null
+          driver_id: string
+          driving_hours: number | null
+          id: string
+          log_date: string
+          notes: string | null
+          off_duty_hours: number | null
+          on_duty_hours: number | null
+          shop_id: string
+          sleeper_hours: number | null
+          status: string | null
+          updated_at: string | null
+          violation_type: string | null
+        }
+        Insert: {
+          certified_at?: string | null
+          certified_by?: string | null
+          created_at?: string | null
+          driver_id: string
+          driving_hours?: number | null
+          id?: string
+          log_date: string
+          notes?: string | null
+          off_duty_hours?: number | null
+          on_duty_hours?: number | null
+          shop_id: string
+          sleeper_hours?: number | null
+          status?: string | null
+          updated_at?: string | null
+          violation_type?: string | null
+        }
+        Update: {
+          certified_at?: string | null
+          certified_by?: string | null
+          created_at?: string | null
+          driver_id?: string
+          driving_hours?: number | null
+          id?: string
+          log_date?: string
+          notes?: string | null
+          off_duty_hours?: number | null
+          on_duty_hours?: number | null
+          shop_id?: string
+          sleeper_hours?: number | null
+          status?: string | null
+          updated_at?: string | null
+          violation_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_hours_of_service_certified_by_fkey"
+            columns: ["certified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_hours_of_service_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "driver_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_licenses: {
+        Row: {
+          created_at: string | null
+          document_url: string | null
+          driver_id: string
+          expiry_date: string
+          id: string
+          issue_date: string | null
+          issuing_state: string | null
+          license_number: string
+          license_type: string
+          notes: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_url?: string | null
+          driver_id: string
+          expiry_date: string
+          id?: string
+          issue_date?: string | null
+          issuing_state?: string | null
+          license_number: string
+          license_type: string
+          notes?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_url?: string | null
+          driver_id?: string
+          expiry_date?: string
+          id?: string
+          issue_date?: string | null
+          issuing_state?: string | null
+          license_number?: string
+          license_type?: string
+          notes?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_licenses_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "driver_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_profiles: {
+        Row: {
+          created_at: string | null
+          date_of_birth: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          endorsements: Json | null
+          hire_date: string | null
+          id: string
+          is_active: boolean | null
+          license_class: string | null
+          license_expiry: string | null
+          license_number: string | null
+          license_state: string | null
+          medical_card_expiry: string | null
+          notes: string | null
+          restrictions: string | null
+          shop_id: string
+          staff_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_of_birth?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          endorsements?: Json | null
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_class?: string | null
+          license_expiry?: string | null
+          license_number?: string | null
+          license_state?: string | null
+          medical_card_expiry?: string | null
+          notes?: string | null
+          restrictions?: string | null
+          shop_id: string
+          staff_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_of_birth?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          endorsements?: Json | null
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_class?: string | null
+          license_expiry?: string | null
+          license_number?: string | null
+          license_state?: string | null
+          medical_card_expiry?: string | null
+          notes?: string | null
+          restrictions?: string | null
+          shop_id?: string
+          staff_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_profiles_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_safety_scores: {
+        Row: {
+          accident_count: number | null
+          created_at: string | null
+          driver_id: string
+          hard_braking_events: number | null
+          hours_driven: number | null
+          id: string
+          miles_driven: number | null
+          notes: string | null
+          overall_score: number | null
+          period_end: string
+          period_start: string
+          rapid_acceleration_events: number | null
+          shop_id: string
+          speeding_events: number | null
+          updated_at: string | null
+          violation_count: number | null
+        }
+        Insert: {
+          accident_count?: number | null
+          created_at?: string | null
+          driver_id: string
+          hard_braking_events?: number | null
+          hours_driven?: number | null
+          id?: string
+          miles_driven?: number | null
+          notes?: string | null
+          overall_score?: number | null
+          period_end: string
+          period_start: string
+          rapid_acceleration_events?: number | null
+          shop_id: string
+          speeding_events?: number | null
+          updated_at?: string | null
+          violation_count?: number | null
+        }
+        Update: {
+          accident_count?: number | null
+          created_at?: string | null
+          driver_id?: string
+          hard_braking_events?: number | null
+          hours_driven?: number | null
+          id?: string
+          miles_driven?: number | null
+          notes?: string | null
+          overall_score?: number | null
+          period_end?: string
+          period_start?: string
+          rapid_acceleration_events?: number | null
+          shop_id?: string
+          speeding_events?: number | null
+          updated_at?: string | null
+          violation_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_safety_scores_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "driver_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_violations: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          document_url: string | null
+          driver_id: string
+          fine_amount: number | null
+          id: string
+          is_resolved: boolean | null
+          location: string | null
+          points: number | null
+          resolution_date: string | null
+          resolution_notes: string | null
+          shop_id: string
+          updated_at: string | null
+          violation_date: string
+          violation_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          document_url?: string | null
+          driver_id: string
+          fine_amount?: number | null
+          id?: string
+          is_resolved?: boolean | null
+          location?: string | null
+          points?: number | null
+          resolution_date?: string | null
+          resolution_notes?: string | null
+          shop_id: string
+          updated_at?: string | null
+          violation_date: string
+          violation_type: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          document_url?: string | null
+          driver_id?: string
+          fine_amount?: number | null
+          id?: string
+          is_resolved?: boolean | null
+          location?: string | null
+          points?: number | null
+          resolution_date?: string | null
+          resolution_notes?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          violation_date?: string
+          violation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_violations_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "driver_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dvir_reports: {
         Row: {
           brakes_ok: boolean
@@ -25968,6 +26355,361 @@ export type Database = {
             columns: ["closed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tire_brands: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          rating: string | null
+          shop_id: string
+          updated_at: string | null
+          warranty_miles: number | null
+          warranty_months: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          rating?: string | null
+          shop_id: string
+          updated_at?: string | null
+          warranty_miles?: number | null
+          warranty_months?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          rating?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          warranty_miles?: number | null
+          warranty_months?: number | null
+        }
+        Relationships: []
+      }
+      tire_inspections: {
+        Row: {
+          condition: string | null
+          created_at: string | null
+          damage_location: string | null
+          damage_type: string | null
+          equipment_id: string | null
+          id: string
+          inspection_date: string
+          inspector_id: string | null
+          inspector_name: string | null
+          notes: string | null
+          photo_url: string | null
+          pressure_psi: number | null
+          shop_id: string
+          tire_id: string
+          tread_depth_32nds: number | null
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          condition?: string | null
+          created_at?: string | null
+          damage_location?: string | null
+          damage_type?: string | null
+          equipment_id?: string | null
+          id?: string
+          inspection_date: string
+          inspector_id?: string | null
+          inspector_name?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          pressure_psi?: number | null
+          shop_id: string
+          tire_id: string
+          tread_depth_32nds?: number | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          condition?: string | null
+          created_at?: string | null
+          damage_location?: string | null
+          damage_type?: string | null
+          equipment_id?: string | null
+          id?: string
+          inspection_date?: string
+          inspector_id?: string | null
+          inspector_name?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          pressure_psi?: number | null
+          shop_id?: string
+          tire_id?: string
+          tread_depth_32nds?: number | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tire_inspections_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tire_inspections_inspector_id_fkey"
+            columns: ["inspector_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tire_inspections_tire_id_fkey"
+            columns: ["tire_id"]
+            isOneToOne: false
+            referencedRelation: "tire_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tire_inspections_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tire_installations: {
+        Row: {
+          created_at: string | null
+          equipment_id: string | null
+          id: string
+          install_date: string
+          install_hours: number | null
+          install_mileage: number | null
+          installed_by: string | null
+          notes: string | null
+          position: string
+          removal_reason: string | null
+          remove_date: string | null
+          remove_hours: number | null
+          remove_mileage: number | null
+          shop_id: string
+          tire_id: string
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_id?: string | null
+          id?: string
+          install_date: string
+          install_hours?: number | null
+          install_mileage?: number | null
+          installed_by?: string | null
+          notes?: string | null
+          position: string
+          removal_reason?: string | null
+          remove_date?: string | null
+          remove_hours?: number | null
+          remove_mileage?: number | null
+          shop_id: string
+          tire_id: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          equipment_id?: string | null
+          id?: string
+          install_date?: string
+          install_hours?: number | null
+          install_mileage?: number | null
+          installed_by?: string | null
+          notes?: string | null
+          position?: string
+          removal_reason?: string | null
+          remove_date?: string | null
+          remove_hours?: number | null
+          remove_mileage?: number | null
+          shop_id?: string
+          tire_id?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tire_installations_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tire_installations_installed_by_fkey"
+            columns: ["installed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tire_installations_tire_id_fkey"
+            columns: ["tire_id"]
+            isOneToOne: false
+            referencedRelation: "tire_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tire_installations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tire_inventory: {
+        Row: {
+          brand_id: string | null
+          brand_name: string | null
+          created_at: string | null
+          dot_code: string | null
+          id: string
+          location: string | null
+          model: string | null
+          notes: string | null
+          purchase_cost: number | null
+          purchase_date: string | null
+          serial_number: string | null
+          shop_id: string
+          size: string
+          status: string | null
+          tread_depth_initial: number | null
+          updated_at: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          brand_id?: string | null
+          brand_name?: string | null
+          created_at?: string | null
+          dot_code?: string | null
+          id?: string
+          location?: string | null
+          model?: string | null
+          notes?: string | null
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          shop_id: string
+          size: string
+          status?: string | null
+          tread_depth_initial?: number | null
+          updated_at?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          brand_id?: string | null
+          brand_name?: string | null
+          created_at?: string | null
+          dot_code?: string | null
+          id?: string
+          location?: string | null
+          model?: string | null
+          notes?: string | null
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          shop_id?: string
+          size?: string
+          status?: string | null
+          tread_depth_initial?: number | null
+          updated_at?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tire_inventory_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "tire_brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tire_rotations: {
+        Row: {
+          created_at: string | null
+          equipment_id: string | null
+          hours: number | null
+          id: string
+          mileage: number | null
+          notes: string | null
+          performed_by: string | null
+          rotation_date: string
+          rotation_pattern: Json | null
+          shop_id: string
+          updated_at: string | null
+          vehicle_id: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_id?: string | null
+          hours?: number | null
+          id?: string
+          mileage?: number | null
+          notes?: string | null
+          performed_by?: string | null
+          rotation_date: string
+          rotation_pattern?: Json | null
+          shop_id: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          equipment_id?: string | null
+          hours?: number | null
+          id?: string
+          mileage?: number | null
+          notes?: string | null
+          performed_by?: string | null
+          rotation_date?: string
+          rotation_pattern?: Json | null
+          shop_id?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tire_rotations_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tire_rotations_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tire_rotations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]

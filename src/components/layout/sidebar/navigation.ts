@@ -313,6 +313,20 @@ export const navigation: NavigationSection[] = [
         description: 'Manage warranties and claims',
         permissionModule: 'fleet_management',
       },
+      {
+        title: 'Driver Management',
+        href: '/driver-management',
+        icon: UserCog,
+        description: 'Driver profiles, licenses, and compliance',
+        permissionModule: 'fleet_management',
+      },
+      {
+        title: 'Tire Management',
+        href: '/tire-management',
+        icon: Package,
+        description: 'Tire inventory and lifecycle tracking',
+        permissionModule: 'fleet_management',
+      },
     ],
   },
   {
