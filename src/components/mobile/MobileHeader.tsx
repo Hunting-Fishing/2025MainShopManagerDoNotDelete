@@ -52,7 +52,8 @@ import {
   Award,
   CalendarClock,
   HardHat,
-  ClipboardCheck
+  ClipboardCheck,
+  Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -221,6 +222,8 @@ export function MobileHeader({
         { label: 'Meetings', icon: Users, path: '/safety/meetings', requiredPath: '/safety/meetings' },
         { label: 'JSA', icon: ClipboardCheck, path: '/safety/jsa', requiredPath: '/safety/jsa' },
         { label: 'PPE Management', icon: HardHat, path: '/safety/ppe', requiredPath: '/safety/ppe' },
+        { label: 'Contractors', icon: Building, path: '/safety/contractors', requiredPath: '/safety/contractors' },
+        { label: 'Safety Rewards', icon: Trophy, path: '/safety/rewards', requiredPath: '/safety/rewards' },
       ]
     },
     {

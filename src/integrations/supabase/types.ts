@@ -3088,6 +3088,132 @@ export type Database = {
           },
         ]
       }
+      contractor_certifications: {
+        Row: {
+          certification_name: string
+          certification_number: string | null
+          contractor_id: string | null
+          created_at: string | null
+          document_url: string | null
+          expiry_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_authority: string | null
+          status: string | null
+        }
+        Insert: {
+          certification_name: string
+          certification_number?: string | null
+          contractor_id?: string | null
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_authority?: string | null
+          status?: string | null
+        }
+        Update: {
+          certification_name?: string
+          certification_number?: string | null
+          contractor_id?: string | null
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_authority?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_certifications_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "safety_contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractor_site_access: {
+        Row: {
+          access_date: string
+          check_in_time: string | null
+          check_out_time: string | null
+          contractor_id: string | null
+          created_at: string | null
+          id: string
+          incidents_reported: number | null
+          jsa_completed: boolean | null
+          jsa_id: string | null
+          notes: string | null
+          ppe_verified: boolean | null
+          safety_briefing_completed: boolean | null
+          shop_id: string
+          supervised_by: string | null
+          work_area: string | null
+          work_description: string | null
+        }
+        Insert: {
+          access_date: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          contractor_id?: string | null
+          created_at?: string | null
+          id?: string
+          incidents_reported?: number | null
+          jsa_completed?: boolean | null
+          jsa_id?: string | null
+          notes?: string | null
+          ppe_verified?: boolean | null
+          safety_briefing_completed?: boolean | null
+          shop_id: string
+          supervised_by?: string | null
+          work_area?: string | null
+          work_description?: string | null
+        }
+        Update: {
+          access_date?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          contractor_id?: string | null
+          created_at?: string | null
+          id?: string
+          incidents_reported?: number | null
+          jsa_completed?: boolean | null
+          jsa_id?: string | null
+          notes?: string | null
+          ppe_verified?: boolean | null
+          safety_briefing_completed?: boolean | null
+          shop_id?: string
+          supervised_by?: string | null
+          work_area?: string | null
+          work_description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_site_access_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "safety_contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_site_access_jsa_id_fkey"
+            columns: ["jsa_id"]
+            isOneToOne: false
+            referencedRelation: "job_safety_analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_site_access_supervised_by_fkey"
+            columns: ["supervised_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversion_audit: {
         Row: {
           conversion_notes: string | null
@@ -20633,6 +20759,69 @@ export type Database = {
         }
         Relationships: []
       }
+      safety_contractors: {
+        Row: {
+          company_name: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          insurance_expiry: string | null
+          insurance_policy_number: string | null
+          insurance_provider: string | null
+          liability_coverage_amount: number | null
+          notes: string | null
+          safety_rating: number | null
+          shop_id: string
+          status: string | null
+          trade_type: string | null
+          updated_at: string | null
+          workers_comp_expiry: string | null
+        }
+        Insert: {
+          company_name: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          liability_coverage_amount?: number | null
+          notes?: string | null
+          safety_rating?: number | null
+          shop_id: string
+          status?: string | null
+          trade_type?: string | null
+          updated_at?: string | null
+          workers_comp_expiry?: string | null
+        }
+        Update: {
+          company_name?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          liability_coverage_amount?: number | null
+          notes?: string | null
+          safety_rating?: number | null
+          shop_id?: string
+          status?: string | null
+          trade_type?: string | null
+          updated_at?: string | null
+          workers_comp_expiry?: string | null
+        }
+        Relationships: []
+      }
       safety_documents: {
         Row: {
           chemical_name: string | null
@@ -20968,6 +21157,187 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      safety_points_config: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          points_value: number
+          shop_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          points_value?: number
+          shop_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          points_value?: number
+          shop_id?: string
+        }
+        Relationships: []
+      }
+      safety_points_ledger: {
+        Row: {
+          action_type: string
+          awarded_by: string | null
+          created_at: string | null
+          description: string | null
+          employee_id: string
+          id: string
+          points: number
+          reference_id: string | null
+          reference_type: string | null
+          shop_id: string
+        }
+        Insert: {
+          action_type: string
+          awarded_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_id: string
+          id?: string
+          points: number
+          reference_id?: string | null
+          reference_type?: string | null
+          shop_id: string
+        }
+        Update: {
+          action_type?: string
+          awarded_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_id?: string
+          id?: string
+          points?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_points_ledger_awarded_by_fkey"
+            columns: ["awarded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_points_ledger_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_reward_redemptions: {
+        Row: {
+          approved_by: string | null
+          created_at: string | null
+          employee_id: string | null
+          fulfilled_at: string | null
+          id: string
+          notes: string | null
+          points_spent: number
+          reward_id: string | null
+          status: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          notes?: string | null
+          points_spent: number
+          reward_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          notes?: string | null
+          points_spent?: number
+          reward_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_reward_redemptions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_reward_redemptions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_reward_redemptions_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "safety_rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_rewards: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          points_required: number
+          quantity_available: number | null
+          reward_name: string
+          reward_type: string | null
+          shop_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          points_required: number
+          quantity_available?: number | null
+          reward_name: string
+          reward_type?: string | null
+          shop_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          points_required?: number
+          quantity_available?: number | null
+          reward_name?: string
+          reward_type?: string | null
+          shop_id?: string
+        }
+        Relationships: []
       }
       safety_schedules: {
         Row: {

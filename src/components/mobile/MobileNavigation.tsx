@@ -48,7 +48,9 @@ import {
   Lock,
   HelpCircle,
   DollarSign,
-  Kanban
+  Kanban,
+  Trophy,
+  Building
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -197,6 +199,8 @@ export function MobileNavigation() {
         { id: 'safety-meetings', label: 'Meetings', icon: Users, path: '/safety/meetings', description: 'Toolbox talks & meetings' },
         { id: 'safety-jsa', label: 'JSA', icon: ClipboardCheck, path: '/safety/jsa', description: 'Job Safety Analysis' },
         { id: 'safety-ppe', label: 'PPE Management', icon: HardHat, path: '/safety/ppe', description: 'PPE inventory & assignments' },
+        { id: 'safety-contractors', label: 'Contractors', icon: Building, path: '/safety/contractors', description: 'Contractor compliance' },
+        { id: 'safety-rewards', label: 'Safety Rewards', icon: Trophy, path: '/safety/rewards', description: 'Points & gamification' },
       ]
     },
     {
