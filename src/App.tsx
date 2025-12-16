@@ -109,6 +109,7 @@ import SafetyReports from '@/pages/SafetyReports';
 import SafetyCorrectiveActions from '@/pages/SafetyCorrectiveActions';
 import SafetyNearMiss from '@/pages/SafetyNearMiss';
 import SafetyTraining from '@/pages/SafetyTraining';
+import SafetyMeetings from '@/pages/SafetyMeetings';
 import TechnicianPortal from '@/pages/TechnicianPortal';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import SetupBrianAuth from '@/pages/SetupBrianAuth';
@@ -678,6 +679,11 @@ function App() {
                   <Route path="/safety/training" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <SafetyTraining />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/safety/meetings" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyMeetings />
                     </ProtectedRoute>
                   } />
                   

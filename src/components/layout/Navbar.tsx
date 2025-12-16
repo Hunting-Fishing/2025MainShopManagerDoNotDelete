@@ -113,6 +113,7 @@ const navigationCategories = [
       { name: 'Corrective Actions', href: '/safety/corrective-actions', requiredPath: '/safety/corrective-actions' },
       { name: 'Near Miss', href: '/safety/near-miss', requiredPath: '/safety/near-miss' },
       { name: 'Training', href: '/safety/training', requiredPath: '/safety/training' },
+      { name: 'Meetings', href: '/safety/meetings', requiredPath: '/safety/meetings' },
     ]
   },
   {

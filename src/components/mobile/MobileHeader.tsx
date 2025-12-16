@@ -218,6 +218,7 @@ export function MobileHeader({
         { label: 'Corrective Actions', icon: ClipboardCheck, path: '/safety/corrective-actions', requiredPath: '/safety/corrective-actions' },
         { label: 'Near Miss', icon: AlertCircle, path: '/safety/near-miss', requiredPath: '/safety/near-miss' },
         { label: 'Training', icon: GraduationCap, path: '/safety/training', requiredPath: '/safety/training' },
+        { label: 'Meetings', icon: Users, path: '/safety/meetings', requiredPath: '/safety/meetings' },
       ]
     },
     {

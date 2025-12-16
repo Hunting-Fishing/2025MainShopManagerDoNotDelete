@@ -20419,6 +20419,135 @@ export type Database = {
           },
         ]
       }
+      safety_meeting_attendees: {
+        Row: {
+          attended: boolean | null
+          created_at: string
+          employee_id: string | null
+          employee_name: string
+          id: string
+          meeting_id: string
+          notes: string | null
+          signature_data: string | null
+          signed_at: string | null
+        }
+        Insert: {
+          attended?: boolean | null
+          created_at?: string
+          employee_id?: string | null
+          employee_name: string
+          id?: string
+          meeting_id: string
+          notes?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+        }
+        Update: {
+          attended?: boolean | null
+          created_at?: string
+          employee_id?: string | null
+          employee_name?: string
+          id?: string
+          meeting_id?: string
+          notes?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_meeting_attendees_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_meeting_attendees_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "safety_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_meetings: {
+        Row: {
+          action_items: Json | null
+          attachments: string[] | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          discussion_notes: string | null
+          duration_minutes: number | null
+          facilitator_id: string | null
+          facilitator_name: string | null
+          id: string
+          location: string | null
+          meeting_date: string
+          meeting_type: string
+          shop_id: string
+          status: string
+          title: string
+          topics: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          action_items?: Json | null
+          attachments?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discussion_notes?: string | null
+          duration_minutes?: number | null
+          facilitator_id?: string | null
+          facilitator_name?: string | null
+          id?: string
+          location?: string | null
+          meeting_date: string
+          meeting_type?: string
+          shop_id: string
+          status?: string
+          title: string
+          topics?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json | null
+          attachments?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discussion_notes?: string | null
+          duration_minutes?: number | null
+          facilitator_id?: string | null
+          facilitator_name?: string | null
+          id?: string
+          location?: string | null
+          meeting_date?: string
+          meeting_type?: string
+          shop_id?: string
+          status?: string
+          title?: string
+          topics?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_meetings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_meetings_facilitator_id_fkey"
+            columns: ["facilitator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       safety_schedules: {
         Row: {
           assigned_to: string | null
