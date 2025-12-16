@@ -122,6 +122,38 @@ import ShopSetup from '@/pages/ShopSetup';
 import SecurityAudit from '@/pages/SecurityAudit';
 import ResetPassword from '@/pages/ResetPassword';
 import Planner from '@/pages/Planner';
+import AdvancedAnalytics from '@/pages/AdvancedAnalytics';
+import AffiliateTool from '@/pages/AffiliateTool';
+import BoatInspection from '@/pages/BoatInspection';
+import Checkout from '@/pages/Checkout';
+import ClientBooking from '@/pages/ClientBooking';
+import CustomerAnalytics from '@/pages/CustomerAnalytics';
+import CustomerExperience from '@/pages/CustomerExperience';
+import CustomerFollowUps from '@/pages/CustomerFollowUps';
+import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
+import CustomerServiceHistory from '@/pages/CustomerServiceHistory';
+import EmailCampaignAnalytics from '@/pages/EmailCampaignAnalytics';
+import EmailSequenceDetails from '@/pages/EmailSequenceDetails';
+import Enterprise from '@/pages/Enterprise';
+import EnterpriseAdmin from '@/pages/EnterpriseAdmin';
+import InventoryAutomation from '@/pages/InventoryAutomation';
+import InventoryCategories from '@/pages/InventoryCategories';
+import InventoryLocations from '@/pages/InventoryLocations';
+import InventoryOrders from '@/pages/InventoryOrders';
+import InventorySuppliers from '@/pages/InventorySuppliers';
+import InvoiceCreate from '@/pages/InvoiceCreate';
+import InvoiceScan from '@/pages/InvoiceScan';
+import MaintenanceDashboard from '@/pages/MaintenanceDashboard';
+import NotFound from '@/pages/NotFound';
+import OrderConfirmation from '@/pages/OrderConfirmation';
+import PartsTracking from '@/pages/PartsTracking';
+import PurchaseOrders from '@/pages/PurchaseOrders';
+import StockControl from '@/pages/StockControl';
+import TeamMemberProfile from '@/pages/TeamMemberProfile';
+import TeamRoles from '@/pages/TeamRoles';
+import Unauthorized from '@/pages/Unauthorized';
+import VehicleDetails from '@/pages/VehicleDetails';
+import VehicleInspectionForm from '@/pages/VehicleInspectionForm';
 
 function App() {
   useEffect(() => {
@@ -725,8 +757,205 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Catch all */}
-                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                  {/* Advanced Analytics */}
+                  <Route path="/advanced-analytics" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <AdvancedAnalytics />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Affiliate Tool */}
+                  <Route path="/affiliate-tool" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <AffiliateTool />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Boat Inspection */}
+                  <Route path="/boat-inspection" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'boat_manager', 'mechanic_manager', 'owner']}>
+                      <BoatInspection />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Checkout */}
+                  <Route path="/checkout" element={<Checkout />} />
+                  
+                  {/* Client Booking */}
+                  <Route path="/booking" element={<ClientBooking />} />
+                  
+                  {/* Customer Analytics */}
+                  <Route path="/customer-analytics" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <CustomerAnalytics />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Customer Experience */}
+                  <Route path="/customer-experience" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                      <CustomerExperience />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Customer Follow-ups */}
+                  <Route path="/customer-followups" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                      <CustomerFollowUps />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Customer Portal Login */}
+                  <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
+                  
+                  {/* Customer Service History */}
+                  <Route path="/customer-service-history/:customerId" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'technician', 'owner']}>
+                      <CustomerServiceHistory />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Email Campaign Analytics */}
+                  <Route path="/email-campaigns/:id/analytics" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                      <EmailCampaignAnalytics />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Email Sequence Details */}
+                  <Route path="/email-sequences/:id" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                      <EmailSequenceDetails />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Enterprise */}
+                  <Route path="/enterprise" element={
+                    <ProtectedRoute allowedRoles={['admin', 'owner']}>
+                      <Enterprise />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Enterprise Admin */}
+                  <Route path="/enterprise-admin" element={
+                    <ProtectedRoute allowedRoles={['admin', 'owner']}>
+                      <EnterpriseAdmin />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Inventory Automation */}
+                  <Route path="/inventory-automation" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                      <InventoryAutomation />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Inventory Categories */}
+                  <Route path="/inventory-categories" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                      <InventoryCategories />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Inventory Locations */}
+                  <Route path="/inventory-locations" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                      <InventoryLocations />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Inventory Orders */}
+                  <Route path="/inventory-orders" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                      <InventoryOrders />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Inventory Suppliers */}
+                  <Route path="/inventory-suppliers" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                      <InventorySuppliers />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Invoice Create */}
+                  <Route path="/invoices/create" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                      <InvoiceCreate />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Invoice Scan */}
+                  <Route path="/invoice-scan" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                      <InvoiceScan />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Maintenance Dashboard */}
+                  <Route path="/maintenance-dashboard" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <MaintenanceDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Order Confirmation */}
+                  <Route path="/order-confirmation" element={<OrderConfirmation />} />
+                  
+                  {/* Parts Tracking */}
+                  <Route path="/parts-tracking" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'inventory_manager', 'owner']}>
+                      <PartsTracking />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Purchase Orders */}
+                  <Route path="/purchase-orders" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                      <PurchaseOrders />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Stock Control */}
+                  <Route path="/stock-control" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                      <StockControl />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Team Member Profile */}
+                  <Route path="/team/member/:id" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <TeamMemberProfile />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Team Roles */}
+                  <Route path="/team/roles" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <TeamRoles />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Vehicle Details */}
+                  <Route path="/vehicles/:id" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'owner']}>
+                      <VehicleDetails />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Vehicle Inspection Form */}
+                  <Route path="/vehicle-inspection/:vehicleId" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <VehicleInspectionForm />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Unauthorized */}
+                  <Route path="/unauthorized" element={<Unauthorized />} />
+                  
+                  {/* Not Found - Catch all */}
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>
             </AuthGate>
