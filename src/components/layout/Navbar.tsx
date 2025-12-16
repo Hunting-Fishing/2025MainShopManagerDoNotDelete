@@ -114,6 +114,7 @@ const navigationCategories = [
       { name: 'Near Miss', href: '/safety/near-miss', requiredPath: '/safety/near-miss' },
       { name: 'Training', href: '/safety/training', requiredPath: '/safety/training' },
       { name: 'Meetings', href: '/safety/meetings', requiredPath: '/safety/meetings' },
+      { name: 'JSA', href: '/safety/jsa', requiredPath: '/safety/jsa' },
     ]
   },
   {
