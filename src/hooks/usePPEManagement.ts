@@ -38,8 +38,32 @@ export interface PPEAssignment {
   notes?: string;
   returned_date?: string;
   return_condition?: string;
+  in_service_date?: string;
+  out_of_service_date?: string;
+  out_of_service_reason?: string;
   created_at: string;
   ppe_inventory?: PPEItem;
+  profiles?: { first_name: string; last_name: string; email: string };
+}
+
+export interface PPEHistory {
+  id: string;
+  shop_id: string;
+  assignment_id?: string;
+  ppe_item_id?: string;
+  employee_id?: string;
+  event_type: string;
+  event_date: string;
+  previous_status?: string;
+  new_status?: string;
+  condition_before?: string;
+  condition_after?: string;
+  notes?: string;
+  performed_by?: string;
+  performed_by_name?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+  ppe_inventory?: { name: string; category: string };
   profiles?: { first_name: string; last_name: string; email: string };
 }
 
@@ -110,6 +134,25 @@ export const usePPEManagement = () => {
         .order('inspection_date', { ascending: false });
       if (error) throw error;
       return data as PPEInspection[];
+    },
+    enabled: !!shopId,
+  });
+
+  const { data: history = [], isLoading: loadingHistory } = useQuery({
+    queryKey: ['ppe-history', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from('ppe_history')
+        .select(`
+          *,
+          ppe_inventory(name, category)
+        `)
+        .eq('shop_id', shopId)
+        .order('event_date', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data as unknown as PPEHistory[];
     },
     enabled: !!shopId,
   });
@@ -258,9 +301,11 @@ export const usePPEManagement = () => {
     inventory,
     assignments,
     inspections,
+    history,
     loadingInventory,
     loadingAssignments,
     loadingInspections,
+    loadingHistory,
     createInventoryItem,
     updateInventoryItem,
     createAssignment,
