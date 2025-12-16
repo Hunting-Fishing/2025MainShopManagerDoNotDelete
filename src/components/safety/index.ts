@@ -15,3 +15,7 @@ export { TrainingAcknowledgmentsCard } from './TrainingAcknowledgmentsCard';
 export { AssignInspectionDialog } from './AssignInspectionDialog';
 export { CreateVehicleScheduleDialog } from './CreateVehicleScheduleDialog';
 export { TrainingComplianceMatrix } from './TrainingComplianceMatrix';
+export { CorrectiveActionsWidget } from './dashboard/CorrectiveActionsWidget';
+export { NearMissWidget } from './dashboard/NearMissWidget';
+export { TrainingComplianceWidget } from './dashboard/TrainingComplianceWidget';
+export { ComplianceScoreWidget } from './dashboard/ComplianceScoreWidget';

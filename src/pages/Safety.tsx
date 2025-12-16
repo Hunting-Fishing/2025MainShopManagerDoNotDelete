@@ -21,6 +21,7 @@ import { ServiceAlertsPanel } from '@/components/safety/dashboard/ServiceAlertsP
 import { CorrectiveActionsWidget } from '@/components/safety/dashboard/CorrectiveActionsWidget';
 import { NearMissWidget } from '@/components/safety/dashboard/NearMissWidget';
 import { TrainingComplianceWidget } from '@/components/safety/dashboard/TrainingComplianceWidget';
+import { ComplianceScoreWidget } from '@/components/safety/dashboard/ComplianceScoreWidget';
 import { Shield, RefreshCw, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -91,7 +92,8 @@ export default function Safety() {
         </div>
 
         {/* CAPA & Training Row */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-4">
+          <ComplianceScoreWidget />
           <CorrectiveActionsWidget />
           <NearMissWidget />
           <TrainingComplianceWidget />
