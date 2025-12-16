@@ -18,6 +18,9 @@ import {
   CriticalDefectsCard
 } from '@/components/safety';
 import { ServiceAlertsPanel } from '@/components/safety/dashboard/ServiceAlertsPanel';
+import { CorrectiveActionsWidget } from '@/components/safety/dashboard/CorrectiveActionsWidget';
+import { NearMissWidget } from '@/components/safety/dashboard/NearMissWidget';
+import { TrainingComplianceWidget } from '@/components/safety/dashboard/TrainingComplianceWidget';
 import { Shield, RefreshCw, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -85,6 +88,13 @@ export default function Safety() {
             dvirReports={dvirReports} 
             loading={dvirLoading} 
           />
+        </div>
+
+        {/* CAPA & Training Row */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <CorrectiveActionsWidget />
+          <NearMissWidget />
+          <TrainingComplianceWidget />
         </div>
 
         {/* Main Content Grid */}
