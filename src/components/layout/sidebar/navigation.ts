@@ -296,6 +296,26 @@ export const navigation: NavigationSection[] = [
     ],
   },
   {
+    title: 'Fleet Operations',
+    icon: Truck,
+    items: [
+      {
+        title: 'Fuel Management',
+        href: '/fuel-management',
+        icon: Gauge,
+        description: 'Track fuel entries, cards, and costs',
+        permissionModule: 'fleet_management',
+      },
+      {
+        title: 'Warranty Tracking',
+        href: '/warranties',
+        icon: Shield,
+        description: 'Manage warranties and claims',
+        permissionModule: 'fleet_management',
+      },
+    ],
+  },
+  {
     title: 'Safety & Compliance',
     icon: HardHat,
     items: [

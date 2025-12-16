@@ -87,6 +87,8 @@ import EmployeeScheduling from '@/pages/EmployeeScheduling';
 import TrainingOverview from '@/pages/TrainingOverview';
 import DailyLogs from '@/pages/DailyLogs';
 import Insurance from '@/pages/Insurance';
+import FuelManagement from '@/pages/FuelManagement';
+import Warranties from '@/pages/Warranties';
 import Safety from '@/pages/Safety';
 import SafetyIncidents from '@/pages/SafetyIncidents';
 import SafetyIncidentNew from '@/pages/SafetyIncidentNew';
@@ -601,6 +603,18 @@ function App() {
                   <Route path="/insurance" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Insurance />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Fleet Operations */}
+                  <Route path="/fuel-management" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <FuelManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/warranties" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <Warranties />
                     </ProtectedRoute>
                   } />
                   
