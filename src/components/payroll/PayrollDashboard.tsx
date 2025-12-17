@@ -16,7 +16,8 @@ import {
   TrendingUp,
   CheckCircle,
   PlayCircle,
-  PauseCircle
+  PauseCircle,
+  Calendar
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -230,6 +231,3 @@ export function PayrollDashboard() {
     </div>
   );
 }
-
-// Add missing import
-import { Calendar } from 'lucide-react';
