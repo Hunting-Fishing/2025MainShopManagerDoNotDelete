@@ -11,13 +11,15 @@ import {
   Play, 
   Square, 
   Clock,
-  User
+  User,
+  Coffee,
+  PlayCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export function EmployeeTimeClock() {
   const { toast } = useToast();
-  const { timeCards, clockIn, clockOut, loading } = useTimeCards();
+  const { timeCards, clockIn, clockOut, startBreak, endBreak, loading } = useTimeCards();
   const [notes, setNotes] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -32,16 +34,19 @@ export function EmployeeTimeClock() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       
-      return { ...user, profile };
+      return profile ? { ...user, profile } : { ...user, profile: null };
     },
   });
 
   // Find active time card for current user
   const activeTimeCard = timeCards.find(
     tc => tc.employee_id === currentUser?.id && tc.status === 'active'
-  );
+  ) as any;
+
+  // Check if currently on break
+  const isOnBreak = activeTimeCard?.break_start_time && !activeTimeCard?.break_end_time;
 
   // Update current time every second
   useEffect(() => {
@@ -51,12 +56,31 @@ export function EmployeeTimeClock() {
     return () => clearInterval(interval);
   }, []);
 
-  // Calculate elapsed time
+  // Calculate elapsed time (excluding breaks)
   const getElapsedTime = () => {
     if (!activeTimeCard) return { hours: 0, minutes: 0, seconds: 0 };
     
     const clockInTime = new Date(activeTimeCard.clock_in_time);
-    const totalSeconds = differenceInSeconds(currentTime, clockInTime);
+    let totalSeconds = differenceInSeconds(currentTime, clockInTime);
+    
+    // Subtract break time if on break
+    if (activeTimeCard.break_start_time) {
+      const breakStart = new Date(activeTimeCard.break_start_time);
+      if (activeTimeCard.break_end_time) {
+        const breakEnd = new Date(activeTimeCard.break_end_time);
+        totalSeconds -= differenceInSeconds(breakEnd, breakStart);
+      } else {
+        // Currently on break
+        totalSeconds -= differenceInSeconds(currentTime, breakStart);
+      }
+    }
+    
+    // Also subtract any accumulated break minutes
+    if (activeTimeCard.break_duration_minutes) {
+      totalSeconds -= activeTimeCard.break_duration_minutes * 60;
+    }
+    
+    totalSeconds = Math.max(0, totalSeconds);
     
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -77,13 +101,24 @@ export function EmployeeTimeClock() {
       return;
     }
 
-    await clockIn(currentUser.id);
+    await clockIn(currentUser.id, undefined, notes || undefined);
+    setNotes('');
   };
 
   const handleClockOut = async () => {
     if (!activeTimeCard) return;
-    await clockOut(activeTimeCard.id);
+    await clockOut(activeTimeCard.id, notes || undefined);
     setNotes('');
+  };
+
+  const handleStartBreak = async () => {
+    if (!activeTimeCard) return;
+    await startBreak(activeTimeCard.id);
+  };
+
+  const handleEndBreak = async () => {
+    if (!activeTimeCard) return;
+    await endBreak(activeTimeCard.id);
   };
 
   // Get today's completed time cards
@@ -130,14 +165,19 @@ export function EmployeeTimeClock() {
           {/* Status Display */}
           {activeTimeCard ? (
             <div className="text-center space-y-4">
-              <Badge variant="default" className="text-lg py-2 px-4 bg-green-500">
+              <Badge 
+                variant="default" 
+                className={`text-lg py-2 px-4 ${isOnBreak ? 'bg-yellow-500' : 'bg-green-500'}`}
+              >
                 <Clock className="h-4 w-4 mr-2" />
-                Clocked In
+                {isOnBreak ? 'On Break' : 'Clocked In'}
               </Badge>
               
               {/* Elapsed Time */}
               <div className="bg-muted rounded-lg p-6">
-                <p className="text-sm text-muted-foreground mb-2">Time Worked</p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {isOnBreak ? 'Time Worked (Paused)' : 'Time Worked'}
+                </p>
                 <p className="text-4xl font-mono font-bold">
                   {String(elapsed.hours).padStart(2, '0')}:
                   {String(elapsed.minutes).padStart(2, '0')}:
@@ -148,16 +188,47 @@ export function EmployeeTimeClock() {
                 </p>
               </div>
 
+              {/* Break Buttons */}
+              <div className="flex gap-2">
+                {isOnBreak ? (
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    className="flex-1 h-12 border-green-500 text-green-600 hover:bg-green-50"
+                    onClick={handleEndBreak}
+                  >
+                    <PlayCircle className="h-5 w-5 mr-2" />
+                    End Break
+                  </Button>
+                ) : (
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    className="flex-1 h-12 border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                    onClick={handleStartBreak}
+                  >
+                    <Coffee className="h-5 w-5 mr-2" />
+                    Start Break
+                  </Button>
+                )}
+              </div>
+
               {/* Clock Out Button */}
               <Button 
                 size="lg" 
                 variant="destructive" 
                 className="w-full h-16 text-lg"
                 onClick={handleClockOut}
+                disabled={isOnBreak}
               >
                 <Square className="h-6 w-6 mr-2" />
                 Clock Out
               </Button>
+              {isOnBreak && (
+                <p className="text-sm text-muted-foreground">
+                  End your break before clocking out
+                </p>
+              )}
             </div>
           ) : (
             <div className="text-center space-y-4">
@@ -209,7 +280,7 @@ export function EmployeeTimeClock() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {todayCards.map((tc) => (
+              {todayCards.map((tc: any) => (
                 <div key={tc.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div>
                     <p className="font-medium">
@@ -223,7 +294,17 @@ export function EmployeeTimeClock() {
                           ({tc.overtime_hours.toFixed(2)} OT)
                         </span>
                       )}
+                      {tc.break_duration_minutes && tc.break_duration_minutes > 0 && (
+                        <span className="text-yellow-600 ml-2">
+                          ({tc.break_duration_minutes} min break)
+                        </span>
+                      )}
                     </p>
+                    {tc.notes && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">
+                        "{tc.notes}"
+                      </p>
+                    )}
                   </div>
                   <Badge variant={
                     tc.status === 'approved' ? 'default' :

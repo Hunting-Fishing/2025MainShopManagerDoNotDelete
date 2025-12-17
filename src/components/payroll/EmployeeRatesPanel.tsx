@@ -16,20 +16,13 @@ import {
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-interface EmployeeRate {
-  id: string;
-  employee_id: string;
-  hourly_rate: number;
-  overtime_rate: number;
-}
-
 export function EmployeeRatesPanel() {
   const { shopId } = useShopId();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingEmployee, setEditingEmployee] = useState<string | null>(null);
   const [editRate, setEditRate] = useState('');
-  const [editOvertimeRate, setEditOvertimeRate] = useState('');
+  const [editOvertimeMultiplier, setEditOvertimeMultiplier] = useState('1.5');
 
   // Fetch employees
   const { data: employees, isLoading } = useQuery({
@@ -47,7 +40,7 @@ export function EmployeeRatesPanel() {
     enabled: !!shopId,
   });
 
-  // Fetch time card entries to get hourly rates
+  // Fetch time card entries to get hourly rates (most recent per employee)
   const { data: employeeRates } = useQuery({
     queryKey: ['employee-rates-from-timecards', shopId],
     queryFn: async () => {
@@ -62,7 +55,7 @@ export function EmployeeRatesPanel() {
         .order('created_at', { ascending: false });
       
       const rates: Record<string, number> = {};
-      (data || []).forEach(tc => {
+      (data || []).forEach((tc: any) => {
         if (tc.employee_id && tc.hourly_rate && !rates[tc.employee_id]) {
           rates[tc.employee_id] = tc.hourly_rate;
         }
@@ -73,10 +66,55 @@ export function EmployeeRatesPanel() {
     enabled: !!shopId,
   });
 
+  // Store rate by creating a time card entry template (or we could use localStorage/company_settings)
+  const saveRateMutation = useMutation({
+    mutationFn: async ({ employeeId, hourlyRate }: { employeeId: string; hourlyRate: number }) => {
+      // For now, store in localStorage as a quick solution
+      // In production, you'd want a dedicated employee_rates table
+      const ratesKey = `employee_rates_${shopId}`;
+      const existingRates = JSON.parse(localStorage.getItem(ratesKey) || '{}');
+      existingRates[employeeId] = {
+        hourly_rate: hourlyRate,
+        overtime_multiplier: parseFloat(editOvertimeMultiplier) || 1.5,
+        updated_at: new Date().toISOString()
+      };
+      localStorage.setItem(ratesKey, JSON.stringify(existingRates));
+      return existingRates[employeeId];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee-rates-local'] });
+      toast({
+        title: 'Rate Updated',
+        description: 'Employee rate has been saved and will apply to future time cards.',
+      });
+      setEditingEmployee(null);
+    },
+    onError: (error) => {
+      console.error('Error saving rate:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save employee rate',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Get locally stored rates
+  const { data: localRates } = useQuery({
+    queryKey: ['employee-rates-local', shopId],
+    queryFn: () => {
+      const ratesKey = `employee_rates_${shopId}`;
+      return JSON.parse(localStorage.getItem(ratesKey) || '{}');
+    },
+    enabled: !!shopId,
+  });
+
   const handleEditClick = (employeeId: string) => {
     setEditingEmployee(employeeId);
-    setEditRate(employeeRates?.[employeeId]?.toString() || '');
-    setEditOvertimeRate('');
+    const localRate = localRates?.[employeeId];
+    const tcRate = employeeRates?.[employeeId];
+    setEditRate(localRate?.hourly_rate?.toString() || tcRate?.toString() || '');
+    setEditOvertimeMultiplier(localRate?.overtime_multiplier?.toString() || '1.5');
   };
 
   const handleSave = async (employeeId: string) => {
@@ -91,15 +129,7 @@ export function EmployeeRatesPanel() {
       return;
     }
     
-    // Store rate info - in a real app you'd have a dedicated rates table
-    // For now we'll just show the rate from time cards
-    toast({
-      title: 'Rate Updated',
-      description: `Hourly rate set to $${hourlyRate.toFixed(2)}. This will be applied to future time cards.`,
-    });
-    
-    setEditingEmployee(null);
-    queryClient.invalidateQueries({ queryKey: ['employee-rates-from-timecards'] });
+    saveRateMutation.mutate({ employeeId, hourlyRate });
   };
 
   if (isLoading) {
@@ -127,81 +157,104 @@ export function EmployeeRatesPanel() {
           Employee Hourly Rates
         </CardTitle>
         <CardDescription>
-          View and manage hourly pay rates for each employee
+          Manage hourly pay rates for each employee. Changes apply to future time cards.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {employees?.map((employee) => (
-            <div 
-              key={employee.id}
-              className="flex items-center justify-between p-4 border rounded-lg"
-            >
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">
-                    {employee.first_name} {employee.last_name}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {employee.job_title || 'Employee'}
-                  </p>
-                </div>
-              </div>
-
-              {editingEmployee === employee.id ? (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="Hourly"
-                      value={editRate}
-                      onChange={(e) => setEditRate(e.target.value)}
-                      className="w-20"
-                    />
-                    <span className="text-sm text-muted-foreground">/hr</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleSave(employee.id)}
-                  >
-                    <Save className="h-4 w-4 text-green-500" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setEditingEmployee(null)}
-                  >
-                    <X className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              ) : (
+          {employees?.map((employee: any) => {
+            const localRate = localRates?.[employee.id];
+            const tcRate = employeeRates?.[employee.id];
+            const displayRate = localRate?.hourly_rate || tcRate;
+            const overtimeMultiplier = localRate?.overtime_multiplier || 1.5;
+            
+            return (
+              <div 
+                key={employee.id}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
                 <div className="flex items-center gap-4">
-                  {employeeRates?.[employee.id] ? (
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">
-                        ${employeeRates[employee.id].toFixed(2)}/hr
-                      </p>
-                    </div>
-                  ) : (
-                    <Badge variant="outline">No rate set</Badge>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEditClick(employee.id)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">
+                      {employee.first_name} {employee.last_name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {employee.job_title || 'Employee'}
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {editingEmployee === employee.id ? (
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm text-muted-foreground">$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Rate"
+                        value={editRate}
+                        onChange={(e) => setEditRate(e.target.value)}
+                        className="w-20"
+                      />
+                      <span className="text-sm text-muted-foreground">/hr</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm text-muted-foreground">OT:</span>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        placeholder="1.5"
+                        value={editOvertimeMultiplier}
+                        onChange={(e) => setEditOvertimeMultiplier(e.target.value)}
+                        className="w-16"
+                      />
+                      <span className="text-sm text-muted-foreground">x</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleSave(employee.id)}
+                      disabled={saveRateMutation.isPending}
+                    >
+                      <Save className="h-4 w-4 text-green-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingEmployee(null)}
+                    >
+                      <X className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4">
+                    {displayRate ? (
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">
+                          ${displayRate.toFixed(2)}/hr
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          OT: {overtimeMultiplier}x
+                        </p>
+                      </div>
+                    ) : (
+                      <Badge variant="outline">No rate set</Badge>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditClick(employee.id)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           {(!employees || employees.length === 0) && (
             <div className="text-center py-8 text-muted-foreground">
