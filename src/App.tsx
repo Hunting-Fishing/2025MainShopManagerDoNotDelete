@@ -160,6 +160,8 @@ import TeamRoles from '@/pages/TeamRoles';
 import Unauthorized from '@/pages/Unauthorized';
 import VehicleDetails from '@/pages/VehicleDetails';
 import VehicleInspectionForm from '@/pages/VehicleInspectionForm';
+import TermsOfService from '@/pages/legal/TermsOfService';
+import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
 
 function App() {
   useEffect(() => {
@@ -175,6 +177,8 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/about" element={<About />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/setup-brian" element={<SetupBrianAuth />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/shop-setup" element={<ShopSetup />} />
