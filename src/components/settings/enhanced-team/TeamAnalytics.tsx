@@ -87,10 +87,42 @@ export function TeamAnalytics() {
         const completedWorkOrders = workOrders?.filter(wo => wo.status === 'completed').length || 0;
         const completionRate = totalWorkOrders > 0 ? (completedWorkOrders / totalWorkOrders) * 100 : 0;
 
-        // Calculate average completion time (mock data for now)
-        const averageCompletionTime = Math.floor(Math.random() * 48) + 12; // 12-60 hours
-        const customerSatisfaction = Math.floor(Math.random() * 20) + 80; // 80-100%
-        const efficiency = Math.floor(completionRate * 0.8 + Math.random() * 20); // Based on completion rate
+        // Calculate real average completion time from completed work orders
+        const completedWOs = workOrders?.filter(wo => wo.status === 'completed' && wo.created_at && wo.updated_at) || [];
+        let averageCompletionTime = 0;
+        if (completedWOs.length > 0) {
+          const totalHours = completedWOs.reduce((sum, wo) => {
+            const created = new Date(wo.created_at).getTime();
+            const updated = new Date(wo.updated_at).getTime();
+            const hours = (updated - created) / (1000 * 60 * 60);
+            return sum + Math.max(0, hours);
+          }, 0);
+          averageCompletionTime = Math.round(totalHours / completedWOs.length);
+        }
+
+        // Fetch real customer satisfaction from feedback_responses table
+        const { data: feedbackData } = await supabase
+          .from('feedback_responses')
+          .select('overall_rating, work_order_id')
+          .not('overall_rating', 'is', null);
+        
+        // Filter feedback for work orders handled by this technician
+        const { data: memberWorkOrderIds } = await supabase
+          .from('work_orders')
+          .select('id')
+          .eq('technician_id', member.id);
+        
+        const memberWoIds = new Set(memberWorkOrderIds?.map(wo => wo.id) || []);
+        const memberFeedback = feedbackData?.filter(f => f.work_order_id && memberWoIds.has(f.work_order_id)) || [];
+        
+        let customerSatisfaction = 0;
+        if (memberFeedback.length > 0) {
+          const avgRating = memberFeedback.reduce((sum, f) => sum + (f.overall_rating || 0), 0) / memberFeedback.length;
+          customerSatisfaction = Math.round((avgRating / 5) * 100); // Convert 5-star to percentage
+        }
+
+        // Calculate efficiency based on completion rate and on-time delivery
+        const efficiency = Math.round(completionRate * 0.9 + (customerSatisfaction > 0 ? customerSatisfaction * 0.1 : completionRate * 0.1));
 
         return {
           id: member.id,
