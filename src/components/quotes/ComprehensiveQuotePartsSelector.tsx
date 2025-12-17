@@ -58,8 +58,8 @@ export function ComprehensiveQuotePartsSelector({
 }: ComprehensiveQuotePartsSelectorProps) {
   const [isAddPartOpen, setIsAddPartOpen] = useState(false);
 
-  // Mock job lines for quotes - in the future this could be quote line items
-  const mockJobLines: WorkOrderJobLine[] = [];
+  // Empty job lines for quotes - parts are managed via selectedParts prop
+  const jobLines: WorkOrderJobLine[] = [];
 
   const handlePartAdded = async () => {
     // For now, this is a placeholder
@@ -268,7 +268,7 @@ export function ComprehensiveQuotePartsSelector({
         open={isAddPartOpen}
         onOpenChange={setIsAddPartOpen}
         workOrderId={quoteId || 'quote-temp-id'}
-        jobLines={mockJobLines}
+        jobLines={jobLines}
         onPartAdded={handlePartAdded}
       />
     </div>

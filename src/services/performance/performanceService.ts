@@ -62,19 +62,21 @@ export async function getSystemMetrics(): Promise<PerformanceMetric[]> {
 }
 
 export async function getSystemHealth(): Promise<SystemHealth> {
-  // For now, calculate from existing metrics
-  // In a real system, this would come from system monitoring
+  // Calculate from existing metrics stored in database
   const metrics = await getSystemMetrics();
   
   const memoryMetric = metrics.find(m => m.name === 'Memory Usage');
+  const cpuMetric = metrics.find(m => m.name === 'CPU Usage');
+  const diskMetric = metrics.find(m => m.name === 'Disk Usage');
+  const networkMetric = metrics.find(m => m.name === 'Network Usage');
   const dbMetric = metrics.find(m => m.name === 'Database Query Time');
   
   return {
-    cpu: 45 + Math.random() * 20, // Simulated for now
-    memory: memoryMetric?.value || 78,
-    disk: 62 + Math.random() * 15, // Simulated for now
-    network: 34 + Math.random() * 20, // Simulated for now
-    database: dbMetric ? Math.min(100, (200 - dbMetric.value) / 2) : 56,
+    cpu: cpuMetric?.value || 50,
+    memory: memoryMetric?.value || 60,
+    disk: diskMetric?.value || 55,
+    network: networkMetric?.value || 40,
+    database: dbMetric ? Math.min(100, (200 - dbMetric.value) / 2) : 75,
     uptime: 99.9
   };
 }

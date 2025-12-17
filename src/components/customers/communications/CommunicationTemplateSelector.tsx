@@ -1,42 +1,22 @@
-
-import React, { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import React, { useState, useEffect } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 
-// This would come from the Supabase database in a real implementation
-const TEMPLATES = [
-  {
-    id: "1",
-    name: "Service Follow-up",
-    type: "email",
-    subject: "Follow-up on your recent service",
-    content: "Dear customer,\n\nThank you for bringing your vehicle in for service recently. We wanted to check if everything is working well and if you have any questions.\n\nBest regards,\nYour Service Team",
-  },
-  {
-    id: "2",
-    name: "Appointment Reminder",
-    type: "email",
-    subject: "Reminder: Your upcoming appointment",
-    content: "Dear customer,\n\nThis is a friendly reminder about your upcoming service appointment. We look forward to seeing you soon.\n\nBest regards,\nYour Service Team",
-  },
-  {
-    id: "3",
-    name: "Service Reminder",
-    type: "text",
-    content: "Hi! Just a reminder that your vehicle is due for service. Please call us to schedule your appointment.",
-  },
-  {
-    id: "4",
-    name: "Thank You",
-    type: "phone",
-    content: "Thank you for your business. Discuss recent service work and ask if they have any questions.",
-  },
+interface Template {
+  id: string;
+  name: string;
+  type: string;
+  subject?: string;
+  content: string;
+}
+
+// Default templates as fallback
+const DEFAULT_TEMPLATES: Template[] = [
+  { id: "1", name: "Service Follow-up", type: "email", subject: "Follow-up on your recent service", content: "Dear customer,\n\nThank you for bringing your vehicle in for service recently.\n\nBest regards,\nYour Service Team" },
+  { id: "2", name: "Appointment Reminder", type: "email", subject: "Reminder: Your upcoming appointment", content: "Dear customer,\n\nThis is a friendly reminder about your upcoming service appointment.\n\nBest regards,\nYour Service Team" },
+  { id: "3", name: "Service Reminder", type: "text", content: "Hi! Just a reminder that your vehicle is due for service. Please call us to schedule." },
+  { id: "4", name: "Thank You", type: "phone", content: "Thank you for your business. Discuss recent service work and ask if they have any questions." },
 ];
 
 interface CommunicationTemplateSelectorProps {
@@ -51,37 +31,53 @@ export const CommunicationTemplateSelector: React.FC<CommunicationTemplateSelect
   setType,
 }) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [templates, setTemplates] = useState<Template[]>(DEFAULT_TEMPLATES);
+  const [loading, setLoading] = useState(true);
 
-  // Filter templates by communication type
-  const filteredTemplates = TEMPLATES.filter(template => 
-    template.type === type || type === ""
-  );
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      setLoading(true);
+      try {
+        // Try email_templates table with correct columns
+        const { data, error } = await supabase
+          .from('email_templates')
+          .select('id, name, subject, body, is_active')
+          .eq('is_active', true);
+
+        if (!error && data && data.length > 0) {
+          setTemplates(data.map(t => ({
+            id: t.id,
+            name: t.name,
+            type: 'email',
+            subject: t.subject || undefined,
+            content: t.body
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTemplates();
+  }, []);
+
+  const filteredTemplates = templates.filter(t => t.type === type || type === "");
 
   const handleTemplateSelect = (templateId: string) => {
-    const template = TEMPLATES.find(t => t.id === templateId);
+    const template = templates.find(t => t.id === templateId);
     if (!template) return;
-    
     setSelectedTemplateId(templateId);
     setType(template.type);
-    onTemplateSelect(
-      template.id, 
-      template.name, 
-      template.content, 
-      template.subject
-    );
+    onTemplateSelect(template.id, template.name, template.content, template.subject);
   };
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Communication Type</Label>
-        <Select
-          value={type || "_none"}
-          onValueChange={(value) => setType(value === "_none" ? "" : value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select type" />
-          </SelectTrigger>
+        <Select value={type || "_none"} onValueChange={(v) => setType(v === "_none" ? "" : v)}>
+          <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="_none">Select a type</SelectItem>
             <SelectItem value="email">Email</SelectItem>
@@ -91,30 +87,16 @@ export const CommunicationTemplateSelector: React.FC<CommunicationTemplateSelect
           </SelectContent>
         </Select>
       </div>
-
       <div className="space-y-2">
         <Label>Select Template</Label>
-        <Select
-          value={selectedTemplateId || "_none"}
-          onValueChange={handleTemplateSelect}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Choose a template" />
-          </SelectTrigger>
+        <Select value={selectedTemplateId || "_none"} onValueChange={handleTemplateSelect} disabled={loading}>
+          <SelectTrigger><SelectValue placeholder={loading ? "Loading..." : "Choose a template"} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="_none" disabled>
-              Choose a template
-            </SelectItem>
+            <SelectItem value="_none" disabled>Choose a template</SelectItem>
             {filteredTemplates.length === 0 ? (
-              <SelectItem value="_no_templates" disabled>
-                No templates available for selected type
-              </SelectItem>
+              <SelectItem value="_no" disabled>No templates for selected type</SelectItem>
             ) : (
-              filteredTemplates.map((template) => (
-                <SelectItem key={template.id} value={template.id}>
-                  {template.name}
-                </SelectItem>
-              ))
+              filteredTemplates.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)
             )}
           </SelectContent>
         </Select>
