@@ -68,9 +68,6 @@ export function useRecurringJournalTemplates() {
       if (error) throw error;
       return data;
     },
-      if (error) throw error;
-      return data;
-    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring-journal-templates'] });
       toast.success('Recurring template created');
