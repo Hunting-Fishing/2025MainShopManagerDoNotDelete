@@ -7071,6 +7071,59 @@ export type Database = {
           },
         ]
       }
+      employee_leave_balances: {
+        Row: {
+          accrued_ytd: number | null
+          balance_hours: number | null
+          carry_over_hours: number | null
+          created_at: string
+          employee_id: string
+          id: string
+          leave_type_id: string
+          pending_hours: number | null
+          shop_id: string
+          updated_at: string
+          used_hours: number | null
+          year: number
+        }
+        Insert: {
+          accrued_ytd?: number | null
+          balance_hours?: number | null
+          carry_over_hours?: number | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          leave_type_id: string
+          pending_hours?: number | null
+          shop_id: string
+          updated_at?: string
+          used_hours?: number | null
+          year?: number
+        }
+        Update: {
+          accrued_ytd?: number | null
+          balance_hours?: number | null
+          carry_over_hours?: number | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          leave_type_id?: string
+          pending_hours?: number | null
+          shop_id?: string
+          updated_at?: string
+          used_hours?: number | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_leave_balances_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employment_types: {
         Row: {
           created_at: string | null
@@ -14548,6 +14601,113 @@ export type Database = {
           },
         ]
       }
+      leave_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          employee_id: string
+          end_date: string
+          id: string
+          leave_type_id: string
+          reason: string | null
+          rejection_reason: string | null
+          shop_id: string
+          start_date: string
+          status: string
+          total_hours: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          employee_id: string
+          end_date: string
+          id?: string
+          leave_type_id: string
+          reason?: string | null
+          rejection_reason?: string | null
+          shop_id: string
+          start_date: string
+          status?: string
+          total_hours: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          id?: string
+          leave_type_id?: string
+          reason?: string | null
+          rejection_reason?: string | null
+          shop_id?: string
+          start_date?: string
+          status?: string
+          total_hours?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_types: {
+        Row: {
+          accrual_period: string | null
+          accrual_rate: number | null
+          code: string
+          color: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_paid: boolean | null
+          max_balance: number | null
+          name: string
+          requires_approval: boolean | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          accrual_period?: string | null
+          accrual_rate?: number | null
+          code: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_paid?: boolean | null
+          max_balance?: number | null
+          name: string
+          requires_approval?: boolean | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          accrual_period?: string | null
+          accrual_rate?: number | null
+          code?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_paid?: boolean | null
+          max_balance?: number | null
+          name?: string
+          requires_approval?: boolean | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lift_hoist_inspections: {
         Row: {
           cables_chains_ok: boolean | null
@@ -18281,6 +18441,119 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payroll_run_details: {
+        Row: {
+          created_at: string
+          deductions: number | null
+          employee_id: string
+          gross_pay: number | null
+          hourly_rate: number | null
+          id: string
+          net_pay: number | null
+          notes: string | null
+          overtime_hours: number | null
+          overtime_rate: number | null
+          payroll_run_id: string
+          pto_hours_used: number | null
+          regular_hours: number | null
+        }
+        Insert: {
+          created_at?: string
+          deductions?: number | null
+          employee_id: string
+          gross_pay?: number | null
+          hourly_rate?: number | null
+          id?: string
+          net_pay?: number | null
+          notes?: string | null
+          overtime_hours?: number | null
+          overtime_rate?: number | null
+          payroll_run_id: string
+          pto_hours_used?: number | null
+          regular_hours?: number | null
+        }
+        Update: {
+          created_at?: string
+          deductions?: number | null
+          employee_id?: string
+          gross_pay?: number | null
+          hourly_rate?: number | null
+          id?: string
+          net_pay?: number | null
+          notes?: string | null
+          overtime_hours?: number | null
+          overtime_rate?: number | null
+          payroll_run_id?: string
+          pto_hours_used?: number | null
+          regular_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_run_details_payroll_run_id_fkey"
+            columns: ["payroll_run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_runs: {
+        Row: {
+          created_at: string
+          employee_count: number | null
+          id: string
+          notes: string | null
+          pay_period_id: string
+          processed_at: string | null
+          processed_by: string | null
+          run_date: string
+          shop_id: string
+          status: string
+          total_deductions: number | null
+          total_gross_pay: number | null
+          total_net_pay: number | null
+          total_overtime_pay: number | null
+          total_regular_pay: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_count?: number | null
+          id?: string
+          notes?: string | null
+          pay_period_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          run_date?: string
+          shop_id: string
+          status?: string
+          total_deductions?: number | null
+          total_gross_pay?: number | null
+          total_net_pay?: number | null
+          total_overtime_pay?: number | null
+          total_regular_pay?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_count?: number | null
+          id?: string
+          notes?: string | null
+          pay_period_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          run_date?: string
+          shop_id?: string
+          status?: string
+          total_deductions?: number | null
+          total_gross_pay?: number | null
+          total_net_pay?: number | null
+          total_overtime_pay?: number | null
+          total_regular_pay?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       performance_logs: {
         Row: {

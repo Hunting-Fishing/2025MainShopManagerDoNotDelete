@@ -1,20 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTimeCards } from '@/hooks/useTimeCards';
+import { usePayPeriods } from '@/hooks/usePayPeriods';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
-import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { format, isWithinInterval } from 'date-fns';
 import { 
   CheckCircle, 
   Search,
   Filter,
   Edit,
-  User
+  User,
+  X,
+  Calendar
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TimeCardEditDialog } from './TimeCardEditDialog';
@@ -34,11 +39,18 @@ interface TimeCardWithProfile {
 
 export function EnhancedTimeCardManager() {
   const { shopId } = useShopId();
+  const { toast } = useToast();
   const { approveTimeCard, refetch } = useTimeCards();
+  const { payPeriods } = usePayPeriods();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [employeeFilter, setEmployeeFilter] = useState<string>('all');
+  const [payPeriodFilter, setPayPeriodFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [editingTimeCard, setEditingTimeCard] = useState<any>(null);
+  const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
 
   // Fetch time cards
   const { data: timeCardsRaw, isLoading } = useQuery({
@@ -75,11 +87,11 @@ export function EnhancedTimeCardManager() {
   });
 
   // Merge time cards with profile names
-  const timeCardsWithNames: TimeCardWithProfile[] = React.useMemo(() => {
+  const timeCardsWithNames: TimeCardWithProfile[] = useMemo(() => {
     if (!timeCardsRaw || !profiles) return [];
     
-    return timeCardsRaw.map(tc => {
-      const profile = profiles.find(p => p.id === tc.employee_id);
+    return timeCardsRaw.map((tc: any) => {
+      const profile = profiles.find((p: any) => p.id === tc.employee_id);
       return {
         ...tc,
         employee_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown',
@@ -88,22 +100,43 @@ export function EnhancedTimeCardManager() {
   }, [timeCardsRaw, profiles]);
 
   // Get unique employees for filter
-  const employees = React.useMemo(() => {
+  const employees = useMemo(() => {
     return profiles || [];
   }, [profiles]);
 
   // Filter time cards
-  const filteredTimeCards = React.useMemo(() => {
-    return timeCardsWithNames.filter(tc => {
+  const filteredTimeCards = useMemo(() => {
+    return timeCardsWithNames.filter((tc: TimeCardWithProfile) => {
       if (statusFilter !== 'all' && tc.status !== statusFilter) return false;
       if (employeeFilter !== 'all' && tc.employee_id !== employeeFilter) return false;
       if (searchTerm && !tc.employee_name?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      
+      // Date range filter
+      if (dateFrom || dateTo) {
+        const cardDate = new Date(tc.clock_in_time);
+        if (dateFrom && cardDate < new Date(dateFrom)) return false;
+        if (dateTo && cardDate > new Date(dateTo + 'T23:59:59')) return false;
+      }
+
+      // Pay period filter
+      if (payPeriodFilter !== 'all') {
+        const period = payPeriods?.find((p: any) => p.id === payPeriodFilter);
+        if (period) {
+          const cardDate = new Date(tc.clock_in_time);
+          const periodStart = new Date(period.start_date);
+          const periodEnd = new Date(period.end_date);
+          if (!isWithinInterval(cardDate, { start: periodStart, end: periodEnd })) {
+            return false;
+          }
+        }
+      }
+
       return true;
     });
-  }, [timeCardsWithNames, statusFilter, employeeFilter, searchTerm]);
+  }, [timeCardsWithNames, statusFilter, employeeFilter, searchTerm, dateFrom, dateTo, payPeriodFilter, payPeriods]);
 
   // Calculate totals
-  const totals = React.useMemo(() => {
+  const totals = useMemo(() => {
     return filteredTimeCards.reduce((acc, tc) => ({
       hours: acc.hours + (tc.total_hours || 0),
       overtime: acc.overtime + (tc.overtime_hours || 0),
@@ -111,11 +144,78 @@ export function EnhancedTimeCardManager() {
     }), { hours: 0, overtime: 0, pay: 0 });
   }, [filteredTimeCards]);
 
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectedCards.size === filteredTimeCards.length) {
+      setSelectedCards(new Set());
+    } else {
+      setSelectedCards(new Set(filteredTimeCards.map(c => c.id)));
+    }
+  };
+
+  // Handle individual selection
+  const handleSelectCard = (cardId: string) => {
+    const newSelected = new Set(selectedCards);
+    if (newSelected.has(cardId)) {
+      newSelected.delete(cardId);
+    } else {
+      newSelected.add(cardId);
+    }
+    setSelectedCards(newSelected);
+  };
+
+  // Bulk approve
+  const handleBulkApprove = async () => {
+    const toApprove = filteredTimeCards.filter(
+      c => selectedCards.has(c.id) && c.status === 'completed'
+    );
+
+    if (toApprove.length === 0) {
+      toast({
+        title: 'No Cards to Approve',
+        description: 'Select completed time cards to approve',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    let successCount = 0;
+    for (const card of toApprove) {
+      try {
+        await approveTimeCard(card.id);
+        successCount++;
+      } catch (error) {
+        console.error('Failed to approve card:', card.id);
+      }
+    }
+
+    toast({
+      title: 'Bulk Approve Complete',
+      description: `Approved ${successCount} of ${toApprove.length} time cards`,
+    });
+
+    setSelectedCards(new Set());
+    refetch();
+  };
+
+  // Clear filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setEmployeeFilter('all');
+    setPayPeriodFilter('all');
+    setDateFrom('');
+    setDateTo('');
+  };
+
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || employeeFilter !== 'all' || 
+    payPeriodFilter !== 'all' || dateFrom || dateTo;
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'default';
+      case 'active': return 'bg-green-500';
       case 'completed': return 'secondary';
-      case 'approved': return 'outline';
+      case 'approved': return 'bg-blue-500';
       default: return 'outline';
     }
   };
@@ -141,14 +241,14 @@ export function EnhancedTimeCardManager() {
     <div className="space-y-6">
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Filter className="h-5 w-5" />
             Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -177,14 +277,49 @@ export function EnhancedTimeCardManager() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Employees</SelectItem>
-                {employees.map((emp) => (
+                {employees.map((emp: any) => (
                   <SelectItem key={emp.id} value={emp.id}>
                     {emp.first_name} {emp.last_name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+
+            <Select value={payPeriodFilter} onValueChange={setPayPeriodFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pay Period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Periods</SelectItem>
+                {payPeriods?.map((period: any) => (
+                  <SelectItem key={period.id} value={period.id}>
+                    {format(new Date(period.start_date), 'MMM d')} - {format(new Date(period.end_date), 'MMM d')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Input
+              type="date"
+              placeholder="From date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+
+            <Input
+              type="date"
+              placeholder="To date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
           </div>
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="mt-3">
+              <X className="h-4 w-4 mr-1" />
+              Clear Filters
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -219,75 +354,100 @@ export function EnhancedTimeCardManager() {
       {/* Time Cards List */}
       <Card>
         <CardHeader>
-          <CardTitle>Time Cards ({filteredTimeCards.length})</CardTitle>
-          <CardDescription>
-            Review and approve employee time entries
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Time Cards ({filteredTimeCards.length})</CardTitle>
+              <CardDescription>
+                Review and approve employee time entries
+              </CardDescription>
+            </div>
+            {selectedCards.size > 0 && (
+              <Button onClick={handleBulkApprove} className="bg-blue-600 hover:bg-blue-700">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Approve Selected ({selectedCards.size})
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[500px]">
-            <div className="space-y-3">
+            {/* Header Row */}
+            <div className="flex items-center gap-4 p-3 bg-muted rounded-lg font-medium text-sm mb-2">
+              <Checkbox
+                checked={selectedCards.size === filteredTimeCards.length && filteredTimeCards.length > 0}
+                onCheckedChange={handleSelectAll}
+              />
+              <div className="flex-1">Employee</div>
+              <div className="w-48">Date/Time</div>
+              <div className="w-24 text-right">Hours</div>
+              <div className="w-24 text-right">Pay</div>
+              <div className="w-24">Status</div>
+              <div className="w-20">Actions</div>
+            </div>
+
+            <div className="space-y-2">
               {filteredTimeCards.map((tc) => (
                 <div 
                   key={tc.id} 
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className={`flex items-center gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors ${
+                    selectedCards.has(tc.id) ? 'bg-primary/5 border-primary/30' : ''
+                  }`}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="h-5 w-5 text-primary" />
+                  <Checkbox
+                    checked={selectedCards.has(tc.id)}
+                    onCheckedChange={() => handleSelectCard(tc.id)}
+                  />
+                  <div className="flex-1 flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary" />
                     </div>
-                    <div>
-                      <p className="font-medium">{tc.employee_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(tc.clock_in_time), 'MMM d, yyyy • h:mm a')}
-                        {tc.clock_out_time && (
-                          <> - {format(new Date(tc.clock_out_time), 'h:mm a')}</>
-                        )}
-                      </p>
-                    </div>
+                    <span className="font-medium">{tc.employee_name}</span>
                   </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-medium">
-                        {tc.total_hours?.toFixed(2) || '—'} hrs
-                      </p>
-                      {tc.overtime_hours && tc.overtime_hours > 0 && (
-                        <p className="text-sm text-orange-500">
-                          +{tc.overtime_hours.toFixed(2)} OT
-                        </p>
-                      )}
-                      {tc.total_pay && (
-                        <p className="text-sm text-green-600">
-                          ${tc.total_pay.toFixed(2)}
-                        </p>
-                      )}
-                    </div>
-
-                    <Badge variant={getStatusColor(tc.status)}>
+                  <div className="w-48">
+                    <p className="text-sm">
+                      {format(new Date(tc.clock_in_time), 'MMM d, yyyy')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(tc.clock_in_time), 'h:mm a')}
+                      {tc.clock_out_time && ` - ${format(new Date(tc.clock_out_time), 'h:mm a')}`}
+                    </p>
+                  </div>
+                  <div className="w-24 text-right">
+                    <p className="font-medium">{tc.total_hours?.toFixed(2) || '—'}h</p>
+                    {tc.overtime_hours && tc.overtime_hours > 0 && (
+                      <p className="text-xs text-orange-500">+{tc.overtime_hours.toFixed(1)} OT</p>
+                    )}
+                  </div>
+                  <div className="w-24 text-right">
+                    {tc.total_pay ? (
+                      <span className="font-medium text-green-600">${tc.total_pay.toFixed(2)}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                  <div className="w-24">
+                    <Badge className={tc.status === 'active' ? 'bg-green-500' : tc.status === 'approved' ? 'bg-blue-500' : ''} variant={tc.status === 'completed' ? 'secondary' : 'default'}>
                       {tc.status}
                     </Badge>
-
-                    <div className="flex gap-2">
+                  </div>
+                  <div className="w-20 flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingTimeCard(tc)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {tc.status === 'completed' && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setEditingTimeCard(tc)}
+                        onClick={() => approveTimeCard(tc.id)}
+                        className="text-blue-600"
                       >
-                        <Edit className="h-4 w-4" />
+                        <CheckCircle className="h-4 w-4" />
                       </Button>
-                      
-                      {tc.status === 'completed' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => approveTimeCard(tc.id)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               ))}
