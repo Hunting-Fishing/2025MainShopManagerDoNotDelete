@@ -2,123 +2,65 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, User, AlertTriangle, CheckCircle, Wrench } from 'lucide-react';
+import { Calendar, Clock, User, AlertTriangle, CheckCircle, Wrench, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-interface MaintenanceTask {
-  id: string;
-  title: string;
-  equipmentId: string;
-  equipmentName: string;
-  type: 'preventive' | 'corrective' | 'emergency';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'scheduled' | 'in-progress' | 'completed' | 'overdue';
-  assignedTo: string;
-  scheduledDate: string;
-  estimatedDuration: number; // in hours
-  description: string;
-  lastCompleted?: string;
-}
-
-const mockTasks: MaintenanceTask[] = [
-  {
-    id: '1',
-    title: 'Hydraulic Fluid Change',
-    equipmentId: '1',
-    equipmentName: 'Hydraulic Lift #1',
-    type: 'preventive',
-    priority: 'medium',
-    status: 'scheduled',
-    assignedTo: 'John Smith',
-    scheduledDate: '2024-07-15',
-    estimatedDuration: 2,
-    description: 'Replace hydraulic fluid and check seals',
-    lastCompleted: '2024-04-15',
-  },
-  {
-    id: '2',
-    title: 'Calibration Check',
-    equipmentId: '2',
-    equipmentName: 'Tire Balancer',
-    type: 'preventive',
-    priority: 'high',
-    status: 'in-progress',
-    assignedTo: 'Mike Johnson',
-    scheduledDate: '2024-07-12',
-    estimatedDuration: 1.5,
-    description: 'Calibrate tire balancer accuracy',
-  },
-  {
-    id: '3',
-    title: 'Air Filter Replacement',
-    equipmentId: '3',
-    equipmentName: 'Air Compressor',
-    type: 'preventive',
-    priority: 'low',
-    status: 'completed',
-    assignedTo: 'Sarah Wilson',
-    scheduledDate: '2024-07-10',
-    estimatedDuration: 0.5,
-    description: 'Replace air intake filter',
-    lastCompleted: '2024-07-10',
-  },
-  {
-    id: '4',
-    title: 'Software Update',
-    equipmentId: '4',
-    equipmentName: 'Diagnostic Scanner',
-    type: 'corrective',
-    priority: 'critical',
-    status: 'overdue',
-    assignedTo: 'Tech Support',
-    scheduledDate: '2024-07-08',
-    estimatedDuration: 1,
-    description: 'Update diagnostic software to latest version',
-  },
-];
+import { useMaintenanceSchedules, MaintenanceSchedule } from '@/hooks/useMaintenanceSchedules';
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
-    case 'critical': return 'text-red-600';
-    case 'high': return 'text-orange-600';
-    case 'medium': return 'text-yellow-600';
-    case 'low': return 'text-green-600';
-    default: return 'text-gray-600';
+    case 'critical': return 'text-destructive';
+    case 'high': return 'text-orange-500';
+    case 'medium': return 'text-yellow-500';
+    case 'low': return 'text-green-500';
+    default: return 'text-muted-foreground';
   }
 };
 
 const getStatusIcon = (status: string) => {
   switch (status) {
     case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />;
-    case 'in-progress': return <Wrench className="h-4 w-4 text-blue-500" />;
-    case 'overdue': return <AlertTriangle className="h-4 w-4 text-red-500" />;
-    default: return <Clock className="h-4 w-4 text-gray-500" />;
+    case 'due_soon': return <Wrench className="h-4 w-4 text-blue-500" />;
+    case 'overdue': return <AlertTriangle className="h-4 w-4 text-destructive" />;
+    default: return <Clock className="h-4 w-4 text-muted-foreground" />;
   }
 };
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
   switch (status) {
     case 'completed': return 'default';
-    case 'in-progress': return 'secondary';
+    case 'due_soon': return 'secondary';
     case 'overdue': return 'destructive';
     default: return 'outline';
   }
 };
 
+const formatStatus = (status: string) => {
+  return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
 export function MaintenanceScheduler() {
-  const [tasks] = useState<MaintenanceTask[]>(mockTasks);
+  const { schedules, loading } = useMaintenanceSchedules();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-    const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+  const filteredSchedules = schedules.filter(schedule => {
+    const matchesStatus = statusFilter === 'all' || schedule.status === statusFilter;
+    const matchesPriority = priorityFilter === 'all' || schedule.priority === priorityFilter;
     return matchesStatus && matchesPriority;
   });
 
-  const todaysTasks = tasks.filter(task => 
-    task.scheduledDate === new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().split('T')[0];
+  const todaysSchedules = schedules.filter(schedule => 
+    schedule.next_service_date?.startsWith(today)
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -131,25 +73,29 @@ export function MaintenanceScheduler() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {todaysTasks.length > 0 ? (
+          {todaysSchedules.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
-              {todaysTasks.map((task) => (
-                <Card key={task.id} className="p-4">
+              {todaysSchedules.map((schedule) => (
+                <Card key={schedule.id} className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      {getStatusIcon(task.status)}
+                      {getStatusIcon(schedule.status)}
                       <div>
-                        <h4 className="font-semibold">{task.title}</h4>
-                        <p className="text-sm text-muted-foreground">{task.equipmentName}</p>
+                        <h4 className="font-semibold">{schedule.schedule_name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {schedule.description || 'No description'}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-sm font-medium ${getPriorityColor(task.priority)}`}>
-                        {task.priority.toUpperCase()}
+                      <div className={`text-sm font-medium ${getPriorityColor(schedule.priority)}`}>
+                        {schedule.priority.toUpperCase()}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {task.estimatedDuration}h estimated
-                      </div>
+                      {schedule.estimated_duration_hours && (
+                        <div className="text-xs text-muted-foreground">
+                          {schedule.estimated_duration_hours}h estimated
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -176,9 +122,10 @@ export function MaintenanceScheduler() {
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="scheduled">Scheduled</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="due_soon">Due Soon</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
@@ -197,47 +144,64 @@ export function MaintenanceScheduler() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredTasks.map((task) => (
-              <Card key={task.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {getStatusIcon(task.status)}
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <h3 className="font-semibold">{task.title}</h3>
-                        <Badge variant={getStatusVariant(task.status)}>
-                          {task.status}
-                        </Badge>
-                        <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(task.priority)} bg-opacity-10`}>
-                          {task.priority}
-                        </span>
+          {filteredSchedules.length > 0 ? (
+            <div className="space-y-4">
+              {filteredSchedules.map((schedule) => (
+                <Card key={schedule.id} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      {getStatusIcon(schedule.status)}
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold">{schedule.schedule_name}</h3>
+                          <Badge variant={getStatusVariant(schedule.status)}>
+                            {formatStatus(schedule.status)}
+                          </Badge>
+                          <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(schedule.priority)} bg-muted`}>
+                            {schedule.priority}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {schedule.trigger_type === 'time-based' ? 'Time-based' : 
+                           schedule.trigger_type === 'usage-based' ? 'Usage-based' : 'Time & Usage'}
+                        </p>
+                        {schedule.description && (
+                          <p className="text-xs text-muted-foreground mt-1">{schedule.description}</p>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{task.equipmentName}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
                     </div>
+                    <div className="text-right space-y-1">
+                      {schedule.next_service_date && (
+                        <div className="flex items-center text-sm">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {new Date(schedule.next_service_date).toLocaleDateString()}
+                        </div>
+                      )}
+                      {schedule.estimated_duration_hours && (
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {schedule.estimated_duration_hours}h
+                        </div>
+                      )}
+                      {schedule.assigned_technician && (
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <User className="h-3 w-3 mr-1" />
+                          {schedule.assigned_technician}
+                        </div>
+                      )}
+                    </div>
+                    <Button variant="outline" size="sm">
+                      View Details
+                    </Button>
                   </div>
-                  <div className="text-right space-y-1">
-                    <div className="flex items-center text-sm">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {new Date(task.scheduledDate).toLocaleDateString()}
-                    </div>
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {task.estimatedDuration}h
-                    </div>
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <User className="h-3 w-3 mr-1" />
-                      {task.assignedTo}
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">
+              No maintenance schedules found. Create your first schedule to get started.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

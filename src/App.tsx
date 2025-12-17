@@ -55,7 +55,7 @@ import EquipmentDashboard from '@/pages/EquipmentDashboard';
 import FleetManagement from '@/pages/FleetManagement';
 import MaintenanceRequests from '@/pages/MaintenanceRequests';
 import ShoppingCartPage from '@/pages/ShoppingCart';
-import Wishlist from '@/pages/Wishlist';
+import WishlistPage from '@/pages/WishlistPage';
 import Orders from '@/pages/Orders';
 import Security from '@/pages/Security';
 import Profile from '@/pages/Profile';
@@ -547,7 +547,7 @@ function App() {
                   
                   {/* Shopping Cart & Orders */}
                   <Route path="/shopping/cart" element={<ShoppingCartPage />} />
-                  <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/wishlist" element={<WishlistPage />} />
                   <Route path="/orders" element={<Orders />} />
                   
                   {/* Security */}
