@@ -215,6 +215,7 @@ export function MobileNavigation() {
       title: 'Company',
       items: [
         { id: 'team', label: 'Team', icon: UserCog, path: '/team', description: 'Team management' },
+        { id: 'payroll', label: 'Payroll', icon: DollarSign, path: '/payroll', description: 'Time tracking & payroll' },
         { id: 'company-profile', label: 'Company Profile', icon: Building2, path: '/company-profile', description: 'Company settings' },
         { id: 'training', label: 'Training', icon: GraduationCap, path: '/training-overview', description: 'Staff training' },
         { id: 'documents', label: 'Documents', icon: FolderOpen, path: '/documents', description: 'Document management' },
