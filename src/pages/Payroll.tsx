@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PayrollDashboard } from '@/components/payroll/PayrollDashboard';
 import { EmployeeTimeClock } from '@/components/payroll/EmployeeTimeClock';
 import { EnhancedTimeCardManager } from '@/components/payroll/EnhancedTimeCardManager';
 import { PayPeriodManager } from '@/components/payroll/PayPeriodManager';
 import { PayrollReportsPanel } from '@/components/payroll/PayrollReportsPanel';
 import { EmployeeRatesPanel } from '@/components/payroll/EmployeeRatesPanel';
-import { LayoutDashboard, Clock, CreditCard, Calendar, FileText, DollarSign } from 'lucide-react';
+import { OvertimeAlertsPanel } from '@/components/payroll/OvertimeAlertsPanel';
+import { OvertimeConfigPanel } from '@/components/payroll/OvertimeConfigPanel';
+import { 
+  LayoutDashboard, 
+  Clock, 
+  CreditCard, 
+  Calendar, 
+  FileText, 
+  DollarSign,
+  AlertTriangle,
+  Settings
+} from 'lucide-react';
 
 export default function Payroll() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -22,7 +32,7 @@ export default function Payroll() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 gap-2 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 gap-2 h-auto p-1">
           <TabsTrigger value="dashboard" className="flex items-center gap-2 py-2">
             <LayoutDashboard className="h-4 w-4" />
             <span className="hidden sm:inline">Dashboard</span>
@@ -35,6 +45,10 @@ export default function Payroll() {
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">Time Cards</span>
           </TabsTrigger>
+          <TabsTrigger value="overtime" className="flex items-center gap-2 py-2">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="hidden sm:inline">Overtime</span>
+          </TabsTrigger>
           <TabsTrigger value="payperiods" className="flex items-center gap-2 py-2">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Pay Periods</span>
@@ -46,6 +60,10 @@ export default function Payroll() {
           <TabsTrigger value="reports" className="flex items-center gap-2 py-2">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Reports</span>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2 py-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Settings</span>
           </TabsTrigger>
         </TabsList>
 
@@ -61,6 +79,10 @@ export default function Payroll() {
           <EnhancedTimeCardManager />
         </TabsContent>
 
+        <TabsContent value="overtime" className="space-y-6">
+          <OvertimeAlertsPanel />
+        </TabsContent>
+
         <TabsContent value="payperiods" className="space-y-6">
           <PayPeriodManager />
         </TabsContent>
@@ -71,6 +93,10 @@ export default function Payroll() {
 
         <TabsContent value="reports" className="space-y-6">
           <PayrollReportsPanel />
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <OvertimeConfigPanel />
         </TabsContent>
       </Tabs>
     </div>
