@@ -10,6 +10,10 @@ import { OvertimeAlertsPanel } from '@/components/payroll/OvertimeAlertsPanel';
 import { OvertimeConfigPanel } from '@/components/payroll/OvertimeConfigPanel';
 import { PayrollRunPanel } from '@/components/payroll/PayrollRunPanel';
 import { LeaveManagementPanel } from '@/components/payroll/LeaveManagementPanel';
+import { DeductionsAdditionsPanel } from '@/components/payroll/DeductionsAdditionsPanel';
+import { TimeCardDisputesPanel } from '@/components/payroll/TimeCardDisputesPanel';
+import { PayrollAuditTrail } from '@/components/payroll/PayrollAuditTrail';
+import { PayrollHistoryPanel } from '@/components/payroll/PayrollHistoryPanel';
 import { 
   LayoutDashboard, 
   Clock, 
@@ -20,7 +24,11 @@ import {
   AlertTriangle,
   Settings,
   Play,
-  Palmtree
+  Palmtree,
+  PlusCircle,
+  MessageSquare,
+  History,
+  Archive
 } from 'lucide-react';
 
 export default function Payroll() {
@@ -73,6 +81,22 @@ export default function Payroll() {
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Reports</span>
           </TabsTrigger>
+          <TabsTrigger value="deductions" className="flex items-center gap-2 py-2">
+            <PlusCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Deductions</span>
+          </TabsTrigger>
+          <TabsTrigger value="disputes" className="flex items-center gap-2 py-2">
+            <MessageSquare className="h-4 w-4" />
+            <span className="hidden sm:inline">Disputes</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2 py-2">
+            <History className="h-4 w-4" />
+            <span className="hidden sm:inline">History</span>
+          </TabsTrigger>
+          <TabsTrigger value="audit" className="flex items-center gap-2 py-2">
+            <Archive className="h-4 w-4" />
+            <span className="hidden sm:inline">Audit</span>
+          </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2 py-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Settings</span>
@@ -113,6 +137,22 @@ export default function Payroll() {
 
         <TabsContent value="reports" className="space-y-6">
           <PayrollReportsPanel />
+        </TabsContent>
+
+        <TabsContent value="deductions" className="space-y-6">
+          <DeductionsAdditionsPanel />
+        </TabsContent>
+
+        <TabsContent value="disputes" className="space-y-6">
+          <TimeCardDisputesPanel />
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-6">
+          <PayrollHistoryPanel />
+        </TabsContent>
+
+        <TabsContent value="audit" className="space-y-6">
+          <PayrollAuditTrail />
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
