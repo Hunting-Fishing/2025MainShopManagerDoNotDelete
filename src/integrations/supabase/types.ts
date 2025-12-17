@@ -18442,6 +18442,59 @@ export type Database = {
           },
         ]
       }
+      payroll_audit_log: {
+        Row: {
+          action: string
+          changed_by: string
+          changed_by_name: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          shop_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          changed_by: string
+          changed_by_name?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          shop_id?: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string
+          changed_by_name?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          shop_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_audit_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll_run_details: {
         Row: {
           created_at: string
@@ -26734,6 +26787,79 @@ export type Database = {
           technician_id?: string
         }
         Relationships: []
+      }
+      time_card_disputes: {
+        Row: {
+          created_at: string
+          dispute_type: string
+          employee_id: string
+          id: string
+          original_value: string | null
+          reason: string
+          requested_value: string | null
+          resolution_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string
+          status: string
+          time_card_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dispute_type: string
+          employee_id: string
+          id?: string
+          original_value?: string | null
+          reason: string
+          requested_value?: string | null
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string
+          status?: string
+          time_card_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dispute_type?: string
+          employee_id?: string
+          id?: string
+          original_value?: string | null
+          reason?: string
+          requested_value?: string | null
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string
+          status?: string
+          time_card_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_card_disputes_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_card_disputes_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_card_disputes_time_card_id_fkey"
+            columns: ["time_card_id"]
+            isOneToOne: false
+            referencedRelation: "time_card_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       time_card_entries: {
         Row: {
