@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
+// Map Stripe product IDs to plan names
+const PRODUCT_PLAN_MAP: Record<string, 'pro' | 'enterprise'> = {
+  'prod_TcUkAmDPfO5bOp': 'pro',
+  'prod_TcUkrI1FhW4IlG': 'enterprise',
+};
+
 export interface SubscriptionStatus {
   subscribed: boolean;
   plan: 'free' | 'pro' | 'enterprise';
@@ -37,7 +43,7 @@ export const useSubscription = () => {
       
       setStatus({
         subscribed: data.subscribed,
-        plan: data.plan || 'free',
+        plan: data.product_id ? (PRODUCT_PLAN_MAP[data.product_id] || 'free') : 'free',
         productId: data.product_id,
         subscriptionEnd: data.subscription_end,
         loading: false,

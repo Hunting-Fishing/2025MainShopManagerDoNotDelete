@@ -30,8 +30,9 @@ const plans = [
     id: 'pro',
     name: 'Pro',
     description: 'For growing businesses with more demands',
-    price: '$49',
-    priceId: 'price_pro_monthly', // Replace with actual Stripe price ID
+    price: '$29',
+    priceId: 'price_1SfFklGapOfsltWt0rAg5XgB',
+    productId: 'prod_TcUkAmDPfO5bOp',
     icon: Crown,
     features: [
       'Unlimited work orders',
@@ -48,8 +49,9 @@ const plans = [
     id: 'enterprise',
     name: 'Enterprise',
     description: 'For large organizations with custom needs',
-    price: '$149',
-    priceId: 'price_enterprise_monthly', // Replace with actual Stripe price ID
+    price: '$99',
+    priceId: 'price_1SfFl6GapOfsltWtRLbO0OVQ',
+    productId: 'prod_TcUkrI1FhW4IlG',
     icon: Building2,
     features: [
       'Everything in Pro',
