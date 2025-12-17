@@ -13,10 +13,13 @@ import { Switch } from '@/components/ui/switch';
 import { 
   Link, Plus, RefreshCw, Settings, BookOpen, FileSpreadsheet, 
   Calculator, CheckCircle, XCircle, Clock, AlertTriangle,
-  ArrowUpDown, Trash2, Edit
+  ArrowUpDown, Trash2, Edit, Repeat, CalendarCheck
 } from 'lucide-react';
 import { useAccountingIntegration, ChartOfAccount, JournalEntry } from '@/hooks/useAccountingIntegration';
 import { format } from 'date-fns';
+import { FinancialReportsPanel } from '@/components/accounting/FinancialReportsPanel';
+import { RecurringJournalTemplatesPanel } from '@/components/accounting/RecurringJournalTemplatesPanel';
+import { FinancialPeriodsPanel } from '@/components/accounting/FinancialPeriodsPanel';
 
 const INTEGRATION_TYPES = [
   { value: 'quickbooks_online', label: 'QuickBooks Online', icon: '📊' },
@@ -153,7 +156,7 @@ export default function AccountingIntegration() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="flex flex-wrap gap-1 h-auto p-1">
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Link className="h-4 w-4" />
             Integrations
@@ -165,6 +168,14 @@ export default function AccountingIntegration() {
           <TabsTrigger value="journal" className="flex items-center gap-2">
             <FileSpreadsheet className="h-4 w-4" />
             Journal Entries
+          </TabsTrigger>
+          <TabsTrigger value="recurring" className="flex items-center gap-2">
+            <Repeat className="h-4 w-4" />
+            Recurring
+          </TabsTrigger>
+          <TabsTrigger value="periods" className="flex items-center gap-2">
+            <CalendarCheck className="h-4 w-4" />
+            Periods
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <Calculator className="h-4 w-4" />
@@ -566,56 +577,19 @@ export default function AccountingIntegration() {
           </Card>
         </TabsContent>
 
+        {/* Recurring Templates Tab */}
+        <TabsContent value="recurring" className="space-y-4">
+          <RecurringJournalTemplatesPanel />
+        </TabsContent>
+
+        {/* Financial Periods Tab */}
+        <TabsContent value="periods" className="space-y-4">
+          <FinancialPeriodsPanel />
+        </TabsContent>
+
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-4">
-          <h2 className="text-xl font-semibold">Financial Reports</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
-                  Trial Balance
-                </CardTitle>
-                <CardDescription>View account balances at a point in time</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileSpreadsheet className="h-5 w-5" />
-                  Income Statement
-                </CardTitle>
-                <CardDescription>Revenue and expenses for a period</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ArrowUpDown className="h-5 w-5" />
-                  Balance Sheet
-                </CardTitle>
-                <CardDescription>Assets, liabilities, and equity</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  General Ledger
-                </CardTitle>
-                <CardDescription>Detailed transaction history by account</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <RefreshCw className="h-5 w-5" />
-                  Sync History
-                </CardTitle>
-                <CardDescription>View integration sync logs and errors</CardDescription>
-              </CardHeader>
-            </Card>
-          </div>
+          <FinancialReportsPanel />
         </TabsContent>
       </Tabs>
     </div>
