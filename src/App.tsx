@@ -127,6 +127,7 @@ import ShopSetup from '@/pages/ShopSetup';
 import SecurityAudit from '@/pages/SecurityAudit';
 import ResetPassword from '@/pages/ResetPassword';
 import Planner from '@/pages/Planner';
+import Payroll from '@/pages/Payroll';
 import AdvancedAnalytics from '@/pages/AdvancedAnalytics';
 import AffiliateTool from '@/pages/AffiliateTool';
 import BoatInspection from '@/pages/BoatInspection';
@@ -447,6 +448,13 @@ function App() {
                   <Route path="/timesheet" element={
                     <ProtectedRoute>
                       <Timesheet />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Payroll & Time Tracking */}
+                  <Route path="/payroll" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'owner']}>
+                      <Payroll />
                     </ProtectedRoute>
                   } />
                   

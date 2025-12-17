@@ -472,6 +472,13 @@ export const navigation: NavigationSection[] = [
         permissionModule: 'team',
       },
       {
+        title: 'Payroll',
+        href: '/payroll',
+        icon: ClipboardList,
+        description: 'Time tracking & payroll',
+        permissionModule: 'team',
+      },
+      {
         title: 'Timesheet',
         href: '/timesheet',
         icon: ClipboardList,
