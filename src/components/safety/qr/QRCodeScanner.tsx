@@ -210,10 +210,12 @@ export function QRCodeScanner({ onScan }: QRCodeScannerProps) {
                 Start Scanner
               </Button>
               
-              {/* Demo button - remove in production */}
-              <Button variant="outline" onClick={simulateScan}>
-                Demo Scan
-              </Button>
+              {/* Demo button - only show in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <Button variant="outline" onClick={simulateScan}>
+                  Demo Scan
+                </Button>
+              )}
             </div>
           </div>
         )}
