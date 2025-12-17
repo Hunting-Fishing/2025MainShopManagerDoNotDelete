@@ -126,14 +126,46 @@ export const usePopularArticles = () => {
           .select('*')
           .in('id', topArticleIds);
 
-        return (articlesData || []).map((article, index) => ({
-          id: article.id,
-          title: article.title,
-          category: article.category || 'general',
-          views: viewCounts[article.id] || 0,
-          rating: 4.5, // Could be calculated from feedback
-          helpfulness: 85 + Math.random() * 15 // Mock helpfulness percentage
-        }));
+        // Fetch feedback data for these articles using help_feedback table (resource_id, resource_type)
+        const { data: feedbackData } = await supabase
+          .from('help_feedback')
+          .select('resource_id, rating, is_helpful')
+          .eq('resource_type', 'article')
+          .in('resource_id', topArticleIds);
+
+        // Calculate ratings and helpfulness per article
+        const articleFeedback = feedbackData?.reduce((acc: any, item) => {
+          const resourceId = item.resource_id;
+          if (!resourceId) return acc;
+          if (!acc[resourceId]) {
+            acc[resourceId] = { ratings: [], helpful: 0, total: 0 };
+          }
+          if (item.rating) acc[resourceId].ratings.push(item.rating);
+          if (item.is_helpful !== null) {
+            acc[resourceId].total++;
+            if (item.is_helpful) acc[resourceId].helpful++;
+          }
+          return acc;
+        }, {}) || {};
+
+        return (articlesData || []).map((article) => {
+          const feedback = articleFeedback[article.id] || { ratings: [], helpful: 0, total: 0 };
+          const avgRating = feedback.ratings.length > 0 
+            ? feedback.ratings.reduce((a: number, b: number) => a + b, 0) / feedback.ratings.length 
+            : 0;
+          const helpfulness = feedback.total > 0 
+            ? (feedback.helpful / feedback.total) * 100 
+            : 0;
+
+          return {
+            id: article.id,
+            title: article.title,
+            category: article.category || 'general',
+            views: viewCounts[article.id] || 0,
+            rating: Math.round(avgRating * 10) / 10,
+            helpfulness: Math.round(helpfulness)
+          };
+        });
       } catch (error) {
         console.error('Error fetching popular articles:', error);
         return [];
