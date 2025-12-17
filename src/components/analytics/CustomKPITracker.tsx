@@ -39,7 +39,7 @@ export function CustomKPITracker({ data, isLoading, onKPIClick }: CustomKPITrack
         const [workOrdersRes, invoicesRes, inventoryRes] = await Promise.all([
           supabase.from('work_orders').select('id, status, created_at'),
           supabase.from('invoices').select('id, total, status, created_at'),
-          supabase.from('inventory_items').select('id, quantity, min_stock_level')
+          supabase.from('inventory_items').select('id, quantity, reorder_point')
         ]);
 
         const workOrders = workOrdersRes.data || [];
@@ -67,7 +67,7 @@ export function CustomKPITracker({ data, isLoading, onKPIClick }: CustomKPITrack
         const completionRate = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
 
         // Parts availability
-        const inStockItems = inventory.filter(i => (i.quantity || 0) > (i.min_stock_level || 0)).length;
+        const inStockItems = inventory.filter(i => (i.quantity || 0) > (i.reorder_point || 0)).length;
         const partsAvailability = inventory.length > 0 ? (inStockItems / inventory.length) * 100 : 0;
 
         const calculatedKpis: KPI[] = [

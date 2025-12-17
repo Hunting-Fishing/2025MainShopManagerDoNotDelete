@@ -41,8 +41,8 @@ export const CommunicationTemplateSelector: React.FC<CommunicationTemplateSelect
         // Try email_templates table with correct columns
         const { data, error } = await supabase
           .from('email_templates')
-          .select('id, name, subject, body, is_active')
-          .eq('is_active', true);
+          .select('id, name, subject, content, is_archived')
+          .eq('is_archived', false);
 
         if (!error && data && data.length > 0) {
           setTemplates(data.map(t => ({
@@ -50,7 +50,7 @@ export const CommunicationTemplateSelector: React.FC<CommunicationTemplateSelect
             name: t.name,
             type: 'email',
             subject: t.subject || undefined,
-            content: t.body
+            content: t.content
           })));
         }
       } catch (error) {
