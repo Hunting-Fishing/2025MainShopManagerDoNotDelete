@@ -8,6 +8,8 @@ import { PayrollReportsPanel } from '@/components/payroll/PayrollReportsPanel';
 import { EmployeeRatesPanel } from '@/components/payroll/EmployeeRatesPanel';
 import { OvertimeAlertsPanel } from '@/components/payroll/OvertimeAlertsPanel';
 import { OvertimeConfigPanel } from '@/components/payroll/OvertimeConfigPanel';
+import { PayrollRunPanel } from '@/components/payroll/PayrollRunPanel';
+import { LeaveManagementPanel } from '@/components/payroll/LeaveManagementPanel';
 import { 
   LayoutDashboard, 
   Clock, 
@@ -16,7 +18,9 @@ import {
   FileText, 
   DollarSign,
   AlertTriangle,
-  Settings
+  Settings,
+  Play,
+  Palmtree
 } from 'lucide-react';
 
 export default function Payroll() {
@@ -32,7 +36,7 @@ export default function Payroll() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 gap-2 h-auto p-1">
+        <TabsList className="flex flex-wrap gap-2 h-auto p-1">
           <TabsTrigger value="dashboard" className="flex items-center gap-2 py-2">
             <LayoutDashboard className="h-4 w-4" />
             <span className="hidden sm:inline">Dashboard</span>
@@ -48,6 +52,14 @@ export default function Payroll() {
           <TabsTrigger value="overtime" className="flex items-center gap-2 py-2">
             <AlertTriangle className="h-4 w-4" />
             <span className="hidden sm:inline">Overtime</span>
+          </TabsTrigger>
+          <TabsTrigger value="runpayroll" className="flex items-center gap-2 py-2">
+            <Play className="h-4 w-4" />
+            <span className="hidden sm:inline">Run Payroll</span>
+          </TabsTrigger>
+          <TabsTrigger value="leave" className="flex items-center gap-2 py-2">
+            <Palmtree className="h-4 w-4" />
+            <span className="hidden sm:inline">PTO/Leave</span>
           </TabsTrigger>
           <TabsTrigger value="payperiods" className="flex items-center gap-2 py-2">
             <Calendar className="h-4 w-4" />
@@ -81,6 +93,14 @@ export default function Payroll() {
 
         <TabsContent value="overtime" className="space-y-6">
           <OvertimeAlertsPanel />
+        </TabsContent>
+
+        <TabsContent value="runpayroll" className="space-y-6">
+          <PayrollRunPanel />
+        </TabsContent>
+
+        <TabsContent value="leave" className="space-y-6">
+          <LeaveManagementPanel />
         </TabsContent>
 
         <TabsContent value="payperiods" className="space-y-6">
