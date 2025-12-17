@@ -4,7 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import { CustomersPage as RefactoredCustomersPage } from '@/components/customers/CustomersPage';
 import CustomerDetails from './CustomerDetails';
 import CustomerEdit from './CustomerEdit';
-import CustomerCreate from './CustomerCreate';
+import CreateCustomer from './CreateCustomer';
 
 /**
  * REFACTORED: Customer routing with nested routes
@@ -18,7 +18,7 @@ export default function Customers() {
   return (
     <Routes>
       <Route index element={<RefactoredCustomersPage />} />
-      <Route path="create" element={<CustomerCreate />} />
+      <Route path="create" element={<CreateCustomer />} />
       <Route path=":customerId" element={<CustomerDetails />} />
       <Route path=":customerId/edit" element={<CustomerEdit />} />
     </Routes>
