@@ -91,6 +91,17 @@ export function PlannerResourceSidebar({ onClose }: PlannerResourceSidebarProps)
               <div
                 key={s.id}
                 draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'staff',
+                    id: s.id,
+                    name: `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.email,
+                    job_title: s.job_title,
+                    avatar_url: s.avatar_url,
+                    initials: (s.first_name?.[0] || '') + (s.last_name?.[0] || ''),
+                  }));
+                  e.dataTransfer.effectAllowed = 'copy';
+                }}
                 className={cn(
                   'flex items-center gap-2 p-2 rounded-lg border border-border bg-card',
                   'cursor-grab active:cursor-grabbing hover:bg-muted/50 transition-colors'
@@ -123,10 +134,21 @@ export function PlannerResourceSidebar({ onClose }: PlannerResourceSidebarProps)
             <p className="text-xs text-muted-foreground mb-2">
               Drag equipment to schedule
             </p>
-            {filteredEquipment?.map((e) => (
+            {filteredEquipment?.map((eq) => (
               <div
-                key={e.id}
+                key={eq.id}
                 draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'equipment',
+                    id: eq.id,
+                    name: eq.name,
+                    equipment_type: eq.equipment_type,
+                    unit_number: eq.unit_number,
+                    status: eq.status || 'Available',
+                  }));
+                  e.dataTransfer.effectAllowed = 'copy';
+                }}
                 className={cn(
                   'flex items-center gap-2 p-2 rounded-lg border border-border bg-card',
                   'cursor-grab active:cursor-grabbing hover:bg-muted/50 transition-colors'
@@ -137,13 +159,13 @@ export function PlannerResourceSidebar({ onClose }: PlannerResourceSidebarProps)
                   <Wrench className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{e.name}</p>
+                  <p className="text-sm font-medium truncate">{eq.name}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {e.equipment_type} {e.unit_number && `• ${e.unit_number}`}
+                    {eq.equipment_type} {eq.unit_number && `• ${eq.unit_number}`}
                   </p>
                 </div>
                 <Badge variant="secondary" className="text-xs shrink-0">
-                  {e.status || 'Available'}
+                  {eq.status || 'Available'}
                 </Badge>
               </div>
             ))}

@@ -2,10 +2,10 @@ import { useState, useRef, useCallback } from 'react';
 import { usePlannerItems, usePlannerMutations } from '@/hooks/usePlannerData';
 import { PlannerBoardItem } from '@/types/planner';
 import { Button } from '@/components/ui/button';
-import { Plus, StickyNote, Type, ArrowRight, Trash2, ZoomIn, ZoomOut, Move, Hand } from 'lucide-react';
+import { StickyNote, ZoomIn, ZoomOut, Move, Hand, Users, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WhiteboardNote } from './WhiteboardNote';
-import { Input } from '@/components/ui/input';
+import { WhiteboardResourceCard } from './WhiteboardResourceCard';
 
 const NOTE_COLORS = [
   '#fef08a', // yellow
@@ -17,12 +17,25 @@ const NOTE_COLORS = [
   '#ffffff', // white
 ];
 
+interface DroppedResource {
+  type: 'staff' | 'equipment';
+  id: string;
+  name: string;
+  job_title?: string;
+  avatar_url?: string;
+  initials?: string;
+  equipment_type?: string;
+  unit_number?: string;
+  status?: string;
+}
+
 export function PlannerWhiteboard() {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [tool, setTool] = useState<'select' | 'pan' | 'note'>('select');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState(NOTE_COLORS[0]);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const isPanning = useRef(false);
@@ -58,6 +71,60 @@ export function PlannerWhiteboard() {
     setTool('select');
   }, [tool, pan, zoom, createItem, selectedColor]);
 
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const jsonData = e.dataTransfer.getData('application/json');
+    if (!jsonData) return;
+
+    try {
+      const resource: DroppedResource = JSON.parse(jsonData);
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const x = (e.clientX - rect.left - pan.x) / zoom;
+      const y = (e.clientY - rect.top - pan.y) / zoom;
+
+      // Create a resource card item
+      createItem.mutate({
+        board_type: 'whiteboard',
+        item_type: 'assignment',
+        title: resource.name,
+        content: JSON.stringify({
+          resourceType: resource.type,
+          resourceId: resource.id,
+          name: resource.name,
+          subtitle: resource.type === 'staff' 
+            ? resource.job_title 
+            : `${resource.equipment_type}${resource.unit_number ? ` • ${resource.unit_number}` : ''}`,
+          avatarUrl: resource.avatar_url,
+          initials: resource.initials,
+          status: resource.status,
+        }),
+        position_x: x,
+        position_y: y,
+        width: 220,
+        height: 80,
+        employee_id: resource.type === 'staff' ? resource.id : undefined,
+        equipment_id: resource.type === 'equipment' ? resource.id : undefined,
+        swimlane_resource_type: resource.type === 'staff' ? 'employee' : 'equipment',
+      });
+    } catch (err) {
+      console.error('Failed to parse dropped resource:', err);
+    }
+  }, [pan, zoom, createItem]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setIsDragOver(false);
+  }, []);
+
   const handleNoteUpdate = useCallback((id: string, updates: Partial<PlannerBoardItem>) => {
     updateItem.mutate({ id, ...updates });
   }, [updateItem]);
@@ -92,6 +159,26 @@ export function PlannerWhiteboard() {
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       setZoom((prev) => Math.min(Math.max(prev + delta, 0.25), 2));
+    }
+  };
+
+  // Parse resource data from item content
+  const getResourceData = (item: PlannerBoardItem) => {
+    try {
+      const data = JSON.parse(item.content || '{}');
+      return {
+        type: data.resourceType as 'staff' | 'equipment',
+        name: data.name || item.title || 'Unknown',
+        subtitle: data.subtitle,
+        avatarUrl: data.avatarUrl,
+        initials: data.initials,
+        status: data.status,
+      };
+    } catch {
+      return {
+        type: 'staff' as const,
+        name: item.title || 'Unknown',
+      };
     }
   };
 
@@ -146,6 +233,13 @@ export function PlannerWhiteboard() {
               ))}
             </div>
           )}
+
+          {/* Resource hint */}
+          <div className="flex items-center gap-2 ml-4 text-xs text-muted-foreground">
+            <Users className="h-3.5 w-3.5" />
+            <Wrench className="h-3.5 w-3.5" />
+            <span>Drag resources from sidebar</span>
+          </div>
         </div>
 
         {/* Zoom Controls */}
@@ -184,9 +278,10 @@ export function PlannerWhiteboard() {
       <div
         ref={containerRef}
         className={cn(
-          'flex-1 overflow-hidden relative',
+          'flex-1 overflow-hidden relative transition-colors',
           tool === 'pan' && 'cursor-grab active:cursor-grabbing',
-          tool === 'note' && 'cursor-crosshair'
+          tool === 'note' && 'cursor-crosshair',
+          isDragOver && 'bg-primary/5 ring-2 ring-inset ring-primary/30'
         )}
         style={{
           backgroundImage: `
@@ -201,33 +296,62 @@ export function PlannerWhiteboard() {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
       >
+        {/* Drop indicator */}
+        {isDragOver && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+            <div className="bg-primary/10 border-2 border-dashed border-primary rounded-lg px-6 py-4">
+              <p className="text-primary font-medium">Drop to add resource</p>
+            </div>
+          </div>
+        )}
+
         <div
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
             transformOrigin: '0 0',
           }}
         >
-          {items?.map((item) => (
-            <WhiteboardNote
-              key={item.id}
-              item={item}
-              isSelected={selectedId === item.id}
-              onSelect={() => setSelectedId(item.id)}
-              onUpdate={handleNoteUpdate}
-              onDelete={handleNoteDelete}
-              zoom={zoom}
-            />
-          ))}
+          {items?.map((item) => {
+            if (item.item_type === 'assignment') {
+              const resourceData = getResourceData(item);
+              return (
+                <WhiteboardResourceCard
+                  key={item.id}
+                  item={item}
+                  resourceData={resourceData}
+                  isSelected={selectedId === item.id}
+                  onSelect={() => setSelectedId(item.id)}
+                  onUpdate={handleNoteUpdate}
+                  onDelete={handleNoteDelete}
+                  zoom={zoom}
+                />
+              );
+            }
+            return (
+              <WhiteboardNote
+                key={item.id}
+                item={item}
+                isSelected={selectedId === item.id}
+                onSelect={() => setSelectedId(item.id)}
+                onUpdate={handleNoteUpdate}
+                onDelete={handleNoteDelete}
+                zoom={zoom}
+              />
+            );
+          })}
         </div>
 
         {/* Empty State */}
-        {(!items || items.length === 0) && (
+        {(!items || items.length === 0) && !isDragOver && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center text-muted-foreground">
               <StickyNote className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="text-lg font-medium">Empty Whiteboard</p>
-              <p className="text-sm">Select the note tool and click to add sticky notes</p>
+              <p className="text-sm">Add notes or drag Staff/Equipment from the sidebar</p>
             </div>
           </div>
         )}
