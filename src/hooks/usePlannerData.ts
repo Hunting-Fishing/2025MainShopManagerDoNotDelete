@@ -128,7 +128,6 @@ export function useStaffForPlanner() {
         .from('profiles')
         .select('id, first_name, last_name, email, job_title')
         .eq('shop_id', shopId)
-        .eq('is_active', true)
         .order('first_name');
       
       if (result.error) throw result.error;
@@ -158,7 +157,6 @@ export function useEquipmentForPlanner() {
         .from('equipment_assets')
         .select('id, name, equipment_type, status, unit_number')
         .eq('shop_id', shopId)
-        .eq('is_active', true)
         .order('name');
       
       if (result.error) throw result.error;
