@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -29,9 +29,12 @@ import {
   Plus,
   Check,
   Clock,
+  Trash2,
 } from 'lucide-react';
 import { COMPONENT_CATALOG, type ComponentDefinition, type ComponentCategory } from '@/config/componentCatalog';
 import { cn } from '@/lib/utils';
+import { useCustomComponents, useDeleteCustomComponent, CustomComponent } from '@/hooks/useCustomComponents';
+import { AddCustomComponentDialog } from './AddCustomComponentDialog';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Gauge,
@@ -62,6 +65,16 @@ const TYPE_LABELS: Record<string, string> = {
   fluid_level: 'Fluid Level',
 };
 
+// Extended component definition that can include custom flag
+interface ExtendedComponentDefinition extends ComponentDefinition {
+  isCustom?: boolean;
+  customId?: string;
+}
+
+interface ExtendedComponentCategory extends Omit<ComponentCategory, 'components'> {
+  components: ExtendedComponentDefinition[];
+}
+
 interface ComponentPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -77,8 +90,42 @@ export function ComponentPickerDialog({
 }: ComponentPickerDialogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedComponents, setSelectedComponents] = useState<Set<string>>(new Set());
+  const [addCustomDialogOpen, setAddCustomDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | null>(null);
 
-  const filteredCategories = COMPONENT_CATALOG.map((category) => ({
+  // Fetch custom components from database
+  const { data: customComponents = [], isLoading: isLoadingCustom } = useCustomComponents();
+  const deleteCustomMutation = useDeleteCustomComponent();
+
+  // Merge custom components with predefined catalog
+  const mergedCategories = useMemo<ExtendedComponentCategory[]>(() => {
+    return COMPONENT_CATALOG.map((category) => {
+      // Find custom components for this category
+      const categoryCustomComponents: ExtendedComponentDefinition[] = customComponents
+        .filter((cc) => cc.category === category.id)
+        .map((cc) => ({
+          id: cc.id,
+          key: cc.key,
+          name: cc.name,
+          type: cc.type,
+          category: cc.category,
+          description: cc.description || undefined,
+          unit: cc.unit || undefined,
+          isCustom: true,
+          customId: cc.id,
+        }));
+
+      return {
+        ...category,
+        components: [
+          ...category.components.map((c) => ({ ...c, isCustom: false })),
+          ...categoryCustomComponents,
+        ],
+      };
+    });
+  }, [customComponents]);
+
+  const filteredCategories = mergedCategories.map((category) => ({
     ...category,
     components: category.components.filter(
       (comp) =>
@@ -98,7 +145,7 @@ export function ComponentPickerDialog({
   };
 
   const handleAdd = () => {
-    const components = COMPONENT_CATALOG.flatMap((cat) => cat.components).filter((comp) =>
+    const components = mergedCategories.flatMap((cat) => cat.components).filter((comp) =>
       selectedComponents.has(comp.id)
     );
     onSelectComponents(components);
@@ -113,86 +160,112 @@ export function ComponentPickerDialog({
     onOpenChange(false);
   };
 
-  const isAlreadyAdded = (key: string) => existingKeys.includes(key);
+  const handleAddCustomClick = (categoryId: string, categoryName: string) => {
+    setSelectedCategory({ id: categoryId, name: categoryName });
+    setAddCustomDialogOpen(true);
+  };
+
+  const handleDeleteCustom = async (customId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('Are you sure you want to delete this custom component?')) {
+      await deleteCustomMutation.mutateAsync(customId);
+    }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Add Equipment Components
-          </DialogTitle>
-          <DialogDescription>
-            Select predefined components to add to your inspection template. Components are grouped by category.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Add Equipment Components
+            </DialogTitle>
+            <DialogDescription>
+              Select predefined components to add to your inspection template. Components are grouped by category.
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search components..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        {/* Component List */}
-        <ScrollArea type="always" className="h-[55vh]">
-          <div className="pr-4">
-            <Accordion type="multiple" defaultValue={COMPONENT_CATALOG.map((c) => c.id)} className="w-full">
-              {filteredCategories.map((category) => (
-                <CategoryAccordion
-                  key={category.id}
-                  category={category}
-                  selectedComponents={selectedComponents}
-                  existingKeys={existingKeys}
-                  onToggle={toggleComponent}
-                />
-              ))}
-            </Accordion>
-
-            {filteredCategories.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No components found matching "{searchQuery}"
-              </div>
-            )}
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search components..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
           </div>
-        </ScrollArea>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          <div className="text-sm text-muted-foreground">
-            {selectedComponents.size > 0 ? (
-              <span className="font-medium text-foreground">
-                {selectedComponents.size} component{selectedComponents.size !== 1 ? 's' : ''} selected
-              </span>
-            ) : (
-              'Select components to add'
-            )}
+          {/* Component List */}
+          <ScrollArea type="always" className="h-[55vh]">
+            <div className="pr-4">
+              <Accordion type="multiple" defaultValue={COMPONENT_CATALOG.map((c) => c.id)} className="w-full">
+                {filteredCategories.map((category) => (
+                  <CategoryAccordion
+                    key={category.id}
+                    category={category}
+                    selectedComponents={selectedComponents}
+                    existingKeys={existingKeys}
+                    onToggle={toggleComponent}
+                    onAddCustomClick={handleAddCustomClick}
+                    onDeleteCustom={handleDeleteCustom}
+                  />
+                ))}
+              </Accordion>
+
+              {filteredCategories.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No components found matching "{searchQuery}"
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              {selectedComponents.size > 0 ? (
+                <span className="font-medium text-foreground">
+                  {selectedComponents.size} component{selectedComponents.size !== 1 ? 's' : ''} selected
+                </span>
+              ) : (
+                'Select components to add'
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleAdd} disabled={selectedComponents.size === 0}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Selected
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button onClick={handleAdd} disabled={selectedComponents.size === 0}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Selected
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Custom Component Dialog */}
+      {selectedCategory && (
+        <AddCustomComponentDialog
+          open={addCustomDialogOpen}
+          onOpenChange={setAddCustomDialogOpen}
+          categoryId={selectedCategory.id}
+          categoryName={selectedCategory.name}
+        />
+      )}
+    </>
   );
 }
 
 interface CategoryAccordionProps {
-  category: ComponentCategory;
+  category: ExtendedComponentCategory;
   selectedComponents: Set<string>;
   existingKeys: string[];
   onToggle: (id: string) => void;
+  onAddCustomClick: (categoryId: string, categoryName: string) => void;
+  onDeleteCustom: (customId: string, e: React.MouseEvent) => void;
 }
 
 function CategoryAccordion({
@@ -200,6 +273,8 @@ function CategoryAccordion({
   selectedComponents,
   existingKeys,
   onToggle,
+  onAddCustomClick,
+  onDeleteCustom,
 }: CategoryAccordionProps) {
   const IconComponent = ICON_MAP[category.icon] || Gauge;
   const selectedCount = category.components.filter((c) => selectedComponents.has(c.id)).length;
@@ -252,7 +327,14 @@ function CategoryAccordion({
                     {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
                   </div>
                   <div>
-                    <div className="font-medium text-sm">{component.name}</div>
+                    <div className="font-medium text-sm flex items-center gap-2">
+                      {component.name}
+                      {component.isCustom && (
+                        <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+                          Custom
+                        </Badge>
+                      )}
+                    </div>
                     {component.description && (
                       <div className="text-xs text-muted-foreground">{component.description}</div>
                     )}
@@ -270,10 +352,33 @@ function CategoryAccordion({
                       Already added
                     </Badge>
                   )}
+                  {component.isCustom && component.customId && !isExisting && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => onDeleteCustom(component.customId!, e)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </button>
             );
           })}
+
+          {/* Add Custom Component Button */}
+          <div className="pt-2 border-t mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-primary"
+              onClick={() => onAddCustomClick(category.id, category.name)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Custom Component
+            </Button>
+          </div>
         </div>
       </AccordionContent>
     </AccordionItem>
