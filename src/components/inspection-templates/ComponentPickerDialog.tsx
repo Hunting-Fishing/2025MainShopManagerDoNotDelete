@@ -140,24 +140,26 @@ export function ComponentPickerDialog({
         </div>
 
         {/* Component List */}
-        <ScrollArea className="flex-1 min-h-0 max-h-[55vh] -mx-6 px-6">
-          <Accordion type="multiple" defaultValue={COMPONENT_CATALOG.map((c) => c.id)} className="w-full">
-            {filteredCategories.map((category) => (
-              <CategoryAccordion
-                key={category.id}
-                category={category}
-                selectedComponents={selectedComponents}
-                existingKeys={existingKeys}
-                onToggle={toggleComponent}
-              />
-            ))}
-          </Accordion>
+        <ScrollArea className="flex-1 min-h-0 max-h-[55vh]">
+          <div className="pr-4">
+            <Accordion type="multiple" defaultValue={COMPONENT_CATALOG.map((c) => c.id)} className="w-full">
+              {filteredCategories.map((category) => (
+                <CategoryAccordion
+                  key={category.id}
+                  category={category}
+                  selectedComponents={selectedComponents}
+                  existingKeys={existingKeys}
+                  onToggle={toggleComponent}
+                />
+              ))}
+            </Accordion>
 
-          {filteredCategories.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No components found matching "{searchQuery}"
-            </div>
-          )}
+            {filteredCategories.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No components found matching "{searchQuery}"
+              </div>
+            )}
+          </div>
         </ScrollArea>
 
         {/* Footer */}
