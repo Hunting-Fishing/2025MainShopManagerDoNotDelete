@@ -22,7 +22,20 @@ import {
   Lock,
   UserCog,
   LayoutList,
-  ClipboardCheck
+  ClipboardCheck,
+  User,
+  Languages,
+  Timer,
+  Percent,
+  MapPin,
+  Mail,
+  Clock,
+  Download,
+  CreditCard,
+  Gift,
+  History,
+  ShieldCheck,
+  HardHat
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -56,7 +69,41 @@ import { RolePermissionsSettingsTab } from '@/components/settings/RolePermission
 import { UserPermissionsSettingsTab } from '@/components/settings/UserPermissionsSettingsTab';
 import { NavigationSettingsTab } from '@/components/settings/NavigationSettingsTab';
 
+// Placeholder component for lazy-loaded pages
+const PlaceholderTab = () => null;
+
 export const SETTINGS_SECTIONS: SettingsSection[] = [
+  {
+    id: 'account',
+    title: 'Account & Profile',
+    description: 'Personal account settings and preferences',
+    tabs: [
+      {
+        id: 'account',
+        label: 'Account',
+        icon: User,
+        component: PlaceholderTab,
+        path: '/settings/account',
+        description: 'Manage your account settings'
+      },
+      {
+        id: 'appearance',
+        label: 'Appearance',
+        icon: Palette,
+        component: PlaceholderTab,
+        path: '/settings/appearance',
+        description: 'Theme and display preferences'
+      },
+      {
+        id: 'language',
+        label: 'Language',
+        icon: Languages,
+        component: PlaceholderTab,
+        path: '/settings/language',
+        description: 'Language and regional settings'
+      }
+    ]
+  },
   {
     id: 'basic',
     title: 'Basic Settings',
@@ -151,12 +198,59 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         description: 'Set rates for DIY bay rentals'
       },
       {
-        id: 'integrations',
-        label: 'Integrations',
-        icon: Link,
-        component: IntegrationsTab,
-        path: '/settings/integrations',
-        description: 'Connect external services and manage API integrations'
+        id: 'labour',
+        label: 'Labour',
+        icon: Timer,
+        component: PlaceholderTab,
+        path: '/settings/labour',
+        description: 'Labour rates and time tracking settings'
+      },
+      {
+        id: 'markup',
+        label: 'Markup',
+        icon: Percent,
+        component: PlaceholderTab,
+        path: '/settings/markup',
+        description: 'Configure pricing markup rules'
+      },
+      {
+        id: 'locations',
+        label: 'Locations',
+        icon: MapPin,
+        component: PlaceholderTab,
+        path: '/settings/locations',
+        description: 'Manage business locations'
+      },
+      {
+        id: 'inspection-templates',
+        label: 'Inspection Templates',
+        icon: ClipboardCheck,
+        component: PlaceholderTab,
+        path: '/settings/inspection-templates',
+        description: 'Create and manage pre-trip inspection form templates'
+      }
+    ]
+  },
+  {
+    id: 'communications',
+    title: 'Communications',
+    description: 'Email and notification configuration',
+    tabs: [
+      {
+        id: 'email',
+        label: 'Email Settings',
+        icon: Mail,
+        component: PlaceholderTab,
+        path: '/settings/email',
+        description: 'Configure email server and templates'
+      },
+      {
+        id: 'email-scheduling',
+        label: 'Email Scheduling',
+        icon: Clock,
+        component: PlaceholderTab,
+        path: '/settings/email-scheduling',
+        description: 'Schedule automated email campaigns'
       }
     ]
   },
@@ -190,6 +284,14 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         description: 'Manage volunteers, skills tracking, and assignment workflows'
       },
       {
+        id: 'training',
+        label: 'Training',
+        icon: HardHat,
+        component: PlaceholderTab,
+        path: '/settings/training',
+        description: 'Training programs and certification tracking'
+      },
+      {
         id: 'grants',
         label: 'Grant Management',
         icon: FileText,
@@ -198,36 +300,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         description: 'Track grant applications, deadlines, and reporting requirements'
       },
       {
-        id: 'financial',
-        label: 'Financial Management',
-        icon: Calculator,
-        component: FinancialManagementTab,
-        path: '/settings/financial',
-        description: 'Budget tracking, financial reporting, and compliance management'
-      },
-      {
-        id: 'budget-management',
-        label: 'Budget Management',
-        icon: Calculator,
-        component: BudgetManagementTab,
-        path: '/settings/budget-management',
-        description: 'Track budgets, expenses, and financial performance'
-      },
-      {
         id: 'asset-tracking',
         label: 'Asset Tracking',
         icon: Database,
         component: AssetTrackingTab,
         path: '/settings/asset-tracking',
         description: 'Track and manage organizational assets and equipment'
-      },
-      {
-        id: 'inspection-templates',
-        label: 'Inspection Templates',
-        icon: ClipboardCheck,
-        component: AssetTrackingTab, // Placeholder - actual page is lazy loaded in Settings.tsx
-        path: '/settings/inspection-templates',
-        description: 'Create and manage pre-trip inspection form templates'
       },
       {
         id: 'board-meetings',
@@ -264,17 +342,64 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     ]
   },
   {
-    id: 'public',
-    title: 'Public Interface',
-    description: 'Customer-facing features and portals',
+    id: 'finance',
+    title: 'Finance & Billing',
+    description: 'Financial settings, budgets, and payments',
     tabs: [
       {
-        id: 'public-portal',
-        label: 'Public Portal',
-        icon: Globe,
-        component: PublicPortalTab,
-        path: '/settings/public-portal',
-        description: 'Manage public-facing portal and application forms'
+        id: 'financial',
+        label: 'Financial Management',
+        icon: Calculator,
+        component: FinancialManagementTab,
+        path: '/settings/financial',
+        description: 'Budget tracking, financial reporting, and compliance management'
+      },
+      {
+        id: 'budget-management',
+        label: 'Budget Management',
+        icon: Calculator,
+        component: BudgetManagementTab,
+        path: '/settings/budget-management',
+        description: 'Track budgets, expenses, and financial performance'
+      },
+      {
+        id: 'billing',
+        label: 'Billing',
+        icon: CreditCard,
+        component: PlaceholderTab,
+        path: '/settings/billing',
+        description: 'Manage billing and subscription settings'
+      },
+      {
+        id: 'loyalty',
+        label: 'Loyalty Program',
+        icon: Gift,
+        component: PlaceholderTab,
+        path: '/settings/loyalty',
+        description: 'Configure customer loyalty rewards'
+      }
+    ]
+  },
+  {
+    id: 'integrations',
+    title: 'Data & Integrations',
+    description: 'External connections and data management',
+    tabs: [
+      {
+        id: 'integrations',
+        label: 'Integrations',
+        icon: Link,
+        component: IntegrationsTab,
+        path: '/settings/integrations',
+        description: 'Connect external services and manage API integrations'
+      },
+      {
+        id: 'data-export',
+        label: 'Data Export',
+        icon: Download,
+        component: PlaceholderTab,
+        path: '/settings/data-export',
+        description: 'Export your data in various formats'
       }
     ]
   },
@@ -298,6 +423,53 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         component: UserPermissionsSettingsTab,
         path: '/settings/user-permissions',
         description: 'Override permissions for individual users'
+      },
+      {
+        id: 'employee-permissions',
+        label: 'Employee Permissions',
+        icon: Users,
+        component: PlaceholderTab,
+        path: '/settings/employee-permissions',
+        description: 'Manage employee access levels'
+      },
+      {
+        id: 'security-advanced',
+        label: 'Advanced Security',
+        icon: ShieldCheck,
+        component: PlaceholderTab,
+        path: '/settings/security-advanced',
+        description: 'Advanced security and audit settings'
+      },
+      {
+        id: 'team-history',
+        label: 'Team History',
+        icon: History,
+        component: PlaceholderTab,
+        path: '/settings/team-history',
+        description: 'View team activity and change history'
+      }
+    ]
+  },
+  {
+    id: 'public',
+    title: 'Public Interface',
+    description: 'Customer-facing features and portals',
+    tabs: [
+      {
+        id: 'public-portal',
+        label: 'Public Portal',
+        icon: Globe,
+        component: PublicPortalTab,
+        path: '/settings/public-portal',
+        description: 'Manage public-facing portal and application forms'
+      },
+      {
+        id: 'scheduling',
+        label: 'Scheduling',
+        icon: Calendar,
+        component: PlaceholderTab,
+        path: '/settings/scheduling',
+        description: 'Customer appointment scheduling settings'
       }
     ]
   }
