@@ -456,6 +456,62 @@ export function useDeleteInspectionItem() {
   });
 }
 
+// Reorder items within a section
+export function useReorderInspectionItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      templateId,
+      items,
+    }: {
+      templateId: string;
+      items: { id: string; display_order: number }[];
+    }) => {
+      // Update each item's display_order
+      for (const item of items) {
+        const { error } = await supabase
+          .from('inspection_form_items')
+          .update({ display_order: item.display_order })
+          .eq('id', item.id);
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['inspection-template', variables.templateId] });
+    },
+  });
+}
+
+// Reorder sections within a template
+export function useReorderInspectionSections() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      templateId,
+      sections,
+    }: {
+      templateId: string;
+      sections: { id: string; display_order: number }[];
+    }) => {
+      // Update each section's display_order
+      for (const section of sections) {
+        const { error } = await supabase
+          .from('inspection_form_sections')
+          .update({ display_order: section.display_order })
+          .eq('id', section.id);
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['inspection-template', variables.templateId] });
+    },
+  });
+}
+
 // Get template for an asset (by asset's inspection_template_id or base template for asset_type)
 export function useTemplateForAsset(inspectionTemplateId?: string, assetType?: string) {
   return useQuery({
@@ -499,48 +555,48 @@ export function useTemplateForAsset(inspectionTemplateId?: string, assetType?: s
         return { ...template, sections: sectionsWithItems } as InspectionFormTemplate;
       }
 
-      // Otherwise, try to find a published base template for the asset type
+      // Otherwise, try to find a base template for the asset type
       if (assetType) {
-        const { data: templates, error } = await supabase
+        const { data: template, error } = await supabase
           .from('inspection_form_templates')
           .select('*')
           .eq('asset_type', assetType)
           .eq('is_base_template', true)
           .eq('is_published', true)
-          .limit(1);
+          .single();
 
-        if (error) throw error;
+        if (error) {
+          // No base template found
+          if (error.code === 'PGRST116') return null;
+          throw error;
+        }
 
-        if (templates && templates.length > 0) {
-          const template = templates[0];
+        // Fetch sections and items
+        const { data: sections } = await supabase
+          .from('inspection_form_sections')
+          .select('*')
+          .eq('template_id', template.id)
+          .order('display_order');
 
-          // Fetch sections and items
-          const { data: sections } = await supabase
-            .from('inspection_form_sections')
+        const sectionIds = sections?.map((s) => s.id) || [];
+        let items: InspectionFormItem[] = [];
+
+        if (sectionIds.length > 0) {
+          const { data: itemsData } = await supabase
+            .from('inspection_form_items')
             .select('*')
-            .eq('template_id', template.id)
+            .in('section_id', sectionIds)
             .order('display_order');
 
-          const sectionIds = sections?.map((s) => s.id) || [];
-          let items: InspectionFormItem[] = [];
-
-          if (sectionIds.length > 0) {
-            const { data: itemsData } = await supabase
-              .from('inspection_form_items')
-              .select('*')
-              .in('section_id', sectionIds)
-              .order('display_order');
-
-            items = (itemsData as InspectionFormItem[]) || [];
-          }
-
-          const sectionsWithItems = (sections || []).map((section) => ({
-            ...section,
-            items: items.filter((item) => item.section_id === section.id),
-          }));
-
-          return { ...template, sections: sectionsWithItems } as InspectionFormTemplate;
+          items = (itemsData as InspectionFormItem[]) || [];
         }
+
+        const sectionsWithItems = (sections || []).map((section) => ({
+          ...section,
+          items: items.filter((item) => item.section_id === section.id),
+        }));
+
+        return { ...template, sections: sectionsWithItems } as InspectionFormTemplate;
       }
 
       return null;

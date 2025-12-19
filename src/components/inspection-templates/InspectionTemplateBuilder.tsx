@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -36,6 +35,8 @@ import {
   useAddInspectionItem,
   useUpdateInspectionItem,
   useDeleteInspectionItem,
+  useReorderInspectionItems,
+  useReorderInspectionSections,
 } from '@/hooks/useInspectionTemplates';
 import type { InspectionFormSection, InspectionFormItem, InspectionItemType } from '@/types/inspectionTemplate';
 import { ITEM_TYPE_LABELS } from '@/types/inspectionTemplate';
@@ -57,6 +58,23 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ComponentPickerDialog } from './ComponentPickerDialog';
 import type { ComponentDefinition } from '@/config/componentCatalog';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface InspectionTemplateBuilderProps {
   templateId: string;
@@ -72,6 +90,7 @@ export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTem
   const addItem = useAddInspectionItem();
   const updateItem = useUpdateInspectionItem();
   const deleteItem = useDeleteInspectionItem();
+  const reorderSections = useReorderInspectionSections();
   const { toast } = useToast();
 
   const [editingName, setEditingName] = useState(false);
@@ -79,6 +98,37 @@ export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTem
   const [tempDescription, setTempDescription] = useState('');
   const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<{ itemId: string; sectionId: string } | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleSectionDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (over && active.id !== over.id && template?.sections) {
+        const oldIndex = template.sections.findIndex((s) => s.id === active.id);
+        const newIndex = template.sections.findIndex((s) => s.id === over.id);
+
+        const newSections = arrayMove(template.sections, oldIndex, newIndex);
+        const updates = newSections.map((section, index) => ({
+          id: section.id,
+          display_order: index + 1,
+        }));
+
+        reorderSections.mutate({ templateId, sections: updates });
+      }
+    },
+    [template?.sections, templateId, reorderSections]
+  );
 
   if (isLoading) {
     return (
@@ -144,6 +194,8 @@ export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTem
     }
   };
 
+  const sectionIds = template.sections?.map((s) => s.id) || [];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -201,30 +253,38 @@ export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTem
       </div>
 
       {/* Sections */}
-      <div className="space-y-4">
-        {template.sections?.map((section) => (
-          <SectionCard
-            key={section.id}
-            section={section}
-            templateId={templateId}
-            onUpdateSection={updateSection}
-            onDeleteSection={() => setDeleteSectionId(section.id)}
-            onAddItem={addItem}
-            onUpdateItem={updateItem}
-            onDeleteItem={(itemId) => setDeleteItemId({ itemId, sectionId: section.id })}
-          />
-        ))}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleSectionDragEnd}
+      >
+        <SortableContext items={sectionIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-4">
+            {template.sections?.map((section) => (
+              <SortableSectionCard
+                key={section.id}
+                section={section}
+                templateId={templateId}
+                onUpdateSection={updateSection}
+                onDeleteSection={() => setDeleteSectionId(section.id)}
+                onAddItem={addItem}
+                onUpdateItem={updateItem}
+                onDeleteItem={(itemId) => setDeleteItemId({ itemId, sectionId: section.id })}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
-        <Button
-          variant="outline"
-          className="w-full border-dashed"
-          onClick={handleAddSection}
-          disabled={addSection.isPending}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Section
-        </Button>
-      </div>
+      <Button
+        variant="outline"
+        className="w-full border-dashed"
+        onClick={handleAddSection}
+        disabled={addSection.isPending}
+      >
+        <Plus className="mr-2 h-4 w-4" />
+        Add Section
+      </Button>
 
       {/* Delete Section Confirmation */}
       <AlertDialog open={!!deleteSectionId} onOpenChange={() => setDeleteSectionId(null)}>
@@ -279,6 +339,31 @@ interface SectionCardProps {
   onAddItem: ReturnType<typeof useAddInspectionItem>;
   onUpdateItem: ReturnType<typeof useUpdateInspectionItem>;
   onDeleteItem: (itemId: string) => void;
+  dragListeners?: any;
+}
+
+function SortableSectionCard(props: Omit<SectionCardProps, 'dragListeners'>) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.section.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 'auto',
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <SectionCard {...props} dragListeners={listeners} />
+    </div>
+  );
 }
 
 function SectionCard({
@@ -289,6 +374,7 @@ function SectionCard({
   onAddItem,
   onUpdateItem,
   onDeleteItem,
+  dragListeners,
 }: SectionCardProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(true);
@@ -296,8 +382,41 @@ function SectionCard({
   const [tempTitle, setTempTitle] = useState(section.title);
   const [newlyAddedItemId, setNewlyAddedItemId] = useState<string | null>(null);
   const [componentPickerOpen, setComponentPickerOpen] = useState(false);
+  const reorderItems = useReorderInspectionItems();
 
   const existingItemKeys = section.items?.map((item) => item.item_key) || [];
+  const itemIds = section.items?.map((item) => item.id) || [];
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleItemDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (over && active.id !== over.id && section.items) {
+        const oldIndex = section.items.findIndex((i) => i.id === active.id);
+        const newIndex = section.items.findIndex((i) => i.id === over.id);
+
+        const newItems = arrayMove(section.items, oldIndex, newIndex);
+        const updates = newItems.map((item, index) => ({
+          id: item.id,
+          display_order: index + 1,
+        }));
+
+        reorderItems.mutate({ templateId, items: updates });
+      }
+    },
+    [section.items, templateId, reorderItems]
+  );
 
   const handleSaveTitle = async () => {
     if (tempTitle.trim() && tempTitle !== section.title) {
@@ -381,7 +500,12 @@ function SectionCard({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
+              <div
+                {...dragListeners}
+                className="cursor-grab active:cursor-grabbing touch-none"
+              >
+                <GripVertical className="h-5 w-5 text-muted-foreground" />
+              </div>
               {editingTitle ? (
                 <div className="flex items-center gap-2">
                   <Input
@@ -426,17 +550,25 @@ function SectionCard({
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="space-y-3">
-            {section.items?.map((item) => (
-              <ItemRow
-                key={item.id}
-                item={item}
-                templateId={templateId}
-                onUpdate={onUpdateItem}
-                onDelete={() => onDeleteItem(item.id)}
-                autoEdit={item.id === newlyAddedItemId}
-                onEditComplete={() => setNewlyAddedItemId(null)}
-              />
-            ))}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleItemDragEnd}
+            >
+              <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                {section.items?.map((item) => (
+                  <SortableItemRow
+                    key={item.id}
+                    item={item}
+                    templateId={templateId}
+                    onUpdate={onUpdateItem}
+                    onDelete={() => onDeleteItem(item.id)}
+                    autoEdit={item.id === newlyAddedItemId}
+                    onEditComplete={() => setNewlyAddedItemId(null)}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
 
             <div className="flex gap-2">
               <Button
@@ -481,16 +613,43 @@ interface ItemRowProps {
   onDelete: () => void;
   autoEdit?: boolean;
   onEditComplete?: () => void;
+  dragListeners?: any;
 }
 
-function ItemRow({ item, templateId, onUpdate, onDelete, autoEdit, onEditComplete }: ItemRowProps) {
+function SortableItemRow(props: Omit<ItemRowProps, 'dragListeners'>) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.item.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 'auto',
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <ItemRow {...props} dragListeners={listeners} />
+    </div>
+  );
+}
+
+function ItemRow({ item, templateId, onUpdate, onDelete, autoEdit, onEditComplete, dragListeners }: ItemRowProps) {
   const [isEditing, setIsEditing] = useState(autoEdit ?? false);
   const [tempName, setTempName] = useState(item.item_name);
   const [tempType, setTempType] = useState<InspectionItemType>(item.item_type as InspectionItemType);
   const [tempRequired, setTempRequired] = useState(item.is_required);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
   const { toast } = useToast();
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
 
   // Handle autoEdit prop changes
   React.useEffect(() => {
@@ -565,14 +724,21 @@ function ItemRow({ item, templateId, onUpdate, onDelete, autoEdit, onEditComplet
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-2 p-3 rounded-lg border-2 border-primary/50 bg-muted/50 shadow-sm">
-        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      <div 
+        ref={rowRef}
+        className="flex items-center gap-2 p-3 rounded-lg border-2 border-primary/50 bg-muted/50 shadow-sm"
+      >
+        <div
+          {...dragListeners}
+          className="cursor-grab active:cursor-grabbing touch-none"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
         <Input
           ref={inputRef}
           value={tempName}
           onChange={(e) => setTempName(e.target.value)}
           onKeyDown={handleKeyDown}
-          onBlur={handleSave}
           className="flex-1"
           placeholder="Enter item name..."
           disabled={isSaving}
@@ -581,11 +747,13 @@ function ItemRow({ item, templateId, onUpdate, onDelete, autoEdit, onEditComplet
           value={tempType} 
           onValueChange={(v) => setTempType(v as InspectionItemType)}
           disabled={isSaving}
+          open={isSelectOpen}
+          onOpenChange={setIsSelectOpen}
         >
           <SelectTrigger className="w-40" onKeyDown={handleKeyDown}>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[9999] bg-popover">
             {Object.entries(ITEM_TYPE_LABELS).map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {label}
@@ -642,7 +810,13 @@ function ItemRow({ item, templateId, onUpdate, onDelete, autoEdit, onEditComplet
         setIsEditing(true);
       }}
     >
-      <GripVertical className="h-4 w-4 text-muted-foreground" />
+      <div
+        {...dragListeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
       <span className="flex-1 font-medium">{item.item_name}</span>
       <Badge variant="outline">{ITEM_TYPE_LABELS[item.item_type as InspectionItemType]}</Badge>
       {item.is_required && <Badge variant="secondary">Required</Badge>}
