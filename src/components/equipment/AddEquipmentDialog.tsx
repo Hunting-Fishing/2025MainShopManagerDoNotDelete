@@ -12,6 +12,7 @@ import { decodeVin, getVinValidationError } from '@/services/vinDecoderService';
 import { uploadEquipmentProfileImage } from '@/services/equipment/equipmentImageService';
 import { EquipmentImageUpload } from './EquipmentImageUpload';
 import { EquipmentCategorySelector } from './EquipmentCategorySelector';
+import { getAssetClassForType } from '@/types/equipmentCategory';
 import { Loader2, Search, Car, CheckCircle2 } from 'lucide-react';
 
 interface AddEquipmentDialogProps {
@@ -155,10 +156,14 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         }
       }
       
+      // Determine asset_class based on equipment type
+      const assetClass = getAssetClassForType(formData.equipment_type);
+      
       const equipmentData = {
         shop_id: profile.shop_id,
         equipment_type: formData.equipment_type as any,
         category_id: categoryId || null,
+        asset_class: assetClass,
         asset_number: assetNumber,
         unit_number: formData.unit_number || null,
         name: formData.name,
