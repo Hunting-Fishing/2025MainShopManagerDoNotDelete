@@ -7210,6 +7210,7 @@ export type Database = {
           engine_id: string | null
           equipment_type: Database["public"]["Enums"]["equipment_type"]
           id: string
+          inspection_template_id: string | null
           last_service_date: string | null
           location: string | null
           maintenance_intervals: Json | null
@@ -7251,6 +7252,7 @@ export type Database = {
           engine_id?: string | null
           equipment_type: Database["public"]["Enums"]["equipment_type"]
           id?: string
+          inspection_template_id?: string | null
           last_service_date?: string | null
           location?: string | null
           maintenance_intervals?: Json | null
@@ -7292,6 +7294,7 @@ export type Database = {
           engine_id?: string | null
           equipment_type?: Database["public"]["Enums"]["equipment_type"]
           id?: string
+          inspection_template_id?: string | null
           last_service_date?: string | null
           location?: string | null
           maintenance_intervals?: Json | null
@@ -7347,6 +7350,13 @@ export type Database = {
             columns: ["engine_id"]
             isOneToOne: false
             referencedRelation: "engines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_assets_inspection_template_id_fkey"
+            columns: ["inspection_template_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_form_templates"
             referencedColumns: ["id"]
           },
           {
@@ -7769,6 +7779,7 @@ export type Database = {
           fluid_notes: string | null
           general_notes: string | null
           id: string
+          inspection_data: Json | null
           inspection_date: string
           inspector_id: string | null
           operational_notes: string | null
@@ -7782,6 +7793,7 @@ export type Database = {
           safety_equipment_ok: boolean | null
           safety_equipment_status: number | null
           signature_data: string | null
+          template_id: string | null
           urgent_repair: boolean | null
           visual_damage_notes: string | null
           visual_damage_ok: boolean | null
@@ -7796,6 +7808,7 @@ export type Database = {
           fluid_notes?: string | null
           general_notes?: string | null
           id?: string
+          inspection_data?: Json | null
           inspection_date?: string
           inspector_id?: string | null
           operational_notes?: string | null
@@ -7809,6 +7822,7 @@ export type Database = {
           safety_equipment_ok?: boolean | null
           safety_equipment_status?: number | null
           signature_data?: string | null
+          template_id?: string | null
           urgent_repair?: boolean | null
           visual_damage_notes?: string | null
           visual_damage_ok?: boolean | null
@@ -7823,6 +7837,7 @@ export type Database = {
           fluid_notes?: string | null
           general_notes?: string | null
           id?: string
+          inspection_data?: Json | null
           inspection_date?: string
           inspector_id?: string | null
           operational_notes?: string | null
@@ -7836,12 +7851,21 @@ export type Database = {
           safety_equipment_ok?: boolean | null
           safety_equipment_status?: number | null
           signature_data?: string | null
+          template_id?: string | null
           urgent_repair?: boolean | null
           visual_damage_notes?: string | null
           visual_damage_ok?: boolean | null
           visual_damage_status?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "equipment_inspections_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       equipment_locations: {
         Row: {
@@ -12300,6 +12324,154 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "inspection_concern_roles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_form_items: {
+        Row: {
+          created_at: string
+          default_value: string | null
+          description: string | null
+          display_order: number
+          id: string
+          is_required: boolean | null
+          item_key: string
+          item_name: string
+          item_type: string
+          section_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_value?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_required?: boolean | null
+          item_key: string
+          item_name: string
+          item_type?: string
+          section_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_value?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_required?: boolean | null
+          item_key?: string
+          item_name?: string
+          item_type?: string
+          section_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_form_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_form_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_form_sections: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          template_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          template_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          template_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_form_sections_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_form_templates: {
+        Row: {
+          asset_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_base_template: boolean | null
+          is_published: boolean | null
+          name: string
+          parent_template_id: string | null
+          shop_id: string | null
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_base_template?: boolean | null
+          is_published?: boolean | null
+          name: string
+          parent_template_id?: string | null
+          shop_id?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_base_template?: boolean | null
+          is_published?: boolean | null
+          name?: string
+          parent_template_id?: string | null
+          shop_id?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_form_templates_parent_template_id_fkey"
+            columns: ["parent_template_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_form_templates_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"

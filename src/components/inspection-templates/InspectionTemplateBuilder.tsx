@@ -1,0 +1,477 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  GripVertical,
+  Save,
+  Eye,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
+import {
+  useInspectionTemplate,
+  useUpdateInspectionTemplate,
+  useAddInspectionSection,
+  useUpdateInspectionSection,
+  useDeleteInspectionSection,
+  useAddInspectionItem,
+  useUpdateInspectionItem,
+  useDeleteInspectionItem,
+} from '@/hooks/useInspectionTemplates';
+import type { InspectionFormSection, InspectionFormItem, InspectionItemType } from '@/types/inspectionTemplate';
+import { ITEM_TYPE_LABELS } from '@/types/inspectionTemplate';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+interface InspectionTemplateBuilderProps {
+  templateId: string;
+  onClose: () => void;
+}
+
+export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTemplateBuilderProps) {
+  const { data: template, isLoading } = useInspectionTemplate(templateId);
+  const updateTemplate = useUpdateInspectionTemplate();
+  const addSection = useAddInspectionSection();
+  const updateSection = useUpdateInspectionSection();
+  const deleteSection = useDeleteInspectionSection();
+  const addItem = useAddInspectionItem();
+  const updateItem = useUpdateInspectionItem();
+  const deleteItem = useDeleteInspectionItem();
+  const { toast } = useToast();
+
+  const [editingName, setEditingName] = useState(false);
+  const [tempName, setTempName] = useState('');
+  const [tempDescription, setTempDescription] = useState('');
+  const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
+  const [deleteItemId, setDeleteItemId] = useState<{ itemId: string; sectionId: string } | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-[600px] w-full" />
+      </div>
+    );
+  }
+
+  if (!template) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-muted-foreground">Template not found</p>
+        <Button variant="outline" onClick={onClose} className="mt-4">
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
+  const handleSaveTemplateDetails = async () => {
+    await updateTemplate.mutateAsync({
+      templateId,
+      updates: {
+        name: tempName || template.name,
+        description: tempDescription || template.description,
+      },
+    });
+    setEditingName(false);
+  };
+
+  const handleTogglePublish = async () => {
+    await updateTemplate.mutateAsync({
+      templateId,
+      updates: {
+        is_published: !template.is_published,
+        version: template.is_published ? template.version : template.version + 1,
+      },
+    });
+  };
+
+  const handleAddSection = async () => {
+    const displayOrder = (template.sections?.length || 0) + 1;
+    await addSection.mutateAsync({
+      templateId,
+      title: `Section ${displayOrder}`,
+      displayOrder,
+    });
+  };
+
+  const handleDeleteSection = async () => {
+    if (deleteSectionId) {
+      await deleteSection.mutateAsync({ sectionId: deleteSectionId, templateId });
+      setDeleteSectionId(null);
+    }
+  };
+
+  const handleDeleteItem = async () => {
+    if (deleteItemId) {
+      await deleteItem.mutateAsync({ itemId: deleteItemId.itemId, templateId });
+      setDeleteItemId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            {editingName ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  className="text-xl font-bold"
+                  autoFocus
+                />
+                <Button size="sm" onClick={handleSaveTemplateDetails}>
+                  <Save className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <h2
+                className="text-2xl font-bold cursor-pointer hover:text-primary"
+                onClick={() => {
+                  setTempName(template.name);
+                  setTempDescription(template.description || '');
+                  setEditingName(true);
+                }}
+              >
+                {template.name}
+              </h2>
+            )}
+            <p className="text-muted-foreground">
+              {template.is_base_template ? 'Base Template' : 'Custom Template'} • v{template.version}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mr-4">
+            <Label htmlFor="publish" className="text-sm">
+              {template.is_published ? 'Published' : 'Draft'}
+            </Label>
+            <Switch
+              id="publish"
+              checked={template.is_published}
+              onCheckedChange={handleTogglePublish}
+            />
+          </div>
+          <Button variant="outline">
+            <Eye className="mr-2 h-4 w-4" />
+            Preview
+          </Button>
+        </div>
+      </div>
+
+      {/* Sections */}
+      <div className="space-y-4">
+        {template.sections?.map((section) => (
+          <SectionCard
+            key={section.id}
+            section={section}
+            templateId={templateId}
+            onUpdateSection={updateSection}
+            onDeleteSection={() => setDeleteSectionId(section.id)}
+            onAddItem={addItem}
+            onUpdateItem={updateItem}
+            onDeleteItem={(itemId) => setDeleteItemId({ itemId, sectionId: section.id })}
+          />
+        ))}
+
+        <Button
+          variant="outline"
+          className="w-full border-dashed"
+          onClick={handleAddSection}
+          disabled={addSection.isPending}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Section
+        </Button>
+      </div>
+
+      {/* Delete Section Confirmation */}
+      <AlertDialog open={!!deleteSectionId} onOpenChange={() => setDeleteSectionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Section</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will delete the section and all its items. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSection}
+              className="bg-destructive text-destructive-foreground"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Item Confirmation */}
+      <AlertDialog open={!!deleteItemId} onOpenChange={() => setDeleteItemId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this inspection item?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteItem}
+              className="bg-destructive text-destructive-foreground"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+interface SectionCardProps {
+  section: InspectionFormSection;
+  templateId: string;
+  onUpdateSection: ReturnType<typeof useUpdateInspectionSection>;
+  onDeleteSection: () => void;
+  onAddItem: ReturnType<typeof useAddInspectionItem>;
+  onUpdateItem: ReturnType<typeof useUpdateInspectionItem>;
+  onDeleteItem: (itemId: string) => void;
+}
+
+function SectionCard({
+  section,
+  templateId,
+  onUpdateSection,
+  onDeleteSection,
+  onAddItem,
+  onUpdateItem,
+  onDeleteItem,
+}: SectionCardProps) {
+  const [isOpen, setIsOpen] = useState(true);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState(section.title);
+
+  const handleSaveTitle = async () => {
+    await onUpdateSection.mutateAsync({
+      sectionId: section.id,
+      templateId,
+      updates: { title: tempTitle },
+    });
+    setEditingTitle(false);
+  };
+
+  const handleAddItem = async () => {
+    const displayOrder = (section.items?.length || 0) + 1;
+    await onAddItem.mutateAsync({
+      sectionId: section.id,
+      templateId,
+      item: {
+        item_name: `Item ${displayOrder}`,
+        item_key: `item_${displayOrder}_${Date.now()}`,
+        item_type: 'gyr_status',
+        display_order: displayOrder,
+        is_required: false,
+      },
+    });
+  };
+
+  return (
+    <Card>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
+              {editingTitle ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={tempTitle}
+                    onChange={(e) => setTempTitle(e.target.value)}
+                    className="h-8"
+                    autoFocus
+                    onBlur={handleSaveTitle}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSaveTitle()}
+                  />
+                </div>
+              ) : (
+                <CardTitle
+                  className="text-lg cursor-pointer hover:text-primary"
+                  onClick={() => {
+                    setTempTitle(section.title);
+                    setEditingTitle(true);
+                  }}
+                >
+                  {section.title}
+                </CardTitle>
+              )}
+              <Badge variant="secondary">{section.items?.length || 0} items</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={onDeleteSection}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+          </div>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="space-y-3">
+            {section.items?.map((item) => (
+              <ItemRow
+                key={item.id}
+                item={item}
+                templateId={templateId}
+                onUpdate={onUpdateItem}
+                onDelete={() => onDeleteItem(item.id)}
+              />
+            ))}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full border border-dashed"
+              onClick={handleAddItem}
+              disabled={onAddItem.isPending}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Item
+            </Button>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+}
+
+interface ItemRowProps {
+  item: InspectionFormItem;
+  templateId: string;
+  onUpdate: ReturnType<typeof useUpdateInspectionItem>;
+  onDelete: () => void;
+}
+
+function ItemRow({ item, templateId, onUpdate, onDelete }: ItemRowProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempName, setTempName] = useState(item.item_name);
+  const [tempType, setTempType] = useState<InspectionItemType>(item.item_type as InspectionItemType);
+  const [tempRequired, setTempRequired] = useState(item.is_required);
+
+  const handleSave = async () => {
+    await onUpdate.mutateAsync({
+      itemId: item.id,
+      templateId,
+      updates: {
+        item_name: tempName,
+        item_type: tempType,
+        is_required: tempRequired,
+      },
+    });
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/50">
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+        <Input
+          value={tempName}
+          onChange={(e) => setTempName(e.target.value)}
+          className="flex-1"
+          placeholder="Item name"
+        />
+        <Select value={tempType} onValueChange={(v) => setTempType(v as InspectionItemType)}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(ITEM_TYPE_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={tempRequired}
+            onCheckedChange={setTempRequired}
+          />
+          <span className="text-xs text-muted-foreground">Required</span>
+        </div>
+        <Button size="sm" onClick={handleSave}>
+          <Save className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center gap-2 p-3 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
+      onClick={() => {
+        setTempName(item.item_name);
+        setTempType(item.item_type as InspectionItemType);
+        setTempRequired(item.is_required);
+        setIsEditing(true);
+      }}
+    >
+      <GripVertical className="h-4 w-4 text-muted-foreground" />
+      <span className="flex-1 font-medium">{item.item_name}</span>
+      <Badge variant="outline">{ITEM_TYPE_LABELS[item.item_type as InspectionItemType]}</Badge>
+      {item.is_required && <Badge variant="secondary">Required</Badge>}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+      >
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </div>
+  );
+}
