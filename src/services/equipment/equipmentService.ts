@@ -37,6 +37,7 @@ export interface EquipmentDetails extends Equipment {
   last_service_date?: string;
   next_service_date?: string;
   shop_id?: string;
+  inspection_template_id?: string | null;
 }
 
 export async function getEquipmentById(id: string): Promise<EquipmentDetails | null> {
@@ -127,7 +128,8 @@ export async function getEquipmentById(id: string): Promise<EquipmentDetails | n
       next_maintenance_date: equipment.next_service_date || '',
       maintenance_frequency: 'as-needed',
       created_at: equipment.created_at,
-      updated_at: equipment.updated_at
+      updated_at: equipment.updated_at,
+      inspection_template_id: equipment.inspection_template_id || null
     } as unknown as EquipmentDetails;
   } catch (error) {
     console.error('Error fetching equipment details:', error);
