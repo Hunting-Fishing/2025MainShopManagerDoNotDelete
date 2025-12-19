@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen, FileText, MapPin, Gauge, Hash, Truck, ListTodo, ShoppingCart, FolderOpen, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Settings, Calendar, AlertTriangle, CheckCircle, Wrench, ClipboardList, ShieldCheck, BookOpen, FileText, MapPin, Gauge, Hash, Truck, ListTodo, ShoppingCart, FolderOpen, RefreshCw, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { getEquipmentById, updateEquipmentStatus, type EquipmentDetails } from '@/services/equipment/equipmentService';
 import { MaintenanceIntervals } from '@/components/equipment/MaintenanceIntervals';
@@ -16,6 +16,7 @@ import { EquipmentTasks } from '@/components/equipment-details/EquipmentTasks';
 import { EquipmentSupplyOrders } from '@/components/equipment-details/EquipmentSupplyOrders';
 import { EquipmentDocuments } from '@/components/equipment-details/EquipmentDocuments';
 import { RecurringTasksPanel } from '@/components/equipment-details/RecurringTasksPanel';
+import { EquipmentHourHistory } from '@/components/equipment/EquipmentHourHistory';
 
 // Helper to check if equipment is a vehicle type
 const isVehicleType = (type?: string): boolean => {
@@ -287,6 +288,10 @@ export default function EquipmentDetails() {
             <TabsTrigger value="intervals" className="whitespace-nowrap gap-2">
               <Wrench className="h-4 w-4" />
               <span className="hidden sm:inline">Intervals</span>
+            </TabsTrigger>
+            <TabsTrigger value="hour-history" className="whitespace-nowrap gap-2">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Hour History</span>
             </TabsTrigger>
             <TabsTrigger value="maintenance" className="whitespace-nowrap">History</TabsTrigger>
             <TabsTrigger value="specifications" className="whitespace-nowrap">Specs</TabsTrigger>
@@ -799,6 +804,15 @@ export default function EquipmentDetails() {
               })()}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Hour History Tab */}
+        <TabsContent value="hour-history" className="space-y-4">
+          <EquipmentHourHistory
+            parentEquipmentId={id}
+            title="Component Hour Reading History"
+            showExport={true}
+          />
         </TabsContent>
       </Tabs>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,8 @@ import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import type { InspectionDataValue, InspectionData } from '@/types/inspectionTemplate';
 import type { GYRStatus } from '@/hooks/useEquipmentInspections';
+import { ComponentHoursSection } from './ComponentHoursSection';
+import { useComponentHours } from '@/hooks/useComponentHours';
 
 interface PreTripInspectionDialogWithTemplateProps {
   open: boolean;
@@ -36,6 +38,7 @@ export function PreTripInspectionDialogWithTemplate({
 }: PreTripInspectionDialogWithTemplateProps) {
   const { createInspection, loading: submitting } = useEquipmentInspections(equipmentId);
   const { data: template, isLoading: templateLoading } = useTemplateForAsset(inspectionTemplateId, equipmentType);
+  const { components, saveHours, savingHours } = useComponentHours(equipmentId);
   
   const [previousHours, setPreviousHours] = useState<number | null>(null);
   const [currentReading, setCurrentReading] = useState('');
@@ -43,7 +46,7 @@ export function PreTripInspectionDialogWithTemplate({
   const [requiresMaintenance, setRequiresMaintenance] = useState(false);
   const [urgentRepair, setUrgentRepair] = useState(false);
   const [generalNotes, setGeneralNotes] = useState('');
-
+  const [componentHourReadings, setComponentHourReadings] = useState<{ equipmentId: string; hours: number }[]>([]);
   // Fetch previous hours from equipment or last inspection
   useEffect(() => {
     if (open && equipmentId) {
@@ -59,8 +62,14 @@ export function PreTripInspectionDialogWithTemplate({
       setRequiresMaintenance(false);
       setUrgentRepair(false);
       setGeneralNotes('');
+      setComponentHourReadings([]);
     }
   }, [open]);
+
+  // Memoized callback for component hours changes
+  const handleComponentHoursChange = useCallback((readings: { equipmentId: string; hours: number }[]) => {
+    setComponentHourReadings(readings);
+  }, []);
 
   const fetchPreviousHours = async () => {
     try {
@@ -134,6 +143,11 @@ export function PreTripInspectionDialogWithTemplate({
     const operationalStatus = (inspectionValues['operational']?.value as number) ?? 3;
 
     try {
+      // Save component hour readings first
+      if (componentHourReadings.length > 0) {
+        saveHours(componentHourReadings);
+      }
+
       await createInspection({
         equipment_id: equipmentId,
         current_reading: parseFloat(currentReading),
@@ -216,6 +230,14 @@ export function PreTripInspectionDialogWithTemplate({
               />
             </div>
           </div>
+
+          {/* Component Hour Readings (Engines, Generators, etc.) */}
+          {components.length > 0 && (
+            <ComponentHoursSection
+              parentEquipmentId={equipmentId}
+              onHoursChange={handleComponentHoursChange}
+            />
+          )}
 
           {/* Dynamic Form from Template */}
           {template ? (
