@@ -4,7 +4,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { GYRSelector, GYRLegend } from './GYRSelector';
+import { GYRLegend } from './GYRSelector';
+import { GYRSelectorWithDeficiency } from './GYRSelectorWithDeficiency';
 import { HourMeterInput } from './HourMeterInput';
 import { GYRStatus } from '@/hooks/useEquipmentInspections';
 import type { 
@@ -14,14 +15,34 @@ import type {
   InspectionDataValue 
 } from '@/types/inspectionTemplate';
 
+interface MediaItem {
+  url: string;
+  type: 'image' | 'video';
+  fileName: string;
+}
+
+interface DeficiencyData {
+  reason: string;
+  mediaItems: MediaItem[];
+}
+
 interface DynamicInspectionFormProps {
   template: InspectionFormTemplate;
   values: Record<string, InspectionDataValue>;
   onChange: (values: Record<string, InspectionDataValue>) => void;
   equipmentId?: string;
+  deficiencies?: Record<string, DeficiencyData>;
+  onDeficiencyChange?: (itemKey: string, data: DeficiencyData | undefined) => void;
 }
 
-export function DynamicInspectionForm({ template, values, onChange, equipmentId }: DynamicInspectionFormProps) {
+export function DynamicInspectionForm({ 
+  template, 
+  values, 
+  onChange, 
+  equipmentId,
+  deficiencies = {},
+  onDeficiencyChange,
+}: DynamicInspectionFormProps) {
   const handleValueChange = (item: InspectionFormItem, newValue: string | number | boolean | null) => {
     onChange({
       ...values,
@@ -31,6 +52,16 @@ export function DynamicInspectionForm({ template, values, onChange, equipmentId 
         value: newValue,
       },
     });
+  };
+
+  const handleGYRChange = (item: InspectionFormItem, status: GYRStatus, deficiencyData?: DeficiencyData) => {
+    // Update the status value
+    handleValueChange(item, status);
+    
+    // Update deficiency data
+    if (onDeficiencyChange) {
+      onDeficiencyChange(item.item_key, deficiencyData);
+    }
   };
 
   const getValue = (itemKey: string) => {
@@ -53,34 +84,20 @@ export function DynamicInspectionForm({ template, values, onChange, equipmentId 
             key={item.id} 
             className={`p-4 space-y-3 transition-colors ${getCardClassName(currentValue as number)}`}
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
               <div>
                 <Label className="text-base font-medium">{item.item_name}</Label>
                 {item.description && (
                   <p className="text-sm text-muted-foreground">{item.description}</p>
                 )}
               </div>
-              <GYRSelector 
+              <GYRSelectorWithDeficiency 
                 value={(currentValue as GYRStatus) ?? 3} 
-                onChange={(val) => handleValueChange(item, val)} 
+                onChange={(val, defData) => handleGYRChange(item, val, defData)}
+                itemName={item.item_name}
+                deficiencyData={deficiencies[item.item_key]}
               />
             </div>
-            {(currentValue as number) !== 3 && currentValue !== null && (
-              <Textarea
-                placeholder={`Describe issues with ${item.item_name.toLowerCase()}...`}
-                value={(values[`${item.item_key}_notes`]?.value as string) ?? ''}
-                onChange={(e) => onChange({
-                  ...values,
-                  [item.item_key]: values[item.item_key],
-                  [`${item.item_key}_notes`]: {
-                    item_key: `${item.item_key}_notes`,
-                    item_type: 'text',
-                    value: e.target.value,
-                  },
-                })}
-                className="mt-2"
-              />
-            )}
           </Card>
         );
 
