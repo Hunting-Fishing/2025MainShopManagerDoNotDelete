@@ -18,9 +18,10 @@ import {
   Copy,
   Eye
 } from 'lucide-react';
-import { useInspectionTemplates, useDeleteInspectionTemplate } from '@/hooks/useInspectionTemplates';
+import { useInspectionTemplates, useDeleteInspectionTemplate, useDuplicateInspectionTemplate } from '@/hooks/useInspectionTemplates';
 import { InspectionTemplateBuilder } from '@/components/inspection-templates/InspectionTemplateBuilder';
 import { CreateTemplateDialog } from '@/components/inspection-templates/CreateTemplateDialog';
+import { TemplatePreviewDialog } from '@/components/inspection-templates/TemplatePreviewDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,9 +59,11 @@ export default function InspectionTemplateSettings() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
+  const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
 
   const { data: templates, isLoading } = useInspectionTemplates();
   const deleteTemplate = useDeleteInspectionTemplate();
+  const duplicateTemplate = useDuplicateInspectionTemplate();
 
   const filteredTemplates = templates?.filter((template) => {
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -172,6 +175,8 @@ export default function InspectionTemplateSettings() {
                 template={template}
                 onEdit={() => setEditingTemplateId(template.id)}
                 onDelete={() => setDeleteTemplateId(template.id)}
+                onPreview={() => setPreviewTemplateId(template.id)}
+                onDuplicate={() => duplicateTemplate.mutate(template.id)}
               />
             ))}
           </div>
@@ -203,6 +208,8 @@ export default function InspectionTemplateSettings() {
                 template={template}
                 onEdit={() => setEditingTemplateId(template.id)}
                 onDelete={() => setDeleteTemplateId(template.id)}
+                onPreview={() => setPreviewTemplateId(template.id)}
+                onDuplicate={() => duplicateTemplate.mutate(template.id)}
               />
             ))}
           </div>
@@ -239,6 +246,15 @@ export default function InspectionTemplateSettings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Preview Dialog */}
+      {previewTemplateId && (
+        <TemplatePreviewDialog
+          templateId={previewTemplateId}
+          open={!!previewTemplateId}
+          onOpenChange={(open) => !open && setPreviewTemplateId(null)}
+        />
+      )}
     </div>
   );
 }
@@ -247,10 +263,14 @@ function TemplateCard({
   template,
   onEdit,
   onDelete,
+  onPreview,
+  onDuplicate,
 }: {
   template: InspectionFormTemplate;
   onEdit: () => void;
   onDelete: () => void;
+  onPreview: () => void;
+  onDuplicate: () => void;
 }) {
   return (
     <Card className="group hover:shadow-md transition-shadow">
@@ -271,11 +291,11 @@ function TemplateCard({
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={onDuplicate}>
                 <Copy className="mr-2 h-4 w-4" />
                 Duplicate
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={onPreview}>
                 <Eye className="mr-2 h-4 w-4" />
                 Preview
               </DropdownMenuItem>
