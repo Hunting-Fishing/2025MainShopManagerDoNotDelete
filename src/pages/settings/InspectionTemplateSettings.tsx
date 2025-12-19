@@ -16,9 +16,11 @@ import {
   Edit,
   Trash2,
   Copy,
-  Eye
+  Eye,
+  Link2
 } from 'lucide-react';
 import { useInspectionTemplates, useDeleteInspectionTemplate, useDuplicateInspectionTemplate } from '@/hooks/useInspectionTemplates';
+import { useEquipmentByTemplate } from '@/hooks/useEquipmentByTemplate';
 import { InspectionTemplateBuilder } from '@/components/inspection-templates/InspectionTemplateBuilder';
 import { CreateTemplateDialog } from '@/components/inspection-templates/CreateTemplateDialog';
 import { TemplatePreviewDialog } from '@/components/inspection-templates/TemplatePreviewDialog';
@@ -62,6 +64,7 @@ export default function InspectionTemplateSettings() {
   const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
 
   const { data: templates, isLoading } = useInspectionTemplates();
+  const { data: equipmentByTemplate } = useEquipmentByTemplate();
   const deleteTemplate = useDeleteInspectionTemplate();
   const duplicateTemplate = useDuplicateInspectionTemplate();
 
@@ -173,6 +176,7 @@ export default function InspectionTemplateSettings() {
               <TemplateCard
                 key={template.id}
                 template={template}
+                assignedEquipment={equipmentByTemplate?.[template.id] || []}
                 onEdit={() => setEditingTemplateId(template.id)}
                 onDelete={() => setDeleteTemplateId(template.id)}
                 onPreview={() => setPreviewTemplateId(template.id)}
@@ -206,6 +210,7 @@ export default function InspectionTemplateSettings() {
               <TemplateCard
                 key={template.id}
                 template={template}
+                assignedEquipment={equipmentByTemplate?.[template.id] || []}
                 onEdit={() => setEditingTemplateId(template.id)}
                 onDelete={() => setDeleteTemplateId(template.id)}
                 onPreview={() => setPreviewTemplateId(template.id)}
@@ -259,14 +264,22 @@ export default function InspectionTemplateSettings() {
   );
 }
 
+interface EquipmentAssignment {
+  id: string;
+  name: string;
+  inspection_template_id: string;
+}
+
 function TemplateCard({
   template,
+  assignedEquipment,
   onEdit,
   onDelete,
   onPreview,
   onDuplicate,
 }: {
   template: InspectionFormTemplate;
+  assignedEquipment: EquipmentAssignment[];
   onEdit: () => void;
   onDelete: () => void;
   onPreview: () => void;
@@ -311,7 +324,7 @@ function TemplateCard({
           {template.description || 'No description'}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">
             {ASSET_TYPE_LABELS[template.asset_type]}
@@ -321,6 +334,26 @@ function TemplateCard({
           </Badge>
           <Badge variant="outline">v{template.version}</Badge>
         </div>
+        
+        {assignedEquipment.length > 0 && (
+          <div className="pt-2 border-t">
+            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+              <Link2 className="h-3 w-3" />
+              Assigned to:
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {assignedEquipment.map((eq) => (
+                <Badge 
+                  key={eq.id} 
+                  variant="outline" 
+                  className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300 text-xs"
+                >
+                  {eq.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
