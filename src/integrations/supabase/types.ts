@@ -12331,6 +12331,63 @@ export type Database = {
           },
         ]
       }
+      inspection_deficiencies: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          inspection_id: string | null
+          item_key: string
+          media_types: string[] | null
+          media_urls: string[] | null
+          reason: string | null
+          shop_id: string | null
+          status: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          inspection_id?: string | null
+          item_key: string
+          media_types?: string[] | null
+          media_urls?: string[] | null
+          reason?: string | null
+          shop_id?: string | null
+          status: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          inspection_id?: string | null
+          item_key?: string
+          media_types?: string[] | null
+          media_urls?: string[] | null
+          reason?: string | null
+          shop_id?: string | null
+          status?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_deficiencies_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_deficiencies_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_form_items: {
         Row: {
           component_category: string | null
