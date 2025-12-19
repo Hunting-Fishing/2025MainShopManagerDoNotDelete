@@ -21,7 +21,8 @@ import {
   LayoutDashboard,
   Lock,
   UserCog,
-  LayoutList
+  LayoutList,
+  ClipboardCheck
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -219,6 +220,14 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         component: AssetTrackingTab,
         path: '/settings/asset-tracking',
         description: 'Track and manage organizational assets and equipment'
+      },
+      {
+        id: 'inspection-templates',
+        label: 'Inspection Templates',
+        icon: ClipboardCheck,
+        component: AssetTrackingTab, // Placeholder - actual page is lazy loaded in Settings.tsx
+        path: '/settings/inspection-templates',
+        description: 'Create and manage pre-trip inspection form templates'
       },
       {
         id: 'board-meetings',
