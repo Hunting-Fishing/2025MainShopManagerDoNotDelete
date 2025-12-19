@@ -12,7 +12,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Ship, Truck, Wrench, Package } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Ship, Truck, Wrench, Package, Info } from 'lucide-react';
 import { useEquipmentForTemplateAssignment, useAssignTemplateToEquipment } from '@/hooks/useTemplateEquipmentAssignment';
 import { toast } from 'sonner';
 import type { AssetType } from '@/types/inspectionTemplate';
@@ -23,6 +24,7 @@ interface AssignTemplateToEquipmentDialogProps {
   templateId: string;
   templateName: string;
   templateAssetType: AssetType;
+  isBaseTemplate: boolean;
 }
 
 const ASSET_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -41,20 +43,24 @@ export function AssignTemplateToEquipmentDialog({
   templateId,
   templateName,
   templateAssetType,
+  isBaseTemplate,
 }: AssignTemplateToEquipmentDialogProps) {
   const { data: equipment, isLoading } = useEquipmentForTemplateAssignment();
   const assignMutation = useAssignTemplateToEquipment();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Initialize selected IDs when equipment data loads
+  // For base templates, don't pre-select since they create copies
   useEffect(() => {
-    if (equipment) {
+    if (equipment && !isBaseTemplate) {
       const currentlyAssigned = equipment
         .filter(e => e.inspection_template_id === templateId)
         .map(e => e.id);
       setSelectedIds(currentlyAssigned);
+    } else {
+      setSelectedIds([]);
     }
-  }, [equipment, templateId]);
+  }, [equipment, templateId, isBaseTemplate]);
 
   const handleToggle = (equipmentId: string) => {
     setSelectedIds(prev =>
@@ -65,18 +71,26 @@ export function AssignTemplateToEquipmentDialog({
   };
 
   const handleSave = async () => {
-    const previousEquipmentIds = equipment
-      ?.filter(e => e.inspection_template_id === templateId)
-      .map(e => e.id) || [];
+    const previousEquipmentIds = isBaseTemplate 
+      ? [] 
+      : equipment?.filter(e => e.inspection_template_id === templateId).map(e => e.id) || [];
 
     try {
       const result = await assignMutation.mutateAsync({
         templateId,
         equipmentIds: selectedIds,
         previousEquipmentIds,
+        isBaseTemplate,
+        templateName,
       });
       
-      toast.success(`Template assigned to ${result.assigned} equipment`);
+      if (result.isBaseTemplate && result.createdTemplates.length > 0) {
+        toast.success(`Created ${result.createdTemplates.length} asset-specific template(s)`, {
+          description: result.createdTemplates.join(', '),
+        });
+      } else {
+        toast.success(`Template assigned to ${result.assigned} equipment`);
+      }
       onOpenChange(false);
     } catch (error) {
       toast.error('Failed to assign template');
@@ -96,6 +110,15 @@ export function AssignTemplateToEquipmentDialog({
             Select which equipment should use "<span className="font-medium">{templateName}</span>" for inspections.
           </DialogDescription>
         </DialogHeader>
+
+        {isBaseTemplate && (
+          <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-sm text-blue-700 dark:text-blue-300">
+              This is a <strong>Base Template</strong>. Assigning it will create an <strong>Asset-Specific copy</strong> for each selected equipment (e.g., "{templateName} - CADAL").
+            </AlertDescription>
+          </Alert>
+        )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">

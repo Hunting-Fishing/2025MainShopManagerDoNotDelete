@@ -267,6 +267,7 @@ export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTem
             templateId={templateId}
             templateName={template.name}
             templateAssetType={template.asset_type}
+            isBaseTemplate={template.is_base_template}
             open={assignDialogOpen}
             onOpenChange={setAssignDialogOpen}
           />

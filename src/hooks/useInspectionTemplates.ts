@@ -712,3 +712,126 @@ export function useDuplicateInspectionTemplate() {
     },
   });
 }
+
+// Duplicate a base template as an asset-specific template
+export function useDuplicateAsAssetSpecific() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      sourceTemplateId,
+      newName,
+      equipmentId,
+    }: {
+      sourceTemplateId: string;
+      newName: string;
+      equipmentId: string;
+    }) => {
+      // 1. Fetch source template
+      const { data: sourceTemplate, error: templateError } = await supabase
+        .from('inspection_form_templates')
+        .select('*')
+        .eq('id', sourceTemplateId)
+        .single();
+
+      if (templateError) throw templateError;
+
+      // 2. Create new asset-specific template
+      const { data: newTemplate, error: newTemplateError } = await supabase
+        .from('inspection_form_templates')
+        .insert({
+          name: newName,
+          asset_type: sourceTemplate.asset_type,
+          description: sourceTemplate.description,
+          is_base_template: false, // Asset-specific
+          parent_template_id: sourceTemplateId, // Track lineage
+          is_published: sourceTemplate.is_published,
+          version: 1,
+        })
+        .select()
+        .single();
+
+      if (newTemplateError) throw newTemplateError;
+
+      // 3. Fetch and duplicate sections
+      const { data: sourceSections, error: sectionsError } = await supabase
+        .from('inspection_form_sections')
+        .select('*')
+        .eq('template_id', sourceTemplateId)
+        .order('display_order');
+
+      if (sectionsError) throw sectionsError;
+
+      if (sourceSections && sourceSections.length > 0) {
+        const sectionMapping: Record<string, string> = {};
+
+        for (const section of sourceSections) {
+          const { data: newSection, error: newSectionError } = await supabase
+            .from('inspection_form_sections')
+            .insert({
+              template_id: newTemplate.id,
+              title: section.title,
+              description: section.description,
+              display_order: section.display_order,
+            })
+            .select()
+            .single();
+
+          if (newSectionError) throw newSectionError;
+          sectionMapping[section.id] = newSection.id;
+        }
+
+        // 4. Fetch and duplicate items
+        const sectionIds = sourceSections.map((s) => s.id);
+        const { data: sourceItems, error: itemsError } = await supabase
+          .from('inspection_form_items')
+          .select('*')
+          .in('section_id', sectionIds)
+          .order('display_order');
+
+        if (itemsError) throw itemsError;
+
+        if (sourceItems && sourceItems.length > 0) {
+          const newItems = sourceItems.map((item) => ({
+            section_id: sectionMapping[item.section_id],
+            item_name: item.item_name,
+            item_key: item.item_key,
+            item_type: item.item_type,
+            description: item.description,
+            is_required: item.is_required,
+            display_order: item.display_order,
+            default_value: item.default_value,
+            component_category: item.component_category,
+            linked_component_type: item.linked_component_type,
+            unit: item.unit,
+          }));
+
+          const { error: newItemsError } = await supabase
+            .from('inspection_form_items')
+            .insert(newItems);
+
+          if (newItemsError) throw newItemsError;
+        }
+      }
+
+      // 5. Assign the new template to the equipment
+      const { error: assignError } = await supabase
+        .from('equipment_assets')
+        .update({ inspection_template_id: newTemplate.id })
+        .eq('id', equipmentId);
+
+      if (assignError) throw assignError;
+
+      return newTemplate;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inspection-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-template-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-for-template-assignment'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+    },
+    onError: (error) => {
+      console.error('Failed to create asset-specific template:', error);
+    },
+  });
+}
