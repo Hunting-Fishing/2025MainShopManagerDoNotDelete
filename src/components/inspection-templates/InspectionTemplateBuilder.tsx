@@ -23,6 +23,8 @@ import {
   Eye,
   ChevronDown,
   ChevronUp,
+  Check,
+  X,
 } from 'lucide-react';
 import {
   useInspectionTemplate,
@@ -288,29 +290,36 @@ function SectionCard({
   const [isOpen, setIsOpen] = useState(true);
   const [editingTitle, setEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(section.title);
+  const [newlyAddedItemId, setNewlyAddedItemId] = useState<string | null>(null);
 
   const handleSaveTitle = async () => {
-    await onUpdateSection.mutateAsync({
-      sectionId: section.id,
-      templateId,
-      updates: { title: tempTitle },
-    });
+    if (tempTitle.trim() && tempTitle !== section.title) {
+      await onUpdateSection.mutateAsync({
+        sectionId: section.id,
+        templateId,
+        updates: { title: tempTitle.trim() },
+      });
+    }
     setEditingTitle(false);
   };
 
   const handleAddItem = async () => {
     const displayOrder = (section.items?.length || 0) + 1;
-    await onAddItem.mutateAsync({
+    const result = await onAddItem.mutateAsync({
       sectionId: section.id,
       templateId,
       item: {
-        item_name: `Item ${displayOrder}`,
+        item_name: `New Item`,
         item_key: `item_${displayOrder}_${Date.now()}`,
         item_type: 'gyr_status',
         display_order: displayOrder,
         is_required: false,
       },
     });
+    // Set the newly added item to auto-open in edit mode
+    if (result?.id) {
+      setNewlyAddedItemId(result.id);
+    }
   };
 
   return (
@@ -328,7 +337,13 @@ function SectionCard({
                     className="h-8"
                     autoFocus
                     onBlur={handleSaveTitle}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSaveTitle()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveTitle();
+                      if (e.key === 'Escape') {
+                        setTempTitle(section.title);
+                        setEditingTitle(false);
+                      }
+                    }}
                   />
                 </div>
               ) : (
@@ -365,6 +380,8 @@ function SectionCard({
                 templateId={templateId}
                 onUpdate={onUpdateItem}
                 onDelete={() => onDeleteItem(item.id)}
+                autoEdit={item.id === newlyAddedItemId}
+                onEditComplete={() => setNewlyAddedItemId(null)}
               />
             ))}
 
@@ -390,39 +407,110 @@ interface ItemRowProps {
   templateId: string;
   onUpdate: ReturnType<typeof useUpdateInspectionItem>;
   onDelete: () => void;
+  autoEdit?: boolean;
+  onEditComplete?: () => void;
 }
 
-function ItemRow({ item, templateId, onUpdate, onDelete }: ItemRowProps) {
-  const [isEditing, setIsEditing] = useState(false);
+function ItemRow({ item, templateId, onUpdate, onDelete, autoEdit, onEditComplete }: ItemRowProps) {
+  const [isEditing, setIsEditing] = useState(autoEdit ?? false);
   const [tempName, setTempName] = useState(item.item_name);
   const [tempType, setTempType] = useState<InspectionItemType>(item.item_type as InspectionItemType);
   const [tempRequired, setTempRequired] = useState(item.is_required);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Handle autoEdit prop changes
+  React.useEffect(() => {
+    if (autoEdit) {
+      setIsEditing(true);
+      onEditComplete?.();
+    }
+  }, [autoEdit, onEditComplete]);
+
+  const hasChanges = tempName !== item.item_name || tempType !== item.item_type || tempRequired !== item.is_required;
 
   const handleSave = async () => {
-    await onUpdate.mutateAsync({
-      itemId: item.id,
-      templateId,
-      updates: {
-        item_name: tempName,
-        item_type: tempType,
-        is_required: tempRequired,
-      },
-    });
+    if (!hasChanges) {
+      setIsEditing(false);
+      return;
+    }
+    
+    if (!tempName.trim()) {
+      toast({
+        title: 'Item name required',
+        description: 'Please enter a name for this inspection item.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await onUpdate.mutateAsync({
+        itemId: item.id,
+        templateId,
+        updates: {
+          item_name: tempName.trim(),
+          item_type: tempType,
+          is_required: tempRequired,
+        },
+      });
+      setIsEditing(false);
+      toast({
+        title: 'Saved',
+        description: 'Item updated successfully.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setTempName(item.item_name);
+    setTempType(item.item_type as InspectionItemType);
+    setTempRequired(item.is_required);
     setIsEditing(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancel();
+    }
+  };
+
+  // Auto-focus input when entering edit mode
+  React.useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
   if (isEditing) {
     return (
-      <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/50">
+      <div className="flex items-center gap-2 p-3 rounded-lg border-2 border-primary/50 bg-muted/50 shadow-sm">
         <GripVertical className="h-4 w-4 text-muted-foreground" />
         <Input
+          ref={inputRef}
           value={tempName}
           onChange={(e) => setTempName(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleSave}
           className="flex-1"
-          placeholder="Item name"
+          placeholder="Enter item name..."
+          disabled={isSaving}
         />
-        <Select value={tempType} onValueChange={(v) => setTempType(v as InspectionItemType)}>
-          <SelectTrigger className="w-40">
+        <Select 
+          value={tempType} 
+          onValueChange={(v) => setTempType(v as InspectionItemType)}
+          disabled={isSaving}
+        >
+          <SelectTrigger className="w-40" onKeyDown={handleKeyDown}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -437,12 +525,37 @@ function ItemRow({ item, templateId, onUpdate, onDelete }: ItemRowProps) {
           <Switch
             checked={tempRequired}
             onCheckedChange={setTempRequired}
+            disabled={isSaving}
           />
           <span className="text-xs text-muted-foreground">Required</span>
         </div>
-        <Button size="sm" onClick={handleSave}>
-          <Save className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCancel();
+            }}
+            disabled={isSaving}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+          <Button 
+            size="sm" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSave();
+            }}
+            disabled={isSaving || !hasChanges}
+          >
+            {isSaving ? (
+              <span className="animate-spin">⏳</span>
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </div>
     );
   }
