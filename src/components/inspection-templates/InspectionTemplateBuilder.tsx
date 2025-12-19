@@ -343,6 +343,9 @@ function SectionCard({
           display_order: startOrder + i,
           is_required: false,
           description: comp.description,
+          component_category: comp.category,
+          linked_component_type: comp.key,
+          unit: comp.unit,
         },
       });
     }
