@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type {
@@ -602,5 +603,112 @@ export function useTemplateForAsset(inspectionTemplateId?: string, assetType?: s
       return null;
     },
     enabled: !!(inspectionTemplateId || assetType),
+  });
+}
+
+// Duplicate template
+export function useDuplicateInspectionTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (sourceTemplateId: string) => {
+      // 1. Fetch source template with sections and items
+      const { data: sourceTemplate, error: templateError } = await supabase
+        .from('inspection_form_templates')
+        .select('*')
+        .eq('id', sourceTemplateId)
+        .single();
+
+      if (templateError) throw templateError;
+
+      // 2. Create new template
+      const { data: newTemplate, error: newTemplateError } = await supabase
+        .from('inspection_form_templates')
+        .insert({
+          name: `Copy of ${sourceTemplate.name}`,
+          asset_type: sourceTemplate.asset_type,
+          description: sourceTemplate.description,
+          is_base_template: sourceTemplate.is_base_template,
+          is_published: false,
+          version: 1,
+        })
+        .select()
+        .single();
+
+      if (newTemplateError) throw newTemplateError;
+
+      // 3. Fetch sections from source
+      const { data: sourceSections, error: sectionsError } = await supabase
+        .from('inspection_form_sections')
+        .select('*')
+        .eq('template_id', sourceTemplateId)
+        .order('display_order');
+
+      if (sectionsError) throw sectionsError;
+
+      if (sourceSections && sourceSections.length > 0) {
+        // 4. Create new sections
+        const sectionMapping: Record<string, string> = {};
+        
+        for (const section of sourceSections) {
+          const { data: newSection, error: newSectionError } = await supabase
+            .from('inspection_form_sections')
+            .insert({
+              template_id: newTemplate.id,
+              title: section.title,
+              description: section.description,
+              display_order: section.display_order,
+            })
+            .select()
+            .single();
+
+          if (newSectionError) throw newSectionError;
+          sectionMapping[section.id] = newSection.id;
+        }
+
+        // 5. Fetch items from source sections
+        const sectionIds = sourceSections.map((s) => s.id);
+        const { data: sourceItems, error: itemsError } = await supabase
+          .from('inspection_form_items')
+          .select('*')
+          .in('section_id', sectionIds)
+          .order('display_order');
+
+        if (itemsError) throw itemsError;
+
+        // 6. Create new items
+        if (sourceItems && sourceItems.length > 0) {
+          const newItems = sourceItems.map((item) => ({
+            section_id: sectionMapping[item.section_id],
+            item_name: item.item_name,
+            item_key: item.item_key,
+            item_type: item.item_type,
+            description: item.description,
+            is_required: item.is_required,
+            display_order: item.display_order,
+            default_value: item.default_value,
+            component_category: item.component_category,
+            linked_component_type: item.linked_component_type,
+            unit: item.unit,
+          }));
+
+          const { error: newItemsError } = await supabase
+            .from('inspection_form_items')
+            .insert(newItems);
+
+          if (newItemsError) throw newItemsError;
+        }
+      }
+
+      return newTemplate;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inspection-templates'] });
+      toast.success('Template duplicated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to duplicate template');
+      console.error('Duplicate template error:', error);
+    },
   });
 }

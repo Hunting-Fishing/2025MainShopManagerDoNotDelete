@@ -57,6 +57,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ComponentPickerDialog } from './ComponentPickerDialog';
+import { TemplatePreviewDialog } from './TemplatePreviewDialog';
 import type { ComponentDefinition } from '@/config/componentCatalog';
 import {
   DndContext,
@@ -98,6 +99,7 @@ export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTem
   const [tempDescription, setTempDescription] = useState('');
   const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<{ itemId: string; sectionId: string } | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -245,10 +247,15 @@ export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTem
               onCheckedChange={handleTogglePublish}
             />
           </div>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setPreviewOpen(true)}>
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
+          <TemplatePreviewDialog
+            templateId={templateId}
+            open={previewOpen}
+            onOpenChange={setPreviewOpen}
+          />
         </div>
       </div>
 
