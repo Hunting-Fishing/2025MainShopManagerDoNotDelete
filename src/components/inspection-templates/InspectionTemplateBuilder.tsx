@@ -25,6 +25,7 @@ import {
   Check,
   X,
   Gauge,
+  Link2,
 } from 'lucide-react';
 import {
   useInspectionTemplate,
@@ -58,6 +59,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ComponentPickerDialog } from './ComponentPickerDialog';
 import { TemplatePreviewDialog } from './TemplatePreviewDialog';
+import { AssignTemplateToEquipmentDialog } from './AssignTemplateToEquipmentDialog';
 import type { ComponentDefinition } from '@/config/componentCatalog';
 import {
   DndContext,
@@ -100,6 +102,7 @@ export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTem
   const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<{ itemId: string; sectionId: string } | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -247,6 +250,10 @@ export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTem
               onCheckedChange={handleTogglePublish}
             />
           </div>
+          <Button variant="outline" onClick={() => setAssignDialogOpen(true)}>
+            <Link2 className="mr-2 h-4 w-4" />
+            Assign to Equipment
+          </Button>
           <Button variant="outline" onClick={() => setPreviewOpen(true)}>
             <Eye className="mr-2 h-4 w-4" />
             Preview
@@ -255,6 +262,13 @@ export function InspectionTemplateBuilder({ templateId, onClose }: InspectionTem
             templateId={templateId}
             open={previewOpen}
             onOpenChange={setPreviewOpen}
+          />
+          <AssignTemplateToEquipmentDialog
+            templateId={templateId}
+            templateName={template.name}
+            templateAssetType={template.asset_type}
+            open={assignDialogOpen}
+            onOpenChange={setAssignDialogOpen}
           />
         </div>
       </div>
