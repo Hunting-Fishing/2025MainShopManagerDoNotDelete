@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { GYRSelector, GYRLegend } from './GYRSelector';
+import { HourMeterInput } from './HourMeterInput';
 import { GYRStatus } from '@/hooks/useEquipmentInspections';
 import type { 
   InspectionFormTemplate, 
@@ -17,9 +18,10 @@ interface DynamicInspectionFormProps {
   template: InspectionFormTemplate;
   values: Record<string, InspectionDataValue>;
   onChange: (values: Record<string, InspectionDataValue>) => void;
+  equipmentId?: string;
 }
 
-export function DynamicInspectionForm({ template, values, onChange }: DynamicInspectionFormProps) {
+export function DynamicInspectionForm({ template, values, onChange, equipmentId }: DynamicInspectionFormProps) {
   const handleValueChange = (item: InspectionFormItem, newValue: string | number | boolean | null) => {
     onChange({
       ...values,
@@ -162,6 +164,22 @@ export function DynamicInspectionForm({ template, values, onChange }: DynamicIns
               required={item.is_required}
             />
           </div>
+        );
+
+      case 'hour_meter':
+        return (
+          <HourMeterInput
+            key={item.id}
+            itemKey={item.item_key}
+            itemName={item.item_name}
+            description={item.description}
+            linkedComponentType={item.linked_component_type}
+            unit={item.unit || 'hours'}
+            value={currentValue as number | null}
+            onChange={(val) => handleValueChange(item, val)}
+            equipmentId={equipmentId}
+            isRequired={item.is_required}
+          />
         );
 
       default:

@@ -12333,6 +12333,7 @@ export type Database = {
       }
       inspection_form_items: {
         Row: {
+          component_category: string | null
           created_at: string
           default_value: string | null
           description: string | null
@@ -12342,10 +12343,13 @@ export type Database = {
           item_key: string
           item_name: string
           item_type: string
+          linked_component_type: string | null
           section_id: string
+          unit: string | null
           updated_at: string
         }
         Insert: {
+          component_category?: string | null
           created_at?: string
           default_value?: string | null
           description?: string | null
@@ -12355,10 +12359,13 @@ export type Database = {
           item_key: string
           item_name: string
           item_type?: string
+          linked_component_type?: string | null
           section_id: string
+          unit?: string | null
           updated_at?: string
         }
         Update: {
+          component_category?: string | null
           created_at?: string
           default_value?: string | null
           description?: string | null
@@ -12368,7 +12375,9 @@ export type Database = {
           item_key?: string
           item_name?: string
           item_type?: string
+          linked_component_type?: string | null
           section_id?: string
+          unit?: string | null
           updated_at?: string
         }
         Relationships: [
