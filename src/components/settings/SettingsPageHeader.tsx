@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { 
@@ -26,6 +26,10 @@ export const SettingsPageHeader: React.FC<SettingsPageHeaderProps> = ({
   backPath = '/settings'
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if we're on the main settings index page
+  const isSettingsIndex = location.pathname === '/settings' || location.pathname === '/settings/';
 
   return (
     <>
@@ -37,21 +41,29 @@ export const SettingsPageHeader: React.FC<SettingsPageHeaderProps> = ({
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/settings">Settings</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{title}</BreadcrumbPage>
-          </BreadcrumbItem>
+          {isSettingsIndex ? (
+            <BreadcrumbItem>
+              <BreadcrumbPage>Settings</BreadcrumbPage>
+            </BreadcrumbItem>
+          ) : (
+            <>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/settings">Settings</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{title}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </>
+          )}
         </BreadcrumbList>
       </Breadcrumb>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between my-6">
         <div>
-          {showBackButton && (
+          {showBackButton && !isSettingsIndex && (
             <Button 
               variant="ghost" 
               size="sm" 
