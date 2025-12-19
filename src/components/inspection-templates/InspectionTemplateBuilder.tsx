@@ -25,6 +25,7 @@ import {
   ChevronUp,
   Check,
   X,
+  Gauge,
 } from 'lucide-react';
 import {
   useInspectionTemplate,
@@ -54,6 +55,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ComponentPickerDialog } from './ComponentPickerDialog';
+import type { ComponentDefinition } from '@/config/componentCatalog';
 
 interface InspectionTemplateBuilderProps {
   templateId: string;
@@ -291,6 +294,9 @@ function SectionCard({
   const [editingTitle, setEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(section.title);
   const [newlyAddedItemId, setNewlyAddedItemId] = useState<string | null>(null);
+  const [componentPickerOpen, setComponentPickerOpen] = useState(false);
+
+  const existingItemKeys = section.items?.map((item) => item.item_key) || [];
 
   const handleSaveTitle = async () => {
     if (tempTitle.trim() && tempTitle !== section.title) {
@@ -319,6 +325,26 @@ function SectionCard({
     // Set the newly added item to auto-open in edit mode
     if (result?.id) {
       setNewlyAddedItemId(result.id);
+    }
+  };
+
+  const handleAddComponents = async (components: ComponentDefinition[]) => {
+    const startOrder = (section.items?.length || 0) + 1;
+    
+    for (let i = 0; i < components.length; i++) {
+      const comp = components[i];
+      await onAddItem.mutateAsync({
+        sectionId: section.id,
+        templateId,
+        item: {
+          item_name: comp.name,
+          item_key: comp.key,
+          item_type: comp.type === 'fluid_level' ? 'gyr_status' : comp.type,
+          display_order: startOrder + i,
+          is_required: false,
+          description: comp.description,
+        },
+      });
     }
   };
 
@@ -385,19 +411,38 @@ function SectionCard({
               />
             ))}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full border border-dashed"
-              onClick={handleAddItem}
-              disabled={onAddItem.isPending}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 border border-dashed"
+                onClick={handleAddItem}
+                disabled={onAddItem.isPending}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 border-primary/50 text-primary hover:bg-primary/10"
+                onClick={() => setComponentPickerOpen(true)}
+                disabled={onAddItem.isPending}
+              >
+                <Gauge className="mr-2 h-4 w-4" />
+                Add Equipment Component
+              </Button>
+            </div>
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
+
+      <ComponentPickerDialog
+        open={componentPickerOpen}
+        onOpenChange={setComponentPickerOpen}
+        onSelectComponents={handleAddComponents}
+        existingKeys={existingItemKeys}
+      />
     </Card>
   );
 }
