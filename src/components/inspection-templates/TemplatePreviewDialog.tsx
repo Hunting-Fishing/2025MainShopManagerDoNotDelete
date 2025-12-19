@@ -36,6 +36,24 @@ const ITEM_TYPE_ICONS: Record<string, React.ReactNode> = {
   hour_meter: <Clock className="h-4 w-4" />,
 };
 
+// Visual preview of GYR status selector
+const GYRPreviewIndicator = () => (
+  <div className="flex gap-1.5">
+    <div className="flex items-center gap-1 px-2 py-1 rounded bg-green-100 border border-green-300 text-green-700 text-xs">
+      <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+      <span>OK</span>
+    </div>
+    <div className="flex items-center gap-1 px-2 py-1 rounded bg-yellow-100 border border-yellow-300 text-yellow-700 text-xs">
+      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+      <span>Attention</span>
+    </div>
+    <div className="flex items-center gap-1 px-2 py-1 rounded bg-red-100 border border-red-300 text-red-700 text-xs">
+      <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+      <span>Urgent</span>
+    </div>
+  </div>
+);
+
 export function TemplatePreviewDialog({ templateId, open, onOpenChange }: TemplatePreviewDialogProps) {
   const { data: template, isLoading } = useInspectionTemplate(templateId);
 
@@ -118,9 +136,13 @@ export function TemplatePreviewDialog({ templateId, open, onOpenChange }: Templa
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-xs">
-                                      {ITEM_TYPE_LABELS[item.item_type]}
-                                    </Badge>
+                                    {item.item_type === 'gyr_status' ? (
+                                      <GYRPreviewIndicator />
+                                    ) : (
+                                      <Badge variant="outline" className="text-xs">
+                                        {ITEM_TYPE_LABELS[item.item_type]}
+                                      </Badge>
+                                    )}
                                     {item.is_required && (
                                       <Badge variant="destructive" className="text-xs">
                                         Required
