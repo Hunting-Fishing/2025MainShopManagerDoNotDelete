@@ -7198,6 +7198,7 @@ export type Database = {
       }
       equipment_assets: {
         Row: {
+          asset_class: string | null
           asset_number: string
           assigned_to: string | null
           category_id: string | null
@@ -7238,6 +7239,7 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          asset_class?: string | null
           asset_number: string
           assigned_to?: string | null
           category_id?: string | null
@@ -7278,6 +7280,7 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          asset_class?: string | null
           asset_number?: string
           assigned_to?: string | null
           category_id?: string | null
@@ -7579,6 +7582,7 @@ export type Database = {
       }
       equipment_categories: {
         Row: {
+          asset_class: string | null
           created_at: string | null
           description: string | null
           display_order: number | null
@@ -7589,6 +7593,7 @@ export type Database = {
           shop_id: string | null
         }
         Insert: {
+          asset_class?: string | null
           created_at?: string | null
           description?: string | null
           display_order?: number | null
@@ -7599,6 +7604,7 @@ export type Database = {
           shop_id?: string | null
         }
         Update: {
+          asset_class?: string | null
           created_at?: string | null
           description?: string | null
           display_order?: number | null

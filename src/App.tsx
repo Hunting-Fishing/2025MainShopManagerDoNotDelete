@@ -53,6 +53,7 @@ import Equipment from '@/pages/Equipment';
 import EquipmentDetails from '@/pages/EquipmentDetails';
 import EquipmentDashboard from '@/pages/EquipmentDashboard';
 import FleetManagement from '@/pages/FleetManagement';
+import SafetyEquipment from '@/pages/SafetyEquipment';
 import MaintenanceRequests from '@/pages/MaintenanceRequests';
 import ShoppingCartPage from '@/pages/ShoppingCart';
 import WishlistPage from '@/pages/WishlistPage';
@@ -535,6 +536,12 @@ function App() {
                   <Route path="/maintenance-requests" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <MaintenanceRequests />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/safety-equipment" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <SafetyEquipment />
                     </ProtectedRoute>
                   } />
                   
