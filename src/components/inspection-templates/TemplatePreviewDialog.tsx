@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,16 +9,18 @@ import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useInspectionTemplate } from '@/hooks/useInspectionTemplates';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ASSET_TYPE_LABELS, ITEM_TYPE_LABELS } from '@/types/inspectionTemplate';
+import { GYRSelectorWithDeficiency, GYRStatus, DeficiencyData } from '@/components/equipment/GYRSelectorWithDeficiency';
 import { 
-  CheckCircle2, 
   Circle, 
   ToggleLeft, 
   Type, 
   Hash, 
   Calendar, 
   Clock,
-  AlertCircle
+  AlertCircle,
+  Info
 } from 'lucide-react';
 
 interface TemplatePreviewDialogProps {
@@ -36,26 +38,32 @@ const ITEM_TYPE_ICONS: Record<string, React.ReactNode> = {
   hour_meter: <Clock className="h-4 w-4" />,
 };
 
-// Visual preview of GYR status selector
-const GYRPreviewIndicator = () => (
-  <div className="flex gap-1.5">
-    <div className="flex items-center gap-1 px-2 py-1 rounded bg-green-100 border border-green-300 text-green-700 text-xs">
-      <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-      <span>OK</span>
-    </div>
-    <div className="flex items-center gap-1 px-2 py-1 rounded bg-yellow-100 border border-yellow-300 text-yellow-700 text-xs">
-      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-      <span>Attention</span>
-    </div>
-    <div className="flex items-center gap-1 px-2 py-1 rounded bg-red-100 border border-red-300 text-red-700 text-xs">
-      <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-      <span>Urgent</span>
-    </div>
-  </div>
-);
-
 export function TemplatePreviewDialog({ templateId, open, onOpenChange }: TemplatePreviewDialogProps) {
   const { data: template, isLoading } = useInspectionTemplate(templateId);
+  const [previewValues, setPreviewValues] = useState<Record<string, GYRStatus>>({});
+  const [previewDeficiencies, setPreviewDeficiencies] = useState<Record<string, DeficiencyData>>({});
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setPreviewValues({});
+      setPreviewDeficiencies({});
+    }
+  }, [open]);
+
+  const handleGYRChange = (itemKey: string, status: GYRStatus, defData?: DeficiencyData) => {
+    setPreviewValues(prev => ({ ...prev, [itemKey]: status }));
+    if (defData) {
+      setPreviewDeficiencies(prev => ({ ...prev, [itemKey]: defData }));
+    } else if (status === 3) {
+      // Clear deficiency if set to Green
+      setPreviewDeficiencies(prev => {
+        const updated = { ...prev };
+        delete updated[itemKey];
+        return updated;
+      });
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -80,6 +88,14 @@ export function TemplatePreviewDialog({ templateId, open, onOpenChange }: Templa
           </div>
         ) : template ? (
           <div className="space-y-6">
+            {/* Interactive Preview Banner */}
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                This is an interactive preview. Click on the GYR buttons to test the deficiency dialog. Data will not be saved.
+              </AlertDescription>
+            </Alert>
+
             {/* Template Header */}
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">{template.name}</h2>
@@ -137,7 +153,12 @@ export function TemplatePreviewDialog({ templateId, open, onOpenChange }: Templa
                                   </div>
                                   <div className="flex items-center gap-2">
                                     {item.item_type === 'gyr_status' ? (
-                                      <GYRPreviewIndicator />
+                                      <GYRSelectorWithDeficiency
+                                        value={previewValues[item.item_key] ?? 3}
+                                        onChange={(status, defData) => handleGYRChange(item.item_key, status, defData)}
+                                        itemName={item.item_name}
+                                        deficiencyData={previewDeficiencies[item.item_key]}
+                                      />
                                     ) : (
                                       <Badge variant="outline" className="text-xs">
                                         {ITEM_TYPE_LABELS[item.item_type]}

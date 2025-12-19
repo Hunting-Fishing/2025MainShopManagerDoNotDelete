@@ -5,13 +5,13 @@ import { DeficiencyDialog } from './DeficiencyDialog';
 
 export type GYRStatus = 1 | 2 | 3; // 1=Red, 2=Yellow, 3=Green
 
-interface MediaItem {
+export interface MediaItem {
   url: string;
   type: 'image' | 'video';
   fileName: string;
 }
 
-interface DeficiencyData {
+export interface DeficiencyData {
   reason: string;
   mediaItems: MediaItem[];
 }
