@@ -19,13 +19,14 @@ import { EquipmentInspectionsTab } from '@/components/equipment/EquipmentInspect
 import { Wrench, ClipboardList, FileText, Calendar, Hammer, ShieldCheck, Package, Lightbulb, BookOpen, Fuel, ClipboardCheck } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useEquipment } from '@/hooks/useEquipment';
+import { useEquipmentByAssetClass } from '@/hooks/useEquipmentByAssetClass';
 
 export default function EquipmentManagement() {
   const [activeTab, setActiveTab] = useState('equipment');
   const [dialogOpen, setDialogOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { equipment, isLoading, refetch } = useEquipment();
+  // Filter to only show shop equipment (tools, small engines, safety gear)
+  const { equipment, isLoading, refetch } = useEquipmentByAssetClass('shop_equipment');
 
   const tabs = [
     { value: 'equipment', label: 'Equipment', icon: Wrench },
@@ -48,7 +49,7 @@ export default function EquipmentManagement() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Equipment & Tool Management</h1>
           <p className="text-sm md:text-base text-muted-foreground">
-            Manage marine equipment, forklifts, semis, small engines, and tools
+            Manage shop tools, small engines, diagnostic equipment, and safety gear
           </p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>

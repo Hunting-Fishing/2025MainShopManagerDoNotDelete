@@ -94,3 +94,26 @@ export const getCategoryForType = (typeValue: string): string | null => {
   }
   return null;
 };
+
+// Asset class mapping - Fleet vs Shop Equipment
+export const CATEGORY_ASSET_CLASS_MAP: Record<string, 'fleet' | 'shop_equipment'> = {
+  'Heavy Trucks': 'fleet',
+  'Heavy Equipment': 'fleet',
+  'Vehicles': 'fleet',
+  'Marine': 'fleet',
+  'Shop Equipment': 'shop_equipment',
+  'Small Engines': 'shop_equipment',
+  'Safety Equipment': 'shop_equipment',
+  'Other': 'shop_equipment',
+};
+
+// Get asset_class from category name
+export const getAssetClassForCategory = (categoryName: string): 'fleet' | 'shop_equipment' => {
+  return CATEGORY_ASSET_CLASS_MAP[categoryName] || 'shop_equipment';
+};
+
+// Get asset_class from equipment type value
+export const getAssetClassForType = (typeValue: string): 'fleet' | 'shop_equipment' => {
+  const category = getCategoryForType(typeValue);
+  return category ? getAssetClassForCategory(category) : 'shop_equipment';
+};
