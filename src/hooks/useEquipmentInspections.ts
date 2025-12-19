@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export type GYRStatus = 1 | 2 | 3; // 1=Red, 2=Yellow, 3=Green
+
 export interface EquipmentInspection {
   id: string;
   equipment_id: string;
@@ -9,6 +11,7 @@ export interface EquipmentInspection {
   inspection_date: string;
   current_reading: number;
   reading_type: 'hours' | 'kilometers' | 'miles';
+  // Legacy boolean fields (kept for backward compatibility)
   fluid_levels_ok: boolean;
   fluid_notes?: string;
   visual_damage_ok: boolean;
@@ -17,6 +20,11 @@ export interface EquipmentInspection {
   safety_equipment_notes?: string;
   operational_ok: boolean;
   operational_notes?: string;
+  // New GYR status fields
+  fluid_levels_status?: GYRStatus;
+  visual_damage_status?: GYRStatus;
+  safety_equipment_status?: GYRStatus;
+  operational_status?: GYRStatus;
   overall_status: 'pass' | 'pass_with_notes' | 'fail';
   requires_maintenance: boolean;
   urgent_repair: boolean;

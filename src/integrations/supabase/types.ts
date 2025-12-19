@@ -7765,6 +7765,7 @@ export type Database = {
           current_reading: number
           equipment_id: string
           fluid_levels_ok: boolean | null
+          fluid_levels_status: number | null
           fluid_notes: string | null
           general_notes: string | null
           id: string
@@ -7772,22 +7773,26 @@ export type Database = {
           inspector_id: string | null
           operational_notes: string | null
           operational_ok: boolean | null
+          operational_status: number | null
           overall_status: string
           parts_needed: Json | null
           reading_type: string
           requires_maintenance: boolean | null
           safety_equipment_notes: string | null
           safety_equipment_ok: boolean | null
+          safety_equipment_status: number | null
           signature_data: string | null
           urgent_repair: boolean | null
           visual_damage_notes: string | null
           visual_damage_ok: boolean | null
+          visual_damage_status: number | null
         }
         Insert: {
           created_at?: string | null
           current_reading: number
           equipment_id: string
           fluid_levels_ok?: boolean | null
+          fluid_levels_status?: number | null
           fluid_notes?: string | null
           general_notes?: string | null
           id?: string
@@ -7795,22 +7800,26 @@ export type Database = {
           inspector_id?: string | null
           operational_notes?: string | null
           operational_ok?: boolean | null
+          operational_status?: number | null
           overall_status: string
           parts_needed?: Json | null
           reading_type: string
           requires_maintenance?: boolean | null
           safety_equipment_notes?: string | null
           safety_equipment_ok?: boolean | null
+          safety_equipment_status?: number | null
           signature_data?: string | null
           urgent_repair?: boolean | null
           visual_damage_notes?: string | null
           visual_damage_ok?: boolean | null
+          visual_damage_status?: number | null
         }
         Update: {
           created_at?: string | null
           current_reading?: number
           equipment_id?: string
           fluid_levels_ok?: boolean | null
+          fluid_levels_status?: number | null
           fluid_notes?: string | null
           general_notes?: string | null
           id?: string
@@ -7818,16 +7827,19 @@ export type Database = {
           inspector_id?: string | null
           operational_notes?: string | null
           operational_ok?: boolean | null
+          operational_status?: number | null
           overall_status?: string
           parts_needed?: Json | null
           reading_type?: string
           requires_maintenance?: boolean | null
           safety_equipment_notes?: string | null
           safety_equipment_ok?: boolean | null
+          safety_equipment_status?: number | null
           signature_data?: string | null
           urgent_repair?: boolean | null
           visual_damage_notes?: string | null
           visual_damage_ok?: boolean | null
+          visual_damage_status?: number | null
         }
         Relationships: []
       }
