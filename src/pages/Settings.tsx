@@ -31,6 +31,7 @@ const RolePermissionsSettings = lazy(() => import('./settings/RolePermissionsSet
 const UserPermissionsSettings = lazy(() => import('./settings/UserPermissionsSettings'));
 const NavigationSettings = lazy(() => import('@/components/settings/NavigationSettingsTab').then(m => ({ default: m.NavigationSettingsTab })));
 const BillingSettings = lazy(() => import('./settings/BillingSettings'));
+const InspectionTemplateSettings = lazy(() => import('./settings/InspectionTemplateSettings'));
 
 export default function Settings() {
   usePageTitle('Settings');
@@ -65,6 +66,7 @@ export default function Settings() {
         <Route path="user-permissions" element={<UserPermissionsSettings />} />
         <Route path="navigation" element={<NavigationSettings />} />
         <Route path="billing" element={<BillingSettings />} />
+        <Route path="inspection-templates" element={<InspectionTemplateSettings />} />
       </Routes>
     </Suspense>
   );

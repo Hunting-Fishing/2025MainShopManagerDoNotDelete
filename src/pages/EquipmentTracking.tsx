@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useEquipmentInspections } from '@/hooks/useEquipmentInspections';
 import { useMaintenanceSchedules } from '@/hooks/useMaintenanceSchedules';
-import { PreTripInspectionDialog } from '@/components/equipment/PreTripInspectionDialog';
+import { PreTripInspectionDialogWithTemplate } from '@/components/equipment/PreTripInspectionDialogWithTemplate';
 import { ClipboardCheck, Calendar, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -298,12 +298,14 @@ export default function EquipmentTracking() {
       </Tabs>
 
       {selectedEquipment && (
-        <PreTripInspectionDialog
+        <PreTripInspectionDialogWithTemplate
           open={inspectionDialogOpen}
           onOpenChange={setInspectionDialogOpen}
           equipmentId={selectedEquipment.id}
           equipmentName={selectedEquipment.name}
           readingType="hours"
+          inspectionTemplateId={selectedEquipment.inspection_template_id}
+          equipmentType={selectedEquipment.equipment_type}
         />
       )}
     </div>
