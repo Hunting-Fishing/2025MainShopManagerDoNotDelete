@@ -140,7 +140,7 @@ export function ComponentPickerDialog({
         </div>
 
         {/* Component List */}
-        <ScrollArea className="flex-1 min-h-0 max-h-[55vh]">
+        <ScrollArea type="always" className="h-[55vh]">
           <div className="pr-4">
             <Accordion type="multiple" defaultValue={COMPONENT_CATALOG.map((c) => c.id)} className="w-full">
               {filteredCategories.map((category) => (
