@@ -151,8 +151,9 @@ export function MobileNavigation() {
       items: [
         { id: 'customers', label: 'Customers', icon: Users, path: '/customers', description: 'Customer database' },
         { id: 'vehicles', label: 'Vehicles', icon: Truck, path: '/vehicles', description: 'Customer vehicles' },
-        { id: 'fleet-management', label: 'Fleet Management', icon: Truck, path: '/fleet-management', description: 'Manage company vehicles' },
-        { id: 'equipment', label: 'Equipment', icon: Package, path: '/equipment', description: 'Equipment list' },
+        { id: 'fleet-management', label: 'Fleet Management', icon: Truck, path: '/fleet-management', description: 'Vehicles, vessels & heavy equipment' },
+        { id: 'equipment', label: 'Shop Equipment', icon: Package, path: '/equipment', description: 'Tools, lifts & shop equipment' },
+        { id: 'safety-equipment', label: 'Safety Equipment', icon: Shield, path: '/safety-equipment', description: 'Fire extinguishers & safety gear' },
         { id: 'equipment-management', label: 'Equipment Management', icon: Package, path: '/equipment-management', description: 'Manage equipment & tools' },
         { id: 'equipment-tracking', label: 'Equipment Tracking', icon: MapPin, path: '/equipment-tracking', description: 'Track equipment location' },
         { id: 'maintenance', label: 'Maintenance Requests', icon: Wrench, path: '/maintenance-requests', description: 'Track maintenance requests' },

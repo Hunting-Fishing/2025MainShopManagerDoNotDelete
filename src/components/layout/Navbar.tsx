@@ -61,7 +61,8 @@ const navigationCategories = [
     title: 'Fleet & Assets',
     items: [
       { name: 'Fleet Management', href: '/fleet-management', requiredPath: '/fleet-management' },
-      { name: 'Equipment', href: '/equipment', requiredPath: '/equipment' },
+      { name: 'Shop Equipment', href: '/equipment', requiredPath: '/equipment' },
+      { name: 'Safety Equipment', href: '/safety-equipment', requiredPath: '/safety-equipment' },
       { name: 'Equipment Tracking', href: '/equipment-tracking', requiredPath: '/equipment-tracking' },
       { name: 'Maintenance Requests', href: '/maintenance-requests', requiredPath: '/maintenance-requests' },
       { name: 'Insurance', href: '/insurance', requiredPath: '/insurance' },

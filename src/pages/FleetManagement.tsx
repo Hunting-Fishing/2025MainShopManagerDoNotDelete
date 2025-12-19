@@ -1,27 +1,25 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Car, Plus, Settings, Wrench } from 'lucide-react';
+import { Car, Plus, Settings, Wrench, Ship, Truck } from 'lucide-react';
 import { FleetList } from '@/components/fleet/FleetList';
 import { AddEquipmentDialog } from '@/components/equipment/AddEquipmentDialog';
-import { useEquipment } from '@/hooks/useEquipment';
+import { useEquipmentByAssetClass } from '@/hooks/useEquipmentByAssetClass';
 
 export default function FleetManagement() {
-  const { equipment, isLoading, refetch } = useEquipment();
+  // Filter to only show fleet assets (vehicles, vessels, heavy equipment)
+  const { equipment: fleetAssets, stats, isLoading, refetch } = useEquipmentByAssetClass('fleet');
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Filter for fleet vehicles only
-  const fleetCategories = ['fleet_vehicle', 'courtesy_car', 'rental_vehicle', 'service_vehicle'];
-  const fleetAssets = equipment.filter(item => fleetCategories.includes(item.category));
-
-  const availableCount = fleetAssets.filter(a => a.status === 'operational').length;
-  const inUseCount = fleetAssets.filter(a => a.status === 'maintenance').length;
-  const maintenanceCount = fleetAssets.filter(a => a.status === 'out_of_service').length;
+  const availableCount = stats.operational;
+  const inUseCount = stats.needsMaintenance;
+  const maintenanceCount = stats.outOfService;
 
   return (
     <>
       <Helmet>
         <title>Fleet Management | AutoShop Pro</title>
+        <meta name="description" content="Manage company fleet including vehicles, vessels, heavy equipment, and mobile assets." />
       </Helmet>
       
       <div className="space-y-6">
@@ -29,10 +27,10 @@ export default function FleetManagement() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Fleet Management</h1>
             <p className="text-muted-foreground">
-              Manage company vehicles, courtesy cars, and rental fleet
+              Manage vehicles, vessels, heavy equipment, and mobile assets
             </p>
           </div>
-          <AddEquipmentDialog 
+          <AddEquipmentDialog
             open={dialogOpen} 
             onOpenChange={(open) => {
               setDialogOpen(open);

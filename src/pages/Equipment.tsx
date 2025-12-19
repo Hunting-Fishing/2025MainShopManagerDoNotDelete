@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Wrench, Package, Car } from 'lucide-react';
 import { EquipmentList } from '@/components/equipment/EquipmentList';
 import { AddEquipmentDialog } from '@/components/equipment/AddEquipmentDialog';
-import { useEquipment } from '@/hooks/useEquipment';
+import { useEquipmentByAssetClass } from '@/hooks/useEquipmentByAssetClass';
 import { useEquipmentCategories } from '@/hooks/useEquipmentCategories';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTypesForCategory, getCategoryForType } from '@/types/equipmentCategory';
@@ -13,7 +13,8 @@ export default function Equipment() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const { equipment, stats, isLoading, refetch } = useEquipment();
+  // Filter to only show shop_equipment (not fleet or safety)
+  const { equipment, stats, isLoading, refetch } = useEquipmentByAssetClass('shop_equipment');
   const { categories } = useEquipmentCategories();
 
   // Sort categories alphabetically
@@ -76,15 +77,16 @@ export default function Equipment() {
   return (
     <>
       <Helmet>
-        <title>Assets & Equipment Management | AutoShop Pro</title>
+        <title>Shop Equipment | AutoShop Pro</title>
+        <meta name="description" content="Manage shop equipment including tools, lifts, diagnostics, and stationary equipment." />
       </Helmet>
       
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Assets & Equipment</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Shop Equipment</h1>
             <p className="text-muted-foreground">
-              Manage all shop equipment, vehicles, and company assets
+              Manage tools, lifts, diagnostics, and stationary shop equipment
             </p>
           </div>
           <AddEquipmentDialog 
