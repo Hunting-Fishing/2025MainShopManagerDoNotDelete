@@ -245,6 +245,7 @@ export function PreTripInspectionDialogWithTemplate({
               template={template}
               values={inspectionValues}
               onChange={setInspectionValues}
+              equipmentId={equipmentId}
             />
           ) : (
             <div className="text-center py-8 text-muted-foreground">
