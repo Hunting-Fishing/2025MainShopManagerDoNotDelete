@@ -164,6 +164,9 @@ export function useCreateInspectionTemplate() {
             is_required: item.is_required ?? false,
             display_order: item.display_order,
             default_value: item.default_value,
+            component_category: item.component_category,
+            linked_component_type: item.linked_component_type,
+            unit: item.unit,
           }));
 
           const { error: itemsError } = await supabase
@@ -417,6 +420,9 @@ export function useUpdateInspectionItem() {
           is_required: updates.is_required,
           display_order: updates.display_order,
           default_value: updates.default_value,
+          component_category: updates.component_category,
+          linked_component_type: updates.linked_component_type,
+          unit: updates.unit,
         })
         .eq('id', itemId)
         .select()

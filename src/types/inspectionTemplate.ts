@@ -70,6 +70,9 @@ export interface CreateInspectionFormItem {
   is_required?: boolean;
   display_order: number;
   default_value?: string;
+  component_category?: string;
+  linked_component_type?: string;
+  unit?: string;
 }
 
 export interface CreateInspectionFormSection {
