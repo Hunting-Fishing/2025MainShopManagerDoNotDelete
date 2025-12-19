@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useEquipmentManagement } from '@/hooks/useEquipmentManagement';
 import { EquipmentDetails } from '@/services/equipment/equipmentService';
-import { Wrench, FileText, Image, Plus, X, Upload, Settings, Trash2, ShieldCheck } from 'lucide-react';
+import { Wrench, FileText, Image, Plus, X, Upload, Settings, Trash2, ShieldCheck, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AddSafetyEquipmentDialog } from './AddSafetyEquipmentDialog';
@@ -24,6 +24,7 @@ import { getCategoryForType } from '@/types/equipmentCategory';
 import { useEquipmentCategories } from '@/hooks/useEquipmentCategories';
 import { EquipmentImageUpload } from './EquipmentImageUpload';
 import { uploadEquipmentProfileImage, deleteEquipmentProfileImage, updateEquipmentProfileImageUrl } from '@/services/equipment/equipmentImageService';
+import { useInspectionTemplates } from '@/hooks/useInspectionTemplates';
 
 interface EquipmentConfigDialogProps {
   open: boolean;
@@ -85,6 +86,9 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
   const [profileImageUploading, setProfileImageUploading] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>((equipment as any).profile_image_url || null);
   
+  // Fetch inspection templates
+  const { data: inspectionTemplates } = useInspectionTemplates();
+  
   // Basic Info State
   const [formData, setFormData] = useState({
     name: equipment.name || '',
@@ -106,6 +110,8 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
     registration_expiry: (equipment as any).registration_expiry || '',
     title_number: (equipment as any).title_number || '',
     title_status: (equipment as any).title_status || '',
+    // Inspection template
+    inspection_template_id: (equipment as any).inspection_template_id || '',
   });
 
   // Equipment Type State
@@ -454,6 +460,8 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
         registration_expiry: formData.registration_expiry || null,
         title_number: formData.title_number || null,
         title_status: formData.title_status || null,
+        // Inspection template
+        inspection_template_id: formData.inspection_template_id || null,
       };
 
       // Save service items first
@@ -692,6 +700,36 @@ export function EquipmentConfigDialog({ open, onOpenChange, equipment, onSave }:
                 placeholder="Enter any additional notes or comments"
                 rows={4}
               />
+            </div>
+
+            {/* Inspection Template Assignment */}
+            <div className="space-y-2 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="inspection_template">Pre-Trip Inspection Template</Label>
+              </div>
+              <Select 
+                value={formData.inspection_template_id || ''} 
+                onValueChange={(value) => setFormData({ ...formData, inspection_template_id: value })}
+              >
+                <SelectTrigger id="inspection_template" className="bg-background">
+                  <SelectValue placeholder="Select inspection template..." />
+                </SelectTrigger>
+                <SelectContent className="bg-background border">
+                  <SelectItem value="">None</SelectItem>
+                  {inspectionTemplates?.filter(t => t.is_published).map(template => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                      {template.asset_type && (
+                        <span className="text-muted-foreground ml-2">({template.asset_type})</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Assign an inspection form template for pre-trip/daily inspections on this equipment.
+              </p>
             </div>
 
             {/* Vehicle Information Section - shown for vehicle types */}
