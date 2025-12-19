@@ -290,6 +290,7 @@ function SectionCard({
   onUpdateItem,
   onDeleteItem,
 }: SectionCardProps) {
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(true);
   const [editingTitle, setEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(section.title);
@@ -330,23 +331,46 @@ function SectionCard({
 
   const handleAddComponents = async (components: ComponentDefinition[]) => {
     const startOrder = (section.items?.length || 0) + 1;
+    let successCount = 0;
+    let errorMessages: string[] = [];
     
     for (let i = 0; i < components.length; i++) {
       const comp = components[i];
-      await onAddItem.mutateAsync({
-        sectionId: section.id,
-        templateId,
-        item: {
-          item_name: comp.name,
-          item_key: comp.key,
-          item_type: comp.type === 'fluid_level' ? 'gyr_status' : comp.type,
-          display_order: startOrder + i,
-          is_required: false,
-          description: comp.description,
-          component_category: comp.category,
-          linked_component_type: comp.key,
-          unit: comp.unit,
-        },
+      try {
+        await onAddItem.mutateAsync({
+          sectionId: section.id,
+          templateId,
+          item: {
+            item_name: comp.name,
+            item_key: comp.key,
+            item_type: comp.type === 'fluid_level' ? 'gyr_status' : comp.type,
+            display_order: startOrder + i,
+            is_required: false,
+            description: comp.description,
+            component_category: comp.category,
+            linked_component_type: comp.key,
+            unit: comp.unit,
+          },
+        });
+        successCount++;
+      } catch (error: any) {
+        console.error(`Failed to add component ${comp.name}:`, error);
+        errorMessages.push(`${comp.name}: ${error?.message || 'Unknown error'}`);
+      }
+    }
+    
+    if (successCount > 0) {
+      toast({
+        title: "Components Added",
+        description: `Successfully added ${successCount} component${successCount > 1 ? 's' : ''} to the section.`,
+      });
+    }
+    
+    if (errorMessages.length > 0) {
+      toast({
+        title: "Some components failed to add",
+        description: errorMessages.join(', '),
+        variant: "destructive",
       });
     }
   };
