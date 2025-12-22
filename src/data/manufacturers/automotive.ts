@@ -8,7 +8,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-1",
     name: "Toyota",
-    logoUrl: "https://via.placeholder.com/150x50?text=Toyota",
+    logoUrl: "/placeholder.png",
     description: "Japanese multinational automotive manufacturer",
     slug: "toyota",
     featured: true,
@@ -17,7 +17,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-2",
     name: "Honda",
-    logoUrl: "https://via.placeholder.com/150x50?text=Honda",
+    logoUrl: "/placeholder.png",
     description: "Japanese multinational conglomerate manufacturer",
     slug: "honda",
     featured: true,
@@ -26,7 +26,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-3",
     name: "Ford",
-    logoUrl: "https://via.placeholder.com/150x50?text=Ford",
+    logoUrl: "/placeholder.png",
     description: "American multinational automobile manufacturer",
     slug: "ford",
     featured: true,
@@ -35,7 +35,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-4",
     name: "Chevrolet",
-    logoUrl: "https://via.placeholder.com/150x50?text=Chevrolet",
+    logoUrl: "/placeholder.png",
     description: "American automobile division of General Motors",
     slug: "chevrolet",
     featured: false,
@@ -44,7 +44,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-5",
     name: "BMW",
-    logoUrl: "https://via.placeholder.com/150x50?text=BMW",
+    logoUrl: "/placeholder.png",
     description: "German luxury vehicle manufacturer",
     slug: "bmw",
     featured: true,
@@ -53,7 +53,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-6",
     name: "Mercedes-Benz",
-    logoUrl: "https://via.placeholder.com/150x50?text=Mercedes",
+    logoUrl: "/placeholder.png",
     description: "German global automobile marque",
     slug: "mercedes-benz",
     featured: true,
@@ -62,7 +62,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-7",
     name: "Volkswagen",
-    logoUrl: "https://via.placeholder.com/150x50?text=VW",
+    logoUrl: "/placeholder.png",
     description: "German multinational automotive manufacturer",
     slug: "volkswagen",
     featured: false,
@@ -71,7 +71,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-8",
     name: "Audi",
-    logoUrl: "https://via.placeholder.com/150x50?text=Audi",
+    logoUrl: "/placeholder.png",
     description: "German luxury vehicle manufacturer",
     slug: "audi",
     featured: true,
@@ -80,7 +80,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-9",
     name: "Nissan",
-    logoUrl: "https://via.placeholder.com/150x50?text=Nissan",
+    logoUrl: "/placeholder.png",
     description: "Japanese multinational automobile manufacturer",
     slug: "nissan",
     featured: false,
@@ -89,7 +89,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-10",
     name: "Hyundai",
-    logoUrl: "https://via.placeholder.com/150x50?text=Hyundai",
+    logoUrl: "/placeholder.png",
     description: "South Korean multinational automotive manufacturer",
     slug: "hyundai",
     featured: false,
@@ -98,7 +98,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-11",
     name: "Kia",
-    logoUrl: "https://via.placeholder.com/150x50?text=Kia",
+    logoUrl: "/placeholder.png",
     description: "South Korean multinational automotive manufacturer",
     slug: "kia",
     featured: false,
@@ -107,7 +107,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-12",
     name: "Subaru",
-    logoUrl: "https://via.placeholder.com/150x50?text=Subaru",
+    logoUrl: "/placeholder.png",
     description: "Japanese automobile manufacturer",
     slug: "subaru",
     featured: false,
@@ -116,7 +116,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-13",
     name: "Mazda",
-    logoUrl: "https://via.placeholder.com/150x50?text=Mazda",
+    logoUrl: "/placeholder.png",
     description: "Japanese multinational automaker",
     slug: "mazda",
     featured: false,
@@ -125,7 +125,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-14",
     name: "Lexus",
-    logoUrl: "https://via.placeholder.com/150x50?text=Lexus",
+    logoUrl: "/placeholder.png",
     description: "Luxury vehicle division of Toyota",
     slug: "lexus",
     featured: true,
@@ -134,7 +134,7 @@ export const automotiveManufacturers: Manufacturer[] = [
   {
     id: "auto-15",
     name: "Acura",
-    logoUrl: "https://via.placeholder.com/150x50?text=Acura",
+    logoUrl: "/placeholder.png",
     description: "Luxury vehicle division of Honda",
     slug: "acura",
     featured: false,

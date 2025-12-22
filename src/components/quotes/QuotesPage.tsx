@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { useQuotes } from '@/hooks/useQuotes';
 import { QuotesHeader } from './QuotesHeader';
 import { QuotesTable } from './QuotesTable';
@@ -9,6 +10,9 @@ import { Database, Loader2 } from 'lucide-react';
 
 export default function QuotesPage() {
   const { quotes, loading, error, refetch } = useQuotes();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const openCreateOnLoad = location.pathname.endsWith('/quotes/new') || searchParams.get('create') === '1';
 
   if (loading) {
     return (
@@ -24,7 +28,7 @@ export default function QuotesPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <QuotesHeader quotes={quotes} />
+        <QuotesHeader quotes={quotes} openCreateOnLoad={openCreateOnLoad} />
         <Alert variant="destructive">
           <Database className="h-4 w-4" />
           <AlertDescription>
@@ -37,7 +41,7 @@ export default function QuotesPage() {
 
   return (
     <div className="space-y-6">
-      <QuotesHeader quotes={quotes} onQuoteCreated={refetch} />
+      <QuotesHeader quotes={quotes} onQuoteCreated={refetch} openCreateOnLoad={openCreateOnLoad} />
       
       <Alert>
         <Database className="h-4 w-4" />

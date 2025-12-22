@@ -66,13 +66,15 @@ import { useShopId } from '@/hooks/useShopId';
 interface EnhancedCreateQuoteDialogProps {
   children: React.ReactNode;
   onSuccess?: (quoteId: string) => void;
+  defaultOpen?: boolean;
 }
 
 export function EnhancedCreateQuoteDialog({
   children,
-  onSuccess
+  onSuccess,
+  defaultOpen = false
 }: EnhancedCreateQuoteDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [activeTab, setActiveTab] = useState('details');
@@ -148,6 +150,12 @@ export function EnhancedCreateQuoteDialog({
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
     setExpiryDate(thirtyDaysFromNow.toISOString().split('T')[0]);
   }, []);
+
+  useEffect(() => {
+    if (defaultOpen) {
+      setOpen(true);
+    }
+  }, [defaultOpen]);
 
   const handleCustomerChange = (customerIdValue: string) => {
     setSelectedCustomerId(customerIdValue);

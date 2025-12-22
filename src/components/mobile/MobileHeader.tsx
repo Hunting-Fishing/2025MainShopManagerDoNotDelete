@@ -12,48 +12,7 @@ import {
   FileText,
   Receipt,
   Calendar,
-  Wrench,
-  Users,
-  MessageSquare,
-  Package,
-  ClipboardList,
-  Building,
-  Truck,
-  ShoppingCart,
-  Store,
-  BarChart3,
-  Brain,
-  LayoutDashboard,
   UserCircle,
-  Hammer,
-  AlertCircle,
-  Phone,
-  Star,
-  Cog,
-  HelpCircle,
-  Shield,
-  Heart,
-  Mail,
-  Send,
-  MessagesSquare,
-  MessageCircle,
-  Archive,
-  FileBarChart,
-  FileBarChart2,
-  FormInput,
-  Code,
-  UserCog,
-  Boxes,
-  Gauge,
-  TrendingDown,
-  Smartphone,
-  GraduationCap,
-  ShoppingBag,
-  Award,
-  CalendarClock,
-  HardHat,
-  ClipboardCheck,
-  Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,6 +23,7 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { hasRoutePermission } from '@/utils/routeGuards';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { getNavigationForSurface } from '@/components/navigation/appNavigation';
 
 interface MobileHeaderProps {
   title?: string;
@@ -123,147 +83,21 @@ export function MobileHeader({
     { label: 'Schedule Appointment', icon: Calendar, path: '/calendar', requiredPath: '/calendar' },
   ].filter(item => hasRoutePermission(item.requiredPath, userRoles));
 
-  // Categorized Navigation - Synced with sidebar navigation.ts
-  const navigationSections = [
-    {
-      title: 'Dashboard',
-      items: [
-        { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', requiredPath: '/dashboard' },
-      ]
-    },
-    {
-      title: 'Customers',
-      items: [
-        { label: 'Customers', icon: Users, path: '/customers', requiredPath: '/customers' },
-      ]
-    },
-    {
-      title: 'Inventory',
-      items: [
-        { label: 'Inventory Overview', icon: Package, path: '/inventory', requiredPath: '/inventory' },
-        { label: 'Service Packages', icon: Boxes, path: '/service-packages', requiredPath: '/service-packages' },
-        { label: 'Asset Work Orders', icon: ClipboardList, path: '/work-orders', requiredPath: '/work-orders' },
-        { label: 'Asset Usage', icon: Gauge, path: '/asset-usage', requiredPath: '/asset-usage' },
-        { label: 'Consumption Tracking', icon: TrendingDown, path: '/consumption-tracking', requiredPath: '/consumption-tracking' },
-        { label: 'Mobile Scanner', icon: Smartphone, path: '/mobile-inventory', requiredPath: '/mobile-inventory' },
-        { label: 'Inventory Analytics', icon: BarChart3, path: '/inventory-analytics', requiredPath: '/inventory-analytics' },
-        { label: 'Inventory Manager', icon: Settings, path: '/inventory-manager', requiredPath: '/inventory-manager' },
-        { label: 'Maintenance Planning', icon: Wrench, path: '/maintenance-planning', requiredPath: '/maintenance-planning' },
-      ]
-    },
-    {
-      title: 'Scheduling',
-      items: [
-        { label: 'Service Calendar', icon: Calendar, path: '/calendar', requiredPath: '/calendar' },
-        { label: 'Staff Scheduling', icon: UserCog, path: '/scheduling', requiredPath: '/scheduling' },
-        { label: 'Service Reminders', icon: Bell, path: '/service-reminders', requiredPath: '/service-reminders' },
-      ]
-    },
-    {
-      title: 'Communications',
-      items: [
-        { label: 'Team Chat', icon: MessageCircle, path: '/chat', requiredPath: '/chat' },
-        { label: 'Customer Comms', icon: MessageSquare, path: '/customer-comms', requiredPath: '/customer-comms' },
-        { label: 'Call Logger', icon: Phone, path: '/call-logger', requiredPath: '/call-logger' },
-      ]
-    },
-    {
-      title: 'Marketing',
-      items: [
-        { label: 'Email Campaigns', icon: Mail, path: '/email-campaigns', requiredPath: '/email-campaigns' },
-        { label: 'Email Sequences', icon: Send, path: '/email-sequences', requiredPath: '/email-sequences' },
-        { label: 'Email Templates', icon: FileText, path: '/email-templates', requiredPath: '/email-templates' },
-        { label: 'SMS Management', icon: MessagesSquare, path: '/sms-management', requiredPath: '/sms-management' },
-        { label: 'SMS Templates', icon: MessageSquare, path: '/sms-templates', requiredPath: '/sms-templates' },
-      ]
-    },
-    {
-      title: 'Operations',
-      items: [
-        { label: 'Quotes', icon: FileText, path: '/quotes', requiredPath: '/quotes' },
-        { label: 'Work Orders', icon: Wrench, path: '/work-orders', requiredPath: '/work-orders' },
-        { label: 'Invoices', icon: Receipt, path: '/invoices', requiredPath: '/invoices' },
-        { label: 'Service Board', icon: ClipboardList, path: '/service-board', requiredPath: '/service-board' },
-        { label: 'Payments', icon: ShoppingBag, path: '/payments', requiredPath: '/payments' },
-      ]
-    },
-    {
-      title: 'Equipment & Tools',
-      items: [
-        { label: 'Equipment Management', icon: Hammer, path: '/equipment-management', requiredPath: '/equipment-management' },
-        { label: 'Maintenance Requests', icon: AlertCircle, path: '/maintenance-requests', requiredPath: '/maintenance-requests' },
-      ]
-    },
-    {
-      title: 'Company',
-      items: [
-        { label: 'Company Profile', icon: Building, path: '/company-profile', requiredPath: '/company-profile' },
-        { label: 'Team', icon: UserCog, path: '/team', requiredPath: '/team' },
-        { label: 'Training Overview', icon: GraduationCap, path: '/training-overview', requiredPath: '/training-overview' },
-        { label: 'Vehicles', icon: Truck, path: '/vehicles', requiredPath: '/vehicles' },
-        { label: 'Documents', icon: FileBarChart, path: '/documents', requiredPath: '/documents' },
-      ]
-    },
-    {
-      title: 'Safety & Compliance',
-      items: [
-        { label: 'Safety Dashboard', icon: Shield, path: '/safety', requiredPath: '/safety' },
-        { label: 'Incidents', icon: AlertCircle, path: '/safety/incidents', requiredPath: '/safety/incidents' },
-        { label: 'Daily Inspections', icon: ClipboardCheck, path: '/safety/inspections', requiredPath: '/safety/inspections' },
-        { label: 'DVIR Reports', icon: Truck, path: '/safety/dvir', requiredPath: '/safety/dvir' },
-        { label: 'Lift Inspections', icon: Package, path: '/safety/equipment', requiredPath: '/safety/equipment' },
-        { label: 'Certifications', icon: Award, path: '/safety/certifications', requiredPath: '/safety/certifications' },
-        { label: 'Safety Documents', icon: FileText, path: '/safety/documents', requiredPath: '/safety/documents' },
-        { label: 'Schedules & Reminders', icon: CalendarClock, path: '/safety/schedules', requiredPath: '/safety/schedules' },
-        { label: 'Reports', icon: FileText, path: '/safety/reports', requiredPath: '/safety/reports' },
-        { label: 'Corrective Actions', icon: ClipboardCheck, path: '/safety/corrective-actions', requiredPath: '/safety/corrective-actions' },
-        { label: 'Near Miss', icon: AlertCircle, path: '/safety/near-miss', requiredPath: '/safety/near-miss' },
-        { label: 'Training', icon: GraduationCap, path: '/safety/training', requiredPath: '/safety/training' },
-        { label: 'Meetings', icon: Users, path: '/safety/meetings', requiredPath: '/safety/meetings' },
-        { label: 'JSA', icon: ClipboardCheck, path: '/safety/jsa', requiredPath: '/safety/jsa' },
-        { label: 'PPE Management', icon: HardHat, path: '/safety/ppe', requiredPath: '/safety/ppe' },
-        { label: 'Contractors', icon: Building, path: '/safety/contractors', requiredPath: '/safety/contractors' },
-        { label: 'Safety Rewards', icon: Trophy, path: '/safety/rewards', requiredPath: '/safety/rewards' },
-      ]
-    },
-    {
-      title: 'Services',
-      items: [
-        { label: 'Service Editor', icon: Cog, path: '/service-editor', requiredPath: '/service-editor' },
-        { label: 'Service Library', icon: Star, path: '/services', requiredPath: '/services' },
-        { label: 'Repair Plans', icon: Archive, path: '/repair-plans', requiredPath: '/repair-plans' },
-      ]
-    },
-    {
-      title: 'Store',
-      items: [
-        { label: 'Shopping', icon: Store, path: '/shopping', requiredPath: '/shopping' },
-        { label: 'Shopping Cart', icon: ShoppingCart, path: '/shopping/cart', requiredPath: '/shopping/cart' },
-        { label: 'Wishlist', icon: Heart, path: '/wishlist', requiredPath: '/wishlist' },
-        { label: 'Orders', icon: ShoppingBag, path: '/orders', requiredPath: '/orders' },
-      ]
-    },
-    {
-      title: 'Tools',
-      items: [
-        { label: 'AI Hub', icon: Brain, path: '/ai-hub', requiredPath: '/ai-hub' },
-        { label: 'Reports', icon: FileBarChart2, path: '/reports', requiredPath: '/reports' },
-        { label: 'Forms', icon: FormInput, path: '/forms', requiredPath: '/forms' },
-        { label: 'Feedback', icon: Star, path: '/feedback', requiredPath: '/feedback' },
-        { label: 'Developer', icon: Code, path: '/developer', requiredPath: '/developer' },
-      ]
-    },
-    {
-      title: 'Support',
-      items: [
-        { label: 'Help', icon: HelpCircle, path: '/help', requiredPath: '/help' },
-        { label: 'Security', icon: Shield, path: '/security', requiredPath: '/security' },
-      ]
-    }
-  ].map(section => ({
-    ...section,
-    items: section.items.filter(item => hasRoutePermission(item.requiredPath, userRoles))
-  })).filter(section => section.items.length > 0);
+  const navigationSections = getNavigationForSurface('mobileHeader')
+    .map((section) => ({
+      title: section.title,
+      items: section.items.map((item) => ({
+        label: item.title,
+        icon: item.icon,
+        path: item.href,
+        requiredPath: item.href,
+      })),
+    }))
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => hasRoutePermission(item.requiredPath, userRoles)),
+    }))
+    .filter((section) => section.items.length > 0);
 
   // User Profile items
   const profileItems = [

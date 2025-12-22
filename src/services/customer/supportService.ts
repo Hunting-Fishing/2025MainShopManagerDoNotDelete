@@ -41,6 +41,16 @@ export interface CreateMessageRequest {
   attachments?: any[];
 }
 
+const parseTicketStatus = (type?: string): SupportTicket['status'] => {
+  if (type && type.startsWith('ticket:')) {
+    const status = type.split(':')[1] as SupportTicket['status'];
+    if (status) {
+      return status;
+    }
+  }
+  return 'open';
+};
+
 export const supportService = {
   // Get user tickets (placeholder - using notifications table)
   async getUserTickets(userId: string): Promise<SupportTicket[]> {
@@ -49,19 +59,20 @@ export const supportService = {
       .select('*')
       .eq('user_id', userId)
       .eq('category', 'support')
+      .ilike('type', 'ticket%')
       .order('timestamp', { ascending: false });
 
     if (error) throw error;
     return data?.map(item => ({
       id: item.id,
       user_id: item.user_id,
-      order_id: null,
+      order_id: item.link || undefined,
       ticket_number: `T-${item.id.slice(-8)}`,
       subject: item.title,
       description: item.message,
-      priority: 'medium' as const,
-      status: 'open' as const,
-      category: 'other' as const,
+      priority: (item.priority as SupportTicket['priority']) || 'medium',
+      status: parseTicketStatus(item.type),
+      category: (item.recipient as SupportTicket['category']) || 'other',
       assigned_to: undefined,
       resolution_notes: undefined,
       resolved_at: undefined,
@@ -82,13 +93,13 @@ export const supportService = {
     return {
       id: data.id,
       user_id: data.user_id,
-      order_id: null,
+      order_id: data.link || undefined,
       ticket_number: `T-${data.id.slice(-8)}`,
       subject: data.title,
       description: data.message,
-      priority: 'medium' as const,
-      status: 'open' as const,
-      category: 'other' as const,
+      priority: (data.priority as SupportTicket['priority']) || 'medium',
+      status: parseTicketStatus(data.type),
+      category: (data.recipient as SupportTicket['category']) || 'other',
       assigned_to: undefined,
       resolution_notes: undefined,
       resolved_at: undefined,
@@ -106,8 +117,10 @@ export const supportService = {
         title: ticket.subject,
         message: ticket.description,
         category: 'support',
-        type: 'ticket',
-        priority: ticket.priority || 'medium'
+        type: 'ticket:open',
+        priority: ticket.priority || 'medium',
+        recipient: ticket.category,
+        link: ticket.order_id || null
       })
       .select()
       .single();
@@ -121,7 +134,7 @@ export const supportService = {
       subject: data.title,
       description: data.message,
       priority: ticket.priority || 'medium',
-      status: 'open' as const,
+      status: 'open',
       category: ticket.category,
       assigned_to: undefined,
       resolution_notes: undefined,
@@ -131,34 +144,89 @@ export const supportService = {
     };
   },
 
-  // Get ticket messages (placeholder)
+  // Get ticket messages
   async getTicketMessages(ticketId: string): Promise<SupportTicketMessage[]> {
-    // For now, return empty array as placeholder
-    return [];
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('category', 'support_message')
+      .eq('link', ticketId)
+      .order('timestamp', { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map(item => ({
+      id: item.id,
+      ticket_id: ticketId,
+      user_id: item.user_id,
+      message: item.message,
+      is_internal: false,
+      attachments: [],
+      created_at: item.timestamp
+    }));
   },
 
-  // Send message (placeholder)
+  // Send message
   async sendMessage(userId: string, message: CreateMessageRequest): Promise<SupportTicketMessage> {
-    // Placeholder implementation
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        title: `message_${message.ticket_id}`,
+        message: message.message,
+        category: 'support_message',
+        type: 'ticket_message',
+        link: message.ticket_id
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
     return {
-      id: crypto.randomUUID(),
+      id: data.id,
       ticket_id: message.ticket_id,
       user_id: userId,
       message: message.message,
       is_internal: false,
       attachments: message.attachments || [],
-      created_at: new Date().toISOString()
+      created_at: data.timestamp
     };
   },
 
-  // Update ticket status (placeholder)
+  // Update ticket status
   async updateTicketStatus(ticketId: string, status: SupportTicket['status']): Promise<SupportTicket> {
-    const ticket = await this.getTicket(ticketId);
+    const resolvedAt = status === 'resolved' || status === 'closed'
+      ? new Date().toISOString()
+      : undefined;
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .update({
+        type: `ticket:${status}`,
+        timestamp: new Date().toISOString()
+      })
+      .eq('id', ticketId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
     return {
-      ...ticket,
+      id: data.id,
+      user_id: data.user_id,
+      order_id: data.link || undefined,
+      ticket_number: `T-${data.id.slice(-8)}`,
+      subject: data.title,
+      description: data.message,
+      priority: (data.priority as SupportTicket['priority']) || 'medium',
       status,
-      resolved_at: status === 'resolved' || status === 'closed' ? new Date().toISOString() : undefined,
-      updated_at: new Date().toISOString()
+      category: (data.recipient as SupportTicket['category']) || 'other',
+      assigned_to: undefined,
+      resolution_notes: undefined,
+      resolved_at: resolvedAt,
+      created_at: data.timestamp,
+      updated_at: data.timestamp
     };
   },
 
@@ -188,10 +256,13 @@ export const supportService = {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'notifications', // Placeholder table
-          filter: `title=eq.message_${ticketId}`
+          table: 'notifications',
+          filter: `link=eq.${ticketId}`
         },
         (payload) => {
+          if (payload.new.category !== 'support_message') {
+            return;
+          }
           callback({
             id: payload.new.id,
             ticket_id: ticketId,

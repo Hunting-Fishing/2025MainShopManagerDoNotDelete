@@ -1,174 +1,32 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Plus, FileText, Wrench, Receipt, ClipboardList, Calendar } from 'lucide-react';
+import { Menu, X, Plus, FileText, Receipt, Calendar } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { hasRoutePermission } from '@/utils/routeGuards';
+import { getNavigationForSurface } from '@/components/navigation/appNavigation';
 
 // Quick action items for creating new records
 const quickActions = [
-  { name: 'Create Work Order', href: '/work-orders/new', icon: Plus, requiredPath: '/work-orders' },
-  { name: 'Create Quote', href: '/quotes/new', icon: FileText, requiredPath: '/quotes' },
-  { name: 'Create Invoice', href: '/invoices/new', icon: Receipt, requiredPath: '/invoices' },
-  { name: 'Schedule Appointment', href: '/calendar', icon: Calendar, requiredPath: '/calendar' },
+  { fallbackName: 'Create Work Order', href: '/work-orders/new', icon: Plus, requiredPath: '/work-orders' },
+  { fallbackName: 'Create Quote', href: '/quotes/new', icon: FileText, requiredPath: '/quotes' },
+  { fallbackName: 'Create Invoice', href: '/invoices/new', icon: Receipt, requiredPath: '/invoices' },
+  { fallbackName: 'Schedule Appointment', href: '/calendar', icon: Calendar, requiredPath: '/calendar' },
 ];
 
-// Main navigation organized by category
-const navigationCategories = [
-  {
-    title: 'Dashboard',
-    items: [
-      { name: 'Dashboard', href: '/dashboard', requiredPath: '/dashboard' },
-    ]
-  },
-  {
-    title: 'Operations',
-    items: [
-      { name: 'Work Orders', href: '/work-orders', requiredPath: '/work-orders' },
-      { name: 'Daily Logs', href: '/daily-logs', requiredPath: '/daily-logs' },
-      { name: 'Service Board', href: '/service-board', requiredPath: '/service-board' },
-      { name: 'Quotes', href: '/quotes', requiredPath: '/quotes' },
-      { name: 'Invoices', href: '/invoices', requiredPath: '/invoices' },
-      { name: 'Payments', href: '/payments', requiredPath: '/payments' },
-    ]
-  },
-  {
-    title: 'Scheduling',
-    items: [
-      { name: 'Calendar', href: '/calendar', requiredPath: '/calendar' },
-      { name: 'Staff Scheduling', href: '/scheduling', requiredPath: '/scheduling' },
-      { name: 'Service Reminders', href: '/service-reminders', requiredPath: '/service-reminders' },
-    ]
-  },
-  {
-    title: 'Customer Management',
-    items: [
-      { name: 'Customers', href: '/customers', requiredPath: '/customers' },
-      { name: 'Vehicles', href: '/vehicles', requiredPath: '/vehicles' },
-      { name: 'Customer Communications', href: '/customer-comms', requiredPath: '/customer-comms' },
-      { name: 'Call Logger', href: '/call-logger', requiredPath: '/call-logger' },
-    ]
-  },
-  {
-    title: 'Inventory & Parts',
-    items: [
-      { name: 'Inventory', href: '/inventory', requiredPath: '/inventory' },
-      { name: 'Inventory Manager', href: '/inventory/manager', requiredPath: '/inventory/manager' },
-      { name: 'Purchase Orders', href: '/inventory/orders', requiredPath: '/inventory/orders' },
-    ]
-  },
-  {
-    title: 'Fleet & Assets',
-    items: [
-      { name: 'Fleet Management', href: '/fleet-management', requiredPath: '/fleet-management' },
-      { name: 'Shop Equipment', href: '/equipment', requiredPath: '/equipment' },
-      { name: 'Safety Equipment', href: '/safety-equipment', requiredPath: '/safety-equipment' },
-      { name: 'Equipment Tracking', href: '/equipment-tracking', requiredPath: '/equipment-tracking' },
-      { name: 'Maintenance Requests', href: '/maintenance-requests', requiredPath: '/maintenance-requests' },
-      { name: 'Insurance', href: '/insurance', requiredPath: '/insurance' },
-    ]
-  },
-  {
-    title: 'Services',
-    items: [
-      { name: 'Service Library', href: '/services', requiredPath: '/services' },
-      { name: 'Service Editor', href: '/service-editor', requiredPath: '/service-editor' },
-      { name: 'Repair Plans', href: '/repair-plans', requiredPath: '/repair-plans' },
-    ]
-  },
-  {
-    title: 'Marketing',
-    items: [
-      { name: 'Email Campaigns', href: '/email-campaigns', requiredPath: '/email-campaigns' },
-      { name: 'Email Sequences', href: '/email-sequences', requiredPath: '/email-sequences' },
-      { name: 'Email Templates', href: '/email-templates', requiredPath: '/email-templates' },
-      { name: 'SMS Management', href: '/sms-management', requiredPath: '/sms-management' },
-      { name: 'SMS Templates', href: '/sms-templates', requiredPath: '/sms-templates' },
-    ]
-  },
-  {
-    title: 'Company',
-    items: [
-      { name: 'Team', href: '/team', requiredPath: '/team' },
-      { name: 'Company Profile', href: '/company-profile', requiredPath: '/company-profile' },
-      { name: 'Timesheet', href: '/timesheet', requiredPath: '/timesheet' },
-      { name: 'Training', href: '/training-overview', requiredPath: '/training-overview' },
-      { name: 'Documents', href: '/documents', requiredPath: '/documents' },
-    ]
-  },
-  {
-    title: 'Safety & Compliance',
-    items: [
-      { name: 'Safety Dashboard', href: '/safety', requiredPath: '/safety' },
-      { name: 'Incidents', href: '/safety/incidents', requiredPath: '/safety/incidents' },
-      { name: 'Daily Inspections', href: '/safety/inspections', requiredPath: '/safety/inspections' },
-      { name: 'DVIR Reports', href: '/safety/dvir', requiredPath: '/safety/dvir' },
-      { name: 'Vessel Inspections', href: '/safety/vessels', requiredPath: '/safety/vessels' },
-      { name: 'Forklift Inspections', href: '/safety/equipment/forklift', requiredPath: '/safety/equipment/forklift' },
-      { name: 'Lift Inspections', href: '/safety/equipment', requiredPath: '/safety/equipment' },
-      { name: 'Certifications', href: '/safety/certifications', requiredPath: '/safety/certifications' },
-      { name: 'Safety Documents', href: '/safety/documents', requiredPath: '/safety/documents' },
-      { name: 'Schedules', href: '/safety/schedules', requiredPath: '/safety/schedules' },
-      { name: 'Analytics', href: '/safety/analytics', requiredPath: '/safety/analytics' },
-      { name: 'Reports', href: '/safety/reports', requiredPath: '/safety/reports' },
-      { name: 'Corrective Actions', href: '/safety/corrective-actions', requiredPath: '/safety/corrective-actions' },
-      { name: 'Near Miss', href: '/safety/near-miss', requiredPath: '/safety/near-miss' },
-      { name: 'Training', href: '/safety/training', requiredPath: '/safety/training' },
-      { name: 'Meetings', href: '/safety/meetings', requiredPath: '/safety/meetings' },
-      { name: 'JSA', href: '/safety/jsa', requiredPath: '/safety/jsa' },
-      { name: 'PPE Management', href: '/safety/ppe', requiredPath: '/safety/ppe' },
-    ]
-  },
-  {
-    title: 'Store',
-    items: [
-      { name: 'Shopping', href: '/shopping', requiredPath: '/shopping' },
-      { name: 'Wishlist', href: '/wishlist', requiredPath: '/wishlist' },
-      { name: 'My Orders', href: '/orders', requiredPath: '/orders' },
-    ]
-  },
-  {
-    title: 'Planning',
-    items: [
-      { name: 'Planner', href: '/planner', requiredPath: '/planner' },
-      { name: 'Projects', href: '/projects', requiredPath: '/projects' },
-    ]
-  },
-  {
-    title: 'Tools',
-    items: [
-      { name: 'Technician Portal', href: '/technician-portal', requiredPath: '/technician-portal' },
-      { name: 'Analytics', href: '/analytics', requiredPath: '/analytics' },
-      { name: 'AI Hub', href: '/ai-hub', requiredPath: '/ai-hub' },
-      { name: 'Forms', href: '/forms', requiredPath: '/forms' },
-      { name: 'Feedback', href: '/feedback', requiredPath: '/feedback' },
-    ]
-  },
-  {
-    title: 'Reports',
-    items: [
-      { name: 'Reports', href: '/reports', requiredPath: '/reports' },
-    ]
-  },
-  {
-    title: 'Support',
-    items: [
-      { name: 'Help', href: '/help', requiredPath: '/help' },
-      { name: 'Feature Requests', href: '/feature-requests', requiredPath: '/feature-requests' },
-    ]
-  },
-  {
-    title: 'Administration',
-    items: [
-      { name: 'Developer', href: '/developer', requiredPath: '/developer' },
-    ]
-  },
-];
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { data: userRoles = [] } = useUserRoles();
+
+  const flatNavigation = getNavigationForSurface('mobileMenu')
+    .flatMap((section) => section.items);
+
+  const getNavLabel = (href: string, fallback: string) => {
+    const match = flatNavigation.find((item) => item.href === href);
+    return match?.title || fallback;
+  };
   
   // Function to check if a navigation item is active based on the current URL path
   const isNavItemActive = (href: string) => {
@@ -187,14 +45,26 @@ export function Navbar() {
            currentPath.startsWith(`${href}/`);
   };
   
-  // Get desktop navigation items (just show main categories)
-  const desktopNavItems = [
-    { name: 'Dashboard', href: '/dashboard', requiredPath: '/dashboard' },
-    { name: 'Work Orders', href: '/work-orders', requiredPath: '/work-orders' },
-    { name: 'Customers', href: '/customers', requiredPath: '/customers' },
-    { name: 'Inventory', href: '/inventory', requiredPath: '/inventory' },
-    { name: 'Reports', href: '/reports', requiredPath: '/reports' },
-  ];
+  const desktopNavItems = getNavigationForSurface('navbar')
+    .flatMap((section) => section.items)
+    .filter((item) => hasRoutePermission(item.href, userRoles))
+    .map((item) => ({
+      name: item.title,
+      href: item.href,
+    }));
+
+  const navigationCategories = getNavigationForSurface('mobileMenu')
+    .map((section) => ({
+      title: section.title,
+      items: section.items
+        .filter((item) => hasRoutePermission(item.href, userRoles))
+        .map((item) => ({
+          name: item.title,
+          href: item.href,
+          requiredPath: item.href,
+        })),
+    }))
+    .filter((section) => section.items.length > 0);
   
   return (
     <header className="bg-white shadow-sm dark:bg-slate-800 dark:border-slate-700 border-b border-slate-200">
@@ -218,19 +88,17 @@ export function Navbar() {
         </div>
         <div className="hidden lg:flex lg:gap-x-8">
           {desktopNavItems.map((item) => (
-            hasRoutePermission(item.requiredPath, userRoles) && (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`text-sm font-medium ${
-                  isNavItemActive(item.href) 
-                    ? 'text-blue-600 dark:text-blue-400'
-                    : 'text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400'
-                }`}
-              >
-                {item.name}
-              </Link>
-            )
+            <Link
+              key={item.name}
+              to={item.href}
+              className={`text-sm font-medium ${
+                isNavItemActive(item.href) 
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400'
+              }`}
+            >
+              {item.name}
+            </Link>
           ))}
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
@@ -242,7 +110,7 @@ export function Navbar() {
               asChild
             >
               <Link to="/settings">
-                Settings
+                {getNavLabel('/settings', 'Settings')}
               </Link>
             </Button>
           </div>
@@ -280,13 +148,13 @@ export function Navbar() {
                     {quickActions.map((action) => (
                       hasRoutePermission(action.requiredPath, userRoles) && (
                         <Link
-                          key={action.name}
+                          key={action.href}
                           to={action.href}
                           className="flex items-center gap-3 -mx-3 rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-700"
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           <action.icon className="h-5 w-5" />
-                          {action.name}
+                          {getNavLabel(action.requiredPath, action.fallbackName)}
                         </Link>
                       )
                     ))}
@@ -333,7 +201,7 @@ export function Navbar() {
                     className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-slate-700 hover:bg-blue-50 dark:text-slate-300 dark:hover:bg-slate-700"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Settings
+                    {getNavLabel('/settings', 'Settings')}
                   </Link>
                 </div>
               </div>

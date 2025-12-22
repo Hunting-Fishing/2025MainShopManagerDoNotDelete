@@ -31,7 +31,7 @@ export const routePermissions: RoutePermission[] = [
   { path: '/email-templates', allowedRoles: ['admin', 'manager', 'service_advisor', 'owner'] },
   { path: '/sms-management', allowedRoles: ['admin', 'manager', 'service_advisor', 'owner'] },
   { path: '/sms-templates', allowedRoles: ['admin', 'manager', 'service_advisor', 'owner'] },
-  { path: '/customer-comms', allowedRoles: ['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner'] },
+  { path: '/customer-communications', allowedRoles: ['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner'] },
   
   // Technician Portal
   { path: '/technician-portal', allowedRoles: ['admin', 'manager', 'technician', 'yard_manager', 'mechanic_manager', 'owner'] },

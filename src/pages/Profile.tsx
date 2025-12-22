@@ -51,7 +51,7 @@ export default function Profile() {
         toast.error(error.message);
       } else {
         toast.success('Signed out successfully');
-        navigate('/auth');
+        navigate('/login');
       }
     } catch (error) {
       toast.error('An error occurred while signing out');

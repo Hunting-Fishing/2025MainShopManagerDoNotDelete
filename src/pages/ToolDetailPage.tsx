@@ -86,7 +86,7 @@ export default function ToolDetailPage() {
         <Grid.Column width={8}>
           <Segment>
             <img 
-              src={tool.image_url || 'https://via.placeholder.com/600x400?text=Tool+Image'} 
+              src={tool.image_url || '/placeholder.png'} 
               alt={tool.name} 
               style={{ width: '100%' }} 
             />

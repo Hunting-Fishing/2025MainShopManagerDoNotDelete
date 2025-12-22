@@ -34,6 +34,9 @@ npm i
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
+
+# Optional: Enable git hooks for route audits before commits.
+git config core.hooksPath .githooks
 ```
 
 **Edit a file directly in GitHub**

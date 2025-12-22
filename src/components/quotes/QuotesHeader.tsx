@@ -8,9 +8,10 @@ import { EnhancedCreateQuoteDialog } from './EnhancedCreateQuoteDialog';
 interface QuotesHeaderProps {
   quotes: Quote[];
   onQuoteCreated?: () => void;
+  openCreateOnLoad?: boolean;
 }
 
-export function QuotesHeader({ quotes, onQuoteCreated }: QuotesHeaderProps) {
+export function QuotesHeader({ quotes, onQuoteCreated, openCreateOnLoad = false }: QuotesHeaderProps) {
   const statusCounts = quotes.reduce((acc, quote) => {
     acc[quote.status] = (acc[quote.status] || 0) + 1;
     return acc;
@@ -43,7 +44,7 @@ export function QuotesHeader({ quotes, onQuoteCreated }: QuotesHeaderProps) {
           <FileText className="h-4 w-4 mr-2" />
           Export
         </Button>
-        <EnhancedCreateQuoteDialog onSuccess={handleQuoteCreated}>
+        <EnhancedCreateQuoteDialog onSuccess={handleQuoteCreated} defaultOpen={openCreateOnLoad}>
           <Button size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Create Quote

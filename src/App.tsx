@@ -27,7 +27,7 @@ import Analytics from '@/pages/Analytics';
 import Settings from '@/pages/Settings';
 import Calendar from '@/pages/Calendar';
 import Team from '@/pages/Team';
-import CustomerComms from '@/pages/CustomerComms';
+import CustomerCommunications from '@/pages/CustomerCommunications';
 import CallLogger from '@/pages/CallLogger';
 import Help from '@/pages/Help';
 import ServiceReminders from '@/pages/ServiceReminders';
@@ -68,6 +68,7 @@ import Forms from '@/pages/Forms';
 import FormSubmissions from '@/pages/FormSubmissions';
 import QuoteDetails from '@/pages/QuoteDetails';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
+import WorkOrderCreate from '@/pages/WorkOrderCreate';
 import RepairPlanDetails from '@/pages/RepairPlanDetails';
 import AIHub from '@/pages/AIHub';
 import Chat from '@/pages/Chat';
@@ -93,6 +94,18 @@ import Warranties from '@/pages/Warranties';
 import DriverManagement from '@/pages/DriverManagement';
 import TireManagement from '@/pages/TireManagement';
 import AccountingIntegration from '@/pages/AccountingIntegration';
+import FinanceDashboard from '@/pages/finance/FinanceDashboard';
+import AccountsPayable from '@/pages/finance/AccountsPayable';
+import AccountsReceivable from '@/pages/finance/AccountsReceivable';
+import GeneralLedger from '@/pages/finance/GeneralLedger';
+import JournalEntries from '@/pages/finance/JournalEntries';
+import BankReconciliation from '@/pages/finance/BankReconciliation';
+import RFQs from '@/pages/procurement/RFQs';
+import Receiving from '@/pages/procurement/Receiving';
+import QualityDashboard from '@/pages/quality/QualityDashboard';
+import Nonconformances from '@/pages/quality/Nonconformances';
+import QualityChecklists from '@/pages/quality/QualityChecklists';
+import QualityCAPA from '@/pages/quality/QualityCAPA';
 import Safety from '@/pages/Safety';
 import SafetyIncidents from '@/pages/SafetyIncidents';
 import SafetyIncidentNew from '@/pages/SafetyIncidentNew';
@@ -148,7 +161,7 @@ import InventoryCategories from '@/pages/InventoryCategories';
 import InventoryLocations from '@/pages/InventoryLocations';
 import InventoryOrders from '@/pages/InventoryOrders';
 import InventorySuppliers from '@/pages/InventorySuppliers';
-import InvoiceCreate from '@/pages/InvoiceCreate';
+import CreateInvoice from '@/pages/CreateInvoice';
 import InvoiceScan from '@/pages/InvoiceScan';
 import MaintenanceDashboard from '@/pages/MaintenanceDashboard';
 import NotFound from '@/pages/NotFound';
@@ -163,6 +176,7 @@ import VehicleDetails from '@/pages/VehicleDetails';
 import VehicleInspectionForm from '@/pages/VehicleInspectionForm';
 import TermsOfService from '@/pages/legal/TermsOfService';
 import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
+import AuditTrailPage from '@/pages/AuditTrail';
 
 function App() {
   useEffect(() => {
@@ -203,6 +217,11 @@ function App() {
                   <Route path="/work-orders" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <WorkOrders />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/work-orders/new" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <WorkOrderCreate />
                     </ProtectedRoute>
                   } />
                   <Route path="/work-orders/:id" element={
@@ -313,9 +332,9 @@ function App() {
                   <Route path="/service-reminders" element={<ServiceReminders />} />
                   
                   {/* Customer Communications */}
-                  <Route path="/customer-comms" element={
+                  <Route path="/customer-communications" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
-                      <CustomerComms />
+                      <CustomerCommunications />
                     </ProtectedRoute>
                   } />
                   
@@ -368,6 +387,11 @@ function App() {
                       <Quotes />
                     </ProtectedRoute>
                   } />
+                  <Route path="/quotes/new" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <Quotes />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/quotes/:id" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <QuoteDetails />
@@ -377,6 +401,16 @@ function App() {
                   <Route path="/invoices" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Invoices />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/invoices/new" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                      <CreateInvoice />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/invoices/create" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
+                      <CreateInvoice />
                     </ProtectedRoute>
                   } />
                   <Route path="/invoices/:id" element={
@@ -394,6 +428,38 @@ function App() {
                   <Route path="/payments" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Payments />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Finance Core */}
+                  <Route path="/finance" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <FinanceDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/finance/accounts-payable" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <AccountsPayable />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/finance/accounts-receivable" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <AccountsReceivable />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/finance/general-ledger" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <GeneralLedger />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/finance/journal-entries" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <JournalEntries />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/finance/bank-reconciliation" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <BankReconciliation />
                     </ProtectedRoute>
                   } />
                   
@@ -559,6 +625,11 @@ function App() {
                   
                   {/* Security */}
                   <Route path="/security" element={<Security />} />
+                  <Route path="/audit-trail" element={
+                    <ProtectedRoute allowedRoles={['admin', 'owner']}>
+                      <AuditTrailPage />
+                    </ProtectedRoute>
+                  } />
                   
                   {/* User Pages */}
                   <Route path="/profile" element={<Profile />} />
@@ -793,6 +864,28 @@ function App() {
                       <SafetyGamification />
                     </ProtectedRoute>
                   } />
+
+                  {/* Quality */}
+                  <Route path="/quality" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <QualityDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/quality/nonconformances" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <Nonconformances />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/quality/checklists" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <QualityChecklists />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/quality/capa" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'yard_manager', 'mechanic_manager', 'owner']}>
+                      <QualityCAPA />
+                    </ProtectedRoute>
+                  } />
                   
                   {/* Employee Scheduling */}
                   <Route path="/scheduling" element={
@@ -929,13 +1022,6 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Invoice Create */}
-                  <Route path="/invoices/create" element={
-                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
-                      <InvoiceCreate />
-                    </ProtectedRoute>
-                  } />
-                  
                   {/* Invoice Scan */}
                   <Route path="/invoice-scan" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'owner']}>
@@ -964,6 +1050,18 @@ function App() {
                   <Route path="/purchase-orders" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
                       <PurchaseOrders />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Procurement */}
+                  <Route path="/procurement/rfqs" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                      <RFQs />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/procurement/receiving" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'inventory_manager', 'owner']}>
+                      <Receiving />
                     </ProtectedRoute>
                   } />
                   

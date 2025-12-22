@@ -9,7 +9,9 @@ import {
   Settings, 
   Shield,
   BarChart3,
-  ShoppingBag
+  ShoppingBag,
+  Building,
+  Hammer
 } from 'lucide-react';
 
 const navigationItems = [
@@ -18,6 +20,18 @@ const navigationItems = [
     label: 'Service Management',
     icon: Wrench,
     description: 'Manage service hierarchy and jobs'
+  },
+  {
+    href: '/developer/organization',
+    label: 'Organization Management',
+    icon: Building,
+    description: 'Manage organizations, shops, and access'
+  },
+  {
+    href: '/developer/tools',
+    label: 'Tools Management',
+    icon: Hammer,
+    description: 'Manage tools and equipment catalogs'
   },
   {
     href: '/developer/api-docs',

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Prevent route/navigation drift before commits.
+npm run -s route:audit

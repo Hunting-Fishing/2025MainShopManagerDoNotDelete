@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Download, Printer, QrCode } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import QRCode from 'qrcode';
 
 interface QRCodeGeneratorProps {
   assetType: 'equipment' | 'vehicle';
@@ -26,78 +27,17 @@ export function QRCodeGenerator({
     app: 'shop-safety'
   });
 
-  // Generate QR code using canvas
+  // Generate QR code using QRCode library
   useEffect(() => {
     if (!canvasRef.current) return;
     
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Simple QR code generation using a basic pattern
-    // In production, you'd use a library like qrcode
-    const size = 200;
-    canvas.width = size;
-    canvas.height = size;
-
-    // Clear canvas
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, size, size);
-
-    // Draw a placeholder QR pattern (replace with actual QR library)
-    ctx.fillStyle = 'black';
-    
-    // Generate a simple pattern based on the data hash
-    const hash = simpleHash(qrData);
-    const moduleSize = 10;
-    const modules = 20;
-    
-    for (let y = 0; y < modules; y++) {
-      for (let x = 0; x < modules; x++) {
-        const bit = (hash >> ((x + y * modules) % 32)) & 1;
-        if (bit || isPositionModule(x, y, modules)) {
-          ctx.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize);
-        }
+    QRCode.toCanvas(canvas, qrData, { width: 200, margin: 2 }, (err) => {
+      if (err) {
+        console.error('Error generating QR code:', err);
       }
-    }
-
-    // Draw position patterns (corners)
-    drawPositionPattern(ctx, 0, 0, moduleSize);
-    drawPositionPattern(ctx, (modules - 7) * moduleSize, 0, moduleSize);
-    drawPositionPattern(ctx, 0, (modules - 7) * moduleSize, moduleSize);
-
+    });
   }, [qrData]);
-
-  const simpleHash = (str: string): number => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash = hash & hash;
-    }
-    return Math.abs(hash);
-  };
-
-  const isPositionModule = (x: number, y: number, modules: number): boolean => {
-    // Check if in position pattern area
-    if (x < 7 && y < 7) return false; // Top-left
-    if (x >= modules - 7 && y < 7) return false; // Top-right
-    if (x < 7 && y >= modules - 7) return false; // Bottom-left
-    return false;
-  };
-
-  const drawPositionPattern = (ctx: CanvasRenderingContext2D, x: number, y: number, moduleSize: number) => {
-    // Outer black square
-    ctx.fillStyle = 'black';
-    ctx.fillRect(x, y, 7 * moduleSize, 7 * moduleSize);
-    
-    // Middle white square
-    ctx.fillStyle = 'white';
-    ctx.fillRect(x + moduleSize, y + moduleSize, 5 * moduleSize, 5 * moduleSize);
-    
-    // Inner black square
-    ctx.fillStyle = 'black';
-    ctx.fillRect(x + 2 * moduleSize, y + 2 * moduleSize, 3 * moduleSize, 3 * moduleSize);
-  };
 
   const downloadQR = () => {
     if (!canvasRef.current) return;

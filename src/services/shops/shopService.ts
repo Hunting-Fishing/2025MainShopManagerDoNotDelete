@@ -95,18 +95,7 @@ export const getDefaultShop = async () => {
 
   if (error) {
     console.error("Error fetching default shop:", error);
-    // As a last resort, return a placeholder shop with zero UUID
-    console.log("Returning placeholder shop");
-    return {
-      id: "00000000-0000-0000-0000-000000000000",
-      name: "Main Shop",
-      organization_id: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      address: null,
-      phone: null,
-      email: null
-    };
+    throw new Error("No shops available for the current user.");
   }
 
   console.log("Returning first shop:", data);

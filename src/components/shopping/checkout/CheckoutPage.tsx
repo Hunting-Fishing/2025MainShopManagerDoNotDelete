@@ -39,7 +39,7 @@ export const CheckoutPage = () => {
         description: "Please log in to proceed with checkout.",
         variant: "destructive"
       });
-      navigate('/auth?redirect=/checkout');
+      navigate('/login?redirect=/checkout');
     }
   }, [isAuthenticated, authLoading, navigate, toast]);
 

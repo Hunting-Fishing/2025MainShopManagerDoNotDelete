@@ -58,74 +58,6 @@ export interface HelpResource {
   updated_at: string;
 }
 
-// Mock data for categories since they might not be in the current database
-const mockCategories: HelpCategory[] = [
-  { id: '1', name: 'Getting Started', description: 'Essential guides for new users', icon: 'Rocket', sort_order: 1, is_active: true, created_at: '2024-01-01', updated_at: '2024-01-01' },
-  { id: '2', name: 'Work Orders', description: 'Work order management system', icon: 'Wrench', sort_order: 2, is_active: true, created_at: '2024-01-01', updated_at: '2024-01-01' },
-  { id: '3', name: 'Customer Management', description: 'Customer relationship tools', icon: 'Users', sort_order: 3, is_active: true, created_at: '2024-01-01', updated_at: '2024-01-01' },
-  { id: '4', name: 'Inventory Management', description: 'Parts and inventory control', icon: 'Package', sort_order: 4, is_active: true, created_at: '2024-01-01', updated_at: '2024-01-01' },
-  { id: '5', name: 'Financial Management', description: 'Billing and financial tools', icon: 'DollarSign', sort_order: 5, is_active: true, created_at: '2024-01-01', updated_at: '2024-01-01' },
-  { id: '6', name: 'Reporting & Analytics', description: 'Business intelligence', icon: 'BarChart3', sort_order: 6, is_active: true, created_at: '2024-01-01', updated_at: '2024-01-01' },
-];
-
-// Mock data for learning paths
-const mockLearningPaths: HelpLearningPath[] = [
-  {
-    id: '1',
-    title: 'Complete Beginner Onboarding',
-    description: 'Everything you need to know to get started with ServicePro in your first 30 days',
-    difficulty_level: 'beginner',
-    estimated_duration: '4-6 weeks',
-    target_role: 'All Users',
-    articles: ['Complete Setup Guide', 'First Week Checklist'],
-    prerequisites: [],
-    is_active: true,
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  },
-  {
-    id: '2',
-    title: 'Service Manager Mastery',
-    description: 'Advanced path for service managers focusing on operations and analytics',
-    difficulty_level: 'intermediate',
-    estimated_duration: '6-8 weeks',
-    target_role: 'Manager',
-    articles: ['Advanced Work Order Workflows', 'Custom Report Creation'],
-    prerequisites: ['Complete Setup Guide'],
-    is_active: true,
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  }
-];
-
-// Mock data for resources
-const mockResources: HelpResource[] = [
-  {
-    id: '1',
-    title: 'Work Order Template Library',
-    description: 'Collection of professional work order templates for different service types',
-    resource_type: 'template',
-    category_id: '2',
-    tags: ['templates', 'work-orders'],
-    is_active: true,
-    download_count: 3456,
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  },
-  {
-    id: '2',
-    title: 'ROI Calculator Tool',
-    description: 'Calculate return on investment for ServicePro implementation',
-    resource_type: 'calculator',
-    category_id: '6',
-    tags: ['calculator', 'roi'],
-    is_active: true,
-    download_count: 1876,
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  }
-];
-
 // Fetch help categories
 export const useHelpCategories = () => {
   return useQuery({
@@ -142,7 +74,7 @@ export const useHelpCategories = () => {
         return data || [];
       } catch (error) {
         console.error('Error fetching help categories:', error);
-        return mockCategories;
+        return [];
       }
     },
   });
@@ -205,7 +137,7 @@ export const useHelpLearningPaths = () => {
         return data || [];
       } catch (error) {
         console.error('Error fetching learning paths:', error);
-        return mockLearningPaths;
+        return [];
       }
     },
   });
@@ -245,10 +177,7 @@ export const useHelpResources = (categoryId?: string, resourceType?: string) => 
         return data || [];
       } catch (error) {
         console.error('Error fetching help resources:', error);
-        return mockResources.map(resource => ({
-          ...resource,
-          help_categories: { name: 'General', icon: 'FileText' }
-        }));
+        return [];
       }
     },
   });

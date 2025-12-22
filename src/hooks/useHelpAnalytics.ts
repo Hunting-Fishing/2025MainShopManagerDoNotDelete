@@ -32,6 +32,27 @@ export interface FeedbackStat {
   percentage: number;
 }
 
+const toPercentChange = (current: number, previous: number) => {
+  if (previous === 0) {
+    return current === 0 ? 0 : 100;
+  }
+  return Math.round(((current - previous) / previous) * 1000) / 10;
+};
+
+const formatHours = (hours: number) => `${Math.round(hours * 10) / 10}h`;
+
+const calculateAvgResolutionHours = (tickets: { created_at?: string; updated_at?: string }[]) => {
+  if (!tickets.length) return 0;
+  const totalMs = tickets.reduce((sum, ticket) => {
+    if (!ticket.created_at || !ticket.updated_at) return sum;
+    const created = new Date(ticket.created_at).getTime();
+    const updated = new Date(ticket.updated_at).getTime();
+    if (Number.isNaN(created) || Number.isNaN(updated)) return sum;
+    return sum + Math.max(0, updated - created);
+  }, 0);
+  return totalMs / tickets.length / (1000 * 60 * 60);
+};
+
 // Fetch real help metrics from analytics
 export const useHelpMetrics = () => {
   return useQuery({
@@ -39,37 +60,74 @@ export const useHelpMetrics = () => {
     queryFn: async () => {
       try {
         // Get page views from last 30 days
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const now = new Date();
+        const currentStart = new Date(now);
+        currentStart.setDate(currentStart.getDate() - 30);
+        const previousStart = new Date(now);
+        previousStart.setDate(previousStart.getDate() - 60);
 
-        const { data: viewsData, error: viewsError } = await supabase
+        const { data: currentViewsData, error: currentViewsError } = await supabase
           .from('help_analytics')
-          .select('*')
+          .select('user_id, created_at')
           .eq('event_type', 'page_view')
-          .gte('created_at', thirtyDaysAgo.toISOString());
+          .gte('created_at', currentStart.toISOString());
 
-        if (viewsError) throw viewsError;
+        if (currentViewsError) throw currentViewsError;
 
-        // Get unique users
-        const uniqueUsers = new Set(viewsData?.map(v => v.user_id)).size;
+        const { data: previousViewsData, error: previousViewsError } = await supabase
+          .from('help_analytics')
+          .select('user_id, created_at')
+          .eq('event_type', 'page_view')
+          .gte('created_at', previousStart.toISOString())
+          .lt('created_at', currentStart.toISOString());
 
-        // Get support tickets (if support_tickets table exists)
-        const { data: ticketsData } = await supabase
+        if (previousViewsError) throw previousViewsError;
+
+        const currentViews = currentViewsData?.length || 0;
+        const previousViews = previousViewsData?.length || 0;
+        const currentUsers = new Set((currentViewsData || []).map(view => view.user_id).filter(Boolean)).size;
+        const previousUsers = new Set((previousViewsData || []).map(view => view.user_id).filter(Boolean)).size;
+
+        const { data: currentTicketsData, error: currentTicketsError } = await supabase
           .from('support_tickets')
-          .select('*')
-          .gte('created_at', thirtyDaysAgo.toISOString())
-          .limit(1000);
+          .select('id, created_at')
+          .gte('created_at', currentStart.toISOString());
 
-        // Calculate metrics with mock changes for now
+        if (currentTicketsError) throw currentTicketsError;
+
+        const { data: previousTicketsData, error: previousTicketsError } = await supabase
+          .from('support_tickets')
+          .select('id, created_at')
+          .gte('created_at', previousStart.toISOString())
+          .lt('created_at', currentStart.toISOString());
+
+        if (previousTicketsError) throw previousTicketsError;
+
+        const { data: currentResolvedTickets } = await supabase
+          .from('support_tickets')
+          .select('created_at, updated_at')
+          .in('status', ['resolved', 'closed'])
+          .gte('updated_at', currentStart.toISOString());
+
+        const { data: previousResolvedTickets } = await supabase
+          .from('support_tickets')
+          .select('created_at, updated_at')
+          .in('status', ['resolved', 'closed'])
+          .gte('updated_at', previousStart.toISOString())
+          .lt('updated_at', currentStart.toISOString());
+
+        const currentAvgResolution = calculateAvgResolutionHours(currentResolvedTickets || []);
+        const previousAvgResolution = calculateAvgResolutionHours(previousResolvedTickets || []);
+
         const metrics: HelpMetrics = {
-          totalViews: viewsData?.length || 0,
-          activeUsers: uniqueUsers,
-          supportTickets: ticketsData?.length || 0,
-          avgResolutionTime: '2.3h',
-          viewsChange: 12.3,
-          usersChange: 8.7,
-          ticketsChange: -15.2,
-          resolutionChange: -22.1
+          totalViews: currentViews,
+          activeUsers: currentUsers,
+          supportTickets: currentTicketsData?.length || 0,
+          avgResolutionTime: formatHours(currentAvgResolution),
+          viewsChange: toPercentChange(currentViews, previousViews),
+          usersChange: toPercentChange(currentUsers, previousUsers),
+          ticketsChange: toPercentChange(currentTicketsData?.length || 0, previousTicketsData?.length || 0),
+          resolutionChange: toPercentChange(currentAvgResolution, previousAvgResolution)
         };
 
         return metrics;

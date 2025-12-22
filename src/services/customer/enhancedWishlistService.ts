@@ -45,7 +45,7 @@ export interface ProductComparison {
 }
 
 export const enhancedWishlistService = {
-  // Share wishlist (placeholder - will be enabled after DB migration)
+  // Share wishlist
   async createWishlistShare(
     userId: string, 
     title: string, 
@@ -53,28 +53,65 @@ export const enhancedWishlistService = {
     isPublic = false,
     expiresAt?: string
   ): Promise<WishlistShare> {
-    // For now, return a placeholder response
     const shareToken = crypto.randomUUID();
+    const permissions = JSON.stringify({
+      title,
+      description: description || '',
+      is_public: isPublic
+    });
+
+    const { data, error } = await supabase
+      .from('wishlist_shares')
+      .insert({
+        wishlist_owner_id: userId,
+        share_token: shareToken,
+        shared_with_email: '',
+        permissions,
+        expires_at: expiresAt || null
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
     return {
-      id: crypto.randomUUID(),
-      user_id: userId,
-      share_token: shareToken,
+      id: data.id,
+      user_id: data.wishlist_owner_id,
+      share_token: data.share_token,
       title,
       description: description || '',
       is_public: isPublic,
-      expires_at: expiresAt,
+      expires_at: data.expires_at || undefined,
       view_count: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      created_at: data.created_at,
+      updated_at: data.updated_at
     };
   },
 
-  // Get shared wishlist (placeholder)
+  // Get shared wishlist
   async getSharedWishlist(shareToken: string): Promise<{
     share: WishlistShare;
     items: WishlistItem[];
   }> {
-    // Get wishlist items for demo
+    const { data: share, error: shareError } = await supabase
+      .from('wishlist_shares')
+      .select('*')
+      .eq('share_token', shareToken)
+      .single();
+
+    if (shareError) throw shareError;
+
+    if (share.expires_at && new Date(share.expires_at) < new Date()) {
+      throw new Error('Wishlist share has expired');
+    }
+
+    let metadata: { title?: string; description?: string; is_public?: boolean } = {};
+    try {
+      metadata = JSON.parse(share.permissions || '{}');
+    } catch (error) {
+      metadata = {};
+    }
+
     const { data: items, error: itemsError } = await supabase
       .from('wishlist_items')
       .select(`
@@ -91,35 +128,69 @@ export const enhancedWishlistService = {
           review_count
         )
       `)
-      .limit(10)
+      .eq('user_id', share.wishlist_owner_id)
       .order('created_at', { ascending: false });
 
     if (itemsError) throw itemsError;
 
     return {
       share: {
-        id: '1',
-        user_id: '1',
-        share_token: shareToken,
-        title: 'Shared Wishlist',
-        description: 'A shared wishlist',
-        is_public: true,
-        view_count: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        id: share.id,
+        user_id: share.wishlist_owner_id,
+        share_token: share.share_token,
+        title: metadata.title || 'Shared Wishlist',
+        description: metadata.description || '',
+        is_public: Boolean(metadata.is_public),
+        expires_at: share.expires_at || undefined,
+        view_count: 0,
+        created_at: share.created_at,
+        updated_at: share.updated_at
       },
       items: items || []
     };
   },
 
-  // Get user's shared wishlists (placeholder)
+  // Get user's shared wishlists
   async getUserWishlistShares(userId: string): Promise<WishlistShare[]> {
-    return [];
+    const { data, error } = await supabase
+      .from('wishlist_shares')
+      .select('*')
+      .eq('wishlist_owner_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(share => {
+      let metadata: { title?: string; description?: string; is_public?: boolean } = {};
+      try {
+        metadata = JSON.parse(share.permissions || '{}');
+      } catch (parseError) {
+        metadata = {};
+      }
+
+      return {
+        id: share.id,
+        user_id: share.wishlist_owner_id,
+        share_token: share.share_token,
+        title: metadata.title || 'Shared Wishlist',
+        description: metadata.description || '',
+        is_public: Boolean(metadata.is_public),
+        expires_at: share.expires_at || undefined,
+        view_count: 0,
+        created_at: share.created_at,
+        updated_at: share.updated_at
+      };
+    });
   },
 
-  // Delete wishlist share (placeholder)
+  // Delete wishlist share
   async deleteWishlistShare(shareId: string): Promise<void> {
-    // Placeholder implementation
+    const { error } = await supabase
+      .from('wishlist_shares')
+      .delete()
+      .eq('id', shareId);
+
+    if (error) throw error;
   },
 
   // Set price drop alert (placeholder)
@@ -128,7 +199,6 @@ export const enhancedWishlistService = {
     productId: string, 
     targetPrice: number
   ): Promise<PriceDropAlert> {
-    // Get current product price
     const { data: product, error: productError } = await supabase
       .from('products')
       .select('price')
@@ -137,32 +207,80 @@ export const enhancedWishlistService = {
 
     if (productError) throw productError;
 
+    const { data, error } = await supabase
+      .from('price_drop_alerts')
+      .insert({
+        user_id: userId,
+        product_id: productId,
+        target_price: targetPrice,
+        current_price: product.price,
+        is_active: true
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
     return {
-      id: crypto.randomUUID(),
-      user_id: userId,
-      product_id: productId,
-      target_price: targetPrice,
-      current_price: product.price,
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      product: {
-        id: productId,
-        name: 'Product',
-        price: product.price,
-        image_url: ''
-      }
+      id: data.id,
+      user_id: data.user_id,
+      product_id: data.product_id,
+      target_price: data.target_price,
+      current_price: data.current_price,
+      is_active: data.is_active,
+      notified_at: data.notified_at || undefined,
+      created_at: data.created_at,
+      updated_at: data.updated_at
     };
   },
 
   // Get user's price drop alerts (placeholder)
   async getPriceDropAlerts(userId: string): Promise<PriceDropAlert[]> {
-    return [];
+    const { data, error } = await supabase
+      .from('price_drop_alerts')
+      .select(`
+        *,
+        product:products(
+          id,
+          name,
+          price,
+          image_url
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(alert => ({
+      id: alert.id,
+      user_id: alert.user_id,
+      product_id: alert.product_id,
+      target_price: alert.target_price,
+      current_price: alert.current_price,
+      is_active: alert.is_active,
+      notified_at: alert.notified_at || undefined,
+      created_at: alert.created_at,
+      updated_at: alert.updated_at,
+      product: alert.product
+        ? {
+            id: alert.product.id,
+            name: alert.product.name,
+            price: alert.product.price,
+            image_url: alert.product.image_url || undefined
+          }
+        : undefined
+    }));
   },
 
   // Remove price drop alert (placeholder)
   async removePriceDropAlert(alertId: string): Promise<void> {
-    // Placeholder implementation
+    const { error } = await supabase
+      .from('price_drop_alerts')
+      .delete()
+      .eq('id', alertId);
+
+    if (error) throw error;
   },
 
   // Compare products

@@ -8,7 +8,7 @@ export const motorcycleManufacturers: Manufacturer[] = [
   {
     id: "moto-1",
     name: "Harley-Davidson",
-    logoUrl: "https://via.placeholder.com/150x50?text=Harley-Davidson",
+    logoUrl: "/placeholder.png",
     description: "American motorcycle manufacturer",
     slug: "harley-davidson",
     featured: true,
@@ -17,7 +17,7 @@ export const motorcycleManufacturers: Manufacturer[] = [
   {
     id: "moto-2",
     name: "Honda Motorcycles",
-    logoUrl: "https://via.placeholder.com/150x50?text=Honda+Motorcycles",
+    logoUrl: "/placeholder.png",
     description: "Motorcycle division of Honda",
     slug: "honda-motorcycles",
     featured: true,
@@ -26,7 +26,7 @@ export const motorcycleManufacturers: Manufacturer[] = [
   {
     id: "moto-3",
     name: "Yamaha Motorcycles",
-    logoUrl: "https://via.placeholder.com/150x50?text=Yamaha+Motorcycles",
+    logoUrl: "/placeholder.png",
     description: "Motorcycle division of Yamaha",
     slug: "yamaha-motorcycles",
     featured: true,
@@ -35,7 +35,7 @@ export const motorcycleManufacturers: Manufacturer[] = [
   {
     id: "moto-4",
     name: "Kawasaki Motorcycles",
-    logoUrl: "https://via.placeholder.com/150x50?text=Kawasaki+Motorcycles",
+    logoUrl: "/placeholder.png",
     description: "Motorcycle division of Kawasaki",
     slug: "kawasaki-motorcycles",
     featured: false,
@@ -44,7 +44,7 @@ export const motorcycleManufacturers: Manufacturer[] = [
   {
     id: "moto-5",
     name: "Suzuki Motorcycles",
-    logoUrl: "https://via.placeholder.com/150x50?text=Suzuki+Motorcycles",
+    logoUrl: "/placeholder.png",
     description: "Motorcycle division of Suzuki",
     slug: "suzuki-motorcycles",
     featured: false,
@@ -53,7 +53,7 @@ export const motorcycleManufacturers: Manufacturer[] = [
   {
     id: "moto-6",
     name: "Ducati",
-    logoUrl: "https://via.placeholder.com/150x50?text=Ducati",
+    logoUrl: "/placeholder.png",
     description: "Italian motorcycle manufacturer",
     slug: "ducati",
     featured: true,
@@ -62,7 +62,7 @@ export const motorcycleManufacturers: Manufacturer[] = [
   {
     id: "moto-7",
     name: "BMW Motorrad",
-    logoUrl: "https://via.placeholder.com/150x50?text=BMW+Motorrad",
+    logoUrl: "/placeholder.png",
     description: "Motorcycle division of BMW",
     slug: "bmw-motorrad",
     featured: true,
@@ -71,7 +71,7 @@ export const motorcycleManufacturers: Manufacturer[] = [
   {
     id: "moto-8",
     name: "Triumph",
-    logoUrl: "https://via.placeholder.com/150x50?text=Triumph",
+    logoUrl: "/placeholder.png",
     description: "British motorcycle manufacturer",
     slug: "triumph",
     featured: false,
@@ -80,7 +80,7 @@ export const motorcycleManufacturers: Manufacturer[] = [
   {
     id: "moto-9",
     name: "KTM",
-    logoUrl: "https://via.placeholder.com/150x50?text=KTM",
+    logoUrl: "/placeholder.png",
     description: "Austrian motorcycle and sports car manufacturer",
     slug: "ktm",
     featured: false,
@@ -89,7 +89,7 @@ export const motorcycleManufacturers: Manufacturer[] = [
   {
     id: "moto-10",
     name: "Indian Motorcycle",
-    logoUrl: "https://via.placeholder.com/150x50?text=Indian+Motorcycle",
+    logoUrl: "/placeholder.png",
     description: "American motorcycle manufacturer",
     slug: "indian-motorcycle",
     featured: false,

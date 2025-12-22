@@ -79,7 +79,7 @@ export default function ProductBundles({
         productId: bundle.id,
         name: bundle.name,
         price: calculation.bundle_price,
-        imageUrl: bundle.image_url || '/placeholder.svg',
+        imageUrl: bundle.image_url || '/placeholder.png',
         category: 'Bundle',
         manufacturer: 'Bundle'
       });

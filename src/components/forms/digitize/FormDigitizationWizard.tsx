@@ -10,8 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { saveFormTemplate } from '@/services/formBuilderService';
-import { FormBuilderTemplate, FormBuilderSection, FormBuilderField, FormFieldType } from '@/types/formBuilder';
-import { DocumentPreview } from './DocumentPreview';
+import { FormBuilderTemplate, FormFieldType } from '@/types/formBuilder';
 import { DocumentFieldMapper } from './DocumentFieldMapper';
 import { ChevronLeft, ChevronRight, Save, FileText, Plus, Trash2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -139,6 +138,18 @@ export function FormDigitizationWizard({ open, onOpenChange, sourceDocument }: F
     }]);
   };
 
+  const addFieldFromMapping = (_position: { x: number; y: number }) => {
+    setFields(prevFields => ([
+      ...prevFields,
+      {
+        id: uuidv4(),
+        label: `Field ${prevFields.length + 1}`,
+        fieldType: 'text',
+        isRequired: false
+      }
+    ]));
+  };
+
   const updateField = (id: string, updates: Partial<FieldDefinition>) => {
     setFields(fields.map(f => f.id === id ? { ...f, ...updates } : f));
   };
@@ -245,7 +256,11 @@ export function FormDigitizationWizard({ open, onOpenChange, sourceDocument }: F
               <p className="text-muted-foreground">
                 Review the source document and identify the fields you need to create.
               </p>
-              <DocumentPreview documentUrl={documentUrl} fileName={sourceDocument?.file_name} />
+              <DocumentFieldMapper
+                documentUrl={documentUrl}
+                fileName={sourceDocument?.file_name}
+                onFieldAdd={addFieldFromMapping}
+              />
             </div>
           )}
 

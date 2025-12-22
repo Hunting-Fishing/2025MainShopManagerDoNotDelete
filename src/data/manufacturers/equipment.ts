@@ -8,7 +8,7 @@ export const equipmentManufacturers: Manufacturer[] = [
   {
     id: "equip-1",
     name: "Caterpillar",
-    logoUrl: "https://via.placeholder.com/150x50?text=Caterpillar",
+    logoUrl: "/placeholder.png",
     description: "American construction equipment manufacturer",
     slug: "caterpillar",
     featured: true,
@@ -17,7 +17,7 @@ export const equipmentManufacturers: Manufacturer[] = [
   {
     id: "equip-2",
     name: "John Deere",
-    logoUrl: "https://via.placeholder.com/150x50?text=John+Deere",
+    logoUrl: "/placeholder.png",
     description: "American corporation that manufactures agricultural machinery",
     slug: "john-deere",
     featured: true,
@@ -26,7 +26,7 @@ export const equipmentManufacturers: Manufacturer[] = [
   {
     id: "equip-3",
     name: "Bobcat",
-    logoUrl: "https://via.placeholder.com/150x50?text=Bobcat",
+    logoUrl: "/placeholder.png",
     description: "American manufacturer of farm and construction equipment",
     slug: "bobcat",
     featured: true,
@@ -35,7 +35,7 @@ export const equipmentManufacturers: Manufacturer[] = [
   {
     id: "equip-4",
     name: "Komatsu",
-    logoUrl: "https://via.placeholder.com/150x50?text=Komatsu",
+    logoUrl: "/placeholder.png",
     description: "Japanese multinational corporation that manufactures construction and mining equipment",
     slug: "komatsu",
     featured: false,
@@ -44,7 +44,7 @@ export const equipmentManufacturers: Manufacturer[] = [
   {
     id: "equip-5",
     name: "Hitachi Construction",
-    logoUrl: "https://via.placeholder.com/150x50?text=Hitachi",
+    logoUrl: "/placeholder.png",
     description: "Japanese construction machinery manufacturer",
     slug: "hitachi-construction",
     featured: false,
@@ -53,7 +53,7 @@ export const equipmentManufacturers: Manufacturer[] = [
   {
     id: "equip-6",
     name: "Volvo Construction",
-    logoUrl: "https://via.placeholder.com/150x50?text=Volvo+CE",
+    logoUrl: "/placeholder.png",
     description: "Leading manufacturer of construction equipment",
     slug: "volvo-construction",
     featured: true,
@@ -62,7 +62,7 @@ export const equipmentManufacturers: Manufacturer[] = [
   {
     id: "equip-7",
     name: "JCB",
-    logoUrl: "https://via.placeholder.com/150x50?text=JCB",
+    logoUrl: "/placeholder.png",
     description: "British multinational corporation that manufactures equipment for construction",
     slug: "jcb",
     featured: false,
@@ -71,7 +71,7 @@ export const equipmentManufacturers: Manufacturer[] = [
   {
     id: "equip-8",
     name: "Case Construction",
-    logoUrl: "https://via.placeholder.com/150x50?text=Case",
+    logoUrl: "/placeholder.png",
     description: "American construction equipment company",
     slug: "case-construction",
     featured: false,
@@ -80,7 +80,7 @@ export const equipmentManufacturers: Manufacturer[] = [
   {
     id: "equip-9",
     name: "New Holland",
-    logoUrl: "https://via.placeholder.com/150x50?text=New+Holland",
+    logoUrl: "/placeholder.png",
     description: "Global agricultural machinery manufacturer",
     slug: "new-holland",
     featured: false,
@@ -89,7 +89,7 @@ export const equipmentManufacturers: Manufacturer[] = [
   {
     id: "equip-10",
     name: "Kubota",
-    logoUrl: "https://via.placeholder.com/150x50?text=Kubota",
+    logoUrl: "/placeholder.png",
     description: "Japanese tractor and heavy equipment manufacturer",
     slug: "kubota",
     featured: false,

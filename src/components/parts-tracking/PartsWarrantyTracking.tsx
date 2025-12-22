@@ -3,16 +3,32 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { mapDatabasePartToWorkOrderPart } from '@/utils/databaseMappers';
 import { Shield, Clock, AlertCircle } from 'lucide-react';
 
 export function PartsWarrantyTracking() {
-  // This would need to fetch parts with warranty information from the database
-  const { data: partsWithWarranty = [] } = useQuery({
+  const { data: partsWithWarranty = [], isLoading } = useQuery({
     queryKey: ['parts-warranty-tracking'],
     queryFn: async () => {
-      // In a real implementation, this would fetch parts with warranty data
-      // For now, return empty array to avoid mock data
-      return [];
+      const { data, error } = await supabase
+        .from('work_order_parts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || [])
+        .map(part => {
+          try {
+            return mapDatabasePartToWorkOrderPart(part);
+          } catch (mapError) {
+            console.error('Error mapping part:', mapError);
+            return null;
+          }
+        })
+        .filter(Boolean)
+        .filter((part: any) => part.warrantyDuration || part.warrantyExpiryDate);
     }
   });
 
@@ -26,7 +42,12 @@ export function PartsWarrantyTracking() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {partsWithWarranty.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <Shield className="h-5 w-5 mr-2 animate-pulse" />
+              Loading warranty data...
+            </div>
+          ) : partsWithWarranty.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No warranty data available</p>
@@ -68,7 +89,9 @@ export function PartsWarrantyTracking() {
                     
                     <div>
                       <p className="text-muted-foreground">Value</p>
-                      <p className="font-medium">${(part.retailPrice || part.total_price || 0).toFixed(2)}</p>
+                      <p className="font-medium">
+                        ${(part.supplierSuggestedRetail || part.total_price || 0).toFixed(2)}
+                      </p>
                     </div>
                   </div>
                 </div>

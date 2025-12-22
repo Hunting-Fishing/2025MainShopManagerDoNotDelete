@@ -274,7 +274,10 @@ export function IntegrationDetailsDialog({
           </TabsContent>
 
           <TabsContent value="workflows" className="space-y-6">
-            <IntegrationWorkflowsTab integrationId={integration.id} />
+            <IntegrationWorkflowsTab
+              integrationId={integration.id}
+              providerId={integration.provider_id}
+            />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

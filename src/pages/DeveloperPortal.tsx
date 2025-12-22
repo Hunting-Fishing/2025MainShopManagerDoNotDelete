@@ -11,6 +11,8 @@ import SecuritySettings from './developer/SecuritySettings';
 import AnalyticsDashboard from './developer/AnalyticsDashboard';
 import ShoppingControls from './developer/ShoppingControls';
 import ProductFormPage from './developer/ProductFormPage';
+import OrganizationManagement from './developer/OrganizationManagement';
+import ToolsManagement from './developer/ToolsManagement';
 import { DeveloperNavigation } from '@/components/developer/DeveloperNavigation';
 
 export default function DeveloperPortal() {
@@ -31,10 +33,14 @@ export default function DeveloperPortal() {
         <Routes>
           <Route path="/" element={<DeveloperNavigation />} />
           <Route path="/service-management/*" element={<ServiceManagementPage />} />
+          <Route path="/organization" element={<OrganizationManagement />} />
+          <Route path="/tools" element={<ToolsManagement />} />
           <Route path="/api-docs" element={<ApiDocumentationPage />} />
           <Route path="/api-tools" element={<ApiToolsPage />} />
           <Route path="/user-management" element={<UserManagement />} />
+          <Route path="/users" element={<Navigate to="/developer/user-management" replace />} />
           <Route path="/system-settings" element={<SystemSettings />} />
+          <Route path="/system" element={<Navigate to="/developer/system-settings" replace />} />
           <Route path="/security" element={<SecuritySettings />} />
           <Route path="/analytics" element={<AnalyticsDashboard />} />
           <Route path="/shopping" element={<ShoppingControls />} />

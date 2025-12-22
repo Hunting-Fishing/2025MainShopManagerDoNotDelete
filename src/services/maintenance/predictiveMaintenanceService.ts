@@ -82,8 +82,7 @@ async function calculateMaintenancePrediction(
   else if (daysUntilDue <= 30) priority = 'medium';
   else priority = 'low';
 
-  // Get required parts from service items (placeholder - will be from service packages)
-  const serviceItems: MaintenanceServiceItem[] = [];
+  const serviceItems = await generatePartsListForMaintenance(schedule.id);
 
   // Calculate recommended schedule date (a few days before due date for buffer)
   const recommendedScheduleDate = addDays(dueDate, -7).toISOString();
@@ -118,9 +117,31 @@ async function calculateMaintenancePrediction(
 export async function generatePartsListForMaintenance(
   scheduleId: string
 ): Promise<MaintenanceServiceItem[]> {
-  // This will be implemented with service packages integration
-  // For now, return empty array
-  return [];
+  const { data, error } = await supabase
+    .from('maintenance_schedules_enhanced')
+    .select('required_parts')
+    .eq('id', scheduleId)
+    .single();
+
+  if (error || !data?.required_parts) {
+    return [];
+  }
+
+  if (!Array.isArray(data.required_parts)) {
+    return [];
+  }
+
+  return data.required_parts.map((part: any, index: number) => ({
+    id: part.id || `${scheduleId}-${index}`,
+    inventory_item_id: part.inventory_item_id || part.inventoryItemId || undefined,
+    part_name: part.part_name || part.partName || 'Unknown Part',
+    part_number: part.part_number || part.partNumber || undefined,
+    quantity: Number(part.quantity) || 1,
+    unit: part.unit || 'each',
+    estimated_unit_cost: Number(part.estimated_unit_cost || part.estimatedUnitCost) || 0,
+    is_critical: Boolean(part.is_critical ?? part.isCritical),
+    notes: part.notes || undefined
+  }));
 }
 
 /**

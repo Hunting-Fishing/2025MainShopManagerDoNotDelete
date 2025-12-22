@@ -2,23 +2,38 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { supabase } from '@/integrations/supabase/client';
+import { mapDatabasePartToWorkOrderPart } from '@/utils/databaseMappers';
 import { Loader2, Package, DollarSign, AlertTriangle } from 'lucide-react';
 
 export function PartsInventoryOverview() {
-  // This would need to be updated to fetch parts across all work orders
-  // For now, showing a placeholder that explains the need for real data
-  
-  const { data: sampleParts = [], isLoading } = useQuery({
+  const { data: parts = [], isLoading } = useQuery({
     queryKey: ['parts-inventory-overview'],
     queryFn: async () => {
-      // In a real implementation, this would fetch parts across all work orders
-      // For now, return empty array to avoid mock data
-      return [];
+      const { data, error } = await supabase
+        .from('work_order_parts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || [])
+        .map(part => {
+          try {
+            return mapDatabasePartToWorkOrderPart(part);
+          } catch (mapError) {
+            console.error('Error mapping part:', mapError);
+            return null;
+          }
+        })
+        .filter(Boolean);
     }
   });
 
-  const totalValue = sampleParts.reduce((sum: number, part: any) => sum + (part.total_price || 0), 0);
+  const totalValue = parts.reduce((sum: number, part: any) => sum + (part.total_price || 0), 0);
+  const totalQuantity = parts.reduce((sum: number, part: any) => sum + (part.quantity || 0), 0);
+  const backorderedCount = parts.filter((part: any) => part.status === 'backordered').length;
+  const recentParts = parts.slice(0, 8);
 
   if (isLoading) {
     return (
@@ -40,8 +55,8 @@ export function PartsInventoryOverview() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{sampleParts.length}</div>
-            <p className="text-xs text-muted-foreground">Across all work orders</p>
+            <div className="text-2xl font-bold">{parts.length}</div>
+            <p className="text-xs text-muted-foreground">{totalQuantity} total quantity</p>
           </CardContent>
         </Card>
         
@@ -62,12 +77,12 @@ export function PartsInventoryOverview() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
-              Low Stock Items
+              Backordered Items
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Items need restocking</p>
+            <div className="text-2xl font-bold">{backorderedCount}</div>
+            <p className="text-xs text-muted-foreground">Awaiting stock arrival</p>
           </CardContent>
         </Card>
       </div>
@@ -77,7 +92,7 @@ export function PartsInventoryOverview() {
           <CardTitle>Recent Parts Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          {sampleParts.length === 0 ? (
+          {parts.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No parts data available</p>
@@ -85,7 +100,7 @@ export function PartsInventoryOverview() {
             </div>
           ) : (
             <div className="space-y-4">
-              {sampleParts.map((part: any) => (
+              {recentParts.map((part: any) => (
                 <div key={part.id} className="flex justify-between items-center p-3 border rounded">
                   <div>
                     <div className="font-medium">{part.name}</div>

@@ -106,12 +106,54 @@ export async function deleteConditionalRules(fieldId: string): Promise<boolean> 
 export async function getConditionalRulesForTemplate(
   templateId: string
 ): Promise<Map<string, ConditionalRule[]>> {
-  // This would require a join with form_fields to get all rules for a template
-  // For now, we'll use the in-memory rules stored in the template
   const rulesMap = new Map<string, ConditionalRule[]>();
-  
-  // Note: This is a placeholder - in production, you'd query through form_fields
-  // that belong to the template's sections
-  
+
+  const { data: sections, error: sectionsError } = await supabase
+    .from('form_sections')
+    .select('id')
+    .eq('template_id', templateId);
+
+  if (sectionsError) {
+    console.error('Error fetching form sections:', sectionsError);
+    return rulesMap;
+  }
+
+  const sectionIds = (sections || []).map(section => section.id);
+  if (sectionIds.length === 0) {
+    return rulesMap;
+  }
+
+  const { data: fields, error: fieldsError } = await supabase
+    .from('form_fields')
+    .select('id')
+    .in('section_id', sectionIds);
+
+  if (fieldsError) {
+    console.error('Error fetching form fields:', fieldsError);
+    return rulesMap;
+  }
+
+  const fieldIds = (fields || []).map(field => field.id);
+  if (fieldIds.length === 0) {
+    return rulesMap;
+  }
+
+  const { data: rules, error: rulesError } = await supabase
+    .from('form_conditional_rules')
+    .select('*')
+    .in('form_field_id', fieldIds);
+
+  if (rulesError) {
+    console.error('Error fetching template conditional rules:', rulesError);
+    return rulesMap;
+  }
+
+  (rules || []).forEach(rule => {
+    const mappedRule = toConditionalRule(rule as DbConditionalRule);
+    const existing = rulesMap.get(mappedRule.formFieldId) || [];
+    existing.push(mappedRule);
+    rulesMap.set(mappedRule.formFieldId, existing);
+  });
+
   return rulesMap;
 }

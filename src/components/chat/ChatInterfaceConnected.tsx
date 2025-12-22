@@ -77,7 +77,7 @@ export function ChatInterfaceConnected() {
           <p className="text-muted-foreground mb-4">
             You need to be logged in to access team chat
           </p>
-          <Button onClick={() => navigate('/auth')}>
+          <Button onClick={() => navigate('/login')}>
             Sign In
           </Button>
         </CardContent>

@@ -18,6 +18,7 @@ import {
 } from '@/services/chat/message/reactions';
 import { useEffect } from 'react';
 import { markMessageAsRead } from '@/services/chat/message/readReceipts';
+import { getWorkOrderById } from '@/services/workOrder/workOrderQueryService';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -134,8 +135,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   // Handle saving to vehicle history
   const handleSaveToVehicleHistory = async () => {
     try {
-      // For simplicity, using the work order's vehicle if available
-      // In a real app, you might want to prompt the user to select a vehicle
       if (!message.metadata?.taggedItems?.workOrderIds?.length) {
         toast({
           title: "No work order tagged",
@@ -145,10 +144,18 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         return;
       }
       
-      // In a real implementation, you would get the vehicle ID from the work order
-      // This is a placeholder example
       const workOrderId = message.metadata.taggedItems.workOrderIds[0];
-      const vehicleId = "placeholder-vehicle-id";
+      const workOrder = await getWorkOrderById(workOrderId);
+      const vehicleId = workOrder?.vehicle_id;
+
+      if (!vehicleId) {
+        toast({
+          title: "Vehicle not found",
+          description: "The tagged work order does not have a vehicle attached.",
+          variant: "destructive"
+        });
+        return;
+      }
       
       await saveMessageToRecord(message.id, 'vehicle', vehicleId);
       

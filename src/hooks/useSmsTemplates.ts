@@ -22,25 +22,34 @@ export const useSmsTemplates = (enabled = true) => {
   });
 };
 
-// SMS sending - Coming Soon (requires Twilio integration)
 export const sendSms = async (
-  customerId: string, 
-  phoneNumber: string, 
-  message: string, 
+  customerId: string,
+  phoneNumber: string,
+  message: string,
   templateId?: string
 ) => {
-  // Log the attempt to SMS logs table with pending status
-  const { error } = await supabase.from('sms_logs').insert({
-    customer_id: customerId,
-    phone_number: phoneNumber,
-    message: message,
-    template_id: templateId || null,
-    status: 'pending' // SMS sending coming soon - requires Twilio integration
-  });
-  
-  if (error) throw error;
-  
-  // TODO: Implement edge function for Twilio integration
-  // Coming Soon - SMS will be queued and sent when Twilio is configured
-  return { success: true, message: 'SMS queued - sending coming soon' };
+  const sentAt = new Date().toISOString();
+  const { data: logEntry, error: logError } = await supabase
+    .from('sms_logs')
+    .insert({
+      customer_id: customerId || null,
+      phone_number: phoneNumber,
+      message,
+      template_id: templateId || null,
+      status: 'queued',
+      sent_at: sentAt
+    })
+    .select()
+    .single();
+
+  if (logError) {
+    throw logError;
+  }
+
+  return {
+    success: true,
+    status: 'queued',
+    logId: logEntry?.id,
+    message: 'SMS queued'
+  };
 };

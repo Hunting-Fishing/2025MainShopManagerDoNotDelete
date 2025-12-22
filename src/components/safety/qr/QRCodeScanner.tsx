@@ -102,18 +102,6 @@ export function QRCodeScanner({ onScan }: QRCodeScannerProps) {
     requestAnimationFrame(scanFrame);
   }, [scanning]);
 
-  // Simulate QR scan for demo purposes
-  const simulateScan = () => {
-    const mockResult: QRScanResult = {
-      type: 'equipment',
-      id: 'test-equipment-id',
-      inspection: 'vessel',
-      app: 'shop-safety'
-    };
-    
-    handleScanResult(mockResult);
-  };
-
   const handleScanResult = (result: QRScanResult) => {
     stopScanning();
     
@@ -209,13 +197,6 @@ export function QRCodeScanner({ onScan }: QRCodeScannerProps) {
                 <Camera className="h-4 w-4 mr-2" />
                 Start Scanner
               </Button>
-              
-              {/* Demo button - only show in development */}
-              {process.env.NODE_ENV === 'development' && (
-                <Button variant="outline" onClick={simulateScan}>
-                  Demo Scan
-                </Button>
-              )}
             </div>
           </div>
         )}
