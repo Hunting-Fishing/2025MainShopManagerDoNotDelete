@@ -47,6 +47,7 @@ export class SecureRoleManager {
     operations_manager: 7,
     captain: 7,
     admin: 7,
+    developer: 8,
     owner: 8,
   };
 
@@ -380,6 +381,17 @@ export class SecureRoleManager {
       canManageWorkOrders: true,
       canViewReports: true,
       canManageSettings: false,
+    },
+    developer: {
+      canViewUsers: true,
+      canManageUsers: true,
+      canAssignRoles: true,
+      canViewInventory: true,
+      canManageInventory: true,
+      canViewWorkOrders: true,
+      canManageWorkOrders: true,
+      canViewReports: true,
+      canManageSettings: true,
     },
   };
 

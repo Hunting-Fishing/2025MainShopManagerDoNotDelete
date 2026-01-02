@@ -15,10 +15,10 @@ export function ServiceDueDashboard() {
     queryKey: ['upcoming-services'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('asset_work_orders')
-        .select('*')
-        .in('status', ['scheduled', 'in_progress'])
-        .order('scheduled_date', { ascending: true })
+        .from('work_orders')
+        .select('id, service_type, description, status, priority, start_time, technician_id, vehicle_id')
+        .in('status', ['scheduled', 'in_progress', 'pending'])
+        .order('start_time', { ascending: true, nullsFirst: false })
         .limit(10);
 
       if (error) throw error;
@@ -37,10 +37,10 @@ export function ServiceDueDashboard() {
     }
   };
 
-  const getServiceStatus = (scheduledDate: string | null) => {
-    if (!scheduledDate) return { label: 'Not Scheduled', variant: 'secondary' as const };
+  const getServiceStatus = (startTime: string | null) => {
+    if (!startTime) return { label: 'Not Scheduled', variant: 'secondary' as const };
     
-    const date = new Date(scheduledDate);
+    const date = new Date(startTime);
     const now = new Date();
     const daysDiff = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -89,7 +89,7 @@ export function ServiceDueDashboard() {
         ) : (
           <div className="space-y-3">
             {upcomingServices.slice(0, 5).map((service) => {
-              const status = getServiceStatus(service.scheduled_date);
+              const status = getServiceStatus(service.start_time);
               return (
                 <div
                   key={service.id}
@@ -97,26 +97,28 @@ export function ServiceDueDashboard() {
                   onClick={() => navigate('/work-orders')}
                 >
                   <div className="flex items-center gap-3 flex-1">
-                    <div className={`w-2 h-12 rounded-full ${getPriorityColor(service.priority)}`} />
+                    <div className={`w-2 h-12 rounded-full ${getPriorityColor(service.priority || 'medium')}`} />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium">{service.title}</p>
+                        <p className="font-medium">{service.service_type || 'Service'}</p>
                         <Badge variant={status.variant} className="text-xs">
                           {status.label}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Asset: {service.asset_id}
-                      </p>
-                      {service.assigned_to && (
+                      {service.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {service.description}
+                        </p>
+                      )}
+                      {service.technician_id && (
                         <p className="text-xs text-muted-foreground">
-                          Assigned to: {service.assigned_to}
+                          Assigned technician
                         </p>
                       )}
                     </div>
                   </div>
                   <Badge variant="outline" className="capitalize">
-                    {service.status.replace('_', ' ')}
+                    {service.status?.replace('_', ' ') || 'Unknown'}
                   </Badge>
                 </div>
               );
