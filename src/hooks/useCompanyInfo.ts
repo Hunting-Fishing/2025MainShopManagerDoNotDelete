@@ -4,9 +4,11 @@ import { companyService, type CompanyInfo, type BusinessHours } from '@/services
 import { useBusinessConstants } from '@/hooks/useBusinessConstants';
 import { useToast } from '@/hooks/use-toast';
 import { cleanPhoneNumber } from '@/utils/formatters';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 export function useCompanyInfo() {
   const { toast } = useToast();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthUser();
   const { businessTypes, businessIndustries, isLoading: isLoadingConstants } = useBusinessConstants();
   
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
@@ -36,7 +38,7 @@ export function useCompanyInfo() {
 
   const loadCompanyInfo = async (retryCount = 0) => {
     const maxRetries = 3;
-    const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff, max 5s
+    const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000);
     
     try {
       setLoading(true);
@@ -52,7 +54,6 @@ export function useCompanyInfo() {
     } catch (error: any) {
       console.error('Failed to load company info:', error);
       
-      // Check if it's a JWT/auth error and retry
       const isAuthError = error?.message?.includes('JWT') || 
                          error?.message?.includes('expired') ||
                          error?.code === 'PGRST301' || 
@@ -66,7 +67,6 @@ export function useCompanyInfo() {
         return loadCompanyInfo(retryCount + 1);
       }
       
-      // Only show error toast if we've exhausted retries
       const errorMessage = "Failed to load company information";
       setError(errorMessage);
       
@@ -83,8 +83,14 @@ export function useCompanyInfo() {
   };
 
   useEffect(() => {
-    loadCompanyInfo();
-  }, []);
+    // Only load company info when user is authenticated
+    if (!authLoading && isAuthenticated && user) {
+      loadCompanyInfo();
+    } else if (!authLoading && !isAuthenticated) {
+      // Not authenticated - skip loading, no error
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
