@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AuthGate } from '@/components/AuthGate';
 import { AuthDebugPanel } from '@/components/debug/AuthDebugPanel';
 import { authMonitor } from '@/utils/authMonitoring';
+import Index from '@/pages/Index';
 
 // Pages
 import Dashboard from '@/pages/Dashboard';
@@ -173,7 +174,8 @@ function App() {
   return (
     <>
       <Routes>
-        {/* Public routes */}
+        {/* Public routes - no auth required, loads instantly */}
+        <Route path="/" element={<Index />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -183,6 +185,8 @@ function App() {
         <Route path="/setup-brian" element={<SetupBrianAuth />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/shop-setup" element={<ShopSetup />} />
+        <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
+        <Route path="/staff-login" element={<Login />} />
         
         {/* Protected routes */}
         <Route
@@ -191,7 +195,6 @@ function App() {
             <AuthGate>
               <Layout>
                 <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   
                   {/* Store */}
