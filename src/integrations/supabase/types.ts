@@ -20498,6 +20498,86 @@ export type Database = {
           },
         ]
       }
+      power_washing_communications: {
+        Row: {
+          communication_type: string
+          content: string | null
+          created_at: string
+          customer_id: string | null
+          direction: string
+          id: string
+          job_id: string | null
+          metadata: Json | null
+          quote_id: string | null
+          sent_at: string | null
+          sent_by: string | null
+          shop_id: string
+          status: string | null
+          subject: string | null
+        }
+        Insert: {
+          communication_type: string
+          content?: string | null
+          created_at?: string
+          customer_id?: string | null
+          direction: string
+          id?: string
+          job_id?: string | null
+          metadata?: Json | null
+          quote_id?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          shop_id: string
+          status?: string | null
+          subject?: string | null
+        }
+        Update: {
+          communication_type?: string
+          content?: string | null
+          created_at?: string
+          customer_id?: string | null
+          direction?: string
+          id?: string
+          job_id?: string | null
+          metadata?: Json | null
+          quote_id?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          shop_id?: string
+          status?: string | null
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_communications_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_communications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_communications_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_communications_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_customer_portal: {
         Row: {
           access_token: string
@@ -21350,6 +21430,62 @@ export type Database = {
           },
         ]
       }
+      power_washing_properties: {
+        Row: {
+          address: string
+          city: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          property_name: string | null
+          property_type: string | null
+          shop_id: string
+          square_footage: number | null
+          state: string | null
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          address: string
+          city?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          property_name?: string | null
+          property_type?: string | null
+          shop_id: string
+          square_footage?: number | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string
+          city?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          property_name?: string | null
+          property_type?: string | null
+          shop_id?: string
+          square_footage?: number | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_properties_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_quote_requests: {
         Row: {
           additional_notes: string | null
@@ -21899,6 +22035,90 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_subscriptions: {
+        Row: {
+          auto_renew: boolean | null
+          base_price: number
+          created_at: string
+          customer_id: string
+          discount_percent: number | null
+          end_date: string | null
+          final_price: number
+          frequency: string
+          id: string
+          last_service_date: string | null
+          next_service_date: string | null
+          notes: string | null
+          payment_method: string | null
+          plan_name: string
+          property_id: string | null
+          services: Json
+          shop_id: string
+          start_date: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          base_price: number
+          created_at?: string
+          customer_id: string
+          discount_percent?: number | null
+          end_date?: string | null
+          final_price: number
+          frequency: string
+          id?: string
+          last_service_date?: string | null
+          next_service_date?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          plan_name: string
+          property_id?: string | null
+          services?: Json
+          shop_id: string
+          start_date: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          base_price?: number
+          created_at?: string
+          customer_id?: string
+          discount_percent?: number | null
+          end_date?: string | null
+          final_price?: number
+          frequency?: string
+          id?: string
+          last_service_date?: string | null
+          next_service_date?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          plan_name?: string
+          property_id?: string | null
+          services?: Json
+          shop_id?: string
+          start_date?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_subscriptions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_subscriptions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_properties"
             referencedColumns: ["id"]
           },
         ]
