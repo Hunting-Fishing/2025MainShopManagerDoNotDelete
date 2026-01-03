@@ -7,14 +7,16 @@ import {
   Calendar, 
   DollarSign, 
   FileText, 
-  Wrench, 
   AlertTriangle,
   Plus,
   ClipboardList,
   Truck,
   FlaskConical,
   Beaker,
-  Calculator
+  Calculator,
+  RefreshCw,
+  Receipt,
+  BarChart3
 } from 'lucide-react';
 import { usePowerWashingStats, usePowerWashingJobs, usePowerWashingQuotes } from '@/hooks/usePowerWashing';
 import { useNavigate } from 'react-router-dom';
@@ -146,14 +148,14 @@ export default function PowerWashingDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-9 gap-4 mb-8">
         <Button
           variant="outline"
           className="h-24 flex flex-col gap-2"
           onClick={() => navigate('/power-washing/jobs')}
         >
           <ClipboardList className="h-6 w-6" />
-          <span>All Jobs</span>
+          <span className="text-xs">All Jobs</span>
         </Button>
         <Button
           variant="outline"
@@ -161,7 +163,7 @@ export default function PowerWashingDashboard() {
           onClick={() => navigate('/power-washing/quotes')}
         >
           <FileText className="h-6 w-6" />
-          <span>Quotes</span>
+          <span className="text-xs">Quotes</span>
         </Button>
         <Button
           variant="outline"
@@ -169,7 +171,7 @@ export default function PowerWashingDashboard() {
           onClick={() => navigate('/power-washing/equipment')}
         >
           <Truck className="h-6 w-6" />
-          <span>Equipment</span>
+          <span className="text-xs">Equipment</span>
         </Button>
         <Button
           variant="outline"
@@ -177,7 +179,7 @@ export default function PowerWashingDashboard() {
           onClick={() => navigate('/power-washing/chemicals')}
         >
           <FlaskConical className="h-6 w-6" />
-          <span>Chemicals</span>
+          <span className="text-xs">Chemicals</span>
         </Button>
         <Button
           variant="outline"
@@ -185,7 +187,7 @@ export default function PowerWashingDashboard() {
           onClick={() => navigate('/power-washing/formulas')}
         >
           <Beaker className="h-6 w-6 text-primary" />
-          <span>Formulas</span>
+          <span className="text-xs">Formulas</span>
         </Button>
         <Button
           variant="outline"
@@ -193,7 +195,31 @@ export default function PowerWashingDashboard() {
           onClick={() => navigate('/power-washing/surface-calculator')}
         >
           <Calculator className="h-6 w-6 text-green-600" />
-          <span>Mix Calculator</span>
+          <span className="text-xs">Calculator</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-purple-500/30 hover:bg-purple-500/5"
+          onClick={() => navigate('/power-washing/recurring')}
+        >
+          <RefreshCw className="h-6 w-6 text-purple-500" />
+          <span className="text-xs">Recurring</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-amber-500/30 hover:bg-amber-500/5"
+          onClick={() => navigate('/power-washing/invoices')}
+        >
+          <Receipt className="h-6 w-6 text-amber-500" />
+          <span className="text-xs">Invoices</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-blue-500/30 hover:bg-blue-500/5"
+          onClick={() => navigate('/power-washing/reports')}
+        >
+          <BarChart3 className="h-6 w-6 text-blue-500" />
+          <span className="text-xs">Reports</span>
         </Button>
       </div>
 

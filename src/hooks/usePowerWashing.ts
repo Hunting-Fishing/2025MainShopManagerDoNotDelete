@@ -607,3 +607,128 @@ export function useUpdatePowerWashingChemical() {
     },
   });
 }
+
+// ======= Phase 3: Recurring Schedules, Invoices =======
+
+export interface PowerWashingRecurringSchedule {
+  id: string;
+  shop_id: string;
+  schedule_name: string;
+  recurrence_type: string;
+  day_of_week: number | null;
+  day_of_month: number | null;
+  preferred_time_start: string | null;
+  property_address: string | null;
+  property_city: string | null;
+  agreed_price: number | null;
+  is_active: boolean;
+  next_scheduled_date: string | null;
+  jobs_completed: number;
+  created_at: string;
+}
+
+export interface PowerWashingInvoice {
+  id: string;
+  shop_id: string;
+  job_id: string | null;
+  invoice_number: string;
+  status: string;
+  issue_date: string;
+  due_date: string | null;
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  discount_amount: number;
+  total: number;
+  amount_paid: number;
+  balance_due: number;
+  notes: string | null;
+  terms: string | null;
+  created_at: string;
+}
+
+// Recurring schedules hook
+export function usePowerWashingRecurringSchedules() {
+  return useQuery({
+    queryKey: ['power-washing-recurring-schedules'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('power_washing_recurring_schedules')
+        .select('*')
+        .eq('is_active', true)
+        .order('next_scheduled_date', { ascending: true });
+      if (error) throw error;
+      return data as PowerWashingRecurringSchedule[];
+    },
+  });
+}
+
+// Invoices hook
+export function usePowerWashingInvoices(status?: string) {
+  return useQuery({
+    queryKey: ['power-washing-invoices', status],
+    queryFn: async () => {
+      let query = supabase
+        .from('power_washing_invoices')
+        .select('*')
+        .order('issue_date', { ascending: false });
+      
+      if (status) {
+        query = query.eq('status', status);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as PowerWashingInvoice[];
+    },
+  });
+}
+
+// Create invoice mutation
+export function useCreatePowerWashingInvoice() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (invoice: Omit<PowerWashingInvoice, 'id' | 'created_at'>) => {
+      const { data, error } = await supabase
+        .from('power_washing_invoices')
+        .insert([invoice])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['power-washing-invoices'] });
+      toast.success('Invoice created');
+    },
+    onError: (error) => {
+      toast.error('Failed to create invoice: ' + error.message);
+    },
+  });
+}
+
+// Update invoice mutation
+export function useUpdatePowerWashingInvoice() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<PowerWashingInvoice> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('power_washing_invoices')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['power-washing-invoices'] });
+      toast.success('Invoice updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update invoice: ' + error.message);
+    },
+  });
+}
