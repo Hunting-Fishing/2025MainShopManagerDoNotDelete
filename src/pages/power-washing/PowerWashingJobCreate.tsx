@@ -28,6 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { CrewAssignmentPicker } from '@/components/power-washing/CrewAssignmentPicker';
 
 const PROPERTY_TYPES = [
   { value: 'residential_home', label: 'Residential Home' },
@@ -99,6 +100,8 @@ export default function PowerWashingJobCreate() {
     customerNotes: '',
     internalNotes: '',
     specialInstructions: '',
+    // Crew
+    assignedCrew: [] as string[],
   });
 
   const selectedService = services?.find(s => s.id === formData.serviceId);
@@ -145,6 +148,7 @@ export default function PowerWashingJobCreate() {
         customer_notes: formData.customerNotes || null,
         internal_notes: formData.internalNotes || null,
         special_instructions: formData.specialInstructions || null,
+        assigned_crew: formData.assignedCrew.length > 0 ? formData.assignedCrew : null,
         status: formData.scheduledDate ? 'scheduled' : 'pending',
         created_by: user?.id || null,
       });
@@ -461,6 +465,25 @@ export default function PowerWashingJobCreate() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Crew Assignment */}
+          {shopId && (
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Assign Crew
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CrewAssignmentPicker
+                  shopId={shopId}
+                  selectedCrew={formData.assignedCrew}
+                  onCrewChange={(crew) => setFormData(prev => ({ ...prev, assignedCrew: crew }))}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Notes Section - Full Width */}
