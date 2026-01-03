@@ -20114,6 +20114,57 @@ export type Database = {
           },
         ]
       }
+      power_washing_formulas: {
+        Row: {
+          application: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          ingredients: Json
+          is_active: boolean | null
+          is_favorite: boolean | null
+          name: string
+          notes: string | null
+          shop_id: string
+          surface_type: string | null
+          updated_at: string
+          water_gallons: number
+        }
+        Insert: {
+          application?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          ingredients?: Json
+          is_active?: boolean | null
+          is_favorite?: boolean | null
+          name: string
+          notes?: string | null
+          shop_id: string
+          surface_type?: string | null
+          updated_at?: string
+          water_gallons?: number
+        }
+        Update: {
+          application?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          ingredients?: Json
+          is_active?: boolean | null
+          is_favorite?: boolean | null
+          name?: string
+          notes?: string | null
+          shop_id?: string
+          surface_type?: string | null
+          updated_at?: string
+          water_gallons?: number
+        }
+        Relationships: []
+      }
       power_washing_jobs: {
         Row: {
           actual_end_time: string | null
