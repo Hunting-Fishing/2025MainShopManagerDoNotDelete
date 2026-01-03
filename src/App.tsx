@@ -200,6 +200,19 @@ import PowerWashingPayments from '@/pages/power-washing/PowerWashingPayments';
 import PowerWashingSchedule from '@/pages/power-washing/PowerWashingSchedule';
 import PowerWashingLeads from '@/pages/power-washing/PowerWashingLeads';
 import PowerWashingFleet from '@/pages/power-washing/PowerWashingFleet';
+
+// Gunsmith
+import GunsmithDashboard from '@/pages/gunsmith/GunsmithDashboard';
+import GunsmithJobs from '@/pages/gunsmith/GunsmithJobs';
+import GunsmithFirearms from '@/pages/gunsmith/GunsmithFirearms';
+import GunsmithParts from '@/pages/gunsmith/GunsmithParts';
+import GunsmithQuotes from '@/pages/gunsmith/GunsmithQuotes';
+import GunsmithInvoices from '@/pages/gunsmith/GunsmithInvoices';
+import GunsmithPayments from '@/pages/gunsmith/GunsmithPayments';
+import GunsmithAppointments from '@/pages/gunsmith/GunsmithAppointments';
+import GunsmithCompliance from '@/pages/gunsmith/GunsmithCompliance';
+import GunsmithTransfers from '@/pages/gunsmith/GunsmithTransfers';
+import GunsmithConsignments from '@/pages/gunsmith/GunsmithConsignments';
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1084,6 +1097,20 @@ function App() {
                   <Route path="/power-washing/schedule" element={<PowerWashingSchedule />} />
                   <Route path="/power-washing/leads" element={<PowerWashingLeads />} />
                   <Route path="/power-washing/fleet" element={<PowerWashingFleet />} />
+                  
+                  {/* Gunsmith Routes */}
+                  <Route path="/gunsmith" element={<GunsmithDashboard />} />
+                  <Route path="/gunsmith/jobs" element={<GunsmithJobs />} />
+                  <Route path="/gunsmith/firearms" element={<GunsmithFirearms />} />
+                  <Route path="/gunsmith/parts" element={<GunsmithParts />} />
+                  <Route path="/gunsmith/quotes" element={<GunsmithQuotes />} />
+                  <Route path="/gunsmith/invoices" element={<GunsmithInvoices />} />
+                  <Route path="/gunsmith/payments" element={<GunsmithPayments />} />
+                  <Route path="/gunsmith/appointments" element={<GunsmithAppointments />} />
+                  <Route path="/gunsmith/compliance" element={<GunsmithCompliance />} />
+                  <Route path="/gunsmith/transfers" element={<GunsmithTransfers />} />
+                  <Route path="/gunsmith/consignments" element={<GunsmithConsignments />} />
+                  
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
