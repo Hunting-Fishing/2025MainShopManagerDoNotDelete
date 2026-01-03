@@ -12373,6 +12373,1006 @@ export type Database = {
         }
         Relationships: []
       }
+      gunsmith_acquisition_records: {
+        Row: {
+          buyer_license: string | null
+          buyer_name: string | null
+          cfo_reference: string | null
+          created_at: string
+          customer_id: string | null
+          document_urls: string[] | null
+          firearm_caliber: string | null
+          firearm_classification: string | null
+          firearm_id: string | null
+          firearm_make: string | null
+          firearm_model: string | null
+          firearm_serial: string | null
+          id: string
+          notes: string | null
+          pal_rpal_expiry: string | null
+          pal_rpal_number: string | null
+          record_type: string
+          registration_number: string | null
+          sale_price: number | null
+          seller_license: string | null
+          seller_name: string | null
+          shop_id: string | null
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+          verification_date: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          buyer_license?: string | null
+          buyer_name?: string | null
+          cfo_reference?: string | null
+          created_at?: string
+          customer_id?: string | null
+          document_urls?: string[] | null
+          firearm_caliber?: string | null
+          firearm_classification?: string | null
+          firearm_id?: string | null
+          firearm_make?: string | null
+          firearm_model?: string | null
+          firearm_serial?: string | null
+          id?: string
+          notes?: string | null
+          pal_rpal_expiry?: string | null
+          pal_rpal_number?: string | null
+          record_type?: string
+          registration_number?: string | null
+          sale_price?: number | null
+          seller_license?: string | null
+          seller_name?: string | null
+          shop_id?: string | null
+          transaction_date?: string
+          transaction_type: string
+          updated_at?: string
+          verification_date?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          buyer_license?: string | null
+          buyer_name?: string | null
+          cfo_reference?: string | null
+          created_at?: string
+          customer_id?: string | null
+          document_urls?: string[] | null
+          firearm_caliber?: string | null
+          firearm_classification?: string | null
+          firearm_id?: string | null
+          firearm_make?: string | null
+          firearm_model?: string | null
+          firearm_serial?: string | null
+          id?: string
+          notes?: string | null
+          pal_rpal_expiry?: string | null
+          pal_rpal_number?: string | null
+          record_type?: string
+          registration_number?: string | null
+          sale_price?: number | null
+          seller_license?: string | null
+          seller_name?: string | null
+          shop_id?: string | null
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+          verification_date?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_acquisition_records_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_acquisition_records_firearm_id_fkey"
+            columns: ["firearm_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_firearms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_acquisition_records_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_acquisition_records_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          appointment_type: string
+          assigned_to: string | null
+          created_at: string
+          customer_id: string | null
+          duration_minutes: number | null
+          firearm_id: string | null
+          id: string
+          notes: string | null
+          shop_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          appointment_type: string
+          assigned_to?: string | null
+          created_at?: string
+          customer_id?: string | null
+          duration_minutes?: number | null
+          firearm_id?: string | null
+          id?: string
+          notes?: string | null
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          appointment_type?: string
+          assigned_to?: string | null
+          created_at?: string
+          customer_id?: string | null
+          duration_minutes?: number | null
+          firearm_id?: string | null
+          id?: string
+          notes?: string | null
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_appointments_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_appointments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_appointments_firearm_id_fkey"
+            columns: ["firearm_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_firearms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_appointments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_consignments: {
+        Row: {
+          agreement_url: string | null
+          asking_price: number | null
+          commission_amount: number | null
+          commission_rate: number | null
+          consignment_date: string | null
+          created_at: string
+          customer_id: string | null
+          firearm_id: string | null
+          id: string
+          minimum_price: number | null
+          notes: string | null
+          payout_amount: number | null
+          payout_date: string | null
+          shop_id: string | null
+          sold_date: string | null
+          sold_price: number | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          agreement_url?: string | null
+          asking_price?: number | null
+          commission_amount?: number | null
+          commission_rate?: number | null
+          consignment_date?: string | null
+          created_at?: string
+          customer_id?: string | null
+          firearm_id?: string | null
+          id?: string
+          minimum_price?: number | null
+          notes?: string | null
+          payout_amount?: number | null
+          payout_date?: string | null
+          shop_id?: string | null
+          sold_date?: string | null
+          sold_price?: number | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agreement_url?: string | null
+          asking_price?: number | null
+          commission_amount?: number | null
+          commission_rate?: number | null
+          consignment_date?: string | null
+          created_at?: string
+          customer_id?: string | null
+          firearm_id?: string | null
+          id?: string
+          minimum_price?: number | null
+          notes?: string | null
+          payout_amount?: number | null
+          payout_date?: string | null
+          shop_id?: string | null
+          sold_date?: string | null
+          sold_price?: number | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_consignments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_consignments_firearm_id_fkey"
+            columns: ["firearm_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_firearms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_consignments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_customer_licenses: {
+        Row: {
+          conditions: string[] | null
+          created_at: string
+          customer_id: string | null
+          expiry_date: string
+          id: string
+          issue_date: string | null
+          license_number: string
+          license_type: string
+          notes: string | null
+          photo_url: string | null
+          province: string | null
+          shop_id: string | null
+          updated_at: string
+          verified: boolean | null
+          verified_by: string | null
+          verified_date: string | null
+        }
+        Insert: {
+          conditions?: string[] | null
+          created_at?: string
+          customer_id?: string | null
+          expiry_date: string
+          id?: string
+          issue_date?: string | null
+          license_number: string
+          license_type: string
+          notes?: string | null
+          photo_url?: string | null
+          province?: string | null
+          shop_id?: string | null
+          updated_at?: string
+          verified?: boolean | null
+          verified_by?: string | null
+          verified_date?: string | null
+        }
+        Update: {
+          conditions?: string[] | null
+          created_at?: string
+          customer_id?: string | null
+          expiry_date?: string
+          id?: string
+          issue_date?: string | null
+          license_number?: string
+          license_type?: string
+          notes?: string | null
+          photo_url?: string | null
+          province?: string | null
+          shop_id?: string | null
+          updated_at?: string
+          verified?: boolean | null
+          verified_by?: string | null
+          verified_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_customer_licenses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_customer_licenses_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_customer_licenses_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_firearms: {
+        Row: {
+          acquisition_type: string | null
+          barrel_length: number | null
+          caliber: string | null
+          classification: string | null
+          condition: string | null
+          created_at: string
+          customer_id: string | null
+          date_acquired: string | null
+          finish: string | null
+          firearm_type: string
+          id: string
+          make: string
+          model: string
+          notes: string | null
+          overall_length: number | null
+          photo_urls: string[] | null
+          registration_number: string | null
+          serial_number: string | null
+          shop_id: string | null
+          stock_material: string | null
+          updated_at: string
+        }
+        Insert: {
+          acquisition_type?: string | null
+          barrel_length?: number | null
+          caliber?: string | null
+          classification?: string | null
+          condition?: string | null
+          created_at?: string
+          customer_id?: string | null
+          date_acquired?: string | null
+          finish?: string | null
+          firearm_type: string
+          id?: string
+          make: string
+          model: string
+          notes?: string | null
+          overall_length?: number | null
+          photo_urls?: string[] | null
+          registration_number?: string | null
+          serial_number?: string | null
+          shop_id?: string | null
+          stock_material?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acquisition_type?: string | null
+          barrel_length?: number | null
+          caliber?: string | null
+          classification?: string | null
+          condition?: string | null
+          created_at?: string
+          customer_id?: string | null
+          date_acquired?: string | null
+          finish?: string | null
+          firearm_type?: string
+          id?: string
+          make?: string
+          model?: string
+          notes?: string | null
+          overall_length?: number | null
+          photo_urls?: string[] | null
+          registration_number?: string | null
+          serial_number?: string | null
+          shop_id?: string | null
+          stock_material?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_firearms_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_firearms_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_invoices: {
+        Row: {
+          balance_due: number | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string | null
+          job_id: string | null
+          notes: string | null
+          shop_id: string | null
+          status: string
+          subtotal: number | null
+          tax: number | null
+          tax_rate: number | null
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          balance_due?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string | null
+          job_id?: string | null
+          notes?: string | null
+          shop_id?: string | null
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          tax_rate?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          balance_due?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string | null
+          job_id?: string | null
+          notes?: string | null
+          shop_id?: string | null
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          tax_rate?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_invoices_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_invoices_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_jobs: {
+        Row: {
+          actual_completion: string | null
+          assigned_to: string | null
+          created_at: string
+          customer_id: string | null
+          description: string | null
+          diagnosis: string | null
+          estimated_completion: string | null
+          firearm_id: string | null
+          id: string
+          job_number: string
+          job_type: string
+          labor_hours: number | null
+          labor_rate: number | null
+          notes: string | null
+          parts_cost: number | null
+          parts_used: Json | null
+          priority: string | null
+          received_date: string | null
+          shop_id: string | null
+          status: string
+          total_cost: number | null
+          updated_at: string
+          work_performed: string | null
+        }
+        Insert: {
+          actual_completion?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          diagnosis?: string | null
+          estimated_completion?: string | null
+          firearm_id?: string | null
+          id?: string
+          job_number: string
+          job_type: string
+          labor_hours?: number | null
+          labor_rate?: number | null
+          notes?: string | null
+          parts_cost?: number | null
+          parts_used?: Json | null
+          priority?: string | null
+          received_date?: string | null
+          shop_id?: string | null
+          status?: string
+          total_cost?: number | null
+          updated_at?: string
+          work_performed?: string | null
+        }
+        Update: {
+          actual_completion?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          diagnosis?: string | null
+          estimated_completion?: string | null
+          firearm_id?: string | null
+          id?: string
+          job_number?: string
+          job_type?: string
+          labor_hours?: number | null
+          labor_rate?: number | null
+          notes?: string | null
+          parts_cost?: number | null
+          parts_used?: Json | null
+          priority?: string | null
+          received_date?: string | null
+          shop_id?: string | null
+          status?: string
+          total_cost?: number | null
+          updated_at?: string
+          work_performed?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_jobs_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_jobs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_jobs_firearm_id_fkey"
+            columns: ["firearm_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_firearms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_jobs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_parts: {
+        Row: {
+          category: string | null
+          compatible_firearms: string[] | null
+          created_at: string
+          description: string | null
+          id: string
+          is_serialized: boolean | null
+          location: string | null
+          manufacturer: string | null
+          min_quantity: number | null
+          name: string
+          part_number: string | null
+          quantity: number | null
+          retail_price: number | null
+          serial_numbers: string[] | null
+          shop_id: string | null
+          supplier: string | null
+          unit_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          compatible_firearms?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_serialized?: boolean | null
+          location?: string | null
+          manufacturer?: string | null
+          min_quantity?: number | null
+          name: string
+          part_number?: string | null
+          quantity?: number | null
+          retail_price?: number | null
+          serial_numbers?: string[] | null
+          shop_id?: string | null
+          supplier?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          compatible_firearms?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_serialized?: boolean | null
+          location?: string | null
+          manufacturer?: string | null
+          min_quantity?: number | null
+          name?: string
+          part_number?: string | null
+          quantity?: number | null
+          retail_price?: number | null
+          serial_numbers?: string[] | null
+          shop_id?: string | null
+          supplier?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_parts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          payment_method: string
+          reference_number: string | null
+          shop_id: string | null
+          transaction_date: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_method?: string
+          reference_number?: string | null
+          shop_id?: string | null
+          transaction_date?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_method?: string
+          reference_number?: string | null
+          shop_id?: string | null
+          transaction_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_payments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_quotes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          description: string | null
+          firearm_id: string | null
+          id: string
+          job_type: string | null
+          labor_estimate: number | null
+          notes: string | null
+          parts_estimate: number | null
+          quote_number: string
+          shop_id: string | null
+          status: string
+          subtotal: number | null
+          tax: number | null
+          tax_rate: number | null
+          total: number | null
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          firearm_id?: string | null
+          id?: string
+          job_type?: string | null
+          labor_estimate?: number | null
+          notes?: string | null
+          parts_estimate?: number | null
+          quote_number: string
+          shop_id?: string | null
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          tax_rate?: number | null
+          total?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          firearm_id?: string | null
+          id?: string
+          job_type?: string | null
+          labor_estimate?: number | null
+          notes?: string | null
+          parts_estimate?: number | null
+          quote_number?: string
+          shop_id?: string | null
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          tax_rate?: number | null
+          total?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_quotes_firearm_id_fkey"
+            columns: ["firearm_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_firearms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_quotes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_transfers: {
+        Row: {
+          cfo_authorization_date: string | null
+          cfo_expiry_date: string | null
+          cfo_reference_number: string | null
+          completed_by: string | null
+          created_at: string
+          firearm_classification: string | null
+          firearm_id: string | null
+          firearm_make: string | null
+          firearm_model: string | null
+          firearm_serial: string | null
+          from_customer_id: string | null
+          from_license_number: string | null
+          from_license_verified: boolean | null
+          id: string
+          notes: string | null
+          registration_certificate_number: string | null
+          sale_price: number | null
+          shop_id: string | null
+          to_customer_id: string | null
+          to_license_number: string | null
+          to_license_verified: boolean | null
+          transfer_date: string | null
+          transfer_status: string | null
+          transfer_type: string
+          updated_at: string
+        }
+        Insert: {
+          cfo_authorization_date?: string | null
+          cfo_expiry_date?: string | null
+          cfo_reference_number?: string | null
+          completed_by?: string | null
+          created_at?: string
+          firearm_classification?: string | null
+          firearm_id?: string | null
+          firearm_make?: string | null
+          firearm_model?: string | null
+          firearm_serial?: string | null
+          from_customer_id?: string | null
+          from_license_number?: string | null
+          from_license_verified?: boolean | null
+          id?: string
+          notes?: string | null
+          registration_certificate_number?: string | null
+          sale_price?: number | null
+          shop_id?: string | null
+          to_customer_id?: string | null
+          to_license_number?: string | null
+          to_license_verified?: boolean | null
+          transfer_date?: string | null
+          transfer_status?: string | null
+          transfer_type: string
+          updated_at?: string
+        }
+        Update: {
+          cfo_authorization_date?: string | null
+          cfo_expiry_date?: string | null
+          cfo_reference_number?: string | null
+          completed_by?: string | null
+          created_at?: string
+          firearm_classification?: string | null
+          firearm_id?: string | null
+          firearm_make?: string | null
+          firearm_model?: string | null
+          firearm_serial?: string | null
+          from_customer_id?: string | null
+          from_license_number?: string | null
+          from_license_verified?: boolean | null
+          id?: string
+          notes?: string | null
+          registration_certificate_number?: string | null
+          sale_price?: number | null
+          shop_id?: string | null
+          to_customer_id?: string | null
+          to_license_number?: string | null
+          to_license_verified?: boolean | null
+          transfer_date?: string | null
+          transfer_status?: string | null
+          transfer_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_transfers_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_transfers_firearm_id_fkey"
+            columns: ["firearm_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_firearms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_transfers_from_customer_id_fkey"
+            columns: ["from_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_transfers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_transfers_to_customer_id_fkey"
+            columns: ["to_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       help_analytics: {
         Row: {
           created_at: string | null
