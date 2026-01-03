@@ -15,7 +15,8 @@ import {
   Star,
   Droplets,
   Copy,
-  Trash2
+  Trash2,
+  Calculator
 } from 'lucide-react';
 import { 
   usePowerWashingFormulas, 
@@ -192,18 +193,23 @@ export default function PowerWashingFormulas() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Button>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Quick Formulas</h1>
             <p className="text-muted-foreground">Pre-mixed chemical recipes for common jobs</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Formula
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/power-washing/bleach-calculator')}>
+              <Calculator className="h-4 w-4 mr-2" />
+              SH Calculator
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => handleOpenDialog()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Formula
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingFormula ? 'Edit Formula' : 'Create Formula'}</DialogTitle>
@@ -338,6 +344,7 @@ export default function PowerWashingFormulas() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </div>
 
