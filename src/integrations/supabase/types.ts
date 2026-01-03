@@ -19978,6 +19978,427 @@ export type Database = {
         }
         Relationships: []
       }
+      power_washing_chemicals: {
+        Row: {
+          brand: string | null
+          chemical_type: string
+          cost_per_unit: number | null
+          created_at: string | null
+          current_quantity: number | null
+          dilution_ratio: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          reorder_level: number | null
+          safety_notes: string | null
+          sds_url: string | null
+          shop_id: string
+          supplier: string | null
+          unit_of_measure: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          brand?: string | null
+          chemical_type: string
+          cost_per_unit?: number | null
+          created_at?: string | null
+          current_quantity?: number | null
+          dilution_ratio?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          reorder_level?: number | null
+          safety_notes?: string | null
+          sds_url?: string | null
+          shop_id: string
+          supplier?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          brand?: string | null
+          chemical_type?: string
+          cost_per_unit?: number | null
+          created_at?: string | null
+          current_quantity?: number | null
+          dilution_ratio?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          reorder_level?: number | null
+          safety_notes?: string | null
+          sds_url?: string | null
+          shop_id?: string
+          supplier?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_chemicals_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_equipment: {
+        Row: {
+          brand: string | null
+          condition: string | null
+          created_at: string | null
+          equipment_type: string
+          gpm_rating: number | null
+          id: string
+          is_active: boolean | null
+          last_maintenance_date: string | null
+          model: string | null
+          name: string
+          next_maintenance_date: string | null
+          notes: string | null
+          psi_rating: number | null
+          purchase_date: string | null
+          purchase_price: number | null
+          serial_number: string | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          brand?: string | null
+          condition?: string | null
+          created_at?: string | null
+          equipment_type: string
+          gpm_rating?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_maintenance_date?: string | null
+          model?: string | null
+          name: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          psi_rating?: number | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          brand?: string | null
+          condition?: string | null
+          created_at?: string | null
+          equipment_type?: string
+          gpm_rating?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_maintenance_date?: string | null
+          model?: string | null
+          name?: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          psi_rating?: number | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_equipment_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_jobs: {
+        Row: {
+          actual_end_time: string | null
+          actual_start_time: string | null
+          after_photos: string[] | null
+          assigned_crew: string[] | null
+          before_photos: string[] | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          customer_notes: string | null
+          deposit_amount: number | null
+          deposit_paid: boolean | null
+          final_price: number | null
+          id: string
+          internal_notes: string | null
+          job_number: string
+          priority: string | null
+          property_address: string | null
+          property_city: string | null
+          property_state: string | null
+          property_type: string | null
+          property_zip: string | null
+          quoted_price: number | null
+          scheduled_date: string | null
+          scheduled_time_end: string | null
+          scheduled_time_start: string | null
+          service_id: string | null
+          shop_id: string
+          special_instructions: string | null
+          square_footage: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          after_photos?: string[] | null
+          assigned_crew?: string[] | null
+          before_photos?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          customer_notes?: string | null
+          deposit_amount?: number | null
+          deposit_paid?: boolean | null
+          final_price?: number | null
+          id?: string
+          internal_notes?: string | null
+          job_number: string
+          priority?: string | null
+          property_address?: string | null
+          property_city?: string | null
+          property_state?: string | null
+          property_type?: string | null
+          property_zip?: string | null
+          quoted_price?: number | null
+          scheduled_date?: string | null
+          scheduled_time_end?: string | null
+          scheduled_time_start?: string | null
+          service_id?: string | null
+          shop_id: string
+          special_instructions?: string | null
+          square_footage?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          after_photos?: string[] | null
+          assigned_crew?: string[] | null
+          before_photos?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          customer_notes?: string | null
+          deposit_amount?: number | null
+          deposit_paid?: boolean | null
+          final_price?: number | null
+          id?: string
+          internal_notes?: string | null
+          job_number?: string
+          priority?: string | null
+          property_address?: string | null
+          property_city?: string | null
+          property_state?: string | null
+          property_type?: string | null
+          property_zip?: string | null
+          quoted_price?: number | null
+          scheduled_date?: string | null
+          scheduled_time_end?: string | null
+          scheduled_time_start?: string | null
+          service_id?: string | null
+          shop_id?: string
+          special_instructions?: string | null
+          square_footage?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_jobs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_jobs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_jobs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_quotes: {
+        Row: {
+          additional_details: string | null
+          converted_to_job_id: string | null
+          created_at: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          estimated_sqft: number | null
+          flexibility: string | null
+          id: string
+          preferred_date: string | null
+          property_address: string
+          property_city: string | null
+          property_photos: string[] | null
+          property_state: string | null
+          property_type: string
+          property_zip: string | null
+          quote_notes: string | null
+          quote_number: string
+          quoted_at: string | null
+          quoted_by: string | null
+          quoted_price: number | null
+          services_requested: string[] | null
+          shop_id: string
+          source: string | null
+          status: string | null
+          updated_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          additional_details?: string | null
+          converted_to_job_id?: string | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          estimated_sqft?: number | null
+          flexibility?: string | null
+          id?: string
+          preferred_date?: string | null
+          property_address: string
+          property_city?: string | null
+          property_photos?: string[] | null
+          property_state?: string | null
+          property_type: string
+          property_zip?: string | null
+          quote_notes?: string | null
+          quote_number: string
+          quoted_at?: string | null
+          quoted_by?: string | null
+          quoted_price?: number | null
+          services_requested?: string[] | null
+          shop_id: string
+          source?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          additional_details?: string | null
+          converted_to_job_id?: string | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          estimated_sqft?: number | null
+          flexibility?: string | null
+          id?: string
+          preferred_date?: string | null
+          property_address?: string
+          property_city?: string | null
+          property_photos?: string[] | null
+          property_state?: string | null
+          property_type?: string
+          property_zip?: string | null
+          quote_notes?: string | null
+          quote_number?: string
+          quoted_at?: string | null
+          quoted_by?: string | null
+          quoted_price?: number | null
+          services_requested?: string[] | null
+          shop_id?: string
+          source?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_quotes_converted_to_job_id_fkey"
+            columns: ["converted_to_job_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_quotes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_services: {
+        Row: {
+          base_price_per_sqft: number | null
+          category: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          estimated_time_minutes: number | null
+          id: string
+          is_active: boolean | null
+          minimum_price: number | null
+          name: string
+          requires_chemicals: boolean | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_price_per_sqft?: number | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          estimated_time_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          minimum_price?: number | null
+          name: string
+          requires_chemicals?: boolean | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_price_per_sqft?: number | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          estimated_time_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          minimum_price?: number | null
+          name?: string
+          requires_chemicals?: boolean | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_services_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ppe_assignments: {
         Row: {
           assigned_by: string | null

@@ -165,6 +165,14 @@ import VehicleInspectionForm from '@/pages/VehicleInspectionForm';
 import TermsOfService from '@/pages/legal/TermsOfService';
 import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
 
+// Power Washing
+import PowerWashingDashboard from '@/pages/power-washing/PowerWashingDashboard';
+import PowerWashingJobsList from '@/pages/power-washing/PowerWashingJobsList';
+import PowerWashingEquipment from '@/pages/power-washing/PowerWashingEquipment';
+import PowerWashingChemicals from '@/pages/power-washing/PowerWashingChemicals';
+import PowerWashingQuoteForm from '@/pages/power-washing/PowerWashingQuoteForm';
+import PowerWashingQuotesList from '@/pages/power-washing/PowerWashingQuotesList';
+
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1007,6 +1015,14 @@ function App() {
                   
                   {/* Unauthorized */}
                   <Route path="/unauthorized" element={<Unauthorized />} />
+                  
+                  {/* Power Washing */}
+                  <Route path="/power-washing" element={<PowerWashingDashboard />} />
+                  <Route path="/power-washing/jobs" element={<PowerWashingJobsList />} />
+                  <Route path="/power-washing/quotes" element={<PowerWashingQuotesList />} />
+                  <Route path="/power-washing/quotes/new" element={<PowerWashingQuoteForm />} />
+                  <Route path="/power-washing/equipment" element={<PowerWashingEquipment />} />
+                  <Route path="/power-washing/chemicals" element={<PowerWashingChemicals />} />
                   
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
