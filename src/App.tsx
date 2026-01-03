@@ -215,6 +215,14 @@ import GunsmithTransfers from '@/pages/gunsmith/GunsmithTransfers';
 import GunsmithConsignments from '@/pages/gunsmith/GunsmithConsignments';
 import GunsmithJobForm from '@/pages/gunsmith/GunsmithJobForm';
 import GunsmithQuoteForm from '@/pages/gunsmith/GunsmithQuoteForm';
+import GunsmithJobDetail from '@/pages/gunsmith/GunsmithJobDetail';
+import GunsmithQuoteDetail from '@/pages/gunsmith/GunsmithQuoteDetail';
+import GunsmithFirearmForm from '@/pages/gunsmith/GunsmithFirearmForm';
+import GunsmithPartForm from '@/pages/gunsmith/GunsmithPartForm';
+import GunsmithAppointmentForm from '@/pages/gunsmith/GunsmithAppointmentForm';
+import GunsmithInvoiceForm from '@/pages/gunsmith/GunsmithInvoiceForm';
+import GunsmithTransferForm from '@/pages/gunsmith/GunsmithTransferForm';
+import GunsmithConsignmentForm from '@/pages/gunsmith/GunsmithConsignmentForm';
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1104,16 +1112,24 @@ function App() {
                   <Route path="/gunsmith" element={<GunsmithDashboard />} />
                   <Route path="/gunsmith/jobs" element={<GunsmithJobs />} />
                   <Route path="/gunsmith/jobs/new" element={<GunsmithJobForm />} />
-                  <Route path="/gunsmith/quotes/new" element={<GunsmithQuoteForm />} />
-                  <Route path="/gunsmith/firearms" element={<GunsmithFirearms />} />
-                  <Route path="/gunsmith/parts" element={<GunsmithParts />} />
+                  <Route path="/gunsmith/jobs/:id" element={<GunsmithJobDetail />} />
                   <Route path="/gunsmith/quotes" element={<GunsmithQuotes />} />
+                  <Route path="/gunsmith/quotes/new" element={<GunsmithQuoteForm />} />
+                  <Route path="/gunsmith/quotes/:id" element={<GunsmithQuoteDetail />} />
+                  <Route path="/gunsmith/firearms" element={<GunsmithFirearms />} />
+                  <Route path="/gunsmith/firearms/new" element={<GunsmithFirearmForm />} />
+                  <Route path="/gunsmith/parts" element={<GunsmithParts />} />
+                  <Route path="/gunsmith/parts/new" element={<GunsmithPartForm />} />
                   <Route path="/gunsmith/invoices" element={<GunsmithInvoices />} />
+                  <Route path="/gunsmith/invoices/new" element={<GunsmithInvoiceForm />} />
                   <Route path="/gunsmith/payments" element={<GunsmithPayments />} />
                   <Route path="/gunsmith/appointments" element={<GunsmithAppointments />} />
+                  <Route path="/gunsmith/appointments/new" element={<GunsmithAppointmentForm />} />
                   <Route path="/gunsmith/compliance" element={<GunsmithCompliance />} />
                   <Route path="/gunsmith/transfers" element={<GunsmithTransfers />} />
+                  <Route path="/gunsmith/transfers/new" element={<GunsmithTransferForm />} />
                   <Route path="/gunsmith/consignments" element={<GunsmithConsignments />} />
+                  <Route path="/gunsmith/consignments/new" element={<GunsmithConsignmentForm />} />
                   
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
