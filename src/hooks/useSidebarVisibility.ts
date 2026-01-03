@@ -1,11 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useEnabledModules } from '@/hooks/useEnabledModules';
 
 export interface SidebarVisibilitySettings {
   hidden_sections: string[];
   section_roles: Record<string, string[]>;
 }
+
+// Map navigation sections to module slugs
+const SECTION_TO_MODULE_MAP: Record<string, string> = {
+  'Fleet Operations': 'fleet',
+  'Fleet Management': 'fleet',
+  'Safety & Compliance': 'safety',
+  'Safety': 'safety',
+  'Marketing': 'marketing',
+  'Marketing & CRM': 'marketing',
+  'Non-Profit': 'nonprofit',
+  'Equipment & Tools': 'equipment',
+  'Equipment': 'equipment',
+  'Inventory': 'inventory',
+  'Automotive': 'automotive',
+  'Gunsmith': 'gunsmith',
+  'Power Washing': 'power_washing',
+  'Marine': 'marine',
+};
 
 export function useSidebarVisibilitySettings() {
   return useQuery({
@@ -95,6 +114,7 @@ export function useUpdateSidebarVisibility() {
 export function useSidebarVisibility() {
   const { data: settings } = useSidebarVisibilitySettings();
   const { data: userRoles = [] } = useUserRoles();
+  const { isModuleEnabled } = useEnabledModules();
 
   const isVisible = (sectionTitle: string): boolean => {
     // Check if section is hidden at shop level
@@ -106,7 +126,15 @@ export function useSidebarVisibility() {
     const allowedRoles = settings?.section_roles?.[sectionTitle];
     if (allowedRoles && allowedRoles.length > 0) {
       // If there are allowed roles defined, user must have at least one
-      return allowedRoles.some(role => userRoles.includes(role));
+      if (!allowedRoles.some(role => userRoles.includes(role))) {
+        return false;
+      }
+    }
+
+    // Check module-based visibility
+    const moduleSlug = SECTION_TO_MODULE_MAP[sectionTitle];
+    if (moduleSlug && !isModuleEnabled(moduleSlug)) {
+      return false;
     }
 
     // If no restrictions, section is visible
@@ -119,3 +147,4 @@ export function useSidebarVisibility() {
     userRoles,
   };
 }
+

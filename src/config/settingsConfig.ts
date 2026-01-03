@@ -35,7 +35,8 @@ import {
   Gift,
   History,
   ShieldCheck,
-  HardHat
+  HardHat,
+  Puzzle
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -165,6 +166,15 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         path: '/settings/navigation',
         description: 'Configure sidebar visibility and role access',
         requiredRoles: ['owner', 'manager']
+      },
+      {
+        id: 'business-modules',
+        label: 'Business Modules',
+        icon: Puzzle,
+        component: PlaceholderTab,
+        path: '/settings/business-modules',
+        description: 'Enable or disable business features and industry-specific modules',
+        requiredRoles: ['owner']
       }
     ]
   },
