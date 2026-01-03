@@ -20,7 +20,10 @@ import {
   Navigation,
   Star,
   Bell,
-  Smartphone
+  Smartphone,
+  Cloud,
+  PieChart,
+  BookOpen
 } from 'lucide-react';
 import { usePowerWashingStats, usePowerWashingJobs, usePowerWashingQuotes } from '@/hooks/usePowerWashing';
 import { useNavigate } from 'react-router-dom';
@@ -256,6 +259,30 @@ export default function PowerWashingDashboard() {
         >
           <Smartphone className="h-6 w-6 text-teal-500" />
           <span className="text-xs">Field View</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-emerald-500/30 hover:bg-emerald-500/5"
+          onClick={() => navigate('/power-washing/price-book')}
+        >
+          <BookOpen className="h-6 w-6 text-emerald-500" />
+          <span className="text-xs">Price Book</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-violet-500/30 hover:bg-violet-500/5"
+          onClick={() => navigate('/power-washing/analytics')}
+        >
+          <PieChart className="h-6 w-6 text-violet-500" />
+          <span className="text-xs">Analytics</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-sky-500/30 hover:bg-sky-500/5"
+          onClick={() => navigate('/power-washing/weather')}
+        >
+          <Cloud className="h-6 w-6 text-sky-500" />
+          <span className="text-xs">Weather</span>
         </Button>
       </div>
 
