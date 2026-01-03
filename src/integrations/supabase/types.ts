@@ -20620,6 +20620,113 @@ export type Database = {
         }
         Relationships: []
       }
+      power_washing_job_chemicals: {
+        Row: {
+          chemical_id: string
+          cost_at_use: number | null
+          created_at: string
+          id: string
+          job_id: string
+          notes: string | null
+          quantity_used: number
+          shop_id: string | null
+          unit_of_measure: string
+        }
+        Insert: {
+          chemical_id: string
+          cost_at_use?: number | null
+          created_at?: string
+          id?: string
+          job_id: string
+          notes?: string | null
+          quantity_used: number
+          shop_id?: string | null
+          unit_of_measure?: string
+        }
+        Update: {
+          chemical_id?: string
+          cost_at_use?: number | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          notes?: string | null
+          quantity_used?: number
+          shop_id?: string | null
+          unit_of_measure?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_job_chemicals_chemical_id_fkey"
+            columns: ["chemical_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_chemicals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_job_chemicals_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_job_chemicals_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_job_equipment: {
+        Row: {
+          assigned_at: string
+          equipment_id: string
+          id: string
+          job_id: string
+          notes: string | null
+          shop_id: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          equipment_id: string
+          id?: string
+          job_id: string
+          notes?: string | null
+          shop_id?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          equipment_id?: string
+          id?: string
+          job_id?: string
+          notes?: string | null
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_job_equipment_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_job_equipment_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_job_equipment_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_jobs: {
         Row: {
           actual_end_time: string | null
@@ -20637,6 +20744,7 @@ export type Database = {
           id: string
           internal_notes: string | null
           job_number: string
+          photos: string[] | null
           priority: string | null
           property_address: string | null
           property_city: string | null
@@ -20670,6 +20778,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           job_number: string
+          photos?: string[] | null
           priority?: string | null
           property_address?: string | null
           property_city?: string | null
@@ -20703,6 +20812,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           job_number?: string
+          photos?: string[] | null
           priority?: string | null
           property_address?: string | null
           property_city?: string | null
@@ -20737,6 +20847,73 @@ export type Database = {
           },
           {
             foreignKeyName: "power_washing_jobs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_maintenance_logs: {
+        Row: {
+          cost: number | null
+          created_at: string
+          equipment_id: string
+          id: string
+          maintenance_type: string
+          next_due_date: string | null
+          next_due_hours: number | null
+          notes: string | null
+          parts_used: string[] | null
+          performed_by: string | null
+          performed_date: string
+          shop_id: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          equipment_id: string
+          id?: string
+          maintenance_type: string
+          next_due_date?: string | null
+          next_due_hours?: number | null
+          notes?: string | null
+          parts_used?: string[] | null
+          performed_by?: string | null
+          performed_date?: string
+          shop_id?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          maintenance_type?: string
+          next_due_date?: string | null
+          next_due_hours?: number | null
+          notes?: string | null
+          parts_used?: string[] | null
+          performed_by?: string | null
+          performed_date?: string
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_maintenance_logs_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_maintenance_logs_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_maintenance_logs_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -20898,6 +21075,73 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "power_washing_services_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_time_entries: {
+        Row: {
+          break_minutes: number | null
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          employee_id: string
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string
+          job_id: string
+          notes: string | null
+          shop_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          break_minutes?: number | null
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          employee_id: string
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          job_id: string
+          notes?: string | null
+          shop_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          break_minutes?: number | null
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          employee_id?: string
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          job_id?: string
+          notes?: string | null
+          shop_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_time_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_time_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_time_entries_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
