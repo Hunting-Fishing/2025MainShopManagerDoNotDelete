@@ -182,6 +182,10 @@ import PowerWashingQuotesList from '@/pages/power-washing/PowerWashingQuotesList
 import PowerWashingFormulas from '@/pages/power-washing/PowerWashingFormulas';
 import BleachCalculator from '@/pages/power-washing/BleachCalculator';
 import SurfaceMixCalculator from '@/pages/power-washing/SurfaceMixCalculator';
+import PowerWashingRecurringSchedules from '@/pages/power-washing/PowerWashingRecurringSchedules';
+import PowerWashingInvoices from '@/pages/power-washing/PowerWashingInvoices';
+import PowerWashingInvoiceDetail from '@/pages/power-washing/PowerWashingInvoiceDetail';
+import PowerWashingReports from '@/pages/power-washing/PowerWashingReports';
 
 function App() {
   useEffect(() => {
@@ -1049,6 +1053,10 @@ function App() {
                   <Route path="/power-washing/formulas" element={<PowerWashingFormulas />} />
                   <Route path="/power-washing/bleach-calculator" element={<BleachCalculator />} />
                   <Route path="/power-washing/surface-calculator" element={<SurfaceMixCalculator />} />
+                  <Route path="/power-washing/recurring" element={<PowerWashingRecurringSchedules />} />
+                  <Route path="/power-washing/invoices" element={<PowerWashingInvoices />} />
+                  <Route path="/power-washing/invoices/:id" element={<PowerWashingInvoiceDetail />} />
+                  <Route path="/power-washing/reports" element={<PowerWashingReports />} />
                   
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />

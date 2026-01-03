@@ -20620,6 +20620,147 @@ export type Database = {
         }
         Relationships: []
       }
+      power_washing_invoice_lines: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number | null
+          sort_order: number | null
+          total_price: number | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number | null
+          sort_order?: number | null
+          total_price?: number | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number | null
+          sort_order?: number | null
+          total_price?: number | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_invoices: {
+        Row: {
+          amount_paid: number | null
+          balance_due: number | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          discount_amount: number | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          job_id: string | null
+          notes: string | null
+          paid_date: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          shop_id: string
+          status: string
+          subtotal: number | null
+          tax_amount: number | null
+          tax_rate: number | null
+          terms: string | null
+          total: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          balance_due?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          job_id?: string | null
+          notes?: string | null
+          paid_date?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          shop_id: string
+          status?: string
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          terms?: string | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          balance_due?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          job_id?: string | null
+          notes?: string | null
+          paid_date?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          shop_id?: string
+          status?: string
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          terms?: string | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_invoices_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_invoices_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_job_chemicals: {
         Row: {
           chemical_id: string
@@ -21019,6 +21160,115 @@ export type Database = {
           },
           {
             foreignKeyName: "power_washing_quotes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_recurring_schedules: {
+        Row: {
+          agreed_price: number | null
+          assigned_crew: string[] | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          day_of_month: number | null
+          day_of_week: number | null
+          id: string
+          is_active: boolean | null
+          jobs_completed: number | null
+          last_job_id: string | null
+          next_scheduled_date: string | null
+          preferred_time_end: string | null
+          preferred_time_start: string | null
+          property_address: string | null
+          property_city: string | null
+          property_state: string | null
+          property_type: string | null
+          property_zip: string | null
+          recurrence_type: string
+          schedule_name: string
+          service_id: string | null
+          shop_id: string
+          special_instructions: string | null
+          square_footage: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          agreed_price?: number | null
+          assigned_crew?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          day_of_month?: number | null
+          day_of_week?: number | null
+          id?: string
+          is_active?: boolean | null
+          jobs_completed?: number | null
+          last_job_id?: string | null
+          next_scheduled_date?: string | null
+          preferred_time_end?: string | null
+          preferred_time_start?: string | null
+          property_address?: string | null
+          property_city?: string | null
+          property_state?: string | null
+          property_type?: string | null
+          property_zip?: string | null
+          recurrence_type: string
+          schedule_name: string
+          service_id?: string | null
+          shop_id: string
+          special_instructions?: string | null
+          square_footage?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          agreed_price?: number | null
+          assigned_crew?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          day_of_month?: number | null
+          day_of_week?: number | null
+          id?: string
+          is_active?: boolean | null
+          jobs_completed?: number | null
+          last_job_id?: string | null
+          next_scheduled_date?: string | null
+          preferred_time_end?: string | null
+          preferred_time_start?: string | null
+          property_address?: string | null
+          property_city?: string | null
+          property_state?: string | null
+          property_type?: string | null
+          property_zip?: string | null
+          recurrence_type?: string
+          schedule_name?: string
+          service_id?: string | null
+          shop_id?: string
+          special_instructions?: string | null
+          square_footage?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_recurring_schedules_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_recurring_schedules_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_recurring_schedules_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
