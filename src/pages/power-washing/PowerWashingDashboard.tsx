@@ -16,7 +16,11 @@ import {
   Calculator,
   RefreshCw,
   Receipt,
-  BarChart3
+  BarChart3,
+  Navigation,
+  Star,
+  Bell,
+  Smartphone
 } from 'lucide-react';
 import { usePowerWashingStats, usePowerWashingJobs, usePowerWashingQuotes } from '@/hooks/usePowerWashing';
 import { useNavigate } from 'react-router-dom';
@@ -148,7 +152,7 @@ export default function PowerWashingDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-9 gap-4 mb-8">
+      <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-13 gap-4 mb-8">
         <Button
           variant="outline"
           className="h-24 flex flex-col gap-2"
@@ -220,6 +224,38 @@ export default function PowerWashingDashboard() {
         >
           <BarChart3 className="h-6 w-6 text-blue-500" />
           <span className="text-xs">Reports</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-indigo-500/30 hover:bg-indigo-500/5"
+          onClick={() => navigate('/power-washing/routes')}
+        >
+          <Navigation className="h-6 w-6 text-indigo-500" />
+          <span className="text-xs">Routes</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-yellow-500/30 hover:bg-yellow-500/5"
+          onClick={() => navigate('/power-washing/reviews')}
+        >
+          <Star className="h-6 w-6 text-yellow-500" />
+          <span className="text-xs">Reviews</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-pink-500/30 hover:bg-pink-500/5"
+          onClick={() => navigate('/power-washing/notifications')}
+        >
+          <Bell className="h-6 w-6 text-pink-500" />
+          <span className="text-xs">Alerts</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-teal-500/30 hover:bg-teal-500/5"
+          onClick={() => navigate('/power-washing/field')}
+        >
+          <Smartphone className="h-6 w-6 text-teal-500" />
+          <span className="text-xs">Field View</span>
         </Button>
       </div>
 
