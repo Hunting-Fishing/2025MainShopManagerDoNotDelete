@@ -462,3 +462,148 @@ export function useDeleteFormula() {
     },
   });
 }
+
+// ======= Phase 2: Time Entries, Chemical Usage, Maintenance =======
+
+export interface PowerWashingTimeEntry {
+  id: string;
+  job_id: string;
+  employee_id: string;
+  shop_id: string;
+  clock_in: string;
+  clock_out: string | null;
+  break_minutes: number;
+  notes: string | null;
+  gps_lat: number | null;
+  gps_lng: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PowerWashingJobChemical {
+  id: string;
+  job_id: string;
+  chemical_id: string;
+  shop_id: string;
+  quantity_used: number;
+  unit_of_measure: string;
+  cost_at_use: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface PowerWashingMaintenanceLog {
+  id: string;
+  equipment_id: string;
+  shop_id: string;
+  maintenance_type: string;
+  performed_by: string | null;
+  performed_date: string;
+  cost: number | null;
+  parts_used: string[] | null;
+  notes: string | null;
+  next_due_date: string | null;
+  next_due_hours: number | null;
+  created_at: string;
+}
+
+// Time entries for a job
+export function usePowerWashingTimeEntries(jobId: string) {
+  return useQuery({
+    queryKey: ['power-washing-time-entries', jobId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('power_washing_time_entries')
+        .select('*')
+        .eq('job_id', jobId)
+        .order('clock_in', { ascending: false });
+      if (error) throw error;
+      return data as PowerWashingTimeEntry[];
+    },
+    enabled: !!jobId,
+  });
+}
+
+// Chemical usage for a job
+export function usePowerWashingJobChemicals(jobId: string) {
+  return useQuery({
+    queryKey: ['power-washing-job-chemicals', jobId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('power_washing_job_chemicals')
+        .select('*')
+        .eq('job_id', jobId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as PowerWashingJobChemical[];
+    },
+    enabled: !!jobId,
+  });
+}
+
+// Maintenance logs for equipment
+export function usePowerWashingMaintenanceLogs(equipmentId: string) {
+  return useQuery({
+    queryKey: ['power-washing-maintenance-logs', equipmentId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('power_washing_maintenance_logs')
+        .select('*')
+        .eq('equipment_id', equipmentId)
+        .order('performed_date', { ascending: false });
+      if (error) throw error;
+      return data as PowerWashingMaintenanceLog[];
+    },
+    enabled: !!equipmentId,
+  });
+}
+
+// Equipment update mutation
+export function useUpdatePowerWashingEquipment() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<PowerWashingEquipment> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('power_washing_equipment')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['power-washing-equipment'] });
+      toast.success('Equipment updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update equipment: ' + error.message);
+    },
+  });
+}
+
+// Chemical update mutation
+export function useUpdatePowerWashingChemical() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<PowerWashingChemical> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('power_washing_chemicals')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['power-washing-chemicals'] });
+      toast.success('Chemical updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update chemical: ' + error.message);
+    },
+  });
+}
