@@ -2288,6 +2288,400 @@ export type Database = {
           },
         ]
       }
+      bookable_services: {
+        Row: {
+          booking_notice_hours: number | null
+          buffer_minutes: number | null
+          cancellation_notice_hours: number | null
+          category: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          duration_minutes: number
+          equipment_type: string | null
+          id: string
+          is_active: boolean | null
+          max_concurrent_bookings: number | null
+          name: string
+          price: number | null
+          requires_equipment: boolean | null
+          shop_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_notice_hours?: number | null
+          buffer_minutes?: number | null
+          cancellation_notice_hours?: number | null
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          duration_minutes?: number
+          equipment_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_concurrent_bookings?: number | null
+          name: string
+          price?: number | null
+          requires_equipment?: boolean | null
+          shop_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_notice_hours?: number | null
+          buffer_minutes?: number | null
+          cancellation_notice_hours?: number | null
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          duration_minutes?: number
+          equipment_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_concurrent_bookings?: number | null
+          name?: string
+          price?: number | null
+          requires_equipment?: boolean | null
+          shop_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookable_services_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_appointments: {
+        Row: {
+          booked_by: string | null
+          booked_via: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          confirmation_sent: boolean | null
+          created_at: string
+          customer_id: string | null
+          customer_notes: string | null
+          employee_id: string | null
+          end_time: string
+          equipment_id: string | null
+          equipment_type: string | null
+          id: string
+          internal_notes: string | null
+          notes: string | null
+          reminder_sent: boolean | null
+          service_id: string | null
+          shop_id: string | null
+          start_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          booked_by?: string | null
+          booked_via?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          confirmation_sent?: boolean | null
+          created_at?: string
+          customer_id?: string | null
+          customer_notes?: string | null
+          employee_id?: string | null
+          end_time: string
+          equipment_id?: string | null
+          equipment_type?: string | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          reminder_sent?: boolean | null
+          service_id?: string | null
+          shop_id?: string | null
+          start_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          booked_by?: string | null
+          booked_via?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          confirmation_sent?: boolean | null
+          created_at?: string
+          customer_id?: string | null
+          customer_notes?: string | null
+          employee_id?: string | null
+          end_time?: string
+          equipment_id?: string | null
+          equipment_type?: string | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          reminder_sent?: boolean | null
+          service_id?: string | null
+          shop_id?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_appointments_booked_by_fkey"
+            columns: ["booked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_appointments_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_appointments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_appointments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "bookable_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_appointments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_reminders: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          id: string
+          reminder_type: string
+          send_at: string
+          sent_at: string | null
+          shop_id: string | null
+          status: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          id?: string
+          reminder_type: string
+          send_at: string
+          sent_at?: string | null
+          shop_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          id?: string
+          reminder_type?: string
+          send_at?: string
+          sent_at?: string | null
+          shop_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_reminders_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_reminders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_settings: {
+        Row: {
+          allow_online_booking: boolean | null
+          allow_same_day_booking: boolean | null
+          allow_waitlist: boolean | null
+          auto_confirm: boolean | null
+          booking_instructions: string | null
+          cancellation_policy: string | null
+          created_at: string
+          default_buffer_minutes: number | null
+          id: string
+          max_advance_booking_days: number | null
+          min_booking_notice_hours: number | null
+          reminder_hours_before: number | null
+          require_confirmation: boolean | null
+          send_confirmation_email: boolean | null
+          send_reminder_email: boolean | null
+          shop_id: string | null
+          slot_interval_minutes: number | null
+          updated_at: string
+        }
+        Insert: {
+          allow_online_booking?: boolean | null
+          allow_same_day_booking?: boolean | null
+          allow_waitlist?: boolean | null
+          auto_confirm?: boolean | null
+          booking_instructions?: string | null
+          cancellation_policy?: string | null
+          created_at?: string
+          default_buffer_minutes?: number | null
+          id?: string
+          max_advance_booking_days?: number | null
+          min_booking_notice_hours?: number | null
+          reminder_hours_before?: number | null
+          require_confirmation?: boolean | null
+          send_confirmation_email?: boolean | null
+          send_reminder_email?: boolean | null
+          shop_id?: string | null
+          slot_interval_minutes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          allow_online_booking?: boolean | null
+          allow_same_day_booking?: boolean | null
+          allow_waitlist?: boolean | null
+          auto_confirm?: boolean | null
+          booking_instructions?: string | null
+          cancellation_policy?: string | null
+          created_at?: string
+          default_buffer_minutes?: number | null
+          id?: string
+          max_advance_booking_days?: number | null
+          min_booking_notice_hours?: number | null
+          reminder_hours_before?: number | null
+          require_confirmation?: boolean | null
+          send_confirmation_email?: boolean | null
+          send_reminder_email?: boolean | null
+          shop_id?: string | null
+          slot_interval_minutes?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_waitlist: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          expires_at: string | null
+          flexibility: string | null
+          id: string
+          notes: string | null
+          notified_at: string | null
+          preferred_date: string | null
+          preferred_employee_id: string | null
+          preferred_time_end: string | null
+          preferred_time_start: string | null
+          priority: number | null
+          service_id: string | null
+          shop_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          expires_at?: string | null
+          flexibility?: string | null
+          id?: string
+          notes?: string | null
+          notified_at?: string | null
+          preferred_date?: string | null
+          preferred_employee_id?: string | null
+          preferred_time_end?: string | null
+          preferred_time_start?: string | null
+          priority?: number | null
+          service_id?: string | null
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          expires_at?: string | null
+          flexibility?: string | null
+          id?: string
+          notes?: string | null
+          notified_at?: string | null
+          preferred_date?: string | null
+          preferred_employee_id?: string | null
+          preferred_time_end?: string | null
+          preferred_time_start?: string | null
+          priority?: number | null
+          service_id?: string | null
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_waitlist_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_waitlist_preferred_employee_id_fkey"
+            columns: ["preferred_employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_waitlist_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "bookable_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_waitlist_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branding_settings: {
         Row: {
           accent_color: string | null
@@ -8063,6 +8457,67 @@ export type Database = {
           },
           {
             foreignKeyName: "equipment_audit_trail_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_booking_blocks: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          created_by: string | null
+          end_time: string
+          equipment_id: string
+          equipment_type: string
+          id: string
+          reason: string | null
+          shop_id: string | null
+          start_time: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_time: string
+          equipment_id: string
+          equipment_type: string
+          id?: string
+          reason?: string | null
+          shop_id?: string | null
+          start_time: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_time?: string
+          equipment_id?: string
+          equipment_type?: string
+          id?: string
+          reason?: string | null
+          shop_id?: string | null
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_booking_blocks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_booking_blocks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_booking_blocks_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -27530,6 +27985,55 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_service_assignments: {
+        Row: {
+          created_at: string
+          employee_id: string | null
+          id: string
+          is_primary: boolean | null
+          service_id: string | null
+          shop_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          is_primary?: boolean | null
+          service_id?: string | null
+          shop_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          is_primary?: boolean | null
+          service_id?: string | null
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_service_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_service_assignments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "bookable_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_service_assignments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]

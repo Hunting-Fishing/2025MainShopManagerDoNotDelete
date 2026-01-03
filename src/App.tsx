@@ -135,6 +135,7 @@ import AffiliateTool from '@/pages/AffiliateTool';
 import BoatInspection from '@/pages/BoatInspection';
 import Checkout from '@/pages/Checkout';
 import ClientBooking from '@/pages/ClientBooking';
+import BookingManagement from '@/pages/BookingManagement';
 import CustomerAnalytics from '@/pages/CustomerAnalytics';
 import CustomerExperience from '@/pages/CustomerExperience';
 import CustomerFollowUps from '@/pages/CustomerFollowUps';
@@ -312,6 +313,13 @@ function App() {
                   <Route path="/calendar" element={
                     <ProtectedRoute allowedRoles={['admin', 'manager', 'technician', 'service_advisor', 'reception', 'yard_manager', 'mechanic_manager', 'owner']}>
                       <Calendar />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Booking Management */}
+                  <Route path="/booking-management" element={
+                    <ProtectedRoute allowedRoles={['admin', 'manager', 'service_advisor', 'reception', 'owner']}>
+                      <BookingManagement />
                     </ProtectedRoute>
                   } />
                   

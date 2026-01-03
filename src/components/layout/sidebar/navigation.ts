@@ -50,7 +50,8 @@ import {
   Ship,
   Forklift,
   Kanban,
-  FolderKanban
+  FolderKanban,
+  CalendarPlus
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -112,6 +113,13 @@ export const navigation: NavigationSection[] = [
   {
     title: 'Scheduling',
     items: [
+      {
+        title: 'Booking Management',
+        href: '/booking-management',
+        icon: CalendarPlus,
+        description: 'Appointments, services & waitlist',
+        permissionModule: 'calendar',
+      },
       {
         title: 'Planner',
         href: '/planner',
