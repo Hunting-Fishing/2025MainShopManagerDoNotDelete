@@ -195,7 +195,11 @@ import PowerWashingAnalytics from '@/pages/power-washing/PowerWashingAnalytics';
 import PowerWashingWeather from '@/pages/power-washing/PowerWashingWeather';
 import PowerWashingPhotos from '@/pages/power-washing/PowerWashingPhotos';
 import PowerWashingSubscriptions from '@/pages/power-washing/PowerWashingSubscriptions';
-
+import PowerWashingCustomerPortal from '@/pages/power-washing/PowerWashingCustomerPortal';
+import PowerWashingPayments from '@/pages/power-washing/PowerWashingPayments';
+import PowerWashingSchedule from '@/pages/power-washing/PowerWashingSchedule';
+import PowerWashingLeads from '@/pages/power-washing/PowerWashingLeads';
+import PowerWashingFleet from '@/pages/power-washing/PowerWashingFleet';
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1075,7 +1079,11 @@ function App() {
                   <Route path="/power-washing/weather" element={<PowerWashingWeather />} />
                   <Route path="/power-washing/photos" element={<PowerWashingPhotos />} />
                   <Route path="/power-washing/subscriptions" element={<PowerWashingSubscriptions />} />
-                  
+                  <Route path="/power-washing/portal" element={<PowerWashingCustomerPortal />} />
+                  <Route path="/power-washing/payments" element={<PowerWashingPayments />} />
+                  <Route path="/power-washing/schedule" element={<PowerWashingSchedule />} />
+                  <Route path="/power-washing/leads" element={<PowerWashingLeads />} />
+                  <Route path="/power-washing/fleet" element={<PowerWashingFleet />} />
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

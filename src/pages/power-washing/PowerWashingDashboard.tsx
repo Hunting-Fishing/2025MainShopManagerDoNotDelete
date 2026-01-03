@@ -25,7 +25,12 @@ import {
   PieChart,
   BookOpen,
   Camera,
-  Repeat
+  Repeat,
+  Users,
+  CreditCard,
+  CalendarDays,
+  UserPlus,
+  Car
 } from 'lucide-react';
 import { usePowerWashingStats, usePowerWashingJobs, usePowerWashingQuotes } from '@/hooks/usePowerWashing';
 import { useNavigate } from 'react-router-dom';
@@ -301,6 +306,46 @@ export default function PowerWashingDashboard() {
         >
           <Repeat className="h-6 w-6 text-cyan-500" />
           <span className="text-xs">Subscriptions</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-lime-500/30 hover:bg-lime-500/5"
+          onClick={() => navigate('/power-washing/portal')}
+        >
+          <Users className="h-6 w-6 text-lime-500" />
+          <span className="text-xs">Portal</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-green-600/30 hover:bg-green-600/5"
+          onClick={() => navigate('/power-washing/payments')}
+        >
+          <CreditCard className="h-6 w-6 text-green-600" />
+          <span className="text-xs">Payments</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-blue-600/30 hover:bg-blue-600/5"
+          onClick={() => navigate('/power-washing/schedule')}
+        >
+          <CalendarDays className="h-6 w-6 text-blue-600" />
+          <span className="text-xs">Schedule</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-orange-500/30 hover:bg-orange-500/5"
+          onClick={() => navigate('/power-washing/leads')}
+        >
+          <UserPlus className="h-6 w-6 text-orange-500" />
+          <span className="text-xs">Leads</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-slate-500/30 hover:bg-slate-500/5"
+          onClick={() => navigate('/power-washing/fleet')}
+        >
+          <Car className="h-6 w-6 text-slate-500" />
+          <span className="text-xs">Fleet</span>
         </Button>
       </div>
 

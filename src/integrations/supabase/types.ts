@@ -20433,6 +20433,65 @@ export type Database = {
         }
         Relationships: []
       }
+      power_washing_campaigns: {
+        Row: {
+          actual_spend: number | null
+          budget: number | null
+          campaign_name: string
+          campaign_type: string
+          conversions: number | null
+          created_at: string
+          end_date: string | null
+          id: string
+          leads_generated: number | null
+          notes: string | null
+          shop_id: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual_spend?: number | null
+          budget?: number | null
+          campaign_name: string
+          campaign_type: string
+          conversions?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          leads_generated?: number | null
+          notes?: string | null
+          shop_id?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_spend?: number | null
+          budget?: number | null
+          campaign_name?: string
+          campaign_type?: string
+          conversions?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          leads_generated?: number | null
+          notes?: string | null
+          shop_id?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_campaigns_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_chemicals: {
         Row: {
           brand: string | null
@@ -20618,6 +20677,57 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_employee_availability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          employee_id: string | null
+          end_time: string
+          id: string
+          is_available: boolean
+          shop_id: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          employee_id?: string | null
+          end_time: string
+          id?: string
+          is_available?: boolean
+          shop_id?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          employee_id?: string | null
+          end_time?: string
+          id?: string
+          is_available?: boolean
+          shop_id?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_employee_availability_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_employee_availability_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -21119,6 +21229,87 @@ export type Database = {
           },
         ]
       }
+      power_washing_leads: {
+        Row: {
+          assigned_to: string | null
+          converted_to_quote_id: string | null
+          created_at: string
+          email: string | null
+          estimated_value: number | null
+          first_name: string
+          follow_up_date: string | null
+          id: string
+          last_name: string | null
+          lead_source: string | null
+          notes: string | null
+          phone: string | null
+          property_address: string | null
+          property_city: string | null
+          property_state: string | null
+          property_zip: string | null
+          shop_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          converted_to_quote_id?: string | null
+          created_at?: string
+          email?: string | null
+          estimated_value?: number | null
+          first_name: string
+          follow_up_date?: string | null
+          id?: string
+          last_name?: string | null
+          lead_source?: string | null
+          notes?: string | null
+          phone?: string | null
+          property_address?: string | null
+          property_city?: string | null
+          property_state?: string | null
+          property_zip?: string | null
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          converted_to_quote_id?: string | null
+          created_at?: string
+          email?: string | null
+          estimated_value?: number | null
+          first_name?: string
+          follow_up_date?: string | null
+          id?: string
+          last_name?: string | null
+          lead_source?: string | null
+          notes?: string | null
+          phone?: string | null
+          property_address?: string | null
+          property_city?: string | null
+          property_state?: string | null
+          property_zip?: string | null
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_leads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_leads_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_maintenance_logs: {
         Row: {
           cost: number | null
@@ -21323,6 +21514,93 @@ export type Database = {
           },
           {
             foreignKeyName: "power_washing_notifications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          job_id: string | null
+          notes: string | null
+          payment_method: string
+          reference_number: string | null
+          shop_id: string | null
+          status: string
+          transaction_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          job_id?: string | null
+          notes?: string | null
+          payment_method?: string
+          reference_number?: string | null
+          shop_id?: string | null
+          status?: string
+          transaction_date?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          job_id?: string | null
+          notes?: string | null
+          payment_method?: string
+          reference_number?: string | null
+          shop_id?: string | null
+          status?: string
+          transaction_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_payments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_payments_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -21983,6 +22261,70 @@ export type Database = {
           },
         ]
       }
+      power_washing_schedule_slots: {
+        Row: {
+          created_at: string
+          employee_id: string | null
+          end_time: string
+          id: string
+          job_id: string | null
+          notes: string | null
+          shop_id: string | null
+          slot_date: string
+          slot_type: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id?: string | null
+          end_time: string
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          shop_id?: string | null
+          slot_date: string
+          slot_type?: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string | null
+          end_time?: string
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          shop_id?: string | null
+          slot_date?: string
+          slot_type?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_schedule_slots_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_schedule_slots_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_schedule_slots_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_services: {
         Row: {
           base_price_per_sqft: number | null
@@ -22183,6 +22525,145 @@ export type Database = {
           },
           {
             foreignKeyName: "power_washing_time_entries_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_vehicle_logs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fuel_cost: number | null
+          gallons: number | null
+          id: string
+          log_date: string
+          log_type: string
+          notes: string | null
+          odometer_reading: number | null
+          shop_id: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fuel_cost?: number | null
+          gallons?: number | null
+          id?: string
+          log_date?: string
+          log_type?: string
+          notes?: string | null
+          odometer_reading?: number | null
+          shop_id?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fuel_cost?: number | null
+          gallons?: number | null
+          id?: string
+          log_date?: string
+          log_type?: string
+          notes?: string | null
+          odometer_reading?: number | null
+          shop_id?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_vehicle_logs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_vehicle_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_vehicle_logs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_vehicles: {
+        Row: {
+          assigned_employee_id: string | null
+          created_at: string
+          current_odometer: number | null
+          fuel_type: string | null
+          id: string
+          last_service_date: string | null
+          license_plate: string | null
+          make: string | null
+          model: string | null
+          next_service_due: string | null
+          notes: string | null
+          shop_id: string | null
+          status: string
+          updated_at: string
+          vehicle_name: string
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          assigned_employee_id?: string | null
+          created_at?: string
+          current_odometer?: number | null
+          fuel_type?: string | null
+          id?: string
+          last_service_date?: string | null
+          license_plate?: string | null
+          make?: string | null
+          model?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_name: string
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          assigned_employee_id?: string | null
+          created_at?: string
+          current_odometer?: number | null
+          fuel_type?: string | null
+          id?: string
+          last_service_date?: string | null
+          license_plate?: string | null
+          make?: string | null
+          model?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_name?: string
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_vehicles_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_vehicles_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
