@@ -17,6 +17,7 @@ const BrandingSettings = lazy(() => import('./settings/BrandingSettings'));
 const NotificationSettings = lazy(() => import('./settings/NotificationSettings'));
 const SecuritySettings = lazy(() => import('./settings/SecuritySettings'));
 const NavigationSettings = lazy(() => import('@/components/settings/NavigationSettingsTab').then(m => ({ default: m.NavigationSettingsTab })));
+const BusinessModulesSettings = lazy(() => import('./settings/BusinessModulesSettings'));
 
 // Lazy load settings pages - Operations
 const WorkOrdersSettings = lazy(() => import('./settings/WorkOrdersSettings'));
@@ -85,6 +86,7 @@ export default function Settings() {
         <Route path="notifications" element={<NotificationSettings />} />
         <Route path="security" element={<SecuritySettings />} />
         <Route path="navigation" element={<NavigationSettings />} />
+        <Route path="business-modules" element={<BusinessModulesSettings />} />
         
         {/* Operations */}
         <Route path="work-orders" element={<WorkOrdersSettings />} />

@@ -2676,6 +2676,51 @@ export type Database = {
           },
         ]
       }
+      business_modules: {
+        Row: {
+          category: string
+          created_at: string | null
+          default_enabled: boolean | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_premium: boolean | null
+          name: string
+          related_industries: string[] | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          default_enabled?: boolean | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_premium?: boolean | null
+          name: string
+          related_industries?: string[] | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          default_enabled?: boolean | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_premium?: boolean | null
+          name?: string
+          related_industries?: string[] | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       business_types: {
         Row: {
           created_at: string | null
@@ -26306,6 +26351,45 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      shop_enabled_modules: {
+        Row: {
+          enabled_at: string | null
+          enabled_by: string | null
+          id: string
+          module_id: string
+          shop_id: string
+        }
+        Insert: {
+          enabled_at?: string | null
+          enabled_by?: string | null
+          id?: string
+          module_id: string
+          shop_id: string
+        }
+        Update: {
+          enabled_at?: string | null
+          enabled_by?: string | null
+          id?: string
+          module_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_enabled_modules_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "business_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_enabled_modules_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shop_hours: {
         Row: {
