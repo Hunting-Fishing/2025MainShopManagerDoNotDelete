@@ -186,6 +186,10 @@ import PowerWashingRecurringSchedules from '@/pages/power-washing/PowerWashingRe
 import PowerWashingInvoices from '@/pages/power-washing/PowerWashingInvoices';
 import PowerWashingInvoiceDetail from '@/pages/power-washing/PowerWashingInvoiceDetail';
 import PowerWashingReports from '@/pages/power-washing/PowerWashingReports';
+import PowerWashingRoutes from '@/pages/power-washing/PowerWashingRoutes';
+import PowerWashingReviews from '@/pages/power-washing/PowerWashingReviews';
+import PowerWashingNotifications from '@/pages/power-washing/PowerWashingNotifications';
+import PowerWashingFieldView from '@/pages/power-washing/PowerWashingFieldView';
 
 function App() {
   useEffect(() => {
@@ -1057,6 +1061,10 @@ function App() {
                   <Route path="/power-washing/invoices" element={<PowerWashingInvoices />} />
                   <Route path="/power-washing/invoices/:id" element={<PowerWashingInvoiceDetail />} />
                   <Route path="/power-washing/reports" element={<PowerWashingReports />} />
+                  <Route path="/power-washing/routes" element={<PowerWashingRoutes />} />
+                  <Route path="/power-washing/reviews" element={<PowerWashingReviews />} />
+                  <Route path="/power-washing/notifications" element={<PowerWashingNotifications />} />
+                  <Route path="/power-washing/field" element={<PowerWashingFieldView />} />
                   
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
