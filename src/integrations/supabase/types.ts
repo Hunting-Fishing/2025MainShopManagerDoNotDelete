@@ -21106,6 +21106,74 @@ export type Database = {
           },
         ]
       }
+      power_washing_metrics: {
+        Row: {
+          average_job_duration: number | null
+          conversion_rate: number | null
+          created_at: string
+          customer_satisfaction: number | null
+          id: string
+          jobs_completed: number | null
+          jobs_scheduled: number | null
+          labor_cost: number | null
+          material_cost: number | null
+          metric_date: string
+          new_customers: number | null
+          profit_margin: number | null
+          quotes_accepted: number | null
+          quotes_sent: number | null
+          repeat_customers: number | null
+          revenue: number | null
+          shop_id: string | null
+        }
+        Insert: {
+          average_job_duration?: number | null
+          conversion_rate?: number | null
+          created_at?: string
+          customer_satisfaction?: number | null
+          id?: string
+          jobs_completed?: number | null
+          jobs_scheduled?: number | null
+          labor_cost?: number | null
+          material_cost?: number | null
+          metric_date: string
+          new_customers?: number | null
+          profit_margin?: number | null
+          quotes_accepted?: number | null
+          quotes_sent?: number | null
+          repeat_customers?: number | null
+          revenue?: number | null
+          shop_id?: string | null
+        }
+        Update: {
+          average_job_duration?: number | null
+          conversion_rate?: number | null
+          created_at?: string
+          customer_satisfaction?: number | null
+          id?: string
+          jobs_completed?: number | null
+          jobs_scheduled?: number | null
+          labor_cost?: number | null
+          material_cost?: number | null
+          metric_date?: string
+          new_customers?: number | null
+          profit_margin?: number | null
+          quotes_accepted?: number | null
+          quotes_sent?: number | null
+          repeat_customers?: number | null
+          revenue?: number | null
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_metrics_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_notifications: {
         Row: {
           channel: string
@@ -21175,6 +21243,182 @@ export type Database = {
           },
           {
             foreignKeyName: "power_washing_notifications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_portal_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: string | null
+          portal_id: string | null
+          session_token: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip_address?: string | null
+          portal_id?: string | null
+          session_token: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          portal_id?: string | null
+          session_token?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_portal_sessions_portal_id_fkey"
+            columns: ["portal_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_customer_portal"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_price_book: {
+        Row: {
+          base_price: number
+          category: string
+          created_at: string
+          description: string | null
+          display_order: number | null
+          estimated_duration_minutes: number | null
+          id: string
+          includes_materials: boolean | null
+          is_active: boolean | null
+          max_price: number | null
+          min_price: number | null
+          service_name: string
+          shop_id: string | null
+          unit_type: string
+          updated_at: string
+        }
+        Insert: {
+          base_price: number
+          category: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          includes_materials?: boolean | null
+          is_active?: boolean | null
+          max_price?: number | null
+          min_price?: number | null
+          service_name: string
+          shop_id?: string | null
+          unit_type: string
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          includes_materials?: boolean | null
+          is_active?: boolean | null
+          max_price?: number | null
+          min_price?: number | null
+          service_name?: string
+          shop_id?: string | null
+          unit_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_price_book_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_quote_requests: {
+        Row: {
+          additional_notes: string | null
+          assigned_to: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          photos: string[] | null
+          preferred_date: string | null
+          preferred_time_slot: string | null
+          property_address: string
+          property_type: string
+          quote_id: string | null
+          services_requested: Json | null
+          shop_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          additional_notes?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          photos?: string[] | null
+          preferred_date?: string | null
+          preferred_time_slot?: string | null
+          property_address: string
+          property_type: string
+          quote_id?: string | null
+          services_requested?: Json | null
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          additional_notes?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          photos?: string[] | null
+          preferred_date?: string | null
+          preferred_time_slot?: string | null
+          property_address?: string
+          property_type?: string
+          quote_id?: string | null
+          services_requested?: Json | null
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_quote_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_quote_requests_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_quote_requests_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -21719,6 +21963,65 @@ export type Database = {
           },
           {
             foreignKeyName: "power_washing_time_entries_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_weather_data: {
+        Row: {
+          conditions: string | null
+          fetched_at: string
+          forecast_date: string
+          humidity: number | null
+          icon: string | null
+          id: string
+          is_suitable_for_work: boolean | null
+          location: string
+          precipitation_amount: number | null
+          precipitation_chance: number | null
+          shop_id: string | null
+          temperature_high: number | null
+          temperature_low: number | null
+          wind_speed: number | null
+        }
+        Insert: {
+          conditions?: string | null
+          fetched_at?: string
+          forecast_date: string
+          humidity?: number | null
+          icon?: string | null
+          id?: string
+          is_suitable_for_work?: boolean | null
+          location: string
+          precipitation_amount?: number | null
+          precipitation_chance?: number | null
+          shop_id?: string | null
+          temperature_high?: number | null
+          temperature_low?: number | null
+          wind_speed?: number | null
+        }
+        Update: {
+          conditions?: string | null
+          fetched_at?: string
+          forecast_date?: string
+          humidity?: number | null
+          icon?: string | null
+          id?: string
+          is_suitable_for_work?: boolean | null
+          location?: string
+          precipitation_amount?: number | null
+          precipitation_chance?: number | null
+          shop_id?: string | null
+          temperature_high?: number | null
+          temperature_low?: number | null
+          wind_speed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_weather_data_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
