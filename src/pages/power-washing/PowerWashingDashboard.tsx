@@ -23,7 +23,9 @@ import {
   Smartphone,
   Cloud,
   PieChart,
-  BookOpen
+  BookOpen,
+  Camera,
+  Repeat
 } from 'lucide-react';
 import { usePowerWashingStats, usePowerWashingJobs, usePowerWashingQuotes } from '@/hooks/usePowerWashing';
 import { useNavigate } from 'react-router-dom';
@@ -283,6 +285,22 @@ export default function PowerWashingDashboard() {
         >
           <Cloud className="h-6 w-6 text-sky-500" />
           <span className="text-xs">Weather</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-rose-500/30 hover:bg-rose-500/5"
+          onClick={() => navigate('/power-washing/photos')}
+        >
+          <Camera className="h-6 w-6 text-rose-500" />
+          <span className="text-xs">Photos</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-cyan-500/30 hover:bg-cyan-500/5"
+          onClick={() => navigate('/power-washing/subscriptions')}
+        >
+          <Repeat className="h-6 w-6 text-cyan-500" />
+          <span className="text-xs">Subscriptions</span>
         </Button>
       </div>
 

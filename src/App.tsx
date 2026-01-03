@@ -193,6 +193,8 @@ import PowerWashingFieldView from '@/pages/power-washing/PowerWashingFieldView';
 import PowerWashingPriceBook from '@/pages/power-washing/PowerWashingPriceBook';
 import PowerWashingAnalytics from '@/pages/power-washing/PowerWashingAnalytics';
 import PowerWashingWeather from '@/pages/power-washing/PowerWashingWeather';
+import PowerWashingPhotos from '@/pages/power-washing/PowerWashingPhotos';
+import PowerWashingSubscriptions from '@/pages/power-washing/PowerWashingSubscriptions';
 
 function App() {
   useEffect(() => {
@@ -1071,6 +1073,8 @@ function App() {
                   <Route path="/power-washing/price-book" element={<PowerWashingPriceBook />} />
                   <Route path="/power-washing/analytics" element={<PowerWashingAnalytics />} />
                   <Route path="/power-washing/weather" element={<PowerWashingWeather />} />
+                  <Route path="/power-washing/photos" element={<PowerWashingPhotos />} />
+                  <Route path="/power-washing/subscriptions" element={<PowerWashingSubscriptions />} />
                   
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
