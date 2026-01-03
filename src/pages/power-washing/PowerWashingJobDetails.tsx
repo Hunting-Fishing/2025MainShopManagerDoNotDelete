@@ -19,7 +19,11 @@ import {
   User,
   Building2,
   Droplets,
-  Trash2
+  Trash2,
+  FileText,
+  DollarSign,
+  Phone,
+  Mail
 } from 'lucide-react';
 import { usePowerWashingJobs, useUpdatePowerWashingJob, PowerWashingJob } from '@/hooks/usePowerWashing';
 import { JobPhotoUploader } from '@/components/power-washing/JobPhotoUploader';
@@ -113,14 +117,6 @@ export default function PowerWashingJobDetails() {
     const field = type === 'before' ? 'before_photos' : 'after_photos';
     await updateJob.mutateAsync({ id: job.id, [field]: photos });
     queryClient.invalidateQueries({ queryKey: ['power-washing-jobs'] });
-  };
-    if (!startTime) return 'Not started';
-    const start = new Date(startTime);
-    const end = endTime ? new Date(endTime) : new Date();
-    const diffMs = end.getTime() - start.getTime();
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
   };
 
   return (
