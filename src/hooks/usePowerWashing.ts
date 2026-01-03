@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 
 // Types
 export interface PowerWashingService {
@@ -322,6 +323,142 @@ export function useCreatePowerWashingQuote() {
     },
     onError: (error) => {
       toast.error('Failed to submit quote: ' + error.message);
+    },
+  });
+}
+
+// Formula types
+export interface FormulaIngredient {
+  chemical_id: string;
+  amount: number;
+  unit: string;
+}
+
+export interface PowerWashingFormula {
+  id: string;
+  shop_id: string;
+  name: string;
+  description: string | null;
+  surface_type: string | null;
+  application: string | null;
+  ingredients: FormulaIngredient[];
+  water_gallons: number;
+  notes: string | null;
+  is_favorite: boolean;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Formulas hooks
+export function usePowerWashingFormulas() {
+  return useQuery({
+    queryKey: ['power-washing-formulas'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('power_washing_formulas')
+        .select('*')
+        .eq('is_active', true)
+        .order('is_favorite', { ascending: false })
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return (data || []).map(item => ({
+        ...item,
+        ingredients: (item.ingredients as unknown as FormulaIngredient[]) || []
+      })) as PowerWashingFormula[];
+    },
+  });
+}
+
+export function useCreateFormula() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (formula: Omit<PowerWashingFormula, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('power_washing_formulas')
+        .insert([{
+          shop_id: formula.shop_id,
+          name: formula.name,
+          description: formula.description,
+          surface_type: formula.surface_type,
+          application: formula.application,
+          water_gallons: formula.water_gallons,
+          notes: formula.notes,
+          is_favorite: formula.is_favorite,
+          is_active: formula.is_active,
+          created_by: formula.created_by,
+          ingredients: JSON.parse(JSON.stringify(formula.ingredients)),
+        }])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['power-washing-formulas'] });
+      toast.success('Formula created');
+    },
+    onError: (error) => {
+      toast.error('Failed to create formula: ' + error.message);
+    },
+  });
+}
+
+export function useUpdateFormula() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<PowerWashingFormula> & { id: string }) => {
+      const payload: Record<string, Json | undefined> = {};
+      if (updates.name !== undefined) payload.name = updates.name;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.surface_type !== undefined) payload.surface_type = updates.surface_type;
+      if (updates.application !== undefined) payload.application = updates.application;
+      if (updates.water_gallons !== undefined) payload.water_gallons = updates.water_gallons;
+      if (updates.notes !== undefined) payload.notes = updates.notes;
+      if (updates.is_favorite !== undefined) payload.is_favorite = updates.is_favorite;
+      if (updates.is_active !== undefined) payload.is_active = updates.is_active;
+      if (updates.ingredients !== undefined) {
+        payload.ingredients = JSON.parse(JSON.stringify(updates.ingredients));
+      }
+      const { data, error } = await supabase
+        .from('power_washing_formulas')
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['power-washing-formulas'] });
+      toast.success('Formula updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update formula: ' + error.message);
+    },
+  });
+}
+
+export function useDeleteFormula() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('power_washing_formulas')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['power-washing-formulas'] });
+      toast.success('Formula deleted');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete formula: ' + error.message);
     },
   });
 }

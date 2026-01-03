@@ -172,6 +172,7 @@ import PowerWashingEquipment from '@/pages/power-washing/PowerWashingEquipment';
 import PowerWashingChemicals from '@/pages/power-washing/PowerWashingChemicals';
 import PowerWashingQuoteForm from '@/pages/power-washing/PowerWashingQuoteForm';
 import PowerWashingQuotesList from '@/pages/power-washing/PowerWashingQuotesList';
+import PowerWashingFormulas from '@/pages/power-washing/PowerWashingFormulas';
 
 function App() {
   useEffect(() => {
@@ -1023,6 +1024,7 @@ function App() {
                   <Route path="/power-washing/quotes/new" element={<PowerWashingQuoteForm />} />
                   <Route path="/power-washing/equipment" element={<PowerWashingEquipment />} />
                   <Route path="/power-washing/chemicals" element={<PowerWashingChemicals />} />
+                  <Route path="/power-washing/formulas" element={<PowerWashingFormulas />} />
                   
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
