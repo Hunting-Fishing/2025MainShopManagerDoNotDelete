@@ -11,10 +11,78 @@ import {
   Droplets, 
   AlertTriangle,
   Copy,
-  RefreshCw
+  RefreshCw,
+  Shield,
+  CheckCircle2,
+  AlertCircle,
+  XCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+
+// Safety levels with color coding
+const SAFETY_LEVELS = [
+  { 
+    level: 'safe',
+    label: 'Safe',
+    range: '0.1% - 1%',
+    minPct: 0.1,
+    maxPct: 1,
+    color: 'bg-green-500',
+    textColor: 'text-green-700 dark:text-green-400',
+    bgColor: 'bg-green-50 dark:bg-green-950/30',
+    borderColor: 'border-green-200 dark:border-green-800',
+    icon: CheckCircle2,
+    description: 'Safe for most surfaces',
+    uses: ['House washing', 'Vinyl siding', 'Fences', 'Decks (rinse well)', 'General cleaning'],
+    precautions: ['Basic PPE (gloves)', 'Rinse plants before/after'],
+  },
+  { 
+    level: 'caution',
+    label: 'Caution',
+    range: '1% - 3%',
+    minPct: 1,
+    maxPct: 3,
+    color: 'bg-yellow-500',
+    textColor: 'text-yellow-700 dark:text-yellow-400',
+    bgColor: 'bg-yellow-50 dark:bg-yellow-950/30',
+    borderColor: 'border-yellow-200 dark:border-yellow-800',
+    icon: AlertCircle,
+    description: 'Use with care',
+    uses: ['Roof washing', 'Concrete stains', 'Heavy algae', 'Commercial surfaces'],
+    precautions: ['Full PPE required', 'Protect landscaping', 'Test on small area first'],
+  },
+  { 
+    level: 'warning',
+    label: 'Warning',
+    range: '3% - 6%',
+    minPct: 3,
+    maxPct: 6,
+    color: 'bg-orange-500',
+    textColor: 'text-orange-700 dark:text-orange-400',
+    bgColor: 'bg-orange-50 dark:bg-orange-950/30',
+    borderColor: 'border-orange-200 dark:border-orange-800',
+    icon: AlertTriangle,
+    description: 'High concentration - Pro use',
+    uses: ['Heavy mold/mildew', 'Tough organic stains', 'Industrial cleaning'],
+    precautions: ['Professional use only', 'Respirator recommended', 'May damage plants/surfaces'],
+  },
+  { 
+    level: 'danger',
+    label: 'Danger',
+    range: '6% - 12.5%',
+    minPct: 6,
+    maxPct: 12.5,
+    color: 'bg-red-500',
+    textColor: 'text-red-700 dark:text-red-400',
+    bgColor: 'bg-red-50 dark:bg-red-950/30',
+    borderColor: 'border-red-200 dark:border-red-800',
+    icon: XCircle,
+    description: 'Extreme - Rarely needed',
+    uses: ['Undiluted stock only', 'Extreme stain pre-treat', 'NOT for direct application'],
+    precautions: ['NEVER apply directly', 'Full hazmat protection', 'Will damage most surfaces'],
+  },
+];
 
 // Common sodium hypochlorite concentrations
 const COMMON_SOURCES = [
@@ -33,6 +101,14 @@ const COMMON_TARGETS = [
   { label: 'Heavy Mold (3-4%)', min: 3, max: 4, color: 'bg-orange-500' },
   { label: 'Tough Stains (5%+)', min: 5, max: 6, color: 'bg-red-500' },
 ];
+
+// Get current safety level based on concentration
+const getSafetyLevel = (concentration: number) => {
+  if (concentration <= 1) return SAFETY_LEVELS[0];
+  if (concentration <= 3) return SAFETY_LEVELS[1];
+  if (concentration <= 6) return SAFETY_LEVELS[2];
+  return SAFETY_LEVELS[3];
+};
 
 export default function BleachCalculator() {
   const navigate = useNavigate();
@@ -303,6 +379,122 @@ Recipe:
                     <p className="text-3xl font-bold text-foreground">
                       1 : {calculations.partsWater.toFixed(1)}
                     </p>
+                  </div>
+
+                  {/* Current Safety Level Indicator */}
+                  {(() => {
+                    const safetyLevel = getSafetyLevel(targetConcentration);
+                    const SafetyIcon = safetyLevel.icon;
+                    return (
+                      <div className={`p-4 rounded-lg border ${safetyLevel.bgColor} ${safetyLevel.borderColor}`}>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className={`p-2 rounded-full ${safetyLevel.color}`}>
+                            <SafetyIcon className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <p className={`font-bold text-lg ${safetyLevel.textColor}`}>{safetyLevel.label}</p>
+                            <p className="text-sm text-muted-foreground">{safetyLevel.description}</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 space-y-2 text-sm">
+                          <p className={`font-medium ${safetyLevel.textColor}`}>Common uses:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {safetyLevel.uses.map((use, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">{use}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* Safety Scale Visual */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Safety Scale Guide
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {/* Visual Scale Bar */}
+                  <div className="mb-6">
+                    <div className="flex h-8 rounded-lg overflow-hidden border">
+                      {SAFETY_LEVELS.map((level, index) => (
+                        <div 
+                          key={level.level}
+                          className={`flex-1 ${level.color} flex items-center justify-center relative`}
+                        >
+                          <span className="text-white text-xs font-bold hidden sm:block">{level.range}</span>
+                          {targetConcentration >= level.minPct && targetConcentration <= level.maxPct && (
+                            <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
+                              <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[8px] border-l-transparent border-r-transparent border-b-foreground" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between mt-4 text-xs text-muted-foreground">
+                      <span>0.1%</span>
+                      <span>1%</span>
+                      <span>3%</span>
+                      <span>6%</span>
+                      <span>12.5%</span>
+                    </div>
+                  </div>
+
+                  {/* Detailed Safety Levels */}
+                  <div className="space-y-3">
+                    {SAFETY_LEVELS.map((level) => {
+                      const isActive = targetConcentration >= level.minPct && targetConcentration <= level.maxPct;
+                      const Icon = level.icon;
+                      return (
+                        <div 
+                          key={level.level}
+                          className={`p-3 rounded-lg border transition-all ${
+                            isActive 
+                              ? `${level.bgColor} ${level.borderColor} ring-2 ring-offset-2 ring-${level.color.replace('bg-', '')}`
+                              : 'bg-muted/30 border-border opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`p-1.5 rounded-full ${level.color} shrink-0`}>
+                              <Icon className="h-4 w-4 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={`font-bold ${isActive ? level.textColor : 'text-foreground'}`}>
+                                  {level.label}
+                                </span>
+                                <Badge variant={isActive ? 'default' : 'secondary'} className="text-xs">
+                                  {level.range}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{level.description}</p>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {level.uses.slice(0, 3).map((use, i) => (
+                                  <span key={i} className="text-xs bg-background px-2 py-0.5 rounded border">
+                                    {use}
+                                  </span>
+                                ))}
+                              </div>
+                              {isActive && (
+                                <div className="mt-2 pt-2 border-t border-dashed">
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">⚠️ Precautions:</p>
+                                  <ul className="text-xs text-muted-foreground space-y-0.5">
+                                    {level.precautions.map((p, i) => (
+                                      <li key={i}>• {p}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
