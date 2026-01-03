@@ -13,7 +13,8 @@ import {
   ClipboardList,
   Truck,
   FlaskConical,
-  Beaker
+  Beaker,
+  Calculator
 } from 'lucide-react';
 import { usePowerWashingStats, usePowerWashingJobs, usePowerWashingQuotes } from '@/hooks/usePowerWashing';
 import { useNavigate } from 'react-router-dom';
@@ -145,7 +146,7 @@ export default function PowerWashingDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
         <Button
           variant="outline"
           className="h-24 flex flex-col gap-2"
@@ -184,7 +185,15 @@ export default function PowerWashingDashboard() {
           onClick={() => navigate('/power-washing/formulas')}
         >
           <Beaker className="h-6 w-6 text-primary" />
-          <span>Quick Formulas</span>
+          <span>Formulas</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-green-500/30 hover:bg-green-500/5"
+          onClick={() => navigate('/power-washing/surface-calculator')}
+        >
+          <Calculator className="h-6 w-6 text-green-600" />
+          <span>Mix Calculator</span>
         </Button>
       </div>
 
