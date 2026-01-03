@@ -51,7 +51,10 @@ import {
   Forklift,
   Kanban,
   FolderKanban,
-  CalendarPlus
+  CalendarPlus,
+  Crosshair,
+  ArrowRightLeft,
+  CreditCard
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -578,6 +581,89 @@ export const navigation: NavigationSection[] = [
         icon: ShoppingBag,
         description: 'Order history and tracking',
         permissionModule: 'orders',
+      },
+    ],
+  },
+  {
+    title: 'Gunsmith',
+    icon: Crosshair,
+    items: [
+      {
+        title: 'Gunsmith Dashboard',
+        href: '/gunsmith',
+        icon: Crosshair,
+        description: 'Gunsmith module overview',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Jobs',
+        href: '/gunsmith/jobs',
+        icon: ClipboardList,
+        description: 'Repair and service work orders',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Firearms Registry',
+        href: '/gunsmith/firearms',
+        icon: Crosshair,
+        description: 'Customer firearm database',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Parts Inventory',
+        href: '/gunsmith/parts',
+        icon: Package,
+        description: 'Gunsmith parts and supplies',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Quotes',
+        href: '/gunsmith/quotes',
+        icon: FileText,
+        description: 'Service quotes and estimates',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Invoices',
+        href: '/gunsmith/invoices',
+        icon: Receipt,
+        description: 'Billing and invoices',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Payments',
+        href: '/gunsmith/payments',
+        icon: CreditCard,
+        description: 'Payment tracking',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Appointments',
+        href: '/gunsmith/appointments',
+        icon: Calendar,
+        description: 'Scheduling and appointments',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Compliance',
+        href: '/gunsmith/compliance',
+        icon: Shield,
+        description: 'Canadian firearms license tracking',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Transfers',
+        href: '/gunsmith/transfers',
+        icon: ArrowRightLeft,
+        description: 'CFO transfers and sales',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Consignments',
+        href: '/gunsmith/consignments',
+        icon: ShoppingBag,
+        description: 'Consignment inventory',
+        permissionModule: 'gunsmith',
       },
     ],
   },

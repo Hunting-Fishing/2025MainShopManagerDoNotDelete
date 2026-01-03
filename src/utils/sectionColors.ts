@@ -121,6 +121,16 @@ export const sectionColorSchemes: Record<string, SectionColorScheme> = {
     headerText: 'text-emerald-800',
     icon: 'text-emerald-600',
     border: 'border-emerald-200'
+  },
+  'Gunsmith': {
+    background: 'bg-amber-50',
+    text: 'text-amber-700',
+    hover: 'hover:bg-amber-100',
+    active: 'bg-amber-200 text-amber-900',
+    header: 'bg-gradient-to-r from-amber-100 to-amber-50',
+    headerText: 'text-amber-800',
+    icon: 'text-amber-600',
+    border: 'border-amber-200'
   }
 };
 
