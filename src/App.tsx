@@ -171,8 +171,12 @@ import PowerWashingDashboard from '@/pages/power-washing/PowerWashingDashboard';
 import PowerWashingJobsList from '@/pages/power-washing/PowerWashingJobsList';
 import PowerWashingJobCreate from '@/pages/power-washing/PowerWashingJobCreate';
 import PowerWashingJobDetails from '@/pages/power-washing/PowerWashingJobDetails';
+import PowerWashingJobEdit from '@/pages/power-washing/PowerWashingJobEdit';
 import PowerWashingEquipment from '@/pages/power-washing/PowerWashingEquipment';
+import PowerWashingEquipmentCreate from '@/pages/power-washing/PowerWashingEquipmentCreate';
+import PowerWashingEquipmentDetail from '@/pages/power-washing/PowerWashingEquipmentDetail';
 import PowerWashingChemicals from '@/pages/power-washing/PowerWashingChemicals';
+import PowerWashingChemicalCreate from '@/pages/power-washing/PowerWashingChemicalCreate';
 import PowerWashingQuoteForm from '@/pages/power-washing/PowerWashingQuoteForm';
 import PowerWashingQuotesList from '@/pages/power-washing/PowerWashingQuotesList';
 import PowerWashingFormulas from '@/pages/power-washing/PowerWashingFormulas';
@@ -1034,10 +1038,14 @@ function App() {
                   <Route path="/power-washing/jobs" element={<PowerWashingJobsList />} />
                   <Route path="/power-washing/jobs/new" element={<PowerWashingJobCreate />} />
                   <Route path="/power-washing/jobs/:id" element={<PowerWashingJobDetails />} />
+                  <Route path="/power-washing/jobs/:id/edit" element={<PowerWashingJobEdit />} />
                   <Route path="/power-washing/quotes" element={<PowerWashingQuotesList />} />
                   <Route path="/power-washing/quotes/new" element={<PowerWashingQuoteForm />} />
                   <Route path="/power-washing/equipment" element={<PowerWashingEquipment />} />
+                  <Route path="/power-washing/equipment/new" element={<PowerWashingEquipmentCreate />} />
+                  <Route path="/power-washing/equipment/:id" element={<PowerWashingEquipmentDetail />} />
                   <Route path="/power-washing/chemicals" element={<PowerWashingChemicals />} />
+                  <Route path="/power-washing/chemicals/new" element={<PowerWashingChemicalCreate />} />
                   <Route path="/power-washing/formulas" element={<PowerWashingFormulas />} />
                   <Route path="/power-washing/bleach-calculator" element={<BleachCalculator />} />
                   <Route path="/power-washing/surface-calculator" element={<SurfaceMixCalculator />} />

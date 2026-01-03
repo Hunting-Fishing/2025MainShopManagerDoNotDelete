@@ -10,26 +10,24 @@ import {
   MapPin, 
   Calendar, 
   Clock, 
-  DollarSign,
   Camera,
   Play,
   Pause,
   CheckCircle,
   AlertTriangle,
-  FileText,
-  Upload,
-  Trash2,
   Edit,
-  Phone,
-  Mail,
   User,
   Building2,
-  Image as ImageIcon
+  Droplets,
+  Trash2
 } from 'lucide-react';
 import { usePowerWashingJobs, useUpdatePowerWashingJob, PowerWashingJob } from '@/hooks/usePowerWashing';
+import { JobPhotoUploader } from '@/components/power-washing/JobPhotoUploader';
+import { TimeClockWidget } from '@/components/power-washing/TimeClockWidget';
+import { ChemicalUsageLogger } from '@/components/power-washing/ChemicalUsageLogger';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: { label: 'Pending', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20', icon: Clock },
@@ -44,11 +42,10 @@ const STATUS_FLOW = ['pending', 'scheduled', 'in_progress', 'completed'];
 export default function PowerWashingJobDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: jobs, isLoading } = usePowerWashingJobs();
   const updateJob = useUpdatePowerWashingJob();
   
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
   const [notes, setNotes] = useState('');
 
   const job = jobs?.find(j => j.id === id);
@@ -107,23 +104,16 @@ export default function PowerWashingJobDetails() {
     }
   };
 
-  const handleStartTimer = () => {
-    setIsTimerRunning(true);
-    if (!job.actual_start_time) {
-      handleStatusChange('in_progress');
-    }
-  };
-
-  const handleStopTimer = () => {
-    setIsTimerRunning(false);
-  };
-
   const handleComplete = () => {
     handleStatusChange('completed');
-    setIsTimerRunning(false);
   };
 
-  const formatDuration = (startTime: string | null, endTime: string | null) => {
+  const handlePhotosUpdate = async (type: 'before' | 'after', photos: string[]) => {
+    if (!job) return;
+    const field = type === 'before' ? 'before_photos' : 'after_photos';
+    await updateJob.mutateAsync({ id: job.id, [field]: photos });
+    queryClient.invalidateQueries({ queryKey: ['power-washing-jobs'] });
+  };
     if (!startTime) return 'Not started';
     const start = new Date(startTime);
     const end = endTime ? new Date(endTime) : new Date();
@@ -222,6 +212,7 @@ export default function PowerWashingJobDetails() {
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="photos">Photos</TabsTrigger>
               <TabsTrigger value="time">Time Tracking</TabsTrigger>
+              <TabsTrigger value="chemicals">Chemicals</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
@@ -317,106 +308,56 @@ export default function PowerWashingJobDetails() {
             </TabsContent>
 
             <TabsContent value="photos" className="mt-4">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* Before Photos */}
-                    <div>
-                      <h3 className="font-semibold mb-4 flex items-center gap-2">
-                        <Camera className="h-4 w-4" />
-                        Before Photos
-                      </h3>
-                      {job.before_photos && job.before_photos.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2">
-                          {job.before_photos.map((photo, index) => (
-                            <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted">
-                              <img src={photo} alt={`Before ${index + 1}`} className="w-full h-full object-cover" />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                          <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground">No before photos yet</p>
-                          <Button variant="outline" size="sm" className="mt-2">
-                            <Camera className="h-4 w-4 mr-2" />
-                            Add Photos
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* After Photos */}
-                    <div>
-                      <h3 className="font-semibold mb-4 flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        After Photos
-                      </h3>
-                      {job.after_photos && job.after_photos.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2">
-                          {job.after_photos.map((photo, index) => (
-                            <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted">
-                              <img src={photo} alt={`After ${index + 1}`} className="w-full h-full object-cover" />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                          <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground">No after photos yet</p>
-                          <Button variant="outline" size="sm" className="mt-2">
-                            <Camera className="h-4 w-4 mr-2" />
-                            Add Photos
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Camera className="h-4 w-4" />
+                      Before Photos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <JobPhotoUploader
+                      jobId={job.id}
+                      photoType="before"
+                      existingPhotos={job.before_photos || []}
+                      onPhotosUpdate={(photos) => handlePhotosUpdate('before', photos)}
+                    />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      After Photos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <JobPhotoUploader
+                      jobId={job.id}
+                      photoType="after"
+                      existingPhotos={job.after_photos || []}
+                      onPhotosUpdate={(photos) => handlePhotosUpdate('after', photos)}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="time" className="mt-4">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center py-8">
-                    <div className="text-5xl font-mono font-bold mb-4">
-                      {formatDuration(job.actual_start_time, job.actual_end_time)}
-                    </div>
-                    {job.status === 'in_progress' && (
-                      <div className="flex justify-center gap-4">
-                        {isTimerRunning ? (
-                          <Button variant="outline" size="lg" onClick={handleStopTimer}>
-                            <Pause className="h-5 w-5 mr-2" />
-                            Pause
-                          </Button>
-                        ) : (
-                          <Button size="lg" onClick={handleStartTimer}>
-                            <Play className="h-5 w-5 mr-2" />
-                            {job.actual_start_time ? 'Resume' : 'Start Timer'}
-                          </Button>
-                        )}
-                        <Button variant="default" size="lg" onClick={handleComplete}>
-                          <CheckCircle className="h-5 w-5 mr-2" />
-                          Complete Job
-                        </Button>
-                      </div>
-                    )}
-                    {job.status === 'scheduled' && (
-                      <Button size="lg" onClick={handleStartTimer}>
-                        <Play className="h-5 w-5 mr-2" />
-                        Start Job
-                      </Button>
-                    )}
-                    {job.status === 'completed' && (
-                      <Badge className="bg-green-500/10 text-green-600 text-lg py-2 px-4">
-                        <CheckCircle className="h-5 w-5 mr-2" />
-                        Job Completed
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <TimeClockWidget
+                jobId={job.id}
+                shopId={job.shop_id}
+                onTimeUpdate={() => queryClient.invalidateQueries({ queryKey: ['power-washing-jobs'] })}
+              />
+            </TabsContent>
+
+            <TabsContent value="chemicals" className="mt-4">
+              <ChemicalUsageLogger
+                jobId={job.id}
+                shopId={job.shop_id}
+                onUpdate={() => queryClient.invalidateQueries({ queryKey: ['power-washing-chemicals'] })}
+              />
             </TabsContent>
 
             <TabsContent value="notes" className="mt-4 space-y-4">
