@@ -223,6 +223,8 @@ import GunsmithAppointmentForm from '@/pages/gunsmith/GunsmithAppointmentForm';
 import GunsmithInvoiceForm from '@/pages/gunsmith/GunsmithInvoiceForm';
 import GunsmithTransferForm from '@/pages/gunsmith/GunsmithTransferForm';
 import GunsmithConsignmentForm from '@/pages/gunsmith/GunsmithConsignmentForm';
+import GunsmithFirearmEdit from '@/pages/gunsmith/GunsmithFirearmEdit';
+import GunsmithPartEdit from '@/pages/gunsmith/GunsmithPartEdit';
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1118,7 +1120,9 @@ function App() {
                   <Route path="/gunsmith/quotes/:id" element={<GunsmithQuoteDetail />} />
                   <Route path="/gunsmith/firearms" element={<GunsmithFirearms />} />
                   <Route path="/gunsmith/firearms/new" element={<GunsmithFirearmForm />} />
+                  <Route path="/gunsmith/firearms/:id" element={<GunsmithFirearmEdit />} />
                   <Route path="/gunsmith/parts" element={<GunsmithParts />} />
+                  <Route path="/gunsmith/parts/:id" element={<GunsmithPartEdit />} />
                   <Route path="/gunsmith/parts/new" element={<GunsmithPartForm />} />
                   <Route path="/gunsmith/invoices" element={<GunsmithInvoices />} />
                   <Route path="/gunsmith/invoices/new" element={<GunsmithInvoiceForm />} />
