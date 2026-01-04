@@ -12820,6 +12820,379 @@ export type Database = {
           },
         ]
       }
+      fuel_delivery_tank_fills: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          delivery_id: string | null
+          driver_id: string | null
+          fill_date: string
+          fill_type: string | null
+          id: string
+          liters_after: number | null
+          liters_before: number | null
+          liters_delivered: number
+          meter_reading_end: number | null
+          meter_reading_start: number | null
+          notes: string | null
+          order_id: string | null
+          photo_url: string | null
+          price_per_liter: number | null
+          product_id: string | null
+          shop_id: string
+          signature_url: string | null
+          tank_id: string | null
+          tidy_tank_id: string | null
+          total_amount: number | null
+          truck_id: string | null
+          updated_at: string
+          verification_method: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          delivery_id?: string | null
+          driver_id?: string | null
+          fill_date?: string
+          fill_type?: string | null
+          id?: string
+          liters_after?: number | null
+          liters_before?: number | null
+          liters_delivered: number
+          meter_reading_end?: number | null
+          meter_reading_start?: number | null
+          notes?: string | null
+          order_id?: string | null
+          photo_url?: string | null
+          price_per_liter?: number | null
+          product_id?: string | null
+          shop_id: string
+          signature_url?: string | null
+          tank_id?: string | null
+          tidy_tank_id?: string | null
+          total_amount?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          verification_method?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          delivery_id?: string | null
+          driver_id?: string | null
+          fill_date?: string
+          fill_type?: string | null
+          id?: string
+          liters_after?: number | null
+          liters_before?: number | null
+          liters_delivered?: number
+          meter_reading_end?: number | null
+          meter_reading_start?: number | null
+          notes?: string | null
+          order_id?: string | null
+          photo_url?: string | null
+          price_per_liter?: number | null
+          product_id?: string | null
+          shop_id?: string
+          signature_url?: string | null
+          tank_id?: string | null
+          tidy_tank_id?: string | null
+          total_amount?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          verification_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_tank_fills_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tank_fills_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_completions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tank_fills_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tank_fills_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tank_fills_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tank_fills_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tank_fills_tidy_tank_id_fkey"
+            columns: ["tidy_tank_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_tidy_tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tank_fills_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_tank_readings: {
+        Row: {
+          created_at: string
+          id: string
+          level_liters: number
+          notes: string | null
+          reading_date: string
+          reading_type: string | null
+          recorded_by: string | null
+          shop_id: string
+          tank_id: string | null
+          tidy_tank_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level_liters: number
+          notes?: string | null
+          reading_date?: string
+          reading_type?: string | null
+          recorded_by?: string | null
+          shop_id: string
+          tank_id?: string | null
+          tidy_tank_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level_liters?: number
+          notes?: string | null
+          reading_date?: string
+          reading_type?: string | null
+          recorded_by?: string | null
+          shop_id?: string
+          tank_id?: string | null
+          tidy_tank_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_tank_readings_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tank_readings_tidy_tank_id_fkey"
+            columns: ["tidy_tank_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_tidy_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_tanks: {
+        Row: {
+          capacity_liters: number
+          created_at: string
+          current_level_liters: number | null
+          customer_id: string | null
+          gps_latitude: number | null
+          gps_longitude: number | null
+          id: string
+          installation_date: string | null
+          last_filled_date: string | null
+          last_inspection_date: string | null
+          last_reading_date: string | null
+          location_id: string | null
+          minimum_level_liters: number | null
+          next_inspection_date: string | null
+          notes: string | null
+          product_id: string | null
+          shop_id: string
+          status: string | null
+          tank_name: string
+          tank_number: string | null
+          tank_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          capacity_liters: number
+          created_at?: string
+          current_level_liters?: number | null
+          customer_id?: string | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          installation_date?: string | null
+          last_filled_date?: string | null
+          last_inspection_date?: string | null
+          last_reading_date?: string | null
+          location_id?: string | null
+          minimum_level_liters?: number | null
+          next_inspection_date?: string | null
+          notes?: string | null
+          product_id?: string | null
+          shop_id: string
+          status?: string | null
+          tank_name: string
+          tank_number?: string | null
+          tank_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capacity_liters?: number
+          created_at?: string
+          current_level_liters?: number | null
+          customer_id?: string | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          installation_date?: string | null
+          last_filled_date?: string | null
+          last_inspection_date?: string | null
+          last_reading_date?: string | null
+          location_id?: string | null
+          minimum_level_liters?: number | null
+          next_inspection_date?: string | null
+          notes?: string | null
+          product_id?: string | null
+          shop_id?: string
+          status?: string | null
+          tank_name?: string
+          tank_number?: string | null
+          tank_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_tanks_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tanks_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tanks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_tidy_tanks: {
+        Row: {
+          assigned_customer_id: string | null
+          assigned_date: string | null
+          capacity_liters: number
+          condition: string | null
+          created_at: string
+          current_level_liters: number | null
+          current_location: string | null
+          id: string
+          last_filled_date: string | null
+          last_inspection_date: string | null
+          next_inspection_date: string | null
+          notes: string | null
+          product_id: string | null
+          return_date: string | null
+          shop_id: string
+          status: string | null
+          tank_name: string
+          tank_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_customer_id?: string | null
+          assigned_date?: string | null
+          capacity_liters: number
+          condition?: string | null
+          created_at?: string
+          current_level_liters?: number | null
+          current_location?: string | null
+          id?: string
+          last_filled_date?: string | null
+          last_inspection_date?: string | null
+          next_inspection_date?: string | null
+          notes?: string | null
+          product_id?: string | null
+          return_date?: string | null
+          shop_id: string
+          status?: string | null
+          tank_name: string
+          tank_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_customer_id?: string | null
+          assigned_date?: string | null
+          capacity_liters?: number
+          condition?: string | null
+          created_at?: string
+          current_level_liters?: number | null
+          current_location?: string | null
+          id?: string
+          last_filled_date?: string | null
+          last_inspection_date?: string | null
+          next_inspection_date?: string | null
+          notes?: string | null
+          product_id?: string | null
+          return_date?: string | null
+          shop_id?: string
+          status?: string | null
+          tank_name?: string
+          tank_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_tidy_tanks_assigned_customer_id_fkey"
+            columns: ["assigned_customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_tidy_tanks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_delivery_trucks: {
         Row: {
           compartment_capacities: Json | null
