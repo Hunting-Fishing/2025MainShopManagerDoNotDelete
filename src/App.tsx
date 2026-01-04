@@ -245,6 +245,9 @@ import FuelDeliveryInventory from '@/pages/fuel-delivery/FuelDeliveryInventory';
 import FuelDeliveryInvoices from '@/pages/fuel-delivery/FuelDeliveryInvoices';
 import FuelDeliveryDriverApp from '@/pages/fuel-delivery/FuelDeliveryDriverApp';
 import FuelDeliveryPricing from '@/pages/fuel-delivery/FuelDeliveryPricing';
+import FuelDeliveryTanks from '@/pages/fuel-delivery/FuelDeliveryTanks';
+import FuelDeliveryTidyTanks from '@/pages/fuel-delivery/FuelDeliveryTidyTanks';
+import FuelDeliveryTankFills from '@/pages/fuel-delivery/FuelDeliveryTankFills';
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1177,6 +1180,9 @@ function App() {
                   <Route path="/fuel-delivery/invoices/new" element={<FuelDeliveryInvoices />} />
                   <Route path="/fuel-delivery/driver-app" element={<FuelDeliveryDriverApp />} />
                   <Route path="/fuel-delivery/pricing" element={<FuelDeliveryPricing />} />
+                  <Route path="/fuel-delivery/tanks" element={<FuelDeliveryTanks />} />
+                  <Route path="/fuel-delivery/tidy-tanks" element={<FuelDeliveryTidyTanks />} />
+                  <Route path="/fuel-delivery/tank-fills" element={<FuelDeliveryTankFills />} />
                   
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
