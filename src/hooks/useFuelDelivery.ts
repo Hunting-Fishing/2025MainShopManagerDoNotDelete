@@ -881,3 +881,46 @@ export function useUpdateFuelDeliveryInventory() {
     }
   });
 }
+
+// Price History types and hooks
+export interface FuelDeliveryPriceHistory {
+  id: string;
+  shop_id: string;
+  product_id: string;
+  old_price: number;
+  new_price: number;
+  change_reason?: string;
+  changed_by?: string;
+  effective_date: string;
+}
+
+export function useFuelDeliveryPriceHistory() {
+  return useQuery({
+    queryKey: ['fuel-delivery-price-history'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('fuel_delivery_price_history')
+        .select('*')
+        .order('effective_date', { ascending: false });
+      if (error) throw error;
+      return data as FuelDeliveryPriceHistory[];
+    }
+  });
+}
+
+export function useCreateFuelDeliveryPriceHistory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (record: Partial<FuelDeliveryPriceHistory>) => {
+      const shopId = await getShopId();
+      const { error } = await (supabase as any)
+        .from('fuel_delivery_price_history')
+        .insert({ ...record, shop_id: shopId, effective_date: new Date().toISOString() });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-price-history'] });
+    }
+  });
+}
