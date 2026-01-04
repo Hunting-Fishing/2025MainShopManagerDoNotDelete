@@ -31,7 +31,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      navigate('/module-hub', { replace: true });
     }
   }, [navigate, isAuthenticated]);
 
