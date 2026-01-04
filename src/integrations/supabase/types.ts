@@ -12909,6 +12909,70 @@ export type Database = {
           },
         ]
       }
+      gunsmith_job_parts: {
+        Row: {
+          created_at: string
+          deducted_at: string | null
+          id: string
+          is_deducted: boolean | null
+          job_id: string
+          notes: string | null
+          part_id: string
+          quantity: number
+          shop_id: string | null
+          total_price: number | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string
+          deducted_at?: string | null
+          id?: string
+          is_deducted?: boolean | null
+          job_id: string
+          notes?: string | null
+          part_id: string
+          quantity?: number
+          shop_id?: string | null
+          total_price?: number | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string
+          deducted_at?: string | null
+          id?: string
+          is_deducted?: boolean | null
+          job_id?: string
+          notes?: string | null
+          part_id?: string
+          quantity?: number
+          shop_id?: string | null
+          total_price?: number | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_job_parts_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_job_parts_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_job_parts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gunsmith_jobs: {
         Row: {
           actual_completion: string | null
@@ -13158,6 +13222,137 @@ export type Database = {
           },
         ]
       }
+      gunsmith_po_items: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          part_id: string | null
+          part_name: string
+          part_number: string | null
+          purchase_order_id: string
+          quantity_ordered: number
+          quantity_received: number | null
+          received_date: string | null
+          total_cost: number | null
+          unit_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          part_id?: string | null
+          part_name: string
+          part_number?: string | null
+          purchase_order_id: string
+          quantity_ordered?: number
+          quantity_received?: number | null
+          received_date?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          part_id?: string | null
+          part_name?: string
+          part_number?: string | null
+          purchase_order_id?: string
+          quantity_ordered?: number
+          quantity_received?: number | null
+          received_date?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_po_items_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_po_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_purchase_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expected_date: string | null
+          id: string
+          notes: string | null
+          order_date: string | null
+          po_number: string
+          received_date: string | null
+          shipping: number | null
+          shop_id: string | null
+          status: string
+          subtotal: number | null
+          supplier: string | null
+          supplier_contact: string | null
+          supplier_email: string | null
+          tax: number | null
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expected_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string | null
+          po_number: string
+          received_date?: string | null
+          shipping?: number | null
+          shop_id?: string | null
+          status?: string
+          subtotal?: number | null
+          supplier?: string | null
+          supplier_contact?: string | null
+          supplier_email?: string | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expected_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string | null
+          po_number?: string
+          received_date?: string | null
+          shipping?: number | null
+          shop_id?: string | null
+          status?: string
+          subtotal?: number | null
+          supplier?: string | null
+          supplier_contact?: string | null
+          supplier_email?: string | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_purchase_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gunsmith_quotes: {
         Row: {
           created_at: string
@@ -13246,6 +13441,163 @@ export type Database = {
           },
           {
             foreignKeyName: "gunsmith_quotes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_serialized_items: {
+        Row: {
+          acquisition_date: string | null
+          acquisition_source: string | null
+          created_at: string
+          customer_id: string | null
+          disposition_date: string | null
+          disposition_type: string | null
+          id: string
+          job_id: string | null
+          notes: string | null
+          part_id: string
+          serial_number: string
+          shop_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          acquisition_date?: string | null
+          acquisition_source?: string | null
+          created_at?: string
+          customer_id?: string | null
+          disposition_date?: string | null
+          disposition_type?: string | null
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          part_id: string
+          serial_number: string
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          acquisition_date?: string | null
+          acquisition_source?: string | null
+          created_at?: string
+          customer_id?: string | null
+          disposition_date?: string | null
+          disposition_type?: string | null
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          part_id?: string
+          serial_number?: string
+          shop_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_serialized_items_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_serialized_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_serialized_items_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_serialized_items_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_stock_movements: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string | null
+          movement_type: string
+          notes: string | null
+          part_id: string
+          performed_by: string | null
+          purchase_order_id: string | null
+          quantity_after: number
+          quantity_before: number
+          quantity_change: number
+          reason: string | null
+          shop_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          movement_type: string
+          notes?: string | null
+          part_id: string
+          performed_by?: string | null
+          purchase_order_id?: string | null
+          quantity_after: number
+          quantity_before: number
+          quantity_change: number
+          reason?: string | null
+          shop_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          movement_type?: string
+          notes?: string | null
+          part_id?: string
+          performed_by?: string | null
+          purchase_order_id?: string | null
+          quantity_after?: number
+          quantity_before?: number
+          quantity_change?: number
+          reason?: string | null
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_stock_movements_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_stock_movements_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_stock_movements_po_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_stock_movements_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"

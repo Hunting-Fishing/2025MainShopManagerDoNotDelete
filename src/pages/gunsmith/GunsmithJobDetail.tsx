@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Crosshair, Save, FileText, Clock, DollarSign, Wrench, User, Calendar } from 'lucide-react';
 import { useUpdateGunsmithJob } from '@/hooks/useGunsmith';
 import { format } from 'date-fns';
+import GunsmithJobPartsPanel from './GunsmithJobPartsPanel';
 
 const STATUS_OPTIONS = ['pending', 'in_progress', 'waiting_parts', 'completed', 'cancelled'];
 const PRIORITY_OPTIONS = ['low', 'normal', 'high', 'rush'];
@@ -402,6 +403,13 @@ export default function GunsmithJobDetail() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Job Parts */}
+        {id && (
+          <div className="mt-6">
+            <GunsmithJobPartsPanel jobId={id} jobStatus={job.status} />
+          </div>
+        )}
 
         {/* Actions */}
         <div className="mt-6 flex gap-4">

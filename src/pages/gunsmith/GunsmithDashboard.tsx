@@ -19,7 +19,8 @@ import {
   CalendarDays,
   BookOpen,
   Scale,
-  ShoppingBag
+  ShoppingBag,
+  BarChart3
 } from 'lucide-react';
 import { useGunsmithStats, useGunsmithJobs } from '@/hooks/useGunsmith';
 import { useNavigate } from 'react-router-dom';
@@ -178,6 +179,14 @@ export default function GunsmithDashboard() {
         >
           <Package className="h-6 w-6" />
           <span className="text-xs">Parts</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-purple-500/30 hover:bg-purple-500/5"
+          onClick={() => navigate('/gunsmith/inventory')}
+        >
+          <BarChart3 className="h-6 w-6 text-purple-500" />
+          <span className="text-xs">Inventory</span>
         </Button>
         <Button
           variant="outline"

@@ -225,6 +225,10 @@ import GunsmithTransferForm from '@/pages/gunsmith/GunsmithTransferForm';
 import GunsmithConsignmentForm from '@/pages/gunsmith/GunsmithConsignmentForm';
 import GunsmithFirearmEdit from '@/pages/gunsmith/GunsmithFirearmEdit';
 import GunsmithPartEdit from '@/pages/gunsmith/GunsmithPartEdit';
+import GunsmithInventory from '@/pages/gunsmith/GunsmithInventory';
+import GunsmithStockAdjust from '@/pages/gunsmith/GunsmithStockAdjust';
+import GunsmithPurchaseOrderForm from '@/pages/gunsmith/GunsmithPurchaseOrderForm';
+import GunsmithSerializedForm from '@/pages/gunsmith/GunsmithSerializedForm';
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1134,6 +1138,10 @@ function App() {
                   <Route path="/gunsmith/transfers/new" element={<GunsmithTransferForm />} />
                   <Route path="/gunsmith/consignments" element={<GunsmithConsignments />} />
                   <Route path="/gunsmith/consignments/new" element={<GunsmithConsignmentForm />} />
+                  <Route path="/gunsmith/inventory" element={<GunsmithInventory />} />
+                  <Route path="/gunsmith/inventory/adjust" element={<GunsmithStockAdjust />} />
+                  <Route path="/gunsmith/inventory/purchase-orders/new" element={<GunsmithPurchaseOrderForm />} />
+                  <Route path="/gunsmith/inventory/serialized/new" element={<GunsmithSerializedForm />} />
                   
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
