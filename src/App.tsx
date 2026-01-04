@@ -229,6 +229,20 @@ import GunsmithInventory from '@/pages/gunsmith/GunsmithInventory';
 import GunsmithStockAdjust from '@/pages/gunsmith/GunsmithStockAdjust';
 import GunsmithPurchaseOrderForm from '@/pages/gunsmith/GunsmithPurchaseOrderForm';
 import GunsmithSerializedForm from '@/pages/gunsmith/GunsmithSerializedForm';
+
+// Fuel Delivery
+import FuelDeliveryDashboard from '@/pages/fuel-delivery/FuelDeliveryDashboard';
+import FuelDeliveryOrders from '@/pages/fuel-delivery/FuelDeliveryOrders';
+import FuelDeliveryOrderForm from '@/pages/fuel-delivery/FuelDeliveryOrderForm';
+import FuelDeliveryCustomers from '@/pages/fuel-delivery/FuelDeliveryCustomers';
+import FuelDeliveryLocations from '@/pages/fuel-delivery/FuelDeliveryLocations';
+import FuelDeliveryProducts from '@/pages/fuel-delivery/FuelDeliveryProducts';
+import FuelDeliveryTrucks from '@/pages/fuel-delivery/FuelDeliveryTrucks';
+import FuelDeliveryDrivers from '@/pages/fuel-delivery/FuelDeliveryDrivers';
+import FuelDeliveryRoutes from '@/pages/fuel-delivery/FuelDeliveryRoutes';
+import FuelDeliveryCompletions from '@/pages/fuel-delivery/FuelDeliveryCompletions';
+import FuelDeliveryInventory from '@/pages/fuel-delivery/FuelDeliveryInventory';
+import FuelDeliveryInvoices from '@/pages/fuel-delivery/FuelDeliveryInvoices';
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1142,6 +1156,23 @@ function App() {
                   <Route path="/gunsmith/inventory/adjust" element={<GunsmithStockAdjust />} />
                   <Route path="/gunsmith/inventory/purchase-orders/new" element={<GunsmithPurchaseOrderForm />} />
                   <Route path="/gunsmith/inventory/serialized/new" element={<GunsmithSerializedForm />} />
+                  
+                  {/* Fuel Delivery Routes */}
+                  <Route path="/fuel-delivery" element={<FuelDeliveryDashboard />} />
+                  <Route path="/fuel-delivery/orders" element={<FuelDeliveryOrders />} />
+                  <Route path="/fuel-delivery/orders/new" element={<FuelDeliveryOrderForm />} />
+                  <Route path="/fuel-delivery/orders/:id" element={<FuelDeliveryOrders />} />
+                  <Route path="/fuel-delivery/customers" element={<FuelDeliveryCustomers />} />
+                  <Route path="/fuel-delivery/locations" element={<FuelDeliveryLocations />} />
+                  <Route path="/fuel-delivery/products" element={<FuelDeliveryProducts />} />
+                  <Route path="/fuel-delivery/trucks" element={<FuelDeliveryTrucks />} />
+                  <Route path="/fuel-delivery/drivers" element={<FuelDeliveryDrivers />} />
+                  <Route path="/fuel-delivery/routes" element={<FuelDeliveryRoutes />} />
+                  <Route path="/fuel-delivery/routes/new" element={<FuelDeliveryRoutes />} />
+                  <Route path="/fuel-delivery/deliveries" element={<FuelDeliveryCompletions />} />
+                  <Route path="/fuel-delivery/inventory" element={<FuelDeliveryInventory />} />
+                  <Route path="/fuel-delivery/invoices" element={<FuelDeliveryInvoices />} />
+                  <Route path="/fuel-delivery/invoices/new" element={<FuelDeliveryInvoices />} />
                   
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
