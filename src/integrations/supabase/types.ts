@@ -11867,6 +11867,1040 @@ export type Database = {
           },
         ]
       }
+      fuel_delivery_completions: {
+        Row: {
+          arrival_time: string | null
+          created_at: string
+          customer_present: boolean | null
+          delivery_date: string
+          delivery_fee: number | null
+          delivery_photos: Json | null
+          departure_time: string | null
+          driver_id: string | null
+          gallons_delivered: number
+          gps_latitude: number | null
+          gps_longitude: number | null
+          id: string
+          meter_end_reading: number | null
+          meter_start_reading: number | null
+          notes: string | null
+          odometer_reading: number | null
+          order_id: string | null
+          payment_method: string | null
+          payment_received: boolean | null
+          shop_id: string
+          signature_url: string | null
+          subtotal: number | null
+          tank_level_after: number | null
+          tank_level_before: number | null
+          tax_amount: number | null
+          total_amount: number | null
+          truck_id: string | null
+          unit_price: number | null
+        }
+        Insert: {
+          arrival_time?: string | null
+          created_at?: string
+          customer_present?: boolean | null
+          delivery_date?: string
+          delivery_fee?: number | null
+          delivery_photos?: Json | null
+          departure_time?: string | null
+          driver_id?: string | null
+          gallons_delivered: number
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          meter_end_reading?: number | null
+          meter_start_reading?: number | null
+          notes?: string | null
+          odometer_reading?: number | null
+          order_id?: string | null
+          payment_method?: string | null
+          payment_received?: boolean | null
+          shop_id: string
+          signature_url?: string | null
+          subtotal?: number | null
+          tank_level_after?: number | null
+          tank_level_before?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          truck_id?: string | null
+          unit_price?: number | null
+        }
+        Update: {
+          arrival_time?: string | null
+          created_at?: string
+          customer_present?: boolean | null
+          delivery_date?: string
+          delivery_fee?: number | null
+          delivery_photos?: Json | null
+          departure_time?: string | null
+          driver_id?: string | null
+          gallons_delivered?: number
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          meter_end_reading?: number | null
+          meter_start_reading?: number | null
+          notes?: string | null
+          odometer_reading?: number | null
+          order_id?: string | null
+          payment_method?: string | null
+          payment_received?: boolean | null
+          shop_id?: string
+          signature_url?: string | null
+          subtotal?: number | null
+          tank_level_after?: number | null
+          tank_level_before?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          truck_id?: string | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_completions_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_completions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_completions_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_customers: {
+        Row: {
+          auto_delivery: boolean | null
+          billing_address: string | null
+          company_name: string | null
+          contact_name: string
+          created_at: string
+          credit_limit: number | null
+          current_balance: number | null
+          customer_id: string | null
+          delivery_frequency: string | null
+          delivery_instructions: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          minimum_delivery_gallons: number | null
+          notes: string | null
+          payment_terms: string | null
+          phone: string | null
+          preferred_fuel_type: string | null
+          shop_id: string
+          tax_exempt: boolean | null
+          tax_exempt_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_delivery?: boolean | null
+          billing_address?: string | null
+          company_name?: string | null
+          contact_name: string
+          created_at?: string
+          credit_limit?: number | null
+          current_balance?: number | null
+          customer_id?: string | null
+          delivery_frequency?: string | null
+          delivery_instructions?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          minimum_delivery_gallons?: number | null
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          preferred_fuel_type?: string | null
+          shop_id: string
+          tax_exempt?: boolean | null
+          tax_exempt_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_delivery?: boolean | null
+          billing_address?: string | null
+          company_name?: string | null
+          contact_name?: string
+          created_at?: string
+          credit_limit?: number | null
+          current_balance?: number | null
+          customer_id?: string | null
+          delivery_frequency?: string | null
+          delivery_instructions?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          minimum_delivery_gallons?: number | null
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          preferred_fuel_type?: string | null
+          shop_id?: string
+          tax_exempt?: boolean | null
+          tax_exempt_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_customers_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_drivers: {
+        Row: {
+          cdl_class: string | null
+          cdl_expiry: string | null
+          cdl_number: string | null
+          cdl_state: string | null
+          commission_rate: number | null
+          created_at: string
+          driver_number: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          first_name: string
+          hazmat_endorsement: boolean | null
+          hazmat_expiry: string | null
+          hire_date: string | null
+          hourly_rate: number | null
+          id: string
+          last_name: string
+          medical_card_expiry: string | null
+          notes: string | null
+          phone: string | null
+          profile_id: string | null
+          shop_id: string
+          status: string | null
+          tanker_endorsement: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          cdl_class?: string | null
+          cdl_expiry?: string | null
+          cdl_number?: string | null
+          cdl_state?: string | null
+          commission_rate?: number | null
+          created_at?: string
+          driver_number?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name: string
+          hazmat_endorsement?: boolean | null
+          hazmat_expiry?: string | null
+          hire_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          last_name: string
+          medical_card_expiry?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          shop_id: string
+          status?: string | null
+          tanker_endorsement?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          cdl_class?: string | null
+          cdl_expiry?: string | null
+          cdl_number?: string | null
+          cdl_state?: string | null
+          commission_rate?: number | null
+          created_at?: string
+          driver_number?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name?: string
+          hazmat_endorsement?: boolean | null
+          hazmat_expiry?: string | null
+          hire_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          last_name?: string
+          medical_card_expiry?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          shop_id?: string
+          status?: string | null
+          tanker_endorsement?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_drivers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_inventory: {
+        Row: {
+          created_at: string
+          current_quantity: number | null
+          id: string
+          last_reading_date: string | null
+          location: string | null
+          minimum_level: number | null
+          notes: string | null
+          product_id: string | null
+          reorder_level: number | null
+          shop_id: string
+          storage_tank_name: string
+          tank_capacity: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_quantity?: number | null
+          id?: string
+          last_reading_date?: string | null
+          location?: string | null
+          minimum_level?: number | null
+          notes?: string | null
+          product_id?: string | null
+          reorder_level?: number | null
+          shop_id: string
+          storage_tank_name: string
+          tank_capacity?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_quantity?: number | null
+          id?: string
+          last_reading_date?: string | null
+          location?: string | null
+          minimum_level?: number | null
+          notes?: string | null
+          product_id?: string | null
+          reorder_level?: number | null
+          shop_id?: string
+          storage_tank_name?: string
+          tank_capacity?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_invoice_lines: {
+        Row: {
+          created_at: string
+          delivery_id: string | null
+          description: string
+          id: string
+          invoice_id: string | null
+          quantity: number | null
+          subtotal: number | null
+          tax_amount: number | null
+          total: number | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_id?: string | null
+          description: string
+          id?: string
+          invoice_id?: string | null
+          quantity?: number | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total?: number | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string
+          delivery_id?: string | null
+          description?: string
+          id?: string
+          invoice_id?: string | null
+          quantity?: number | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total?: number | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_invoice_lines_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_completions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_invoices: {
+        Row: {
+          adjustments: number | null
+          amount_paid: number | null
+          balance_due: number | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          delivery_fees: number | null
+          due_date: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          shop_id: string
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          terms: string | null
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          adjustments?: number | null
+          amount_paid?: number | null
+          balance_due?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          delivery_fees?: number | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          notes?: string | null
+          shop_id: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          adjustments?: number | null
+          amount_paid?: number | null
+          balance_due?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          delivery_fees?: number | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          shop_id?: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_locations: {
+        Row: {
+          access_instructions: string | null
+          address: string
+          city: string | null
+          contact_on_site: string | null
+          contact_phone: string | null
+          created_at: string
+          current_level_gallons: number | null
+          customer_id: string | null
+          fuel_type: string
+          id: string
+          is_active: boolean | null
+          last_delivery_date: string | null
+          latitude: number | null
+          location_name: string
+          longitude: number | null
+          requires_appointment: boolean | null
+          shop_id: string
+          special_equipment_needed: string | null
+          state: string | null
+          tank_capacity_gallons: number | null
+          tank_type: string | null
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          access_instructions?: string | null
+          address: string
+          city?: string | null
+          contact_on_site?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          current_level_gallons?: number | null
+          customer_id?: string | null
+          fuel_type: string
+          id?: string
+          is_active?: boolean | null
+          last_delivery_date?: string | null
+          latitude?: number | null
+          location_name: string
+          longitude?: number | null
+          requires_appointment?: boolean | null
+          shop_id: string
+          special_equipment_needed?: string | null
+          state?: string | null
+          tank_capacity_gallons?: number | null
+          tank_type?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          access_instructions?: string | null
+          address?: string
+          city?: string | null
+          contact_on_site?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          current_level_gallons?: number | null
+          customer_id?: string | null
+          fuel_type?: string
+          id?: string
+          is_active?: boolean | null
+          last_delivery_date?: string | null
+          latitude?: number | null
+          location_name?: string
+          longitude?: number | null
+          requires_appointment?: boolean | null
+          shop_id?: string
+          special_equipment_needed?: string | null
+          state?: string | null
+          tank_capacity_gallons?: number | null
+          tank_type?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_locations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          delivery_fee: number | null
+          driver_id: string | null
+          id: string
+          internal_notes: string | null
+          location_id: string | null
+          order_date: string
+          order_number: string
+          price_per_unit: number | null
+          priority: string | null
+          product_id: string | null
+          quantity_ordered: number
+          requested_date: string | null
+          route_id: string | null
+          scheduled_date: string | null
+          shop_id: string
+          special_instructions: string | null
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          total_amount: number | null
+          truck_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          delivery_fee?: number | null
+          driver_id?: string | null
+          id?: string
+          internal_notes?: string | null
+          location_id?: string | null
+          order_date?: string
+          order_number: string
+          price_per_unit?: number | null
+          priority?: string | null
+          product_id?: string | null
+          quantity_ordered: number
+          requested_date?: string | null
+          route_id?: string | null
+          scheduled_date?: string | null
+          shop_id: string
+          special_instructions?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          delivery_fee?: number | null
+          driver_id?: string | null
+          id?: string
+          internal_notes?: string | null
+          location_id?: string | null
+          order_date?: string
+          order_number?: string
+          price_per_unit?: number | null
+          priority?: string | null
+          product_id?: string | null
+          quantity_ordered?: number
+          requested_date?: string | null
+          route_id?: string | null
+          scheduled_date?: string | null
+          shop_id?: string
+          special_instructions?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_orders_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          reference_number: string | null
+          shop_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          reference_number?: string | null
+          shop_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          reference_number?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_price_history: {
+        Row: {
+          cost_per_unit: number | null
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          id: string
+          price_per_unit: number
+          product_id: string | null
+          reason: string | null
+          shop_id: string
+        }
+        Insert: {
+          cost_per_unit?: number | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          price_per_unit: number
+          product_id?: string | null
+          reason?: string | null
+          shop_id: string
+        }
+        Update: {
+          cost_per_unit?: number | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          price_per_unit?: number
+          product_id?: string | null
+          reason?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_products: {
+        Row: {
+          base_price_per_unit: number | null
+          cost_per_unit: number | null
+          created_at: string
+          description: string | null
+          fuel_type: string
+          id: string
+          is_active: boolean | null
+          is_taxable: boolean | null
+          minimum_order_quantity: number | null
+          product_code: string | null
+          product_name: string
+          shop_id: string
+          tax_rate: number | null
+          unit_of_measure: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_price_per_unit?: number | null
+          cost_per_unit?: number | null
+          created_at?: string
+          description?: string | null
+          fuel_type: string
+          id?: string
+          is_active?: boolean | null
+          is_taxable?: boolean | null
+          minimum_order_quantity?: number | null
+          product_code?: string | null
+          product_name: string
+          shop_id: string
+          tax_rate?: number | null
+          unit_of_measure?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_price_per_unit?: number | null
+          cost_per_unit?: number | null
+          created_at?: string
+          description?: string | null
+          fuel_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_taxable?: boolean | null
+          minimum_order_quantity?: number | null
+          product_code?: string | null
+          product_name?: string
+          shop_id?: string
+          tax_rate?: number | null
+          unit_of_measure?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fuel_delivery_route_stops: {
+        Row: {
+          actual_arrival: string | null
+          created_at: string
+          estimated_arrival: string | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          route_id: string | null
+          skip_reason: string | null
+          status: string | null
+          stop_sequence: number
+        }
+        Insert: {
+          actual_arrival?: string | null
+          created_at?: string
+          estimated_arrival?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          route_id?: string | null
+          skip_reason?: string | null
+          status?: string | null
+          stop_sequence: number
+        }
+        Update: {
+          actual_arrival?: string | null
+          created_at?: string
+          estimated_arrival?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          route_id?: string | null
+          skip_reason?: string | null
+          status?: string | null
+          stop_sequence?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_route_stops_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_routes: {
+        Row: {
+          completed_stops: number | null
+          created_at: string
+          created_by: string | null
+          driver_id: string | null
+          end_time: string | null
+          id: string
+          notes: string | null
+          route_date: string
+          route_name: string
+          shop_id: string
+          start_time: string | null
+          status: string | null
+          total_gallons_delivered: number | null
+          total_gallons_planned: number | null
+          total_miles: number | null
+          total_stops: number | null
+          truck_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          completed_stops?: number | null
+          created_at?: string
+          created_by?: string | null
+          driver_id?: string | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          route_date: string
+          route_name: string
+          shop_id: string
+          start_time?: string | null
+          status?: string | null
+          total_gallons_delivered?: number | null
+          total_gallons_planned?: number | null
+          total_miles?: number | null
+          total_stops?: number | null
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          completed_stops?: number | null
+          created_at?: string
+          created_by?: string | null
+          driver_id?: string | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          route_date?: string
+          route_name?: string
+          shop_id?: string
+          start_time?: string | null
+          status?: string | null
+          total_gallons_delivered?: number | null
+          total_gallons_planned?: number | null
+          total_miles?: number | null
+          total_stops?: number | null
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_routes_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_routes_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_trucks: {
+        Row: {
+          compartment_capacities: Json | null
+          compartments: number | null
+          created_at: string
+          current_fuel_load: number | null
+          current_odometer: number | null
+          dot_inspection_due: string | null
+          id: string
+          insurance_expiry: string | null
+          is_active: boolean | null
+          last_calibration_date: string | null
+          license_plate: string | null
+          make: string | null
+          meter_number: string | null
+          model: string | null
+          next_calibration_due: string | null
+          notes: string | null
+          registration_expiry: string | null
+          shop_id: string
+          status: string | null
+          tank_capacity_gallons: number | null
+          truck_number: string
+          updated_at: string
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          compartment_capacities?: Json | null
+          compartments?: number | null
+          created_at?: string
+          current_fuel_load?: number | null
+          current_odometer?: number | null
+          dot_inspection_due?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          is_active?: boolean | null
+          last_calibration_date?: string | null
+          license_plate?: string | null
+          make?: string | null
+          meter_number?: string | null
+          model?: string | null
+          next_calibration_due?: string | null
+          notes?: string | null
+          registration_expiry?: string | null
+          shop_id: string
+          status?: string | null
+          tank_capacity_gallons?: number | null
+          truck_number: string
+          updated_at?: string
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          compartment_capacities?: Json | null
+          compartments?: number | null
+          created_at?: string
+          current_fuel_load?: number | null
+          current_odometer?: number | null
+          dot_inspection_due?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          is_active?: boolean | null
+          last_calibration_date?: string | null
+          license_plate?: string | null
+          make?: string | null
+          meter_number?: string | null
+          model?: string | null
+          next_calibration_due?: string | null
+          notes?: string | null
+          registration_expiry?: string | null
+          shop_id?: string
+          status?: string | null
+          tank_capacity_gallons?: number | null
+          truck_number?: string
+          updated_at?: string
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
       fuel_entries: {
         Row: {
           cost: number | null
