@@ -757,6 +757,13 @@ export const navigation: NavigationSection[] = [
         permissionModule: 'fleet_management',
       },
       {
+        title: 'Quotes',
+        href: '/fuel-delivery/quotes',
+        icon: FileText,
+        description: 'Customer quotes',
+        permissionModule: 'fleet_management',
+      },
+      {
         title: 'Invoices',
         href: '/fuel-delivery/invoices',
         icon: Receipt,

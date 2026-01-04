@@ -924,3 +924,161 @@ export function useCreateFuelDeliveryPriceHistory() {
     }
   });
 }
+
+// Quote types and hooks
+export interface FuelDeliveryQuote {
+  id: string;
+  shop_id: string;
+  customer_id?: string;
+  location_id?: string;
+  quote_number: string;
+  quote_date: string;
+  valid_until?: string;
+  status: string;
+  subtotal?: number;
+  tax_rate?: number;
+  tax_amount?: number;
+  total_amount?: number;
+  notes?: string;
+  terms?: string;
+  converted_to_order_id?: string;
+  converted_at?: string;
+  created_at: string;
+  fuel_delivery_customers?: FuelDeliveryCustomer;
+}
+
+export interface FuelDeliveryQuoteLine {
+  id: string;
+  quote_id: string;
+  product_id?: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  total_price: number;
+  sort_order: number;
+}
+
+export function useFuelDeliveryQuotes() {
+  return useQuery({
+    queryKey: ['fuel-delivery-quotes'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('fuel_delivery_quotes')
+        .select('*, fuel_delivery_customers(*)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as FuelDeliveryQuote[];
+    }
+  });
+}
+
+export function useCreateFuelDeliveryQuote() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: Partial<FuelDeliveryQuote> & { lines?: any[] }) => {
+      const shopId = await getShopId();
+      const { lines, ...quoteData } = data;
+      
+      // Create the quote
+      const { data: quote, error: quoteError } = await (supabase as any)
+        .from('fuel_delivery_quotes')
+        .insert({ ...quoteData, shop_id: shopId })
+        .select()
+        .single();
+      
+      if (quoteError) throw quoteError;
+      
+      // Create line items if provided
+      if (lines && lines.length > 0) {
+        const lineItems = lines.map(line => ({
+          quote_id: quote.id,
+          product_id: line.product_id || null,
+          description: line.description,
+          quantity: line.quantity,
+          unit_price: line.unit_price,
+          total_price: line.total_price,
+          sort_order: line.sort_order || 0
+        }));
+        
+        const { error: linesError } = await (supabase as any)
+          .from('fuel_delivery_quote_lines')
+          .insert(lineItems);
+        
+        if (linesError) throw linesError;
+      }
+      
+      return quote;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-quotes'] });
+      toast({ title: 'Quote created successfully' });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to create quote', description: String(error), variant: 'destructive' });
+    }
+  });
+}
+
+export function useConvertQuoteToOrder() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (quoteId: string) => {
+      const shopId = await getShopId();
+      
+      // Get the quote with lines
+      const { data: quote, error: quoteError } = await (supabase as any)
+        .from('fuel_delivery_quotes')
+        .select('*, fuel_delivery_quote_lines(*)')
+        .eq('id', quoteId)
+        .single();
+      
+      if (quoteError) throw quoteError;
+      
+      // Create the order
+      const { data: order, error: orderError } = await (supabase as any)
+        .from('fuel_delivery_orders')
+        .insert({
+          shop_id: shopId,
+          order_number: `ORD-${Date.now().toString().slice(-6)}`,
+          customer_id: quote.customer_id,
+          location_id: quote.location_id,
+          order_date: new Date().toISOString(),
+          quantity_ordered: quote.fuel_delivery_quote_lines?.reduce((sum: number, l: any) => sum + l.quantity, 0) || 0,
+          subtotal: quote.subtotal,
+          tax_amount: quote.tax_amount,
+          total_amount: quote.total_amount,
+          status: 'pending',
+          special_instructions: quote.notes
+        })
+        .select()
+        .single();
+      
+      if (orderError) throw orderError;
+      
+      // Update quote status
+      await (supabase as any)
+        .from('fuel_delivery_quotes')
+        .update({
+          status: 'converted',
+          converted_to_order_id: order.id,
+          converted_at: new Date().toISOString()
+        })
+        .eq('id', quoteId);
+      
+      return order;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-orders'] });
+      toast({ title: 'Quote converted to order successfully' });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to convert quote', description: String(error), variant: 'destructive' });
+    }
+  });
+}

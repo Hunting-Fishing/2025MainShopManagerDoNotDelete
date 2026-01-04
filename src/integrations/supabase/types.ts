@@ -12919,6 +12919,148 @@ export type Database = {
         }
         Relationships: []
       }
+      fuel_delivery_quote_lines: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          product_id: string | null
+          quantity: number
+          quote_id: string
+          sort_order: number | null
+          total_price: number
+          unit: string | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          product_id?: string | null
+          quantity?: number
+          quote_id: string
+          sort_order?: number | null
+          total_price?: number
+          unit?: string | null
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          product_id?: string | null
+          quantity?: number
+          quote_id?: string
+          sort_order?: number | null
+          total_price?: number
+          unit?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_quote_lines_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_quotes: {
+        Row: {
+          converted_at: string | null
+          converted_to_order_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          location_id: string | null
+          notes: string | null
+          quote_date: string
+          quote_number: string
+          shop_id: string
+          status: string
+          subtotal: number | null
+          tax_amount: number | null
+          tax_rate: number | null
+          terms: string | null
+          total_amount: number | null
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          converted_at?: string | null
+          converted_to_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          quote_date?: string
+          quote_number: string
+          shop_id: string
+          status?: string
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          converted_at?: string | null
+          converted_to_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          quote_date?: string
+          quote_number?: string
+          shop_id?: string
+          status?: string
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_quotes_converted_to_order_id_fkey"
+            columns: ["converted_to_order_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_quotes_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_delivery_route_stops: {
         Row: {
           actual_arrival: string | null
