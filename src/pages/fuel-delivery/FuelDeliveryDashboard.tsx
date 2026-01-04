@@ -17,7 +17,10 @@ import {
   Route,
   BarChart3,
   Droplets,
-  Clock
+  Clock,
+  Settings,
+  Filter,
+  Container
 } from 'lucide-react';
 import { useFuelDeliveryStats, useFuelDeliveryOrders } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
@@ -145,7 +148,7 @@ export default function FuelDeliveryDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-4 mb-8">
+      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4 mb-8">
         <Button
           variant="outline"
           className="h-24 flex flex-col gap-2"
@@ -162,6 +165,50 @@ export default function FuelDeliveryDashboard() {
           <Users className="h-6 w-6" />
           <span className="text-xs">Customers</span>
         </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-teal-500/30 hover:bg-teal-500/5"
+          onClick={() => navigate('/fuel-delivery/tanks')}
+        >
+          <Container className="h-6 w-6 text-teal-500" />
+          <span className="text-xs">Tanks</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-indigo-500/30 hover:bg-indigo-500/5"
+          onClick={() => navigate('/fuel-delivery/tidy-tanks')}
+        >
+          <Package className="h-6 w-6 text-indigo-500" />
+          <span className="text-xs">Tidy Tanks</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-cyan-500/30 hover:bg-cyan-500/5"
+          onClick={() => navigate('/fuel-delivery/tank-fills')}
+        >
+          <Droplets className="h-6 w-6 text-cyan-500" />
+          <span className="text-xs">Tank Fills</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-blue-500/30 hover:bg-blue-500/5"
+          onClick={() => navigate('/fuel-delivery/equipment')}
+        >
+          <Settings className="h-6 w-6 text-blue-500" />
+          <span className="text-xs">Equipment</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-purple-500/30 hover:bg-purple-500/5"
+          onClick={() => navigate('/fuel-delivery/equipment-filters')}
+        >
+          <Filter className="h-6 w-6 text-purple-500" />
+          <span className="text-xs">Filters</span>
+        </Button>
+      </div>
+
+      {/* Second Row - More Actions */}
+      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4 mb-8">
         <Button
           variant="outline"
           className="h-24 flex flex-col gap-2"
@@ -204,14 +251,6 @@ export default function FuelDeliveryDashboard() {
         </Button>
         <Button
           variant="outline"
-          className="h-24 flex flex-col gap-2 border-cyan-500/30 hover:bg-cyan-500/5"
-          onClick={() => navigate('/fuel-delivery/deliveries')}
-        >
-          <Droplets className="h-6 w-6 text-cyan-500" />
-          <span className="text-xs">Deliveries</span>
-        </Button>
-        <Button
-          variant="outline"
           className="h-24 flex flex-col gap-2 border-emerald-500/30 hover:bg-emerald-500/5"
           onClick={() => navigate('/fuel-delivery/invoices')}
         >
@@ -227,6 +266,7 @@ export default function FuelDeliveryDashboard() {
           <span className="text-xs">Inventory</span>
         </Button>
       </div>
+
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
