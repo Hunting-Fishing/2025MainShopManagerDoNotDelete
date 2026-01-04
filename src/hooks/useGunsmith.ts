@@ -41,6 +41,7 @@ export interface GunsmithFirearm {
   registration_number?: string;
   condition?: string;
   notes?: string;
+  photo_url?: string;
   customers?: { first_name: string; last_name?: string };
 }
 
@@ -55,6 +56,89 @@ export interface GunsmithPart {
   unit_cost?: number;
   retail_price?: number;
   location?: string;
+}
+
+export interface GunsmithQuote {
+  id: string;
+  quote_number: string;
+  customer_id?: string;
+  firearm_id?: string;
+  status: string;
+  valid_until?: string;
+  labor_estimate?: number;
+  parts_estimate?: number;
+  total_estimate?: number;
+  notes?: string;
+  created_at: string;
+  customers?: { first_name: string; last_name?: string };
+  gunsmith_firearms?: { make: string; model: string };
+}
+
+export interface GunsmithAppointment {
+  id: string;
+  customer_id?: string;
+  firearm_id?: string;
+  appointment_date: string;
+  appointment_type: string;
+  duration_minutes?: number;
+  status: string;
+  notes?: string;
+  customers?: { first_name: string; last_name?: string };
+}
+
+export interface GunsmithTransfer {
+  id: string;
+  transfer_type: string;
+  customer_id?: string;
+  firearm_id?: string;
+  transfer_date?: string;
+  cfo_reference?: string;
+  att_number?: string;
+  status: string;
+  notes?: string;
+  customers?: { first_name: string; last_name?: string };
+  gunsmith_firearms?: { make: string; model: string; serial_number?: string };
+}
+
+export interface GunsmithConsignment {
+  id: string;
+  customer_id?: string;
+  firearm_id?: string;
+  asking_price?: number;
+  minimum_price?: number;
+  commission_rate?: number;
+  start_date?: string;
+  end_date?: string;
+  status: string;
+  notes?: string;
+  customers?: { first_name: string; last_name?: string };
+  gunsmith_firearms?: { make: string; model: string };
+}
+
+export interface GunsmithInvoice {
+  id: string;
+  invoice_number: string;
+  job_id?: string;
+  customer_id?: string;
+  subtotal?: number;
+  tax?: number;
+  total?: number;
+  status: string;
+  due_date?: string;
+  paid_date?: string;
+  notes?: string;
+  customers?: { first_name: string; last_name?: string };
+}
+
+export interface GunsmithLicense {
+  id: string;
+  customer_id: string;
+  license_type: string;
+  license_number?: string;
+  issue_date?: string;
+  expiry_date?: string;
+  status: string;
+  customers?: { first_name: string; last_name?: string };
 }
 
 // Stats hook
@@ -122,6 +206,22 @@ export function useGunsmithJobs(status?: string) {
   });
 }
 
+export function useGunsmithJob(id: string) {
+  return useQuery({
+    queryKey: ['gunsmith-job', id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('gunsmith_jobs')
+        .select('*, customers(first_name, last_name, email, phone), gunsmith_firearms(make, model, serial_number, caliber, classification)')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data as GunsmithJob;
+    },
+    enabled: !!id
+  });
+}
+
 export function useCreateGunsmithJob() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -159,8 +259,29 @@ export function useUpdateGunsmithJob() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gunsmith-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-job'] });
       queryClient.invalidateQueries({ queryKey: ['gunsmith-stats'] });
       toast({ title: 'Job updated' });
+    }
+  });
+}
+
+export function useDeleteGunsmithJob() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from('gunsmith_jobs')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-stats'] });
+      toast({ title: 'Job deleted' });
     }
   });
 }
@@ -186,6 +307,22 @@ export function useGunsmithFirearms(customerId?: string) {
   });
 }
 
+export function useGunsmithFirearm(id: string) {
+  return useQuery({
+    queryKey: ['gunsmith-firearm', id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('gunsmith_firearms')
+        .select('*, customers(first_name, last_name, email, phone)')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data as GunsmithFirearm;
+    },
+    enabled: !!id
+  });
+}
+
 export function useCreateGunsmithFirearm() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -207,6 +344,26 @@ export function useCreateGunsmithFirearm() {
   });
 }
 
+export function useUpdateGunsmithFirearm() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<GunsmithFirearm> & { id: string }) => {
+      const { error } = await (supabase as any)
+        .from('gunsmith_firearms')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-firearms'] });
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-firearm'] });
+      toast({ title: 'Firearm updated' });
+    }
+  });
+}
+
 // Parts hooks
 export function useGunsmithParts() {
   return useQuery({
@@ -219,6 +376,22 @@ export function useGunsmithParts() {
       if (error) throw error;
       return data as GunsmithPart[];
     }
+  });
+}
+
+export function useGunsmithPart(id: string) {
+  return useQuery({
+    queryKey: ['gunsmith-part', id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('gunsmith_parts')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data as GunsmithPart;
+    },
+    enabled: !!id
   });
 }
 
@@ -241,4 +414,318 @@ export function useCreateGunsmithPart() {
       toast({ title: 'Failed to add part', variant: 'destructive' });
     }
   });
+}
+
+export function useUpdateGunsmithPart() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<GunsmithPart> & { id: string }) => {
+      const { error } = await (supabase as any)
+        .from('gunsmith_parts')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-parts'] });
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-part'] });
+      toast({ title: 'Part updated' });
+    }
+  });
+}
+
+// Quotes hooks
+export function useGunsmithQuotes() {
+  return useQuery({
+    queryKey: ['gunsmith-quotes'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('gunsmith_quotes')
+        .select('*, customers(first_name, last_name), gunsmith_firearms(make, model)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as GunsmithQuote[];
+    }
+  });
+}
+
+export function useGunsmithQuote(id: string) {
+  return useQuery({
+    queryKey: ['gunsmith-quote', id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('gunsmith_quotes')
+        .select('*, customers(first_name, last_name, email, phone), gunsmith_firearms(make, model, serial_number)')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data as GunsmithQuote;
+    },
+    enabled: !!id
+  });
+}
+
+export function useCreateGunsmithQuote() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (quote: Partial<GunsmithQuote>) => {
+      const quoteNumber = `QT-${Date.now().toString(36).toUpperCase()}`;
+      const { error } = await (supabase as any)
+        .from('gunsmith_quotes')
+        .insert({ ...quote, quote_number: quoteNumber });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-quotes'] });
+      toast({ title: 'Quote created' });
+    }
+  });
+}
+
+export function useUpdateGunsmithQuote() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<GunsmithQuote> & { id: string }) => {
+      const { error } = await (supabase as any)
+        .from('gunsmith_quotes')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-quote'] });
+      toast({ title: 'Quote updated' });
+    }
+  });
+}
+
+// Appointments hooks
+export function useGunsmithAppointments() {
+  return useQuery({
+    queryKey: ['gunsmith-appointments'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('gunsmith_appointments')
+        .select('*, customers(first_name, last_name)')
+        .order('appointment_date', { ascending: true });
+      if (error) throw error;
+      return data as GunsmithAppointment[];
+    }
+  });
+}
+
+export function useCreateGunsmithAppointment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (appointment: Partial<GunsmithAppointment>) => {
+      const { error } = await (supabase as any)
+        .from('gunsmith_appointments')
+        .insert(appointment);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-stats'] });
+      toast({ title: 'Appointment scheduled' });
+    }
+  });
+}
+
+// Transfers hooks
+export function useGunsmithTransfers() {
+  return useQuery({
+    queryKey: ['gunsmith-transfers'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('gunsmith_transfers')
+        .select('*, customers(first_name, last_name), gunsmith_firearms(make, model, serial_number)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as GunsmithTransfer[];
+    }
+  });
+}
+
+export function useCreateGunsmithTransfer() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (transfer: Partial<GunsmithTransfer>) => {
+      const { error } = await (supabase as any)
+        .from('gunsmith_transfers')
+        .insert(transfer);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-transfers'] });
+      toast({ title: 'Transfer recorded' });
+    }
+  });
+}
+
+export function useUpdateGunsmithTransfer() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<GunsmithTransfer> & { id: string }) => {
+      const { error } = await (supabase as any)
+        .from('gunsmith_transfers')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-transfers'] });
+      toast({ title: 'Transfer updated' });
+    }
+  });
+}
+
+// Consignments hooks
+export function useGunsmithConsignments() {
+  return useQuery({
+    queryKey: ['gunsmith-consignments'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('gunsmith_consignments')
+        .select('*, customers(first_name, last_name), gunsmith_firearms(make, model)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as GunsmithConsignment[];
+    }
+  });
+}
+
+export function useCreateGunsmithConsignment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (consignment: Partial<GunsmithConsignment>) => {
+      const { error } = await (supabase as any)
+        .from('gunsmith_consignments')
+        .insert(consignment);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-consignments'] });
+      toast({ title: 'Consignment created' });
+    }
+  });
+}
+
+export function useUpdateGunsmithConsignment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<GunsmithConsignment> & { id: string }) => {
+      const { error } = await (supabase as any)
+        .from('gunsmith_consignments')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-consignments'] });
+      toast({ title: 'Consignment updated' });
+    }
+  });
+}
+
+// Invoices hooks
+export function useGunsmithInvoices() {
+  return useQuery({
+    queryKey: ['gunsmith-invoices'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('gunsmith_invoices')
+        .select('*, customers(first_name, last_name)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as GunsmithInvoice[];
+    }
+  });
+}
+
+export function useCreateGunsmithInvoice() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (invoice: Partial<GunsmithInvoice>) => {
+      const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
+      const { error } = await (supabase as any)
+        .from('gunsmith_invoices')
+        .insert({ ...invoice, invoice_number: invoiceNumber });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-invoices'] });
+      toast({ title: 'Invoice created' });
+    }
+  });
+}
+
+export function useUpdateGunsmithInvoice() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<GunsmithInvoice> & { id: string }) => {
+      const { error } = await (supabase as any)
+        .from('gunsmith_invoices')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gunsmith-invoices'] });
+      toast({ title: 'Invoice updated' });
+    }
+  });
+}
+
+// Licenses hooks
+export function useGunsmithLicenses() {
+  return useQuery({
+    queryKey: ['gunsmith-licenses'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('gunsmith_customer_licenses')
+        .select('*, customers(first_name, last_name)')
+        .order('expiry_date', { ascending: true });
+      if (error) throw error;
+      return data as GunsmithLicense[];
+    }
+  });
+}
+
+// File upload helper
+export async function uploadGunsmithDocument(file: File, folder: string): Promise<string> {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${folder}/${Date.now()}.${fileExt}`;
+  
+  const { error } = await supabase.storage
+    .from('gunsmith-documents')
+    .upload(fileName, file);
+  
+  if (error) throw error;
+  
+  const { data } = supabase.storage
+    .from('gunsmith-documents')
+    .getPublicUrl(fileName);
+  
+  return data.publicUrl;
 }
