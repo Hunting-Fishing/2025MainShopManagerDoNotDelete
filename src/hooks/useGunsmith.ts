@@ -56,6 +56,8 @@ export interface GunsmithPart {
   unit_cost?: number;
   retail_price?: number;
   location?: string;
+  is_serialized?: boolean;
+  compatible_firearms?: string[];
 }
 
 export interface GunsmithQuote {
