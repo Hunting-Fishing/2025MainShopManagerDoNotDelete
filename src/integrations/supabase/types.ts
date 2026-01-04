@@ -12157,6 +12157,237 @@ export type Database = {
           },
         ]
       }
+      fuel_delivery_equipment: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          equipment_name: string
+          equipment_type: string
+          id: string
+          installation_date: string | null
+          location: string | null
+          location_id: string | null
+          location_type: string | null
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          serial_number: string | null
+          shop_id: string
+          specifications: Json | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          equipment_name: string
+          equipment_type: string
+          id?: string
+          installation_date?: string | null
+          location?: string | null
+          location_id?: string | null
+          location_type?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id: string
+          specifications?: Json | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          equipment_name?: string
+          equipment_type?: string
+          id?: string
+          installation_date?: string | null
+          location?: string | null
+          location_id?: string | null
+          location_type?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id?: string
+          specifications?: Json | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_equipment_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_equipment_filters: {
+        Row: {
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          current_hours: number | null
+          current_liters: number | null
+          equipment_id: string
+          filter_name: string
+          filter_type: string
+          id: string
+          installation_date: string
+          installation_hours: number | null
+          installation_liters: number | null
+          manufacturer: string | null
+          max_hours: number | null
+          max_liters: number | null
+          notes: string | null
+          part_number: string | null
+          replaced_by: string | null
+          replacement_date: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          current_hours?: number | null
+          current_liters?: number | null
+          equipment_id: string
+          filter_name: string
+          filter_type: string
+          id?: string
+          installation_date: string
+          installation_hours?: number | null
+          installation_liters?: number | null
+          manufacturer?: string | null
+          max_hours?: number | null
+          max_liters?: number | null
+          notes?: string | null
+          part_number?: string | null
+          replaced_by?: string | null
+          replacement_date?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          current_hours?: number | null
+          current_liters?: number | null
+          equipment_id?: string
+          filter_name?: string
+          filter_type?: string
+          id?: string
+          installation_date?: string
+          installation_hours?: number | null
+          installation_liters?: number | null
+          manufacturer?: string | null
+          max_hours?: number | null
+          max_liters?: number | null
+          notes?: string | null
+          part_number?: string | null
+          replaced_by?: string | null
+          replacement_date?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_equipment_filters_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_equipment_filters_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_equipment_usage: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          filter_id: string | null
+          hours_reading: number | null
+          hours_used: number | null
+          id: string
+          liters_reading: number | null
+          liters_used: number | null
+          notes: string | null
+          recorded_by: string | null
+          shop_id: string
+          usage_date: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          filter_id?: string | null
+          hours_reading?: number | null
+          hours_used?: number | null
+          id?: string
+          liters_reading?: number | null
+          liters_used?: number | null
+          notes?: string | null
+          recorded_by?: string | null
+          shop_id: string
+          usage_date?: string
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          filter_id?: string | null
+          hours_reading?: number | null
+          hours_used?: number | null
+          id?: string
+          liters_reading?: number | null
+          liters_used?: number | null
+          notes?: string | null
+          recorded_by?: string | null
+          shop_id?: string
+          usage_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_equipment_usage_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_equipment_usage_filter_id_fkey"
+            columns: ["filter_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_equipment_filters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_equipment_usage_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_delivery_inventory: {
         Row: {
           created_at: string
