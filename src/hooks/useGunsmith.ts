@@ -2,6 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Helper to get current user's shop_id
+async function getShopId(): Promise<string | null> {
+  const { data } = await supabase.from('profiles').select('shop_id').single();
+  return data?.shop_id || null;
+}
+
 // Types
 export interface GunsmithJob {
   id: string;
@@ -230,10 +236,11 @@ export function useCreateGunsmithJob() {
 
   return useMutation({
     mutationFn: async (job: Partial<GunsmithJob>) => {
+      const shopId = await getShopId();
       const jobNumber = `GS-${Date.now().toString(36).toUpperCase()}`;
       const { error } = await (supabase as any)
         .from('gunsmith_jobs')
-        .insert({ ...job, job_number: jobNumber });
+        .insert({ ...job, job_number: jobNumber, shop_id: shopId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -331,9 +338,10 @@ export function useCreateGunsmithFirearm() {
 
   return useMutation({
     mutationFn: async (firearm: Partial<GunsmithFirearm>) => {
+      const shopId = await getShopId();
       const { error } = await (supabase as any)
         .from('gunsmith_firearms')
-        .insert(firearm);
+        .insert({ ...firearm, shop_id: shopId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -403,9 +411,10 @@ export function useCreateGunsmithPart() {
 
   return useMutation({
     mutationFn: async (part: Partial<GunsmithPart>) => {
+      const shopId = await getShopId();
       const { error } = await (supabase as any)
         .from('gunsmith_parts')
-        .insert(part);
+        .insert({ ...part, shop_id: shopId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -475,10 +484,11 @@ export function useCreateGunsmithQuote() {
 
   return useMutation({
     mutationFn: async (quote: Partial<GunsmithQuote>) => {
+      const shopId = await getShopId();
       const quoteNumber = `QT-${Date.now().toString(36).toUpperCase()}`;
       const { error } = await (supabase as any)
         .from('gunsmith_quotes')
-        .insert({ ...quote, quote_number: quoteNumber });
+        .insert({ ...quote, quote_number: quoteNumber, shop_id: shopId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -529,9 +539,10 @@ export function useCreateGunsmithAppointment() {
 
   return useMutation({
     mutationFn: async (appointment: Partial<GunsmithAppointment>) => {
+      const shopId = await getShopId();
       const { error } = await (supabase as any)
         .from('gunsmith_appointments')
-        .insert(appointment);
+        .insert({ ...appointment, shop_id: shopId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -563,9 +574,10 @@ export function useCreateGunsmithTransfer() {
 
   return useMutation({
     mutationFn: async (transfer: Partial<GunsmithTransfer>) => {
+      const shopId = await getShopId();
       const { error } = await (supabase as any)
         .from('gunsmith_transfers')
-        .insert(transfer);
+        .insert({ ...transfer, shop_id: shopId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -615,9 +627,10 @@ export function useCreateGunsmithConsignment() {
 
   return useMutation({
     mutationFn: async (consignment: Partial<GunsmithConsignment>) => {
+      const shopId = await getShopId();
       const { error } = await (supabase as any)
         .from('gunsmith_consignments')
-        .insert(consignment);
+        .insert({ ...consignment, shop_id: shopId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -667,10 +680,11 @@ export function useCreateGunsmithInvoice() {
 
   return useMutation({
     mutationFn: async (invoice: Partial<GunsmithInvoice>) => {
+      const shopId = await getShopId();
       const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
       const { error } = await (supabase as any)
         .from('gunsmith_invoices')
-        .insert({ ...invoice, invoice_number: invoiceNumber });
+        .insert({ ...invoice, invoice_number: invoiceNumber, shop_id: shopId });
       if (error) throw error;
     },
     onSuccess: () => {
