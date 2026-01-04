@@ -3080,9 +3080,12 @@ export type Database = {
           icon: string | null
           id: string
           is_premium: boolean | null
+          monthly_price: number | null
           name: string
           related_industries: string[] | null
           slug: string
+          stripe_price_id: string | null
+          stripe_product_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -3094,9 +3097,12 @@ export type Database = {
           icon?: string | null
           id?: string
           is_premium?: boolean | null
+          monthly_price?: number | null
           name: string
           related_industries?: string[] | null
           slug: string
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -3108,9 +3114,12 @@ export type Database = {
           icon?: string | null
           id?: string
           is_premium?: boolean | null
+          monthly_price?: number | null
           name?: string
           related_industries?: string[] | null
           slug?: string
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -20984,6 +20993,66 @@ export type Database = {
           },
         ]
       }
+      module_subscriptions: {
+        Row: {
+          canceled_at: string | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          module_id: string
+          shop_id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_ends_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          module_id: string
+          shop_id: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          module_id?: string
+          shop_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_subscriptions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "business_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_subscriptions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       navigation_items: {
         Row: {
           created_at: string | null
@@ -32569,6 +32638,8 @@ export type Database = {
           shop_image_url: string | null
           state: string | null
           tax_id: string | null
+          trial_days: number | null
+          trial_started_at: string | null
           updated_at: string
         }
         Insert: {
@@ -32595,6 +32666,8 @@ export type Database = {
           shop_image_url?: string | null
           state?: string | null
           tax_id?: string | null
+          trial_days?: number | null
+          trial_started_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -32621,6 +32694,8 @@ export type Database = {
           shop_image_url?: string | null
           state?: string | null
           tax_id?: string | null
+          trial_days?: number | null
+          trial_started_at?: string | null
           updated_at?: string
         }
         Relationships: [
