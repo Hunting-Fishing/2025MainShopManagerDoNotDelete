@@ -89,6 +89,9 @@ export default function GunsmithCompliance() {
 
   const createLicense = useMutation({
     mutationFn: async (data: typeof formData) => {
+      // Get shop_id from current user's profile
+      const { data: profile } = await supabase.from('profiles').select('shop_id').single();
+      
       const { error } = await (supabase as any)
         .from('gunsmith_customer_licenses')
         .insert({
@@ -97,7 +100,8 @@ export default function GunsmithCompliance() {
           license_number: data.license_number,
           issue_date: data.issue_date || null,
           expiry_date: data.expiry_date,
-          province: data.province || null
+          province: data.province || null,
+          shop_id: profile?.shop_id
         });
       if (error) throw error;
     },
