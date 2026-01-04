@@ -10,6 +10,7 @@ import Index from '@/pages/Index';
 
 // Pages
 import Dashboard from '@/pages/Dashboard';
+import ModuleHub from '@/pages/ModuleHub';
 import Shopping from '@/pages/Shopping';
 import ProductDetail from '@/pages/ProductDetail';
 import CustomerPortal from '@/pages/CustomerPortal';
@@ -281,6 +282,7 @@ function App() {
             <AuthGate>
               <Layout>
                 <Routes>
+                  <Route path="/module-hub" element={<ModuleHub />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   
                   {/* Store */}

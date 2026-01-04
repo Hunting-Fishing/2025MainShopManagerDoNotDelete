@@ -11,6 +11,7 @@ import { getSectionColorScheme } from '@/utils/sectionColors';
 import { SidebarLogo } from './SidebarLogo';
 import { navigation, NavigationItem } from './navigation';
 import { useSidebarVisibility } from '@/hooks/useSidebarVisibility';
+import { LayoutGrid } from 'lucide-react';
 
 export function SidebarContent() {
   const location = useLocation();
@@ -78,6 +79,23 @@ export function SidebarContent() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-2 p-2 overflow-y-auto">
+        {/* Module Hub Link */}
+        <div className="mb-3">
+          <Link
+            to="/module-hub"
+            onClick={() => handleLinkClick('/module-hub')}
+            className={cn(
+              'flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-150',
+              'bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10',
+              'text-primary border border-primary/20',
+              location.pathname === '/module-hub' && 'from-primary/20 to-primary/15 shadow-sm'
+            )}
+          >
+            <LayoutGrid className="mr-3 h-5 w-5" />
+            Module Hub
+          </Link>
+        </div>
+
         {filteredNavigation.map((section) => {
           const colorScheme = getSectionColorScheme(section.title);
           
