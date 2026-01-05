@@ -11,13 +11,15 @@ import {
   Crosshair, 
   Plus, 
   Search,
-  ArrowLeft
+  ArrowLeft,
+  UserPlus
 } from 'lucide-react';
 import { useGunsmithFirearms, useCreateGunsmithFirearm } from '@/hooks/useGunsmith';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { QuickAddCustomerDialog } from '@/components/gunsmith/QuickAddCustomerDialog';
 
 const FIREARM_TYPES = ['Rifle', 'Shotgun', 'Handgun', 'Revolver', 'Black Powder', 'Air Gun', 'Other'];
 const CLASSIFICATIONS = [
@@ -28,8 +30,10 @@ const CLASSIFICATIONS = [
 
 export default function GunsmithFirearms() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
   const [formData, setFormData] = useState({
     customer_id: '',
     make: '',
@@ -47,7 +51,7 @@ export default function GunsmithFirearms() {
   const { data: firearms, isLoading } = useGunsmithFirearms();
   const createFirearm = useCreateGunsmithFirearm();
 
-  const { data: customers } = useQuery({
+  const { data: customers, refetch: refetchCustomers } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -58,6 +62,11 @@ export default function GunsmithFirearms() {
       return data;
     }
   });
+
+  const handleCustomerCreated = (customerId: string) => {
+    refetchCustomers();
+    setFormData({ ...formData, customer_id: customerId });
+  };
 
   const filteredFirearms = firearms?.filter(f => 
     f.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,18 +137,30 @@ export default function GunsmithFirearms() {
             <div className="space-y-4">
               <div>
                 <Label>Customer *</Label>
-                <Select value={formData.customer_id} onValueChange={(v) => setFormData({ ...formData, customer_id: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers?.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.first_name} {c.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={formData.customer_id} onValueChange={(v) => setFormData({ ...formData, customer_id: v })}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.first_name} {c.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setIsAddCustomerOpen(true)}
+                    className="shrink-0 border-amber-600/30 text-amber-600 hover:bg-amber-600/10"
+                    title="Add new customer"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -313,6 +334,13 @@ export default function GunsmithFirearms() {
           )}
         </CardContent>
       </Card>
+
+      {/* Quick Add Customer Dialog */}
+      <QuickAddCustomerDialog
+        open={isAddCustomerOpen}
+        onOpenChange={setIsAddCustomerOpen}
+        onCustomerCreated={handleCustomerCreated}
+      />
     </div>
   );
 }

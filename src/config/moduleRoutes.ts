@@ -98,6 +98,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
     sections: [
       { title: 'Dashboard', href: '/gunsmith', icon: Gauge },
       { title: 'All Jobs', href: '/gunsmith/jobs', icon: Briefcase },
+      { title: 'Customers', href: '/gunsmith/customers', icon: Users },
       { title: 'Firearms', href: '/gunsmith/firearms', icon: Crosshair },
       { title: 'Parts', href: '/gunsmith/parts', icon: Package },
       { title: 'Parts on Order', href: '/gunsmith/parts-on-order', icon: ShoppingBag },
