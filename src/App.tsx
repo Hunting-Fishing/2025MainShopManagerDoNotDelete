@@ -207,6 +207,7 @@ import GunsmithDashboard from '@/pages/gunsmith/GunsmithDashboard';
 import GunsmithJobs from '@/pages/gunsmith/GunsmithJobs';
 import GunsmithFirearms from '@/pages/gunsmith/GunsmithFirearms';
 import GunsmithParts from '@/pages/gunsmith/GunsmithParts';
+import GunsmithPartsOnOrder from '@/pages/gunsmith/GunsmithPartsOnOrder';
 import GunsmithQuotes from '@/pages/gunsmith/GunsmithQuotes';
 import GunsmithInvoices from '@/pages/gunsmith/GunsmithInvoices';
 import GunsmithPayments from '@/pages/gunsmith/GunsmithPayments';
@@ -1153,6 +1154,7 @@ function App() {
                   <Route path="/gunsmith/parts" element={<GunsmithParts />} />
                   <Route path="/gunsmith/parts/:id" element={<GunsmithPartEdit />} />
                   <Route path="/gunsmith/parts/new" element={<GunsmithPartForm />} />
+                  <Route path="/gunsmith/parts-on-order" element={<GunsmithPartsOnOrder />} />
                   <Route path="/gunsmith/invoices" element={<GunsmithInvoices />} />
                   <Route path="/gunsmith/invoices/new" element={<GunsmithInvoiceForm />} />
                   <Route path="/gunsmith/payments" element={<GunsmithPayments />} />

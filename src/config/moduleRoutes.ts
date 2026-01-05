@@ -100,6 +100,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'All Jobs', href: '/gunsmith/jobs', icon: Briefcase },
       { title: 'Firearms', href: '/gunsmith/firearms', icon: Crosshair },
       { title: 'Parts', href: '/gunsmith/parts', icon: Package },
+      { title: 'Parts on Order', href: '/gunsmith/parts-on-order', icon: ShoppingBag },
       { title: 'Inventory', href: '/gunsmith/inventory', icon: BarChart3 },
       { title: 'Quotes', href: '/gunsmith/quotes', icon: FileText },
       { title: 'Invoices', href: '/gunsmith/invoices', icon: Receipt },

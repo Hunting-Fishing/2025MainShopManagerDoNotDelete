@@ -407,7 +407,7 @@ export default function GunsmithJobDetail() {
         {/* Job Parts */}
         {id && (
           <div className="mt-6">
-            <GunsmithJobPartsPanel jobId={id} jobStatus={job.status} />
+            <GunsmithJobPartsPanel jobId={id} jobStatus={job.status} customerId={job.customer_id} />
           </div>
         )}
 
