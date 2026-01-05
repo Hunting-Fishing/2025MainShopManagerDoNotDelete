@@ -37,7 +37,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const { companyInfo, businessHours, loading: infoLoading, loadCompanyInfo } = useCompanyInfo();
 
   const contextValue: CompanyContextType = {
-    companyName: shopName || companyInfo?.name || 'ServicePro',
+    companyName: shopName || companyInfo?.name || 'All Business 365',
     logoUrl: companyInfo?.logo_url || '',
     contactInfo: {
       phone: companyInfo?.phone || '',

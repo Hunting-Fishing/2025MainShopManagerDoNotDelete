@@ -73,7 +73,7 @@ const mockLearningPaths: HelpLearningPath[] = [
   {
     id: '1',
     title: 'Complete Beginner Onboarding',
-    description: 'Everything you need to know to get started with ServicePro in your first 30 days',
+    description: 'Everything you need to know to get started with All Business 365 in your first 30 days',
     difficulty_level: 'beginner',
     estimated_duration: '4-6 weeks',
     target_role: 'All Users',
@@ -115,7 +115,7 @@ const mockResources: HelpResource[] = [
   {
     id: '2',
     title: 'ROI Calculator Tool',
-    description: 'Calculate return on investment for ServicePro implementation',
+    description: 'Calculate return on investment for All Business 365 implementation',
     resource_type: 'calculator',
     category_id: '6',
     tags: ['calculator', 'roi'],

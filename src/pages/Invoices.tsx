@@ -13,7 +13,7 @@ export default function Invoices() {
     return (
       <>
         <Helmet>
-          <title>Invoices | ServicePro</title>
+          <title>Invoices | All Business 365</title>
         </Helmet>
         
         <div className="space-y-6">
@@ -36,7 +36,7 @@ export default function Invoices() {
     return (
       <>
         <Helmet>
-          <title>Invoices | ServicePro</title>
+          <title>Invoices | All Business 365</title>
         </Helmet>
         
         <div className="space-y-6">
@@ -54,7 +54,7 @@ export default function Invoices() {
   return (
     <>
       <Helmet>
-        <title>Invoices | ServicePro</title>
+        <title>Invoices | All Business 365</title>
       </Helmet>
       
       <div className="space-y-6">

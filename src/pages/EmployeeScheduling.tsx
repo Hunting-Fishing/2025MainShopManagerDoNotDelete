@@ -19,7 +19,7 @@ export default function EmployeeScheduling() {
   return (
     <>
       <Helmet>
-        <title>Staff Scheduling | ServicePro</title>
+        <title>Staff Scheduling | All Business 365</title>
         <meta name="description" content="Manage employee schedules, vessel and equipment assignments, time-off requests, and PTO" />
       </Helmet>
 

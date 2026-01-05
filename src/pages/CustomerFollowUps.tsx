@@ -58,7 +58,7 @@ export default function CustomerFollowUps() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <Helmet>
-        <title>{`Customer Follow-Ups | ${shopName || "Easy Shop Manager"}`}</title>
+        <title>{`Customer Follow-Ups | ${shopName || "All Business 365"}`}</title>
         <meta name="description" content="Manage and track customer follow-ups, callbacks, and scheduled contacts." />
       </Helmet>
       

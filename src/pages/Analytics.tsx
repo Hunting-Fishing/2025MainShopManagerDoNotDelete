@@ -8,7 +8,7 @@ export default function Analytics() {
   return (
     <>
       <Helmet>
-        <title>Analytics | AutoShop Pro</title>
+        <title>Analytics | All Business 365</title>
       </Helmet>
       
       <div className="space-y-6">

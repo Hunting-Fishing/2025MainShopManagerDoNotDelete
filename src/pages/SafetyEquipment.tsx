@@ -56,7 +56,7 @@ export default function SafetyEquipment() {
   return (
     <>
       <Helmet>
-        <title>Safety Equipment | AutoShop Pro</title>
+        <title>Safety Equipment | All Business 365</title>
         <meta name="description" content="Manage safety equipment including fire extinguishers, first aid kits, emergency equipment, and life-saving devices." />
       </Helmet>
       

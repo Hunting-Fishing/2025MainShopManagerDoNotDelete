@@ -24,7 +24,7 @@ export const EquipmentSeo: React.FC = () => {
 
   return (
     <EnhancedSeoHead
-      title={`Equipment Maintenance Tracking & Management - ${shopName || "Easy Shop Manager"}`}
+      title={`Equipment Maintenance Tracking & Management - ${shopName || "All Business 365"}`}
       description="Comprehensive equipment tracking system for automotive shops. Schedule maintenance, track warranties, monitor equipment status, and prevent costly breakdowns."
       keywords="equipment maintenance software, equipment tracking system, maintenance scheduling, warranty management, shop equipment management"
       structuredData={structuredData}

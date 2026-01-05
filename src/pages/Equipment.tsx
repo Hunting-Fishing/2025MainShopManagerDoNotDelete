@@ -77,7 +77,7 @@ export default function Equipment() {
   return (
     <>
       <Helmet>
-        <title>Shop Equipment | AutoShop Pro</title>
+        <title>Shop Equipment | All Business 365</title>
         <meta name="description" content="Manage shop equipment including tools, lifts, diagnostics, and stationary equipment." />
       </Helmet>
       

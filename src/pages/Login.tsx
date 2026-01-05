@@ -104,7 +104,7 @@ export default function Login() {
               Welcome Back
             </CardTitle>
             <p className="text-muted-foreground font-body">
-              Sign in to your AutoShop Pro account
+              Sign in to your All Business 365 account
             </p>
           </CardHeader>
           

@@ -24,7 +24,7 @@ export const CustomersSeo: React.FC = () => {
 
   return (
     <EnhancedSeoHead
-      title={`Customer Management & CRM for Automotive Shops - ${shopName || "Easy Shop Manager"}`}
+      title={`Customer Management & CRM for Automotive Shops - ${shopName || "All Business 365"}`}
       description="Powerful customer relationship management system for automotive shops. Track customer history, manage vehicle records, and provide exceptional service."
       keywords="automotive CRM, customer management software, vehicle service history, customer database, automotive customer tracking"
       structuredData={structuredData}

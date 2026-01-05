@@ -21,7 +21,7 @@ export function CompletionStep({ onComplete, isCompleting, isCompleted }: Comple
         </CardHeader>
         <CardContent className="text-center">
           <p className="text-muted-foreground mb-6">
-            Your ServicePro account has been successfully configured.
+            Your All Business 365 account has been successfully configured.
           </p>
         </CardContent>
       </Card>
@@ -42,7 +42,7 @@ export function CompletionStep({ onComplete, isCompleting, isCompleted }: Comple
         ) : (
           <>
             <p className="text-muted-foreground">
-              You're all set! Click the button below to complete your ServicePro setup.
+              You're all set! Click the button below to complete your All Business 365 setup.
             </p>
             <Button onClick={onComplete} size="lg">
               Complete Setup
