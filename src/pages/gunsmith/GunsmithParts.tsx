@@ -860,7 +860,7 @@ export default function GunsmithParts() {
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {part.manufacturer}
-                      {part.location && ` â€¢ Location: ${part.location}`}
+                      {part.location && ` - Location: ${part.location}`}
                     </p>
                   </div>
                   <div className="text-right">

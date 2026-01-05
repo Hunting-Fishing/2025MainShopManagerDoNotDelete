@@ -359,7 +359,7 @@ export default function GunsmithTransfers() {
                       <Badge variant="outline">{transfer.transfer_type}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {transfer.firearm_serial && `S/N: ${transfer.firearm_serial} â€¢ `}
+                      {transfer.firearm_serial && `S/N: ${transfer.firearm_serial} - `}
                       {transfer.firearm_classification}
                     </p>
                     {transfer.cfo_reference_number && (

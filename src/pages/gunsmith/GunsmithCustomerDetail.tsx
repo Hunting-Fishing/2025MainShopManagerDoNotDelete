@@ -296,7 +296,7 @@ export default function GunsmithCustomerDetail() {
                       <div>
                         <span className="font-medium">{firearm.make} {firearm.model}</span>
                         <div className="text-sm text-muted-foreground">
-                          {firearm.firearm_type} â€¢ S/N: {firearm.serial_number}
+                          {firearm.firearm_type} - S/N: {firearm.serial_number}
                         </div>
                       </div>
                       <Badge variant="outline">{firearm.caliber}</Badge>
@@ -340,7 +340,7 @@ export default function GunsmithCustomerDetail() {
                       <div>
                         <span className="font-medium">{job.job_number}</span>
                         <div className="text-sm text-muted-foreground">
-                          {job.gunsmith_firearms?.make} {job.gunsmith_firearms?.model} â€¢ {job.job_type}
+                          {job.gunsmith_firearms?.make} {job.gunsmith_firearms?.model} - {job.job_type}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

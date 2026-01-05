@@ -181,7 +181,7 @@ export default function GunsmithJobDetail() {
                 <div className="space-y-1">
                   <p className="font-medium">{job.gunsmith_firearms.make} {job.gunsmith_firearms.model}</p>
                   <p className="text-sm text-muted-foreground">S/N: {job.gunsmith_firearms.serial_number || 'N/A'}</p>
-                  <p className="text-sm text-muted-foreground">{job.gunsmith_firearms.caliber} â€¢ {job.gunsmith_firearms.firearm_type}</p>
+                  <p className="text-sm text-muted-foreground">{job.gunsmith_firearms.caliber} - {job.gunsmith_firearms.firearm_type}</p>
                 </div>
               ) : (
                 <p className="text-muted-foreground">No firearm assigned</p>

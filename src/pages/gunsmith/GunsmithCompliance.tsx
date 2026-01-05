@@ -311,8 +311,8 @@ export default function GunsmithCompliance() {
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {license.license_type} â€¢ {license.license_number}
-                            {license.province && ` â€¢ ${license.province}`}
+                            {license.license_type} - {license.license_number}
+                            {license.province && ` - ${license.province}`}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             Expires: {format(new Date(license.expiry_date), 'MMM d, yyyy')}
@@ -363,7 +363,7 @@ export default function GunsmithCompliance() {
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {record.customers?.first_name} {record.customers?.last_name}
-                          {record.firearm_serial && ` â€¢ S/N: ${record.firearm_serial}`}
+                          {record.firearm_serial && ` - S/N: ${record.firearm_serial}`}
                         </p>
                         {record.pal_rpal_number && (
                           <p className="text-sm text-muted-foreground">

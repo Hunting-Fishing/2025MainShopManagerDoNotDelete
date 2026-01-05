@@ -126,7 +126,7 @@ export default function GunsmithJobForm() {
                 </Select>
                 {selectedCustomer && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    {selectedCustomer.phone} â€¢ {selectedCustomer.email}
+                    {selectedCustomer.phone} - {selectedCustomer.email}
                   </p>
                 )}
               </div>

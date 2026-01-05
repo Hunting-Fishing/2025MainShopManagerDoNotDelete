@@ -327,7 +327,7 @@ export default function GunsmithDashboard() {
                     <div>
                       <p className="font-medium text-foreground">{job.job_number}</p>
                       <p className="text-sm text-muted-foreground">
-                        {job.customers?.first_name} {job.customers?.last_name} â€¢ {job.job_type}
+                        {job.customers?.first_name} {job.customers?.last_name} - {job.job_type}
                       </p>
                     </div>
                     <div className="text-right">

@@ -103,7 +103,7 @@ export default function GunsmithQuotes() {
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {quote.customers?.first_name} {quote.customers?.last_name}
-                      {quote.gunsmith_firearms && ` â€¢ ${quote.gunsmith_firearms.make} ${quote.gunsmith_firearms.model}`}
+                      {quote.gunsmith_firearms && ` - ${quote.gunsmith_firearms.make} ${quote.gunsmith_firearms.model}`}
                     </p>
                   </div>
                   <div className="text-right">
