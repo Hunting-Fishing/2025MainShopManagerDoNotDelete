@@ -5554,6 +5554,7 @@ export type Database = {
           tax_id: string | null
           terms_agreed: boolean | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -5599,6 +5600,7 @@ export type Database = {
           tax_id?: string | null
           terms_agreed?: boolean | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -5644,6 +5646,7 @@ export type Database = {
           tax_id?: string | null
           terms_agreed?: boolean | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
