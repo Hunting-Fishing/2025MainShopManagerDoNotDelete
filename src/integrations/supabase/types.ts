@@ -14698,6 +14698,114 @@ export type Database = {
           },
         ]
       }
+      gunsmith_job_part_orders: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          expected_date: string | null
+          id: string
+          installed_date: string | null
+          job_id: string
+          notes: string | null
+          order_date: string | null
+          part_id: string | null
+          part_name: string
+          part_number: string
+          quantity_ordered: number
+          received_date: string | null
+          shop_id: string | null
+          status: string | null
+          supplier: string | null
+          supplier_contact: string | null
+          total_cost: number | null
+          unit_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          expected_date?: string | null
+          id?: string
+          installed_date?: string | null
+          job_id: string
+          notes?: string | null
+          order_date?: string | null
+          part_id?: string | null
+          part_name: string
+          part_number: string
+          quantity_ordered?: number
+          received_date?: string | null
+          shop_id?: string | null
+          status?: string | null
+          supplier?: string | null
+          supplier_contact?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          expected_date?: string | null
+          id?: string
+          installed_date?: string | null
+          job_id?: string
+          notes?: string | null
+          order_date?: string | null
+          part_id?: string | null
+          part_name?: string
+          part_number?: string
+          quantity_ordered?: number
+          received_date?: string | null
+          shop_id?: string | null
+          status?: string | null
+          supplier?: string | null
+          supplier_contact?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_job_part_orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_job_part_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_job_part_orders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_job_part_orders_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_job_part_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gunsmith_job_parts: {
         Row: {
           created_at: string
