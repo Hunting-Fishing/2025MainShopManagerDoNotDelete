@@ -11,10 +11,13 @@ import {
   Plus, 
   Search,
   ArrowLeft,
-  AlertTriangle
+  AlertTriangle,
+  ShoppingCart,
+  ExternalLink
 } from 'lucide-react';
 import { useGunsmithParts, useCreateGunsmithPart } from '@/hooks/useGunsmith';
-import { useNavigate } from 'react-router-dom';
+import { useGunsmithPendingPartOrders } from '@/hooks/useGunsmithJobPartOrders';
+import { useNavigate, Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function GunsmithParts() {
@@ -36,6 +39,7 @@ export default function GunsmithParts() {
   });
   
   const { data: parts, isLoading } = useGunsmithParts();
+  const { data: pendingOrders } = useGunsmithPendingPartOrders();
   const createPart = useCreateGunsmithPart();
 
   const filteredParts = parts?.filter(p => 
@@ -85,107 +89,120 @@ export default function GunsmithParts() {
             <p className="text-muted-foreground mt-1">Manage gunsmith parts and supplies</p>
           </div>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Part
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Add Part</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Part Number</Label>
-                  <Input
-                    value={formData.part_number}
-                    onChange={(e) => setFormData({ ...formData, part_number: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Name *</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Category</Label>
-                  <Input
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    placeholder="e.g., Springs, Triggers"
-                  />
-                </div>
-                <div>
-                  <Label>Manufacturer</Label>
-                  <Input
-                    value={formData.manufacturer}
-                    onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Quantity</Label>
-                  <Input
-                    type="number"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Min Quantity</Label>
-                  <Input
-                    type="number"
-                    value={formData.min_quantity}
-                    onChange={(e) => setFormData({ ...formData, min_quantity: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Unit Cost</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.unit_cost}
-                    onChange={(e) => setFormData({ ...formData, unit_cost: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Retail Price</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.retail_price}
-                    onChange={(e) => setFormData({ ...formData, retail_price: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>Location</Label>
-                <Input
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="e.g., Shelf A-3"
-                />
-              </div>
-              <Button 
-                className="w-full" 
-                onClick={handleSubmit}
-                disabled={!formData.name || createPart.isPending}
-              >
-                {createPart.isPending ? 'Adding...' : 'Add Part'}
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/gunsmith/parts-on-order">
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Parts on Order
+              {pendingOrders && pendingOrders.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {pendingOrders.length}
+                </Badge>
+              )}
+            </Link>
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Part
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Add Part</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Part Number</Label>
+                    <Input
+                      value={formData.part_number}
+                      onChange={(e) => setFormData({ ...formData, part_number: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Name *</Label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Category</Label>
+                    <Input
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      placeholder="e.g., Springs, Triggers"
+                    />
+                  </div>
+                  <div>
+                    <Label>Manufacturer</Label>
+                    <Input
+                      value={formData.manufacturer}
+                      onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Quantity</Label>
+                    <Input
+                      type="number"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Min Quantity</Label>
+                    <Input
+                      type="number"
+                      value={formData.min_quantity}
+                      onChange={(e) => setFormData({ ...formData, min_quantity: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Unit Cost</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.unit_cost}
+                      onChange={(e) => setFormData({ ...formData, unit_cost: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Retail Price</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.retail_price}
+                      onChange={(e) => setFormData({ ...formData, retail_price: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Location</Label>
+                  <Input
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="e.g., Shelf A-3"
+                  />
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={handleSubmit}
+                  disabled={!formData.name || createPart.isPending}
+                >
+                  {createPart.isPending ? 'Adding...' : 'Add Part'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Low Stock Alert */}
