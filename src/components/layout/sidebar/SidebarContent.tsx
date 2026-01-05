@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -9,6 +8,7 @@ import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { hasRoutePermission } from '@/utils/routeGuards';
 import { getSectionColorScheme } from '@/utils/sectionColors';
 import { SidebarLogo } from './SidebarLogo';
+import { ModuleIndicator } from './ModuleIndicator';
 import { navigation, NavigationItem } from './navigation';
 import { useSidebarVisibility } from '@/hooks/useSidebarVisibility';
 import { LayoutGrid } from 'lucide-react';
@@ -77,6 +77,11 @@ export function SidebarContent() {
         <SidebarLogo />
       </div>
 
+      {/* Active Module Indicator */}
+      <div className="py-3 border-b border-gray-100">
+        <ModuleIndicator />
+      </div>
+
       {/* Navigation */}
       <nav className="flex-1 space-y-2 p-2 overflow-y-auto">
         {/* Module Hub Link */}
@@ -85,14 +90,14 @@ export function SidebarContent() {
             to="/module-hub"
             onClick={() => handleLinkClick('/module-hub')}
             className={cn(
-              'flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-150',
-              'bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10',
-              'text-primary border border-primary/20',
-              location.pathname === '/module-hub' && 'from-primary/20 to-primary/15 shadow-sm'
+              'flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-150',
+              'hover:bg-muted/50',
+              'text-muted-foreground hover:text-foreground',
+              location.pathname === '/module-hub' && 'bg-muted text-foreground'
             )}
           >
-            <LayoutGrid className="mr-3 h-5 w-5" />
-            Module Hub
+            <LayoutGrid className="mr-3 h-4 w-4" />
+            All Modules
           </Link>
         </div>
 
