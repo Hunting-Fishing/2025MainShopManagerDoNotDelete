@@ -41,69 +41,84 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
     try {
       // Shop should already exist from initial onboarding, just update it
       if (shopData?.id) {
-        await updateCompanyInfo(formData);
+        const success = await updateCompanyInfo(formData);
+        if (!success) {
+          toast.error('Failed to update shop information. Please try again.');
+          setIsSaving(false);
+          return;
+        }
       } else {
         // Fallback: Create shop and organization if somehow missing
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          // Create organization first
-          const { data: org, error: orgError } = await supabase
-            .from('organizations')
-            .insert([{ name: formData.name }])
-            .select()
-            .single();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          toast.error('You must be logged in to continue. Please refresh the page.');
+          setIsSaving(false);
+          return;
+        }
+        
+        // Create organization first
+        const { data: org, error: orgError } = await supabase
+          .from('organizations')
+          .insert([{ name: formData.name }])
+          .select()
+          .single();
+        
+        if (orgError) {
+          console.error('Failed to create organization:', orgError);
+          toast.error('Failed to set up your organization. Please try again.');
+          setIsSaving(false);
+          return;
+        }
+        
+        // Create the shop with organization_id
+        const { data: newShop, error: shopError } = await supabase
+          .from('shops')
+          .insert([{
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            postal_code: formData.zip,
+            organization_id: org.id,
+            setup_step: 0,
+            onboarding_completed: false,
+            trial_started_at: new Date().toISOString(),
+            trial_days: 14
+          }])
+          .select()
+          .single();
+        
+        if (shopError) {
+          console.error('Failed to create shop:', shopError);
+          toast.error('Failed to create your shop. Please try again.');
+          setIsSaving(false);
+          return;
+        }
+        
+        if (newShop) {
+          // Link user profile to shop
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ shop_id: newShop.id })
+            .eq('user_id', user.id);
           
-          if (orgError) {
-            console.error('Failed to create organization:', orgError);
-            toast.error('Failed to create organization. Please try again.');
-            setIsSaving(false);
-            return;
+          if (profileError) {
+            console.error('Failed to link profile:', profileError);
+            // Non-critical error, continue anyway
           }
           
-          // Create the shop with organization_id
-          const { data: newShop, error: shopError } = await supabase
-            .from('shops')
-            .insert([{
-              name: formData.name,
-              email: formData.email,
-              phone: formData.phone,
-              address: formData.address,
-              city: formData.city,
-              state: formData.state,
-              postal_code: formData.zip,
-              organization_id: org.id,
-              setup_step: 0,
-              onboarding_completed: false,
-              trial_started_at: new Date().toISOString(),
-              trial_days: 14
-            }])
-            .select()
-            .single();
-          
-          if (shopError) {
-            console.error('Failed to create shop:', shopError);
-            toast.error('Failed to create shop. Please try again.');
-            setIsSaving(false);
-            return;
-          }
-          
-          if (newShop) {
-            // Link user profile to shop
-            await supabase
-              .from('profiles')
-              .update({ shop_id: newShop.id })
-              .eq('user_id', user.id);
-            
-            // Refresh shop data
-            await refresh();
-          }
+          // Refresh shop data
+          await refresh();
         }
       }
       
       onNext();
     } catch (error) {
       console.error('Failed to save shop info:', error);
-      toast.error('Failed to save. Please try again.');
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setIsSaving(false);
     }
