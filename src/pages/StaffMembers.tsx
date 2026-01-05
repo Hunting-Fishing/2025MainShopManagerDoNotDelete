@@ -23,7 +23,7 @@ export default function StaffMembers() {
   return (
     <>
       <Helmet>
-        <title>Staff Members | ServicePro</title>
+        <title>Staff Members | All Business 365</title>
       </Helmet>
       
       <div className="space-y-6">

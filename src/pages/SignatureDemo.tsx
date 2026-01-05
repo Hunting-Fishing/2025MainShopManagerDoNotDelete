@@ -22,7 +22,7 @@ export default function SignatureDemo() {
   return (
     <>
       <Helmet>
-        <title>Digital Signatures | ServicePro</title>
+        <title>Digital Signatures | All Business 365</title>
         <meta name="description" content="Capture digital signatures for work orders, inspections, and customer approvals" />
       </Helmet>
       

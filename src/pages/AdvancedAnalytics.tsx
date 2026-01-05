@@ -14,7 +14,7 @@ export default function AdvancedAnalytics() {
   return (
     <>
       <Helmet>
-        <title>Advanced Analytics | ServicePro</title>
+        <title>Advanced Analytics | All Business 365</title>
       </Helmet>
 
       <div className="space-y-6">

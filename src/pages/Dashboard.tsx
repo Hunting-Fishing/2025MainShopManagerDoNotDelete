@@ -22,7 +22,7 @@ export default function Dashboard() {
   return (
     <main className="space-y-6" role="main">
       <Helmet>
-        <title>Dashboard | ServicePro</title>
+        <title>Dashboard | All Business 365</title>
         <meta name="description" content={metaDescription} />
         <link rel="canonical" href={canonicalUrl} />
         <meta name="robots" content="index,follow" />

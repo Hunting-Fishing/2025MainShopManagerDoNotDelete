@@ -29,11 +29,11 @@ export function InvoiceDetailsContent({
   const { shopName } = useShopName();
   
   const companyInfo = {
-    companyName: shopName || "Easy Shop Manager",
+    companyName: shopName || "All Business 365",
     companyDescription: "Work Order System",
     companyAddress: "123 Main Street, Anytown, CA 12345",
     companyPhone: "(555) 123-4567",
-    companyEmail: "billing@easyshopmanager.com",
+    companyEmail: "billing@allbusiness365.com",
   };
 
   return (

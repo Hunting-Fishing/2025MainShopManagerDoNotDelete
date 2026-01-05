@@ -14,7 +14,7 @@ export default function Chat() {
   return (
     <>
       <Helmet>
-        <title>Team Chat | AutoShop Pro</title>
+        <title>Team Chat | All Business 365</title>
       </Helmet>
       
       <div className="space-y-6">

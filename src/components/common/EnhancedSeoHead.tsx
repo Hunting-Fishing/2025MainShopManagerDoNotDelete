@@ -25,8 +25,8 @@ export const EnhancedSeoHead: React.FC<EnhancedSeoHeadProps> = ({
   imageUrl,
   noIndex = false
 }) => {
-  // For now, keep Easy Shop Manager as default - in the future this could use a shop context
-  const shopName = 'Easy Shop Manager';
+  // For now, keep All Business 365 as default - in the future this could use a shop context
+  const shopName = 'All Business 365';
   const fullTitle = title.includes(shopName) ? title : `${title} | ${shopName}`;
   const defaultImageUrl = imageUrl || 'https://lovable.dev/opengraph-image-p98pqg.png';
   

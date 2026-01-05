@@ -45,7 +45,7 @@ export default function Timesheet() {
   return (
     <>
       <Helmet>
-        <title>My Timesheet | ServicePro</title>
+        <title>My Timesheet | All Business 365</title>
       </Helmet>
 
       <div className="space-y-6">

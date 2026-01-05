@@ -12,7 +12,7 @@ export default function WorkOrderDetails() {
     return (
       <>
         <Helmet>
-          <title>Work Order Not Found | ServicePro</title>
+          <title>Work Order Not Found | All Business 365</title>
         </Helmet>
         <Layout>
           <div className="modern-card p-8 text-center">
@@ -27,7 +27,7 @@ export default function WorkOrderDetails() {
   return (
     <>
       <Helmet>
-        <title>Work Order Details | ServicePro</title>
+        <title>Work Order Details | All Business 365</title>
       </Helmet>
       <Layout>
         <WorkOrderDetailsView workOrderId={workOrderId} />

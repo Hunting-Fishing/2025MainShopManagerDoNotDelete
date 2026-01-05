@@ -16,7 +16,7 @@ export default function Feedback() {
   return (
     <>
       <Helmet>
-        <title>Customer Feedback | AutoShop Pro</title>
+        <title>Customer Feedback | All Business 365</title>
       </Helmet>
       
       <div className="space-y-6">

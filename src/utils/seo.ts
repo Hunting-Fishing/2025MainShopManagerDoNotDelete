@@ -4,7 +4,7 @@
  */
 
 export const generatePageTitle = (pageTitle: string, shopName?: string, includeAppName = true): string => {
-  const appName = shopName || 'Easy Shop Manager';
+  const appName = shopName || 'All Business 365';
   if (includeAppName && !pageTitle.includes(appName)) {
     return `${pageTitle} | ${appName}`;
   }

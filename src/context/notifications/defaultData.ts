@@ -4,7 +4,7 @@ import { Notification, NotificationPreferences } from '@/types/notification';
 export const defaultNotifications: Notification[] = [
   {
     id: '1',
-    title: 'Welcome to AutoShop Pro',
+    title: 'Welcome to All Business 365',
     message: 'Your account has been set up successfully. Start managing your shop today!',
     type: 'success',
     category: 'system',

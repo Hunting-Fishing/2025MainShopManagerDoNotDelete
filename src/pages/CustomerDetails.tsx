@@ -86,7 +86,7 @@ export default function CustomerDetails() {
   return (
     <>
       <Helmet>
-        <title>{customerName} | Customer Details | ServicePro</title>
+        <title>{customerName} | Customer Details | All Business 365</title>
       </Helmet>
 
       <div className="container mx-auto px-4 py-8 space-y-8">

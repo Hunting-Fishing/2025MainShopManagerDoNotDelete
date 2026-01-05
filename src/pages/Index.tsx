@@ -83,7 +83,7 @@ export default function Index() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">ServicePro Hub</h1>
+              <h1 className="text-2xl font-bold text-foreground">All Business 365</h1>
               <p className="text-sm text-muted-foreground hidden sm:block">Professional Service Management</p>
             </div>
             <div className="flex gap-3">
@@ -183,7 +183,7 @@ export default function Index() {
             Ready to Transform Your Business?
           </h2>
           <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
-            Join thousands of service professionals who trust ServicePro Hub to run their operations.
+            Join thousands of service professionals who trust All Business 365 to run their operations.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/staff-login">
@@ -206,7 +206,7 @@ export default function Index() {
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
-              <h3 className="text-xl font-bold mb-2">ServicePro Hub</h3>
+              <h3 className="text-xl font-bold mb-2">All Business 365</h3>
               <p className="text-muted-foreground text-sm max-w-md">
                 Professional service management platform for any industry. 
                 Streamline your operations and grow your business.
@@ -230,7 +230,7 @@ export default function Index() {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} ServicePro Hub. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} All Business 365. All rights reserved.</p>
           </div>
         </div>
       </footer>

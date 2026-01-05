@@ -17,7 +17,7 @@ export default function DeveloperPortal() {
   return (
     <>
       <Helmet>
-        <title>Developer Portal | AutoShop Pro</title>
+        <title>Developer Portal | All Business 365</title>
       </Helmet>
       
       <div className="space-y-6">

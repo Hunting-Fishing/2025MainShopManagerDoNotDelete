@@ -11,7 +11,7 @@ export default function InvoiceScan() {
   return (
     <>
       <Helmet>
-        <title>Scan Invoice | ServicePro</title>
+        <title>Scan Invoice | All Business 365</title>
       </Helmet>
 
       <div className="space-y-6">

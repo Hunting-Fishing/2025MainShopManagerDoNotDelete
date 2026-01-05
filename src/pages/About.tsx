@@ -13,9 +13,9 @@ export default function About() {
           <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-primary flex items-center justify-center mb-6 shadow-lg">
             <Wrench className="w-10 h-10 text-primary-foreground" />
           </div>
-          <h1 className="text-4xl font-heading gradient-text">About AutoShop Pro</h1>
+          <h1 className="text-4xl font-heading gradient-text">About All Business 365</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            The complete solution for automotive service management
+            The complete solution for professional service management
           </p>
         </div>
 
