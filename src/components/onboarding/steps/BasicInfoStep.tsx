@@ -48,7 +48,7 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
           return;
         }
       } else {
-        // Fallback: Create shop and organization if somehow missing
+        // Fallback: Create shop using the transactional RPC if somehow missing
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         
         if (authError || !user) {
@@ -57,57 +57,39 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
           return;
         }
         
-        // Create organization first
-        const { data: org, error: orgError } = await supabase
-          .from('organizations')
-          .insert([{ name: formData.name }])
-          .select()
-          .single();
+        // Use the transactional RPC to create workspace
+        const { data: result, error: rpcError } = await supabase.rpc('create_workspace', {
+          company_name: formData.name,
+          selected_module_slugs: []
+        });
         
-        if (orgError) {
-          console.error('Failed to create organization:', orgError);
-          toast.error('Failed to set up your organization. Please try again.');
+        if (rpcError) {
+          console.error('Failed to create workspace:', rpcError);
+          toast.error('Failed to set up your workspace. Please try again.');
           setIsSaving(false);
           return;
         }
         
-        // Create the shop with organization_id
-        const { data: newShop, error: shopError } = await supabase
-          .from('shops')
-          .insert([{
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            address: formData.address,
-            city: formData.city,
-            state: formData.state,
-            postal_code: formData.zip,
-            organization_id: org.id,
-            setup_step: 0,
-            onboarding_completed: false,
-            trial_started_at: new Date().toISOString(),
-            trial_days: 14
-          }])
-          .select()
-          .single();
-        
-        if (shopError) {
-          console.error('Failed to create shop:', shopError);
-          toast.error('Failed to create your shop. Please try again.');
-          setIsSaving(false);
-          return;
-        }
-        
-        if (newShop) {
-          // Link user profile to shop
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ shop_id: newShop.id })
-            .eq('user_id', user.id);
+        // Parse result and update the shop with additional details
+        const workspaceResult = result as { shop_id?: string; organization_id?: string; success?: boolean } | null;
+        if (workspaceResult?.shop_id) {
+          const { error: updateError } = await supabase
+            .from('shops')
+            .update({
+              email: formData.email,
+              phone: formData.phone,
+              address: formData.address,
+              city: formData.city,
+              state: formData.state,
+              postal_code: formData.zip,
+              setup_step: 0,
+              onboarding_completed: false
+            })
+            .eq('id', workspaceResult.shop_id);
           
-          if (profileError) {
-            console.error('Failed to link profile:', profileError);
-            // Non-critical error, continue anyway
+          if (updateError) {
+            console.error('Failed to update shop details:', updateError);
+            // Non-critical, continue anyway
           }
           
           // Refresh shop data
