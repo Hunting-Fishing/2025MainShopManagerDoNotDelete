@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useEnabledModules } from '@/hooks/useEnabledModules';
 import { MODULE_ROUTES } from '@/config/moduleRoutes';
 import { cn } from '@/lib/utils';
@@ -8,6 +8,8 @@ import { ChevronRight, AlertCircle, Rocket } from 'lucide-react';
 
 export function ModuleIndicator() {
   const { modules, hasShop, getEnabledModuleSlugs, isLoading } = useEnabledModules();
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   if (isLoading) {
     return (
@@ -60,21 +62,31 @@ export function ModuleIndicator() {
     );
   }
 
-  // Get the primary module (first one)
-  const primary = enabledModulesWithConfig[0];
-  const moduleConfig = primary.config!;
-  const Icon = moduleConfig.icon;
+  // Find active module based on current route
+  const activeModuleSlug = Object.keys(MODULE_ROUTES).find(slug => {
+    const config = MODULE_ROUTES[slug];
+    return currentPath === config.dashboardRoute || currentPath.startsWith(config.dashboardRoute + '/');
+  });
+
+  // Get the active module config, or fall back to first enabled
+  const activeConfig = activeModuleSlug ? MODULE_ROUTES[activeModuleSlug] : enabledModulesWithConfig[0]?.config;
+  
+  if (!activeConfig) {
+    return null;
+  }
+
+  const Icon = activeConfig.icon;
 
   return (
     <div className="mx-2 space-y-1">
       {/* Primary Module */}
       <Link
-        to={moduleConfig.dashboardRoute}
+        to={activeConfig.dashboardRoute}
         className={cn(
           "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
           "bg-gradient-to-r shadow-sm hover:shadow-md",
-          moduleConfig.gradientFrom,
-          moduleConfig.gradientTo,
+          activeConfig.gradientFrom,
+          activeConfig.gradientTo,
           "text-white"
         )}
       >
@@ -82,7 +94,7 @@ export function ModuleIndicator() {
           <Icon className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{moduleConfig.name}</p>
+          <p className="text-sm font-semibold truncate">{activeConfig.name}</p>
           <p className="text-xs text-white/80 truncate">Active Module</p>
         </div>
         <ChevronRight className="h-4 w-4 opacity-60" />
