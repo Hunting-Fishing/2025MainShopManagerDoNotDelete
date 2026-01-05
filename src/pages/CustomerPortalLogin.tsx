@@ -30,13 +30,13 @@ export default function CustomerPortalLogin() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/50 to-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/50 to-background font-['Space_Grotesk',sans-serif]">
       {/* Header */}
       <header className="p-4">
         <Button 
           variant="ghost" 
           onClick={() => navigate('/')}
-          className="gap-2"
+          className="gap-2 font-medium"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Home
@@ -49,11 +49,11 @@ export default function CustomerPortalLogin() {
           {/* Login Card */}
           <Card className="shadow-lg">
             <CardHeader className="text-center space-y-2">
-              <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary" />
+              <div className="mx-auto w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
+                <Users className="h-7 w-7 text-primary" />
               </div>
-              <CardTitle className="text-2xl">Customer Portal</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-3xl font-semibold tracking-tight">Customer Portal</CardTitle>
+              <CardDescription className="text-base">
                 Access your service history, invoices, and appointments
               </CardDescription>
             </CardHeader>
