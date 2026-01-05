@@ -233,6 +233,7 @@ export default function Index() {
                 <li><a href="#" className="hover:text-foreground transition-colors">Documentation</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Contact Us</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
+                <li><Link to="/affiliate-verify" className="hover:text-foreground transition-colors">Affiliate Verification</Link></li>
               </ul>
             </div>
           </div>
