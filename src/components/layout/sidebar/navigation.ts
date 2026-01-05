@@ -55,7 +55,8 @@ import {
   Crosshair,
   ArrowRightLeft,
   CreditCard,
-  Fuel
+  Fuel,
+  Link
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -664,6 +665,13 @@ export const navigation: NavigationSection[] = [
         href: '/gunsmith/consignments',
         icon: ShoppingBag,
         description: 'Consignment inventory',
+        permissionModule: 'gunsmith',
+      },
+      {
+        title: 'Useful Links',
+        href: '/gunsmith/useful-links',
+        icon: Link,
+        description: 'Web resources and affiliate links',
         permissionModule: 'gunsmith',
       },
     ],

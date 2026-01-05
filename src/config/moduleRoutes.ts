@@ -23,7 +23,8 @@ import {
   Receipt,
   Ship,
   MapPin,
-  Droplet
+  Droplet,
+  Link
 } from 'lucide-react';
 
 export interface ModuleSectionItem {
@@ -110,6 +111,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Compliance', href: '/gunsmith/compliance', icon: Shield },
       { title: 'Transfers', href: '/gunsmith/transfers', icon: ArrowRightLeft },
       { title: 'Consignments', href: '/gunsmith/consignments', icon: ShoppingBag },
+      { title: 'Useful Links', href: '/gunsmith/useful-links', icon: Link },
     ],
   },
   marine: {

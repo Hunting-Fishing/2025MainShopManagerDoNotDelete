@@ -133,6 +133,7 @@ import Planner from '@/pages/Planner';
 import Payroll from '@/pages/Payroll';
 import AdvancedAnalytics from '@/pages/AdvancedAnalytics';
 import AffiliateTool from '@/pages/AffiliateTool';
+import AffiliateVerification from '@/pages/AffiliateVerification';
 import BoatInspection from '@/pages/BoatInspection';
 import Checkout from '@/pages/Checkout';
 import ClientBooking from '@/pages/ClientBooking';
@@ -236,6 +237,7 @@ import GunsmithInventory from '@/pages/gunsmith/GunsmithInventory';
 import GunsmithStockAdjust from '@/pages/gunsmith/GunsmithStockAdjust';
 import GunsmithPurchaseOrderForm from '@/pages/gunsmith/GunsmithPurchaseOrderForm';
 import GunsmithSerializedForm from '@/pages/gunsmith/GunsmithSerializedForm';
+import GunsmithUsefulLinks from '@/pages/gunsmith/GunsmithUsefulLinks';
 
 // Fuel Delivery
 import FuelDeliveryDashboard from '@/pages/fuel-delivery/FuelDeliveryDashboard';
@@ -278,6 +280,7 @@ function App() {
         <Route path="/setup-brian" element={<SetupBrianAuth />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/shop-setup" element={<ShopSetup />} />
+        <Route path="/affiliate-verify" element={<AffiliateVerification />} />
         <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
         <Route path="/customer-portal/login" element={<CustomerPortalAuthLogin />} />
         <Route path="/customer-portal/register" element={<CustomerPortalRegister />} />
@@ -1179,6 +1182,7 @@ function App() {
                   <Route path="/gunsmith/inventory/adjust" element={<GunsmithStockAdjust />} />
                   <Route path="/gunsmith/inventory/purchase-orders/new" element={<GunsmithPurchaseOrderForm />} />
                   <Route path="/gunsmith/inventory/serialized/new" element={<GunsmithSerializedForm />} />
+                  <Route path="/gunsmith/useful-links" element={<GunsmithUsefulLinks />} />
                   
                   {/* Fuel Delivery Routes */}
                   <Route path="/fuel-delivery" element={<FuelDeliveryDashboard />} />
