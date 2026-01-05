@@ -1,20 +1,35 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useEnabledModules } from '@/hooks/useEnabledModules';
 import { MODULE_ROUTES } from '@/config/moduleRoutes';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { ChevronRight, LayoutGrid, AlertCircle } from 'lucide-react';
+import { ChevronRight, AlertCircle, Rocket } from 'lucide-react';
 
 export function ModuleIndicator() {
-  const location = useLocation();
-  const { modules, enabledModules, getEnabledModuleSlugs, isLoading } = useEnabledModules();
+  const { modules, hasShop, getEnabledModuleSlugs, isLoading } = useEnabledModules();
 
   if (isLoading) {
     return (
       <div className="px-3 py-2 mx-2 rounded-lg bg-muted/50 animate-pulse">
         <div className="h-4 w-24 bg-muted rounded" />
       </div>
+    );
+  }
+
+  // No shop - prompt to complete onboarding
+  if (!hasShop) {
+    return (
+      <Link
+        to="/shop-setup"
+        className="mx-2 px-3 py-2.5 rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors block"
+      >
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Rocket className="h-4 w-4" />
+          <span>Complete Setup</span>
+        </div>
+        <p className="text-xs text-primary/70 mt-0.5">Set up your shop to get started</p>
+      </Link>
     );
   }
 
@@ -29,17 +44,18 @@ export function ModuleIndicator() {
     }))
     .filter(m => m.config);
 
+  // Has shop but no modules configured
   if (enabledModulesWithConfig.length === 0) {
     return (
       <Link
         to="/module-hub"
-        className="mx-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 transition-colors block"
+        className="mx-2 px-3 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 hover:bg-amber-500/20 transition-colors block dark:text-amber-400"
       >
         <div className="flex items-center gap-2 text-sm font-medium">
           <AlertCircle className="h-4 w-4" />
-          <span>Set Up Your Modules</span>
+          <span>Set Up Modules</span>
         </div>
-        <p className="text-xs text-amber-600 mt-0.5">Choose which services you offer</p>
+        <p className="text-xs opacity-80 mt-0.5">Choose which services you offer</p>
       </Link>
     );
   }
