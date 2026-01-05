@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -314,12 +314,12 @@ export default function GunsmithFirearms() {
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {firearm.customers?.first_name} {firearm.customers?.last_name}
-                      {firearm.caliber && ` • ${firearm.caliber}`}
+                      {firearm.caliber && ` â€¢ ${firearm.caliber}`}
                     </p>
                     {firearm.serial_number && (
                       <p className="text-sm text-muted-foreground">
                         S/N: {firearm.serial_number}
-                        {firearm.registration_number && ` • Reg: ${firearm.registration_number}`}
+                        {firearm.registration_number && ` â€¢ Reg: ${firearm.registration_number}`}
                       </p>
                     )}
                   </div>

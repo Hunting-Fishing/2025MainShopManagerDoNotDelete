@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  ClipboardList, 
-  Plus, 
+import {
+  ClipboardList,
+  Plus,
   Search,
   ArrowLeft
 } from 'lucide-react';
@@ -28,17 +28,51 @@ export default function GunsmithJobs() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [dueFilter, setDueFilter] = useState('all');
+
   const { data: jobs, isLoading } = useGunsmithJobs(statusFilter === 'all' ? undefined : statusFilter);
   const updateJob = useUpdateGunsmithJob();
 
-  const filteredJobs = jobs?.filter(job => 
-    job.job_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.customers?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.customers?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.gunsmith_firearms?.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.gunsmith_firearms?.model?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const assigneeOptions = useMemo(() => {
+    const assignees = new Set<string>();
+    (jobs || []).forEach((job) => {
+      if (job.assigned_to) {
+        assignees.add(job.assigned_to);
+      }
+    });
+    return Array.from(assignees);
+  }, [jobs]);
+
+  const filteredJobs = jobs?.filter((job) => {
+    const matchesSearch =
+      job.job_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.customers?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.customers?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.gunsmith_firearms?.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.gunsmith_firearms?.model?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesAssignee = assigneeFilter === 'all' || job.assigned_to === assigneeFilter;
+
+    const today = new Date();
+    const dueDate = job.estimated_completion ? new Date(job.estimated_completion) : null;
+    const isOverdue = dueDate ? dueDate < today : false;
+    const isDueSoon = dueDate
+      ? dueDate >= today && dueDate <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+      : false;
+
+    const matchesDue =
+      dueFilter === 'all' ||
+      (dueFilter === 'overdue' && isOverdue) ||
+      (dueFilter === 'due_soon' && isDueSoon);
+
+    return matchesSearch && matchesAssignee && matchesDue;
+  });
+
+  const isOverdue = (job: any) => {
+    if (!job.estimated_completion) return false;
+    return new Date(job.estimated_completion) < new Date();
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -72,7 +106,7 @@ export default function GunsmithJobs() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex flex-wrap gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -92,6 +126,29 @@ export default function GunsmithJobs() {
                 {status.label}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Assigned to" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Assignees</SelectItem>
+            {assigneeOptions.map((assignee) => (
+              <SelectItem key={assignee} value={assignee}>
+                {assignee}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={dueFilter} onValueChange={setDueFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Due date" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Dates</SelectItem>
+            <SelectItem value="overdue">Overdue</SelectItem>
+            <SelectItem value="due_soon">Due in 7 days</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -117,8 +174,8 @@ export default function GunsmithJobs() {
           ) : (
             <div className="space-y-3">
               {filteredJobs?.map((job) => (
-                <div 
-                  key={job.id} 
+                <div
+                  key={job.id}
                   className="flex items-center justify-between p-4 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors"
                   onClick={() => navigate(`/gunsmith/jobs/${job.id}`)}
                 >
@@ -129,14 +186,17 @@ export default function GunsmithJobs() {
                         {job.status.replace('_', ' ')}
                       </Badge>
                       <Badge variant="outline">{job.priority}</Badge>
+                      {isOverdue(job) && (
+                        <Badge variant="destructive">Overdue</Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {job.customers?.first_name} {job.customers?.last_name} • {job.job_type}
+                      {job.customers?.first_name} {job.customers?.last_name} - {job.job_type}
                     </p>
                     {job.gunsmith_firearms && (
                       <p className="text-sm text-muted-foreground">
                         {job.gunsmith_firearms.make} {job.gunsmith_firearms.model}
-                        {job.gunsmith_firearms.serial_number && ` • S/N: ${job.gunsmith_firearms.serial_number}`}
+                        {job.gunsmith_firearms.serial_number && ` - S/N: ${job.gunsmith_firearms.serial_number}`}
                       </p>
                     )}
                   </div>

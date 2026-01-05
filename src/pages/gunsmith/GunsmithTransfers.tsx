@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -359,7 +359,7 @@ export default function GunsmithTransfers() {
                       <Badge variant="outline">{transfer.transfer_type}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {transfer.firearm_serial && `S/N: ${transfer.firearm_serial} • `}
+                      {transfer.firearm_serial && `S/N: ${transfer.firearm_serial} â€¢ `}
                       {transfer.firearm_classification}
                     </p>
                     {transfer.cfo_reference_number && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -224,7 +224,7 @@ export default function GunsmithPayments() {
                       <p className="font-medium">{payment.gunsmith_invoices?.invoice_number || 'Manual Payment'}</p>
                       <p className="text-sm text-muted-foreground">
                         {payment.customers?.first_name} {payment.customers?.last_name}
-                        {payment.reference_number && ` • Ref: ${payment.reference_number}`}
+                        {payment.reference_number && ` â€¢ Ref: ${payment.reference_number}`}
                       </p>
                     </div>
                   </div>

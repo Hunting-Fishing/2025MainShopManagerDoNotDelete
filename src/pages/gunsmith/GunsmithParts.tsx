@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -705,7 +705,7 @@ export default function GunsmithParts() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs">Total Retail (×{orderFormData.quantity_ordered})</Label>
+                        <Label className="text-xs">Total Retail (Ã—{orderFormData.quantity_ordered})</Label>
                         <div className="h-9 flex items-center px-3 bg-amber-500/10 rounded-md text-sm font-bold text-amber-600">
                           ${totalRetail.toFixed(2)}
                         </div>
@@ -860,7 +860,7 @@ export default function GunsmithParts() {
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {part.manufacturer}
-                      {part.location && ` • Location: ${part.location}`}
+                      {part.location && ` â€¢ Location: ${part.location}`}
                     </p>
                   </div>
                   <div className="text-right">

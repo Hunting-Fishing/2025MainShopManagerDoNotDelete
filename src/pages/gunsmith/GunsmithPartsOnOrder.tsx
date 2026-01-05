@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -157,10 +157,10 @@ export default function GunsmithPartsOnOrder() {
                         </Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        <p>PN: {order.part_number} • Qty: {order.quantity_ordered}</p>
+                        <p>PN: {order.part_number} â€¢ Qty: {order.quantity_ordered}</p>
                         {order.supplier && <p>Supplier: {order.supplier}</p>}
                         {order.unit_cost && (
-                          <p>Cost: ${order.unit_cost.toFixed(2)} ea • Total: ${order.total_cost?.toFixed(2)}</p>
+                          <p>Cost: ${order.unit_cost.toFixed(2)} ea â€¢ Total: ${order.total_cost?.toFixed(2)}</p>
                         )}
                       </div>
                     </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -126,7 +126,7 @@ export default function GunsmithJobForm() {
                 </Select>
                 {selectedCustomer && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    {selectedCustomer.phone} • {selectedCustomer.email}
+                    {selectedCustomer.phone} â€¢ {selectedCustomer.email}
                   </p>
                 )}
               </div>

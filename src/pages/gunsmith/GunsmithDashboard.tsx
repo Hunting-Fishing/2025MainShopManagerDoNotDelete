@@ -1,12 +1,12 @@
-import React from 'react';
+﻿import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Crosshair, 
-  Calendar, 
-  DollarSign, 
-  FileText, 
+import {
+  Crosshair,
+  Calendar,
+  DollarSign,
+  FileText,
   AlertTriangle,
   Plus,
   ClipboardList,
@@ -17,12 +17,11 @@ import {
   Receipt,
   CreditCard,
   CalendarDays,
-  BookOpen,
-  Scale,
   ShoppingBag,
-  BarChart3
+  BarChart3,
+  Link
 } from 'lucide-react';
-import { useGunsmithStats, useGunsmithJobs } from '@/hooks/useGunsmith';
+import { useGunsmithStats, useGunsmithJobs, useGunsmithAppointments, useGunsmithConsignments, useGunsmithTransfers } from '@/hooks/useGunsmith';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,6 +30,16 @@ export default function GunsmithDashboard() {
   const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useGunsmithStats();
   const { data: recentJobs, isLoading: jobsLoading } = useGunsmithJobs();
+  const { data: appointments, isLoading: appointmentsLoading } = useGunsmithAppointments();
+  const { data: consignments, isLoading: consignmentsLoading } = useGunsmithConsignments();
+  const { data: transfers, isLoading: transfersLoading } = useGunsmithTransfers();
+
+  const upcomingAppointments = (appointments || [])
+    .filter((appointment) => appointment.appointment_date)
+    .filter((appointment) => appointment.status !== 'cancelled')
+    .filter((appointment) => new Date(appointment.appointment_date) >= new Date())
+    .sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime())
+    .slice(0, 5);
 
   const statCards = [
     {
@@ -48,6 +57,13 @@ export default function GunsmithDashboard() {
       bgColor: 'bg-blue-500/10',
     },
     {
+      title: 'Awaiting Parts',
+      value: stats?.awaitingPartsJobs || 0,
+      icon: Package,
+      color: 'text-yellow-500',
+      bgColor: 'bg-yellow-500/10',
+    },
+    {
       title: 'Completed',
       value: stats?.completedJobs || 0,
       icon: Calendar,
@@ -60,6 +76,27 @@ export default function GunsmithDashboard() {
       icon: DollarSign,
       color: 'text-emerald-500',
       bgColor: 'bg-emerald-500/10',
+    },
+    {
+      title: 'Pending Transfers',
+      value: transfers?.filter((transfer) => transfer.status !== 'completed').length || 0,
+      icon: ArrowRightLeft,
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-500/10',
+    },
+    {
+      title: 'Active Consignments',
+      value: consignments?.filter((consignment) => consignment.status === 'active').length || 0,
+      icon: ShoppingBag,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-500/10',
+    },
+    {
+      title: 'Licenses Expiring',
+      value: stats?.expiringLicenses || 0,
+      icon: Shield,
+      color: 'text-red-500',
+      bgColor: 'bg-red-500/10',
     },
   ];
 
@@ -139,7 +176,7 @@ export default function GunsmithDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  {statsLoading ? (
+                  {statsLoading || consignmentsLoading || transfersLoading ? (
                     <Skeleton className="h-8 w-20 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
@@ -155,7 +192,7 @@ export default function GunsmithDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-10 gap-4 mb-8">
+      <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-12 gap-4 mb-8">
         <Button
           variant="outline"
           className="h-24 flex flex-col gap-2"
@@ -244,6 +281,22 @@ export default function GunsmithDashboard() {
           <ShoppingBag className="h-6 w-6 text-orange-500" />
           <span className="text-xs">Consignments</span>
         </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-cyan-500/30 hover:bg-cyan-500/5"
+          onClick={() => navigate('/gunsmith/parts-on-order')}
+        >
+          <ShoppingBag className="h-6 w-6 text-cyan-500" />
+          <span className="text-xs">Parts on Order</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-slate-500/30 hover:bg-slate-500/5"
+          onClick={() => navigate('/gunsmith/useful-links')}
+        >
+          <Link className="h-6 w-6 text-slate-500" />
+          <span className="text-xs">Useful Links</span>
+        </Button>
       </div>
 
       {/* Main Content Grid */}
@@ -274,7 +327,7 @@ export default function GunsmithDashboard() {
                     <div>
                       <p className="font-medium text-foreground">{job.job_number}</p>
                       <p className="text-sm text-muted-foreground">
-                        {job.customers?.first_name} {job.customers?.last_name} • {job.job_type}
+                        {job.customers?.first_name} {job.customers?.last_name} â€¢ {job.job_type}
                       </p>
                     </div>
                     <div className="text-right">
@@ -313,13 +366,46 @@ export default function GunsmithDashboard() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No upcoming appointments</p>
-              <Button variant="link" onClick={() => navigate('/gunsmith/appointments')}>
-                Schedule an appointment
-              </Button>
-            </div>
+            {appointmentsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : upcomingAppointments.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingAppointments.map((appointment) => (
+                  <div
+                    key={appointment.id}
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors"
+                    onClick={() => navigate('/gunsmith/appointments')}
+                  >
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {appointment.customers?.first_name} {appointment.customers?.last_name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {appointment.appointment_type}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="outline">{appointment.status.replace('_', ' ')}</Badge>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {format(new Date(appointment.appointment_date), 'MMM d, yyyy h:mm a')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No upcoming appointments</p>
+                <Button variant="link" onClick={() => navigate('/gunsmith/appointments')}>
+                  Schedule an appointment
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -281,11 +281,11 @@ export default function GunsmithConsignments() {
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Owner: {consignment.customers?.first_name} {consignment.customers?.last_name}
-                      {consignment.gunsmith_firearms?.serial_number && ` • S/N: ${consignment.gunsmith_firearms.serial_number}`}
+                      {consignment.gunsmith_firearms?.serial_number && ` â€¢ S/N: ${consignment.gunsmith_firearms.serial_number}`}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Commission: {consignment.commission_rate}%
-                      {consignment.minimum_price && ` • Min: $${consignment.minimum_price.toFixed(2)}`}
+                      {consignment.minimum_price && ` â€¢ Min: $${consignment.minimum_price.toFixed(2)}`}
                     </p>
                   </div>
                   <div className="text-right">

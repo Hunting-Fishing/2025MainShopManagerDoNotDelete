@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -124,7 +124,7 @@ export default function GunsmithInventory() {
                           {part.part_number && <Badge variant="outline">{part.part_number}</Badge>}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {part.manufacturer} {part.location && `• ${part.location}`}
+                          {part.manufacturer} {part.location && `â€¢ ${part.location}`}
                         </p>
                       </div>
                       <div className="text-right">
@@ -165,7 +165,7 @@ export default function GunsmithInventory() {
                         <div>
                           <span className="font-medium">{m.gunsmith_parts?.name}</span>
                           <p className="text-sm text-muted-foreground">
-                            {m.movement_type.replace('_', ' ')} • {m.reason || 'No reason'}
+                            {m.movement_type.replace('_', ' ')} â€¢ {m.reason || 'No reason'}
                           </p>
                         </div>
                       </div>
@@ -257,7 +257,7 @@ export default function GunsmithInventory() {
                       <div>
                         <span className="font-medium">{po.po_number}</span>
                         <p className="text-sm text-muted-foreground">
-                          {po.supplier || 'No supplier'} • {format(new Date(po.created_at), 'MMM d, yyyy')}
+                          {po.supplier || 'No supplier'} â€¢ {format(new Date(po.created_at), 'MMM d, yyyy')}
                         </p>
                       </div>
                       <div className="text-right">

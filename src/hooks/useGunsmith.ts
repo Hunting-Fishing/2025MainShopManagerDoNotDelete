@@ -168,6 +168,7 @@ export function useGunsmithStats() {
 
       const pendingJobs = jobs.filter((j: any) => j.status === 'pending').length;
       const inProgressJobs = jobs.filter((j: any) => j.status === 'in_progress').length;
+      const awaitingPartsJobs = jobs.filter((j: any) => j.status === 'awaiting_parts').length;
       const completedJobs = jobs.filter((j: any) => j.status === 'completed').length;
       const revenue = jobs.filter((j: any) => j.status === 'completed').reduce((sum: number, j: any) => sum + (j.total_cost || 0), 0);
       const lowStockParts = parts.filter((p: any) => p.quantity <= p.min_quantity).length;
@@ -183,6 +184,7 @@ export function useGunsmithStats() {
       return {
         pendingJobs,
         inProgressJobs,
+        awaitingPartsJobs,
         completedJobs,
         revenue,
         lowStockParts,
