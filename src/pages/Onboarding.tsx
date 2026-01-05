@@ -1,69 +1,66 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Loader2 } from 'lucide-react';
+import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
+import { ModuleSelectionStep } from '@/components/onboarding/ModuleSelectionStep';
+import { CompanySetupStep } from '@/components/onboarding/CompanySetupStep';
+import { MODULE_CONFIGS } from '@/config/moduleSubscriptions';
+
+const STEPS = ['Select Modules', 'Company Setup'];
 
 export default function Onboarding() {
-  const [companyName, setCompanyName] = useState('');
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleCreateCompany = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!companyName.trim()) {
-      toast({
-        title: "Company name required",
-        description: "Please enter your company name",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleModuleToggle = (slug: string) => {
+    setSelectedModules(prev => 
+      prev.includes(slug) 
+        ? prev.filter(s => s !== slug)
+        : [...prev, slug]
+    );
+  };
 
+  const handleCreateCompany = async (companyName: string) => {
     setIsLoading(true);
     try {
-      // Get the current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) throw new Error('Not authenticated');
 
-      // First create an organization
+      // Create organization
       const { data: org, error: orgError } = await supabase
         .from('organizations')
-        .insert({
-          name: companyName.trim()
-        })
+        .insert({ name: companyName })
         .select()
         .single();
-
       if (orgError) throw orgError;
 
-      // Create the shop linked to the organization
+      // Create shop with trial info
       const { data: shop, error: shopError } = await supabase
         .from('shops')
         .insert({
-          name: companyName.trim(),
-          organization_id: org.id
+          name: companyName,
+          organization_id: org.id,
+          trial_started_at: new Date().toISOString(),
+          trial_days: 14
         })
         .select()
         .single();
-
       if (shopError) throw shopError;
 
-      // Update the user's profile with the new shop_id
+      // Update user profile with shop_id
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ shop_id: shop.id })
         .or(`id.eq.${user.id},user_id.eq.${user.id}`);
-
       if (profileError) throw profileError;
 
-      // Assign owner role to the user
+      // Assign owner role
       const { data: ownerRole } = await supabase
         .from('roles')
         .select('id')
@@ -73,20 +70,29 @@ export default function Onboarding() {
       if (ownerRole) {
         await supabase
           .from('user_roles')
-          .insert({
-            user_id: user.id,
-            role_id: ownerRole.id
-          });
+          .insert({ user_id: user.id, role_id: ownerRole.id });
+      }
+
+      // Enable selected modules for the shop
+      if (selectedModules.length > 0) {
+        const moduleInserts = selectedModules.map(slug => ({
+          shop_id: shop.id,
+          module_slug: slug,
+          is_enabled: true
+        }));
+        
+        await supabase
+          .from('shop_enabled_modules')
+          .insert(moduleInserts);
       }
 
       toast({
-        title: "Company created!",
-        description: `Welcome to ${companyName}. Your workspace is ready.`
+        title: "Welcome to your workspace!",
+        description: `${companyName} is ready. Your 14-day trial has started.`
       });
 
-      // Redirect to dashboard
-      navigate('/');
-      window.location.reload(); // Force reload to refresh shop context
+      navigate('/module-hub');
+      window.location.reload();
     } catch (error: any) {
       console.error('Error creating company:', error);
       toast({
@@ -105,52 +111,41 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Building2 className="h-12 w-12 text-primary mx-auto mb-2" />
-          <CardTitle>Welcome! Let's set up your company</CardTitle>
-          <CardDescription>
-            Create your company workspace to get started
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleCreateCompany} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name</Label>
-              <Input
-                id="companyName"
-                placeholder="Enter your company name"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                disabled={isLoading}
-                autoFocus
-              />
-            </div>
-            
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Company'
-              )}
-            </Button>
-            
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full" 
-              onClick={handleLogout}
-              disabled={isLoading}
-            >
-              Sign Out
-            </Button>
-          </form>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 p-4">
+      <OnboardingProgress 
+        currentStep={currentStep} 
+        totalSteps={STEPS.length} 
+        steps={STEPS} 
+      />
+      
+      <Card className="w-full max-w-lg backdrop-blur-sm bg-card/95 border-border/50 shadow-lg">
+        <CardContent className="p-6">
+          {currentStep === 1 && (
+            <ModuleSelectionStep
+              selectedModules={selectedModules}
+              onModuleToggle={handleModuleToggle}
+              onContinue={() => setCurrentStep(2)}
+            />
+          )}
+          
+          {currentStep === 2 && (
+            <CompanySetupStep
+              onSubmit={handleCreateCompany}
+              onBack={() => setCurrentStep(1)}
+              isLoading={isLoading}
+            />
+          )}
         </CardContent>
       </Card>
+      
+      <Button 
+        variant="ghost" 
+        className="mt-6 text-muted-foreground hover:text-foreground" 
+        onClick={handleLogout}
+        disabled={isLoading}
+      >
+        Sign Out
+      </Button>
     </div>
   );
 }
