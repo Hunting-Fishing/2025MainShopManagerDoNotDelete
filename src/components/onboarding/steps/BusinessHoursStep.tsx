@@ -11,8 +11,18 @@ interface StepProps {
   data: any;
   updateData: (data: any) => void;
   onComplete?: () => void;
-  loading?: boolean; // Add loading property
+  loading?: boolean;
 }
+
+const createDefaultHours = (shopId: string): BusinessHours[] => {
+  return Array.from({ length: 7 }, (_, index) => ({
+    shop_id: shopId,
+    day_of_week: index,
+    open_time: "09:00:00",
+    close_time: "17:00:00",
+    is_closed: index === 0 || index === 6 // Sunday and Saturday closed by default
+  }));
+};
 
 export function BusinessHoursStep({ onNext, onPrevious, data, updateData, loading = false }: StepProps) {
   const { shopData } = useShopData();
@@ -22,34 +32,23 @@ export function BusinessHoursStep({ onNext, onPrevious, data, updateData, loadin
   // Load existing business hours or create defaults
   useEffect(() => {
     const loadBusinessHours = async () => {
-      if (!shopData?.id) return;
+      // If no shop yet, use defaults with empty shop_id (will be updated on save)
+      if (!shopData?.id) {
+        setBusinessHours(createDefaultHours(''));
+        setIsLoading(false);
+        return;
+      }
       
       try {
         const hours = await companyService.getBusinessHours(shopData.id);
         if (hours.length > 0) {
           setBusinessHours(hours);
         } else {
-          // Create default business hours
-          const defaultHours: BusinessHours[] = Array.from({ length: 7 }, (_, index) => ({
-            shop_id: shopData.id,
-            day_of_week: index,
-            open_time: "09:00:00",
-            close_time: "17:00:00",
-            is_closed: index === 0 || index === 6 // Sunday and Saturday closed by default
-          }));
-          setBusinessHours(defaultHours);
+          setBusinessHours(createDefaultHours(shopData.id));
         }
       } catch (error) {
         console.error('Failed to load business hours:', error);
-        // Create default hours on error
-        const defaultHours: BusinessHours[] = Array.from({ length: 7 }, (_, index) => ({
-          shop_id: shopData?.id || '',
-          day_of_week: index,
-          open_time: "09:00:00",
-          close_time: "17:00:00",
-          is_closed: index === 0 || index === 6
-        }));
-        setBusinessHours(defaultHours);
+        setBusinessHours(createDefaultHours(shopData.id));
       } finally {
         setIsLoading(false);
       }
@@ -63,11 +62,12 @@ export function BusinessHoursStep({ onNext, onPrevious, data, updateData, loadin
   };
 
   const handleNext = async () => {
-    if (!shopData?.id) return;
-    
     try {
-      // Save business hours to database
-      await companyService.updateBusinessHours(shopData.id, businessHours);
+      if (shopData?.id) {
+        // Update hours with correct shop_id
+        const hoursWithShopId = businessHours.map(h => ({ ...h, shop_id: shopData.id }));
+        await companyService.updateBusinessHours(shopData.id, hoursWithShopId);
+      }
       updateData({ businessHours });
       onNext();
     } catch (error) {
@@ -76,7 +76,7 @@ export function BusinessHoursStep({ onNext, onPrevious, data, updateData, loadin
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center">Loading business hours...</div>;
+    return <div className="p-8 text-center text-muted-foreground">Loading business hours...</div>;
   }
 
   return (

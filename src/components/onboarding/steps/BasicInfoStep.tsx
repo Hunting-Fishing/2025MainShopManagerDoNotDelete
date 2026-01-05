@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { useShopData } from '@/hooks/useShopData';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface StepProps {
   onNext: () => void;
@@ -14,7 +16,8 @@ interface StepProps {
 }
 
 export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = false }: StepProps) {
-  const { companyInfo, updateCompanyInfo } = useShopData();
+  const { companyInfo, updateCompanyInfo, shopData, refresh } = useShopData();
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: data.name || companyInfo?.name || '',
     email: data.email || companyInfo?.email || '',
@@ -32,12 +35,61 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
   };
 
   const handleNext = async () => {
+    setIsSaving(true);
     updateData(formData);
     
-    // Save to database
-    await updateCompanyInfo(formData);
-    
-    onNext();
+    try {
+      // Check if shop exists, if not create it
+      if (!shopData?.id) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Create the shop
+          const { data: newShop, error: shopError } = await supabase
+            .from('shops')
+            .insert({
+              name: formData.name,
+              email: formData.email,
+              phone: formData.phone,
+              address: formData.address,
+              city: formData.city,
+              state: formData.state,
+              postal_code: formData.zip,
+              setup_step: 0,
+              onboarding_completed: false
+            })
+            .select()
+            .single();
+          
+          if (shopError) {
+            console.error('Failed to create shop:', shopError);
+            toast.error('Failed to create shop. Please try again.');
+            setIsSaving(false);
+            return;
+          }
+          
+          if (newShop) {
+            // Link user profile to shop
+            await supabase
+              .from('profiles')
+              .update({ shop_id: newShop.id })
+              .eq('user_id', user.id);
+            
+            // Refresh shop data
+            await refresh();
+          }
+        }
+      } else {
+        // Shop exists, just update
+        await updateCompanyInfo(formData);
+      }
+      
+      onNext();
+    } catch (error) {
+      console.error('Failed to save shop info:', error);
+      toast.error('Failed to save. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -92,28 +144,28 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
         
         <div className="grid grid-cols-2 gap-4">
           <FormField
-            label="State"
+            label="State / Province"
             id="company-state"
             value={formData.state}
             onChange={handleInputChange}
-            placeholder="State"
+            placeholder="State or Province"
             required
           />
           
           <FormField
-            label="ZIP Code"
+            label="ZIP / Postal Code"
             id="company-zip"
             value={formData.zip}
             onChange={handleInputChange}
-            placeholder="12345"
+            placeholder="ZIP or Postal Code"
             required
           />
         </div>
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleNext} disabled={loading}>
-          {loading ? 'Saving...' : 'Next'}
+        <Button onClick={handleNext} disabled={loading || isSaving}>
+          {isSaving ? 'Saving...' : 'Next'}
         </Button>
       </div>
     </div>
