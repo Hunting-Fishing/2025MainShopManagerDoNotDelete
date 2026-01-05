@@ -4,14 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   LogOut, 
   User, 
   Plus, 
   FileText, 
   Receipt, 
-  Wrench,
   Calendar,
   Settings as SettingsIcon,
   UserCircle,
@@ -40,6 +39,7 @@ export function HeaderActions() {
   const { userRole, isLoading: roleLoading } = useUserRole();
   const { data: userRoles = [] } = useUserRoles();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     try {
@@ -101,6 +101,23 @@ export function HeaderActions() {
   };
 
   const displayRole = userRole?.displayName || userRole?.name || 'User';
+  const isGunsmithModule = location.pathname.startsWith('/gunsmith');
+  const quickActions = isGunsmithModule
+    ? [
+        { label: 'Create Job', path: '/gunsmith/jobs/new', icon: Plus },
+        { label: 'Create Quote', path: '/gunsmith/quotes/new', icon: FileText },
+        { label: 'Create Invoice', path: '/gunsmith/invoices/new', icon: Receipt },
+        { label: 'Schedule Appointment', path: '/gunsmith/appointments/new', icon: Calendar },
+        { label: 'Start Transfer', path: '/gunsmith/transfers/new', icon: ClipboardList },
+      ]
+    : [
+        { label: 'Create Work Order', path: '/work-orders/new', icon: Plus, permission: '/work-orders' },
+        { label: 'Create Quote', path: '/quotes/new', icon: FileText, permission: '/quotes' },
+        { label: 'Create Invoice', path: '/invoices/new', icon: Receipt, permission: '/invoices' },
+        { label: 'Schedule Appointment', path: '/calendar', icon: Calendar, permission: '/calendar' },
+        { label: 'Maintenance Request', path: '/maintenance-requests', icon: AlertCircle, permission: '/maintenance-requests' },
+        { label: 'Daily Logs', path: '/daily-logs', icon: ClipboardList, permission: '/daily-logs' },
+      ];
 
   return (
     <div className="flex items-center space-x-4">
@@ -139,42 +156,18 @@ export function HeaderActions() {
             <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
               Quick Actions
             </DropdownMenuLabel>
-            {hasRoutePermission('/work-orders', userRoles) && (
-              <DropdownMenuItem onClick={() => navigate('/work-orders/new')}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Work Order
-              </DropdownMenuItem>
-            )}
-            {hasRoutePermission('/quotes', userRoles) && (
-              <DropdownMenuItem onClick={() => navigate('/quotes/new')}>
-                <FileText className="mr-2 h-4 w-4" />
-                Create Quote
-              </DropdownMenuItem>
-            )}
-            {hasRoutePermission('/invoices', userRoles) && (
-              <DropdownMenuItem onClick={() => navigate('/invoices/new')}>
-                <Receipt className="mr-2 h-4 w-4" />
-                Create Invoice
-              </DropdownMenuItem>
-            )}
-            {hasRoutePermission('/calendar', userRoles) && (
-              <DropdownMenuItem onClick={() => navigate('/calendar')}>
-                <Calendar className="mr-2 h-4 w-4" />
-                Schedule Appointment
-              </DropdownMenuItem>
-            )}
-            {hasRoutePermission('/maintenance-requests', userRoles) && (
-              <DropdownMenuItem onClick={() => navigate('/maintenance-requests')}>
-                <AlertCircle className="mr-2 h-4 w-4" />
-                Maintenance Request
-              </DropdownMenuItem>
-            )}
-            {hasRoutePermission('/equipment-tracking', userRoles) && (
-              <DropdownMenuItem onClick={() => navigate('/daily-logs')}>
-                <ClipboardList className="mr-2 h-4 w-4" />
-                Daily Logs
-              </DropdownMenuItem>
-            )}
+            {quickActions.map((action) => {
+              if (action.permission && !hasRoutePermission(action.permission, userRoles)) {
+                return null;
+              }
+              const Icon = action.icon;
+              return (
+                <DropdownMenuItem key={action.path} onClick={() => navigate(action.path)}>
+                  <Icon className="mr-2 h-4 w-4" />
+                  {action.label}
+                </DropdownMenuItem>
+              );
+            })}
           </DropdownMenuGroup>
           
           <DropdownMenuSeparator />
