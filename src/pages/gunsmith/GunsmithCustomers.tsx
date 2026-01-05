@@ -11,7 +11,7 @@ import {
   Phone,
   Mail,
   Crosshair,
-  Edit
+  Eye
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -157,25 +157,15 @@ export default function GunsmithCustomers() {
                         <p className="text-sm text-muted-foreground mt-1">{customer.address}</p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/gunsmith/firearms?customer=${customer.id}`)}
-                        className="text-amber-600 border-amber-600/30 hover:bg-amber-600/10"
-                      >
-                        <Crosshair className="h-4 w-4 mr-1" />
-                        View Firearms
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/gunsmith/customers/${customer.id}`)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        View/Edit
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/gunsmith/customers/${customer.id}`)}
+                      className="text-amber-600 border-amber-600/30 hover:bg-amber-600/10"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Details
+                    </Button>
                   </div>
                 );
               })}
