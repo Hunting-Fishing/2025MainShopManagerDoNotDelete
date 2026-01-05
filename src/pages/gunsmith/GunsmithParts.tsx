@@ -20,8 +20,11 @@ import {
   DollarSign,
   Calendar,
   Hash,
-  Loader2
+  Loader2,
+  User,
+  UserPlus
 } from 'lucide-react';
+import { QuickAddCustomerDialog } from '@/components/gunsmith/QuickAddCustomerDialog';
 import { useGunsmithParts, useCreateGunsmithPart } from '@/hooks/useGunsmith';
 import { useGunsmithPendingPartOrders, useCreateJobPartOrder } from '@/hooks/useGunsmithJobPartOrders';
 import { useNavigate, Link } from 'react-router-dom';
@@ -48,6 +51,7 @@ export default function GunsmithParts() {
     supplier: ''
   });
   const [orderFormData, setOrderFormData] = useState({
+    customer_id: '',
     job_id: '',
     part_number: '',
     part_name: '',
@@ -58,25 +62,51 @@ export default function GunsmithParts() {
     expected_date: '',
     notes: '',
   });
+  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
   
   const { data: parts, isLoading } = useGunsmithParts();
   const { data: pendingOrders } = useGunsmithPendingPartOrders();
   const createPart = useCreateGunsmithPart();
   const createOrder = useCreateJobPartOrder();
 
-  // Fetch jobs for the order form dropdown
-  const { data: jobs } = useQuery({
-    queryKey: ['gunsmith-jobs-for-order'],
+  // Fetch customers for order form
+  const { data: customers, refetch: refetchCustomers } = useQuery({
+    queryKey: ['customers-for-order'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('gunsmith_jobs')
-        .select('id, job_number, customer_id, customers(first_name, last_name), gunsmith_firearms(make, model)')
-        .in('status', ['pending', 'in_progress', 'waiting_parts'])
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name')
+        .order('first_name');
       if (error) throw error;
       return data;
     },
   });
+
+  // Fetch jobs for the order form dropdown (filtered by customer if selected)
+  const { data: jobs } = useQuery({
+    queryKey: ['gunsmith-jobs-for-order', orderFormData.customer_id],
+    queryFn: async () => {
+      let query = (supabase as any)
+        .from('gunsmith_jobs')
+        .select('id, job_number, customer_id, customers(first_name, last_name), gunsmith_firearms(make, model)')
+        .in('status', ['pending', 'in_progress', 'waiting_parts'])
+        .order('created_at', { ascending: false });
+      
+      // Filter by customer if one is selected
+      if (orderFormData.customer_id) {
+        query = query.eq('customer_id', orderFormData.customer_id);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleCustomerCreated = (customerId: string) => {
+    refetchCustomers();
+    setOrderFormData({ ...orderFormData, customer_id: customerId, job_id: '' });
+  };
 
   const filteredParts = parts?.filter(p => 
     p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -111,13 +141,12 @@ export default function GunsmithParts() {
   };
 
   const handleOrderSubmit = async () => {
-    if (!orderFormData.job_id || !orderFormData.part_number || !orderFormData.part_name) return;
-    
-    const selectedJob = jobs?.find((j: any) => j.id === orderFormData.job_id);
+    // Require customer and part info
+    if (!orderFormData.customer_id || !orderFormData.part_number || !orderFormData.part_name) return;
     
     await createOrder.mutateAsync({
-      job_id: orderFormData.job_id,
-      customer_id: selectedJob?.customer_id,
+      job_id: orderFormData.job_id || undefined,
+      customer_id: orderFormData.customer_id,
       part_number: orderFormData.part_number,
       part_name: orderFormData.part_name,
       supplier: orderFormData.supplier || undefined,
@@ -130,6 +159,7 @@ export default function GunsmithParts() {
 
     setIsDialogOpen(false);
     setOrderFormData({
+      customer_id: '',
       job_id: '',
       part_number: '',
       part_name: '',
@@ -295,28 +325,75 @@ export default function GunsmithParts() {
 
                 {/* Order for Job Tab */}
                 <TabsContent value="order" className="space-y-4 mt-4">
-                  {/* Job Selection */}
+                  {/* Customer Selection */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <User className="h-3 w-3" />
+                      Customer *
+                    </Label>
+                    <div className="flex gap-2">
+                      <Select 
+                        value={orderFormData.customer_id} 
+                        onValueChange={(v) => setOrderFormData({ ...orderFormData, customer_id: v, job_id: '' })}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select a customer..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {customers?.map((customer) => (
+                            <SelectItem key={customer.id} value={customer.id}>
+                              {customer.first_name} {customer.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setIsAddCustomerOpen(true)}
+                        className="shrink-0 border-amber-600/30 text-amber-600 hover:bg-amber-600/10"
+                        title="Add new customer"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Job Selection (optional, filtered by customer) */}
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                       <Hash className="h-3 w-3" />
-                      Select Job *
+                      Link to Job <span className="text-muted-foreground text-xs">(optional)</span>
                     </Label>
                     <Select 
                       value={orderFormData.job_id} 
                       onValueChange={(v) => setOrderFormData({ ...orderFormData, job_id: v })}
+                      disabled={!orderFormData.customer_id}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a job..." />
+                        <SelectValue placeholder={orderFormData.customer_id ? "Select a job or leave empty..." : "Select a customer first"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {jobs?.map((job: any) => (
-                          <SelectItem key={job.id} value={job.id}>
-                            {job.job_number} - {job.customers?.first_name} {job.customers?.last_name}
-                            {job.gunsmith_firearms && ` (${job.gunsmith_firearms.make} ${job.gunsmith_firearms.model})`}
-                          </SelectItem>
-                        ))}
+                        {jobs?.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground text-center">
+                            No active jobs for this customer
+                          </div>
+                        ) : (
+                          jobs?.map((job: any) => (
+                            <SelectItem key={job.id} value={job.id}>
+                              {job.job_number}
+                              {job.gunsmith_firearms && ` - ${job.gunsmith_firearms.make} ${job.gunsmith_firearms.model}`}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
+                    {orderFormData.customer_id && !orderFormData.job_id && (
+                      <p className="text-xs text-muted-foreground">
+                        Parts can be ordered without linking to a specific job
+                      </p>
+                    )}
                   </div>
 
                   <Separator />
@@ -460,7 +537,7 @@ export default function GunsmithParts() {
                   <Button 
                     className="w-full bg-amber-600 hover:bg-amber-700" 
                     onClick={handleOrderSubmit}
-                    disabled={!orderFormData.job_id || !orderFormData.part_number || !orderFormData.part_name || createOrder.isPending}
+                    disabled={!orderFormData.customer_id || !orderFormData.part_number || !orderFormData.part_name || createOrder.isPending}
                   >
                     {createOrder.isPending ? (
                       <>
@@ -562,6 +639,13 @@ export default function GunsmithParts() {
           )}
         </CardContent>
       </Card>
+
+      {/* Quick Add Customer Dialog */}
+      <QuickAddCustomerDialog
+        open={isAddCustomerOpen}
+        onOpenChange={setIsAddCustomerOpen}
+        onCustomerCreated={handleCustomerCreated}
+      />
     </div>
   );
 }
