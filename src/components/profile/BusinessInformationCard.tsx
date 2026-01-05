@@ -198,14 +198,11 @@ export function BusinessInformationCard() {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-0 shadow-lg">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Business Information
-            </CardTitle>
+            <CardTitle className="text-lg">Business Information</CardTitle>
             <CardDescription>Your company details</CardDescription>
           </div>
           {!isEditMode && (
@@ -220,7 +217,7 @@ export function BusinessInformationCard() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="businessName">Business Name</Label>
           <Input
