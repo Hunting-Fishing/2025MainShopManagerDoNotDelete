@@ -21053,6 +21053,56 @@ export type Database = {
           },
         ]
       }
+      module_work_types: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          is_system: boolean | null
+          module_type: string
+          name: string
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          module_type: string
+          name: string
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          module_type?: string
+          name?: string
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_work_types_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           created_at: string
@@ -35091,13 +35141,16 @@ export type Database = {
           break_minutes: number | null
           comments: string | null
           created_at: string | null
+          custom_work_type: string | null
           employee_id: string
           end_time: string | null
+          gunsmith_job_id: string | null
           id: string
           is_billable: boolean | null
           is_overtime: boolean | null
           job_code: string | null
           location: string | null
+          module_type: string | null
           notes: string | null
           rejection_reason: string | null
           start_time: string
@@ -35110,6 +35163,7 @@ export type Database = {
           work_description: string
           work_location_type: string
           work_order_id: string | null
+          work_type_id: string | null
         }
         Insert: {
           activity_type_id?: string | null
@@ -35118,13 +35172,16 @@ export type Database = {
           break_minutes?: number | null
           comments?: string | null
           created_at?: string | null
+          custom_work_type?: string | null
           employee_id: string
           end_time?: string | null
+          gunsmith_job_id?: string | null
           id?: string
           is_billable?: boolean | null
           is_overtime?: boolean | null
           job_code?: string | null
           location?: string | null
+          module_type?: string | null
           notes?: string | null
           rejection_reason?: string | null
           start_time: string
@@ -35137,6 +35194,7 @@ export type Database = {
           work_description: string
           work_location_type: string
           work_order_id?: string | null
+          work_type_id?: string | null
         }
         Update: {
           activity_type_id?: string | null
@@ -35145,13 +35203,16 @@ export type Database = {
           break_minutes?: number | null
           comments?: string | null
           created_at?: string | null
+          custom_work_type?: string | null
           employee_id?: string
           end_time?: string | null
+          gunsmith_job_id?: string | null
           id?: string
           is_billable?: boolean | null
           is_overtime?: boolean | null
           job_code?: string | null
           location?: string | null
+          module_type?: string | null
           notes?: string | null
           rejection_reason?: string | null
           start_time?: string
@@ -35164,6 +35225,7 @@ export type Database = {
           work_description?: string
           work_location_type?: string
           work_order_id?: string | null
+          work_type_id?: string | null
         }
         Relationships: [
           {
@@ -35188,6 +35250,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "timesheet_entries_gunsmith_job_id_fkey"
+            columns: ["gunsmith_job_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_jobs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "timesheet_entries_vessel_id_fkey"
             columns: ["vessel_id"]
             isOneToOne: false
@@ -35199,6 +35268,13 @@ export type Database = {
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_work_type_id_fkey"
+            columns: ["work_type_id"]
+            isOneToOne: false
+            referencedRelation: "module_work_types"
             referencedColumns: ["id"]
           },
         ]
@@ -39734,6 +39810,70 @@ export type Database = {
           },
           {
             foreignKeyName: "work_schedule_assignments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_type_requests: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          module_type: string
+          name: string
+          requested_by: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          module_type: string
+          name: string
+          requested_by?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          module_type?: string
+          name?: string
+          requested_by?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_type_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_type_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_type_requests_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
