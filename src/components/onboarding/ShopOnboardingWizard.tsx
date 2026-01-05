@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopData } from '@/hooks/useShopData';
@@ -17,7 +18,10 @@ import {
   Database, 
   CheckCircle2,
   ChevronRight,
-  Loader2
+  Loader2,
+  Home,
+  LayoutDashboard,
+  User
 } from 'lucide-react';
 
 interface OnboardingData {
@@ -59,12 +63,26 @@ export function ShopOnboardingWizard() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     basicInfo: {},
     businessDetails: {},
     businessHours: [],
     sampleData: {}
   });
+
+  // Get current user info
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email || null);
+        setUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || null);
+      }
+    };
+    getUser();
+  }, []);
 
   // Load saved progress from database
   useEffect(() => {
@@ -218,7 +236,37 @@ export function ShopOnboardingWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Top Navigation Bar */}
+      <div className="border-b bg-card">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Home className="h-4 w-4" />
+              <span className="hidden sm:inline">Home</span>
+            </Link>
+            <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <LayoutDashboard className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Link>
+          </div>
+          
+          {/* User Info */}
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-medium">{userName || 'User'}</p>
+              <p className="text-xs text-muted-foreground">{userEmail}</p>
+            </div>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="" />
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                {userName?.charAt(0)?.toUpperCase() || userEmail?.charAt(0)?.toUpperCase() || <User className="h-4 w-4" />}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="border-b bg-card">
         <div className="max-w-4xl mx-auto px-4 py-6">
@@ -287,7 +335,7 @@ export function ShopOnboardingWizard() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="flex-1 max-w-4xl mx-auto px-4 py-8 w-full">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -308,6 +356,24 @@ export function ShopOnboardingWizard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t bg-card mt-auto">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+              <span className="hidden sm:inline">•</span>
+              <Link to="/help" className="hover:text-foreground transition-colors">Help & Support</Link>
+              <span className="hidden sm:inline">•</span>
+              <Link to="/settings" className="hover:text-foreground transition-colors">Settings</Link>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} All Business 365. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
