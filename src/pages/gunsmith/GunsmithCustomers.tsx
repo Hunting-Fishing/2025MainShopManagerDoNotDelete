@@ -11,7 +11,7 @@ import {
   Phone,
   Mail,
   Crosshair,
-  ExternalLink
+  Edit
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -168,11 +168,12 @@ export default function GunsmithCustomers() {
                         View Firearms
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/customers?id=${customer.id}`)}
+                        onClick={() => navigate(`/gunsmith/customers/${customer.id}`)}
                       >
-                        <ExternalLink className="h-4 w-4" />
+                        <Edit className="h-4 w-4 mr-1" />
+                        View/Edit
                       </Button>
                     </div>
                   </div>

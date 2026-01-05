@@ -206,6 +206,7 @@ import PowerWashingFleet from '@/pages/power-washing/PowerWashingFleet';
 import GunsmithDashboard from '@/pages/gunsmith/GunsmithDashboard';
 import GunsmithJobs from '@/pages/gunsmith/GunsmithJobs';
 import GunsmithCustomers from '@/pages/gunsmith/GunsmithCustomers';
+import GunsmithCustomerDetail from '@/pages/gunsmith/GunsmithCustomerDetail';
 import GunsmithFirearms from '@/pages/gunsmith/GunsmithFirearms';
 import GunsmithParts from '@/pages/gunsmith/GunsmithParts';
 import GunsmithPartsOnOrder from '@/pages/gunsmith/GunsmithPartsOnOrder';
@@ -1147,6 +1148,7 @@ function App() {
                   <Route path="/gunsmith/jobs/new" element={<GunsmithJobForm />} />
                   <Route path="/gunsmith/jobs/:id" element={<GunsmithJobDetail />} />
                   <Route path="/gunsmith/customers" element={<GunsmithCustomers />} />
+                  <Route path="/gunsmith/customers/:customerId" element={<GunsmithCustomerDetail />} />
                   <Route path="/gunsmith/quotes" element={<GunsmithQuotes />} />
                   <Route path="/gunsmith/quotes/new" element={<GunsmithQuoteForm />} />
                   <Route path="/gunsmith/quotes/:id" element={<GunsmithQuoteDetail />} />
