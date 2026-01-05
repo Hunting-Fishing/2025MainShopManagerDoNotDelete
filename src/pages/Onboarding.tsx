@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 import { ModuleSelectionStep } from '@/components/onboarding/ModuleSelectionStep';
 import { CompanySetupStep } from '@/components/onboarding/CompanySetupStep';
-import { MODULE_CONFIGS } from '@/config/moduleSubscriptions';
 import { Home, LayoutDashboard, User } from 'lucide-react';
 
 const STEPS = ['Select Modules', 'Company Setup'];
@@ -45,70 +44,13 @@ export default function Onboarding() {
   const handleCreateCompany = async (companyName: string) => {
     setIsLoading(true);
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error('Not authenticated');
+      // Use the transactional RPC to create workspace
+      const { data, error } = await supabase.rpc('create_workspace', {
+        company_name: companyName,
+        selected_module_slugs: selectedModules
+      });
 
-      // Create organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({ name: companyName })
-        .select()
-        .single();
-      if (orgError) throw orgError;
-
-      // Create shop with trial info
-      const { data: shop, error: shopError } = await supabase
-        .from('shops')
-        .insert({
-          name: companyName,
-          organization_id: org.id,
-          trial_started_at: new Date().toISOString(),
-          trial_days: 14
-        })
-        .select()
-        .single();
-      if (shopError) throw shopError;
-
-      // Update user profile with shop_id
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ shop_id: shop.id })
-        .or(`id.eq.${user.id},user_id.eq.${user.id}`);
-      if (profileError) throw profileError;
-
-      // Assign owner role
-      const { data: ownerRole } = await supabase
-        .from('roles')
-        .select('id')
-        .eq('name', 'owner')
-        .single();
-
-      if (ownerRole) {
-        await supabase
-          .from('user_roles')
-          .insert({ user_id: user.id, role_id: ownerRole.id });
-      }
-
-      // Enable selected modules for the shop
-      if (selectedModules.length > 0) {
-        // Fetch module IDs for the selected slugs
-        const { data: modules } = await supabase
-          .from('modules')
-          .select('id, slug')
-          .in('slug', selectedModules);
-
-        if (modules && modules.length > 0) {
-          const moduleInserts = modules.map(mod => ({
-            shop_id: shop.id,
-            module_id: mod.id,
-            enabled_by: user.id
-          }));
-          
-          await supabase
-            .from('shop_enabled_modules')
-            .insert(moduleInserts);
-        }
-      }
+      if (error) throw error;
 
       toast({
         title: "Welcome to your workspace!",

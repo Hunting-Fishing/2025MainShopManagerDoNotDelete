@@ -1,16 +1,34 @@
-import { Check, Sparkles, Car, Droplets, Target, Anchor } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Check, Sparkles, Car, Droplets, Target, Anchor, Wrench, Package, Users, FileText, Calculator, BarChart3, Settings, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { MODULE_CONFIGS, ModuleConfig } from '@/config/moduleSubscriptions';
+import { supabase } from '@/integrations/supabase/client';
 
+// Extended icon map for all possible module icons
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Car,
   Droplets,
   Target,
   Anchor,
+  Wrench,
+  Package,
+  Users,
+  FileText,
+  Calculator,
+  BarChart3,
+  Settings,
 };
+
+interface BusinessModule {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  monthly_price: number | null;
+  icon: string | null;
+}
 
 interface ModuleSelectionStepProps {
   selectedModules: string[];
@@ -23,7 +41,36 @@ export function ModuleSelectionStep({
   onModuleToggle, 
   onContinue 
 }: ModuleSelectionStepProps) {
-  const modules = Object.values(MODULE_CONFIGS);
+  const [modules, setModules] = useState<BusinessModule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchModules = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('business_modules')
+        .select('id, slug, name, description, monthly_price, icon')
+        .order('display_order', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching modules:', error);
+      } else {
+        setModules(data || []);
+      }
+      setIsLoading(false);
+    };
+    
+    fetchModules();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-2 text-sm text-muted-foreground">Loading modules...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -40,9 +87,9 @@ export function ModuleSelectionStep({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-1">
         {modules.map((module) => {
-          const Icon = ICON_MAP[module.icon] || Car;
+          const Icon = ICON_MAP[module.icon || 'Settings'] || Settings;
           const isSelected = selectedModules.includes(module.slug);
           
           return (
@@ -68,7 +115,7 @@ export function ModuleSelectionStep({
                     <div>
                       <h3 className="font-semibold text-foreground">{module.name}</h3>
                       <p className="text-xs text-muted-foreground line-clamp-1">
-                        {module.description}
+                        {module.description || 'Business module'}
                       </p>
                     </div>
                   </div>
@@ -83,7 +130,7 @@ export function ModuleSelectionStep({
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   <Badge variant="secondary" className="text-xs">
-                    ${module.price}/month
+                    ${module.monthly_price ?? 0}/month
                   </Badge>
                   {isSelected && (
                     <span className="text-xs text-primary font-medium">Selected</span>

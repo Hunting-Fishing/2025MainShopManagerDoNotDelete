@@ -40485,6 +40485,10 @@ export type Database = {
       }
       create_storage_folders: { Args: never; Returns: undefined }
       create_work_order_procedures: { Args: never; Returns: undefined }
+      create_workspace: {
+        Args: { company_name: string; selected_module_slugs?: string[] }
+        Returns: Json
+      }
       delete_work_order_inventory_items: {
         Args: { work_order_id: string }
         Returns: undefined
