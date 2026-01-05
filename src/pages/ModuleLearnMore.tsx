@@ -52,7 +52,7 @@ export default function ModuleLearnMore() {
                   <p className="text-3xl font-bold text-primary mt-2">{module.price}</p>
                   <Button asChild className="mt-4 w-full">
                     <Link to="/staff-login">
-                      Start Free Trial
+                      Start Exploring
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Link>
                   </Button>
@@ -105,7 +105,7 @@ export default function ModuleLearnMore() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg">
               <Link to="/staff-login">
-                Get Started
+                Start Exploring
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
