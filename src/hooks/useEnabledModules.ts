@@ -38,22 +38,42 @@ export function useBusinessModules() {
   });
 }
 
-export function useShopEnabledModules() {
+export function useUserShopId() {
   const { user } = useAuthUser();
 
   return useQuery({
-    queryKey: ['shop-enabled-modules', user?.id],
+    queryKey: ['user-shop-id', user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) return null;
+      const { data } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
+      return data?.shop_id || null;
+    },
+    enabled: !!user,
+  });
+}
+
+export function useShopEnabledModules() {
+  const { user } = useAuthUser();
+  const { data: shopId } = useUserShopId();
+
+  return useQuery({
+    queryKey: ['shop-enabled-modules', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
 
       const { data, error } = await supabase
         .from('shop_enabled_modules')
-        .select('*');
+        .select('*')
+        .eq('shop_id', shopId);
 
       if (error) throw error;
       return data as EnabledModule[];
     },
-    enabled: !!user,
+    enabled: !!user && !!shopId,
   });
 }
 
@@ -99,31 +119,35 @@ export function useToggleModule() {
 }
 
 export function useEnabledModules() {
-  const { data: modules = [] } = useBusinessModules();
-  const { data: enabledModules = [] } = useShopEnabledModules();
+  const { data: modules = [], isLoading: isLoadingModules } = useBusinessModules();
+  const { data: enabledModules = [], isLoading: isLoadingEnabled } = useShopEnabledModules();
+  const { data: shopId, isLoading: isLoadingShop } = useUserShopId();
 
+  const hasShop = !!shopId;
   const enabledModuleIds = new Set(enabledModules.map(em => em.module_id));
 
   const isModuleEnabled = (moduleSlug: string): boolean => {
+    // No shop means no modules enabled
+    if (!hasShop) return false;
+
     const module = modules.find(m => m.slug === moduleSlug);
-    if (!module) return true; // If module not found, don't hide anything
+    if (!module) return false;
 
     // If explicitly enabled
     if (enabledModuleIds.has(module.id)) return true;
 
-    // If default enabled and not explicitly disabled (no record means use default)
-    if (module.default_enabled && enabledModules.length === 0) return true;
-    if (module.default_enabled && enabledModuleIds.has(module.id)) return true;
-
-    // Check if there are any enabled modules at all - if not, use defaults
+    // If no explicit modules set, use defaults
     if (enabledModules.length === 0) return module.default_enabled;
 
     return false;
   };
 
   const getEnabledModuleSlugs = (): string[] => {
+    // No shop = no modules
+    if (!hasShop) return [];
+
     if (enabledModules.length === 0) {
-      // Use defaults
+      // Use defaults only if shop exists
       return modules.filter(m => m.default_enabled).map(m => m.slug);
     }
     return modules
@@ -134,8 +158,9 @@ export function useEnabledModules() {
   return {
     modules,
     enabledModules,
+    hasShop,
     isModuleEnabled,
     getEnabledModuleSlugs,
-    isLoading: modules.length === 0,
+    isLoading: isLoadingModules || isLoadingEnabled || isLoadingShop,
   };
 }
