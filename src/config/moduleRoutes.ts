@@ -51,11 +51,12 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
     name: 'Automotive Repair',
     description: 'Full-service auto repair shop management',
     icon: Car,
-    dashboardRoute: '/dashboard',
+    dashboardRoute: '/automotive',
     color: 'hsl(var(--primary))',
     gradientFrom: 'from-blue-500',
     gradientTo: 'to-blue-600',
     sections: [
+      { title: 'Dashboard', href: '/automotive', icon: Gauge },
       { title: 'All Jobs', href: '/work-orders', icon: Briefcase },
       { title: 'Vehicles', href: '/vehicles', icon: Car },
       { title: 'Parts', href: '/inventory', icon: Package },
@@ -75,6 +76,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
     gradientFrom: 'from-cyan-500',
     gradientTo: 'to-cyan-600',
     sections: [
+      { title: 'Dashboard', href: '/power-washing', icon: Gauge },
       { title: 'All Jobs', href: '/power-washing/jobs', icon: Briefcase },
       { title: 'Customers', href: '/customers', icon: Users },
       { title: 'Equipment', href: '/equipment-management', icon: Wrench },
@@ -94,6 +96,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
     gradientFrom: 'from-amber-500',
     gradientTo: 'to-amber-600',
     sections: [
+      { title: 'Dashboard', href: '/gunsmith', icon: Gauge },
       { title: 'All Jobs', href: '/gunsmith/jobs', icon: Briefcase },
       { title: 'Firearms', href: '/gunsmith/firearms', icon: Crosshair },
       { title: 'Parts', href: '/gunsmith/parts', icon: Package },
@@ -117,6 +120,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
     gradientFrom: 'from-teal-500',
     gradientTo: 'to-teal-600',
     sections: [
+      { title: 'Dashboard', href: '/marine-services', icon: Gauge },
       { title: 'All Jobs', href: '/marine-services/jobs', icon: Briefcase },
       { title: 'Vessels', href: '/marine-services/vessels', icon: Ship },
       { title: 'Parts', href: '/marine-services/parts', icon: Package },
@@ -136,6 +140,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
     gradientFrom: 'from-orange-500',
     gradientTo: 'to-orange-600',
     sections: [
+      { title: 'Dashboard', href: '/fuel-delivery', icon: Gauge },
       { title: 'Deliveries', href: '/fuel-delivery/deliveries', icon: Truck },
       { title: 'Tanks', href: '/fuel-delivery/tanks', icon: Gauge },
       { title: 'Customers', href: '/customers', icon: Users },
