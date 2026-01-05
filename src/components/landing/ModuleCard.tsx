@@ -38,7 +38,7 @@ export function ModuleCard({ slug, name, description, icon: Icon, color, price }
             asChild
             className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
           >
-            <Link to={`/modules/${slug}`}>Learn More</Link>
+            <Link to={`/modules/${slug}`}>Discover</Link>
           </Button>
         </div>
       </CardContent>
