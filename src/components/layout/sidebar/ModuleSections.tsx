@@ -22,18 +22,15 @@ export function ModuleSections() {
     return null;
   }
 
-  const enabledSlugs = getEnabledModuleSlugs();
-  
-  // Get the currently active module based on the route
+  // Get the currently active module based on the route (check ALL module routes, not just enabled)
   const currentPath = location.pathname;
   
   // Find the active module by checking which module's dashboard route matches
-  const activeModuleSlug = enabledSlugs.find(slug => {
+  const activeModuleSlug = Object.keys(MODULE_ROUTES).find(slug => {
     const config = MODULE_ROUTES[slug];
     if (!config) return false;
     
     // Check if current path starts with the module's dashboard route
-    // or if we're on a nested route of that module
     const dashboardRoute = config.dashboardRoute;
     return currentPath === dashboardRoute || currentPath.startsWith(dashboardRoute + '/');
   });
