@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,13 +27,14 @@ import {
 import { QuickAddCustomerDialog } from '@/components/gunsmith/QuickAddCustomerDialog';
 import { useGunsmithParts, useCreateGunsmithPart } from '@/hooks/useGunsmith';
 import { useGunsmithPendingPartOrders, useCreateJobPartOrder } from '@/hooks/useGunsmithJobPartOrders';
-import { useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function GunsmithParts() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'inventory' | 'order'>('inventory');
@@ -195,6 +196,14 @@ export default function GunsmithParts() {
   const invSuggestedRetail = formData.suggested_retail ? parseFloat(formData.suggested_retail) : 0;
   const invCalculatedRetail = invUnitCost * (1 + formData.markup_percent / 100);
   const invExceedsMSRP = invSuggestedRetail > 0 && invCalculatedRetail > invSuggestedRetail;
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('order') === '1') {
+      setDialogMode('order');
+      setIsDialogOpen(true);
+    }
+  }, [location.search]);
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -894,3 +903,4 @@ export default function GunsmithParts() {
     </div>
   );
 }
+

@@ -30,7 +30,8 @@ import {
   AlertCircle, 
   Clock,
   Wrench,
-  ExternalLink
+  ExternalLink,
+  Plus
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
@@ -80,9 +81,15 @@ export default function GunsmithPartsOnOrder() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Parts on Order</h1>
-        <p className="text-muted-foreground">Track all parts ordered for customer jobs</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Parts on Order</h1>
+          <p className="text-muted-foreground">Track all parts ordered for customer jobs</p>
+        </div>
+        <Button onClick={() => navigate('/gunsmith/parts?order=1')}>
+          <Plus className="mr-2 h-4 w-4" />
+          Quick Add Order
+        </Button>
       </div>
 
       {/* Filters */}
