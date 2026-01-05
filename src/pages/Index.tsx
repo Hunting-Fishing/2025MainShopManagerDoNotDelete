@@ -1,86 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { 
-  Users, Wrench, Car, Droplets, Target, Anchor,
-  Home, Sparkles, TreePine, Scissors, Flame, Trees,
-  ArrowRight, Palette
-} from 'lucide-react';
+import { Users, Wrench, ArrowRight } from 'lucide-react';
 import { ModuleCard } from '@/components/landing/ModuleCard';
 import { ComingSoonCard } from '@/components/landing/ComingSoonCard';
 import { FeatureGrid } from '@/components/landing/FeatureGrid';
 import { PricingSection } from '@/components/landing/PricingSection';
-
-const availableModules = [
-  {
-    name: 'Repair Shop',
-    description: 'Complete automotive service management with work orders, parts, and more',
-    icon: Car,
-    color: 'bg-blue-500',
-    price: '$49/mo'
-  },
-  {
-    name: 'Power Washing',
-    description: 'Manage residential and commercial pressure washing jobs',
-    icon: Droplets,
-    color: 'bg-cyan-500',
-    price: '$39/mo'
-  },
-  {
-    name: 'Gunsmith',
-    description: 'Firearm repair, maintenance tracking, and FFL compliance',
-    icon: Target,
-    color: 'bg-amber-500',
-    price: '$49/mo'
-  },
-  {
-    name: 'Marine Services',
-    description: 'Boat repair, maintenance, and marina service management',
-    icon: Anchor,
-    color: 'bg-teal-500',
-    price: '$49/mo'
-  },
-  {
-    name: 'Tattoo Shop',
-    description: 'Appointment booking, client portfolios, and consent management',
-    icon: Palette,
-    color: 'bg-purple-500',
-    price: '$39/mo'
-  }
-];
-
-const comingSoonModules = [
-  {
-    name: 'Housekeeping',
-    description: 'Residential and commercial cleaning service management',
-    icon: Home
-  },
-  {
-    name: 'Carpet Cleaning',
-    description: 'Professional carpet and upholstery care scheduling',
-    icon: Sparkles
-  },
-  {
-    name: 'Firewood',
-    description: 'Firewood sales, delivery, and inventory tracking',
-    icon: TreePine
-  },
-  {
-    name: 'Seamstress',
-    description: 'Alterations, repairs, and custom clothing orders',
-    icon: Scissors
-  },
-  {
-    name: 'Welding',
-    description: 'Metal fabrication and repair service management',
-    icon: Flame
-  },
-  {
-    name: 'Landscaping',
-    description: 'Lawn care, design, and maintenance scheduling',
-    icon: Trees
-  }
-];
+import { LANDING_COMING_SOON, LANDING_MODULES } from '@/config/landingModules';
 
 export default function Index() {
   return (
@@ -151,8 +77,8 @@ export default function Index() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {availableModules.map((module) => (
-              <ModuleCard key={module.name} {...module} />
+            {LANDING_MODULES.filter((module) => module.available).map((module) => (
+              <ModuleCard key={module.slug} {...module} />
             ))}
           </div>
         </div>
@@ -170,7 +96,7 @@ export default function Index() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {comingSoonModules.map((module) => (
+            {LANDING_COMING_SOON.map((module) => (
               <ComingSoonCard key={module.name} {...module} />
             ))}
           </div>

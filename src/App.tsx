@@ -170,6 +170,7 @@ import VehicleDetails from '@/pages/VehicleDetails';
 import VehicleInspectionForm from '@/pages/VehicleInspectionForm';
 import TermsOfService from '@/pages/legal/TermsOfService';
 import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
+import ModuleLearnMore from '@/pages/ModuleLearnMore';
 
 // Power Washing
 import PowerWashingDashboard from '@/pages/power-washing/PowerWashingDashboard';
@@ -281,6 +282,7 @@ function App() {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/shop-setup" element={<ShopSetup />} />
         <Route path="/affiliate-verify" element={<AffiliateVerification />} />
+        <Route path="/modules/:slug" element={<ModuleLearnMore />} />
         <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
         <Route path="/customer-portal/login" element={<CustomerPortalAuthLogin />} />
         <Route path="/customer-portal/register" element={<CustomerPortalRegister />} />

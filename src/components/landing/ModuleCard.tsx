@@ -1,10 +1,12 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LucideIcon } from 'lucide-react';
 
 interface ModuleCardProps {
+  slug: string;
   name: string;
   description: string;
   icon: LucideIcon;
@@ -12,7 +14,7 @@ interface ModuleCardProps {
   price: string;
 }
 
-export function ModuleCard({ name, description, icon: Icon, color, price }: ModuleCardProps) {
+export function ModuleCard({ slug, name, description, icon: Icon, color, price }: ModuleCardProps) {
   return (
     <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
       <Badge className="absolute top-3 right-3 bg-green-500 hover:bg-green-600">
@@ -30,8 +32,13 @@ export function ModuleCard({ name, description, icon: Icon, color, price }: Modu
         </p>
         <div className="flex items-center justify-between">
           <span className="text-lg font-bold text-primary">{price}</span>
-          <Button size="sm" variant="outline" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-            Learn More
+          <Button
+            size="sm"
+            variant="outline"
+            asChild
+            className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+          >
+            <Link to={`/modules/${slug}`}>Learn More</Link>
           </Button>
         </div>
       </CardContent>
