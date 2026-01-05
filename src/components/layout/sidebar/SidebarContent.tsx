@@ -9,6 +9,7 @@ import { hasRoutePermission } from '@/utils/routeGuards';
 import { getSectionColorScheme } from '@/utils/sectionColors';
 import { SidebarLogo } from './SidebarLogo';
 import { ModuleIndicator } from './ModuleIndicator';
+import { ModuleSections } from './ModuleSections';
 import { navigation, NavigationItem } from './navigation';
 import { useSidebarVisibility } from '@/hooks/useSidebarVisibility';
 import { LayoutGrid } from 'lucide-react';
@@ -100,6 +101,9 @@ export function SidebarContent() {
             All Modules
           </Link>
         </div>
+
+        {/* Active Module Sections */}
+        <ModuleSections />
 
         {filteredNavigation.map((section) => {
           const colorScheme = getSectionColorScheme(section.title);
