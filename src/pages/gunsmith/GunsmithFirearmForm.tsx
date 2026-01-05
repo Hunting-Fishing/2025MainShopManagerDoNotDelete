@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Crosshair, Save } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Crosshair, Save, User } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateGunsmithFirearm } from '@/hooks/useGunsmith';
@@ -17,10 +17,12 @@ const CONDITIONS = ['Excellent', 'Good', 'Fair', 'Poor', 'Non-Functional'];
 
 export default function GunsmithFirearmForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedCustomerId = searchParams.get('customer');
   const createFirearm = useCreateGunsmithFirearm();
   
   const [formData, setFormData] = useState({
-    customer_id: '',
+    customer_id: preselectedCustomerId || '',
     make: '',
     model: '',
     serial_number: '',
@@ -32,6 +34,14 @@ export default function GunsmithFirearmForm() {
     condition: 'Good',
     notes: ''
   });
+
+  const handleBack = () => {
+    if (preselectedCustomerId) {
+      navigate(`/gunsmith/customers/${preselectedCustomerId}`);
+    } else {
+      navigate('/gunsmith/firearms');
+    }
+  };
 
   const { data: customers } = useQuery({
     queryKey: ['customers'],
@@ -59,17 +69,22 @@ export default function GunsmithFirearmForm() {
       condition: formData.condition,
       notes: formData.notes || undefined
     }, {
-      onSuccess: () => navigate('/gunsmith/firearms')
+      onSuccess: () => handleBack()
     });
   };
 
   const isValid = formData.customer_id && formData.make && formData.model && formData.firearm_type;
 
+  // Get preselected customer name for display
+  const preselectedCustomer = preselectedCustomerId 
+    ? customers?.find(c => c.id === preselectedCustomerId)
+    : null;
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/gunsmith/firearms')}>
+          <Button variant="ghost" size="icon" onClick={handleBack}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -77,7 +92,11 @@ export default function GunsmithFirearmForm() {
               <Crosshair className="h-8 w-8 text-amber-600" />
               Register Firearm
             </h1>
-            <p className="text-muted-foreground mt-1">Add a new firearm to the registry</p>
+            <p className="text-muted-foreground mt-1">
+              {preselectedCustomer 
+                ? `Adding firearm for ${preselectedCustomer.first_name} ${preselectedCustomer.last_name}`
+                : 'Add a new firearm to the registry'}
+            </p>
           </div>
         </div>
 
@@ -225,7 +244,7 @@ export default function GunsmithFirearmForm() {
           </Card>
 
           <div className="flex justify-end gap-4">
-            <Button variant="outline" onClick={() => navigate('/gunsmith/firearms')}>
+            <Button variant="outline" onClick={handleBack}>
               Cancel
             </Button>
             <Button onClick={handleSubmit} disabled={!isValid || createFirearm.isPending}>
