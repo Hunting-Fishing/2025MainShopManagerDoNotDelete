@@ -1,0 +1,89 @@
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useEnabledModules } from '@/hooks/useEnabledModules';
+import { MODULE_ROUTES } from '@/config/moduleRoutes';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { ChevronRight, LayoutGrid, AlertCircle } from 'lucide-react';
+
+export function ModuleIndicator() {
+  const location = useLocation();
+  const { modules, enabledModules, getEnabledModuleSlugs, isLoading } = useEnabledModules();
+
+  if (isLoading) {
+    return (
+      <div className="px-3 py-2 mx-2 rounded-lg bg-muted/50 animate-pulse">
+        <div className="h-4 w-24 bg-muted rounded" />
+      </div>
+    );
+  }
+
+  const enabledSlugs = getEnabledModuleSlugs();
+  
+  // Get enabled modules with their configs
+  const enabledModulesWithConfig = enabledSlugs
+    .map(slug => ({
+      slug,
+      module: modules.find(m => m.slug === slug),
+      config: MODULE_ROUTES[slug]
+    }))
+    .filter(m => m.config);
+
+  if (enabledModulesWithConfig.length === 0) {
+    return (
+      <Link
+        to="/module-hub"
+        className="mx-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 transition-colors block"
+      >
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <AlertCircle className="h-4 w-4" />
+          <span>Set Up Your Modules</span>
+        </div>
+        <p className="text-xs text-amber-600 mt-0.5">Choose which services you offer</p>
+      </Link>
+    );
+  }
+
+  // Get the primary module (first one)
+  const primary = enabledModulesWithConfig[0];
+  const moduleConfig = primary.config!;
+  const Icon = moduleConfig.icon;
+
+  return (
+    <div className="mx-2 space-y-1">
+      {/* Primary Module */}
+      <Link
+        to={moduleConfig.dashboardRoute}
+        className={cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+          "bg-gradient-to-r shadow-sm hover:shadow-md",
+          moduleConfig.gradientFrom,
+          moduleConfig.gradientTo,
+          "text-white"
+        )}
+      >
+        <div className="p-1.5 bg-white/20 rounded-md">
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate">{moduleConfig.name}</p>
+          <p className="text-xs text-white/80 truncate">Active Module</p>
+        </div>
+        <ChevronRight className="h-4 w-4 opacity-60" />
+      </Link>
+
+      {/* Additional Modules Count */}
+      {enabledModulesWithConfig.length > 1 && (
+        <Link
+          to="/module-hub"
+          className="flex items-center justify-between px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded transition-colors"
+        >
+          <span>+{enabledModulesWithConfig.length - 1} more module{enabledModulesWithConfig.length > 2 ? 's' : ''}</span>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+            Switch
+          </Badge>
+        </Link>
+      )}
+    </div>
+  );
+}
