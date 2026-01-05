@@ -59,6 +59,7 @@ export default function GunsmithParts() {
     supplier_contact: '',
     quantity_ordered: 1,
     unit_cost: '',
+    markup_percent: 30,
     expected_date: '',
     notes: '',
   });
@@ -167,14 +168,16 @@ export default function GunsmithParts() {
       supplier_contact: '',
       quantity_ordered: 1,
       unit_cost: '',
+      markup_percent: 30,
       expected_date: '',
       notes: '',
     });
   };
 
-  const orderTotalCost = orderFormData.unit_cost 
-    ? (parseFloat(orderFormData.unit_cost) * orderFormData.quantity_ordered).toFixed(2)
-    : '0.00';
+  const unitCostNum = orderFormData.unit_cost ? parseFloat(orderFormData.unit_cost) : 0;
+  const retailPrice = unitCostNum * (1 + orderFormData.markup_percent / 100);
+  const totalCost = unitCostNum * orderFormData.quantity_ordered;
+  const totalRetail = retailPrice * orderFormData.quantity_ordered;
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -474,7 +477,9 @@ export default function GunsmithParts() {
                       <DollarSign className="h-4 w-4" />
                       Pricing
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    
+                    {/* Cost Row */}
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label className="text-xs">Unit Cost</Label>
                         <div className="relative">
@@ -491,15 +496,52 @@ export default function GunsmithParts() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs">Qty</Label>
+                        <Label className="text-xs">Total Cost (×{orderFormData.quantity_ordered})</Label>
                         <div className="h-9 flex items-center px-3 bg-muted/50 rounded-md text-sm font-medium">
-                          × {orderFormData.quantity_ordered}
+                          ${totalCost.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Markup Row */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Markup %</Label>
+                        <span className="text-xs font-medium text-amber-600">{orderFormData.markup_percent}%</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="5"
+                          value={orderFormData.markup_percent}
+                          onChange={(e) => setOrderFormData({ ...orderFormData, markup_percent: parseInt(e.target.value) })}
+                          className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-amber-600"
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="200"
+                          value={orderFormData.markup_percent}
+                          onChange={(e) => setOrderFormData({ ...orderFormData, markup_percent: parseInt(e.target.value) || 0 })}
+                          className="w-20 text-sm text-center"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Retail Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Unit Retail</Label>
+                        <div className="h-9 flex items-center px-3 bg-green-500/10 border border-green-500/20 rounded-md text-sm font-medium text-green-700">
+                          ${retailPrice.toFixed(2)}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs">Total</Label>
+                        <Label className="text-xs">Total Retail (×{orderFormData.quantity_ordered})</Label>
                         <div className="h-9 flex items-center px-3 bg-amber-500/10 rounded-md text-sm font-bold text-amber-600">
-                          ${orderTotalCost}
+                          ${totalRetail.toFixed(2)}
                         </div>
                       </div>
                     </div>
