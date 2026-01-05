@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Users, Wrench, Car, Droplets, Target, Anchor,
   Home, Sparkles, TreePine, Scissors, Flame, Trees,
-  ArrowRight
+  ArrowRight, Palette
 } from 'lucide-react';
 import { ModuleCard } from '@/components/landing/ModuleCard';
 import { ComingSoonCard } from '@/components/landing/ComingSoonCard';
@@ -39,6 +39,13 @@ const availableModules = [
     icon: Anchor,
     color: 'bg-teal-500',
     price: '$49/mo'
+  },
+  {
+    name: 'Tattoo Shop',
+    description: 'Appointment booking, client portfolios, and consent management',
+    icon: Palette,
+    color: 'bg-purple-500',
+    price: '$39/mo'
   }
 ];
 
