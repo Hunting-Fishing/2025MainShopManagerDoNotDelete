@@ -284,6 +284,7 @@ function App() {
                 <Routes>
                   <Route path="/module-hub" element={<ModuleHub />} />
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/automotive" element={<Dashboard />} />
                   
                   {/* Store */}
                   <Route path="/shopping" element={<Shopping />} />
