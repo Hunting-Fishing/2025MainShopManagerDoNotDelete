@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, Edit2, X, Mail, Key, LogOut } from 'lucide-react';
 import { ChangePasswordDialog } from '@/components/profile/ChangePasswordDialog';
 import { ChangeEmailDialog } from '@/components/profile/ChangeEmailDialog';
+import { BusinessInformationCard } from '@/components/profile/BusinessInformationCard';
 
 export default function Profile() {
   const { user } = useAuthUser();
@@ -269,6 +270,9 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Business Information Section */}
+      <BusinessInformationCard />
 
       <ChangePasswordDialog
         open={showPasswordDialog}
