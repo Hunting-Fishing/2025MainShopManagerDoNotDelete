@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Globe,
   Link2,
+  Package,
   Pencil,
   Plus,
   Tags,
@@ -18,8 +19,15 @@ import { useAuthUser } from '@/hooks/useAuthUser';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,14 +58,15 @@ type GunsmithLinkSuggestion = {
   created_at: string;
 };
 
-const AFFILIATE_CATEGORY_HINTS = ['Amazon', 'Other Partners'];
+const CATEGORY_HINTS = ['Tools', 'Safety', 'Compliance', 'Parts', 'Suppliers'];
 
 export default function GunsmithUsefulLinks() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { userId, userRoles, isAdmin, isOwner } = useAuthUser();
-  const canManage = isAdmin || isOwner || userRoles.includes('developer');
+  const { userId, userRoles } = useAuthUser();
+  const canManage = userRoles.includes('developer') || userRoles.includes('admin') || userRoles.includes('owner');
+  const canReviewSuggestions = userRoles.includes('developer');
   const affiliateScriptContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -128,6 +137,7 @@ export default function GunsmithUsefulLinks() {
   });
 
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
   const [linkForm, setLinkForm] = useState({
     title: '',
@@ -189,7 +199,7 @@ export default function GunsmithUsefulLinks() {
         url: linkForm.url.trim(),
         description: linkForm.description.trim() || null,
         link_type: linkForm.linkType,
-        category: linkForm.linkType === 'affiliate' ? linkForm.category.trim() || null : null,
+        category: linkForm.category.trim() || null,
         is_active: linkForm.isActive,
         sort_order: linkForm.sortOrder,
         shop_id: shopId,
@@ -251,7 +261,7 @@ export default function GunsmithUsefulLinks() {
           url: suggestionForm.url.trim(),
           description: suggestionForm.description.trim() || null,
           link_type: suggestionForm.linkType,
-          category: suggestionForm.linkType === 'affiliate' ? suggestionForm.category.trim() || null : null,
+          category: suggestionForm.category.trim() || null,
           suggested_by: userId,
         });
       if (error) throw error;
@@ -260,6 +270,7 @@ export default function GunsmithUsefulLinks() {
       queryClient.invalidateQueries({ queryKey: ['gunsmith-link-suggestions', shopId] });
       toast({ title: 'Suggestion submitted', description: 'We will review it shortly.' });
       resetSuggestionForm();
+      setSuggestionDialogOpen(false);
     },
     onError: (error) => {
       toast({ title: 'Failed to submit suggestion', description: error.message, variant: 'destructive' });
@@ -275,7 +286,7 @@ export default function GunsmithUsefulLinks() {
         url: approvalForm.url.trim(),
         description: approvalForm.description.trim() || null,
         link_type: approvalForm.linkType,
-        category: approvalForm.linkType === 'affiliate' ? approvalForm.category.trim() || null : null,
+        category: approvalForm.category.trim() || null,
         is_active: true,
         sort_order: 0,
         created_by: userId,
@@ -346,12 +357,12 @@ export default function GunsmithUsefulLinks() {
     return links.filter((link) => link.link_type === 'web' && (canManage || link.is_active));
   }, [links, canManage]);
 
-  const affiliateCategories = useMemo(() => {
-    const affiliateLinks = links.filter(
+  const recommendedCategories = useMemo(() => {
+    const recommendedLinks = links.filter(
       (link) => link.link_type === 'affiliate' && (canManage || link.is_active)
     );
     const categoryMap = new Map<string, GunsmithUsefulLink[]>();
-    affiliateLinks.forEach((link) => {
+    recommendedLinks.forEach((link) => {
       const category = link.category?.trim() || 'Uncategorized';
       if (!categoryMap.has(category)) {
         categoryMap.set(category, []);
@@ -359,7 +370,7 @@ export default function GunsmithUsefulLinks() {
       categoryMap.get(category)?.push(link);
     });
 
-    const order = ['Amazon', 'Other Partners', 'Uncategorized'];
+    const order = ['Tools', 'Safety', 'Compliance', 'Parts', 'Suppliers', 'Uncategorized'];
     return Array.from(categoryMap.entries())
       .map(([title, links]) => ({ title, links }))
       .sort((a, b) => {
@@ -377,480 +388,438 @@ export default function GunsmithUsefulLinks() {
     [suggestions]
   );
 
+  const formatUrlHost = (url: string) => {
+    try {
+      return new URL(url).hostname.replace('www.', '');
+    } catch (error) {
+      return url;
+    }
+  };
+
+  const renderLinkGrid = (items: GunsmithUsefulLink[], type: 'web' | 'affiliate') => {
+    if (items.length === 0) {
+      return (
+        <div className="text-center py-12 text-muted-foreground">
+          <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>No links yet</p>
+          <p className="text-sm">Add your go-to resources here.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((link) => (
+          <Card key={link.id} className="group overflow-hidden">
+            <CardContent className="p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="h-12 w-12 rounded-xl bg-muted/60 flex items-center justify-center">
+                  {type === 'web' ? (
+                    <Globe className="h-6 w-6 text-muted-foreground" />
+                  ) : (
+                    <Package className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </div>
+                {!link.is_active && <Badge variant="secondary">Inactive</Badge>}
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-foreground">{link.title}</p>
+                  {link.category && <Badge variant="outline">{link.category}</Badge>}
+                </div>
+                {link.description && (
+                  <p className="text-sm text-muted-foreground">{link.description}</p>
+                )}
+                <p className="text-xs text-muted-foreground">{formatUrlHost(link.url)}</p>
+              </div>
+              <div className="mt-4 flex items-center justify-between">
+                <Button size="sm" asChild>
+                  <a href={link.url} target="_blank" rel="noreferrer">
+                    Visit
+                    <ExternalLink className="h-3 w-3 ml-2" />
+                  </a>
+                </Button>
+                {canManage && (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingLinkId(link.id);
+                        setLinkForm({
+                          title: link.title,
+                          url: link.url,
+                          description: link.description || '',
+                          linkType: link.link_type,
+                          category: link.category || '',
+                          isActive: link.is_active,
+                          sortOrder: link.sort_order,
+                        });
+                        setLinkDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        if (window.confirm('Delete this link?')) {
+                          deleteLink.mutate(link.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mb-8 flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/gunsmith')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Link2 className="h-8 w-8 text-amber-600" />
             Gunsmith Useful Links
           </h1>
           <p className="text-muted-foreground mt-1">
-            Curate web resources and affiliate links for your gunsmith operation
+            Curate web resources and recommended tools for your gunsmith operation
           </p>
         </div>
-      </div>
-      <div ref={affiliateScriptContainerRef} />
-
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Suggest a Link</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="suggestion-title">Title *</Label>
-                <Input
-                  id="suggestion-title"
-                  value={suggestionForm.title}
-                  onChange={(event) => setSuggestionForm({ ...suggestionForm, title: event.target.value })}
-                  placeholder="Example: ATF Forms Portal"
-                />
-              </div>
-              <div>
-                <Label htmlFor="suggestion-url">Web URL *</Label>
-                <Input
-                  id="suggestion-url"
-                  value={suggestionForm.url}
-                  onChange={(event) => setSuggestionForm({ ...suggestionForm, url: event.target.value })}
-                  placeholder="https://"
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label>Link Type</Label>
-                <Select
-                  value={suggestionForm.linkType}
-                  onValueChange={(value) =>
-                    setSuggestionForm({ ...suggestionForm, linkType: value as LinkType })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="web">Web Link</SelectItem>
-                    <SelectItem value="affiliate">Affiliate Link</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {suggestionForm.linkType === 'affiliate' && (
-                <div>
-                  <Label htmlFor="suggestion-category">Affiliate Category</Label>
-                  <Input
-                    id="suggestion-category"
-                    value={suggestionForm.category}
-                    onChange={(event) =>
-                      setSuggestionForm({ ...suggestionForm, category: event.target.value })
-                    }
-                    placeholder="Amazon, Other Partners"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Suggested: {AFFILIATE_CATEGORY_HINTS.join(', ')}
-                  </p>
-                </div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="suggestion-description">Why is this useful?</Label>
-              <Textarea
-                id="suggestion-description"
-                value={suggestionForm.description}
-                onChange={(event) =>
-                  setSuggestionForm({ ...suggestionForm, description: event.target.value })
-                }
-                placeholder="Optional notes for the developer"
-                rows={3}
-              />
-            </div>
-            <Button
-              onClick={() => submitSuggestion.mutate()}
-              disabled={
-                !suggestionForm.title.trim() ||
-                !suggestionForm.url.trim() ||
-                submitSuggestion.isPending
-              }
-            >
-              {submitSuggestion.isPending ? 'Submitting...' : 'Submit Suggestion'}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {canManage && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Pending Suggestions</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Review and convert suggestions into affiliate links.
-                </p>
-              </div>
-              <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => resetLinkForm()}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Link
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>{editingLinkId ? 'Edit Link' : 'Add Link'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          {canManage && (
+            <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" onClick={() => resetLinkForm()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Link
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>{editingLinkId ? 'Edit Link' : 'Add Link'}</DialogTitle>
+                  <DialogDescription>Add a resource or product link.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="link-title">Title *</Label>
+                    <Input
+                      id="link-title"
+                      value={linkForm.title}
+                      onChange={(event) => setLinkForm({ ...linkForm, title: event.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="link-url">URL *</Label>
+                    <Input
+                      id="link-url"
+                      value={linkForm.url}
+                      onChange={(event) => setLinkForm({ ...linkForm, url: event.target.value })}
+                      placeholder="https://"
+                    />
+                  </div>
+                  <div>
+                    <Label>Link Category</Label>
+                    <Select
+                      value={linkForm.linkType}
+                      onValueChange={(value) =>
+                        setLinkForm({ ...linkForm, linkType: value as LinkType })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="web">Web Resource</SelectItem>
+                        <SelectItem value="affiliate">Product Link</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="link-category">Category</Label>
+                    <Input
+                      id="link-category"
+                      value={linkForm.category}
+                      onChange={(event) => setLinkForm({ ...linkForm, category: event.target.value })}
+                      placeholder="Tools, Safety, Compliance"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="link-description">Description</Label>
+                    <Textarea
+                      id="link-description"
+                      value={linkForm.description}
+                      onChange={(event) => setLinkForm({ ...linkForm, description: event.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <Label htmlFor="link-title">Title *</Label>
-                      <Input
-                        id="link-title"
-                        value={linkForm.title}
-                        onChange={(event) => setLinkForm({ ...linkForm, title: event.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="link-url">URL *</Label>
-                      <Input
-                        id="link-url"
-                        value={linkForm.url}
-                        onChange={(event) => setLinkForm({ ...linkForm, url: event.target.value })}
-                        placeholder="https://"
-                      />
-                    </div>
-                    <div>
-                      <Label>Link Type</Label>
+                      <Label>Status</Label>
                       <Select
-                        value={linkForm.linkType}
+                        value={linkForm.isActive ? 'active' : 'inactive'}
                         onValueChange={(value) =>
-                          setLinkForm({ ...linkForm, linkType: value as LinkType })
+                          setLinkForm({ ...linkForm, isActive: value === 'active' })
                         }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="web">Web Link</SelectItem>
-                          <SelectItem value="affiliate">Affiliate Link</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    {linkForm.linkType === 'affiliate' && (
-                      <div>
-                        <Label htmlFor="link-category">Affiliate Category</Label>
-                        <Input
-                          id="link-category"
-                          value={linkForm.category}
-                          onChange={(event) =>
-                            setLinkForm({ ...linkForm, category: event.target.value })
-                          }
-                          placeholder="Amazon, Other Partners"
-                        />
-                      </div>
-                    )}
                     <div>
-                      <Label htmlFor="link-description">Description</Label>
-                      <Textarea
-                        id="link-description"
-                        value={linkForm.description}
+                      <Label htmlFor="link-order">Sort Order</Label>
+                      <Input
+                        id="link-order"
+                        type="number"
+                        value={linkForm.sortOrder}
                         onChange={(event) =>
-                          setLinkForm({ ...linkForm, description: event.target.value })
+                          setLinkForm({
+                            ...linkForm,
+                            sortOrder: Number(event.target.value || 0),
+                          })
                         }
-                        rows={3}
                       />
                     </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label>Status</Label>
-                        <Select
-                          value={linkForm.isActive ? 'active' : 'inactive'}
-                          onValueChange={(value) =>
-                            setLinkForm({ ...linkForm, isActive: value === 'active' })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="link-order">Sort Order</Label>
-                        <Input
-                          id="link-order"
-                          type="number"
-                          value={linkForm.sortOrder}
-                          onChange={(event) =>
-                            setLinkForm({
-                              ...linkForm,
-                              sortOrder: Number(event.target.value || 0),
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => saveLink.mutate()}
-                      disabled={!linkForm.title.trim() || !linkForm.url.trim() || saveLink.isPending}
-                    >
-                      {saveLink.isPending ? 'Saving...' : 'Save Link'}
-                    </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent>
-              {suggestionsLoading ? (
-                <p className="text-sm text-muted-foreground">Loading suggestions...</p>
-              ) : pendingSuggestions.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                  <p>No pending suggestions</p>
+                  <Button
+                    onClick={() => saveLink.mutate()}
+                    disabled={!linkForm.title.trim() || !linkForm.url.trim() || saveLink.isPending}
+                  >
+                    {saveLink.isPending ? 'Saving...' : 'Save Link'}
+                  </Button>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {pendingSuggestions.map((suggestion) => (
-                    <div
-                      key={suggestion.id}
-                      className="flex flex-col gap-3 rounded-lg border border-border p-4 md:flex-row md:items-center md:justify-between"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-foreground">{suggestion.title}</p>
-                          <Badge variant="outline">{suggestion.link_type}</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{suggestion.url}</p>
-                        {suggestion.description && (
-                          <p className="text-sm text-muted-foreground">{suggestion.description}</p>
-                        )}
-                        {suggestion.category && (
-                          <p className="text-xs text-muted-foreground">Category: {suggestion.category}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setApprovalForm({
-                              suggestionId: suggestion.id,
-                              title: suggestion.title,
-                              url: suggestion.url,
-                              description: suggestion.description || '',
-                              linkType: suggestion.link_type,
-                              category: suggestion.category || '',
-                              reviewNotes: '',
-                            });
-                            setApprovalDialogOpen(true);
-                          }}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => rejectSuggestion.mutate(suggestion.id)}
-                          disabled={rejectSuggestion.isPending}
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+              </DialogContent>
+            </Dialog>
+          )}
+          <Dialog open={suggestionDialogOpen} onOpenChange={setSuggestionDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Suggest a Link
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Suggest a Link</DialogTitle>
+                <DialogDescription>
+                  Share a resource or product that would help your team.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="suggestion-title">Title *</Label>
+                    <Input
+                      id="suggestion-title"
+                      value={suggestionForm.title}
+                      onChange={(event) => setSuggestionForm({ ...suggestionForm, title: event.target.value })}
+                      placeholder="Example: ATF Forms Portal"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="suggestion-url">Web URL *</Label>
+                    <Input
+                      id="suggestion-url"
+                      value={suggestionForm.url}
+                      onChange={(event) => setSuggestionForm({ ...suggestionForm, url: event.target.value })}
+                      placeholder="https://"
+                    />
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                <div>
+                  <Label>Link Category</Label>
+                  <Select
+                    value={suggestionForm.linkType}
+                    onValueChange={(value) =>
+                      setSuggestionForm({ ...suggestionForm, linkType: value as LinkType })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="web">Web Resource</SelectItem>
+                      <SelectItem value="affiliate">Product Link</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="suggestion-category">Category</Label>
+                  <Input
+                    id="suggestion-category"
+                    value={suggestionForm.category}
+                    onChange={(event) => setSuggestionForm({ ...suggestionForm, category: event.target.value })}
+                    placeholder="Tools, Safety, Compliance"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Suggested: {CATEGORY_HINTS.join(', ')}
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="suggestion-description">Why is this useful?</Label>
+                  <Textarea
+                    id="suggestion-description"
+                    value={suggestionForm.description}
+                    onChange={(event) => setSuggestionForm({ ...suggestionForm, description: event.target.value })}
+                    placeholder="Optional notes for the team"
+                    rows={3}
+                  />
+                </div>
+                <Button
+                  onClick={() => submitSuggestion.mutate()}
+                  disabled={
+                    !suggestionForm.title.trim() ||
+                    !suggestionForm.url.trim() ||
+                    submitSuggestion.isPending
+                  }
+                >
+                  {submitSuggestion.isPending ? 'Submitting...' : 'Submit Suggestion'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+      <div ref={affiliateScriptContainerRef} />
 
+      <div className="space-y-6">
         <Tabs defaultValue="web" className="space-y-6">
           <TabsList>
             <TabsTrigger value="web" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
-              Web Links
+              Web Resources
             </TabsTrigger>
-            <TabsTrigger value="affiliate" className="flex items-center gap-2">
+            <TabsTrigger value="recommended" className="flex items-center gap-2">
               <Tags className="h-4 w-4" />
-              Affiliate Links
+              Recommended Picks
             </TabsTrigger>
+            {canReviewSuggestions && (
+              <TabsTrigger value="suggestions" className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Suggestions
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="web">
-            <Card>
-              <CardHeader>
-                <CardTitle>Web Links</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {linksLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading links...</p>
-                ) : webLinks.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No web links yet</p>
-                    <p className="text-sm">Add your go-to resources here.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {webLinks.map((link) => (
-                      <div
-                        key={link.id}
-                        className="flex flex-col gap-3 rounded-lg border border-border p-4 md:flex-row md:items-center md:justify-between"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-foreground">{link.title}</p>
-                            {!link.is_active && <Badge variant="secondary">Inactive</Badge>}
-                          </div>
-                          {link.description && (
-                            <p className="text-sm text-muted-foreground">{link.description}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="icon" asChild>
-                            <a href={link.url} target="_blank" rel="noreferrer">
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          </Button>
-                          {canManage && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setEditingLinkId(link.id);
-                                  setLinkForm({
-                                    title: link.title,
-                                    url: link.url,
-                                    description: link.description || '',
-                                    linkType: link.link_type,
-                                    category: link.category || '',
-                                    isActive: link.is_active,
-                                    sortOrder: link.sort_order,
-                                  });
-                                  setLinkDialogOpen(true);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  if (window.confirm('Delete this link?')) {
-                                    deleteLink.mutate(link.id);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {linksLoading ? (
+              <p className="text-sm text-muted-foreground">Loading links...</p>
+            ) : (
+              renderLinkGrid(webLinks, 'web')
+            )}
           </TabsContent>
 
-          <TabsContent value="affiliate">
-            <div className="space-y-6">
-              {linksLoading ? (
-                <Card>
-                  <CardContent className="py-8 text-sm text-muted-foreground">Loading links...</CardContent>
-                </Card>
-              ) : affiliateCategories.length === 0 ? (
-                <Card>
-                  <CardContent className="py-12 text-center text-muted-foreground">
-                    <Tags className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                    <p>No affiliate links yet</p>
-                    <p className="text-sm">Add Amazon or partner links to start earning.</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                affiliateCategories.map((category) => (
-                  <Card key={category.title}>
-                    <CardHeader>
-                      <CardTitle>{category.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {category.links.length === 0 ? (
-                        <div className="text-center py-10 text-muted-foreground">
-                          <Tags className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                          <p>No affiliate links yet</p>
-                          <p className="text-sm">Add links for {category.title} when ready.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {category.links.map((link) => (
-                            <div
-                              key={link.id}
-                              className="flex flex-col gap-3 rounded-lg border border-border p-4 md:flex-row md:items-center md:justify-between"
-                            >
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <p className="font-medium text-foreground">{link.title}</p>
-                                  {!link.is_active && <Badge variant="secondary">Inactive</Badge>}
-                                </div>
-                                {link.description && (
-                                  <p className="text-sm text-muted-foreground">{link.description}</p>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="icon" asChild>
-                                  <a href={link.url} target="_blank" rel="noreferrer">
-                                    <ExternalLink className="h-4 w-4" />
-                                  </a>
-                                </Button>
-                                {canManage && (
-                                  <>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => {
-                                        setEditingLinkId(link.id);
-                                        setLinkForm({
-                                          title: link.title,
-                                          url: link.url,
-                                          description: link.description || '',
-                                          linkType: link.link_type,
-                                          category: link.category || '',
-                                          isActive: link.is_active,
-                                          sortOrder: link.sort_order,
-                                        });
-                                        setLinkDialogOpen(true);
-                                      }}
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => {
-                                        if (window.confirm('Delete this link?')) {
-                                          deleteLink.mutate(link.id);
-                                        }
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+          <TabsContent value="recommended">
+            {linksLoading ? (
+              <Card>
+                <CardContent className="py-8 text-sm text-muted-foreground">Loading links...</CardContent>
+              </Card>
+            ) : recommendedCategories.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Tags className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                  <p>No recommendations yet</p>
+                  <p className="text-sm">Add your preferred gear, tools, and suppliers.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-8">
+                {recommendedCategories.map((category) => (
+                  <div key={category.title} className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">{category.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Curated picks for {category.title.toLowerCase()}.
+                      </p>
+                    </div>
+                    {renderLinkGrid(category.links, 'affiliate')}
+                  </div>
+                ))}
+              </div>
+            )}
           </TabsContent>
+
+          {canReviewSuggestions && (
+            <TabsContent value="suggestions">
+              <Card>
+                <CardContent className="py-6">
+                  {suggestionsLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading suggestions...</p>
+                  ) : pendingSuggestions.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckCircle className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                      <p>No pending suggestions</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {pendingSuggestions.map((suggestion) => (
+                        <div
+                          key={suggestion.id}
+                          className="flex flex-col gap-3 rounded-lg border border-border p-4 md:flex-row md:items-center md:justify-between"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-foreground">{suggestion.title}</p>
+                              <Badge variant="outline">{suggestion.link_type}</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{suggestion.url}</p>
+                            {suggestion.description && (
+                              <p className="text-sm text-muted-foreground">{suggestion.description}</p>
+                            )}
+                            {suggestion.category && (
+                              <p className="text-xs text-muted-foreground">Category: {suggestion.category}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setApprovalForm({
+                                  suggestionId: suggestion.id,
+                                  title: suggestion.title,
+                                  url: suggestion.url,
+                                  description: suggestion.description || '',
+                                  linkType: suggestion.link_type,
+                                  category: suggestion.category || '',
+                                  reviewNotes: '',
+                                });
+                                setApprovalDialogOpen(true);
+                              }}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => rejectSuggestion.mutate(suggestion.id)}
+                              disabled={rejectSuggestion.isPending}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
 
         <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
@@ -868,7 +837,7 @@ export default function GunsmithUsefulLinks() {
                 />
               </div>
               <div>
-                <Label htmlFor="approval-url">Affiliate URL *</Label>
+                <Label htmlFor="approval-url">Destination URL *</Label>
                 <Input
                   id="approval-url"
                   value={approvalForm.url}
@@ -877,7 +846,7 @@ export default function GunsmithUsefulLinks() {
                 />
               </div>
               <div>
-                <Label>Link Type</Label>
+                <Label>Link Category</Label>
                 <Select
                   value={approvalForm.linkType}
                   onValueChange={(value) => setApprovalForm({ ...approvalForm, linkType: value as LinkType })}
@@ -886,19 +855,19 @@ export default function GunsmithUsefulLinks() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="web">Web Link</SelectItem>
-                    <SelectItem value="affiliate">Affiliate Link</SelectItem>
+                    <SelectItem value="web">Web Resource</SelectItem>
+                    <SelectItem value="affiliate">Product Link</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {approvalForm.linkType === 'affiliate' && (
                 <div>
-                  <Label htmlFor="approval-category">Affiliate Category</Label>
+                  <Label htmlFor="approval-category">Category</Label>
                   <Input
                     id="approval-category"
                     value={approvalForm.category}
                     onChange={(event) => setApprovalForm({ ...approvalForm, category: event.target.value })}
-                    placeholder="Amazon"
+                    placeholder="Tools"
                   />
                 </div>
               )}
