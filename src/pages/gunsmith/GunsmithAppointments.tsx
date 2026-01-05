@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,16 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { 
   CalendarDays, 
   Plus, 
-  ArrowLeft,
-  Clock,
-  User
+  ArrowLeft
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, addWeeks } from 'date-fns';
-import { Skeleton } from '@/components/ui/skeleton';
+import { UnifiedModuleCalendar } from '@/components/calendar/UnifiedModuleCalendar';
 
 const APPOINTMENT_TYPES = ['Repair Drop-off', 'Pickup', 'Consultation', 'Estimate', 'Cleaning', 'Custom Work', 'Transfer'];
 
@@ -27,7 +22,6 @@ export default function GunsmithAppointments() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [currentDate, setCurrentDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -36,24 +30,6 @@ export default function GunsmithAppointments() {
     appointment_type: '',
     duration_minutes: '60',
     notes: ''
-  });
-
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
-
-  const { data: appointments, isLoading } = useQuery({
-    queryKey: ['gunsmith-appointments', weekStart, weekEnd],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('gunsmith_appointments')
-        .select('*, customers(first_name, last_name)')
-        .gte('appointment_date', format(weekStart, 'yyyy-MM-dd'))
-        .lte('appointment_date', format(weekEnd, 'yyyy-MM-dd'))
-        .order('appointment_time');
-      if (error) throw error;
-      return data;
-    }
   });
 
   const { data: customers } = useQuery({
@@ -90,38 +66,25 @@ export default function GunsmithAppointments() {
     }
   });
 
-  const getAppointmentsForDay = (day: Date) => {
-    return appointments?.filter((a: any) => isSameDay(new Date(a.appointment_date), day)) || [];
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500';
-      case 'cancelled': return 'bg-red-500';
-      case 'no_show': return 'bg-gray-500';
-      default: return 'bg-blue-500';
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/gunsmith')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <CalendarDays className="h-8 w-8 text-blue-500" />
-              Appointments
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+              <CalendarDays className="h-7 w-7 text-amber-500" />
+              Gunsmith Schedule
             </h1>
-            <p className="text-muted-foreground mt-1">Schedule and manage appointments</p>
+            <p className="text-muted-foreground mt-1">Manage appointments and service schedules</p>
           </div>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
               New Appointment
             </Button>
           </DialogTrigger>
@@ -181,7 +144,11 @@ export default function GunsmithAppointments() {
                 <Label>Notes</Label>
                 <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
               </div>
-              <Button className="w-full" onClick={() => createAppointment.mutate(formData)} disabled={!formData.customer_id || !formData.appointment_date || !formData.appointment_time || !formData.appointment_type || createAppointment.isPending}>
+              <Button 
+                className="w-full" 
+                onClick={() => createAppointment.mutate(formData)} 
+                disabled={!formData.customer_id || !formData.appointment_date || !formData.appointment_time || !formData.appointment_type || createAppointment.isPending}
+              >
                 {createAppointment.isPending ? 'Scheduling...' : 'Schedule Appointment'}
               </Button>
             </div>
@@ -189,64 +156,11 @@ export default function GunsmithAppointments() {
         </Dialog>
       </div>
 
-      {/* Week Navigation */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={() => setCurrentDate(addWeeks(currentDate, -1))}>Previous Week</Button>
-            <div className="text-center">
-              <h2 className="text-lg font-semibold">{format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}</h2>
-              <Button variant="link" size="sm" onClick={() => setCurrentDate(new Date())}>Today</Button>
-            </div>
-            <Button variant="outline" onClick={() => setCurrentDate(addWeeks(currentDate, 1))}>Next Week</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Week Calendar */}
-      {isLoading ? (
-        <Skeleton className="h-96 w-full" />
-      ) : (
-        <div className="grid grid-cols-7 gap-4">
-          {weekDays.map((day) => {
-            const dayAppointments = getAppointmentsForDay(day);
-            const isToday = isSameDay(day, new Date());
-            return (
-              <Card key={day.toISOString()} className={isToday ? 'ring-2 ring-primary' : ''}>
-                <CardHeader className="py-3">
-                  <CardTitle className="text-center text-sm">
-                    <div className={`${isToday ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
-                      {format(day, 'EEE')}
-                    </div>
-                    <div className={`text-2xl ${isToday ? 'text-primary' : ''}`}>{format(day, 'd')}</div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2 min-h-[200px]">
-                  {dayAppointments.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-4">No appointments</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {dayAppointments.map((apt: any) => (
-                        <div key={apt.id} className={`p-2 rounded ${getStatusColor(apt.status)} bg-opacity-20 text-xs`}>
-                          <div className="flex items-center gap-1 font-medium">
-                            <Clock className="h-3 w-3" />
-                            {apt.appointment_time?.slice(0, 5)}
-                          </div>
-                          <div className="flex items-center gap-1 mt-1">
-                            <User className="h-3 w-3" />
-                            {apt.customers?.first_name}
-                          </div>
-                          <Badge variant="outline" className="mt-1 text-[10px]">{apt.appointment_type}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+      {/* Unified Calendar */}
+      <UnifiedModuleCalendar
+        moduleType="gunsmith"
+        onAddEvent={() => setIsDialogOpen(true)}
+      />
     </div>
   );
 }
