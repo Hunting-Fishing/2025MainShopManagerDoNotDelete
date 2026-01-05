@@ -46,10 +46,13 @@ export default function GunsmithParts() {
     quantity: '',
     min_quantity: '',
     unit_cost: '',
+    markup_percent: 30,
+    suggested_retail: '',
     retail_price: '',
     location: '',
     supplier: ''
   });
+  const [inventoryPriceWarningAck, setInventoryPriceWarningAck] = useState(false);
   const [orderFormData, setOrderFormData] = useState({
     customer_id: '',
     job_id: '',
@@ -137,8 +140,10 @@ export default function GunsmithParts() {
         setFormData({
           part_number: '', name: '', description: '', category: '',
           manufacturer: '', quantity: '', min_quantity: '', unit_cost: '',
+          markup_percent: 30, suggested_retail: '',
           retail_price: '', location: '', supplier: ''
         });
+        setInventoryPriceWarningAck(false);
       }
     });
   };
@@ -184,6 +189,12 @@ export default function GunsmithParts() {
   const totalCost = unitCostNum * orderFormData.quantity_ordered;
   const totalRetail = retailPrice * orderFormData.quantity_ordered;
   const exceedsSuggestedRetail = suggestedRetailNum > 0 && retailPrice > suggestedRetailNum;
+
+  // Inventory form calculations
+  const invUnitCost = formData.unit_cost ? parseFloat(formData.unit_cost) : 0;
+  const invSuggestedRetail = formData.suggested_retail ? parseFloat(formData.suggested_retail) : 0;
+  const invCalculatedRetail = invUnitCost * (1 + formData.markup_percent / 100);
+  const invExceedsMSRP = invSuggestedRetail > 0 && invCalculatedRetail > invSuggestedRetail;
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -295,26 +306,150 @@ export default function GunsmithParts() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Unit Cost</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.unit_cost}
-                        onChange={(e) => setFormData({ ...formData, unit_cost: e.target.value })}
-                      />
+
+                  <Separator />
+
+                  {/* Pricing Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                      <DollarSign className="h-4 w-4" />
+                      Pricing
                     </div>
-                    <div>
-                      <Label>Retail Price</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.retail_price}
-                        onChange={(e) => setFormData({ ...formData, retail_price: e.target.value })}
-                      />
+
+                    {/* Cost & MSRP Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Unit Cost</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={formData.unit_cost}
+                            onChange={(e) => setFormData({ ...formData, unit_cost: e.target.value })}
+                            placeholder="0.00"
+                            className="pl-7 text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Suggested Retail (MSRP)</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={formData.suggested_retail}
+                            onChange={(e) => {
+                              setFormData({ ...formData, suggested_retail: e.target.value });
+                              setInventoryPriceWarningAck(false);
+                            }}
+                            placeholder="0.00"
+                            className="pl-7 text-sm"
+                          />
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Markup Row */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Markup %</Label>
+                        <span className="text-xs font-medium text-amber-600">{formData.markup_percent}%</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="5"
+                          value={formData.markup_percent}
+                          onChange={(e) => {
+                            const newMarkup = parseInt(e.target.value);
+                            const newRetail = invUnitCost * (1 + newMarkup / 100);
+                            setFormData({ 
+                              ...formData, 
+                              markup_percent: newMarkup,
+                              retail_price: newRetail > 0 ? newRetail.toFixed(2) : ''
+                            });
+                            setInventoryPriceWarningAck(false);
+                          }}
+                          className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-amber-600"
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="200"
+                          value={formData.markup_percent}
+                          onChange={(e) => {
+                            const newMarkup = parseInt(e.target.value) || 0;
+                            const newRetail = invUnitCost * (1 + newMarkup / 100);
+                            setFormData({ 
+                              ...formData, 
+                              markup_percent: newMarkup,
+                              retail_price: newRetail > 0 ? newRetail.toFixed(2) : ''
+                            });
+                            setInventoryPriceWarningAck(false);
+                          }}
+                          className="w-20 text-sm text-center"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Retail Row */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">Your Retail Price</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.retail_price}
+                          onChange={(e) => setFormData({ ...formData, retail_price: e.target.value })}
+                          placeholder="0.00"
+                          className={`pl-7 text-sm ${invExceedsMSRP ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                        />
+                        {invExceedsMSRP && (
+                          <AlertTriangle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Price Exceeds MSRP Warning */}
+                    {invExceedsMSRP && !inventoryPriceWarningAck && (
+                      <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg space-y-2">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                          <div className="text-sm">
+                            <p className="font-medium text-red-700">Price exceeds Suggested Retail</p>
+                            <p className="text-red-600/80 text-xs mt-1">
+                              Your retail price (${invCalculatedRetail.toFixed(2)}) is ${(invCalculatedRetail - invSuggestedRetail).toFixed(2)} above the MSRP (${invSuggestedRetail.toFixed(2)}).
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInventoryPriceWarningAck(true)}
+                          className="w-full text-xs border-red-500/30 text-red-700 hover:bg-red-500/10"
+                        >
+                          I understand, continue with this price
+                        </Button>
+                      </div>
+                    )}
+
+                    {invExceedsMSRP && inventoryPriceWarningAck && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <AlertTriangle className="h-3 w-3 text-amber-500" />
+                        Pricing above MSRP acknowledged
+                      </div>
+                    )}
                   </div>
+
                   <div>
                     <Label>Location</Label>
                     <Input
@@ -326,7 +461,7 @@ export default function GunsmithParts() {
                   <Button 
                     className="w-full" 
                     onClick={handleSubmit}
-                    disabled={!formData.name || createPart.isPending}
+                    disabled={!formData.name || (invExceedsMSRP && !inventoryPriceWarningAck) || createPart.isPending}
                   >
                     {createPart.isPending ? 'Adding...' : 'Add to Inventory'}
                   </Button>
