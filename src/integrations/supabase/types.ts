@@ -21053,6 +21053,36 @@ export type Database = {
           },
         ]
       }
+      modules: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          price: number | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          price?: number | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          price?: number | null
+          slug?: string
+        }
+        Relationships: []
+      }
       navigation_items: {
         Row: {
           created_at: string | null

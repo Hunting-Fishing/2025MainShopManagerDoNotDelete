@@ -75,15 +75,23 @@ export default function Onboarding() {
 
       // Enable selected modules for the shop
       if (selectedModules.length > 0) {
-        const moduleInserts = selectedModules.map(slug => ({
-          shop_id: shop.id,
-          module_slug: slug,
-          is_enabled: true
-        }));
-        
-        await supabase
-          .from('shop_enabled_modules')
-          .insert(moduleInserts);
+        // Fetch module IDs for the selected slugs
+        const { data: modules } = await supabase
+          .from('modules')
+          .select('id, slug')
+          .in('slug', selectedModules);
+
+        if (modules && modules.length > 0) {
+          const moduleInserts = modules.map(mod => ({
+            shop_id: shop.id,
+            module_id: mod.id,
+            enabled_by: user.id
+          }));
+          
+          await supabase
+            .from('shop_enabled_modules')
+            .insert(moduleInserts);
+        }
       }
 
       toast({
