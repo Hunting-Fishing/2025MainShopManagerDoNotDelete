@@ -141,6 +141,9 @@ import CustomerAnalytics from '@/pages/CustomerAnalytics';
 import CustomerExperience from '@/pages/CustomerExperience';
 import CustomerFollowUps from '@/pages/CustomerFollowUps';
 import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
+import CustomerPortalAuthLogin from '@/pages/customer-portal/CustomerPortalLogin';
+import CustomerPortalRegister from '@/pages/customer-portal/CustomerPortalRegister';
+import CustomerPortalDashboard from '@/pages/customer-portal/CustomerPortalDashboard';
 import CustomerServiceHistory from '@/pages/CustomerServiceHistory';
 import EmailCampaignAnalytics from '@/pages/EmailCampaignAnalytics';
 import EmailSequenceDetails from '@/pages/EmailSequenceDetails';
@@ -276,6 +279,9 @@ function App() {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/shop-setup" element={<ShopSetup />} />
         <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
+        <Route path="/customer-portal/login" element={<CustomerPortalAuthLogin />} />
+        <Route path="/customer-portal/register" element={<CustomerPortalRegister />} />
+        <Route path="/customer-portal/dashboard" element={<CustomerPortalDashboard />} />
         <Route path="/staff-login" element={<Login />} />
         
         {/* Protected routes */}

@@ -19,7 +19,8 @@ import {
   CreditCard,
   Edit,
   AlertTriangle,
-  Plus
+  Plus,
+  KeyRound
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -221,6 +222,14 @@ export default function GunsmithCustomerDetail() {
                 <span>{customer.address}</span>
               </div>
             )}
+            <div className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-muted-foreground" />
+              {customer.user_id ? (
+                <Badge className="bg-green-100 text-green-800">Portal Access Enabled</Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground">No Portal Access</Badge>
+              )}
+            </div>
           </div>
           {customer.notes && (
             <div className="mt-4 p-3 bg-muted/50 rounded-lg">

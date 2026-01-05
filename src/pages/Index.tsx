@@ -87,10 +87,10 @@ export default function Index() {
               <p className="text-sm text-muted-foreground hidden sm:block">Professional Service Management</p>
             </div>
             <div className="flex gap-3">
-              <Link to="/customer-portal-login">
+              <Link to="/customer-portal/login">
                 <Button variant="ghost" className="gap-2">
                   <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Customer</span> Login
+                  <span className="hidden sm:inline">Customer</span> Portal
                 </Button>
               </Link>
               <Link to="/staff-login">
