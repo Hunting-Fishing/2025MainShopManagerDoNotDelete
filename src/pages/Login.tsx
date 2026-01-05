@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AuthService } from '@/lib/services/AuthService';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Mail, Lock, LogIn, ArrowRight, Wrench, Info, Phone, HelpCircle } from 'lucide-react';
 import {
   Dialog,
@@ -30,9 +31,27 @@ export default function Login() {
   const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/module-hub', { replace: true });
-    }
+    const checkUserAndRedirect = async () => {
+      if (isAuthenticated) {
+        // Check if user has a shop
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('shop_id')
+            .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+            .single();
+          
+          if (profile?.shop_id) {
+            navigate('/module-hub', { replace: true });
+          } else {
+            navigate('/onboarding', { replace: true });
+          }
+        }
+      }
+    };
+    
+    checkUserAndRedirect();
   }, [navigate, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
