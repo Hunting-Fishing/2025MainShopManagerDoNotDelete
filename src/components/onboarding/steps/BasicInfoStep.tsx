@@ -39,14 +39,31 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
     updateData(formData);
     
     try {
-      // Check if shop exists, if not create it
-      if (!shopData?.id) {
+      // Shop should already exist from initial onboarding, just update it
+      if (shopData?.id) {
+        await updateCompanyInfo(formData);
+      } else {
+        // Fallback: Create shop and organization if somehow missing
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          // Create the shop
+          // Create organization first
+          const { data: org, error: orgError } = await supabase
+            .from('organizations')
+            .insert([{ name: formData.name }])
+            .select()
+            .single();
+          
+          if (orgError) {
+            console.error('Failed to create organization:', orgError);
+            toast.error('Failed to create organization. Please try again.');
+            setIsSaving(false);
+            return;
+          }
+          
+          // Create the shop with organization_id
           const { data: newShop, error: shopError } = await supabase
             .from('shops')
-            .insert({
+            .insert([{
               name: formData.name,
               email: formData.email,
               phone: formData.phone,
@@ -54,9 +71,12 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
               city: formData.city,
               state: formData.state,
               postal_code: formData.zip,
+              organization_id: org.id,
               setup_step: 0,
-              onboarding_completed: false
-            })
+              onboarding_completed: false,
+              trial_started_at: new Date().toISOString(),
+              trial_days: 14
+            }])
             .select()
             .single();
           
@@ -78,9 +98,6 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
             await refresh();
           }
         }
-      } else {
-        // Shop exists, just update
-        await updateCompanyInfo(formData);
       }
       
       onNext();
