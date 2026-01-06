@@ -33,11 +33,14 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { hasRoutePermission } from '@/utils/routeGuards';
 import { cleanupAuthState } from '@/utils/authCleanup';
+import { useEnabledModules } from '@/hooks/useEnabledModules';
+import { MODULE_ROUTES } from '@/config/moduleRoutes';
 
 export function HeaderActions() {
   const { isAuthenticated, userName, isLoading } = useAuthUser();
   const { userRole, isLoading: roleLoading } = useUserRole();
   const { data: userRoles = [] } = useUserRoles();
+  const { modules, getEnabledModuleSlugs } = useEnabledModules();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -101,8 +104,23 @@ export function HeaderActions() {
   };
 
   const displayRole = userRole?.displayName || userRole?.name || 'User';
-  const isGunsmithModule = location.pathname.startsWith('/gunsmith');
-  const quickActions = isGunsmithModule
+  const enabledSlugs = getEnabledModuleSlugs();
+  const enabledModulesWithConfig = enabledSlugs
+    .map((slug) => ({
+      slug,
+      module: modules.find((item) => item.slug === slug),
+      config: MODULE_ROUTES[slug],
+    }))
+    .filter((item) => item.config);
+  const activeModuleSlug = Object.keys(MODULE_ROUTES).find((slug) => {
+    const config = MODULE_ROUTES[slug];
+    return (
+      location.pathname === config.dashboardRoute ||
+      location.pathname.startsWith(`${config.dashboardRoute}/`)
+    );
+  });
+  const moduleContext = activeModuleSlug ?? enabledModulesWithConfig[0]?.slug ?? null;
+  const quickActions = moduleContext === 'gunsmith'
     ? [
         { label: 'Create Job', path: '/gunsmith/jobs/new', icon: Plus },
         { label: 'Create Quote', path: '/gunsmith/quotes/new', icon: FileText },
@@ -110,14 +128,20 @@ export function HeaderActions() {
         { label: 'Schedule Appointment', path: '/gunsmith/appointments/new', icon: Calendar },
         { label: 'Start Transfer', path: '/gunsmith/transfers/new', icon: ClipboardList },
       ]
-    : [
-        { label: 'Create Work Order', path: '/work-orders/new', icon: Plus, permission: '/work-orders' },
-        { label: 'Create Quote', path: '/quotes/new', icon: FileText, permission: '/quotes' },
-        { label: 'Create Invoice', path: '/invoices/new', icon: Receipt, permission: '/invoices' },
-        { label: 'Schedule Appointment', path: '/calendar', icon: Calendar, permission: '/calendar' },
-        { label: 'Maintenance Request', path: '/maintenance-requests', icon: AlertCircle, permission: '/maintenance-requests' },
-        { label: 'Daily Logs', path: '/daily-logs', icon: ClipboardList, permission: '/daily-logs' },
-      ];
+    : moduleContext === 'power_washing'
+      ? [
+          { label: 'Create Job', path: '/power-washing/jobs/new', icon: Plus },
+          { label: 'Create Quote', path: '/power-washing/quotes/new', icon: FileText },
+          { label: 'Schedule Appointment', path: '/power-washing/schedule', icon: Calendar },
+        ]
+      : [
+          { label: 'Create Work Order', path: '/work-orders/new', icon: Plus, permission: '/work-orders' },
+          { label: 'Create Quote', path: '/quotes/new', icon: FileText, permission: '/quotes' },
+          { label: 'Create Invoice', path: '/invoices/new', icon: Receipt, permission: '/invoices' },
+          { label: 'Schedule Appointment', path: '/calendar', icon: Calendar, permission: '/calendar' },
+          { label: 'Maintenance Request', path: '/maintenance-requests', icon: AlertCircle, permission: '/maintenance-requests' },
+          { label: 'Daily Logs', path: '/daily-logs', icon: ClipboardList, permission: '/daily-logs' },
+        ];
 
   return (
     <div className="flex items-center space-x-4">
