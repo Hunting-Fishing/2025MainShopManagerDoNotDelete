@@ -46,6 +46,27 @@ export function HeaderActions() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  type AccountMenuSettings = {
+    hidden_items?: string[];
+    item_overrides?: Record<string, { enabled?: boolean; modules?: string[]; roles?: string[] }>;
+  };
+
+  const { data: accountMenuSettings } = useQuery({
+    queryKey: ['account-menu-settings', shopId],
+    queryFn: async () => {
+      if (!shopId) return null;
+      const { data, error } = await supabase
+        .from('company_settings')
+        .select('settings_value')
+        .eq('shop_id', shopId)
+        .eq('settings_key', 'account_menu')
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.settings_value ?? null) as AccountMenuSettings | null;
+    },
+    enabled: !!shopId,
+  });
+
   const handleSignOut = async () => {
     try {
       console.log('Initiating sign out...');
@@ -144,27 +165,6 @@ export function HeaderActions() {
           { label: 'Maintenance Request', path: '/maintenance-requests', icon: AlertCircle, permission: '/maintenance-requests' },
           { label: 'Daily Logs', path: '/daily-logs', icon: ClipboardList, permission: '/daily-logs' },
         ];
-
-  type AccountMenuSettings = {
-    hidden_items?: string[];
-    item_overrides?: Record<string, { enabled?: boolean; modules?: string[]; roles?: string[] }>;
-  };
-
-  const { data: accountMenuSettings } = useQuery({
-    queryKey: ['account-menu-settings', shopId],
-    queryFn: async () => {
-      if (!shopId) return null;
-      const { data, error } = await supabase
-        .from('company_settings')
-        .select('settings_value')
-        .eq('shop_id', shopId)
-        .eq('settings_key', 'account_menu')
-        .maybeSingle();
-      if (error) throw error;
-      return (data?.settings_value ?? null) as AccountMenuSettings | null;
-    },
-    enabled: !!shopId,
-  });
 
   const accountItems = [
     { id: 'profile', label: 'Profile', path: '/profile', icon: UserCircle },
