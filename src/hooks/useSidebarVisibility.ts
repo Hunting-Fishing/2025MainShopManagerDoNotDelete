@@ -116,7 +116,15 @@ export function useSidebarVisibility() {
   const { data: userRoles = [] } = useUserRoles();
   const { isModuleEnabled } = useEnabledModules();
 
+  // Check if user is an owner - owners see all sections
+  const isOwner = userRoles.includes('owner');
+
   const isVisible = (sectionTitle: string): boolean => {
+    // Owners always see all sections
+    if (isOwner) {
+      return true;
+    }
+
     // Check if section is hidden at shop level
     if (settings?.hidden_sections?.includes(sectionTitle)) {
       return false;
@@ -145,6 +153,7 @@ export function useSidebarVisibility() {
     isVisible,
     settings,
     userRoles,
+    isOwner,
   };
 }
 

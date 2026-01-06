@@ -129,6 +129,11 @@ export const routePermissions: RoutePermission[] = [
 ];
 
 export function hasRoutePermission(path: string, userRoles: string[]): boolean {
+  // Owners have full access to all routes
+  if (userRoles.includes('owner')) {
+    return true;
+  }
+
   const permission = routePermissions.find(p => path.startsWith(p.path));
   
   if (!permission) {
@@ -146,7 +151,7 @@ export function hasRoutePermission(path: string, userRoles: string[]): boolean {
   }
   
   if (permission.requireAdmin) {
-    return userRoles.includes('admin') || userRoles.includes('owner');
+    return userRoles.includes('admin');
   }
   
   return true;
