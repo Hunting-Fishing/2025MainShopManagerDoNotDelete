@@ -11,7 +11,7 @@ interface ModuleCardProps {
   description: string;
   icon: LucideIcon;
   color: string;
-  price: string;
+  price?: string;
 }
 
 export function ModuleCard({ slug, name, description, icon: Icon, color, price }: ModuleCardProps) {

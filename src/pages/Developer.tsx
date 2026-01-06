@@ -15,7 +15,8 @@ import {
   Wrench,
   Database,
   FileText,
-  Search
+  Search,
+  Clock
 } from 'lucide-react';
 
 const developerModules = [
@@ -82,6 +83,14 @@ const developerModules = [
     path: '/developer/tools',
     color: 'text-amber-600',
     bgColor: 'bg-amber-50',
+  },
+  {
+    title: 'Trial Management',
+    description: 'Extend trials and manage subscription periods for shops',
+    icon: Clock,
+    path: '/developer/trials',
+    color: 'text-pink-600',
+    bgColor: 'bg-pink-50',
   },
 ];
 
