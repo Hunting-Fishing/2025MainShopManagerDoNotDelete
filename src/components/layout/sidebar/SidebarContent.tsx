@@ -30,21 +30,13 @@ export function SidebarContent() {
     }
   };
 
-  // Check if user is an owner - owners get full navigation access
-  const isOwner = userRoles.includes('owner');
-
   /**
    * Check if user has view permission for a navigation item
-   * - Owners always have access to all items
    * - If no permissionModule is specified, item is accessible to all
    * - If permissionModule is specified, check if user has view permission for that module
+   * Note: Owner role gets full access via the get_user_effective_permissions RPC
    */
   const hasModuleViewPermission = (item: NavigationItem): boolean => {
-    // Owners have full access to all navigation items
-    if (isOwner) {
-      return true;
-    }
-
     // If no permission module specified, allow access
     if (!item.permissionModule) {
       return true;
