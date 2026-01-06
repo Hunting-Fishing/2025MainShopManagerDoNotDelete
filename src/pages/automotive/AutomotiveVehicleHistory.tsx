@@ -9,6 +9,16 @@ import { Badge } from '@/components/ui/badge';
 import { History, Search, Car, Calendar, Wrench, DollarSign } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
+interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number | null;
+  vin: string | null;
+  license_plate: string | null;
+  updated_at: string;
+}
+
 export default function AutomotiveVehicleHistory() {
   const { shopId } = useShopId();
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -16,14 +26,14 @@ export default function AutomotiveVehicleHistory() {
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ['vehicles-history', shopId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('vehicles')
         .select('id, make, model, year, vin, license_plate, updated_at')
-        .eq('shop_id', shopId as string)
+        .eq('shop_id', shopId)
         .order('updated_at', { ascending: false });
       
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Vehicle[];
     },
     enabled: !!shopId,
   });
