@@ -668,7 +668,7 @@ export const navigation: NavigationSection[] = [
         permissionModule: 'gunsmith',
       },
       {
-        title: 'Useful Links',
+        title: 'Resources',
         href: '/gunsmith/useful-links',
         icon: Link,
         description: 'Web resources and affiliate links',

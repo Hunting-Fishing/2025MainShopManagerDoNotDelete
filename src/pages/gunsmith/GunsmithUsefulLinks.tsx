@@ -767,7 +767,7 @@ export default function GunsmithUsefulLinks() {
           <TabsList>
             <TabsTrigger value="web" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
-              Web Resources
+              Web Links
             </TabsTrigger>
             <TabsTrigger value="recommended" className="flex items-center gap-2">
               <Tags className="h-4 w-4" />

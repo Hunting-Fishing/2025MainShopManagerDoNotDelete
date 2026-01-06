@@ -111,7 +111,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Compliance', href: '/gunsmith/compliance', icon: Shield },
       { title: 'Transfers', href: '/gunsmith/transfers', icon: ArrowRightLeft },
       { title: 'Consignments', href: '/gunsmith/consignments', icon: ShoppingBag },
-      { title: 'Useful Links', href: '/gunsmith/useful-links', icon: Link },
+      { title: 'Resources', href: '/gunsmith/useful-links', icon: Link },
     ],
   },
   marine: {

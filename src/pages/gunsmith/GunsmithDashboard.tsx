@@ -295,7 +295,7 @@ export default function GunsmithDashboard() {
           onClick={() => navigate('/gunsmith/useful-links')}
         >
           <Link className="h-6 w-6 text-slate-500" />
-          <span className="text-xs">Useful Links</span>
+          <span className="text-xs">Resources</span>
         </Button>
       </div>
 
