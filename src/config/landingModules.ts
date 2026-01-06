@@ -1,22 +1,32 @@
 import { LucideIcon } from 'lucide-react';
 import {
   Anchor,
+  Axe,
   Bike,
+  Bird,
   Bug,
   Car,
+  Cat,
   Cog,
+  Compass,
+  Dog,
   Droplets,
+  Fish,
   Flame,
   Hammer,
   HardHat,
   Home,
   KeyRound,
+  Mountain,
   PaintBucket,
   Palette,
+  PawPrint,
   Power,
+  Rat,
   Refrigerator,
   Sparkles,
   Target,
+  Tent,
   Thermometer,
   Tractor,
   Trees,
@@ -42,6 +52,12 @@ export type LandingComingSoonModule = {
   name: string;
   description: string;
   icon: LucideIcon;
+};
+
+export type LandingComingSoonCategory = {
+  category: string;
+  description: string;
+  modules: LandingComingSoonModule[];
 };
 
 export const LANDING_MODULES: LandingModule[] = [
@@ -147,140 +163,223 @@ export const LANDING_MODULES: LandingModule[] = [
   },
 ];
 
-export const LANDING_COMING_SOON: LandingComingSoonModule[] = [
-  // ═══════════════════════════════════════════════
-  // TIER 1: HIGHEST PRIORITY (Architecture Ready)
-  // ═══════════════════════════════════════════════
+export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
+  // ═══════════════════════════════════════════════════════════════════════
+  // HOME & PROPERTY SERVICES
+  // ═══════════════════════════════════════════════════════════════════════
   {
-    name: 'HVAC Services',
-    description: 'Heating, cooling, and ventilation with EPA 608 compliance tracking',
-    icon: Thermometer,
-  },
-  {
-    name: 'Pool & Spa Services',
-    description: 'Chemical tracking, water testing logs, and route management',
-    icon: Waves,
-  },
-  {
-    name: 'Appliance Repair',
-    description: 'In-home service with parts tracking and warranty management',
-    icon: Refrigerator,
-  },
-  {
-    name: 'Auto Detailing',
-    description: 'Mobile and shop-based detailing with photo documentation',
-    icon: Sparkles,
-  },
-
-  // ═══════════════════════════════════════════════
-  // TIER 2: HIGH VALUE (Growing Markets)
-  // ═══════════════════════════════════════════════
-  {
-    name: 'Pest Control',
-    description: 'Route optimization, chemical compliance, and treatment plans',
-    icon: Bug,
-  },
-  {
-    name: 'Locksmith',
-    description: 'Emergency dispatch, key cutting logs, and mobile service',
-    icon: KeyRound,
-  },
-  {
-    name: 'Small Engine Repair',
-    description: 'Mower, chainsaw, and outdoor power equipment service',
-    icon: Cog,
-  },
-  {
-    name: 'Towing Services',
-    description: 'Dispatch management, fleet tracking, and impound operations',
-    icon: Truck,
-  },
-
-  // ═══════════════════════════════════════════════
-  // TIER 3: NATURAL EXTENSIONS (Industry Synergies)
-  // ═══════════════════════════════════════════════
-  {
-    name: 'Landscaping',
-    description: 'Lawn care, design, irrigation, and crew scheduling',
-    icon: Trees,
-  },
-  {
-    name: 'Welding & Fabrication',
-    description: 'Metal fabrication, repairs, and certification tracking',
-    icon: Flame,
-  },
-  {
-    name: 'Plumbing Services',
-    description: 'Residential and commercial plumbing with parts inventory',
-    icon: Wrench,
-  },
-  {
-    name: 'Electrical Services',
-    description: 'Electrical contracting with permit and inspection tracking',
-    icon: Zap,
-  },
-  {
-    name: 'Roofing',
-    description: 'Roof inspections, repairs, and project management',
-    icon: HardHat,
-  },
-  {
-    name: 'Painting Services',
-    description: 'Interior/exterior painting with estimating and crew dispatch',
-    icon: PaintBucket,
-  },
-  {
-    name: 'Handyman Services',
-    description: 'Multi-trade repairs with flexible pricing and scheduling',
-    icon: Hammer,
-  },
-  {
-    name: 'Fencing',
-    description: 'Fence installation, repair, and material estimating',
-    icon: Home,
+    category: 'Home & Property Services',
+    description: 'Residential and commercial property maintenance',
+    modules: [
+      {
+        name: 'HVAC Services',
+        description: 'Heating, cooling, and ventilation with EPA 608 compliance',
+        icon: Thermometer,
+      },
+      {
+        name: 'Pool & Spa Services',
+        description: 'Chemical tracking, water testing, and route management',
+        icon: Waves,
+      },
+      {
+        name: 'Plumbing Services',
+        description: 'Residential and commercial plumbing with parts inventory',
+        icon: Wrench,
+      },
+      {
+        name: 'Electrical Services',
+        description: 'Electrical contracting with permit and inspection tracking',
+        icon: Zap,
+      },
+      {
+        name: 'Roofing',
+        description: 'Roof inspections, repairs, and project management',
+        icon: HardHat,
+      },
+      {
+        name: 'Painting Services',
+        description: 'Interior/exterior painting with estimating and crew dispatch',
+        icon: PaintBucket,
+      },
+      {
+        name: 'Handyman Services',
+        description: 'Multi-trade repairs with flexible pricing and scheduling',
+        icon: Hammer,
+      },
+      {
+        name: 'Fencing',
+        description: 'Fence installation, repair, and material estimating',
+        icon: Home,
+      },
+      {
+        name: 'Landscaping',
+        description: 'Lawn care, design, irrigation, and crew scheduling',
+        icon: Trees,
+      },
+      {
+        name: 'Pest Control',
+        description: 'Route optimization, chemical compliance, and treatment plans',
+        icon: Bug,
+      },
+      {
+        name: 'Septic Services',
+        description: 'Pumping schedules, inspections, and compliance tracking',
+        icon: Droplets,
+      },
+      {
+        name: 'Window Cleaning',
+        description: 'Commercial and residential window and gutter cleaning',
+        icon: Sparkles,
+      },
+      {
+        name: 'Garage Door Services',
+        description: 'Installation, repair, and opener programming',
+        icon: Cog,
+      },
+    ],
   },
 
-  // ═══════════════════════════════════════════════
-  // TIER 4: NICHE/SPECIALTY (High-Value Verticals)
-  // ═══════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
+  // AUTOMOTIVE & EQUIPMENT
+  // ═══════════════════════════════════════════════════════════════════════
   {
-    name: 'Golf Cart Repair',
-    description: 'Electric and gas cart service for courses and communities',
-    icon: Car,
+    category: 'Automotive & Equipment',
+    description: 'Vehicle and machinery service specialists',
+    modules: [
+      {
+        name: 'Auto Detailing',
+        description: 'Mobile and shop-based detailing with photo documentation',
+        icon: Sparkles,
+      },
+      {
+        name: 'Towing Services',
+        description: 'Dispatch management, fleet tracking, and impound operations',
+        icon: Truck,
+      },
+      {
+        name: 'Motorcycle Services',
+        description: 'Motorcycle and powersports repair with parts tracking',
+        icon: Bike,
+      },
+      {
+        name: 'RV & Camper Services',
+        description: 'Mobile and shop-based RV repair and winterization',
+        icon: Truck,
+      },
+      {
+        name: 'Golf Cart Repair',
+        description: 'Electric and gas cart service for courses and communities',
+        icon: Car,
+      },
+      {
+        name: 'Small Engine Repair',
+        description: 'Mower, chainsaw, and outdoor power equipment service',
+        icon: Cog,
+      },
+      {
+        name: 'Heavy Equipment',
+        description: 'Construction and agricultural equipment maintenance',
+        icon: Tractor,
+      },
+      {
+        name: 'Generator Services',
+        description: 'Standby generator installation, service, and monitoring',
+        icon: Power,
+      },
+    ],
   },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SKILLED TRADES
+  // ═══════════════════════════════════════════════════════════════════════
   {
-    name: 'RV & Camper Services',
-    description: 'Mobile and shop-based RV repair and winterization',
-    icon: Truck,
+    category: 'Skilled Trades',
+    description: 'Specialized craftsmanship and technical services',
+    modules: [
+      {
+        name: 'Welding & Fabrication',
+        description: 'Metal fabrication, repairs, and certification tracking',
+        icon: Flame,
+      },
+      {
+        name: 'Locksmith',
+        description: 'Emergency dispatch, key cutting logs, and mobile service',
+        icon: KeyRound,
+      },
+      {
+        name: 'Appliance Repair',
+        description: 'In-home service with parts tracking and warranty management',
+        icon: Refrigerator,
+      },
+    ],
   },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // OUTDOOR & WILDLIFE
+  // ═══════════════════════════════════════════════════════════════════════
   {
-    name: 'Motorcycle Services',
-    description: 'Motorcycle and powersports repair with parts tracking',
-    icon: Bike,
-  },
-  {
-    name: 'Heavy Equipment',
-    description: 'Construction and agricultural equipment maintenance',
-    icon: Tractor,
-  },
-  {
-    name: 'Generator Services',
-    description: 'Standby generator installation, service, and monitoring',
-    icon: Power,
-  },
-  {
-    name: 'Septic Services',
-    description: 'Pumping schedules, inspections, and compliance tracking',
-    icon: Droplets,
-  },
-  {
-    name: 'Window Cleaning',
-    description: 'Commercial and residential window and gutter cleaning',
-    icon: Home,
-  },
-  {
-    name: 'Garage Door Services',
-    description: 'Installation, repair, and opener programming',
-    icon: Cog,
+    category: 'Outdoor & Wildlife',
+    description: 'Hunting, trapping, and wildlife industry services',
+    modules: [
+      {
+        name: 'Guide & Outfitter',
+        description: 'Trip booking, client management, and license tracking',
+        icon: Compass,
+      },
+      {
+        name: 'Taxidermy',
+        description: 'Specimen intake, project tracking, and client galleries',
+        icon: Bird,
+      },
+      {
+        name: 'Tannery',
+        description: 'Hide processing, inventory, and order management',
+        icon: PawPrint,
+      },
+      {
+        name: 'Trapping Services',
+        description: 'Trapline management, fur tracking, and harvest records',
+        icon: Rat,
+      },
+      {
+        name: 'Hunting Preserve',
+        description: 'Booking, game management, and membership tracking',
+        icon: Target,
+      },
+      {
+        name: 'Fishing Charter',
+        description: 'Trip scheduling, equipment tracking, and catch logs',
+        icon: Fish,
+      },
+      {
+        name: 'Camping & Outpost',
+        description: 'Cabin rentals, equipment checkout, and guest management',
+        icon: Tent,
+      },
+      {
+        name: 'Wildlife Control',
+        description: 'Nuisance animal removal, permits, and compliance',
+        icon: Bug,
+      },
+      {
+        name: 'Forestry Services',
+        description: 'Timber management, logging, and land clearing',
+        icon: Axe,
+      },
+      {
+        name: 'Hunting Dog Training',
+        description: 'Training programs, boarding, and progress tracking',
+        icon: Dog,
+      },
+      {
+        name: 'Wilderness Survival',
+        description: 'Course scheduling, certifications, and equipment rentals',
+        icon: Mountain,
+      },
+    ],
   },
 ];
+
+// Flat list for backward compatibility
+export const LANDING_COMING_SOON: LandingComingSoonModule[] = 
+  LANDING_COMING_SOON_CATEGORIES.flatMap(cat => cat.modules);
