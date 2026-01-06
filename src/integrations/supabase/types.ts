@@ -14980,6 +14980,75 @@ export type Database = {
           },
         ]
       }
+      gunsmith_link_suggestions: {
+        Row: {
+          approved_link_id: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          link_type: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string
+          status: string
+          suggested_by: string
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          approved_link_id?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          link_type?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id: string
+          status?: string
+          suggested_by: string
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          approved_link_id?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          link_type?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string
+          status?: string
+          suggested_by?: string
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_link_suggestions_approved_link_id_fkey"
+            columns: ["approved_link_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_useful_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_link_suggestions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gunsmith_parts: {
         Row: {
           category: string | null
@@ -15621,6 +15690,59 @@ export type Database = {
             columns: ["to_customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_useful_links: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          link_type: string
+          shop_id: string
+          sort_order: number
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          link_type?: string
+          shop_id: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          link_type?: string
+          shop_id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_useful_links_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
