@@ -378,7 +378,7 @@ export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // HEALTH & WELLNESS (10 modules)
+  // HEALTH & WELLNESS (14 modules)
   // ═══════════════════════════════════════════════════════════════════════
   {
     category: 'Health & Wellness',
@@ -394,11 +394,37 @@ export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
       { name: 'Med Spa', description: 'Treatment scheduling, consent forms, and product sales', icon: Sparkles },
       { name: 'Dental Practice', description: 'Patient scheduling, treatment plans, and insurance', icon: Stethoscope },
       { name: 'Optometry', description: 'Eye exams, prescription tracking, and frame inventory', icon: CircleDot },
+      { name: 'Wellness Coaching', description: 'Goal tracking, habit monitoring, check-ins, and program sales', icon: HeartPulse },
+      { name: 'Breathwork & Meditation', description: 'Class scheduling, retreat booking, and practitioner management', icon: Sun },
+      { name: 'Functional Medicine', description: 'Advanced lab tracking, root cause protocols, and supplement stacks', icon: Stethoscope },
+      { name: 'Float Therapy & Sensory', description: 'Pod booking, water quality logs, and membership management', icon: Waves },
     ],
   },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // CREATIVE & ARTISAN (10 modules)
+  // HOLISTIC & ALTERNATIVE MEDICINE (12 modules)
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    category: 'Holistic & Alternative Medicine',
+    description: 'Natural healing, energy work, and alternative therapies',
+    modules: [
+      { name: 'Essential Oils & Aromatherapy', description: 'Product inventory, custom blends, client profiles, and education tracking', icon: Droplets },
+      { name: 'Holistic Medicine Practice', description: 'Patient intake, treatment protocols, remedy tracking, and HIPAA-compliant notes', icon: Leaf },
+      { name: 'Naturopathic Clinic', description: 'Patient management, lab ordering, supplement dispensary, and treatment plans', icon: Sprout },
+      { name: 'Herbalism & Botanical', description: 'Herb inventory, tincture batching, client consultations, and compliance', icon: Leaf },
+      { name: 'Reiki & Energy Healing', description: 'Session booking, client notes, practitioner scheduling, and certifications', icon: Sun },
+      { name: 'Homeopathy Practice', description: 'Remedy inventory, case management, potency tracking, and follow-ups', icon: Droplets },
+      { name: 'Ayurvedic Services', description: 'Dosha assessments, treatment protocols, product sales, and meal planning', icon: Flower2 },
+      { name: 'Crystal Healing & Metaphysical', description: 'Inventory management, session booking, and product sales', icon: Gem },
+      { name: 'Sound & Vibrational Therapy', description: 'Session scheduling, instrument inventory, and treatment protocols', icon: Music },
+      { name: 'Hypnotherapy', description: 'Client intake, session notes, program tracking, and recordings', icon: CircleDot },
+      { name: 'Reflexology', description: 'Appointment booking, foot maps, treatment notes, and package sales', icon: Footprints },
+      { name: 'Craniosacral Therapy', description: 'Session booking, treatment history, and practitioner notes', icon: HandHeart },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CREATIVE & ARTISAN (12 modules)
   // ═══════════════════════════════════════════════════════════════════════
   {
     category: 'Creative & Artisan',
@@ -414,6 +440,8 @@ export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
       { name: 'Screen Printing', description: 'Order management, screen inventory, and production queue', icon: Shirt },
       { name: 'Embroidery & Monogramming', description: 'Design library, order tracking, and machine scheduling', icon: Scissors },
       { name: 'Sign Making', description: 'Custom quotes, material tracking, and installation scheduling', icon: Pen },
+      { name: 'Herbal Product Making', description: 'Salve batches, ingredient sourcing, and labeling compliance', icon: Leaf },
+      { name: 'Incense & Smudge Crafting', description: 'Batch tracking, ingredient inventory, and wholesale orders', icon: Flame },
     ],
   },
 
