@@ -292,7 +292,7 @@ export default function GunsmithDashboard() {
         <Button
           variant="outline"
           className="h-24 flex flex-col gap-2 border-slate-500/30 hover:bg-slate-500/5"
-          onClick={() => navigate('/gunsmith/useful-links')}
+          onClick={() => navigate('/gunsmith/resources')}
         >
           <Link className="h-6 w-6 text-slate-500" />
           <span className="text-xs">Resources</span>

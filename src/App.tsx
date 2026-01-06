@@ -1184,7 +1184,8 @@ function App() {
                   <Route path="/gunsmith/inventory/adjust" element={<GunsmithStockAdjust />} />
                   <Route path="/gunsmith/inventory/purchase-orders/new" element={<GunsmithPurchaseOrderForm />} />
                   <Route path="/gunsmith/inventory/serialized/new" element={<GunsmithSerializedForm />} />
-                  <Route path="/gunsmith/useful-links" element={<GunsmithUsefulLinks />} />
+                  <Route path="/gunsmith/resources" element={<GunsmithUsefulLinks />} />
+                  <Route path="/gunsmith/useful-links" element={<Navigate to="/gunsmith/resources" replace />} />
                   
                   {/* Fuel Delivery Routes */}
                   <Route path="/fuel-delivery" element={<FuelDeliveryDashboard />} />
