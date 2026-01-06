@@ -18,7 +18,8 @@ import {
   Users,
   Brain,
   AlertCircle,
-  ClipboardList
+  ClipboardList,
+  Code
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -29,7 +30,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePrimaryRoleInfo } from '@/hooks/useAllUserRoles';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { hasRoutePermission } from '@/utils/routeGuards';
 import { cleanupAuthState } from '@/utils/authCleanup';
@@ -39,7 +40,7 @@ import { useQuery } from '@tanstack/react-query';
 
 export function HeaderActions() {
   const { isAuthenticated, userName, isLoading } = useAuthUser();
-  const { userRole, isLoading: roleLoading } = useUserRole();
+  const { primaryRole, allRoles, isDeveloper, isLoading: roleLoading } = usePrimaryRoleInfo();
   const { data: userRoles = [] } = useUserRoles();
   const { modules, getEnabledModuleSlugs } = useEnabledModules();
   const { data: shopId } = useUserShopId();
@@ -121,12 +122,16 @@ export function HeaderActions() {
         return 'outline';
       case 'customer':
         return 'secondary';
+      case 'developer':
+        return 'default'; // Special variant for developers
       default:
         return 'outline';
     }
   };
 
-  const displayRole = userRole?.displayName || userRole?.name || 'User';
+  // Display all roles (e.g., "Owner, Developer")
+  const displayRoles = allRoles.map(r => r.displayName).join(', ') || 'User';
+  const primaryDisplayRole = primaryRole?.displayName || 'User';
   const enabledSlugs = getEnabledModuleSlugs();
   const enabledModulesWithConfig = enabledSlugs
     .map((slug) => ({
@@ -166,10 +171,12 @@ export function HeaderActions() {
           { label: 'Daily Logs', path: '/daily-logs', icon: ClipboardList, permission: '/daily-logs' },
         ];
 
+  // Build account items - add Developer Portal for platform developers
   const accountItems = [
     { id: 'profile', label: 'Profile', path: '/profile', icon: UserCircle },
     { id: 'settings', label: 'Settings', path: '/settings', icon: SettingsIcon },
-    { id: 'ai_hub', label: 'AI Hub', path: '/developer', icon: Brain, permission: '/developer' },
+    ...(isDeveloper ? [{ id: 'developer_portal', label: 'Developer Portal', path: '/developer', icon: Code }] : []),
+    { id: 'ai_hub', label: 'AI Hub', path: '/ai-hub', icon: Brain, permission: '/ai-hub' },
     { id: 'reports', label: 'Reports', path: '/reports', icon: BarChart3, permission: '/reports' },
     { id: 'team', label: 'Team', path: '/team', icon: Users, permission: '/team' },
   ];
@@ -200,12 +207,21 @@ export function HeaderActions() {
             <div className="flex flex-col items-start">
               <span className="text-sm font-medium">{userName || 'User'}</span>
               {!roleLoading && (
-                <Badge 
-                  variant={getRoleBadgeVariant(displayRole)} 
-                  className="text-xs h-4 px-1"
-                >
-                  {displayRole}
-                </Badge>
+                <div className="flex items-center gap-1 flex-wrap">
+                  {allRoles.map((role) => (
+                    <Badge 
+                      key={role.id}
+                      variant={getRoleBadgeVariant(role.displayName)} 
+                      className="text-xs h-4 px-1"
+                    >
+                      {role.source === 'developer' && <Code className="w-3 h-3 mr-0.5" />}
+                      {role.displayName}
+                    </Badge>
+                  ))}
+                  {allRoles.length === 0 && (
+                    <Badge variant="outline" className="text-xs h-4 px-1">User</Badge>
+                  )}
+                </div>
               )}
             </div>
           </Button>
@@ -216,7 +232,7 @@ export function HeaderActions() {
               <span>My Account</span>
               {!roleLoading && (
                 <span className="text-xs text-muted-foreground font-normal">
-                  Role: {displayRole}
+                  Roles: {displayRoles}
                 </span>
               )}
             </div>
