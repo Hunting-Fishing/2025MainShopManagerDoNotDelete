@@ -66,6 +66,7 @@ export function AccountMenuSettingsCard() {
   });
 
   const [itemsState, setItemsState] = useState<Record<string, ItemState>>({});
+  const [hasInitializedDefaults, setHasInitializedDefaults] = useState(false);
 
   useEffect(() => {
     const hidden = new Set(settings?.hidden_items ?? []);
@@ -109,6 +110,22 @@ export function AccountMenuSettingsCard() {
       toast.error('Failed to save account menu settings');
     },
   });
+
+  useEffect(() => {
+    if (!shopId || hasInitializedDefaults || settings !== null) return;
+    const defaultSettings: AccountMenuSettings = {
+      hidden_items: [],
+      item_overrides: {
+        ai_hub: { roles: ['owner', 'admin'] },
+        reports: { roles: ['owner', 'admin', 'manager'] },
+        team: { roles: ['owner', 'admin', 'manager'] },
+        settings: { roles: ['owner', 'admin'] },
+      },
+    };
+
+    updateMutation.mutate(defaultSettings);
+    setHasInitializedDefaults(true);
+  }, [shopId, settings, hasInitializedDefaults, updateMutation]);
 
   const handleToggleItem = (id: string) => {
     setItemsState((prev) => ({
