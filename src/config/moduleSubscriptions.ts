@@ -14,7 +14,7 @@ export interface ModuleConfig {
 export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
   automotive: {
     slug: 'automotive',
-    name: 'Repair Shop',
+    name: 'Large Repair Shop',
     description: 'Vehicle repair, maintenance, and diagnostic services',
     price: 49,
     stripeProductId: 'prod_TjQuamW7bXdlp9',
