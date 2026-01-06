@@ -12,6 +12,7 @@ import AnalyticsDashboard from './developer/AnalyticsDashboard';
 import ShoppingControls from './developer/ShoppingControls';
 import ProductFormPage from './developer/ProductFormPage';
 import TrialManagement from './developer/TrialManagement';
+import PlatformDevelopers from './developer/PlatformDevelopers';
 import { DeveloperNavigation } from '@/components/developer/DeveloperNavigation';
 
 export default function DeveloperPortal() {
@@ -45,6 +46,7 @@ export default function DeveloperPortal() {
           <Route path="/shopping/products/edit/:productId" element={<ProductFormPage />} />
           <Route path="/shopping-controls/products/edit/:productId" element={<ProductFormPage />} />
           <Route path="/trials" element={<TrialManagement />} />
+          <Route path="/platform-developers" element={<PlatformDevelopers />} />
         </Routes>
       </div>
     </>
