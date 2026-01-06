@@ -23884,6 +23884,42 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_developers: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          display_name: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          display_name?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          display_name?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       portal_settings: {
         Row: {
           application_forms_enabled: boolean | null
@@ -41515,6 +41551,7 @@ export type Database = {
       is_admin_user: { Args: never; Returns: boolean }
       is_customer: { Args: { user_id: string }; Returns: boolean }
       is_owner_or_admin: { Args: { check_user_id: string }; Returns: boolean }
+      is_platform_developer: { Args: { _user_id?: string }; Returns: boolean }
       is_room_creator: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean

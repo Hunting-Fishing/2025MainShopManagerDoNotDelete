@@ -16,7 +16,8 @@ import {
   Database,
   FileText,
   Search,
-  Clock
+  Clock,
+  Crown
 } from 'lucide-react';
 
 const developerModules = [
@@ -91,6 +92,14 @@ const developerModules = [
     path: '/developer/trials',
     color: 'text-pink-600',
     bgColor: 'bg-pink-50',
+  },
+  {
+    title: 'Platform Developers',
+    description: 'Manage god-mode developer accounts with full platform access',
+    icon: Crown,
+    path: '/developer/platform-developers',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50',
   },
 ];
 
