@@ -137,6 +137,9 @@ export default function GunsmithUsefulLinks() {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sortBy, setSortBy] = useState<'default' | 'title-asc' | 'title-desc'>('default');
   const [linkForm, setLinkForm] = useState({
     title: '',
     url: '',
@@ -351,6 +354,18 @@ export default function GunsmithUsefulLinks() {
     return links.filter((link) => link.link_type === 'web' && (canManage || link.is_active));
   }, [links, canManage]);
 
+  const allCategories = useMemo(() => {
+    const categories = new Set<string>();
+    links.forEach((link) => {
+      if (link.category?.trim()) {
+        categories.add(link.category.trim());
+      } else {
+        categories.add('Uncategorized');
+      }
+    });
+    return Array.from(categories).sort((a, b) => a.localeCompare(b));
+  }, [links]);
+
   const recommendedCategories = useMemo(() => {
     const recommendedLinks = links.filter(
       (link) => link.link_type === 'affiliate' && (canManage || link.is_active)
@@ -389,6 +404,46 @@ export default function GunsmithUsefulLinks() {
       return url;
     }
   };
+
+  const matchesSearch = (link: GunsmithUsefulLink) => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      link.title.toLowerCase().includes(term) ||
+      link.url.toLowerCase().includes(term) ||
+      (link.description || '').toLowerCase().includes(term) ||
+      (link.category || '').toLowerCase().includes(term)
+    );
+  };
+
+  const sortLinks = (items: GunsmithUsefulLink[]) => {
+    if (sortBy === 'title-asc') {
+      return [...items].sort((a, b) => a.title.localeCompare(b.title));
+    }
+    if (sortBy === 'title-desc') {
+      return [...items].sort((a, b) => b.title.localeCompare(a.title));
+    }
+    return items;
+  };
+
+  const filteredWebLinks = useMemo(() => {
+    const filtered = webLinks.filter((link) => {
+      const category = link.category?.trim() || 'Uncategorized';
+      const matchesCategory = categoryFilter === 'all' || category === categoryFilter;
+      return matchesCategory && matchesSearch(link);
+    });
+    return sortLinks(filtered);
+  }, [webLinks, categoryFilter, searchTerm, sortBy]);
+
+  const filteredRecommendedCategories = useMemo(() => {
+    return recommendedCategories
+      .filter((category) => categoryFilter === 'all' || category.title === categoryFilter)
+      .map((category) => ({
+        ...category,
+        links: sortLinks(category.links.filter((link) => matchesSearch(link))),
+      }))
+      .filter((category) => category.links.length > 0);
+  }, [recommendedCategories, categoryFilter, searchTerm, sortBy]);
 
   const renderLinkGrid = (items: GunsmithUsefulLink[], type: 'web' | 'affiliate') => {
     if (items.length === 0) {
@@ -484,10 +539,10 @@ export default function GunsmithUsefulLinks() {
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Link2 className="h-8 w-8 text-amber-600" />
-            Gunsmith Useful Links
+            Gunsmith Resources
           </h1>
           <p className="text-muted-foreground mt-1">
-            Curate web resources and recommended tools for your gunsmith operation
+            Curate resources and recommended tools for your gunsmith operation
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -663,6 +718,51 @@ export default function GunsmithUsefulLinks() {
       <div ref={affiliateScriptContainerRef} />
 
       <div className="space-y-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+              <div className="flex-1">
+                <Label htmlFor="link-search">Search</Label>
+                <Input
+                  id="link-search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search title, URL, or notes..."
+                />
+              </div>
+              <div className="w-full lg:w-56">
+                <Label>Category</Label>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {allCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-full lg:w-48">
+                <Label>Sort</Label>
+                <Select value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Default order" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Default</SelectItem>
+                    <SelectItem value="title-asc">Title A-Z</SelectItem>
+                    <SelectItem value="title-desc">Title Z-A</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="web" className="space-y-6">
           <TabsList>
             <TabsTrigger value="web" className="flex items-center gap-2">
@@ -685,7 +785,7 @@ export default function GunsmithUsefulLinks() {
             {linksLoading ? (
               <p className="text-sm text-muted-foreground">Loading links...</p>
             ) : (
-              renderLinkGrid(webLinks, 'web')
+              renderLinkGrid(filteredWebLinks, 'web')
             )}
           </TabsContent>
 
@@ -694,17 +794,17 @@ export default function GunsmithUsefulLinks() {
               <Card>
                 <CardContent className="py-8 text-sm text-muted-foreground">Loading links...</CardContent>
               </Card>
-            ) : recommendedCategories.length === 0 ? (
+            ) : filteredRecommendedCategories.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Tags className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                  <p>No recommendations yet</p>
-                  <p className="text-sm">Add your preferred gear, tools, and suppliers.</p>
+                  <p>No matching recommendations</p>
+                  <p className="text-sm">Try adjusting your search or filters.</p>
                 </CardContent>
               </Card>
             ) : (
               <div className="space-y-8">
-                {recommendedCategories.map((category) => (
+                {filteredRecommendedCategories.map((category) => (
                   <div key={category.title} className="space-y-4">
                     <div>
                       <h3 className="text-lg font-semibold text-foreground">{category.title}</h3>
