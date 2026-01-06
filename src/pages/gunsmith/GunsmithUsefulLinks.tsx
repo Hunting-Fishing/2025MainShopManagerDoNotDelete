@@ -58,8 +58,6 @@ type GunsmithLinkSuggestion = {
   created_at: string;
 };
 
-const CATEGORY_HINTS = ['Tools', 'Safety', 'Compliance', 'Parts', 'Suppliers'];
-
 export default function GunsmithUsefulLinks() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -153,8 +151,6 @@ export default function GunsmithUsefulLinks() {
     title: '',
     url: '',
     description: '',
-    linkType: 'web' as LinkType,
-    category: '',
   });
 
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
@@ -186,8 +182,6 @@ export default function GunsmithUsefulLinks() {
       title: '',
       url: '',
       description: '',
-      linkType: 'web',
-      category: '',
     });
   };
 
@@ -260,8 +254,8 @@ export default function GunsmithUsefulLinks() {
           title: suggestionForm.title.trim(),
           url: suggestionForm.url.trim(),
           description: suggestionForm.description.trim() || null,
-          link_type: suggestionForm.linkType,
-          category: suggestionForm.category.trim() || null,
+          link_type: 'web',
+          category: null,
           suggested_by: userId,
         });
       if (error) throw error;
@@ -640,35 +634,6 @@ export default function GunsmithUsefulLinks() {
                       placeholder="https://"
                     />
                   </div>
-                </div>
-                <div>
-                  <Label>Link Category</Label>
-                  <Select
-                    value={suggestionForm.linkType}
-                    onValueChange={(value) =>
-                      setSuggestionForm({ ...suggestionForm, linkType: value as LinkType })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="web">Web Resource</SelectItem>
-                      <SelectItem value="affiliate">Product Link</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="suggestion-category">Category</Label>
-                  <Input
-                    id="suggestion-category"
-                    value={suggestionForm.category}
-                    onChange={(event) => setSuggestionForm({ ...suggestionForm, category: event.target.value })}
-                    placeholder="Tools, Safety, Compliance"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Suggested: {CATEGORY_HINTS.join(', ')}
-                  </p>
                 </div>
                 <div>
                   <Label htmlFor="suggestion-description">Why is this useful?</Label>
