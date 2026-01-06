@@ -33,14 +33,16 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { hasRoutePermission } from '@/utils/routeGuards';
 import { cleanupAuthState } from '@/utils/authCleanup';
-import { useEnabledModules } from '@/hooks/useEnabledModules';
+import { useEnabledModules, useUserShopId } from '@/hooks/useEnabledModules';
 import { MODULE_ROUTES } from '@/config/moduleRoutes';
+import { useQuery } from '@tanstack/react-query';
 
 export function HeaderActions() {
   const { isAuthenticated, userName, isLoading } = useAuthUser();
   const { userRole, isLoading: roleLoading } = useUserRole();
   const { data: userRoles = [] } = useUserRoles();
   const { modules, getEnabledModuleSlugs } = useEnabledModules();
+  const { data: shopId } = useUserShopId();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -143,6 +145,52 @@ export function HeaderActions() {
           { label: 'Daily Logs', path: '/daily-logs', icon: ClipboardList, permission: '/daily-logs' },
         ];
 
+  type AccountMenuSettings = {
+    hidden_items?: string[];
+    item_overrides?: Record<string, { enabled?: boolean; modules?: string[]; roles?: string[] }>;
+  };
+
+  const { data: accountMenuSettings } = useQuery({
+    queryKey: ['account-menu-settings', shopId],
+    queryFn: async () => {
+      if (!shopId) return null;
+      const { data, error } = await supabase
+        .from('company_settings')
+        .select('settings_value')
+        .eq('shop_id', shopId)
+        .eq('settings_key', 'account_menu')
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.settings_value ?? null) as AccountMenuSettings | null;
+    },
+    enabled: !!shopId,
+  });
+
+  const accountItems = [
+    { id: 'profile', label: 'Profile', path: '/profile', icon: UserCircle },
+    { id: 'settings', label: 'Settings', path: '/settings', icon: SettingsIcon },
+    { id: 'ai_hub', label: 'AI Hub', path: '/developer', icon: Brain, permission: '/developer' },
+    { id: 'reports', label: 'Reports', path: '/reports', icon: BarChart3, permission: '/reports' },
+    { id: 'team', label: 'Team', path: '/team', icon: Users, permission: '/team' },
+  ];
+
+  const accountMenuOverrides = accountMenuSettings?.item_overrides ?? {};
+  const hiddenAccountItems = new Set(accountMenuSettings?.hidden_items ?? []);
+  const isAccountItemVisible = (item: typeof accountItems[number]) => {
+    if (hiddenAccountItems.has(item.id)) return false;
+    if (item.permission && !hasRoutePermission(item.permission, userRoles)) return false;
+
+    const overrides = accountMenuOverrides[item.id];
+    if (overrides?.enabled === false) return false;
+    if (overrides?.roles && !overrides.roles.some((role) => userRoles.includes(role))) {
+      return false;
+    }
+    if (overrides?.modules && moduleContext && !overrides.modules.includes(moduleContext)) {
+      return false;
+    }
+    return true;
+  };
+
   return (
     <div className="flex items-center space-x-4">
       <DropdownMenu>
@@ -198,32 +246,15 @@ export function HeaderActions() {
           
           {/* Navigation Links */}
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => navigate('/profile')}>
-              <UserCircle className="mr-2 h-4 w-4" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/settings')}>
-              <SettingsIcon className="mr-2 h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-            {hasRoutePermission('/developer', userRoles) && (
-              <DropdownMenuItem onClick={() => navigate('/developer')}>
-                <Brain className="mr-2 h-4 w-4" />
-                AI Hub
-              </DropdownMenuItem>
-            )}
-            {hasRoutePermission('/reports', userRoles) && (
-              <DropdownMenuItem onClick={() => navigate('/reports')}>
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Reports
-              </DropdownMenuItem>
-            )}
-            {hasRoutePermission('/team', userRoles) && (
-              <DropdownMenuItem onClick={() => navigate('/team')}>
-                <Users className="mr-2 h-4 w-4" />
-                Team
-              </DropdownMenuItem>
-            )}
+            {accountItems.filter(isAccountItemVisible).map((item) => {
+              const Icon = item.icon;
+              return (
+                <DropdownMenuItem key={item.id} onClick={() => navigate(item.path)}>
+                  <Icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </DropdownMenuItem>
+              );
+            })}
           </DropdownMenuGroup>
           
           <DropdownMenuSeparator />
