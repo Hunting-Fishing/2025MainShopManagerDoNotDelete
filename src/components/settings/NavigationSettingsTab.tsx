@@ -10,6 +10,7 @@ import { useSidebarVisibilitySettings, useUpdateSidebarVisibility, SidebarVisibi
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { RoleGuard } from '@/components/auth/RoleGuard';
+import { AccountMenuSettingsCard } from '@/components/settings/AccountMenuSettingsCard';
 
 const AVAILABLE_ROLES = [
   { value: 'owner', label: 'Owner' },
@@ -120,6 +121,7 @@ function NavigationSettingsContent() {
 
   return (
     <div className="space-y-6">
+      <AccountMenuSettingsCard />
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
