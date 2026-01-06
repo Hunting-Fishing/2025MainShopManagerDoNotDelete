@@ -6,7 +6,7 @@ import { ModuleCard } from '@/components/landing/ModuleCard';
 import { ComingSoonCard } from '@/components/landing/ComingSoonCard';
 import { FeatureGrid } from '@/components/landing/FeatureGrid';
 import { PricingSection } from '@/components/landing/PricingSection';
-import { LANDING_COMING_SOON, LANDING_MODULES } from '@/config/landingModules';
+import { LANDING_COMING_SOON_CATEGORIES, LANDING_MODULES } from '@/config/landingModules';
 
 export default function Index() {
   return (
@@ -95,9 +95,25 @@ export default function Index() {
               New modules in development. Get notified when they launch.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {LANDING_COMING_SOON.map((module) => (
-              <ComingSoonCard key={module.name} {...module} />
+          
+          {/* Categorized Coming Soon Modules */}
+          <div className="space-y-16 max-w-6xl mx-auto">
+            {LANDING_COMING_SOON_CATEGORIES.map((category) => (
+              <div key={category.category}>
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-foreground mb-2">
+                    {category.category}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {category.description}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {category.modules.map((module) => (
+                    <ComingSoonCard key={module.name} {...module} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
