@@ -243,6 +243,10 @@ import GunsmithUsefulLinks from '@/pages/gunsmith/GunsmithUsefulLinks';
 
 // Automotive
 import AutomotiveDashboard from '@/pages/automotive/AutomotiveDashboard';
+import AutomotiveVehicleHistory from '@/pages/automotive/AutomotiveVehicleHistory';
+import AutomotiveDiagnostics from '@/pages/automotive/AutomotiveDiagnostics';
+import AutomotiveLaborRates from '@/pages/automotive/AutomotiveLaborRates';
+import AutomotiveRecalls from '@/pages/automotive/AutomotiveRecalls';
 
 // Marine
 import MarineDashboard from '@/pages/marine/MarineDashboard';
@@ -306,7 +310,14 @@ function App() {
                 <Routes>
                   <Route path="/module-hub" element={<ModuleHub />} />
                   <Route path="/dashboard" element={<Dashboard />} />
+                  {/* Automotive Module */}
                   <Route path="/automotive" element={<AutomotiveDashboard />} />
+                  <Route path="/automotive/vehicle-history" element={<AutomotiveVehicleHistory />} />
+                  <Route path="/automotive/diagnostics" element={<AutomotiveDiagnostics />} />
+                  <Route path="/automotive/labor-rates" element={<AutomotiveLaborRates />} />
+                  <Route path="/automotive/recalls" element={<AutomotiveRecalls />} />
+                  
+                  {/* Marine Module */}
                   <Route path="/marine-services" element={<MarineDashboard />} />
                   
                   {/* Store */}

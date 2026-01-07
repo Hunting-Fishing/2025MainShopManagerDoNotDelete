@@ -54,6 +54,7 @@ export interface ModuleSectionItem {
   href: string;
   icon: LucideIcon;
   description?: string;
+  group?: string;
 }
 
 export interface ModuleRouteConfig {
@@ -79,20 +80,66 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
     gradientFrom: 'from-blue-500',
     gradientTo: 'to-blue-600',
     sections: [
-      // Core Operations
-      { title: 'Dashboard', href: '/automotive', icon: Gauge, description: 'Module overview and KPIs' },
-      { title: 'All Jobs', href: '/work-orders', icon: Briefcase, description: 'Work orders and repairs' },
-      { title: 'Vehicles', href: '/vehicles', icon: Car, description: 'Customer vehicles' },
-      { title: 'Parts', href: '/inventory', icon: Package, description: 'Parts inventory' },
-      { title: 'Quotes', href: '/quotes', icon: FileText, description: 'Estimates and quotes' },
-      { title: 'Invoices', href: '/invoices', icon: Receipt, description: 'Billing and invoices' },
-      { title: 'Payments', href: '/payments', icon: CreditCard, description: 'Payment processing' },
-      { title: 'Appointments', href: '/booking-management', icon: Calendar, description: 'Scheduling' },
-      // Automotive-Specific Features
-      { title: 'Vehicle History', href: '/automotive/vehicle-history', icon: History, description: 'Complete vehicle service history' },
-      { title: 'Diagnostics', href: '/automotive/diagnostics', icon: Activity, description: 'Diagnostic tools and codes' },
-      { title: 'Labor Rates', href: '/automotive/labor-rates', icon: DollarSign, description: 'Labor rate management' },
-      { title: 'TSB & Recalls', href: '/automotive/recalls', icon: FileSearch, description: 'Technical bulletins and recalls' },
+      // Dashboard
+      { title: 'Dashboard', href: '/automotive', icon: Gauge, description: 'Module overview and KPIs', group: 'Dashboard' },
+      
+      // Services
+      { title: 'All Jobs', href: '/work-orders', icon: Briefcase, description: 'Work orders and repairs', group: 'Services' },
+      { title: 'Quotes', href: '/quotes', icon: FileText, description: 'Estimates and quotes', group: 'Services' },
+      { title: 'Invoices', href: '/invoices', icon: Receipt, description: 'Billing and invoices', group: 'Services' },
+      { title: 'Payments', href: '/payments', icon: CreditCard, description: 'Payment processing', group: 'Services' },
+      { title: 'Service Packages', href: '/service-packages', icon: Package, description: 'Service bundles', group: 'Services' },
+      
+      // Customers
+      { title: 'Customers', href: '/customers', icon: Users, description: 'Customer management', group: 'Customers' },
+      { title: 'Vehicle History', href: '/automotive/vehicle-history', icon: History, description: 'Complete service history', group: 'Customers' },
+      
+      // Inventory
+      { title: 'Parts', href: '/inventory', icon: Package, description: 'Parts inventory', group: 'Inventory' },
+      { title: 'Parts Tracking', href: '/parts-tracking', icon: Package, description: 'Track parts orders', group: 'Inventory' },
+      { title: 'Suppliers', href: '/inventory-suppliers', icon: Users, description: 'Vendor management', group: 'Inventory' },
+      
+      // Scheduling
+      { title: 'Appointments', href: '/booking-management', icon: Calendar, description: 'Booking management', group: 'Scheduling' },
+      { title: 'Planner', href: '/planner', icon: Calendar, description: 'Job planner', group: 'Scheduling' },
+      { title: 'Calendar', href: '/calendar', icon: Calendar, description: 'Service calendar', group: 'Scheduling' },
+      
+      // Communications
+      { title: 'Customer Comms', href: '/customer-comms', icon: Bell, description: 'Customer messaging', group: 'Communications' },
+      { title: 'Call Logger', href: '/call-logger', icon: Bell, description: 'Call tracking', group: 'Communications' },
+      
+      // Marketing
+      { title: 'Email Campaigns', href: '/email-campaigns', icon: Globe, description: 'Email marketing', group: 'Marketing' },
+      { title: 'SMS Management', href: '/sms-management', icon: Smartphone, description: 'Text messaging', group: 'Marketing' },
+      
+      // Operations
+      { title: 'Daily Logs', href: '/daily-logs', icon: ClipboardList, description: 'Daily operations', group: 'Operations' },
+      { title: 'Service Board', href: '/service-board', icon: Briefcase, description: 'Live job board', group: 'Operations' },
+      
+      // Equipment & Tools
+      { title: 'Equipment', href: '/equipment', icon: Wrench, description: 'Shop equipment', group: 'Equipment & Tools' },
+      { title: 'Maintenance', href: '/maintenance-requests', icon: Wrench, description: 'Equipment maintenance', group: 'Equipment & Tools' },
+      
+      // Fleet
+      { title: 'Vehicles', href: '/vehicles', icon: Car, description: 'Customer vehicles', group: 'Fleet' },
+      { title: 'Fleet Management', href: '/fleet-management', icon: Truck, description: 'Fleet tracking', group: 'Fleet' },
+      { title: 'Fuel Management', href: '/fuel-management', icon: Fuel, description: 'Fuel tracking', group: 'Fleet' },
+      { title: 'Tire Management', href: '/tire-management', icon: Car, description: 'Tire tracking', group: 'Fleet' },
+      
+      // Safety & Compliance
+      { title: 'Safety Dashboard', href: '/safety', icon: Shield, description: 'Safety overview', group: 'Safety & Compliance' },
+      { title: 'DVIR', href: '/safety/dvir', icon: ClipboardList, description: 'Vehicle inspections', group: 'Safety & Compliance' },
+      { title: 'Inspections', href: '/safety/inspections', icon: Shield, description: 'Safety inspections', group: 'Safety & Compliance' },
+      
+      // Company
+      { title: 'Company Profile', href: '/company-profile', icon: Users, description: 'Business info', group: 'Company' },
+      { title: 'Team', href: '/team', icon: Users, description: 'Staff management', group: 'Company' },
+      { title: 'Settings', href: '/settings', icon: Wrench, description: 'Module settings', group: 'Company' },
+      
+      // Automotive-Specific
+      { title: 'Diagnostics', href: '/automotive/diagnostics', icon: Activity, description: 'Diagnostic tools', group: 'Automotive' },
+      { title: 'Labor Rates', href: '/automotive/labor-rates', icon: DollarSign, description: 'Rate management', group: 'Automotive' },
+      { title: 'TSB & Recalls', href: '/automotive/recalls', icon: FileSearch, description: 'Technical bulletins', group: 'Automotive' },
     ],
   },
   power_washing: {
