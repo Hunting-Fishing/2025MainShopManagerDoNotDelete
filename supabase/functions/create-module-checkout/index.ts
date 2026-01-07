@@ -12,6 +12,9 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-MODULE-CHECKOUT] ${step}${detailsStr}`);
 };
 
+// Multi-module discount: 20% off each additional module
+const MULTI_MODULE_DISCOUNT_PERCENT = 20;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -26,9 +29,11 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const { moduleSlug, priceId } = await req.json();
-    if (!moduleSlug || !priceId) throw new Error("Module slug and price ID are required");
-    logStep("Request data", { moduleSlug, priceId });
+    const { moduleSlug, tier, priceId } = await req.json();
+    if (!moduleSlug || !priceId || !tier) {
+      throw new Error("Module slug, tier, and price ID are required");
+    }
+    logStep("Request data", { moduleSlug, tier, priceId });
 
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
@@ -43,13 +48,43 @@ serve(async (req) => {
 
     // Check if customer exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId;
+    let customerId: string | undefined;
+    let existingSubscriptionCount = 0;
+
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       logStep("Existing customer found", { customerId });
+
+      // Count existing active subscriptions at the same tier for discount
+      const existingSubs = await stripe.subscriptions.list({
+        customer: customerId,
+        status: 'active',
+        limit: 100,
+      });
+      
+      existingSubscriptionCount = existingSubs.data.length;
+      logStep("Existing subscription count", { count: existingSubscriptionCount });
     }
 
     const origin = req.headers.get("origin") || "https://oudkbrnvommbvtuispla.lovableproject.com";
+    
+    // Calculate discount for multi-module purchase
+    let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined;
+    
+    if (existingSubscriptionCount > 0) {
+      // Create a coupon for the discount
+      try {
+        const coupon = await stripe.coupons.create({
+          percent_off: MULTI_MODULE_DISCOUNT_PERCENT,
+          duration: 'forever',
+          name: `Multi-Module Discount (${MULTI_MODULE_DISCOUNT_PERCENT}% off)`,
+        });
+        discounts = [{ coupon: coupon.id }];
+        logStep("Created discount coupon", { couponId: coupon.id, percentOff: MULTI_MODULE_DISCOUNT_PERCENT });
+      } catch (couponError) {
+        logStep("Could not create coupon, proceeding without discount", { error: String(couponError) });
+      }
+    }
     
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -62,21 +97,28 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
+      discounts,
       success_url: `${origin}/settings?tab=modules&success=true&module=${moduleSlug}`,
       cancel_url: `${origin}/settings?tab=modules&canceled=true`,
       metadata: {
         user_id: user.id,
         module_slug: moduleSlug,
+        tier: tier,
       },
       subscription_data: {
         metadata: {
           user_id: user.id,
           module_slug: moduleSlug,
+          tier: tier,
         },
       },
     });
 
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+    logStep("Checkout session created", { 
+      sessionId: session.id, 
+      url: session.url,
+      hasDiscount: !!discounts 
+    });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

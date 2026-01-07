@@ -12,12 +12,29 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-MODULE-SUBSCRIPTIONS] ${step}${detailsStr}`);
 };
 
-// Map Stripe product IDs to module slugs
-const PRODUCT_TO_MODULE: Record<string, string> = {
-  'prod_TjQuamW7bXdlp9': 'automotive',
-  'prod_TjQvjdaBkKsCDF': 'power_washing',
-  'prod_TjQv4acpfPjNlA': 'gunsmith',
-  'prod_TjQwLR1WwHrnDx': 'marine',
+// Map Stripe product IDs to module slugs and tiers
+const PRODUCT_TO_MODULE_TIER: Record<string, { slug: string; tier: string }> = {
+  // Repair Shop (automotive)
+  'prod_TkHbDuJAyUjch9': { slug: 'automotive', tier: 'starter' },
+  'prod_TkHbtje5K3hM3U': { slug: 'automotive', tier: 'pro' },
+  'prod_TkHcZz0EzbYhgo': { slug: 'automotive', tier: 'business' },
+  // Power Washing
+  'prod_TkHcOEGODLugmr': { slug: 'power_washing', tier: 'starter' },
+  'prod_TkHd4ad9qrOr4F': { slug: 'power_washing', tier: 'pro' },
+  'prod_TkHeGx5u9HzVKa': { slug: 'power_washing', tier: 'business' },
+  // Gunsmith
+  'prod_TkHe0kPKdXohND': { slug: 'gunsmith', tier: 'starter' },
+  'prod_TkHfY1ts1YgObv': { slug: 'gunsmith', tier: 'pro' },
+  'prod_TkHfPTROuIdUkb': { slug: 'gunsmith', tier: 'business' },
+  // Marine
+  'prod_TkHfgZQcYSUY8C': { slug: 'marine', tier: 'starter' },
+  'prod_TkHgia4T6L17EG': { slug: 'marine', tier: 'pro' },
+  'prod_TkHgJD3fYTBFKb': { slug: 'marine', tier: 'business' },
+  // Legacy products (single tier)
+  'prod_TjQuamW7bXdlp9': { slug: 'automotive', tier: 'business' },
+  'prod_TjQvjdaBkKsCDF': { slug: 'power_washing', tier: 'business' },
+  'prod_TjQv4acpfPjNlA': { slug: 'gunsmith', tier: 'business' },
+  'prod_TjQwLR1WwHrnDx': { slug: 'marine', tier: 'business' },
 };
 
 serve(async (req) => {
@@ -78,7 +95,7 @@ serve(async (req) => {
 
     if (shop?.trial_started_at) {
       const trialEnd = new Date(shop.trial_started_at);
-      trialEnd.setDate(trialEnd.getDate() + (shop.trial_days || 14));
+      trialEnd.setDate(trialEnd.getDate() + (shop.trial_days || 30));
       trialEndsAt = trialEnd.toISOString();
       trialActive = new Date() < trialEnd;
     }
@@ -115,25 +132,42 @@ serve(async (req) => {
       subscription_id: string;
       current_period_end: string;
       status: string;
+      tier: string;
+      product_id: string;
     }> = [];
 
     for (const sub of subscriptions.data) {
       for (const item of sub.items.data) {
         const productId = item.price.product as string;
-        const moduleSlug = PRODUCT_TO_MODULE[productId] || sub.metadata?.module_slug;
+        const moduleInfo = PRODUCT_TO_MODULE_TIER[productId];
         
-        if (moduleSlug) {
+        if (moduleInfo) {
           activeModules.push({
-            module_slug: moduleSlug,
+            module_slug: moduleInfo.slug,
             subscription_id: sub.id,
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             status: sub.status,
+            tier: moduleInfo.tier,
+            product_id: productId,
+          });
+        } else if (sub.metadata?.module_slug) {
+          // Fallback for subscriptions with metadata
+          activeModules.push({
+            module_slug: sub.metadata.module_slug,
+            subscription_id: sub.id,
+            current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+            status: sub.status,
+            tier: sub.metadata.tier || 'pro',
+            product_id: productId,
           });
         }
       }
     }
 
-    logStep("Active module subscriptions", { count: activeModules.length, modules: activeModules.map(m => m.module_slug) });
+    logStep("Active module subscriptions", { 
+      count: activeModules.length, 
+      modules: activeModules.map(m => `${m.module_slug}:${m.tier}`) 
+    });
 
     // Sync to database
     for (const mod of activeModules) {
@@ -153,16 +187,24 @@ serve(async (req) => {
             stripe_customer_id: customerId,
             status: 'active',
             current_period_end: mod.current_period_end,
+            tier: mod.tier,
           }, {
             onConflict: 'shop_id,module_id',
           });
       }
     }
 
+    // Get current usage for this period
+    const { data: usageData } = await supabaseClient
+      .from('module_usage')
+      .select('*')
+      .eq('shop_id', profile.shop_id);
+
     return new Response(JSON.stringify({
       subscriptions: activeModules,
       trial_active: trialActive,
       trial_ends_at: trialEndsAt,
+      usage: usageData || [],
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
