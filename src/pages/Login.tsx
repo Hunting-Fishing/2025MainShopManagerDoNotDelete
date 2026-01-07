@@ -33,6 +33,14 @@ export default function Login() {
 
   useEffect(() => {
     const checkUserAndRedirect = async () => {
+      // Skip auto-redirect if coming from logout
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('logout') === 'true') {
+        // Clear the param from URL without triggering navigation
+        window.history.replaceState({}, '', '/login');
+        return;
+      }
+
       if (isAuthenticated) {
         // Check if user has a shop
         const { data: { user } } = await supabase.auth.getUser();

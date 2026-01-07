@@ -107,25 +107,29 @@ export class AuthService {
       // Clean up auth state first
       cleanupAuthState();
 
-      // Attempt global sign out
+      // Attempt global sign out and wait for completion
       const { error } = await supabase.auth.signOut({ scope: 'global' });
 
       if (error) {
         console.warn('Sign out error:', error);
       }
 
-      // Force redirect to login regardless of error
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 100);
+      // Verify session is actually cleared
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.warn('Session still exists after signOut, forcing cleanup');
+        cleanupAuthState();
+      }
+
+      // Use replace for hard navigation with logout flag to prevent auto-redirect
+      window.location.replace('/login?logout=true');
 
       return { error: null };
     } catch (error) {
       console.error('Sign out error:', error);
-      // Still redirect even on error
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 100);
+      // Clean up and redirect even on error
+      cleanupAuthState();
+      window.location.replace('/login?logout=true');
       
       return { 
         error: error instanceof Error ? error : new Error('Sign out failed') 
