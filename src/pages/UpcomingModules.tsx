@@ -6,21 +6,25 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Search, ArrowLeft, Bell, Layers, Grid3X3 } from 'lucide-react';
+import { Sparkles, Search, ArrowLeft, Bell } from 'lucide-react';
 
 export default function UpcomingModules() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [groupBy, setGroupBy] = useState<'category' | 'date'>('category');
 
-  // Get unique categories
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
+  // Get unique categories with their counts
+  const categoryData = useMemo(() => {
+    const catMap = new Map<string, number>();
     UPCOMING_MODULES.forEach(m => {
-      if (m.category) cats.add(m.category);
+      const cat = m.category || 'Other';
+      catMap.set(cat, (catMap.get(cat) || 0) + 1);
     });
-    return Array.from(cats).sort();
+    return Array.from(catMap.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, []);
+
+  const categories = categoryData.map(c => c.name);
 
   const filteredModules = useMemo(() => {
     return UPCOMING_MODULES.filter(module => {
@@ -32,51 +36,62 @@ export default function UpcomingModules() {
     });
   }, [searchQuery, selectedCategory]);
 
-  // Group modules
+  // Group modules by category
   const groupedModules = useMemo(() => {
     return filteredModules.reduce((acc, module) => {
-      const key = groupBy === 'category' 
-        ? (module.category || 'Other') 
-        : (module.expectedDate || 'TBD');
+      const key = module.category || 'Other';
       if (!acc[key]) acc[key] = [];
       acc[key].push(module);
       return acc;
     }, {} as Record<string, typeof UPCOMING_MODULES>);
-  }, [filteredModules, groupBy]);
+  }, [filteredModules]);
 
-  const sortedGroups = useMemo(() => {
+  const sortedCategories = useMemo(() => {
     return Object.keys(groupedModules).sort((a, b) => {
-      if (a === 'TBD' || a === 'Other') return 1;
-      if (b === 'TBD' || b === 'Other') return -1;
+      if (a === 'Other') return 1;
+      if (b === 'Other') return -1;
       return a.localeCompare(b);
     });
   }, [groupedModules]);
 
+  // Category descriptions
+  const categoryDescriptions: Record<string, string> = {
+    'Home & Property Services': 'Residential and commercial property maintenance',
+    'Construction & Trade': 'Building, renovation, and skilled trade services',
+    'Automotive & Transportation': 'Vehicle repair, fleet management, and transport services',
+    'Personal Services': 'Beauty, wellness, and personal care businesses',
+    'Pet Services': 'Pet care, grooming, and veterinary services',
+    'Food & Beverage': 'Restaurants, catering, and food service operations',
+    'Technology & Electronics': 'IT support, electronics repair, and tech services',
+    'Healthcare & Wellness': 'Medical, dental, and wellness practices',
+    'Professional Services': 'Consulting, legal, and business services',
+    'Specialty & Niche': 'Unique and specialized service industries',
+    'Agriculture & Outdoor': 'Farming, outdoor, and environmental services',
+    'Childcare & Education': 'Child care, tutoring, and educational services',
+    'Recreation & Sports': 'Sports, fitness, and recreational facilities',
+    'Retail & Crafts': 'Retail operations and artisan crafts',
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-6 md:p-8">
         {/* Header */}
-        <div className="mb-8">
-          <Link to="/module-hub" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors">
+        <div className="text-center mb-8">
+          <Link to="/module-hub" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors">
             <ArrowLeft className="h-4 w-4" />
             Back to Module Hub
           </Link>
           
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                <Sparkles className="h-8 w-8 text-amber-500" />
-                Upcoming Modules
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                {UPCOMING_MODULES.length} modules in development across {categories.length} categories
-              </p>
-            </div>
-          </div>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+            Coming Soon
+          </h1>
+          <p className="text-muted-foreground">
+            New modules in development. Get notified when they launch.
+          </p>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-8 max-w-2xl mx-auto">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -87,100 +102,60 @@ export default function UpcomingModules() {
             />
           </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectTrigger className="w-full sm:w-[220px]">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(cat => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              <SelectItem value="all">All Categories ({UPCOMING_MODULES.length})</SelectItem>
+              {categoryData.map(cat => (
+                <SelectItem key={cat.name} value={cat.name}>
+                  {cat.name} ({cat.count})
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={groupBy} onValueChange={(v: 'category' | 'date') => setGroupBy(v)}>
-            <SelectTrigger className="w-full sm:w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="category">
-                <span className="flex items-center gap-2">
-                  <Layers className="h-4 w-4" />
-                  By Category
-                </span>
-              </SelectItem>
-              <SelectItem value="date">
-                <span className="flex items-center gap-2">
-                  <Grid3X3 className="h-4 w-4" />
-                  By Release
-                </span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/20">
-            <CardContent className="pt-4">
-              <div className="text-2xl font-bold text-amber-600">{UPCOMING_MODULES.length}</div>
-              <p className="text-sm text-muted-foreground">Total Upcoming</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
-            <CardContent className="pt-4">
-              <div className="text-2xl font-bold text-green-600">{categories.length}</div>
-              <p className="text-sm text-muted-foreground">Categories</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
-            <CardContent className="pt-4">
-              <div className="text-2xl font-bold text-blue-600">
-                {UPCOMING_MODULES.filter(m => m.expectedDate?.includes('Q2 2026')).length}
-              </div>
-              <p className="text-sm text-muted-foreground">Coming Q2 2026</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-purple-500/10 to-violet-500/10 border-purple-500/20">
-            <CardContent className="pt-4">
-              <div className="text-2xl font-bold text-purple-600">{filteredModules.length}</div>
-              <p className="text-sm text-muted-foreground">Showing</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Modules */}
-        {sortedGroups.map(group => (
-          <section key={group} className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-xl font-semibold">{group}</h2>
-              <Badge variant="secondary">{groupedModules[group].length}</Badge>
+        {/* Category Sections */}
+        {sortedCategories.map(category => (
+          <section key={category} className="mb-12">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-foreground">{category}</h2>
+              <p className="text-sm text-muted-foreground">
+                {categoryDescriptions[category] || 'Specialized service modules'}
+              </p>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {groupedModules[group].map(module => {
+              {groupedModules[category].map(module => {
                 const Icon = module.icon;
                 return (
                   <Card 
                     key={module.slug} 
-                    className="group relative overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                    className="group relative overflow-hidden hover:shadow-md transition-all duration-200 bg-card"
                   >
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} shadow-md`}>
-                          <Icon className="h-6 w-6 text-white" />
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-muted">
+                          <Icon className="h-5 w-5 text-muted-foreground" />
                         </div>
-                        <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
-                          {module.expectedDate || 'TBD'}
+                        <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs font-medium">
+                          Coming Soon
                         </Badge>
                       </div>
-                      <CardTitle className="text-base mt-3">{module.name}</CardTitle>
+                      <CardTitle className="text-base mt-3 font-medium">{module.name}</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <CardDescription className="text-sm mb-3 line-clamp-2">
+                      <CardDescription className="text-sm mb-4 line-clamp-2">
                         {module.description}
                       </CardDescription>
-                      <Button variant="outline" size="sm" className="w-full gap-2 text-xs" disabled>
-                        <Bell className="h-3 w-3" />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full gap-2 text-muted-foreground hover:text-foreground justify-start px-0" 
+                        disabled
+                      >
+                        <Bell className="h-4 w-4" />
                         Notify Me
                       </Button>
                     </CardContent>
@@ -197,7 +172,11 @@ export default function UpcomingModules() {
             <Search className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">No modules found</h3>
             <p className="text-muted-foreground">Try adjusting your search or filter.</p>
-            <Button variant="outline" onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }} className="mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }} 
+              className="mt-4"
+            >
               Clear Filters
             </Button>
           </div>
