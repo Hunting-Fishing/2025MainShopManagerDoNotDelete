@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle, Users, Zap, X, Check, Quote, Shield, Star } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, Zap, X, Check, Shield, Eye } from 'lucide-react';
 import { LANDING_MODULES } from '@/config/landingModules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,24 +11,12 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { motion } from 'framer-motion';
-
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
-};
-
-const staggerContainer = {
-  animate: {
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
+import { WorkflowPreviewModal } from '@/components/landing/WorkflowPreviewModal';
 
 export default function ModuleLearnMore() {
   const { slug } = useParams();
   const module = LANDING_MODULES.find((item) => item.slug === slug);
+  const [previewStep, setPreviewStep] = useState<{ step: number; title: string } | null>(null);
 
   if (!module) {
     return (
@@ -117,7 +105,7 @@ export default function ModuleLearnMore() {
               )}
             </div>
 
-            {/* Stats Banner */}
+            {/* Capability Highlights (not fake stats) */}
             {module.stats && module.stats.length > 0 && (
               <motion.div 
                 className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6"
@@ -127,7 +115,7 @@ export default function ModuleLearnMore() {
               >
                 {module.stats.map((stat) => (
                   <div key={stat.label} className="text-center p-6 rounded-xl bg-card border">
-                    <p className="text-3xl md:text-4xl font-bold text-primary">{stat.value}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-primary">{stat.value}</p>
                     <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
                   </div>
                 ))}
@@ -182,7 +170,7 @@ export default function ModuleLearnMore() {
                     <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                       <X className="h-5 w-5 text-red-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-red-600">Without ShopCore</h3>
+                    <h3 className="text-xl font-bold text-red-600">The Old Way</h3>
                   </div>
                   {module.comparisonPoints.map((point, idx) => (
                     <motion.div
@@ -226,7 +214,7 @@ export default function ModuleLearnMore() {
         </section>
       )}
 
-      {/* How It Works - Workflow Steps */}
+      {/* How It Works - Workflow Steps (CLICKABLE) */}
       {module.workflowSteps && module.workflowSteps.length > 0 && (
         <section className="py-20">
           <div className="container mx-auto px-6">
@@ -234,7 +222,7 @@ export default function ModuleLearnMore() {
               <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  From customer check-in to final payment, every step is streamlined for maximum efficiency.
+                  From customer check-in to final payment, every step is streamlined. <span className="text-primary font-medium">Click any step to see it in action.</span>
                 </p>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -243,13 +231,14 @@ export default function ModuleLearnMore() {
                   return (
                     <motion.div
                       key={step.step}
-                      className="relative"
+                      className="relative cursor-pointer group"
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ delay: step.step * 0.1 }}
                       viewport={{ once: true }}
+                      onClick={() => setPreviewStep({ step: step.step, title: step.title })}
                     >
-                      <Card className="h-full hover:shadow-lg transition-shadow">
+                      <Card className="h-full hover:shadow-xl hover:border-primary/50 transition-all group-hover:scale-[1.02]">
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-4 mb-4">
                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${module.color}`}>
@@ -263,6 +252,10 @@ export default function ModuleLearnMore() {
                           <p className="text-sm text-muted-foreground leading-relaxed">
                             {step.description}
                           </p>
+                          <div className="mt-4 flex items-center gap-2 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Eye className="h-4 w-4" />
+                            <span>Click to preview</span>
+                          </div>
                         </CardContent>
                       </Card>
                     </motion.div>
@@ -272,6 +265,16 @@ export default function ModuleLearnMore() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* Workflow Preview Modal */}
+      {previewStep && (
+        <WorkflowPreviewModal
+          isOpen={!!previewStep}
+          onClose={() => setPreviewStep(null)}
+          stepNumber={previewStep.step}
+          stepTitle={previewStep.title}
+        />
       )}
 
       {/* Feature Highlights */}
@@ -312,15 +315,15 @@ export default function ModuleLearnMore() {
         </section>
       )}
 
-      {/* Key Benefits with Stats */}
+      {/* Key Benefits */}
       {module.benefits && module.benefits.length > 0 && (
         <section className="py-20">
           <div className="container mx-auto px-6">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">Real Results for Real Businesses</h2>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Shops Choose ShopCore</h2>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  See the measurable impact our customers experience after switching to ShopCore.
+                  Purpose-built tools that help you work smarter, not harder.
                 </p>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -337,7 +340,7 @@ export default function ModuleLearnMore() {
                           <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${module.color} mx-auto mb-4`}>
                             <BenefitIcon className="h-8 w-8 text-white" />
                           </div>
-                          <p className="text-2xl font-bold text-primary mb-2">{benefit.stat}</p>
+                          <p className="text-sm font-semibold text-primary mb-2">{benefit.stat}</p>
                           <h3 className="font-bold text-lg mb-2">{benefit.title}</h3>
                           <p className="text-sm text-muted-foreground leading-relaxed">
                             {benefit.description}
@@ -429,39 +432,9 @@ export default function ModuleLearnMore() {
         </section>
       )}
 
-      {/* Testimonial */}
-      {module.testimonial && (
-        <section className="py-20 bg-primary/5">
-          <div className="container mx-auto px-6">
-            <div className="max-w-4xl mx-auto text-center">
-              <Quote className="h-16 w-16 text-primary/30 mx-auto mb-6" />
-              <blockquote className="text-2xl md:text-3xl font-medium text-foreground leading-relaxed mb-8">
-                "{module.testimonial.quote}"
-              </blockquote>
-              <div className="flex items-center justify-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-primary">
-                    {module.testimonial.author.charAt(0)}
-                  </span>
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-lg">{module.testimonial.author}</p>
-                  <p className="text-muted-foreground">{module.testimonial.role}, {module.testimonial.company}</p>
-                </div>
-              </div>
-              <div className="flex justify-center gap-1 mt-6">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="h-6 w-6 text-yellow-500 fill-yellow-500" />
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Pricing Tiers */}
       {module.pricingTiers && module.pricingTiers.length > 0 && (
-        <section className="py-20">
+        <section className="py-20 bg-muted/30">
           <div className="container mx-auto px-6">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
@@ -519,7 +492,7 @@ export default function ModuleLearnMore() {
 
       {/* Trust & Security Badges */}
       {module.trustBadges && module.trustBadges.length > 0 && (
-        <section className="py-16 bg-muted/30">
+        <section className="py-16">
           <div className="container mx-auto px-6">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-10">
@@ -548,7 +521,7 @@ export default function ModuleLearnMore() {
 
       {/* Integrations */}
       {module.integrations && module.integrations.length > 0 && (
-        <section className="py-16">
+        <section className="py-16 bg-muted/30">
           <div className="container mx-auto px-6">
             <div className="max-w-6xl mx-auto">
               <h2 className="text-2xl font-bold mb-6">Integrations & Compatibility</h2>
@@ -569,7 +542,7 @@ export default function ModuleLearnMore() {
 
       {/* FAQs */}
       {module.faqs && module.faqs.length > 0 && (
-        <section className="py-20 bg-muted/30">
+        <section className="py-20">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl font-bold mb-10 text-center">Frequently Asked Questions</h2>
@@ -599,10 +572,10 @@ export default function ModuleLearnMore() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-6">
-              Ready to transform your {module.name.toLowerCase()}?
+              Ready to streamline your {module.name.toLowerCase()}?
             </h2>
             <p className="text-primary-foreground/90 max-w-2xl mx-auto mb-10 text-xl">
-              Join thousands of businesses who have already made the switch. Start your free trial today—no credit card required.
+              Start your free trial today—no credit card required. See for yourself why shops are making the switch.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" variant="secondary" className="text-lg px-10">
@@ -620,11 +593,6 @@ export default function ModuleLearnMore() {
                 <Link to="/#modules">Explore Other Modules</Link>
               </Button>
             </div>
-            {module.stats && module.stats.length > 0 && (
-              <p className="mt-8 text-primary-foreground/70">
-                Trusted by {module.stats[0].value} businesses worldwide
-              </p>
-            )}
           </motion.div>
         </div>
       </section>
