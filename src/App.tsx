@@ -45,6 +45,7 @@ import RepairPlans from '@/pages/RepairPlans';
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
 import About from '@/pages/About';
+import Pricing from '@/pages/Pricing';
 import { ArticleViewer } from '@/components/help/ArticleViewer';
 import { LearningPathDetail } from '@/components/help/LearningPathDetail';
 import { ServiceManagementPage } from '@/pages/developer/ServiceManagementPage';
@@ -276,6 +277,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/about" element={<About />} />
+        <Route path="/pricing" element={<Pricing />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/setup-brian" element={<SetupBrianAuth />} />
