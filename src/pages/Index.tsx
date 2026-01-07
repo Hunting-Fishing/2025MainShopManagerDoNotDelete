@@ -12,60 +12,90 @@ import { LANDING_COMING_SOON_CATEGORIES, LANDING_MODULES } from '@/config/landin
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Keyword associations for smart search
+  // Keyword associations for smart search (includes compound words)
   const keywordAssociations: Record<string, string[]> = {
-    eye: ['lash', 'lashes', 'brow', 'brows', 'optometry', 'vision', 'optical', 'eyewear', 'glasses', 'contacts'],
-    lash: ['eye', 'esthetician', 'beauty', 'extensions'],
-    brow: ['eye', 'esthetician', 'beauty', 'wax', 'threading'],
-    hair: ['salon', 'barber', 'stylist', 'cut', 'color', 'beauty'],
-    skin: ['facial', 'esthetician', 'spa', 'derma', 'beauty', 'wax'],
+    eye: ['lash', 'lashes', 'eyelash', 'eyelashes', 'brow', 'brows', 'eyebrow', 'eyebrows', 'optometry', 'vision', 'optical', 'eyewear', 'glasses', 'contacts', 'esthetician'],
+    lash: ['eye', 'eyelash', 'esthetician', 'beauty', 'extensions'],
+    brow: ['eye', 'eyebrow', 'esthetician', 'beauty', 'wax', 'threading'],
+    hair: ['salon', 'barber', 'stylist', 'cut', 'color', 'beauty', 'haircut'],
+    skin: ['facial', 'esthetician', 'spa', 'derma', 'beauty', 'wax', 'skincare'],
     pet: ['dog', 'cat', 'vet', 'veterinary', 'grooming', 'animal', 'boarding', 'kennel'],
-    dog: ['pet', 'grooming', 'walking', 'training', 'boarding', 'kennel'],
-    cat: ['pet', 'grooming', 'boarding', 'sitting'],
-    car: ['auto', 'vehicle', 'repair', 'mechanic', 'tire', 'oil', 'detailing', 'wash'],
+    dog: ['pet', 'grooming', 'walking', 'training', 'boarding', 'kennel', 'canine'],
+    cat: ['pet', 'grooming', 'boarding', 'sitting', 'feline'],
+    car: ['auto', 'vehicle', 'repair', 'mechanic', 'tire', 'oil', 'detailing', 'wash', 'automotive'],
     auto: ['car', 'vehicle', 'repair', 'mechanic', 'automotive'],
     food: ['restaurant', 'catering', 'bakery', 'cafe', 'kitchen', 'chef', 'meal'],
-    clean: ['cleaning', 'maid', 'janitorial', 'housekeeping', 'pressure', 'wash'],
-    health: ['medical', 'therapy', 'wellness', 'clinic', 'doctor', 'nurse', 'care'],
-    beauty: ['salon', 'spa', 'nail', 'hair', 'lash', 'brow', 'esthetician', 'makeup'],
+    clean: ['cleaning', 'maid', 'janitorial', 'housekeeping', 'pressure', 'wash', 'power'],
+    health: ['medical', 'therapy', 'wellness', 'clinic', 'doctor', 'nurse', 'care', 'healthcare'],
+    beauty: ['salon', 'spa', 'nail', 'hair', 'lash', 'brow', 'esthetician', 'makeup', 'cosmetic'],
     home: ['house', 'residential', 'property', 'renovation', 'repair', 'maintenance'],
-    tech: ['computer', 'phone', 'IT', 'repair', 'software', 'electronic'],
-    fitness: ['gym', 'training', 'workout', 'personal', 'yoga', 'pilates'],
-    wedding: ['bridal', 'event', 'photography', 'catering', 'florist', 'venue'],
-    lawn: ['landscape', 'garden', 'mowing', 'yard', 'grass', 'tree'],
+    tech: ['computer', 'phone', 'IT', 'repair', 'software', 'electronic', 'technology'],
+    fitness: ['gym', 'training', 'workout', 'personal', 'yoga', 'pilates', 'exercise'],
+    wedding: ['bridal', 'event', 'photography', 'catering', 'florist', 'venue', 'marriage'],
+    lawn: ['landscape', 'garden', 'mowing', 'yard', 'grass', 'tree', 'landscaping'],
     pool: ['swimming', 'spa', 'hot tub', 'maintenance', 'cleaning'],
+    nail: ['manicure', 'pedicure', 'salon', 'beauty', 'polish'],
+    massage: ['therapy', 'spa', 'wellness', 'relaxation', 'bodywork'],
+    tattoo: ['piercing', 'ink', 'body art', 'studio'],
+    photo: ['photography', 'photographer', 'portrait', 'wedding', 'event'],
   };
 
-  // Get expanded search terms including associations
+  // Get expanded search terms including associations (handles partial matches)
   const getExpandedTerms = (query: string): string[] => {
     const lowerQuery = query.toLowerCase().trim();
     const terms = [lowerQuery];
     
-    // Add associated keywords
+    // Add associated keywords - check partial matches both ways
     Object.entries(keywordAssociations).forEach(([key, associations]) => {
-      if (lowerQuery.includes(key)) {
-        terms.push(...associations);
+      // Check if query contains key OR key contains query (partial match)
+      if (lowerQuery.includes(key) || key.includes(lowerQuery)) {
+        terms.push(key, ...associations);
       }
-      // Also check if query matches any association
-      if (associations.some(assoc => lowerQuery.includes(assoc))) {
-        terms.push(key);
-      }
+      // Also check if query matches any association (partial both ways)
+      associations.forEach(assoc => {
+        if (lowerQuery.includes(assoc) || assoc.includes(lowerQuery)) {
+          terms.push(key, ...associations);
+        }
+      });
     });
     
     return [...new Set(terms)];
   };
 
-  // Smart search matching with relevance scoring
+  // Smart search matching with relevance scoring and partial word support
   const matchScore = (text: string, query: string): number => {
     const lowerText = text.toLowerCase();
-    const lowerQuery = query.toLowerCase();
+    const lowerQuery = query.toLowerCase().trim();
+    
+    if (!lowerQuery) return 0;
+    
+    // Exact match
     if (lowerText === lowerQuery) return 100;
-    if (lowerText.startsWith(lowerQuery)) return 80;
-    if (lowerText.includes(lowerQuery)) return 60;
-    // Fuzzy match - check if all words in query appear
+    
+    // Word boundary match (query is a complete word in text)
+    const wordBoundaryRegex = new RegExp(`\\b${lowerQuery}\\b`);
+    if (wordBoundaryRegex.test(lowerText)) return 90;
+    
+    // Text starts with query
+    if (lowerText.startsWith(lowerQuery)) return 85;
+    
+    // Query found within text (substring)
+    if (lowerText.includes(lowerQuery)) return 70;
+    
+    // Any word in text starts with query (partial word match)
+    const words = lowerText.split(/[\s,.\-\/]+/);
+    if (words.some(word => word.startsWith(lowerQuery))) return 65;
+    
+    // Query contains a word from the text (reverse partial)
+    if (words.some(word => word.length >= 3 && lowerQuery.includes(word))) return 50;
+    
+    // Fuzzy match - check if all query words appear somewhere
     const queryWords = lowerQuery.split(/\s+/);
-    const allWordsMatch = queryWords.every(word => lowerText.includes(word));
+    const allWordsMatch = queryWords.every(qWord => 
+      words.some(tWord => tWord.includes(qWord) || qWord.includes(tWord))
+    );
     if (allWordsMatch) return 40;
+    
     return 0;
   };
 
@@ -78,11 +108,12 @@ export default function Index() {
     const expandedTerms = getExpandedTerms(query);
     let bestScore = 0;
     for (const term of expandedTerms) {
+      if (term === query.toLowerCase().trim()) continue; // Skip original query
       const score = matchScore(text, term);
       if (score > bestScore) bestScore = score;
     }
     // Reduce score for association matches (less relevant than direct)
-    return bestScore * 0.7;
+    return bestScore * 0.6;
   };
 
   // Filter available modules
