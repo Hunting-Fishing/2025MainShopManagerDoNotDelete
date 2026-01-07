@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useModuleAccess } from '@/hooks/useModuleSubscriptions';
@@ -9,11 +9,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, Sparkles } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { LayoutGrid, Sparkles, Search, X } from 'lucide-react';
 
 export default function ModuleHub() {
   const { user } = useAuthUser();
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
   const { 
     hasModuleAccess, 
     trialActive, 
@@ -24,9 +26,66 @@ export default function ModuleHub() {
 
   const allModules = getAllModuleRoutes();
   
-  // Separate modules by access
+  // Filter function for modules
+  const filterModules = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return { accessible: [], locked: [], upcoming: [], hasResults: false, isSearching: false };
+    
+    const matchScore = (name: string, description: string) => {
+      const nameLower = name.toLowerCase();
+      const descLower = description.toLowerCase();
+      
+      // Exact match in name gets highest score
+      if (nameLower === query) return 100;
+      // Starts with query
+      if (nameLower.startsWith(query)) return 80;
+      // Contains query in name
+      if (nameLower.includes(query)) return 60;
+      // Contains query in description
+      if (descLower.includes(query)) return 40;
+      // Partial word match
+      const words = query.split(' ');
+      const matchedWords = words.filter(w => nameLower.includes(w) || descLower.includes(w));
+      if (matchedWords.length > 0) return 20 * (matchedWords.length / words.length);
+      
+      return 0;
+    };
+
+    const accessibleModules = allModules
+      .filter(m => hasModuleAccess(m.slug))
+      .map(m => ({ ...m, score: matchScore(m.name, m.description) }))
+      .filter(m => m.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    const lockedModules = allModules
+      .filter(m => !hasModuleAccess(m.slug))
+      .map(m => ({ ...m, score: matchScore(m.name, m.description) }))
+      .filter(m => m.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    const upcomingModules = UPCOMING_MODULES
+      .map(m => ({ ...m, score: matchScore(m.name, m.description) }))
+      .filter(m => m.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    return {
+      accessible: accessibleModules,
+      locked: lockedModules,
+      upcoming: upcomingModules,
+      hasResults: accessibleModules.length > 0 || lockedModules.length > 0 || upcomingModules.length > 0,
+      isSearching: true
+    };
+  }, [searchQuery, allModules, hasModuleAccess]);
+
+  // Default modules when not searching
   const accessibleModules = allModules.filter(m => hasModuleAccess(m.slug));
   const lockedModules = allModules.filter(m => !hasModuleAccess(m.slug));
+
+  // Determine what to display
+  const isSearching = searchQuery.trim().length > 0;
+  const displayAccessible = isSearching ? filterModules.accessible : accessibleModules;
+  const displayLocked = isSearching ? filterModules.locked : lockedModules;
+  const displayUpcoming = isSearching ? filterModules.upcoming : UPCOMING_MODULES;
 
   if (isLoading) {
     return (
@@ -52,18 +111,62 @@ export default function ModuleHub() {
           trialEndsAt={trialEndsAt}
         />
 
+        {/* Search Bar */}
+        <div className="mb-8">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search modules... (e.g., auto repair, boat, fleet)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-10 h-11"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {isSearching && (
+            <p className="text-sm text-muted-foreground mt-2">
+              {filterModules.hasResults 
+                ? `Found ${displayAccessible.length + displayLocked.length + displayUpcoming.length} matching modules`
+                : 'No modules found. Try a different search term.'
+              }
+            </p>
+          )}
+        </div>
+
+        {/* No Results State */}
+        {isSearching && !filterModules.hasResults && (
+          <div className="text-center py-16">
+            <Search className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No modules found</h3>
+            <p className="text-muted-foreground mb-4">
+              Try searching with different keywords like "repair", "fleet", or "boat"
+            </p>
+            <Button variant="outline" onClick={() => setSearchQuery('')}>
+              Clear Search
+            </Button>
+          </div>
+        )}
+
         {/* Your Modules Section */}
-        {accessibleModules.length > 0 && (
+        {displayAccessible.length > 0 && (
           <section className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <LayoutGrid className="w-5 h-5 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">Your Modules</h2>
               <span className="text-sm text-muted-foreground">
-                ({accessibleModules.length} active)
+                ({displayAccessible.length} {isSearching ? 'found' : 'active'})
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {accessibleModules.map(module => (
+              {displayAccessible.map(module => (
                 <ModuleCard
                   key={module.slug}
                   module={module}
@@ -76,16 +179,16 @@ export default function ModuleHub() {
         )}
 
         {/* Available Modules Section */}
-        {lockedModules.length > 0 && (
+        {displayLocked.length > 0 && (
           <section className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <h2 className="text-xl font-semibold text-foreground">Available Modules</h2>
               <span className="text-sm text-muted-foreground">
-                ({lockedModules.length} available)
+                ({displayLocked.length} {isSearching ? 'found' : 'available'})
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lockedModules.map(module => (
+              {displayLocked.map(module => (
                 <ModuleCard
                   key={module.slug}
                   module={module}
@@ -99,20 +202,24 @@ export default function ModuleHub() {
         )}
 
         {/* Upcoming Modules Section */}
-        {UPCOMING_MODULES.length > 0 && (
+        {displayUpcoming.length > 0 && (
           <section className="mb-10">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-500" />
                 <h2 className="text-xl font-semibold text-foreground">Upcoming Modules</h2>
-                <Badge variant="secondary" className="text-xs">{UPCOMING_MODULES.length} Coming Soon</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {displayUpcoming.length} {isSearching ? 'Found' : 'Coming Soon'}
+                </Badge>
               </div>
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/upcoming-modules">View All</Link>
-              </Button>
+              {!isSearching && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/upcoming-modules">View All</Link>
+                </Button>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {UPCOMING_MODULES.map(module => {
+              {displayUpcoming.map(module => {
                 const Icon = module.icon;
                 return (
                   <Card key={module.slug} className="relative overflow-hidden border-dashed opacity-80 hover:opacity-100 transition-opacity">
@@ -139,8 +246,8 @@ export default function ModuleHub() {
           </section>
         )}
 
-        {/* Empty State */}
-        {accessibleModules.length === 0 && lockedModules.length === 0 && (
+        {/* Empty State - only show when not searching */}
+        {!isSearching && accessibleModules.length === 0 && lockedModules.length === 0 && (
           <div className="text-center py-16">
             <LayoutGrid className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">No modules available</h3>
