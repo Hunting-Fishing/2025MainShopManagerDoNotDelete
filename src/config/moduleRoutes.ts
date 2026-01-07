@@ -46,7 +46,14 @@ import {
   Container,
   PackageCheck,
   UserCheck,
-  FolderOpen
+  FolderOpen,
+  Tractor,
+  Building,
+  Scissors,
+  Home,
+  Leaf,
+  Zap,
+  Paintbrush
 } from 'lucide-react';
 
 export interface ModuleSectionItem {
@@ -68,6 +75,82 @@ export interface ModuleRouteConfig {
   gradientTo: string;
   sections?: ModuleSectionItem[];
 }
+
+export interface UpcomingModuleConfig {
+  slug: string;
+  name: string;
+  description: string;
+  icon: LucideIcon;
+  gradientFrom: string;
+  gradientTo: string;
+  expectedDate?: string;
+}
+
+export const UPCOMING_MODULES: UpcomingModuleConfig[] = [
+  {
+    slug: 'hvac',
+    name: 'HVAC Services',
+    description: 'Heating, ventilation, and air conditioning service management',
+    icon: Zap,
+    gradientFrom: 'from-red-500',
+    gradientTo: 'to-orange-500',
+    expectedDate: 'Q2 2026',
+  },
+  {
+    slug: 'landscaping',
+    name: 'Landscaping',
+    description: 'Lawn care and landscaping business management',
+    icon: Leaf,
+    gradientFrom: 'from-green-500',
+    gradientTo: 'to-emerald-600',
+    expectedDate: 'Q2 2026',
+  },
+  {
+    slug: 'agriculture',
+    name: 'Agriculture & Farm',
+    description: 'Farm equipment service and agricultural operations',
+    icon: Tractor,
+    gradientFrom: 'from-yellow-500',
+    gradientTo: 'to-amber-600',
+    expectedDate: 'Q3 2026',
+  },
+  {
+    slug: 'construction',
+    name: 'Construction',
+    description: 'Construction equipment and project management',
+    icon: Building,
+    gradientFrom: 'from-slate-500',
+    gradientTo: 'to-slate-700',
+    expectedDate: 'Q3 2026',
+  },
+  {
+    slug: 'salon',
+    name: 'Salon & Spa',
+    description: 'Beauty salon and spa appointment management',
+    icon: Scissors,
+    gradientFrom: 'from-pink-500',
+    gradientTo: 'to-rose-600',
+    expectedDate: 'Q4 2026',
+  },
+  {
+    slug: 'home_services',
+    name: 'Home Services',
+    description: 'General home repair and handyman services',
+    icon: Home,
+    gradientFrom: 'from-indigo-500',
+    gradientTo: 'to-purple-600',
+    expectedDate: 'Q4 2026',
+  },
+  {
+    slug: 'painting',
+    name: 'Painting Services',
+    description: 'Interior and exterior painting business management',
+    icon: Paintbrush,
+    gradientFrom: 'from-violet-500',
+    gradientTo: 'to-purple-600',
+    expectedDate: '2027',
+  },
+];
 
 export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
   automotive: {

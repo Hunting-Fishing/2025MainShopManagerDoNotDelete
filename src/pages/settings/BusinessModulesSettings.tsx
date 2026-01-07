@@ -9,6 +9,7 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MODULE_CONFIGS, TIER_CONFIGS, TierSlug, calculateModulePrice, getPaidTiers } from '@/config/moduleSubscriptions';
+import { UPCOMING_MODULES } from '@/config/moduleRoutes';
 import { format, formatDistanceToNow } from 'date-fns';
 import { 
   Car, Target, Droplets, Anchor, Wind, Zap, Pipette,
@@ -301,7 +302,56 @@ export default function BusinessModulesSettings() {
         </div>
       </section>
 
-      {/* Tier Selection Dialog */}
+      {/* Upcoming Modules Section */}
+      {UPCOMING_MODULES.length > 0 && (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              Upcoming Modules
+              <Badge variant="secondary">Coming Soon</Badge>
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              New industry modules we're working on. Stay tuned!
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {UPCOMING_MODULES.map(module => {
+              const Icon = module.icon;
+              return (
+                <Card 
+                  key={module.slug} 
+                  className="border-dashed opacity-75 hover:opacity-100 transition-opacity"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo}`}>
+                          <Icon className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-base">{module.name}</CardTitle>
+                          {module.expectedDate && (
+                            <Badge variant="outline" className="text-xs mt-1 bg-amber-500/10 text-amber-600 border-amber-500/30">
+                              {module.expectedDate}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <CardDescription className="text-sm">
+                      {module.description}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       <Dialog open={!!selectedModule} onOpenChange={() => setSelectedModule(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

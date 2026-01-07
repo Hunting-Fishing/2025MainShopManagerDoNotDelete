@@ -2,11 +2,13 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useModuleAccess } from '@/hooks/useModuleSubscriptions';
-import { getAllModuleRoutes } from '@/config/moduleRoutes';
+import { getAllModuleRoutes, UPCOMING_MODULES } from '@/config/moduleRoutes';
 import { ModuleCard } from '@/components/module-hub/ModuleCard';
 import { ModuleHubHeader } from '@/components/module-hub/ModuleHubHeader';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LayoutGrid } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { LayoutGrid, Sparkles } from 'lucide-react';
 
 export default function ModuleHub() {
   const { user } = useAuthUser();
@@ -74,7 +76,7 @@ export default function ModuleHub() {
 
         {/* Available Modules Section */}
         {lockedModules.length > 0 && (
-          <section>
+          <section className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <h2 className="text-xl font-semibold text-foreground">Available Modules</h2>
               <span className="text-sm text-muted-foreground">
@@ -91,6 +93,42 @@ export default function ModuleHub() {
                   onViewPlans={() => navigate(`/modules/${module.slug}`)}
                 />
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Upcoming Modules Section */}
+        {UPCOMING_MODULES.length > 0 && (
+          <section className="mb-10">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              <h2 className="text-xl font-semibold text-foreground">Upcoming Modules</h2>
+              <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {UPCOMING_MODULES.map(module => {
+                const Icon = module.icon;
+                return (
+                  <Card key={module.slug} className="relative overflow-hidden border-dashed opacity-80 hover:opacity-100 transition-opacity">
+                    <div className="absolute top-3 right-3">
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                        {module.expectedDate || 'Coming Soon'}
+                      </Badge>
+                    </div>
+                    <CardHeader className="pb-3">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} mb-3`}>
+                        <Icon className="h-6 w-6 text-white" />
+                      </div>
+                      <CardTitle className="text-lg">{module.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-sm">
+                        {module.description}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </section>
         )}
