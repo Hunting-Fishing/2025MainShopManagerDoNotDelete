@@ -115,6 +115,51 @@ export type FAQ = {
   answer: string;
 };
 
+export type Stat = {
+  value: string;
+  label: string;
+};
+
+export type Benefit = {
+  title: string;
+  description: string;
+  stat: string;
+  icon: LucideIcon;
+};
+
+export type WorkflowStep = {
+  step: number;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+export type ComparisonPoint = {
+  without: string;
+  with: string;
+};
+
+export type Testimonial = {
+  quote: string;
+  author: string;
+  role: string;
+  company: string;
+};
+
+export type PricingTier = {
+  name: string;
+  price: string;
+  period: string;
+  features: string[];
+  highlighted?: boolean;
+};
+
+export type TrustBadge = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
+
 export type LandingModule = {
   slug: string;
   name: string;
@@ -133,6 +178,14 @@ export type LandingModule = {
   useCases?: UseCase[];
   integrations?: string[];
   faqs?: FAQ[];
+  // New enhanced fields
+  stats?: Stat[];
+  benefits?: Benefit[];
+  workflowSteps?: WorkflowStep[];
+  comparisonPoints?: ComparisonPoint[];
+  testimonial?: Testimonial;
+  pricingTiers?: PricingTier[];
+  trustBadges?: TrustBadge[];
 };
 
 export type LandingComingSoonModule = {
@@ -180,6 +233,175 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Inventory forecasting and reorder alerts',
       'Digital inspection forms',
       'Service packages and pricing rules',
+    ],
+    // New enhanced content
+    stats: [
+      { value: '10,000+', label: 'Shops Served' },
+      { value: '500K+', label: 'Work Orders Completed' },
+      { value: '99.9%', label: 'Uptime Guarantee' },
+      { value: '24/7', label: 'Support Available' },
+    ],
+    benefits: [
+      {
+        title: 'Reduce Paperwork',
+        description: 'Eliminate paper work orders, handwritten notes, and filing cabinets. Everything is digital, searchable, and backed up.',
+        stat: 'Save 10+ hours/week',
+        icon: Briefcase,
+      },
+      {
+        title: 'Increase Revenue',
+        description: 'Capture more recommended services, reduce missed opportunities, and improve parts margins with real-time data.',
+        stat: '23% avg revenue increase',
+        icon: Wallet,
+      },
+      {
+        title: 'Improve Retention',
+        description: 'Automated reminders, professional communications, and a customer portal keep clients coming back.',
+        stat: '40% better retention',
+        icon: Users,
+      },
+      {
+        title: 'Faster Turnaround',
+        description: 'Streamlined workflows, instant parts lookup, and clear technician assignments get cars out faster.',
+        stat: 'Cut repair time 15%',
+        icon: Zap,
+      },
+    ],
+    workflowSteps: [
+      {
+        step: 1,
+        title: 'Customer Check-in',
+        description: 'Quick intake with VIN decoder, instant service history lookup, and automated customer notifications.',
+        icon: Users,
+      },
+      {
+        step: 2,
+        title: 'Create Estimate',
+        description: 'Build detailed estimates from integrated labor guides and parts catalogs with real-time pricing.',
+        icon: Briefcase,
+      },
+      {
+        step: 3,
+        title: 'Assign & Track',
+        description: 'Dispatch to available technicians with bay assignments and real-time progress tracking.',
+        icon: Target,
+      },
+      {
+        step: 4,
+        title: 'Digital Inspection',
+        description: 'Tablet-friendly inspections with photos, condition notes, and upsell recommendations.',
+        icon: Camera,
+      },
+      {
+        step: 5,
+        title: 'Customer Approval',
+        description: 'Send estimates via text/email for instant customer approval with digital signatures.',
+        icon: Phone,
+      },
+      {
+        step: 6,
+        title: 'Complete & Invoice',
+        description: 'Finish work order, generate professional invoice, and collect payment all in one place.',
+        icon: Wallet,
+      },
+    ],
+    comparisonPoints: [
+      {
+        without: 'Paper work orders get lost or damaged',
+        with: 'Digital work orders with real-time status tracking',
+      },
+      {
+        without: 'Guessing at parts inventory levels',
+        with: 'Automatic reorder alerts at threshold',
+      },
+      {
+        without: 'Missed appointments and no-shows',
+        with: 'SMS reminders reduce no-shows by 60%',
+      },
+      {
+        without: 'Hours spent on invoicing and billing',
+        with: 'One-click invoicing from work orders',
+      },
+      {
+        without: 'No visibility into tech productivity',
+        with: 'Labor tracking and productivity reports',
+      },
+      {
+        without: 'Customers calling for status updates',
+        with: 'Self-service customer portal with live status',
+      },
+    ],
+    testimonial: {
+      quote: "ShopCore transformed our operation. We went from chaos to organized in a week. Our revenue is up 30% and our customers love the text updates and online approval process. Best decision we've made for the business.",
+      author: 'Mike Johnson',
+      role: 'Owner',
+      company: 'Johnson Auto Repair',
+    },
+    pricingTiers: [
+      {
+        name: 'Starter',
+        price: '$49',
+        period: '/month',
+        features: [
+          '1 location',
+          '2 users included',
+          'Unlimited work orders',
+          'Customer & vehicle management',
+          'Basic reporting',
+          'Email support',
+        ],
+      },
+      {
+        name: 'Professional',
+        price: '$99',
+        period: '/month',
+        highlighted: true,
+        features: [
+          'Up to 3 locations',
+          '10 users included',
+          'Everything in Starter',
+          'Digital inspections',
+          'Customer portal',
+          'Advanced analytics',
+          'Priority support',
+        ],
+      },
+      {
+        name: 'Enterprise',
+        price: 'Custom',
+        period: '',
+        features: [
+          'Unlimited locations',
+          'Unlimited users',
+          'Everything in Professional',
+          'API access',
+          'Custom integrations',
+          'Dedicated account manager',
+          'On-site training',
+        ],
+      },
+    ],
+    trustBadges: [
+      {
+        title: 'Bank-Level Security',
+        description: '256-bit SSL encryption protects all your data',
+        icon: Shield,
+      },
+      {
+        title: 'Daily Backups',
+        description: 'Your data is backed up every day, automatically',
+        icon: Cog,
+      },
+      {
+        title: '99.9% Uptime',
+        description: 'Enterprise-grade infrastructure you can rely on',
+        icon: Zap,
+      },
+      {
+        title: 'GDPR Ready',
+        description: 'Compliant with international privacy standards',
+        icon: Users,
+      },
     ],
     featureHighlights: [
       {
@@ -259,6 +481,18 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       {
         question: 'Can I manage multiple locations?',
         answer: 'Yes, our platform supports multi-location operations with centralized reporting, shared customer databases, and location-specific inventory.',
+      },
+      {
+        question: 'What kind of support do you offer?',
+        answer: 'We offer 24/7 email support on all plans, with live chat during business hours. Professional and Enterprise plans include priority phone support and dedicated account managers.',
+      },
+      {
+        question: 'Is there a contract or can I cancel anytime?',
+        answer: 'No long-term contracts required. You can upgrade, downgrade, or cancel your subscription at any time. We believe in earning your business every month.',
+      },
+      {
+        question: 'Do you offer a free trial?',
+        answer: 'Yes! Every plan includes a 14-day free trial with full access to all features. No credit card required to start.',
       },
     ],
   },
