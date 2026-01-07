@@ -1243,7 +1243,7 @@ function App() {
         />
       </Routes>
       <Toaster />
-      <AuthDebugPanel />
+      {/* AuthDebugPanel removed - developer only tool */}
       {/* Global UX enhancements */}
       <GlobalUX />
     </>
