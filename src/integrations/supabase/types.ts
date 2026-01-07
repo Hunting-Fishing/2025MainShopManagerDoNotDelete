@@ -708,6 +708,92 @@ export type Database = {
         }
         Relationships: []
       }
+      api_addon_packs: {
+        Row: {
+          cost_cents: number
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          pack_name: string
+          pack_type: string
+          price_cents: number
+          quantity: number
+          stripe_price_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cost_cents: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          pack_name: string
+          pack_type: string
+          price_cents: number
+          quantity: number
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cost_cents?: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          pack_name?: string
+          pack_type?: string
+          price_cents?: number
+          quantity?: number
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      api_addon_purchases: {
+        Row: {
+          addon_pack_id: string
+          billing_period_end: string
+          billing_period_start: string
+          created_at: string | null
+          id: string
+          purchased_by: string
+          quantity_purchased: number
+          remaining_quantity: number
+          shop_id: string
+          stripe_payment_id: string | null
+        }
+        Insert: {
+          addon_pack_id: string
+          billing_period_end: string
+          billing_period_start: string
+          created_at?: string | null
+          id?: string
+          purchased_by: string
+          quantity_purchased?: number
+          remaining_quantity: number
+          shop_id: string
+          stripe_payment_id?: string | null
+        }
+        Update: {
+          addon_pack_id?: string
+          billing_period_end?: string
+          billing_period_start?: string
+          created_at?: string | null
+          id?: string
+          purchased_by?: string
+          quantity_purchased?: number
+          remaining_quantity?: number
+          shop_id?: string
+          stripe_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_addon_purchases_addon_pack_id_fkey"
+            columns: ["addon_pack_id"]
+            isOneToOne: false
+            referencedRelation: "api_addon_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_endpoints: {
         Row: {
           created_at: string | null
@@ -40644,6 +40730,46 @@ export type Database = {
       }
     }
     Views: {
+      api_usage_by_user_daily: {
+        Row: {
+          api_service: string | null
+          call_count: number | null
+          day: string | null
+          shop_id: string | null
+          total_cost_cents: number | null
+          total_tokens: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_usage_by_user_monthly: {
+        Row: {
+          api_service: string | null
+          call_count: number | null
+          month: string | null
+          shop_id: string | null
+          total_cost_cents: number | null
+          total_tokens: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_referrals_view: {
         Row: {
           converted_at: string | null
@@ -41381,6 +41507,16 @@ export type Database = {
         Args: { p_category: string; p_key: string; p_shop_id: string }
         Returns: Json
       }
+      get_shop_usage_by_user: {
+        Args: { p_end_date?: string; p_shop_id: string; p_start_date?: string }
+        Returns: {
+          api_service: string
+          call_count: number
+          total_cost_cents: number
+          total_tokens: number
+          user_id: string
+        }[]
+      }
       get_tables_with_shop_id: {
         Args: never
         Returns: {
@@ -41413,6 +41549,15 @@ export type Database = {
         | { Args: never; Returns: string }
         | { Args: { user_id: string }; Returns: string }
       get_user_shop_id_secure: { Args: { user_uuid: string }; Returns: string }
+      get_user_usage_current_period: {
+        Args: { p_shop_id: string; p_user_id: string }
+        Returns: {
+          api_service: string
+          call_count: number
+          total_cost_cents: number
+          total_tokens: number
+        }[]
+      }
       get_work_order_inventory_items: {
         Args: { work_order_id: string }
         Returns: {
