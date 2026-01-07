@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -305,18 +306,23 @@ export default function BusinessModulesSettings() {
       {/* Upcoming Modules Section */}
       {UPCOMING_MODULES.length > 0 && (
         <section className="space-y-4">
-          <div>
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-amber-500" />
-              Upcoming Modules
-              <Badge variant="secondary">Coming Soon</Badge>
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              New industry modules we're working on. Stay tuned!
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                Upcoming Modules
+                <Badge variant="secondary">{UPCOMING_MODULES.length} Coming Soon</Badge>
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                New industry modules we're working on. Stay tuned!
+              </p>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/upcoming-modules">View All</Link>
+            </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {UPCOMING_MODULES.map(module => {
+            {UPCOMING_MODULES.slice(0, 6).map(module => {
               const Icon = module.icon;
               return (
                 <Card 
@@ -349,6 +355,15 @@ export default function BusinessModulesSettings() {
               );
             })}
           </div>
+          {UPCOMING_MODULES.length > 6 && (
+            <div className="text-center">
+              <Button variant="ghost" asChild>
+                <Link to="/upcoming-modules">
+                  View all {UPCOMING_MODULES.length} upcoming modules →
+                </Link>
+              </Button>
+            </div>
+          )}
         </section>
       )}
 
