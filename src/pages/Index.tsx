@@ -12,6 +12,49 @@ import { LANDING_COMING_SOON_CATEGORIES, LANDING_MODULES } from '@/config/landin
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Keyword associations for smart search
+  const keywordAssociations: Record<string, string[]> = {
+    eye: ['lash', 'lashes', 'brow', 'brows', 'optometry', 'vision', 'optical', 'eyewear', 'glasses', 'contacts'],
+    lash: ['eye', 'esthetician', 'beauty', 'extensions'],
+    brow: ['eye', 'esthetician', 'beauty', 'wax', 'threading'],
+    hair: ['salon', 'barber', 'stylist', 'cut', 'color', 'beauty'],
+    skin: ['facial', 'esthetician', 'spa', 'derma', 'beauty', 'wax'],
+    pet: ['dog', 'cat', 'vet', 'veterinary', 'grooming', 'animal', 'boarding', 'kennel'],
+    dog: ['pet', 'grooming', 'walking', 'training', 'boarding', 'kennel'],
+    cat: ['pet', 'grooming', 'boarding', 'sitting'],
+    car: ['auto', 'vehicle', 'repair', 'mechanic', 'tire', 'oil', 'detailing', 'wash'],
+    auto: ['car', 'vehicle', 'repair', 'mechanic', 'automotive'],
+    food: ['restaurant', 'catering', 'bakery', 'cafe', 'kitchen', 'chef', 'meal'],
+    clean: ['cleaning', 'maid', 'janitorial', 'housekeeping', 'pressure', 'wash'],
+    health: ['medical', 'therapy', 'wellness', 'clinic', 'doctor', 'nurse', 'care'],
+    beauty: ['salon', 'spa', 'nail', 'hair', 'lash', 'brow', 'esthetician', 'makeup'],
+    home: ['house', 'residential', 'property', 'renovation', 'repair', 'maintenance'],
+    tech: ['computer', 'phone', 'IT', 'repair', 'software', 'electronic'],
+    fitness: ['gym', 'training', 'workout', 'personal', 'yoga', 'pilates'],
+    wedding: ['bridal', 'event', 'photography', 'catering', 'florist', 'venue'],
+    lawn: ['landscape', 'garden', 'mowing', 'yard', 'grass', 'tree'],
+    pool: ['swimming', 'spa', 'hot tub', 'maintenance', 'cleaning'],
+  };
+
+  // Get expanded search terms including associations
+  const getExpandedTerms = (query: string): string[] => {
+    const lowerQuery = query.toLowerCase().trim();
+    const terms = [lowerQuery];
+    
+    // Add associated keywords
+    Object.entries(keywordAssociations).forEach(([key, associations]) => {
+      if (lowerQuery.includes(key)) {
+        terms.push(...associations);
+      }
+      // Also check if query matches any association
+      if (associations.some(assoc => lowerQuery.includes(assoc))) {
+        terms.push(key);
+      }
+    });
+    
+    return [...new Set(terms)];
+  };
+
   // Smart search matching with relevance scoring
   const matchScore = (text: string, query: string): number => {
     const lowerText = text.toLowerCase();
@@ -26,6 +69,22 @@ export default function Index() {
     return 0;
   };
 
+  // Enhanced match with keyword associations
+  const smartMatchScore = (text: string, query: string): number => {
+    const directScore = matchScore(text, query);
+    if (directScore > 0) return directScore;
+    
+    // Check expanded terms
+    const expandedTerms = getExpandedTerms(query);
+    let bestScore = 0;
+    for (const term of expandedTerms) {
+      const score = matchScore(text, term);
+      if (score > bestScore) bestScore = score;
+    }
+    // Reduce score for association matches (less relevant than direct)
+    return bestScore * 0.7;
+  };
+
   // Filter available modules
   const filteredAvailableModules = useMemo(() => {
     const available = LANDING_MODULES.filter((module) => module.available);
@@ -35,8 +94,8 @@ export default function Index() {
       .map(module => ({
         module,
         score: Math.max(
-          matchScore(module.name, searchQuery) * 2,
-          matchScore(module.description, searchQuery)
+          smartMatchScore(module.name, searchQuery) * 2,
+          smartMatchScore(module.description, searchQuery)
         )
       }))
       .filter(item => item.score > 0)
@@ -53,9 +112,9 @@ export default function Index() {
         .map(module => ({
           module,
           score: Math.max(
-            matchScore(module.name, searchQuery) * 2,
-            matchScore(module.description, searchQuery),
-            matchScore(category.category, searchQuery) * 0.5
+            smartMatchScore(module.name, searchQuery) * 2,
+            smartMatchScore(module.description, searchQuery),
+            smartMatchScore(category.category, searchQuery) * 0.5
           )
         }))
         .filter(item => item.score > 0)
