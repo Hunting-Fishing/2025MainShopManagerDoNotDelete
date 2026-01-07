@@ -241,6 +241,12 @@ import GunsmithPurchaseOrderForm from '@/pages/gunsmith/GunsmithPurchaseOrderFor
 import GunsmithSerializedForm from '@/pages/gunsmith/GunsmithSerializedForm';
 import GunsmithUsefulLinks from '@/pages/gunsmith/GunsmithUsefulLinks';
 
+// Automotive
+import AutomotiveDashboard from '@/pages/automotive/AutomotiveDashboard';
+
+// Marine
+import MarineDashboard from '@/pages/marine/MarineDashboard';
+
 // Fuel Delivery
 import FuelDeliveryDashboard from '@/pages/fuel-delivery/FuelDeliveryDashboard';
 import FuelDeliveryOrders from '@/pages/fuel-delivery/FuelDeliveryOrders';
@@ -300,7 +306,8 @@ function App() {
                 <Routes>
                   <Route path="/module-hub" element={<ModuleHub />} />
                   <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/automotive" element={<Dashboard />} />
+                  <Route path="/automotive" element={<AutomotiveDashboard />} />
+                  <Route path="/marine-services" element={<MarineDashboard />} />
                   
                   {/* Store */}
                   <Route path="/shopping" element={<Shopping />} />
