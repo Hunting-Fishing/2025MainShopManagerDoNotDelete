@@ -49,6 +49,7 @@ const FinancialSettings = lazy(() => import('./settings/FinancialSettings'));
 const BudgetSettings = lazy(() => import('./settings/BudgetSettings'));
 const BillingSettings = lazy(() => import('./settings/BillingSettings'));
 const LoyaltySettings = lazy(() => import('./settings/LoyaltySettings'));
+const UsageSettings = lazy(() => import('./settings/UsageSettings'));
 
 // Lazy load settings pages - Integrations
 const IntegrationsSettings = lazy(() => import('./settings/IntegrationsSettings'));
@@ -118,6 +119,7 @@ export default function Settings() {
         <Route path="budget-management" element={<BudgetSettings />} />
         <Route path="billing" element={<BillingSettings />} />
         <Route path="loyalty" element={<LoyaltySettings />} />
+        <Route path="usage" element={<UsageSettings />} />
         
         {/* Integrations */}
         <Route path="integrations" element={<IntegrationsSettings />} />
