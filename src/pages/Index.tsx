@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Users, Wrench, ArrowRight } from 'lucide-react';
+import { SearchInput } from '@/components/settings/SearchInput';
 import { ModuleCard } from '@/components/landing/ModuleCard';
 import { ComingSoonCard } from '@/components/landing/ComingSoonCard';
 import { FeatureGrid } from '@/components/landing/FeatureGrid';
@@ -9,6 +10,65 @@ import { PricingSection } from '@/components/landing/PricingSection';
 import { LANDING_COMING_SOON_CATEGORIES, LANDING_MODULES } from '@/config/landingModules';
 
 export default function Index() {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Smart search matching with relevance scoring
+  const matchScore = (text: string, query: string): number => {
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    if (lowerText === lowerQuery) return 100;
+    if (lowerText.startsWith(lowerQuery)) return 80;
+    if (lowerText.includes(lowerQuery)) return 60;
+    // Fuzzy match - check if all words in query appear
+    const queryWords = lowerQuery.split(/\s+/);
+    const allWordsMatch = queryWords.every(word => lowerText.includes(word));
+    if (allWordsMatch) return 40;
+    return 0;
+  };
+
+  // Filter available modules
+  const filteredAvailableModules = useMemo(() => {
+    const available = LANDING_MODULES.filter((module) => module.available);
+    if (!searchQuery.trim()) return available;
+
+    return available
+      .map(module => ({
+        module,
+        score: Math.max(
+          matchScore(module.name, searchQuery) * 2,
+          matchScore(module.description, searchQuery)
+        )
+      }))
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(item => item.module);
+  }, [searchQuery]);
+
+  // Filter coming soon categories and modules
+  const filteredComingSoonCategories = useMemo(() => {
+    if (!searchQuery.trim()) return LANDING_COMING_SOON_CATEGORIES;
+
+    return LANDING_COMING_SOON_CATEGORIES.map(category => {
+      const filteredModules = category.modules
+        .map(module => ({
+          module,
+          score: Math.max(
+            matchScore(module.name, searchQuery) * 2,
+            matchScore(module.description, searchQuery),
+            matchScore(category.category, searchQuery) * 0.5
+          )
+        }))
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(item => item.module);
+
+      return { ...category, modules: filteredModules };
+    }).filter(category => category.modules.length > 0);
+  }, [searchQuery]);
+
+  const totalResults = filteredAvailableModules.length + 
+    filteredComingSoonCategories.reduce((acc, cat) => acc + cat.modules.length, 0);
+
   return (
     <div className="min-h-screen bg-background font-['Space_Grotesk',sans-serif]">
       {/* Header */}
@@ -72,52 +132,75 @@ export default function Index() {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Available Modules
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
               Industry-specific solutions ready to deploy today
             </p>
+            
+            {/* Search Input */}
+            <div className="flex justify-center mb-4">
+              <SearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search all modules..."
+                className="max-w-lg"
+              />
+            </div>
+            
+            {searchQuery && (
+              <p className="text-sm text-muted-foreground">
+                Found {totalResults} module{totalResults !== 1 ? 's' : ''} matching "{searchQuery}"
+              </p>
+            )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {LANDING_MODULES.filter((module) => module.available).map((module) => (
-              <ModuleCard key={module.slug} {...module} />
-            ))}
-          </div>
+
+          {filteredAvailableModules.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+              {filteredAvailableModules.map((module) => (
+                <ModuleCard key={module.slug} {...module} />
+              ))}
+            </div>
+          ) : searchQuery && (
+            <p className="text-center text-muted-foreground">No available modules match your search.</p>
+          )}
         </div>
       </section>
 
       {/* Coming Soon Modules */}
-      <section className="py-20 bg-muted/20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Coming Soon
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              New modules in development. Get notified when they launch.
-            </p>
-          </div>
-          
-          {/* Categorized Coming Soon Modules */}
-          <div className="space-y-16 max-w-6xl mx-auto">
-            {LANDING_COMING_SOON_CATEGORIES.map((category) => (
-              <div key={category.category}>
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-foreground mb-2">
-                    {category.category}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {category.description}
-                  </p>
+      {filteredComingSoonCategories.length > 0 && (
+        <section className="py-20 bg-muted/20">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Coming Soon
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                New modules in development. Get notified when they launch.
+              </p>
+            </div>
+            
+            {/* Categorized Coming Soon Modules */}
+            <div className="space-y-16 max-w-6xl mx-auto">
+              {filteredComingSoonCategories.map((category) => (
+                <div key={category.category}>
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-bold text-foreground mb-2">
+                      {category.category}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {category.description}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {category.modules.map((module) => (
+                      <ComingSoonCard key={module.name} {...module} />
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {category.modules.map((module) => (
-                    <ComingSoonCard key={module.name} {...module} />
-                  ))}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Features Grid */}
       <FeatureGrid />
