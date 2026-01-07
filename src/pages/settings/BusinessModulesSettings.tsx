@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -8,13 +8,20 @@ import { useModuleAccess, useSubscribeToModule } from '@/hooks/useModuleSubscrip
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MODULE_CONFIGS } from '@/config/moduleSubscriptions';
+import { MODULE_CONFIGS, TIER_CONFIGS, TierSlug, calculateModulePrice, getPaidTiers } from '@/config/moduleSubscriptions';
 import { format, formatDistanceToNow } from 'date-fns';
 import { 
   Car, Target, Droplets, Anchor, Wind, Zap, Pipette,
   Truck, Wrench, ShieldCheck, Megaphone, Heart, Package, Users,
-  Lock, Sparkles, CreditCard, Clock, CheckCircle, AlertCircle
+  Lock, Sparkles, CreditCard, Clock, CheckCircle
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Car, Target, Droplets, Anchor, Wind, Zap, Pipette,
@@ -32,15 +39,24 @@ export default function BusinessModulesSettings() {
   const { data: modules = [], isLoading: modulesLoading } = useBusinessModules();
   const { data: enabledModules = [], isLoading: enabledLoading } = useShopEnabledModules();
   const toggleModule = useToggleModule();
-  const { hasModuleAccess, getSubscriptionForModule, trialActive, trialEndsAt, isLoading: subLoading } = useModuleAccess();
+  const { 
+    hasModuleAccess, 
+    getSubscriptionForModule, 
+    getModuleTier,
+    getActiveSubscriptionCount,
+    trialActive, 
+    trialEndsAt, 
+    isLoading: subLoading 
+  } = useModuleAccess();
   const subscribeToModule = useSubscribeToModule();
+  
+  const [selectedModule, setSelectedModule] = useState<string | null>(null);
 
   const isOwner = userRoles.includes('owner');
   const isLoading = modulesLoading || enabledLoading || subLoading;
 
   const enabledModuleIds = new Set(enabledModules.map(em => em.module_id));
 
-  // Determine if a module is enabled (explicitly or by default when no records exist)
   const isModuleEnabled = (moduleId: string, defaultEnabled: boolean): boolean => {
     if (enabledModules.length === 0) return defaultEnabled;
     return enabledModuleIds.has(moduleId);
@@ -71,15 +87,16 @@ export default function BusinessModulesSettings() {
     }
   };
 
-  const handleSubscribe = async (moduleSlug: string) => {
-    await subscribeToModule.mutateAsync(moduleSlug);
+  const handleSubscribe = async (moduleSlug: string, tier: Exclude<TierSlug, 'free'>) => {
+    setSelectedModule(null);
+    await subscribeToModule.mutateAsync({ moduleSlug, tier });
   };
 
   const industryModules = modules.filter(m => m.category === 'industry');
   const operationsModules = modules.filter(m => m.category === 'operations');
 
-  // Check if a module has a subscription product
   const isPurchasableModule = (slug: string) => !!MODULE_CONFIGS[slug];
+  const activeSubCount = getActiveSubscriptionCount();
 
   if (isLoading) {
     return (
@@ -105,15 +122,14 @@ export default function BusinessModulesSettings() {
           Business Modules
         </h1>
         <p className="text-muted-foreground mt-2">
-          Subscribe to modules relevant to your business. Each module is billed separately.
+          Subscribe to modules relevant to your business. Get 20% off each additional module!
         </p>
         
-        {/* Trial Status Banner */}
         {trialActive && trialEndsAt && (
           <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-center gap-3">
             <Clock className="h-5 w-5 text-primary" />
             <div>
-              <p className="font-medium text-primary">Free Trial Active</p>
+              <p className="font-medium text-primary">Free Trial Active (Pro Features)</p>
               <p className="text-sm text-muted-foreground">
                 Trial ends {formatDistanceToNow(new Date(trialEndsAt), { addSuffix: true })} ({format(new Date(trialEndsAt), 'MMM d, yyyy')})
               </p>
@@ -129,7 +145,7 @@ export default function BusinessModulesSettings() {
         )}
       </div>
 
-      {/* Industry Modules - Purchasable */}
+      {/* Industry Modules */}
       <section className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -137,7 +153,7 @@ export default function BusinessModulesSettings() {
             <Badge variant="secondary">Subscription Required</Badge>
           </h2>
           <p className="text-sm text-muted-foreground">
-            Choose the industries and service types your business offers. Each module requires a separate subscription.
+            Choose the industries your business serves. Each module has Free, Starter ($9), Pro ($29), and Business ($49) tiers.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -146,7 +162,7 @@ export default function BusinessModulesSettings() {
             const enabled = isModuleEnabled(module.id, module.default_enabled);
             const hasAccess = hasModuleAccess(module.slug);
             const subscription = getSubscriptionForModule(module.slug);
-            const config = MODULE_CONFIGS[module.slug];
+            const currentTier = getModuleTier(module.slug);
             const isPurchasable = isPurchasableModule(module.slug);
             
             return (
@@ -163,12 +179,12 @@ export default function BusinessModulesSettings() {
                       <div>
                         <CardTitle className="text-base flex items-center gap-2">
                           {module.name}
-                          {config && (
-                            <Badge variant="outline" className="text-xs font-normal">
-                              ${config.price}/mo
-                            </Badge>
-                          )}
                         </CardTitle>
+                        {currentTier !== 'free' && (
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {TIER_CONFIGS[currentTier].name} Tier
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     {hasAccess && !trialActive && subscription && (
@@ -192,24 +208,24 @@ export default function BusinessModulesSettings() {
                   
                   {isPurchasable && !hasAccess && !trialActive && (
                     <Button 
-                      onClick={() => handleSubscribe(module.slug)}
-                      disabled={!isOwner || subscribeToModule.isPending}
+                      onClick={() => setSelectedModule(module.slug)}
+                      disabled={!isOwner}
                       className="w-full gap-2"
                     >
                       <CreditCard className="h-4 w-4" />
-                      Subscribe for ${config?.price}/mo
+                      Choose Plan
                     </Button>
                   )}
                   
                   {isPurchasable && trialActive && !subscription && (
                     <Button 
                       variant="outline"
-                      onClick={() => handleSubscribe(module.slug)}
-                      disabled={!isOwner || subscribeToModule.isPending}
+                      onClick={() => setSelectedModule(module.slug)}
+                      disabled={!isOwner}
                       className="w-full gap-2"
                     >
                       <CreditCard className="h-4 w-4" />
-                      Subscribe Now (${config?.price}/mo)
+                      Subscribe Now
                     </Button>
                   )}
                   
@@ -236,12 +252,12 @@ export default function BusinessModulesSettings() {
         </div>
       </section>
 
-      {/* Operations Modules - Free with any subscription */}
+      {/* Operations Modules */}
       <section className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold">Operations Modules</h2>
           <p className="text-sm text-muted-foreground">
-            Additional tools and features included with any subscription
+            Additional tools included with any subscription
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -284,6 +300,90 @@ export default function BusinessModulesSettings() {
           })}
         </div>
       </section>
+
+      {/* Tier Selection Dialog */}
+      <Dialog open={!!selectedModule} onOpenChange={() => setSelectedModule(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Choose Your Plan</DialogTitle>
+            <DialogDescription>
+              {selectedModule && MODULE_CONFIGS[selectedModule]?.name}
+              {activeSubCount > 0 && (
+                <span className="block mt-1 text-primary">
+                  🎉 20% discount applied (you have {activeSubCount} active module{activeSubCount > 1 ? 's' : ''})
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 md:grid-cols-3 mt-4">
+            {getPaidTiers().map(tier => {
+              const tierConfig = TIER_CONFIGS[tier];
+              const { basePrice, discountedPrice, savings } = calculateModulePrice(tier, activeSubCount);
+              
+              return (
+                <Card 
+                  key={tier} 
+                  className={`relative ${tier === 'pro' ? 'border-primary ring-2 ring-primary/20' : ''}`}
+                >
+                  {tier === 'pro' && (
+                    <Badge className="absolute -top-2 left-1/2 -translate-x-1/2">
+                      Popular
+                    </Badge>
+                  )}
+                  <CardHeader className="text-center pb-2">
+                    <CardTitle className="text-lg">{tierConfig.name}</CardTitle>
+                    <div className="mt-2">
+                      {savings > 0 ? (
+                        <>
+                          <span className="text-2xl font-bold">${discountedPrice}</span>
+                          <span className="text-muted-foreground line-through ml-2">${basePrice}</span>
+                          <span className="text-sm text-muted-foreground">/mo</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-2xl font-bold">${basePrice}</span>
+                          <span className="text-sm text-muted-foreground">/mo</span>
+                        </>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <ul className="text-sm space-y-2">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                        {tierConfig.limits.work_orders_per_month === -1 
+                          ? 'Unlimited work orders' 
+                          : `${tierConfig.limits.work_orders_per_month} work orders/mo`}
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                        {tierConfig.limits.customers === -1 
+                          ? 'Unlimited customers' 
+                          : `${tierConfig.limits.customers} customers`}
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                        {tierConfig.limits.team_members === -1 
+                          ? 'Unlimited team members' 
+                          : `${tierConfig.limits.team_members} team members`}
+                      </li>
+                    </ul>
+                    <Button 
+                      className="w-full"
+                      variant={tier === 'pro' ? 'default' : 'outline'}
+                      onClick={() => selectedModule && handleSubscribe(selectedModule, tier)}
+                      disabled={subscribeToModule.isPending}
+                    >
+                      {subscribeToModule.isPending ? 'Loading...' : 'Subscribe'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
