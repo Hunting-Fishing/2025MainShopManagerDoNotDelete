@@ -11,6 +11,7 @@ import Index from '@/pages/Index';
 // Pages
 import Dashboard from '@/pages/Dashboard';
 import ModuleHub from '@/pages/ModuleHub';
+import UpcomingModules from '@/pages/UpcomingModules';
 import Shopping from '@/pages/Shopping';
 import ProductDetail from '@/pages/ProductDetail';
 import CustomerPortal from '@/pages/CustomerPortal';
@@ -309,6 +310,7 @@ function App() {
               <Layout>
                 <Routes>
                   <Route path="/module-hub" element={<ModuleHub />} />
+                  <Route path="/upcoming-modules" element={<UpcomingModules />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   {/* Automotive Module */}
                   <Route path="/automotive" element={<AutomotiveDashboard />} />

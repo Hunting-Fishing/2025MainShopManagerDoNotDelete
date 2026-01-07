@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useModuleAccess } from '@/hooks/useModuleSubscriptions';
 import { getAllModuleRoutes, UPCOMING_MODULES } from '@/config/moduleRoutes';
@@ -8,6 +8,7 @@ import { ModuleHubHeader } from '@/components/module-hub/ModuleHubHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { LayoutGrid, Sparkles } from 'lucide-react';
 
 export default function ModuleHub() {
@@ -100,10 +101,15 @@ export default function ModuleHub() {
         {/* Upcoming Modules Section */}
         {UPCOMING_MODULES.length > 0 && (
           <section className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-amber-500" />
-              <h2 className="text-xl font-semibold text-foreground">Upcoming Modules</h2>
-              <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                <h2 className="text-xl font-semibold text-foreground">Upcoming Modules</h2>
+                <Badge variant="secondary" className="text-xs">{UPCOMING_MODULES.length} Coming Soon</Badge>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/upcoming-modules">View All</Link>
+              </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {UPCOMING_MODULES.map(module => {
