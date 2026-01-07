@@ -21238,6 +21238,7 @@ export type Database = {
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          tier: string | null
           trial_ends_at: string | null
           updated_at: string | null
         }
@@ -21252,6 +21253,7 @@ export type Database = {
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          tier?: string | null
           trial_ends_at?: string | null
           updated_at?: string | null
         }
@@ -21266,6 +21268,7 @@ export type Database = {
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          tier?: string | null
           trial_ends_at?: string | null
           updated_at?: string | null
         }
@@ -21279,6 +21282,53 @@ export type Database = {
           },
           {
             foreignKeyName: "module_subscriptions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      module_usage: {
+        Row: {
+          created_at: string | null
+          customers_created: number | null
+          id: string
+          invoices_created: number | null
+          module_slug: string
+          period_end: string
+          period_start: string
+          shop_id: string
+          updated_at: string | null
+          work_orders_created: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          customers_created?: number | null
+          id?: string
+          invoices_created?: number | null
+          module_slug: string
+          period_end?: string
+          period_start?: string
+          shop_id: string
+          updated_at?: string | null
+          work_orders_created?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          customers_created?: number | null
+          id?: string
+          invoices_created?: number | null
+          module_slug?: string
+          period_end?: string
+          period_start?: string
+          shop_id?: string
+          updated_at?: string | null
+          work_orders_created?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_usage_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -41402,6 +41452,10 @@ export type Database = {
         Returns: undefined
       }
       increment_faq_views: { Args: { faq_id: string }; Returns: undefined }
+      increment_module_usage: {
+        Args: { p_module_slug: string; p_shop_id: string; p_usage_type: string }
+        Returns: Json
+      }
       increment_rate_limit: {
         Args: {
           p_endpoint: string
