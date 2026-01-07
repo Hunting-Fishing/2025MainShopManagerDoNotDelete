@@ -38,6 +38,17 @@ export default function Index() {
     massage: ['therapy', 'spa', 'wellness', 'relaxation', 'bodywork'],
     tattoo: ['piercing', 'ink', 'body art', 'studio'],
     photo: ['photography', 'photographer', 'portrait', 'wedding', 'event'],
+    dive: ['scuba', 'diving', 'underwater', 'snorkel', 'water', 'ocean', 'reef'],
+    scuba: ['dive', 'diving', 'underwater', 'certification', 'padi', 'reef'],
+    fish: ['fishing', 'charter', 'guide', 'angler', 'fly', 'deep sea', 'bass', 'trout'],
+    wildlife: ['safari', 'tour', 'animal', 'nature', 'bird', 'whale', 'watching'],
+    ocean: ['sea', 'marine', 'water', 'beach', 'surf', 'dive', 'boat'],
+    adventure: ['outdoor', 'tour', 'safari', 'rafting', 'kayak', 'extreme'],
+    water: ['aquatic', 'marine', 'ocean', 'river', 'lake', 'swim', 'dive', 'surf'],
+    tour: ['guide', 'trip', 'excursion', 'safari', 'adventure', 'travel'],
+    kayak: ['paddle', 'paddleboard', 'canoe', 'water', 'river', 'lake'],
+    surf: ['surfing', 'wave', 'board', 'beach', 'ocean', 'water'],
+    boat: ['sailing', 'yacht', 'charter', 'marine', 'vessel', 'cruise'],
   };
 
   // Get expanded search terms including associations (handles partial matches)

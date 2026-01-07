@@ -639,11 +639,11 @@ export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // OUTDOOR & WILDLIFE (11 modules)
+  // OUTDOOR & WILDLIFE (18 modules)
   // ═══════════════════════════════════════════════════════════════════════
   {
     category: 'Outdoor & Wildlife',
-    description: 'Hunting, trapping, and wildlife industry services',
+    description: 'Hunting, fishing, wildlife tours, and outdoor adventure services',
     modules: [
       { name: 'Guide & Outfitter', description: 'Trip booking, client management, and license tracking', icon: Compass },
       { name: 'Taxidermy', description: 'Specimen intake, project tracking, and client galleries', icon: Bird },
@@ -651,11 +651,18 @@ export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
       { name: 'Trapping Services', description: 'Trapline management, fur tracking, and harvest records', icon: Rat },
       { name: 'Hunting Preserve', description: 'Booking, game management, and membership tracking', icon: Target },
       { name: 'Fishing Charter', description: 'Trip scheduling, equipment tracking, and catch logs', icon: Fish },
+      { name: 'Fly Fishing Guide', description: 'Trip booking, client management, gear recommendations, and catch logs', icon: Fish },
+      { name: 'Deep Sea Fishing', description: 'Charter scheduling, tackle inventory, and trophy documentation', icon: Anchor },
       { name: 'Camping & Outpost', description: 'Cabin rentals, equipment checkout, and guest management', icon: Tent },
       { name: 'Wildlife Control', description: 'Nuisance animal removal, permits, and compliance', icon: Bug },
       { name: 'Forestry Services', description: 'Timber management, logging, and land clearing', icon: Axe },
       { name: 'Hunting Dog Training', description: 'Training programs, boarding, and progress tracking', icon: Dog },
       { name: 'Wilderness Survival', description: 'Course scheduling, certifications, and equipment rentals', icon: Mountain },
+      { name: 'Wildlife Safari Tours', description: 'Tour booking, animal sightings log, and guide scheduling', icon: Bird },
+      { name: 'Bird Watching Tours', description: 'Tour scheduling, species checklists, and expert guides', icon: Bird },
+      { name: 'Whale Watching', description: 'Trip scheduling, weather monitoring, and sighting records', icon: Waves },
+      { name: 'Eco Tourism', description: 'Sustainable tour management, conservation tracking, and education', icon: Leaf },
+      { name: 'Photography Safari', description: 'Specialized photo tours, equipment rentals, and guide assignments', icon: Camera },
     ],
   },
 
@@ -914,6 +921,24 @@ export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
       { name: 'Shuttle Service', description: 'Reservation management, driver scheduling, and routes', icon: Truck },
       { name: 'Travel Agency', description: 'Booking management, itinerary building, and vendor coordination', icon: Plane },
       { name: 'Adventure Tours', description: 'Activity booking, equipment tracking, and waivers', icon: Mountain },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // ADVENTURE & WATER SPORTS (8 modules)
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    category: 'Adventure & Water Sports',
+    description: 'Water-based activities, guided adventures, and outdoor experiences',
+    modules: [
+      { name: 'Scuba Diving', description: 'Dive certifications, equipment rentals, trip scheduling, and safety logs', icon: Waves },
+      { name: 'Snorkeling Tours', description: 'Tour booking, equipment tracking, and marine life education', icon: Fish },
+      { name: 'Kayak & Paddleboard Rental', description: 'Equipment inventory, rentals, guided tours, and waivers', icon: Anchor },
+      { name: 'Surfing School', description: 'Lesson scheduling, instructor management, and board rentals', icon: Waves },
+      { name: 'Jet Ski Rentals', description: 'Fleet management, rental booking, and safety certifications', icon: Waves },
+      { name: 'White Water Rafting', description: 'Trip scheduling, guide assignments, and safety waivers', icon: Waves },
+      { name: 'Sailing Charters', description: 'Vessel booking, crew scheduling, and trip management', icon: Anchor },
+      { name: 'Parasailing & Watersports', description: 'Activity booking, equipment maintenance, and weather tracking', icon: Plane },
     ],
   },
 ];
