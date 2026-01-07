@@ -1,4 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { 
+  checkUsageLimit, 
+  logApiUsage, 
+  calculateOpenAICost, 
+  getShopTier,
+  createLimitExceededResponse 
+} from "../_shared/usage-limiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,11 +18,23 @@ serve(async (req) => {
   }
 
   try {
-    const { imageData } = await req.json();
+    const { imageData, shopId } = await req.json();
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     
     if (!OPENAI_API_KEY) {
       throw new Error("OPENAI_API_KEY is not configured");
+    }
+
+    // Check usage limits - scan-invoice uses GPT-4o (more expensive)
+    // Count as 5 units since it's much more expensive than regular chat
+    if (shopId) {
+      const tierSlug = await getShopTier(shopId);
+      const usageCheck = await checkUsageLimit(shopId, tierSlug, 'openai', 5);
+      
+      if (!usageCheck.allowed) {
+        console.log(`Invoice scan blocked for shop ${shopId}: limit exceeded`);
+        return createLimitExceededResponse('AI Invoice Scanning', usageCheck);
+      }
     }
 
     console.log("Scanning invoice with OpenAI GPT-4o...");
@@ -78,9 +97,26 @@ If any field is missing, use null. Ensure all prices are numbers without currenc
     }
 
     const data = await response.json();
-    console.log("AI Response:", JSON.stringify(data, null, 2));
+    console.log("AI Response received");
     
     const content = data.choices?.[0]?.message?.content;
+    const tokensUsed = data.usage?.total_tokens || 0;
+    
+    // Log API usage - GPT-4o vision is expensive, estimate higher cost
+    if (shopId) {
+      // GPT-4o vision is roughly 10x more expensive than GPT-4o-mini
+      const estimatedCost = calculateOpenAICost(tokensUsed) * 10;
+      await logApiUsage({
+        shopId,
+        apiService: 'openai',
+        functionName: 'scan-invoice',
+        tokensUsed,
+        unitsUsed: 5, // Count as 5 calls since it's expensive
+        estimatedCostCents: estimatedCost,
+        metadata: { model: 'gpt-4o', type: 'vision' }
+      });
+    }
+    
     if (!content) {
       throw new Error("No content in AI response");
     }
@@ -106,7 +142,7 @@ If any field is missing, use null. Ensure all prices are numbers without currenc
     console.log("Extracted products:", products.length);
 
     return new Response(
-      JSON.stringify({ products }),
+      JSON.stringify({ products, tokens_used: tokensUsed }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {

@@ -853,6 +853,118 @@ export type Database = {
         }
         Relationships: []
       }
+      api_usage_logs: {
+        Row: {
+          api_service: string
+          created_at: string
+          estimated_cost_cents: number | null
+          function_name: string
+          id: string
+          metadata: Json | null
+          shop_id: string | null
+          tokens_used: number | null
+          units_used: number | null
+          user_id: string | null
+        }
+        Insert: {
+          api_service: string
+          created_at?: string
+          estimated_cost_cents?: number | null
+          function_name: string
+          id?: string
+          metadata?: Json | null
+          shop_id?: string | null
+          tokens_used?: number | null
+          units_used?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          api_service?: string
+          created_at?: string
+          estimated_cost_cents?: number | null
+          function_name?: string
+          id?: string
+          metadata?: Json | null
+          shop_id?: string | null
+          tokens_used?: number | null
+          units_used?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_usage_summary: {
+        Row: {
+          billing_period_end: string
+          billing_period_start: string
+          created_at: string
+          email_cost_cents: number | null
+          emails_sent: number | null
+          id: string
+          openai_calls: number | null
+          openai_cost_cents: number | null
+          openai_tokens: number | null
+          shop_id: string
+          sms_cost_cents: number | null
+          sms_count: number | null
+          total_cost_cents: number | null
+          updated_at: string
+          voice_cost_cents: number | null
+          voice_minutes: number | null
+        }
+        Insert: {
+          billing_period_end: string
+          billing_period_start: string
+          created_at?: string
+          email_cost_cents?: number | null
+          emails_sent?: number | null
+          id?: string
+          openai_calls?: number | null
+          openai_cost_cents?: number | null
+          openai_tokens?: number | null
+          shop_id: string
+          sms_cost_cents?: number | null
+          sms_count?: number | null
+          total_cost_cents?: number | null
+          updated_at?: string
+          voice_cost_cents?: number | null
+          voice_minutes?: number | null
+        }
+        Update: {
+          billing_period_end?: string
+          billing_period_start?: string
+          created_at?: string
+          email_cost_cents?: number | null
+          emails_sent?: number | null
+          id?: string
+          openai_calls?: number | null
+          openai_cost_cents?: number | null
+          openai_tokens?: number | null
+          shop_id?: string
+          sms_cost_cents?: number | null
+          sms_count?: number | null
+          total_cost_cents?: number | null
+          updated_at?: string
+          voice_cost_cents?: number | null
+          voice_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_summary_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appearance_settings: {
         Row: {
           accent_color: string | null
@@ -35161,6 +35273,45 @@ export type Database = {
         }
         Relationships: []
       }
+      tier_api_limits: {
+        Row: {
+          created_at: string
+          email_limit: number
+          id: string
+          openai_calls_limit: number
+          openai_tokens_limit: number
+          sms_limit: number
+          tier_name: string
+          tier_slug: string
+          updated_at: string
+          voice_minutes_limit: number
+        }
+        Insert: {
+          created_at?: string
+          email_limit?: number
+          id?: string
+          openai_calls_limit?: number
+          openai_tokens_limit?: number
+          sms_limit?: number
+          tier_name: string
+          tier_slug: string
+          updated_at?: string
+          voice_minutes_limit?: number
+        }
+        Update: {
+          created_at?: string
+          email_limit?: number
+          id?: string
+          openai_calls_limit?: number
+          openai_tokens_limit?: number
+          sms_limit?: number
+          tier_name?: string
+          tier_slug?: string
+          updated_at?: string
+          voice_minutes_limit?: number
+        }
+        Relationships: []
+      }
       time_card_disputes: {
         Row: {
           created_at: string
@@ -40886,6 +41037,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_usage_limit: {
+        Args: {
+          p_api_service: string
+          p_shop_id: string
+          p_tier_slug: string
+          p_units?: number
+        }
+        Returns: Json
+      }
       check_user_role_secure: {
         Args: { check_user_id: string; required_role: string }
         Returns: boolean
@@ -41018,6 +41178,16 @@ export type Database = {
       generate_work_order_number: {
         Args: { p_shop_id: string }
         Returns: string
+      }
+      get_current_period_usage: {
+        Args: { p_shop_id: string }
+        Returns: {
+          emails_sent: number
+          openai_calls: number
+          openai_tokens: number
+          sms_count: number
+          voice_minutes: number
+        }[]
       }
       get_current_user_role: { Args: never; Returns: string }
       get_current_user_shop_id: { Args: never; Returns: string }

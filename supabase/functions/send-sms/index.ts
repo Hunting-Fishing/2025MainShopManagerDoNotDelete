@@ -1,6 +1,12 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { 
+  checkUsageLimit, 
+  logApiUsage, 
+  calculateSmsCost, 
+  getShopTier,
+  createLimitExceededResponse 
+} from "../_shared/usage-limiter.ts";
 
 const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
 const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
@@ -27,12 +33,23 @@ serve(async (req) => {
       supabaseServiceKey
     );
 
-    const { phoneNumber, message, customerId, templateId } = await req.json();
+    const { phoneNumber, message, customerId, templateId, shopId } = await req.json();
 
     console.log(`Sending SMS to ${phoneNumber}: ${message}`);
     
     if (!phoneNumber || !message) {
       throw new Error('Phone number and message are required');
+    }
+
+    // Check usage limits if shopId is provided
+    if (shopId) {
+      const tierSlug = await getShopTier(shopId);
+      const usageCheck = await checkUsageLimit(shopId, tierSlug, 'twilio_sms', 1);
+      
+      if (!usageCheck.allowed) {
+        console.log(`SMS blocked for shop ${shopId}: limit exceeded`);
+        return createLimitExceededResponse('SMS', usageCheck);
+      }
     }
 
     // Ensure phone number is in E.164 format
@@ -65,6 +82,25 @@ serve(async (req) => {
       throw new Error(`Twilio error: ${twilioData.message || 'Unknown error'}`);
     }
 
+    // Calculate SMS segments (160 chars per segment for GSM-7, 70 for Unicode)
+    const smsSegments = Math.ceil(message.length / 160);
+
+    // Log API usage
+    if (shopId) {
+      await logApiUsage({
+        shopId,
+        apiService: 'twilio_sms',
+        functionName: 'send-sms',
+        unitsUsed: smsSegments,
+        estimatedCostCents: calculateSmsCost(smsSegments),
+        metadata: { 
+          twilioSid: twilioData.sid, 
+          segments: smsSegments,
+          phoneNumber: formattedPhoneNumber.slice(-4) // Last 4 digits only for privacy
+        }
+      });
+    }
+
     // Log the SMS in the database
     const { data: logData, error: logError } = await supabase
       .from('sms_logs')
@@ -88,7 +124,8 @@ serve(async (req) => {
         success: true, 
         sid: twilioData.sid,
         status: twilioData.status,
-        logId: logData?.id
+        logId: logData?.id,
+        segments: smsSegments
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
