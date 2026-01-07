@@ -720,6 +720,16 @@ export const UPCOMING_MODULES: UpcomingModuleConfig[] = [
     category: 'Personal Services',
   },
   {
+    slug: 'esthetician',
+    name: 'Esthetician',
+    description: 'Lashes, brows, facials, waxing, and skincare services',
+    icon: Sparkles,
+    gradientFrom: 'from-rose-400',
+    gradientTo: 'to-pink-500',
+    expectedDate: 'Q2 2026',
+    category: 'Personal Services',
+  },
+  {
     slug: 'tattoo',
     name: 'Tattoo Studio',
     description: 'Tattoo appointments and portfolio management',
