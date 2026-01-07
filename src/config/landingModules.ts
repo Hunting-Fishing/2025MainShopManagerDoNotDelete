@@ -99,6 +99,22 @@ import {
   Zap,
 } from 'lucide-react';
 
+export type FeatureHighlight = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+export type UseCase = {
+  title: string;
+  description: string;
+};
+
+export type FAQ = {
+  question: string;
+  answer: string;
+};
+
 export type LandingModule = {
   slug: string;
   name: string;
@@ -109,6 +125,14 @@ export type LandingModule = {
   available: boolean;
   coreFeatures: string[];
   extraFeatures: string[];
+  // Extended content for detail pages
+  tagline?: string;
+  longDescription?: string;
+  idealFor?: string[];
+  featureHighlights?: FeatureHighlight[];
+  useCases?: UseCase[];
+  integrations?: string[];
+  faqs?: FAQ[];
 };
 
 export type LandingComingSoonModule = {
@@ -132,6 +156,20 @@ export const LANDING_MODULES: LandingModule[] = [
     color: 'bg-blue-500',
     price: '$49/mo',
     available: true,
+    tagline: 'Run your shop like a well-oiled machine',
+    longDescription: `Transform your automotive repair business with a complete management system designed specifically for independent shops, multi-bay service centers, and mobile mechanics. From the moment a customer walks in to the final invoice, every step is streamlined and professional.
+
+Our Repair Shop module handles the complexity of modern auto repair—tracking labor hours across multiple technicians, managing parts inventory with automatic reorder alerts, and maintaining complete vehicle service histories that build customer trust and loyalty.
+
+Whether you're a solo mechanic or managing a team of technicians, you'll have the tools to increase efficiency, reduce paperwork, and focus on what you do best: fixing cars.`,
+    idealFor: [
+      'Independent repair shops',
+      'Multi-bay service centers',
+      'Mobile mechanics',
+      'Fleet maintenance operations',
+      'Specialty shops (transmission, exhaust, brakes)',
+      'Quick lube & oil change centers',
+    ],
     coreFeatures: [
       'Work orders with labor and parts',
       'Customer and vehicle history',
@@ -142,6 +180,86 @@ export const LANDING_MODULES: LandingModule[] = [
       'Inventory forecasting and reorder alerts',
       'Digital inspection forms',
       'Service packages and pricing rules',
+    ],
+    featureHighlights: [
+      {
+        title: 'Work Order Management',
+        description: 'Create, track, and complete repair orders with built-in labor time tracking, parts linkage, and status updates that keep your team aligned.',
+        icon: Wrench,
+      },
+      {
+        title: 'Digital Vehicle Inspections',
+        description: 'Tablet-friendly inspection forms with photo capture, condition ratings, and instant customer approval workflows via text or email.',
+        icon: Camera,
+      },
+      {
+        title: 'Parts & Inventory',
+        description: 'Real-time stock levels, automatic reorder alerts, vendor management, and cost tracking to maintain healthy margins.',
+        icon: Cog,
+      },
+      {
+        title: 'Scheduling & Dispatch',
+        description: 'Visual calendar with technician assignments, bay management, appointment reminders, and SMS notifications for customers.',
+        icon: Users,
+      },
+      {
+        title: 'Customer Portal',
+        description: 'Let customers view estimates, approve recommended services, track repair status, and pay invoices—all online.',
+        icon: Phone,
+      },
+      {
+        title: 'Reports & Analytics',
+        description: 'Track revenue by service type, technician productivity, parts margins, customer retention, and identify growth opportunities.',
+        icon: Target,
+      },
+    ],
+    useCases: [
+      {
+        title: 'Walk-in Repairs',
+        description: 'Quick intake, fast estimates, and seamless handoff to available technicians with real-time bay visibility.',
+      },
+      {
+        title: 'Scheduled Maintenance',
+        description: 'Automated service reminders, pre-scheduled appointments, and prepared parts ensure efficient turnarounds.',
+      },
+      {
+        title: 'Fleet Contracts',
+        description: 'Manage multiple vehicles per customer with scheduled PM intervals, consolidated billing, and fleet-specific pricing.',
+      },
+      {
+        title: 'Warranty Work',
+        description: 'Track warranty claims, parts returns, and maintain documentation required for manufacturer reimbursement.',
+      },
+    ],
+    integrations: [
+      'QuickBooks & accounting software',
+      'Parts catalogs & ordering',
+      'Payment processing',
+      'SMS & email notifications',
+      'VIN decoders',
+      'Labor time guides',
+    ],
+    faqs: [
+      {
+        question: 'How long does setup take?',
+        answer: 'Most shops are fully operational within 24 hours. Our guided setup walks you through importing customers, vehicles, and inventory. We also offer hands-on onboarding assistance.',
+      },
+      {
+        question: 'Can I import my existing customer data?',
+        answer: 'Yes! We support CSV imports from most shop management systems. Our team can also assist with data migration from legacy systems at no additional cost.',
+      },
+      {
+        question: 'Is training included?',
+        answer: 'Absolutely. All plans include access to video tutorials, documentation, and live chat support. Premium plans include one-on-one training sessions.',
+      },
+      {
+        question: 'What hardware do I need?',
+        answer: 'ShopCore works on any modern web browser—desktops, laptops, tablets, and smartphones. No special hardware required, though we recommend tablets for technicians doing inspections.',
+      },
+      {
+        question: 'Can I manage multiple locations?',
+        answer: 'Yes, our platform supports multi-location operations with centralized reporting, shared customer databases, and location-specific inventory.',
+      },
     ],
   },
   {
