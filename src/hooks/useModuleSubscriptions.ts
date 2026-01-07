@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthUser } from '@/hooks/useAuthUser';
-import { MODULE_CONFIGS } from '@/config/moduleSubscriptions';
+import { MODULE_CONFIGS, TIER_CONFIGS, TierSlug } from '@/config/moduleSubscriptions';
 import { toast } from 'sonner';
 
 export interface ModuleSubscription {
@@ -9,6 +9,8 @@ export interface ModuleSubscription {
   subscription_id: string;
   current_period_end: string;
   status: string;
+  tier: TierSlug;
+  product_id: string;
 }
 
 export interface ModuleSubscriptionStatus {
@@ -38,14 +40,18 @@ export function useSubscribeToModule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (moduleSlug: string) => {
+    mutationFn: async ({ moduleSlug, tier }: { moduleSlug: string; tier: Exclude<TierSlug, 'free'> }) => {
       const config = MODULE_CONFIGS[moduleSlug];
       if (!config) throw new Error('Module not found');
+
+      const tierPricing = config.tiers[tier];
+      if (!tierPricing) throw new Error('Invalid tier');
 
       const { data, error } = await supabase.functions.invoke('create-module-checkout', {
         body: {
           moduleSlug,
-          priceId: config.stripePriceId,
+          tier,
+          priceId: tierPricing.priceId,
         },
       });
 
@@ -70,7 +76,7 @@ export function useModuleAccess() {
   const hasModuleAccess = (moduleSlug: string): boolean => {
     if (!subscriptionStatus) return false;
     
-    // Trial is active - grant access to all modules
+    // Trial is active - grant access to all modules at Pro tier
     if (subscriptionStatus.trial_active) return true;
     
     // Check for active subscription
@@ -83,9 +89,25 @@ export function useModuleAccess() {
     return subscriptionStatus?.subscriptions.find(sub => sub.module_slug === moduleSlug);
   };
 
+  const getModuleTier = (moduleSlug: string): TierSlug => {
+    if (!subscriptionStatus) return 'free';
+    
+    // Trial gives Pro tier access
+    if (subscriptionStatus.trial_active) return 'pro';
+    
+    const subscription = getSubscriptionForModule(moduleSlug);
+    return subscription?.tier ?? 'free';
+  };
+
+  const getActiveSubscriptionCount = (): number => {
+    return subscriptionStatus?.subscriptions.filter(sub => sub.status === 'active').length ?? 0;
+  };
+
   return {
     hasModuleAccess,
     getSubscriptionForModule,
+    getModuleTier,
+    getActiveSubscriptionCount,
     trialActive: subscriptionStatus?.trial_active ?? false,
     trialEndsAt: subscriptionStatus?.trial_ends_at ?? null,
     subscriptions: subscriptionStatus?.subscriptions ?? [],

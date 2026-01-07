@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
-import { useModuleAccess, useSubscribeToModule } from '@/hooks/useModuleSubscriptions';
-import { MODULE_ROUTES, getAllModuleRoutes } from '@/config/moduleRoutes';
+import { useModuleAccess } from '@/hooks/useModuleSubscriptions';
+import { getAllModuleRoutes } from '@/config/moduleRoutes';
 import { ModuleCard } from '@/components/module-hub/ModuleCard';
 import { ModuleHubHeader } from '@/components/module-hub/ModuleHubHeader';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,6 +10,7 @@ import { LayoutGrid } from 'lucide-react';
 
 export default function ModuleHub() {
   const { user } = useAuthUser();
+  const navigate = useNavigate();
   const { 
     hasModuleAccess, 
     trialActive, 
@@ -16,8 +18,6 @@ export default function ModuleHub() {
     subscriptions,
     isLoading 
   } = useModuleAccess();
-  const subscribeMutation = useSubscribeToModule();
-  const [subscribingModule, setSubscribingModule] = useState<string | null>(null);
 
   const allModules = getAllModuleRoutes();
   
@@ -88,15 +88,7 @@ export default function ModuleHub() {
                   module={module}
                   hasAccess={false}
                   isSubscribed={false}
-                  onSubscribe={async () => {
-                    setSubscribingModule(module.slug);
-                    try {
-                      await subscribeMutation.mutateAsync(module.slug);
-                    } finally {
-                      setSubscribingModule(null);
-                    }
-                  }}
-                  isLoading={subscribingModule === module.slug}
+                  onViewPlans={() => navigate(`/modules/${module.slug}`)}
                 />
               ))}
             </div>

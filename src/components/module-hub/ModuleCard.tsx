@@ -11,16 +11,14 @@ interface ModuleCardProps {
   module: ModuleRouteConfig;
   hasAccess: boolean;
   isSubscribed: boolean;
-  onSubscribe?: () => void;
-  isLoading?: boolean;
+  onViewPlans?: () => void;
 }
 
 export function ModuleCard({ 
   module, 
   hasAccess, 
   isSubscribed, 
-  onSubscribe,
-  isLoading 
+  onViewPlans,
 }: ModuleCardProps) {
   const navigate = useNavigate();
   const IconComponent = module.icon;
@@ -104,18 +102,10 @@ export function ModuleCard({
             className="w-full"
             onClick={(e) => {
               e.stopPropagation();
-              onSubscribe?.();
+              onViewPlans?.();
             }}
-            disabled={isLoading}
           >
-            {isLoading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                Loading...
-              </>
-            ) : (
-              'Subscribe to Unlock'
-            )}
+            View Plans
           </Button>
         )}
       </CardContent>
