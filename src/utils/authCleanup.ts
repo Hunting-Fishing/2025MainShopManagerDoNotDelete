@@ -24,6 +24,17 @@ export const cleanupAuthState = () => {
         }
       });
     }
+
+    // Clear any auth-related cookies
+    if (typeof document !== 'undefined') {
+      document.cookie.split(';').forEach((c) => {
+        const cookie = c.trim();
+        if (cookie.includes('sb-') || cookie.includes('supabase')) {
+          const name = cookie.split('=')[0];
+          document.cookie = `${name}=;expires=${new Date(0).toUTCString()};path=/`;
+        }
+      });
+    }
   } catch (error) {
     console.warn('Error cleaning up auth state:', error);
   }

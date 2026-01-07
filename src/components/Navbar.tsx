@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useUserRole } from '@/hooks/useUserRole';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -16,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
+import { AuthService } from '@/lib/services/AuthService';
 
 const Navbar: React.FC = () => {
   const { user } = useAuthUser();
@@ -24,32 +24,17 @@ const Navbar: React.FC = () => {
   
   const handleLogout = async () => {
     try {
-      // Clean up any auth-related storage to prevent auth limbo
-      localStorage.removeItem('supabase.auth.token');
-      // Remove all Supabase auth keys from localStorage
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
-      
-      // Sign out (global scope)
-      await supabase.auth.signOut({ scope: 'global' });
-      
       toast({
-        title: "Logged out",
-        description: "You have been successfully logged out."
+        title: "Logging out",
+        description: "Please wait..."
       });
       
-      // Navigate to login page with replace to prevent going back
-      navigate('/login', { replace: true });
+      // Use centralized AuthService which handles cleanup and redirect
+      await AuthService.signOut();
     } catch (error) {
       console.error('Error signing out:', error);
-      toast({
-        title: "Error",
-        description: "Failed to log out. Please try again.",
-        variant: "destructive"
-      });
+      // Force navigation even on error
+      window.location.replace('/login?logout=true');
     }
   };
 

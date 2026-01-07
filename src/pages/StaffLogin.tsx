@@ -21,6 +21,13 @@ export default function StaffLogin() {
 
   // Redirect if already authenticated
   useEffect(() => {
+    // Skip auto-redirect if coming from logout
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('logout') === 'true') {
+      window.history.replaceState({}, '', '/staff-login');
+      return;
+    }
+
     if (!isLoading && isAuthenticated) {
       navigate('/dashboard');
     }
