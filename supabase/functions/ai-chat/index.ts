@@ -1,6 +1,13 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { 
+  checkUsageLimit, 
+  logApiUsage, 
+  calculateOpenAICost, 
+  getShopTier,
+  createLimitExceededResponse 
+} from "../_shared/usage-limiter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,10 +26,21 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, message, action } = await req.json();
+    const { sessionId, message, action, shopId } = await req.json();
 
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
+    }
+
+    // Check usage limits if shopId is provided
+    if (shopId) {
+      const tierSlug = await getShopTier(shopId);
+      const usageCheck = await checkUsageLimit(shopId, tierSlug, 'openai', 1);
+      
+      if (!usageCheck.allowed) {
+        console.log(`AI chat blocked for shop ${shopId}: limit exceeded`);
+        return createLimitExceededResponse('AI', usageCheck);
+      }
     }
 
     // Get session context
@@ -75,6 +93,20 @@ serve(async (req) => {
 
     const aiResponse = await response.json();
     const assistantMessage = aiResponse.choices[0].message.content;
+    const tokensUsed = aiResponse.usage?.total_tokens || 0;
+
+    // Log API usage
+    if (shopId) {
+      await logApiUsage({
+        shopId,
+        apiService: 'openai',
+        functionName: 'ai-chat',
+        tokensUsed,
+        unitsUsed: 1,
+        estimatedCostCents: calculateOpenAICost(tokensUsed),
+        metadata: { sessionId, model: 'gpt-4o-mini' }
+      });
+    }
 
     // Analyze sentiment
     const sentimentResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -101,9 +133,24 @@ serve(async (req) => {
     });
 
     let sentimentScore = 0;
+    let sentimentTokens = 0;
     if (sentimentResponse.ok) {
       const sentimentData = await sentimentResponse.json();
       sentimentScore = parseFloat(sentimentData.choices[0].message.content) || 0;
+      sentimentTokens = sentimentData.usage?.total_tokens || 0;
+      
+      // Log sentiment analysis usage (counts as part of same call)
+      if (shopId && sentimentTokens > 0) {
+        await logApiUsage({
+          shopId,
+          apiService: 'openai',
+          functionName: 'ai-chat-sentiment',
+          tokensUsed: sentimentTokens,
+          unitsUsed: 0, // Don't count as separate call
+          estimatedCostCents: calculateOpenAICost(sentimentTokens),
+          metadata: { sessionId, model: 'gpt-4o-mini', type: 'sentiment' }
+        });
+      }
     }
 
     // Update session with sentiment
@@ -120,7 +167,7 @@ serve(async (req) => {
       sentiment_score: sentimentScore,
       metadata: {
         model: 'gpt-4o-mini',
-        tokens_used: aiResponse.usage?.total_tokens || 0
+        tokens_used: tokensUsed + sentimentTokens
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
