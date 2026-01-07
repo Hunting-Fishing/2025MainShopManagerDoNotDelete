@@ -234,36 +234,36 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Digital inspection forms',
       'Service packages and pricing rules',
     ],
-    // New enhanced content
+    // Capability highlights (honest, not fake stats)
     stats: [
-      { value: '10,000+', label: 'Shops Served' },
-      { value: '500K+', label: 'Work Orders Completed' },
-      { value: '99.9%', label: 'Uptime Guarantee' },
-      { value: '24/7', label: 'Support Available' },
+      { value: 'Unlimited', label: 'Work Orders' },
+      { value: 'Real-time', label: 'Status Tracking' },
+      { value: 'Cloud', label: 'Secure Backup' },
+      { value: 'Mobile', label: 'Ready' },
     ],
     benefits: [
       {
-        title: 'Reduce Paperwork',
+        title: 'Go Paperless',
         description: 'Eliminate paper work orders, handwritten notes, and filing cabinets. Everything is digital, searchable, and backed up.',
-        stat: 'Save 10+ hours/week',
+        stat: 'Digital-first workflow',
         icon: Briefcase,
       },
       {
-        title: 'Increase Revenue',
-        description: 'Capture more recommended services, reduce missed opportunities, and improve parts margins with real-time data.',
-        stat: '23% avg revenue increase',
+        title: 'Capture More Revenue',
+        description: 'Digital inspections with photos help customers understand recommended services, leading to higher approval rates.',
+        stat: 'Visual upselling',
         icon: Wallet,
       },
       {
-        title: 'Improve Retention',
-        description: 'Automated reminders, professional communications, and a customer portal keep clients coming back.',
-        stat: '40% better retention',
+        title: 'Keep Customers Coming Back',
+        description: 'Automated service reminders, professional communications, and a customer portal build lasting relationships.',
+        stat: 'Automated follow-ups',
         icon: Users,
       },
       {
-        title: 'Faster Turnaround',
-        description: 'Streamlined workflows, instant parts lookup, and clear technician assignments get cars out faster.',
-        stat: 'Cut repair time 15%',
+        title: 'Work Smarter',
+        description: 'Streamlined workflows, instant parts lookup, and clear technician assignments reduce wasted time.',
+        stat: 'Efficient operations',
         icon: Zap,
       },
     ],
@@ -316,7 +316,7 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       },
       {
         without: 'Missed appointments and no-shows',
-        with: 'SMS reminders reduce no-shows by 60%',
+        with: 'SMS reminders help reduce no-shows',
       },
       {
         without: 'Hours spent on invoicing and billing',
@@ -331,12 +331,6 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
         with: 'Self-service customer portal with live status',
       },
     ],
-    testimonial: {
-      quote: "ShopCore transformed our operation. We went from chaos to organized in a week. Our revenue is up 30% and our customers love the text updates and online approval process. Best decision we've made for the business.",
-      author: 'Mike Johnson',
-      role: 'Owner',
-      company: 'Johnson Auto Repair',
-    },
     pricingTiers: [
       {
         name: 'Starter',
