@@ -1,22 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, LogIn, Crosshair } from 'lucide-react';
-import { useCompany } from '@/contexts/CompanyContext';
+import { Loader2, LogIn, Building2 } from 'lucide-react';
+import { getShopBySlug, ShopPublicInfo } from '@/services/shopLookupService';
 
 export default function CustomerPortalLogin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { companyName } = useCompany();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  
+  // Shop context
+  const [shop, setShop] = useState<ShopPublicInfo | null>(null);
+  const [shopLoading, setShopLoading] = useState(true);
+
+  // Load shop from URL params
+  useEffect(() => {
+    const loadShopContext = async () => {
+      const shopSlug = searchParams.get('shop');
+      
+      if (shopSlug) {
+        const shopData = await getShopBySlug(shopSlug);
+        if (shopData) setShop(shopData);
+      }
+      
+      setShopLoading(false);
+    };
+    
+    loadShopContext();
+  }, [searchParams]);
 
   useEffect(() => {
     // Check if already logged in as a customer
@@ -117,15 +138,41 @@ export default function CustomerPortalLogin() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 p-4">
       <Card className="w-full max-w-md shadow-xl border-amber-200">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
-            <Crosshair className="h-8 w-8 text-white" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-amber-900">
-            Customer Portal
-          </CardTitle>
-          <CardDescription className="text-amber-700">
-            {companyName || 'Welcome'} - Sign in to view your account
-          </CardDescription>
+          {shop ? (
+            <>
+              {shop.logo_url ? (
+                <img 
+                  src={shop.logo_url} 
+                  alt={shop.name} 
+                  className="w-16 h-16 mx-auto object-contain rounded-lg"
+                />
+              ) : (
+                <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
+                  <Building2 className="h-8 w-8 text-white" />
+                </div>
+              )}
+              <div>
+                <CardTitle className="text-2xl font-bold text-amber-900">
+                  Customer Portal
+                </CardTitle>
+                <CardDescription className="text-amber-700">
+                  {shop.name} - Sign in to view your account
+                </CardDescription>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
+                <LogIn className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-amber-900">
+                Customer Portal
+              </CardTitle>
+              <CardDescription className="text-amber-700">
+                Sign in to view your account
+              </CardDescription>
+            </>
+          )}
         </CardHeader>
         
         <form onSubmit={handleLogin}>
@@ -179,7 +226,7 @@ export default function CustomerPortalLogin() {
             <div className="text-center text-sm text-muted-foreground">
               Don't have an account?{' '}
               <Link 
-                to="/customer-portal/register" 
+                to={shop ? `/customer-portal/register?shop=${shop.slug}` : '/customer-portal/register'} 
                 className="text-amber-600 hover:text-amber-700 font-medium"
               >
                 Register here
@@ -188,10 +235,10 @@ export default function CustomerPortalLogin() {
             
             <div className="text-center">
               <Link 
-                to="/" 
+                to="/customer-portal" 
                 className="text-sm text-muted-foreground hover:text-amber-600"
               >
-                ← Back to home
+                ← Back to Customer Portal
               </Link>
             </div>
           </CardFooter>
