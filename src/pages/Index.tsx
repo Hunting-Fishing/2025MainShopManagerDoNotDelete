@@ -217,7 +217,7 @@ export default function Index() {
               <Link to="/staff-login">
                 <Button className="gap-2">
                   <Wrench className="h-4 w-4" />
-                  <span className="hidden sm:inline">Staff</span> Login
+                  Login / Signup
                 </Button>
               </Link>
             </div>
