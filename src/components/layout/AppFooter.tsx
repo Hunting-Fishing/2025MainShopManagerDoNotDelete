@@ -25,7 +25,7 @@ export function AppFooter() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-3 max-w-7xl mx-auto">
           {/* Left: Copyright */}
           <span className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Order Master. All rights reserved.
+            © {new Date().getFullYear()} All Business 365. All rights reserved.
           </span>
           
           {/* Right: Links */}
