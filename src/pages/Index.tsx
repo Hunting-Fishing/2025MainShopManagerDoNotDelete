@@ -7,10 +7,32 @@ import { ModuleCard } from '@/components/landing/ModuleCard';
 import { ComingSoonCard } from '@/components/landing/ComingSoonCard';
 import { FeatureGrid } from '@/components/landing/FeatureGrid';
 import { PricingSection } from '@/components/landing/PricingSection';
-import { TrustIndicators } from '@/components/landing/TrustIndicators';
 import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
-import { ValuePropositions } from '@/components/landing/ValuePropositions';
+import { HeroSection } from '@/components/landing/HeroSection';
+import { WelcomeSection } from '@/components/landing/WelcomeSection';
+import { CategoryBanner } from '@/components/landing/CategoryBanner';
 import { LANDING_COMING_SOON_CATEGORIES, LANDING_MODULES } from '@/config/landingModules';
+
+// Category images
+import categoryAutomotive from '@/assets/category-automotive.jpg';
+import categoryBeauty from '@/assets/category-beauty.jpg';
+import categoryHome from '@/assets/category-home.jpg';
+import categoryPets from '@/assets/category-pets.jpg';
+import categoryFood from '@/assets/category-food.jpg';
+import categoryAdventure from '@/assets/category-adventure.jpg';
+
+// Map category names to images
+const categoryImages: Record<string, string> = {
+  'Automotive & Fleet': categoryAutomotive,
+  'Beauty & Personal Care': categoryBeauty,
+  'Home & Property Services': categoryHome,
+  'Pet & Animal Services': categoryPets,
+  'Food & Hospitality': categoryFood,
+  'Adventure & Outdoor': categoryAdventure,
+  // Fallback mappings for different category names
+  'Outdoor & Adventure': categoryAdventure,
+  'Adventure Outfitters & Guide Services': categoryAdventure,
+};
 
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -201,45 +223,11 @@ export default function Index() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="py-10 md:py-20 lg:py-28 bg-gradient-to-b from-primary/5 via-primary/3 to-background relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-        </div>
-        
-        <div className="container mx-auto px-4 text-center relative">
-          <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 md:mb-6">
-            One Platform.
-            <span className="text-primary block mt-1 md:mt-2">Unlimited Possibilities.</span>
-          </h2>
-          <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-6 md:mb-8 leading-relaxed px-2">
-            Manage customers, work orders, scheduling, invoicing, and team members across 
-            <strong className="text-foreground"> any service industry</strong>. 
-          </p>
-          
-          {/* Value Propositions */}
-          <ValuePropositions />
-          
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-            <Link to="/staff-login" className="w-full sm:w-auto">
-              <Button size="lg" className="gap-2 text-base md:text-lg px-6 md:px-8 w-full sm:w-auto">
-                Start Free Trial
-                <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
-              </Button>
-            </Link>
-            <a href="#modules" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="text-base md:text-lg px-6 md:px-8 w-full sm:w-auto">
-                Explore Modules
-              </Button>
-            </a>
-          </div>
-          
-          {/* Trust Indicators */}
-          <TrustIndicators />
-        </div>
-      </section>
+      {/* Hero Section with Image */}
+      <HeroSection />
+      
+      {/* Welcome Section */}
+      <WelcomeSection />
 
       {/* Available Modules */}
       <section id="modules" className="py-10 md:py-20">
@@ -294,18 +282,28 @@ export default function Index() {
               </p>
             </div>
             
-            {/* Categorized Coming Soon Modules */}
-            <div className="space-y-10 md:space-y-16 max-w-6xl mx-auto">
-              {filteredComingSoonCategories.map((category) => (
+            {/* Categorized Coming Soon Modules with Category Banners */}
+            <div className="space-y-8 md:space-y-12 max-w-6xl mx-auto">
+              {filteredComingSoonCategories.map((category, index) => (
                 <div key={category.category}>
-                  <div className="mb-4 md:mb-6">
-                    <h3 className="text-lg md:text-2xl font-bold text-foreground mb-1 md:mb-2">
-                      {category.category}
-                    </h3>
-                    <p className="text-muted-foreground text-sm md:text-base">
-                      {category.description}
-                    </p>
-                  </div>
+                  {/* Category Banner with Image */}
+                  {categoryImages[category.category] ? (
+                    <CategoryBanner
+                      title={category.category}
+                      description={category.description}
+                      image={categoryImages[category.category]}
+                      align={index % 2 === 0 ? 'left' : 'right'}
+                    />
+                  ) : (
+                    <div className="mb-4 md:mb-6">
+                      <h3 className="text-lg md:text-2xl font-bold text-foreground mb-1 md:mb-2">
+                        {category.category}
+                      </h3>
+                      <p className="text-muted-foreground text-sm md:text-base">
+                        {category.description}
+                      </p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4">
                     {category.modules.map((module) => (
                       <ComingSoonCard key={module.name} {...module} />
