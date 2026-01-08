@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,16 +10,16 @@ import {
   ShoppingBag, 
   Plus, 
   Search,
-  ArrowLeft,
   DollarSign
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGunsmithFirearms } from '@/hooks/useGunsmith';
+import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
+import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
 
 export default function GunsmithConsignments() {
   const navigate = useNavigate();
@@ -129,119 +129,113 @@ export default function GunsmithConsignments() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/gunsmith')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <ShoppingBag className="h-8 w-8 text-orange-500" />
-              Consignments
-            </h1>
-            <p className="text-muted-foreground mt-1">Manage consignment inventory</p>
-          </div>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Consignment
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>New Consignment</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Customer (Owner) *</Label>
-                <Select value={formData.customer_id} onValueChange={(v) => setFormData({ ...formData, customer_id: v, firearm_id: '' })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers?.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.first_name} {c.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Firearm *</Label>
-                <Select value={formData.firearm_id} onValueChange={(v) => setFormData({ ...formData, firearm_id: v })} disabled={!formData.customer_id}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={formData.customer_id ? "Select firearm" : "Select customer first"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {firearms?.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.make} {f.model} {f.serial_number && `(${f.serial_number})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Asking Price *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.asking_price}
-                    onChange={(e) => setFormData({ ...formData, asking_price: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Minimum Price</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.minimum_price}
-                    onChange={(e) => setFormData({ ...formData, minimum_price: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>Commission Rate (%)</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  value={formData.commission_rate}
-                  onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
-                />
-              </div>
-              <Button 
-                className="w-full" 
-                onClick={() => createConsignment.mutate(formData)}
-                disabled={!formData.customer_id || !formData.firearm_id || !formData.asking_price || createConsignment.isPending}
-              >
-                {createConsignment.isPending ? 'Creating...' : 'Create Consignment'}
+    <MobilePageContainer>
+      <MobilePageHeader
+        title="Consignments"
+        subtitle="Manage consignment inventory"
+        icon={<ShoppingBag className="h-6 w-6 md:h-8 md:w-8 text-orange-500 shrink-0" />}
+        onBack={() => navigate('/gunsmith')}
+        actions={
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="w-full sm:w-auto">
+                <Plus className="h-4 w-4 mr-1 md:mr-2" />
+                <span className="hidden sm:inline">New </span>Consignment
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>New Consignment</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Customer (Owner) *</Label>
+                  <Select value={formData.customer_id} onValueChange={(v) => setFormData({ ...formData, customer_id: v, firearm_id: '' })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.first_name} {c.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Firearm *</Label>
+                  <Select value={formData.firearm_id} onValueChange={(v) => setFormData({ ...formData, firearm_id: v })} disabled={!formData.customer_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={formData.customer_id ? "Select firearm" : "Select customer first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {firearms?.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>
+                          {f.make} {f.model} {f.serial_number && `(${f.serial_number})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Asking Price *</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.asking_price}
+                      onChange={(e) => setFormData({ ...formData, asking_price: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Minimum Price</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.minimum_price}
+                      onChange={(e) => setFormData({ ...formData, minimum_price: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Commission Rate (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={formData.commission_rate}
+                    onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
+                  />
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={() => createConsignment.mutate(formData)}
+                  disabled={!formData.customer_id || !formData.firearm_id || !formData.asking_price || createConsignment.isPending}
+                >
+                  {createConsignment.isPending ? 'Creating...' : 'Create Consignment'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       {/* Summary Card */}
-      <Card className="mb-6">
-        <CardContent className="p-6">
+      <Card className="mb-4 md:mb-6">
+        <CardContent className="p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Active Consignment Value</p>
-              <p className="text-3xl font-bold text-foreground">${totalValue.toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground mt-1">{activeConsignments.length} items</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Active Consignment Value</p>
+              <p className="text-2xl md:text-3xl font-bold text-foreground">${totalValue.toLocaleString()}</p>
+              <p className="text-xs md:text-sm text-muted-foreground mt-1">{activeConsignments.length} items</p>
             </div>
-            <DollarSign className="h-12 w-12 text-orange-500/20" />
+            <DollarSign className="h-10 w-10 md:h-12 md:w-12 text-orange-500/20" />
           </div>
         </CardContent>
       </Card>
 
       {/* Search */}
-      <div className="mb-6 relative">
+      <div className="mb-4 md:mb-6 relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search consignments..."
@@ -253,67 +247,65 @@ export default function GunsmithConsignments() {
 
       {/* Consignments List */}
       <Card>
-        <CardHeader>
-          <CardTitle>Consignment Inventory</CardTitle>
+        <CardHeader className="p-3 md:p-6">
+          <CardTitle className="text-base md:text-lg">Consignment Inventory</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full" />)}
             </div>
           ) : filteredConsignments?.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <ShoppingBag className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No consignments yet</p>
+            <div className="text-center py-8 md:py-12 text-muted-foreground">
+              <ShoppingBag className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-sm md:text-base">No consignments yet</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 md:space-y-3">
               {filteredConsignments?.map((consignment: any) => (
-                <div key={consignment.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="font-medium">
+                <div key={consignment.id} className="p-3 md:p-4 bg-muted/50 rounded-lg">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-medium text-sm md:text-base">
                         {consignment.gunsmith_firearms?.make} {consignment.gunsmith_firearms?.model}
                       </span>
-                      <Badge className={`${getStatusColor(consignment.status)} text-white`}>
+                      <Badge className={`${getStatusColor(consignment.status)} text-white text-xs`}>
                         {consignment.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       Owner: {consignment.customers?.first_name} {consignment.customers?.last_name}
                       {consignment.gunsmith_firearms?.serial_number && ` - S/N: ${consignment.gunsmith_firearms.serial_number}`}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       Commission: {consignment.commission_rate}%
                       {consignment.minimum_price && ` - Min: $${consignment.minimum_price.toFixed(2)}`}
                     </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-lg">
-                      ${consignment.asking_price?.toFixed(2)}
-                    </p>
-                    {consignment.status === 'active' && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="mt-2"
-                        onClick={() => {
-                          const soldPrice = prompt('Enter sold price:');
-                          if (soldPrice) {
-                            markAsSold.mutate({ id: consignment.id, soldPrice: parseFloat(soldPrice) });
-                          }
-                        }}
-                      >
-                        Mark Sold
-                      </Button>
-                    )}
-                    {consignment.status === 'sold' && (
-                      <div className="text-sm text-green-600 mt-1">
-                        Sold: ${consignment.sold_price?.toFixed(2)}
-                        <br />
-                        Payout: ${consignment.payout_amount?.toFixed(2)}
-                      </div>
-                    )}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-1">
+                      <p className="font-medium text-base md:text-lg">
+                        ${consignment.asking_price?.toFixed(2)}
+                      </p>
+                      {consignment.status === 'active' && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="w-full sm:w-auto text-xs"
+                          onClick={() => {
+                            const soldPrice = prompt('Enter sold price:');
+                            if (soldPrice) {
+                              markAsSold.mutate({ id: consignment.id, soldPrice: parseFloat(soldPrice) });
+                            }
+                          }}
+                        >
+                          Mark Sold
+                        </Button>
+                      )}
+                      {consignment.status === 'sold' && (
+                        <div className="text-xs md:text-sm text-green-600">
+                          Sold: ${consignment.sold_price?.toFixed(2)} | Payout: ${consignment.payout_amount?.toFixed(2)}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -321,6 +313,6 @@ export default function GunsmithConsignments() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </MobilePageContainer>
   );
 }
