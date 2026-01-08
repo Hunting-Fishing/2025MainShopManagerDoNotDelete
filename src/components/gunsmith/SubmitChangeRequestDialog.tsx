@@ -58,7 +58,7 @@ export function SubmitChangeRequestDialog({
     module: defaultModule,
     category: 'functionality' as FeatureRequest['category'],
     priority: 'medium' as FeatureRequest['priority'],
-    submitter_name: profile?.first_name ? `${profile.first_name} ${profile.last_name || ''}`.trim() : '',
+    submitter_name: userName || '',
     submitter_email: user?.email || '',
   });
 
@@ -151,7 +151,7 @@ export function SubmitChangeRequestDialog({
           module: defaultModule,
           category: 'functionality',
           priority: 'medium',
-          submitter_name: profile?.first_name ? `${profile.first_name} ${profile.last_name || ''}`.trim() : '',
+          submitter_name: userName || '',
           submitter_email: user?.email || '',
         });
         setUploadedFiles([]);
