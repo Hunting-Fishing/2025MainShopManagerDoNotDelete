@@ -10459,13 +10459,18 @@ export type Database = {
           complexity_estimate: string | null
           created_at: string | null
           description: string
+          developer_actions: string | null
           downvotes: number | null
           estimated_hours: number | null
           id: string
           implementation_notes: string | null
           is_featured: boolean | null
           is_public: boolean | null
+          module: string | null
           priority: string
+          progress_notes: string | null
+          reason_for_change: string | null
+          request_number: number
           reviewed_at: string | null
           status: string
           submitted_by: string | null
@@ -10490,13 +10495,18 @@ export type Database = {
           complexity_estimate?: string | null
           created_at?: string | null
           description: string
+          developer_actions?: string | null
           downvotes?: number | null
           estimated_hours?: number | null
           id?: string
           implementation_notes?: string | null
           is_featured?: boolean | null
           is_public?: boolean | null
+          module?: string | null
           priority?: string
+          progress_notes?: string | null
+          reason_for_change?: string | null
+          request_number?: number
           reviewed_at?: string | null
           status?: string
           submitted_by?: string | null
@@ -10521,13 +10531,18 @@ export type Database = {
           complexity_estimate?: string | null
           created_at?: string | null
           description?: string
+          developer_actions?: string | null
           downvotes?: number | null
           estimated_hours?: number | null
           id?: string
           implementation_notes?: string | null
           is_featured?: boolean | null
           is_public?: boolean | null
+          module?: string | null
           priority?: string
+          progress_notes?: string | null
+          reason_for_change?: string | null
+          request_number?: number
           reviewed_at?: string | null
           status?: string
           submitted_by?: string | null
