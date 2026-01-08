@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sparkles, Heart, Clock, Shield, Zap, Users, TrendingUp, Headphones, CheckCircle } from 'lucide-react';
+import { LANDING_MODULES, LANDING_COMING_SOON } from '@/config/landingModules';
 
 const benefits = [
   {
@@ -52,9 +53,14 @@ const steps = [
   },
 ];
 
+// Calculate exact counts from config
+const liveModulesCount = LANDING_MODULES.filter(m => m.available).length;
+const comingSoonCount = LANDING_COMING_SOON.length;
+const totalModulesCount = liveModulesCount + comingSoonCount;
+
 const stats = [
-  { value: '50+', label: 'Industry Modules' },
-  { value: '24/7', label: 'Support Available' },
+  { value: String(liveModulesCount), label: 'Live Modules' },
+  { value: String(comingSoonCount), label: 'Coming Soon' },
   { value: '99.9%', label: 'Uptime Guaranteed' },
   { value: 'Free', label: 'To Get Started' },
 ];
