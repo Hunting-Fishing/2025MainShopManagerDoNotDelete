@@ -1550,21 +1550,28 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
     gradientFrom: 'from-amber-500',
     gradientTo: 'to-amber-600',
     sections: [
-      { title: 'Dashboard', href: '/gunsmith', icon: Gauge },
-      { title: 'All Jobs', href: '/gunsmith/jobs', icon: Briefcase },
-      { title: 'Customers', href: '/gunsmith/customers', icon: Users },
-      { title: 'Firearms', href: '/gunsmith/firearms', icon: Crosshair },
-      { title: 'Parts', href: '/gunsmith/parts', icon: Package },
-      { title: 'Parts on Order', href: '/gunsmith/parts-on-order', icon: ShoppingBag },
-      { title: 'Inventory', href: '/gunsmith/inventory', icon: BarChart3 },
-      { title: 'Quotes', href: '/gunsmith/quotes', icon: FileText },
-      { title: 'Invoices', href: '/gunsmith/invoices', icon: Receipt },
-      { title: 'Payments', href: '/gunsmith/payments', icon: CreditCard },
-      { title: 'Appointments', href: '/gunsmith/appointments', icon: Calendar },
-      { title: 'Compliance', href: '/gunsmith/compliance', icon: Shield },
-      { title: 'Transfers', href: '/gunsmith/transfers', icon: ArrowRightLeft },
-      { title: 'Consignments', href: '/gunsmith/consignments', icon: ShoppingBag },
-      { title: 'Resources', href: '/gunsmith/resources', icon: Link },
+      // Dashboard
+      { title: 'Dashboard', href: '/gunsmith', icon: Gauge, group: 'Dashboard' },
+      // Services
+      { title: 'All Jobs', href: '/gunsmith/jobs', icon: Briefcase, group: 'Services' },
+      { title: 'Quotes', href: '/gunsmith/quotes', icon: FileText, group: 'Services' },
+      { title: 'Appointments', href: '/gunsmith/appointments', icon: Calendar, group: 'Services' },
+      // Customers
+      { title: 'Customers', href: '/gunsmith/customers', icon: Users, group: 'Customers' },
+      { title: 'Firearms', href: '/gunsmith/firearms', icon: Crosshair, group: 'Customers' },
+      // Inventory
+      { title: 'Parts', href: '/gunsmith/parts', icon: Package, group: 'Inventory' },
+      { title: 'Parts on Order', href: '/gunsmith/parts-on-order', icon: ShoppingBag, group: 'Inventory' },
+      { title: 'Inventory', href: '/gunsmith/inventory', icon: BarChart3, group: 'Inventory' },
+      // Billing
+      { title: 'Invoices', href: '/gunsmith/invoices', icon: Receipt, group: 'Billing' },
+      { title: 'Payments', href: '/gunsmith/payments', icon: CreditCard, group: 'Billing' },
+      // Compliance
+      { title: 'Compliance', href: '/gunsmith/compliance', icon: Shield, group: 'Compliance' },
+      { title: 'Transfers', href: '/gunsmith/transfers', icon: ArrowRightLeft, group: 'Compliance' },
+      { title: 'Consignments', href: '/gunsmith/consignments', icon: ShoppingBag, group: 'Compliance' },
+      // Resources
+      { title: 'Resources', href: '/gunsmith/resources', icon: Link, group: 'Resources' },
     ],
   },
   marine: {

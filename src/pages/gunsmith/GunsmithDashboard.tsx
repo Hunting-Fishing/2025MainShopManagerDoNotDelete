@@ -192,7 +192,7 @@ export default function GunsmithDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-12 gap-4 mb-8">
+      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4 mb-8">
         <Button
           variant="outline"
           className="h-24 flex flex-col gap-2"
@@ -200,6 +200,14 @@ export default function GunsmithDashboard() {
         >
           <ClipboardList className="h-6 w-6" />
           <span className="text-xs">All Jobs</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-24 flex flex-col gap-2 border-indigo-500/30 hover:bg-indigo-500/5"
+          onClick={() => navigate('/gunsmith/customers')}
+        >
+          <Users className="h-6 w-6 text-indigo-500" />
+          <span className="text-xs">Customers</span>
         </Button>
         <Button
           variant="outline"
