@@ -17,13 +17,12 @@ export default function CustomerPortalLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
   
   // Shop context
   const [shop, setShop] = useState<ShopPublicInfo | null>(null);
   const [shopLoading, setShopLoading] = useState(true);
 
-  // Load shop from URL params
+  // Load shop from URL params only - no automatic session redirect
   useEffect(() => {
     const loadShopContext = async () => {
       const shopSlug = searchParams.get('shop');
@@ -38,45 +37,6 @@ export default function CustomerPortalLogin() {
     
     loadShopContext();
   }, [searchParams]);
-
-  useEffect(() => {
-    // Check if already logged in as a customer
-    const checkExistingSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        // Check if this user is linked to a customer
-        const { data: customer } = await supabase
-          .from('customers')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .single();
-        
-        if (customer) {
-          navigate('/customer-portal/dashboard');
-          return;
-        }
-      }
-      setCheckingAuth(false);
-    };
-
-    checkExistingSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const { data: customer } = await supabase
-          .from('customers')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .single();
-        
-        if (customer) {
-          navigate('/customer-portal/dashboard');
-        }
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,19 +86,6 @@ export default function CustomerPortalLogin() {
     }
   };
 
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-primary/20 animate-pulse" />
-            <Loader2 className="h-8 w-8 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-          </div>
-          <p className="text-muted-foreground text-sm">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <CustomerPortalLayout>
