@@ -44,6 +44,7 @@ import Contacts from '@/pages/Contacts';
 import ServiceCatalog from '@/pages/ServiceCatalog';
 import RepairPlans from '@/pages/RepairPlans';
 import Login from '@/pages/Login';
+import StaffLogin from '@/pages/StaffLogin';
 import Signup from '@/pages/Signup';
 import About from '@/pages/About';
 import Pricing from '@/pages/Pricing';
@@ -304,7 +305,7 @@ function App() {
         <Route path="/customer-portal/register" element={<CustomerPortalRegister />} />
         <Route path="/customer-portal/dashboard" element={<CustomerPortalDashboard />} />
         <Route path="/b/:slug" element={<BusinessLanding />} />
-        <Route path="/staff-login" element={<Login />} />
+        <Route path="/staff-login" element={<StaffLogin />} />
         
         {/* Protected routes */}
         <Route
