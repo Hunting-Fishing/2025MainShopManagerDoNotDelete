@@ -2,60 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
-  ClipboardList, 
-  Users, 
-  Package, 
-  Calendar,
   MoreHorizontal,
-  FileText,
-  Wrench,
-  Receipt,
-  Bell,
-  Settings,
-  MessageSquare,
-  Truck,
-  Ship,
-  UserCog,
-  BarChart3,
-  X,
   ChevronRight,
-  CalendarDays,
-  Shield,
-  AlertTriangle,
-  ClipboardCheck,
-  Award,
-  HardHat,
-  Clock,
-  MapPin,
-  Brain,
-  Phone,
-  Mail,
-  Send,
-  MessageCircle,
-  Building2,
-  GraduationCap,
-  FolderOpen,
-  Library,
-  Edit3,
-  ClipboardCopy,
-  ShoppingCart,
-  Heart,
-  ShoppingBag,
-  FormInput,
-  ThumbsUp,
-  Code,
-  User,
-  Lock,
-  HelpCircle,
-  DollarSign,
-  Kanban,
-  Trophy,
-  Building
+  Briefcase,
+  Users,
+  Package,
+  LucideIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { useWorkOrdersCount } from '@/hooks/useWorkOrdersCount';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useActiveModuleNavigation, getModuleGroupedSections } from '@/hooks/useActiveModuleNavigation';
 import {
   Sheet,
   SheetContent,
@@ -68,189 +25,108 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 interface NavItem {
   id: string;
   label: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   path: string;
   badge?: number;
-}
-
-interface MoreMenuItem {
-  id: string;
-  label: string;
-  icon: React.ElementType;
-  path: string;
-  description?: string;
-}
-
-interface MoreMenuSection {
-  title: string;
-  items: MoreMenuItem[];
 }
 
 export function MobileNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { activeCount } = useWorkOrdersCount();
   const { unreadCount } = useNotifications();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { slug: activeModuleSlug, config: activeModuleConfig, isInModule } = useActiveModuleNavigation();
 
-  const navItems: NavItem[] = [
-    {
-      id: 'dashboard',
-      label: 'Home',
-      icon: Home,
-      path: '/dashboard'
-    },
-    {
-      id: 'daily-logs',
-      label: 'Logs',
-      icon: FileText,
-      path: '/daily-logs'
-    },
-    {
-      id: 'calendar',
-      label: 'Service',
-      icon: Calendar,
-      path: '/calendar'
-    },
-    {
-      id: 'staff-scheduling',
-      label: 'Staff',
-      icon: CalendarDays,
-      path: '/scheduling'
-    },
-    {
-      id: 'more',
-      label: 'More',
-      icon: MoreHorizontal,
-      path: ''
+  // Build nav items based on active module
+  const navItems: NavItem[] = React.useMemo(() => {
+    if (isInModule && activeModuleConfig) {
+      // Module-specific navigation
+      const sections = activeModuleConfig.sections;
+      
+      // Find key items for bottom nav (Dashboard, Jobs/Orders, Customers, Parts/Inventory)
+      const dashboard = sections.find(s => s.title === 'Dashboard');
+      const jobs = sections.find(s => s.title === 'All Jobs' || s.title === 'Orders');
+      const customers = sections.find(s => s.title === 'Customers');
+      const parts = sections.find(s => s.title === 'Parts' || s.title === 'Inventory');
+
+      const items: NavItem[] = [];
+
+      if (dashboard) {
+        items.push({
+          id: 'dashboard',
+          label: 'Home',
+          icon: Home,
+          path: dashboard.href,
+        });
+      }
+
+      if (jobs) {
+        items.push({
+          id: 'jobs',
+          label: jobs.title === 'Orders' ? 'Orders' : 'Jobs',
+          icon: jobs.icon as LucideIcon || Briefcase,
+          path: jobs.href,
+        });
+      }
+
+      if (customers) {
+        items.push({
+          id: 'customers',
+          label: 'Customers',
+          icon: customers.icon as LucideIcon || Users,
+          path: customers.href,
+        });
+      }
+
+      if (parts) {
+        items.push({
+          id: 'parts',
+          label: parts.title,
+          icon: parts.icon as LucideIcon || Package,
+          path: parts.href,
+        });
+      }
+
+      // Always add More button
+      items.push({
+        id: 'more',
+        label: 'More',
+        icon: MoreHorizontal,
+        path: '',
+      });
+
+      return items;
     }
-  ];
 
-  const moreMenuSections: MoreMenuSection[] = [
-    {
-      title: 'Operations',
-      items: [
-        { id: 'work-orders', label: 'Work Orders', icon: ClipboardList, path: '/work-orders', description: 'Manage work orders' },
-        { id: 'service-board', label: 'Service Board', icon: ClipboardCheck, path: '/service-board', description: 'Visual service workflow' },
-        { id: 'quotes', label: 'Quotes', icon: FileText, path: '/quotes', description: 'Estimates and quotes' },
-        { id: 'invoices', label: 'Invoices', icon: Receipt, path: '/invoices', description: 'View and manage invoices' },
-        { id: 'payments', label: 'Payments', icon: DollarSign, path: '/payments', description: 'Payment processing' },
-      ]
-    },
-    {
-      title: 'Scheduling',
-      items: [
-        { id: 'planner', label: 'Planner', icon: Kanban, path: '/planner', description: 'Visual planning board' },
-        { id: 'service-reminders', label: 'Service Reminders', icon: Bell, path: '/service-reminders', description: 'Upcoming service alerts' },
-        { id: 'timesheet', label: 'Timesheet', icon: Clock, path: '/timesheet', description: 'Track work hours' },
-        { id: 'staff-scheduling', label: 'Staff Scheduling', icon: CalendarDays, path: '/scheduling', description: 'Manage staff schedules' },
-      ]
-    },
-    {
-      title: 'Fleet & Assets',
-      items: [
-        { id: 'customers', label: 'Customers', icon: Users, path: '/customers', description: 'Customer database' },
-        { id: 'vehicles', label: 'Vehicles', icon: Truck, path: '/vehicles', description: 'Customer vehicles' },
-        { id: 'fleet-management', label: 'Fleet Management', icon: Truck, path: '/fleet-management', description: 'Vehicles, vessels & heavy equipment' },
-        { id: 'equipment', label: 'Shop Equipment', icon: Package, path: '/equipment', description: 'Tools, lifts & shop equipment' },
-        { id: 'safety-equipment', label: 'Safety Equipment', icon: Shield, path: '/safety-equipment', description: 'Fire extinguishers & safety gear' },
-        { id: 'equipment-management', label: 'Equipment Management', icon: Package, path: '/equipment-management', description: 'Manage equipment & tools' },
-        { id: 'equipment-tracking', label: 'Equipment Tracking', icon: MapPin, path: '/equipment-tracking', description: 'Track equipment location' },
-        { id: 'maintenance', label: 'Maintenance Requests', icon: Wrench, path: '/maintenance-requests', description: 'Track maintenance requests' },
-        { id: 'inventory', label: 'Inventory', icon: Package, path: '/inventory', description: 'Parts and supplies' },
-        { id: 'insurance', label: 'Insurance', icon: Shield, path: '/insurance', description: 'Fleet & equipment insurance' },
-      ]
-    },
-    {
-      title: 'Communications',
-      items: [
-        { id: 'chat', label: 'Team Chat', icon: MessageSquare, path: '/chat', description: 'Internal messaging' },
-        { id: 'call-logger', label: 'Call Logger', icon: Phone, path: '/call-logger', description: 'Log phone calls' },
-        { id: 'customer-comms', label: 'Customer Comms', icon: MessageCircle, path: '/customer-comms', description: 'Customer communications' },
-        { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications', description: 'View all notifications' },
-      ]
-    },
-    {
-      title: 'Marketing',
-      items: [
-        { id: 'email-campaigns', label: 'Email Campaigns', icon: Mail, path: '/email-campaigns', description: 'Manage email campaigns' },
-        { id: 'email-sequences', label: 'Email Sequences', icon: Send, path: '/email-sequences', description: 'Automated email flows' },
-        { id: 'email-templates', label: 'Email Templates', icon: FileText, path: '/email-templates', description: 'Email templates' },
-        { id: 'sms-management', label: 'SMS Management', icon: MessageCircle, path: '/sms-management', description: 'SMS campaigns' },
-        { id: 'sms-templates', label: 'SMS Templates', icon: MessageSquare, path: '/sms-templates', description: 'SMS templates' },
-      ]
-    },
-    {
-      title: 'Safety & Compliance',
-      items: [
-        { id: 'safety', label: 'Safety Dashboard', icon: Shield, path: '/safety', description: 'Safety overview' },
-        { id: 'safety-analytics', label: 'Analytics', icon: BarChart3, path: '/safety/analytics', description: 'Inspection trends & alerts' },
-        { id: 'safety-scheduling', label: 'Schedules', icon: Calendar, path: '/safety/schedules', description: 'Schedules, QR codes & auto rules' },
-        { id: 'safety-incidents', label: 'Incidents', icon: AlertTriangle, path: '/safety/incidents', description: 'Report & track incidents' },
-        { id: 'safety-inspections', label: 'Daily Inspections', icon: ClipboardCheck, path: '/safety/inspections', description: 'Shop safety inspections' },
-        { id: 'safety-dvir', label: 'DVIR Reports', icon: Truck, path: '/safety/dvir', description: 'Vehicle inspection reports' },
-        { id: 'safety-vessels', label: 'Vessel Inspections', icon: Ship, path: '/safety/vessels', description: 'Marine vessel pre-trip checks' },
-        { id: 'safety-forklift', label: 'Forklift Inspections', icon: HardHat, path: '/safety/equipment/forklift', description: 'Daily forklift safety checks' },
-        { id: 'safety-equipment', label: 'Lift Inspections', icon: Package, path: '/safety/equipment', description: 'Equipment safety checks' },
-        { id: 'safety-certifications', label: 'Certifications', icon: Award, path: '/safety/certifications', description: 'Staff certifications' },
-        { id: 'safety-reports', label: 'Reports', icon: FileText, path: '/safety/reports', description: 'Safety reports & compliance' },
-        { id: 'safety-corrective-actions', label: 'Corrective Actions', icon: ClipboardCheck, path: '/safety/corrective-actions', description: 'CAPA tracking' },
-        { id: 'safety-near-miss', label: 'Near Miss', icon: AlertTriangle, path: '/safety/near-miss', description: 'Near miss reporting' },
-        { id: 'safety-training', label: 'Training', icon: GraduationCap, path: '/safety/training', description: 'Safety training' },
-        { id: 'safety-meetings', label: 'Meetings', icon: Users, path: '/safety/meetings', description: 'Toolbox talks & meetings' },
-        { id: 'safety-jsa', label: 'JSA', icon: ClipboardCheck, path: '/safety/jsa', description: 'Job Safety Analysis' },
-        { id: 'safety-ppe', label: 'PPE Management', icon: HardHat, path: '/safety/ppe', description: 'PPE inventory & assignments' },
-        { id: 'safety-contractors', label: 'Contractors', icon: Building, path: '/safety/contractors', description: 'Contractor compliance' },
-        { id: 'safety-rewards', label: 'Safety Rewards', icon: Trophy, path: '/safety/rewards', description: 'Points & gamification' },
-      ]
-    },
-    {
-      title: 'Services',
-      items: [
-        { id: 'services', label: 'Service Library', icon: Library, path: '/services', description: 'Service catalog' },
-        { id: 'service-editor', label: 'Service Editor', icon: Edit3, path: '/service-editor', description: 'Edit services' },
-        { id: 'repair-plans', label: 'Repair Plans', icon: ClipboardCopy, path: '/repair-plans', description: 'Repair plan templates' },
-      ]
-    },
-    {
-      title: 'Company',
-      items: [
-        { id: 'team', label: 'Team', icon: UserCog, path: '/team', description: 'Team management' },
-        { id: 'payroll', label: 'Payroll', icon: DollarSign, path: '/payroll', description: 'Time tracking & payroll' },
-        { id: 'company-profile', label: 'Company Profile', icon: Building2, path: '/company-profile', description: 'Company settings' },
-        { id: 'training', label: 'Training', icon: GraduationCap, path: '/training-overview', description: 'Staff training' },
-        { id: 'documents', label: 'Documents', icon: FolderOpen, path: '/documents', description: 'Document management' },
-      ]
-    },
-    {
-      title: 'Store',
-      items: [
-        { id: 'shopping', label: 'Shopping', icon: ShoppingCart, path: '/shopping', description: 'Browse products' },
-        { id: 'wishlist', label: 'Wishlist', icon: Heart, path: '/wishlist', description: 'Saved items' },
-        { id: 'orders', label: 'My Orders', icon: ShoppingBag, path: '/orders', description: 'Order history' },
-      ]
-    },
-    {
-      title: 'Tools',
-      items: [
-        { id: 'projects', label: 'Projects', icon: ClipboardList, path: '/projects', description: 'Project planning & budgets' },
-        { id: 'technician-portal', label: 'Technician Portal', icon: HardHat, path: '/technician-portal', description: 'Mobile technician interface' },
-        { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/analytics', description: 'Business insights' },
-        { id: 'ai-hub', label: 'AI Hub', icon: Brain, path: '/ai-hub', description: 'AI-powered automation' },
-        { id: 'forms', label: 'Forms', icon: FormInput, path: '/forms', description: 'Custom forms' },
-        { id: 'reports', label: 'Reports', icon: BarChart3, path: '/reports', description: 'Analytics and reports' },
-        { id: 'feedback', label: 'Feedback', icon: ThumbsUp, path: '/feedback', description: 'Customer feedback' },
-      ]
-    },
-    {
-      title: 'Account & Settings',
-      items: [
-        { id: 'profile', label: 'Profile', icon: User, path: '/profile', description: 'Your profile' },
-        { id: 'settings', label: 'Settings', icon: Settings, path: '/settings', description: 'App settings' },
-        { id: 'help', label: 'Help', icon: HelpCircle, path: '/help', description: 'Help & support' },
-      ]
-    },
-  ];
+    // Default navigation (not in a module)
+    return [
+      { id: 'dashboard', label: 'Home', icon: Home, path: '/dashboard' },
+      { id: 'more', label: 'More', icon: MoreHorizontal, path: '' },
+    ];
+  }, [isInModule, activeModuleConfig]);
+
+  // Build "More" menu sections based on active module
+  const moreMenuSections = React.useMemo(() => {
+    if (isInModule && activeModuleConfig) {
+      const groupedSections = getModuleGroupedSections(activeModuleConfig);
+      
+      return groupedSections
+        .filter(([groupName]) => groupName !== 'Dashboard') // Don't show dashboard in "more"
+        .map(([groupName, items]) => ({
+          title: groupName,
+          items: items.map(item => ({
+            id: item.href,
+            label: item.title,
+            icon: item.icon as LucideIcon,
+            path: item.href,
+            description: (item as any).description,
+          })),
+        }));
+    }
+
+    // Default - show nothing (user not in module)
+    return [];
+  }, [isInModule, activeModuleConfig]);
 
   const handleNavigation = (path: string) => {
     if (path) {
@@ -260,10 +136,18 @@ export function MobileNavigation() {
   };
 
   const isActive = (path: string) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/' || location.pathname === '/dashboard';
+    if (!path) return false;
+    
+    // Exact match for dashboard
+    if (path === location.pathname) return true;
+    
+    // For non-dashboard routes, check if current path starts with the nav path
+    // but only if it's not the dashboard path
+    if (activeModuleConfig && path !== activeModuleConfig.dashboardRoute) {
+      return location.pathname.startsWith(path);
     }
-    return location.pathname.startsWith(path);
+    
+    return false;
   };
 
   return (
@@ -303,47 +187,80 @@ export function MobileNavigation() {
                 </SheetTrigger>
                 <SheetContent side="bottom" className="h-[85vh] rounded-t-xl">
                   <SheetHeader className="pb-4 border-b">
-                    <SheetTitle>More Options</SheetTitle>
+                    <SheetTitle>
+                      {activeModuleConfig ? activeModuleConfig.name : 'More Options'}
+                    </SheetTitle>
                   </SheetHeader>
                   <ScrollArea className="h-full pb-20">
                     <div className="py-4 space-y-6">
-                      {moreMenuSections.map((section) => (
-                        <div key={section.title}>
-                          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
-                            {section.title}
-                          </h3>
-                          <div className="space-y-1">
-                            {section.items.map((menuItem) => {
-                              const MenuIcon = menuItem.icon;
-                              const isMenuActive = isActive(menuItem.path);
-                              
-                              return (
-                                <button
-                                  key={menuItem.id}
-                                  onClick={() => handleNavigation(menuItem.path)}
-                                  className={cn(
-                                    "w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors",
-                                    isMenuActive 
-                                      ? "bg-primary/10 text-primary" 
-                                      : "hover:bg-muted"
-                                  )}
-                                >
-                                  <MenuIcon className="h-5 w-5 flex-shrink-0" />
-                                  <div className="flex-1 text-left">
-                                    <div className="font-medium">{menuItem.label}</div>
-                                    {menuItem.description && (
-                                      <div className="text-xs text-muted-foreground">
-                                        {menuItem.description}
-                                      </div>
+                      {moreMenuSections.length > 0 ? (
+                        moreMenuSections.map((section) => (
+                          <div key={section.title}>
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                              {section.title}
+                            </h3>
+                            <div className="space-y-1">
+                              {section.items.map((menuItem) => {
+                                const MenuIcon = menuItem.icon;
+                                const isMenuActive = isActive(menuItem.path);
+                                
+                                return (
+                                  <button
+                                    key={menuItem.id}
+                                    onClick={() => handleNavigation(menuItem.path)}
+                                    className={cn(
+                                      "w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors",
+                                      isMenuActive 
+                                        ? "bg-primary/10 text-primary" 
+                                        : "hover:bg-muted"
                                     )}
-                                  </div>
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                </button>
-                              );
-                            })}
+                                  >
+                                    <MenuIcon className="h-5 w-5 flex-shrink-0" />
+                                    <div className="flex-1 text-left">
+                                      <div className="font-medium">{menuItem.label}</div>
+                                      {menuItem.description && (
+                                        <div className="text-xs text-muted-foreground">
+                                          {menuItem.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                          <p>No additional options available</p>
                         </div>
-                      ))}
+                      )}
+
+                      {/* Account section at bottom */}
+                      <div className="border-t pt-4">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                          Account
+                        </h3>
+                        <div className="space-y-1">
+                          <button
+                            onClick={() => handleNavigation('/profile')}
+                            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted"
+                          >
+                            <Users className="h-5 w-5 flex-shrink-0" />
+                            <span className="font-medium">Profile</span>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
+                          </button>
+                          <button
+                            onClick={() => handleNavigation('/settings')}
+                            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted"
+                          >
+                            <Package className="h-5 w-5 flex-shrink-0" />
+                            <span className="font-medium">Settings</span>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </ScrollArea>
                 </SheetContent>
