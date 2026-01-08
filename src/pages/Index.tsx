@@ -270,7 +270,7 @@ export default function Index() {
           </div>
 
           {filteredAvailableModules.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-6 max-w-6xl mx-auto">
+            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-6 max-w-6xl mx-auto">
               {filteredAvailableModules.map((module) => (
                 <ModuleCard key={module.slug} {...module} />
               ))}
@@ -306,7 +306,7 @@ export default function Index() {
                       {category.description}
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4">
                     {category.modules.map((module) => (
                       <ComingSoonCard key={module.name} {...module} />
                     ))}
