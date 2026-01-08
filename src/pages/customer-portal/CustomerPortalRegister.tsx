@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, UserPlus, Crosshair, CheckCircle } from 'lucide-react';
-import { useCompany } from '@/contexts/CompanyContext';
+import { Loader2, UserPlus, Building2, CheckCircle, KeyRound } from 'lucide-react';
+import { getShopBySlug, getShopByInviteCode, ShopPublicInfo } from '@/services/shopLookupService';
 
 export default function CustomerPortalRegister() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { companyName } = useCompany();
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -20,10 +21,37 @@ export default function CustomerPortalRegister() {
     phone: '',
     password: '',
     confirmPassword: '',
+    inviteCode: '',
   });
   const [loading, setLoading] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  
+  // Shop context
+  const [shop, setShop] = useState<ShopPublicInfo | null>(null);
+  const [shopLoading, setShopLoading] = useState(true);
+  const [showInviteCode, setShowInviteCode] = useState(false);
+  const [codeValidating, setCodeValidating] = useState(false);
+
+  // Load shop from URL params
+  useEffect(() => {
+    const loadShopContext = async () => {
+      const shopSlug = searchParams.get('shop');
+      const code = searchParams.get('code');
+      
+      if (shopSlug) {
+        const shopData = await getShopBySlug(shopSlug);
+        if (shopData) setShop(shopData);
+      } else if (code) {
+        const shopData = await getShopByInviteCode(code);
+        if (shopData) setShop(shopData);
+      }
+      
+      setShopLoading(false);
+    };
+    
+    loadShopContext();
+  }, [searchParams]);
 
   useEffect(() => {
     const checkExistingSession = async () => {
@@ -46,6 +74,29 @@ export default function CustomerPortalRegister() {
     checkExistingSession();
   }, [navigate]);
 
+  const validateInviteCode = async () => {
+    if (!formData.inviteCode.trim()) return;
+    
+    setCodeValidating(true);
+    const shopData = await getShopByInviteCode(formData.inviteCode);
+    setCodeValidating(false);
+    
+    if (shopData) {
+      setShop(shopData);
+      setShowInviteCode(false);
+      toast({
+        title: "Business Found!",
+        description: `You'll be registered with ${shopData.name}`,
+      });
+    } else {
+      toast({
+        title: "Invalid Code",
+        description: "We couldn't find a business with that code.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -67,26 +118,20 @@ export default function CustomerPortalRegister() {
       return;
     }
 
+    // Require a shop to be selected
+    if (!shop) {
+      toast({
+        title: "No Business Selected",
+        description: "Please enter a business code or select a business first.",
+        variant: "destructive"
+      });
+      setShowInviteCode(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Get a default shop_id for new customers
-      const { data: shopData } = await supabase
-        .from('shops')
-        .select('id')
-        .limit(1)
-        .single();
-      
-      if (!shopData) {
-        toast({
-          title: "Configuration Error",
-          description: "Unable to register at this time. Please contact support.",
-          variant: "destructive"
-        });
-        setLoading(false);
-        return;
-      }
-
       // First, check if a customer with this email already exists
       const { data: existingCustomer } = await supabase
         .from('customers')
@@ -134,11 +179,11 @@ export default function CustomerPortalRegister() {
           description: `Welcome ${existingCustomer.first_name}! Your existing customer profile has been linked to your new account.`,
         });
       } else {
-        // Create new customer record with shop_id
+        // Create new customer record with the selected shop
         const { error: customerError } = await supabase
           .from('customers')
           .insert([{
-            shop_id: shopData.id,
+            shop_id: shop.id,
             first_name: formData.firstName,
             last_name: formData.lastName,
             email: formData.email.toLowerCase(),
@@ -207,19 +252,93 @@ export default function CustomerPortalRegister() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 p-4">
       <Card className="w-full max-w-md shadow-xl border-amber-200">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
-            <Crosshair className="h-8 w-8 text-white" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-amber-900">
-            Create Account
-          </CardTitle>
-          <CardDescription className="text-amber-700">
-            {companyName || 'Welcome'} - Register for customer portal access
-          </CardDescription>
+          {shop ? (
+            <>
+              {shop.logo_url ? (
+                <img 
+                  src={shop.logo_url} 
+                  alt={shop.name} 
+                  className="w-16 h-16 mx-auto object-contain rounded-lg"
+                />
+              ) : (
+                <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
+                  <Building2 className="h-8 w-8 text-white" />
+                </div>
+              )}
+              <div>
+                <CardTitle className="text-2xl font-bold text-amber-900">
+                  Create Account
+                </CardTitle>
+                <CardDescription className="text-amber-700">
+                  Register with {shop.name}
+                </CardDescription>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
+                <UserPlus className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-amber-900">
+                Create Account
+              </CardTitle>
+              <CardDescription className="text-amber-700">
+                Register for customer portal access
+              </CardDescription>
+            </>
+          )}
         </CardHeader>
         
         <form onSubmit={handleRegister}>
           <CardContent className="space-y-4">
+            {/* Shop context display or invite code entry */}
+            {!shop && !shopLoading && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                {showInviteCode ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-amber-900">Enter Business Code</label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={formData.inviteCode}
+                        onChange={(e) => setFormData({ ...formData, inviteCode: e.target.value.toUpperCase() })}
+                        placeholder="e.g., BUCKS1"
+                        className="uppercase tracking-widest text-center"
+                        maxLength={10}
+                      />
+                      <Button 
+                        type="button"
+                        onClick={validateInviteCode}
+                        disabled={codeValidating || !formData.inviteCode.trim()}
+                        size="sm"
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        {codeValidating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowInviteCode(true)}
+                    className="w-full flex items-center justify-center gap-2 text-amber-700 hover:text-amber-800 text-sm"
+                  >
+                    <KeyRound className="h-4 w-4" />
+                    Have a business code? Enter it here
+                  </button>
+                )}
+              </div>
+            )}
+            
+            {shop && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+                <div className="text-sm">
+                  <span className="text-green-700">Registering with </span>
+                  <span className="font-medium text-green-800">{shop.name}</span>
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name *</Label>
@@ -320,7 +439,7 @@ export default function CustomerPortalRegister() {
             <div className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
               <Link 
-                to="/customer-portal/login" 
+                to={shop ? `/customer-portal/login?shop=${shop.slug}` : '/customer-portal/login'} 
                 className="text-amber-600 hover:text-amber-700 font-medium"
               >
                 Sign in here
@@ -329,10 +448,10 @@ export default function CustomerPortalRegister() {
             
             <div className="text-center">
               <Link 
-                to="/" 
+                to="/customer-portal" 
                 className="text-sm text-muted-foreground hover:text-amber-600"
               >
-                ← Back to home
+                ← Back to Customer Portal
               </Link>
             </div>
           </CardFooter>

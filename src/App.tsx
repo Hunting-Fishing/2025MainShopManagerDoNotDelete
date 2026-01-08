@@ -147,6 +147,8 @@ import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
 import CustomerPortalAuthLogin from '@/pages/customer-portal/CustomerPortalLogin';
 import CustomerPortalRegister from '@/pages/customer-portal/CustomerPortalRegister';
 import CustomerPortalDashboard from '@/pages/customer-portal/CustomerPortalDashboard';
+import CustomerPortalLanding from '@/pages/customer-portal/CustomerPortalLanding';
+import BusinessLanding from '@/pages/customer-portal/BusinessLanding';
 import CustomerServiceHistory from '@/pages/CustomerServiceHistory';
 import EmailCampaignAnalytics from '@/pages/EmailCampaignAnalytics';
 import EmailSequenceDetails from '@/pages/EmailSequenceDetails';
@@ -297,9 +299,11 @@ function App() {
         <Route path="/affiliate-verify" element={<AffiliateVerification />} />
         <Route path="/modules/:slug" element={<ModuleLearnMore />} />
         <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
+        <Route path="/customer-portal" element={<CustomerPortalLanding />} />
         <Route path="/customer-portal/login" element={<CustomerPortalAuthLogin />} />
         <Route path="/customer-portal/register" element={<CustomerPortalRegister />} />
         <Route path="/customer-portal/dashboard" element={<CustomerPortalDashboard />} />
+        <Route path="/b/:slug" element={<BusinessLanding />} />
         <Route path="/staff-login" element={<Login />} />
         
         {/* Protected routes */}

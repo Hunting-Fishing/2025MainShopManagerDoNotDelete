@@ -33219,6 +33219,7 @@ export type Database = {
           email: string | null
           id: string
           industry: string | null
+          invite_code: string | null
           is_active: boolean | null
           latitude: number | null
           logo_url: string | null
@@ -33233,6 +33234,7 @@ export type Database = {
           setup_step: number | null
           shop_description: string | null
           shop_image_url: string | null
+          slug: string | null
           state: string | null
           tax_id: string | null
           trial_days: number | null
@@ -33247,6 +33249,7 @@ export type Database = {
           email?: string | null
           id?: string
           industry?: string | null
+          invite_code?: string | null
           is_active?: boolean | null
           latitude?: number | null
           logo_url?: string | null
@@ -33261,6 +33264,7 @@ export type Database = {
           setup_step?: number | null
           shop_description?: string | null
           shop_image_url?: string | null
+          slug?: string | null
           state?: string | null
           tax_id?: string | null
           trial_days?: number | null
@@ -33275,6 +33279,7 @@ export type Database = {
           email?: string | null
           id?: string
           industry?: string | null
+          invite_code?: string | null
           is_active?: boolean | null
           latitude?: number | null
           logo_url?: string | null
@@ -33289,6 +33294,7 @@ export type Database = {
           setup_step?: number | null
           shop_description?: string | null
           shop_image_url?: string | null
+          slug?: string | null
           state?: string | null
           tax_id?: string | null
           trial_days?: number | null
@@ -41288,6 +41294,7 @@ export type Database = {
         Args: { p_shop_id: string }
         Returns: string
       }
+      generate_invite_code: { Args: never; Returns: string }
       generate_quote_number: { Args: { p_shop_id?: string }; Returns: string }
       generate_raffle_ticket_number: {
         Args: { p_raffle_id: string }
@@ -41301,6 +41308,7 @@ export type Database = {
         Args: { parent_id: string }
         Returns: string
       }
+      generate_shop_slug: { Args: { shop_name: string }; Returns: string }
       generate_work_order_number: {
         Args: { p_shop_id: string }
         Returns: string
