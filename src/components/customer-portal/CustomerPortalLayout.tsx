@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, LogIn, UserPlus, Home } from 'lucide-react';
+import customerPortalBg from '@/assets/customer-portal-bg.jpg';
 
 interface CustomerPortalLayoutProps {
   children: React.ReactNode;
@@ -50,7 +51,7 @@ export function CustomerPortalHeader() {
 
 export function CustomerPortalFooter() {
   return (
-    <footer className="bg-muted/50 border-t mt-auto">
+    <footer className="bg-muted/80 backdrop-blur-md border-t mt-auto relative z-10">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
@@ -118,12 +119,27 @@ export function CustomerPortalFooter() {
 
 export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary/5 via-background to-primary/10">
-      <CustomerPortalHeader />
-      <main className="flex-1">
-        {children}
-      </main>
-      <CustomerPortalFooter />
+    <div className="min-h-screen flex flex-col relative">
+      {/* Background Image */}
+      <div className="fixed inset-0 z-0">
+        <img 
+          src={customerPortalBg} 
+          alt="" 
+          className="w-full h-full object-cover"
+        />
+        {/* Gradient overlays for readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/85 to-background/75" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50" />
+      </div>
+      
+      {/* Content */}
+      <div className="relative z-10 flex flex-col min-h-screen">
+        <CustomerPortalHeader />
+        <main className="flex-1">
+          {children}
+        </main>
+        <CustomerPortalFooter />
+      </div>
     </div>
   );
 }
