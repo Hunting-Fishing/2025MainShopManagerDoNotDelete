@@ -13,20 +13,29 @@ interface ComingSoonCardProps {
 export function ComingSoonCard({ name, description, icon: Icon }: ComingSoonCardProps) {
   return (
     <Card className="group relative overflow-hidden bg-muted/50 hover:bg-muted/80 transition-all duration-300">
-      <Badge variant="secondary" className="absolute top-1.5 right-1.5 md:top-3 md:right-3 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[8px] md:text-xs px-1 py-0 md:px-2.5 md:py-0.5 h-4 md:h-auto">
+      <Badge
+        variant="secondary"
+        className="absolute top-1 right-1 md:top-3 md:right-3 text-[8px] md:text-xs px-1 py-0 md:px-2.5 md:py-0.5 h-4 md:h-auto"
+      >
         Soon
       </Badge>
-      <CardContent className="pt-4 pb-3 px-3 md:pt-8 md:pb-6 md:px-6">
-        <div className="w-8 h-8 md:w-14 md:h-14 rounded-lg md:rounded-xl bg-muted flex items-center justify-center mb-1.5 md:mb-4 group-hover:bg-primary/10 transition-colors">
-          <Icon className="h-4 w-4 md:h-7 md:w-7 text-muted-foreground group-hover:text-primary transition-colors" />
+      <CardContent className="p-2 md:pt-8 md:pb-6 md:px-6">
+        <div className="w-7 h-7 md:w-14 md:h-14 rounded-md md:rounded-xl bg-muted flex items-center justify-center mb-1 md:mb-4 group-hover:bg-primary/10 transition-colors">
+          <Icon className="h-3.5 w-3.5 md:h-7 md:w-7 text-muted-foreground group-hover:text-primary transition-colors" />
         </div>
-        <h3 className="text-xs md:text-xl font-semibold mb-0.5 md:mb-2 text-foreground/80 line-clamp-1">{name}</h3>
-        <p className="text-muted-foreground text-[10px] md:text-sm mb-2 md:mb-4 line-clamp-2 min-h-[24px] md:min-h-[40px]">
+        <h3 className="text-[11px] leading-4 md:text-xl font-semibold mb-0.5 md:mb-2 text-foreground/80 line-clamp-1">
+          {name}
+        </h3>
+        <p className="hidden sm:block text-muted-foreground text-[10px] md:text-sm mb-2 md:mb-4 line-clamp-2">
           {description}
         </p>
-        <Button size="sm" variant="ghost" className="gap-1 md:gap-2 text-muted-foreground hover:text-primary text-[10px] md:text-sm h-6 md:h-9 px-1.5 md:px-3">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="gap-1.5 text-muted-foreground hover:text-primary h-6 md:h-9 px-2 md:px-3"
+        >
           <Bell className="h-3 w-3 md:h-4 md:w-4" />
-          Notify
+          <span className="hidden md:inline text-sm">Notify</span>
         </Button>
       </CardContent>
     </Card>

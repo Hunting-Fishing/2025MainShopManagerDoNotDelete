@@ -1,25 +1,22 @@
 import React from 'react';
-import { Star, Quote } from 'lucide-react';
+import { CalendarDays, ClipboardList, ReceiptText } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
-const testimonials = [
+const highlights = [
   {
-    quote: "All Business 365 transformed how we manage our auto shop. Everything is in one place now!",
-    author: "Marcus Johnson",
-    role: "Owner, Johnson's Auto Repair",
-    rating: 5,
+    icon: ClipboardList,
+    title: 'Run work orders end-to-end',
+    description: 'Create jobs, assign staff, track status, and keep history organized.',
   },
   {
-    quote: "The marine module is exactly what our yacht club needed. Setup took less than an hour.",
-    author: "Sarah Chen",
-    role: "Manager, Coastal Marina",
-    rating: 5,
+    icon: CalendarDays,
+    title: 'Schedule without the chaos',
+    description: 'Book appointments, manage availability, and reduce no-shows.',
   },
   {
-    quote: "Finally, software that understands the funeral industry. Compassionate and professional.",
-    author: "Robert Williams",
-    role: "Director, Williams Memorial",
-    rating: 5,
+    icon: ReceiptText,
+    title: 'Invoice & get paid faster',
+    description: 'Send invoices, track balances, and keep cash flow visible.',
   },
 ];
 
@@ -27,30 +24,21 @@ export function TestimonialsSection() {
   return (
     <section className="py-10 md:py-16">
       <div className="text-center mb-6 md:mb-10">
-        <h3 className="text-xl md:text-3xl font-bold mb-2">Trusted by Businesses Everywhere</h3>
-        <p className="text-muted-foreground text-sm md:text-base">See what our customers have to say</p>
+        <h3 className="text-xl md:text-3xl font-bold mb-2">Built for Real Operations</h3>
+        <p className="text-muted-foreground text-sm md:text-base">
+          Everything you need to run a service business—without juggling tools.
+        </p>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-        {testimonials.map((testimonial, index) => (
-          <Card key={index} className="relative overflow-hidden hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6 pb-5 px-5">
-              <Quote className="h-6 w-6 text-primary/20 absolute top-4 right-4" />
-              
-              <div className="flex gap-0.5 mb-3">
-                {Array.from({ length: testimonial.rating }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                ))}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+        {highlights.map((item) => (
+          <Card key={item.title} className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-5">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                <item.icon className="h-5 w-5 text-primary" />
               </div>
-              
-              <p className="text-sm md:text-base text-foreground/90 mb-4 leading-relaxed">
-                "{testimonial.quote}"
-              </p>
-              
-              <div className="border-t pt-3">
-                <p className="font-semibold text-sm">{testimonial.author}</p>
-                <p className="text-xs text-muted-foreground">{testimonial.role}</p>
-              </div>
+              <h4 className="font-semibold mb-1">{item.title}</h4>
+              <p className="text-sm text-muted-foreground">{item.description}</p>
             </CardContent>
           </Card>
         ))}

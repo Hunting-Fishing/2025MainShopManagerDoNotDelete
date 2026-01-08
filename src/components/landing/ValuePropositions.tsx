@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, CreditCard, Rocket, Calendar, HeartHandshake } from 'lucide-react';
+import { CreditCard, Rocket, Calendar, HeartHandshake } from 'lucide-react';
 
 const propositions = [
   { icon: CreditCard, text: 'No Credit Card Required' },
@@ -10,14 +10,14 @@ const propositions = [
 
 export function ValuePropositions() {
   return (
-    <div className="flex flex-wrap justify-center gap-3 md:gap-6 py-4 md:py-6">
-      {propositions.map((prop, index) => (
+    <div className="flex flex-wrap justify-center gap-2 md:gap-4 py-3 md:py-6">
+      {propositions.map((prop) => (
         <div
-          key={index}
-          className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-full bg-green-500/10 border border-green-500/20"
+          key={prop.text}
+          className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-muted/60 border border-border"
         >
-          <Check className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-          <span className="text-xs md:text-sm font-medium text-green-700 dark:text-green-300 whitespace-nowrap">
+          <prop.icon className="h-4 w-4 text-primary flex-shrink-0" />
+          <span className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap">
             {prop.text}
           </span>
         </div>
