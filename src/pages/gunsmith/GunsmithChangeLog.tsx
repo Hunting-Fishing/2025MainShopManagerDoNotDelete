@@ -85,7 +85,7 @@ export default function GunsmithChangeLog() {
   return (
     <MobilePageContainer>
       <MobilePageHeader
-        title="Change Log"
+        title="Feedback Log"
         subtitle="Track feature requests and development progress"
         icon={<ClipboardList className="h-6 w-6 md:h-8 md:w-8 text-amber-600" />}
         actions={

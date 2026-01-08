@@ -99,7 +99,7 @@ export function MobileHeader({
     if (path.startsWith('/scheduling')) return 'Staff Scheduling';
     if (path.startsWith('/shopping')) return 'Shop';
     if (path.startsWith('/ai')) return 'AI Hub';
-    return 'Order Master';
+    return 'All Business 365';
   };
 
   const handleBack = () => {
@@ -270,7 +270,7 @@ export function MobileHeader({
                           {user?.email || 'User'}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Order Master
+                          All Business 365
                         </p>
                       </div>
                     </div>
