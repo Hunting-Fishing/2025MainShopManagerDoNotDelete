@@ -66,6 +66,7 @@ export function AddFeatureRequestDialog({ open, onOpenChange }: AddFeatureReques
       description: values.description,
       category: values.category,
       priority: values.priority,
+      module: 'general',
       submitter_name: values.submitter_name,
       technical_requirements: values.technical_requirements,
     });
