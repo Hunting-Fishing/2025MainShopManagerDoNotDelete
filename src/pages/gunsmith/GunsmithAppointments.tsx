@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,14 +7,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '@/components/ui/textarea';
 import { 
   CalendarDays, 
-  Plus, 
-  ArrowLeft
+  Plus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { UnifiedModuleCalendar } from '@/components/calendar/UnifiedModuleCalendar';
+import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
+import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
 
 const APPOINTMENT_TYPES = ['Repair Drop-off', 'Pickup', 'Consultation', 'Estimate', 'Cleaning', 'Custom Work', 'Transfer'];
 
@@ -67,100 +68,94 @@ export default function GunsmithAppointments() {
   });
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/gunsmith')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-              <CalendarDays className="h-7 w-7 text-amber-500" />
-              Gunsmith Schedule
-            </h1>
-            <p className="text-muted-foreground mt-1">Manage appointments and service schedules</p>
-          </div>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Appointment
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Schedule Appointment</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Customer *</Label>
-                <Select value={formData.customer_id} onValueChange={(v) => setFormData({ ...formData, customer_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
-                  <SelectContent>
-                    {customers?.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.first_name} {c.last_name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+    <MobilePageContainer>
+      <MobilePageHeader
+        title="Schedule"
+        subtitle="Manage appointments and service schedules"
+        icon={<CalendarDays className="h-6 w-6 md:h-7 md:w-7 text-amber-500 shrink-0" />}
+        onBack={() => navigate('/gunsmith')}
+        actions={
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 w-full sm:w-auto" size="sm">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">New </span>Appointment
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Schedule Appointment</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
                 <div>
-                  <Label>Date *</Label>
-                  <Input type="date" value={formData.appointment_date} onChange={(e) => setFormData({ ...formData, appointment_date: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Time *</Label>
-                  <Input type="time" value={formData.appointment_time} onChange={(e) => setFormData({ ...formData, appointment_time: e.target.value })} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Type *</Label>
-                  <Select value={formData.appointment_type} onValueChange={(v) => setFormData({ ...formData, appointment_type: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <Label>Customer *</Label>
+                  <Select value={formData.customer_id} onValueChange={(v) => setFormData({ ...formData, customer_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
                     <SelectContent>
-                      {APPOINTMENT_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      {customers?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.first_name} {c.last_name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Duration (min)</Label>
-                  <Select value={formData.duration_minutes} onValueChange={(v) => setFormData({ ...formData, duration_minutes: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="15">15 min</SelectItem>
-                      <SelectItem value="30">30 min</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="90">1.5 hours</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Date *</Label>
+                    <Input type="date" value={formData.appointment_date} onChange={(e) => setFormData({ ...formData, appointment_date: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Time *</Label>
+                    <Input type="time" value={formData.appointment_time} onChange={(e) => setFormData({ ...formData, appointment_time: e.target.value })} />
+                  </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Type *</Label>
+                    <Select value={formData.appointment_type} onValueChange={(v) => setFormData({ ...formData, appointment_type: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                      <SelectContent>
+                        {APPOINTMENT_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Duration (min)</Label>
+                    <Select value={formData.duration_minutes} onValueChange={(v) => setFormData({ ...formData, duration_minutes: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 min</SelectItem>
+                        <SelectItem value="30">30 min</SelectItem>
+                        <SelectItem value="60">1 hour</SelectItem>
+                        <SelectItem value="90">1.5 hours</SelectItem>
+                        <SelectItem value="120">2 hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Notes</Label>
+                  <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={() => createAppointment.mutate(formData)} 
+                  disabled={!formData.customer_id || !formData.appointment_date || !formData.appointment_time || !formData.appointment_type || createAppointment.isPending}
+                >
+                  {createAppointment.isPending ? 'Scheduling...' : 'Schedule Appointment'}
+                </Button>
               </div>
-              <div>
-                <Label>Notes</Label>
-                <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
-              </div>
-              <Button 
-                className="w-full" 
-                onClick={() => createAppointment.mutate(formData)} 
-                disabled={!formData.customer_id || !formData.appointment_date || !formData.appointment_time || !formData.appointment_type || createAppointment.isPending}
-              >
-                {createAppointment.isPending ? 'Scheduling...' : 'Schedule Appointment'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       {/* Unified Calendar */}
       <UnifiedModuleCalendar
         moduleType="gunsmith"
         onAddEvent={() => setIsDialogOpen(true)}
       />
-    </div>
+    </MobilePageContainer>
   );
 }

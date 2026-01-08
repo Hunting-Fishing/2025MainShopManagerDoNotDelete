@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Users, Save, Loader2, CheckCircle, Crosshair } from 'lucide-react';
+import { Users, Save, Loader2, CheckCircle, Crosshair } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
 import { toast } from 'sonner';
+import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
+import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
 
 export default function GunsmithCustomerCreate() {
   const navigate = useNavigate();
@@ -88,21 +90,21 @@ export default function GunsmithCustomerCreate() {
   // Success state - customer created
   if (createdCustomerId) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <MobilePageContainer>
         <div className="max-w-2xl mx-auto">
           <Card className="border-amber-500/30">
-            <CardContent className="pt-8 pb-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="h-8 w-8 text-green-500" />
+            <CardContent className="pt-6 pb-6 md:pt-8 md:pb-8 text-center">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="h-7 w-7 md:h-8 md:w-8 text-green-500" />
               </div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">Customer Created!</h2>
-              <p className="text-muted-foreground mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">Customer Created!</h2>
+              <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
                 {formData.first_name} {formData.last_name} has been added to your customer list.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="flex flex-col gap-2 md:gap-3">
                 <Button 
                   onClick={() => navigate(`/gunsmith/firearms/new?customerId=${createdCustomerId}`)}
-                  className="bg-amber-600 hover:bg-amber-700"
+                  className="bg-amber-600 hover:bg-amber-700 w-full"
                 >
                   <Crosshair className="h-4 w-4 mr-2" />
                   Add a Firearm
@@ -110,13 +112,14 @@ export default function GunsmithCustomerCreate() {
                 <Button 
                   variant="outline" 
                   onClick={() => navigate(`/gunsmith/customers/${createdCustomerId}`)}
-                  className="border-amber-600/30 text-amber-600 hover:bg-amber-600/10"
+                  className="border-amber-600/30 text-amber-600 hover:bg-amber-600/10 w-full"
                 >
                   View Customer Profile
                 </Button>
                 <Button 
                   variant="ghost" 
                   onClick={() => navigate('/gunsmith/customers')}
+                  className="w-full"
                 >
                   Back to Customers
                 </Button>
@@ -124,39 +127,32 @@ export default function GunsmithCustomerCreate() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </MobilePageContainer>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <MobilePageContainer>
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/gunsmith/customers')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <Users className="h-8 w-8 text-amber-600" />
-              New Customer
-            </h1>
-            <p className="text-muted-foreground mt-1">Add a new customer to your gunsmith records</p>
-          </div>
-        </div>
+        <MobilePageHeader
+          title="New Customer"
+          subtitle="Add a new customer to your gunsmith records"
+          icon={<Users className="h-6 w-6 md:h-8 md:w-8 text-amber-600 shrink-0" />}
+          onBack={() => navigate('/gunsmith/customers')}
+        />
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
           <Card className="border-amber-500/20">
-            <CardHeader>
-              <CardTitle>Customer Information</CardTitle>
-              <CardDescription>Enter the customer's basic contact information</CardDescription>
+            <CardHeader className="p-3 md:p-6">
+              <CardTitle className="text-base md:text-lg">Customer Information</CardTitle>
+              <CardDescription className="text-xs md:text-sm">Enter the customer's basic contact information</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0 space-y-4 md:space-y-6">
               {/* Name Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name *</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                <div className="space-y-1.5 md:space-y-2">
+                  <Label htmlFor="first_name" className="text-sm">First Name *</Label>
                   <Input
                     id="first_name"
                     value={formData.first_name}
@@ -166,8 +162,8 @@ export default function GunsmithCustomerCreate() {
                     className="border-amber-500/20 focus:border-amber-500"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name *</Label>
+                <div className="space-y-1.5 md:space-y-2">
+                  <Label htmlFor="last_name" className="text-sm">Last Name *</Label>
                   <Input
                     id="last_name"
                     value={formData.last_name}
@@ -180,9 +176,9 @@ export default function GunsmithCustomerCreate() {
               </div>
 
               {/* Contact Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                <div className="space-y-1.5 md:space-y-2">
+                  <Label htmlFor="phone" className="text-sm">Phone</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -192,8 +188,8 @@ export default function GunsmithCustomerCreate() {
                     className="border-amber-500/20 focus:border-amber-500"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                <div className="space-y-1.5 md:space-y-2">
+                  <Label htmlFor="email" className="text-sm">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -206,8 +202,8 @@ export default function GunsmithCustomerCreate() {
               </div>
 
               {/* Preferred Contact */}
-              <div className="space-y-2">
-                <Label htmlFor="preferred_contact">Preferred Contact Method</Label>
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="preferred_contact" className="text-sm">Preferred Contact Method</Label>
                 <Select 
                   value={formData.preferred_contact} 
                   onValueChange={(value) => handleInputChange('preferred_contact', value)}
@@ -224,15 +220,15 @@ export default function GunsmithCustomerCreate() {
               </div>
 
               {/* Address */}
-              <div className="space-y-4">
-                <Label>Address</Label>
+              <div className="space-y-3 md:space-y-4">
+                <Label className="text-sm">Address</Label>
                 <Input
                   value={formData.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   placeholder="Street Address"
                   className="border-amber-500/20 focus:border-amber-500"
                 />
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-4">
                   <div className="col-span-2">
                     <Input
                       value={formData.city}
@@ -257,8 +253,8 @@ export default function GunsmithCustomerCreate() {
               </div>
 
               {/* Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="notes" className="text-sm">Notes</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
@@ -272,17 +268,18 @@ export default function GunsmithCustomerCreate() {
           </Card>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 md:gap-3 mt-4 md:mt-6">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => navigate('/gunsmith/customers')}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              className="bg-amber-600 hover:bg-amber-700"
+              className="bg-amber-600 hover:bg-amber-700 w-full sm:w-auto"
               disabled={createMutation.isPending}
             >
               {createMutation.isPending ? (
@@ -300,6 +297,6 @@ export default function GunsmithCustomerCreate() {
           </div>
         </form>
       </div>
-    </div>
+    </MobilePageContainer>
   );
 }
