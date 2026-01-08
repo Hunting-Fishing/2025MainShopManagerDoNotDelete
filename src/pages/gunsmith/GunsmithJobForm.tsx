@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,19 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateGunsmithJob, useGunsmithFirearms } from '@/hooks/useGunsmith';
-
-const JOB_TYPES = [
-  'Repair',
-  'Cleaning',
-  'Trigger Job',
-  'Barrel Work',
-  'Stock Work',
-  'Bluing/Refinish',
-  'Scope Mount',
-  'Custom Build',
-  'Safety Check',
-  'Other'
-];
+import GunsmithJobTypeSelect, { insertCustomJobType } from '@/components/gunsmith/GunsmithJobTypeSelect';
 
 const PRIORITIES = [
   { value: 'low', label: 'Low' },
@@ -35,6 +23,7 @@ export default function GunsmithJobForm() {
   const navigate = useNavigate();
   const createJob = useCreateGunsmithJob();
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [customJobType, setCustomJobType] = useState('');
   
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -67,11 +56,21 @@ export default function GunsmithJobForm() {
     setFormData({ ...formData, customer_id: customerId, firearm_id: '' });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // Determine the final job type
+    let finalJobType = formData.job_type;
+    
+    // If "Other" is selected and custom value provided, use that and add to database
+    if (formData.job_type === 'Other' && customJobType.trim()) {
+      finalJobType = customJobType.trim();
+      // Insert the custom job type to the database for future use
+      await insertCustomJobType(finalJobType);
+    }
+
     createJob.mutate({
       customer_id: formData.customer_id || undefined,
       firearm_id: formData.firearm_id || undefined,
-      job_type: formData.job_type,
+      job_type: finalJobType,
       priority: formData.priority,
       description: formData.description || undefined,
       diagnosis: formData.diagnosis || undefined,
@@ -173,22 +172,12 @@ export default function GunsmithJobForm() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Job Type *</Label>
-                  <Select 
-                    value={formData.job_type} 
-                    onValueChange={(v) => setFormData({ ...formData, job_type: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {JOB_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <GunsmithJobTypeSelect
+                  value={formData.job_type}
+                  customValue={customJobType}
+                  onValueChange={(v) => setFormData({ ...formData, job_type: v })}
+                  onCustomValueChange={setCustomJobType}
+                />
                 <div>
                   <Label>Priority</Label>
                   <Select 
@@ -266,7 +255,7 @@ export default function GunsmithJobForm() {
             </Button>
             <Button 
               onClick={handleSubmit}
-              disabled={!formData.job_type || createJob.isPending}
+              disabled={!formData.job_type || (formData.job_type === 'Other' && !customJobType.trim()) || createJob.isPending}
             >
               <Save className="h-4 w-4 mr-2" />
               {createJob.isPending ? 'Creating...' : 'Create Job'}
