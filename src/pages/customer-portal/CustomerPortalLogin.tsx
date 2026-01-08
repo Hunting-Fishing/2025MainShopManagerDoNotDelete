@@ -5,8 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, LogIn, Building2 } from 'lucide-react';
+import { Loader2, LogIn, Building2, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { getShopBySlug, ShopPublicInfo } from '@/services/shopLookupService';
 
 export default function CustomerPortalLogin() {
@@ -128,122 +127,164 @@ export default function CustomerPortalLogin() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full bg-primary/20 animate-pulse" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <p className="text-muted-foreground text-sm">Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 p-4">
-      <Card className="w-full max-w-md shadow-xl border-amber-200">
-        <CardHeader className="text-center space-y-2">
-          {shop ? (
-            <>
-              {shop.logo_url ? (
-                <img 
-                  src={shop.logo_url} 
-                  alt={shop.name} 
-                  className="w-16 h-16 mx-auto object-contain rounded-lg"
-                />
-              ) : (
-                <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
-                  <Building2 className="h-8 w-8 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
+      {/* Background decoration */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10 fade-in">
+        {/* Back link */}
+        <Link 
+          to="/customer-portal" 
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6 group"
+        >
+          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm">Back to Customer Portal</span>
+        </Link>
+
+        {/* Main card */}
+        <div className="modern-card-floating p-8 space-y-6">
+          {/* Header */}
+          <div className="text-center space-y-4">
+            {shop ? (
+              <>
+                {shop.logo_url ? (
+                  <div className="mx-auto w-20 h-20 rounded-2xl overflow-hidden shadow-lg ring-4 ring-primary/10">
+                    <img 
+                      src={shop.logo_url} 
+                      alt={shop.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Building2 className="h-10 w-10 text-primary-foreground" />
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <h1 className="text-2xl font-heading font-bold text-foreground">
+                    Welcome Back
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Sign in to <span className="font-medium text-foreground">{shop.name}</span>
+                  </p>
                 </div>
-              )}
-              <div>
-                <CardTitle className="text-2xl font-bold text-amber-900">
-                  Customer Portal
-                </CardTitle>
-                <CardDescription className="text-amber-700">
-                  {shop.name} - Sign in to view your account
-                </CardDescription>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
-                <LogIn className="h-8 w-8 text-white" />
-              </div>
-              <CardTitle className="text-2xl font-bold text-amber-900">
-                Customer Portal
-              </CardTitle>
-              <CardDescription className="text-amber-700">
-                Sign in to view your account
-              </CardDescription>
-            </>
-          )}
-        </CardHeader>
-        
-        <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
+              </>
+            ) : (
+              <>
+                <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg pulse-glow">
+                  <LogIn className="h-10 w-10 text-primary-foreground" />
+                </div>
+                <div className="space-y-1">
+                  <h1 className="text-2xl font-heading font-bold text-foreground">
+                    Customer Portal
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Sign in to access your account
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="border-amber-200 focus:border-amber-500"
-              />
+              <Label htmlFor="email" className="text-sm font-medium">
+                Email Address
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="pl-10 h-12 bg-muted/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="border-amber-200 focus:border-amber-500"
-              />
+              <Label htmlFor="password" className="text-sm font-medium">
+                Password
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pl-10 h-12 bg-muted/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
+                />
+              </div>
             </div>
-          </CardContent>
-          
-          <CardFooter className="flex flex-col gap-4">
+
             <Button 
               type="submit" 
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+              className="w-full h-12 btn-gradient-primary font-medium text-base"
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                   Signing in...
                 </>
               ) : (
                 <>
-                  <LogIn className="h-4 w-4 mr-2" />
+                  <LogIn className="h-5 w-5 mr-2" />
                   Sign In
                 </>
               )}
             </Button>
-            
-            <div className="text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <Link 
-                to={shop ? `/customer-portal/register?shop=${shop.slug}` : '/customer-portal/register'} 
-                className="text-amber-600 hover:text-amber-700 font-medium"
-              >
-                Register here
-              </Link>
+          </form>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/50" />
             </div>
-            
-            <div className="text-center">
-              <Link 
-                to="/customer-portal" 
-                className="text-sm text-muted-foreground hover:text-amber-600"
-              >
-                ← Back to Customer Portal
-              </Link>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-3 text-muted-foreground">New here?</span>
             </div>
-          </CardFooter>
-        </form>
-      </Card>
+          </div>
+
+          {/* Register link */}
+          <div className="text-center">
+            <Link 
+              to={shop ? `/customer-portal/register?shop=${shop.slug}` : '/customer-portal/register'} 
+              className="inline-flex items-center justify-center w-full h-12 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted/50 text-foreground font-medium transition-all hover:border-primary/30"
+            >
+              Create an Account
+            </Link>
+          </div>
+        </div>
+
+        {/* Footer text */}
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          By signing in, you agree to our Terms of Service and Privacy Policy
+        </p>
+      </div>
     </div>
   );
 }
