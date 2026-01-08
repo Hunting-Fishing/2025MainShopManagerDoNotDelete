@@ -20,6 +20,7 @@ import categoryHome from '@/assets/category-home.jpg';
 import categoryPets from '@/assets/category-pets.jpg';
 import categoryFood from '@/assets/category-food.jpg';
 import categoryAdventure from '@/assets/category-adventure.jpg';
+import categoryFarming from '@/assets/category-farming.jpg';
 
 // Map category names to images
 const categoryImages: Record<string, string> = {
@@ -29,6 +30,7 @@ const categoryImages: Record<string, string> = {
   'Pet & Animal Services': categoryPets,
   'Food & Hospitality': categoryFood,
   'Adventure & Outdoor': categoryAdventure,
+  'Farming & Livestock': categoryFarming,
   // Fallback mappings for different category names
   'Outdoor & Adventure': categoryAdventure,
   'Adventure Outfitters & Guide Services': categoryAdventure,
