@@ -7,6 +7,9 @@ import { ModuleCard } from '@/components/landing/ModuleCard';
 import { ComingSoonCard } from '@/components/landing/ComingSoonCard';
 import { FeatureGrid } from '@/components/landing/FeatureGrid';
 import { PricingSection } from '@/components/landing/PricingSection';
+import { TrustIndicators } from '@/components/landing/TrustIndicators';
+import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
+import { ValuePropositions } from '@/components/landing/ValuePropositions';
 import { LANDING_COMING_SOON_CATEGORIES, LANDING_MODULES } from '@/config/landingModules';
 
 export default function Index() {
@@ -199,46 +202,58 @@ export default function Index() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 md:py-28 bg-gradient-to-b from-primary/5 to-background">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+      <section className="py-10 md:py-20 lg:py-28 bg-gradient-to-b from-primary/5 via-primary/3 to-background relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        </div>
+        
+        <div className="container mx-auto px-4 text-center relative">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 md:mb-6">
             One Platform.
-            <span className="text-primary block mt-2">Unlimited Possibilities.</span>
+            <span className="text-primary block mt-1 md:mt-2">Unlimited Possibilities.</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed">
+          <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-6 md:mb-8 leading-relaxed px-2">
             Manage customers, work orders, scheduling, invoicing, and team members across 
             <strong className="text-foreground"> any service industry</strong>. 
-            Built for professionals who demand more.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/staff-login">
-              <Button size="lg" className="gap-2 text-lg px-8">
+          
+          {/* Value Propositions */}
+          <ValuePropositions />
+          
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+            <Link to="/staff-login" className="w-full sm:w-auto">
+              <Button size="lg" className="gap-2 text-base md:text-lg px-6 md:px-8 w-full sm:w-auto">
                 Start Free Trial
-                <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </Link>
-            <a href="#modules">
-              <Button size="lg" variant="outline" className="text-lg px-8">
+            <a href="#modules" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="text-base md:text-lg px-6 md:px-8 w-full sm:w-auto">
                 Explore Modules
               </Button>
             </a>
           </div>
+          
+          {/* Trust Indicators */}
+          <TrustIndicators />
         </div>
       </section>
 
       {/* Available Modules */}
-      <section id="modules" className="py-20">
+      <section id="modules" className="py-10 md:py-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <div className="text-center mb-6 md:mb-12">
+            <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">
               Available Modules
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
+            <p className="text-muted-foreground text-sm md:text-lg max-w-2xl mx-auto mb-4 md:mb-8">
               Industry-specific solutions ready to deploy today
             </p>
             
             {/* Search Input */}
-            <div className="flex justify-center mb-4">
+            <div className="flex justify-center mb-3 md:mb-4">
               <SearchInput
                 value={searchQuery}
                 onChange={setSearchQuery}
@@ -248,14 +263,14 @@ export default function Index() {
             </div>
             
             {searchQuery && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground">
                 Found {totalResults} module{totalResults !== 1 ? 's' : ''} matching "{searchQuery}"
               </p>
             )}
           </div>
 
           {filteredAvailableModules.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 max-w-6xl mx-auto">
               {filteredAvailableModules.map((module) => (
                 <ModuleCard key={module.slug} {...module} />
               ))}
@@ -268,30 +283,30 @@ export default function Index() {
 
       {/* Coming Soon Modules */}
       {filteredComingSoonCategories.length > 0 && (
-        <section className="py-20 bg-muted/20">
+        <section className="py-10 md:py-20 bg-muted/20">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <div className="text-center mb-6 md:mb-12">
+              <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">
                 Coming Soon
               </h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              <p className="text-muted-foreground text-sm md:text-lg max-w-2xl mx-auto">
                 New modules in development. Get notified when they launch.
               </p>
             </div>
             
             {/* Categorized Coming Soon Modules */}
-            <div className="space-y-16 max-w-6xl mx-auto">
+            <div className="space-y-10 md:space-y-16 max-w-6xl mx-auto">
               {filteredComingSoonCategories.map((category) => (
                 <div key={category.category}>
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold text-foreground mb-2">
+                  <div className="mb-4 md:mb-6">
+                    <h3 className="text-lg md:text-2xl font-bold text-foreground mb-1 md:mb-2">
                       {category.category}
                     </h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground text-sm md:text-base">
                       {category.description}
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                     {category.modules.map((module) => (
                       <ComingSoonCard key={module.name} {...module} />
                     ))}
@@ -303,6 +318,13 @@ export default function Index() {
         </section>
       )}
 
+      {/* Testimonials */}
+      <section className="py-10 md:py-16">
+        <div className="container mx-auto px-4">
+          <TestimonialsSection />
+        </div>
+      </section>
+
       {/* Features Grid */}
       <FeatureGrid />
 
@@ -310,23 +332,23 @@ export default function Index() {
       <PricingSection />
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
+      <section className="py-12 md:py-20 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+          <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">
             Ready to Transform Your Business?
           </h2>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
+          <p className="text-sm md:text-lg opacity-90 max-w-2xl mx-auto mb-6 md:mb-8">
             Join thousands of service professionals who trust All Business 365 to run their operations.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/staff-login">
-              <Button size="lg" variant="secondary" className="gap-2 text-lg px-8">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link to="/staff-login" className="w-full sm:w-auto">
+              <Button size="lg" variant="secondary" className="gap-2 text-base md:text-lg px-6 md:px-8 w-full sm:w-auto">
                 Get Started Free
-                <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </Link>
-            <Link to="/customer-portal-login">
-              <Button size="lg" variant="outline" className="text-lg px-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+            <Link to="/customer-portal-login" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="text-base md:text-lg px-6 md:px-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto">
                 Customer Portal
               </Button>
             </Link>
