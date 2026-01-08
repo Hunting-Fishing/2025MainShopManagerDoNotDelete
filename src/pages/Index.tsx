@@ -208,7 +208,7 @@ export default function Index() {
               <p className="text-sm text-muted-foreground hidden sm:block">Professional Service Management</p>
             </div>
             <div className="flex gap-3">
-              <Link to="/customer-portal/login">
+              <Link to="/customer-portal">
                 <Button variant="ghost" className="gap-2">
                   <Users className="h-4 w-4" />
                   <span className="hidden sm:inline">Customer</span> Portal
@@ -347,7 +347,7 @@ export default function Index() {
                 <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </Link>
-            <Link to="/customer-portal-login" className="w-full sm:w-auto">
+            <Link to="/customer-portal" className="w-full sm:w-auto">
               <Button size="lg" variant="outline" className="text-base md:text-lg px-6 md:px-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto">
                 Customer Portal
               </Button>
@@ -372,7 +372,7 @@ export default function Index() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#modules" className="hover:text-foreground transition-colors">Modules</a></li>
                 <li><Link to="/staff-login" className="hover:text-foreground transition-colors">Staff Portal</Link></li>
-                <li><Link to="/customer-portal-login" className="hover:text-foreground transition-colors">Customer Portal</Link></li>
+                <li><Link to="/customer-portal" className="hover:text-foreground transition-colors">Customer Portal</Link></li>
               </ul>
             </div>
             <div>
