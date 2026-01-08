@@ -711,12 +711,33 @@ export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // PET & ANIMAL SERVICES (10 modules)
+  // FARMING & LIVESTOCK (10 modules)
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    category: 'Farming & Livestock',
+    description: 'Agricultural operations, animal husbandry, and farm management',
+    modules: [
+      { name: 'Livestock Management', description: 'Herd tracking, breeding records, health monitoring, and sales', icon: PawPrint },
+      { name: 'Dairy Farm', description: 'Milk production tracking, herd health, and processing schedules', icon: Droplets },
+      { name: 'Poultry Farm', description: 'Flock management, egg production, feed inventory, and processing', icon: Bird },
+      { name: 'Cattle Ranch', description: 'Cattle tracking, pasture rotation, breeding, and market sales', icon: PawPrint },
+      { name: 'Sheep & Goat Farm', description: 'Flock records, shearing schedules, milk production, and breeding', icon: PawPrint },
+      { name: 'Horse Breeding', description: 'Breeding records, foal tracking, training logs, and sales', icon: PawPrint },
+      { name: 'Pig Farm', description: 'Herd management, farrowing schedules, feed conversion, and sales', icon: PawPrint },
+      { name: 'Beekeeping & Apiary', description: 'Hive management, honey production, queen tracking, and sales', icon: Bug },
+      { name: 'Feed & Supply Store', description: 'Agricultural supply inventory, bulk orders, and delivery', icon: Wheat },
+      { name: 'Farm Equipment Rental', description: 'Tractor and equipment booking, maintenance, and billing', icon: Tractor },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // PET & ANIMAL SERVICES (12 modules)
   // ═══════════════════════════════════════════════════════════════════════
   {
     category: 'Pet & Animal Services',
     description: 'Pet care, training, and animal-related businesses',
     modules: [
+      { name: 'Pet Store', description: 'Inventory management, live animal tracking, and customer loyalty', icon: Store },
       { name: 'Pet Grooming', description: 'Appointment scheduling, breed profiles, and grooming notes', icon: PawPrint },
       { name: 'Pet Boarding & Kennel', description: 'Reservation management, feeding schedules, and health tracking', icon: Dog },
       { name: 'Veterinary Clinic', description: 'Patient records, appointments, and prescription tracking', icon: Stethoscope },
