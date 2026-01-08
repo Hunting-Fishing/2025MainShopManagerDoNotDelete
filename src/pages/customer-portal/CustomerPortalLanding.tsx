@@ -1,13 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Search, KeyRound, Building2, Crosshair, ArrowRight, UserPlus, LogIn } from 'lucide-react';
-import { getShopBySlug, getShopByInviteCode, searchShops, ShopPublicInfo } from '@/services/shopLookupService';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Search, KeyRound, Building2, Crosshair, ArrowRight, UserPlus, LogIn, MapPin, Briefcase } from 'lucide-react';
+import { getShopBySlug, getShopByInviteCode, enhancedSearchShops, getAvailableIndustries, ShopPublicInfo } from '@/services/shopLookupService';
 import { useToast } from '@/hooks/use-toast';
 
 type ConnectionMethod = 'code' | 'search' | null;
+
+// Debounce hook for auto-search
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function CustomerPortalLanding() {
   const navigate = useNavigate();
@@ -26,6 +44,23 @@ export default function CustomerPortalLanding() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ShopPublicInfo[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  
+  // Industry filter
+  const [industries, setIndustries] = useState<string[]>([]);
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
+
+  // Debounced search query for auto-search
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Load available industries
+  useEffect(() => {
+    const loadIndustries = async () => {
+      const availableIndustries = await getAvailableIndustries();
+      setIndustries(availableIndustries);
+    };
+    loadIndustries();
+  }, []);
 
   // Check for shop context from URL params
   useEffect(() => {
@@ -51,6 +86,34 @@ export default function CustomerPortalLanding() {
     checkShopContext();
   }, [searchParams]);
 
+  // Auto-search when query or industry changes
+  const performSearch = useCallback(async (query: string, industry: string) => {
+    if (!query.trim() && industry === 'all') {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
+    
+    setSearchLoading(true);
+    setHasSearched(true);
+    
+    const results = await enhancedSearchShops({
+      query: query.trim(),
+      industry: industry !== 'all' ? industry : undefined,
+      limit: 50
+    });
+    
+    setSearchResults(results);
+    setSearchLoading(false);
+  }, []);
+
+  // Trigger search on debounced query or industry change
+  useEffect(() => {
+    if (connectionMethod === 'search') {
+      performSearch(debouncedSearchQuery, selectedIndustry);
+    }
+  }, [debouncedSearchQuery, selectedIndustry, connectionMethod, performSearch]);
+
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteCode.trim()) return;
@@ -71,20 +134,13 @@ export default function CustomerPortalLanding() {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    
-    setSearchLoading(true);
-    const results = await searchShops(searchQuery);
-    setSearchResults(results);
-    setSearchLoading(false);
-  };
-
   const selectShop = (selectedShop: ShopPublicInfo) => {
     setShop(selectedShop);
     setConnectionMethod(null);
     setSearchResults([]);
     setSearchQuery('');
+    setSelectedIndustry('all');
+    setHasSearched(false);
   };
 
   const proceedToRegister = () => {
@@ -132,6 +188,11 @@ export default function CustomerPortalLanding() {
               <CardTitle className="text-2xl font-bold text-amber-900">
                 {shop.name}
               </CardTitle>
+              {shop.industry && (
+                <Badge variant="secondary" className="mt-2 bg-amber-100 text-amber-800">
+                  {shop.industry}
+                </Badge>
+              )}
               <CardDescription className="text-amber-700 mt-2">
                 Welcome to our Customer Portal
               </CardDescription>
@@ -226,7 +287,7 @@ export default function CustomerPortalLanding() {
                   </div>
                   <div className="text-left">
                     <div className="font-medium">Find a business</div>
-                    <div className="text-sm text-muted-foreground">Search our directory of service providers</div>
+                    <div className="text-sm text-muted-foreground">Search by name, location, or service type</div>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground" />
@@ -298,59 +359,134 @@ export default function CustomerPortalLanding() {
                   setConnectionMethod(null);
                   setSearchResults([]);
                   setSearchQuery('');
+                  setSelectedIndustry('all');
+                  setHasSearched(false);
                 }}
                 className="mb-2"
               >
                 ← Back
               </Button>
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <label className="text-sm font-medium">Search for a Business</label>
-                <div className="flex gap-2">
+                
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Business name..."
-                    className="border-amber-200 focus:border-amber-500"
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    placeholder="Search by name, location, or service type..."
+                    className="pl-10 border-amber-200 focus:border-amber-500"
                   />
-                  <Button 
-                    onClick={handleSearch}
-                    className="bg-amber-600 hover:bg-amber-700"
-                    disabled={searchLoading}
-                  >
-                    {searchLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Search className="h-4 w-4" />
-                    )}
-                  </Button>
+                  {searchLoading && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-amber-600" />
+                  )}
                 </div>
+                
+                {/* Industry Filter Pills */}
+                {industries.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setSelectedIndustry('all')}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        selectedIndustry === 'all'
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                      }`}
+                    >
+                      All
+                    </button>
+                    {industries.map((ind) => (
+                      <button
+                        key={ind}
+                        onClick={() => setSelectedIndustry(ind)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                          selectedIndustry === ind
+                            ? 'bg-amber-600 text-white'
+                            : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                        }`}
+                      >
+                        {ind}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               
+              {/* Search Results */}
               {searchResults.length > 0 && (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  <p className="text-xs text-muted-foreground">
+                    {searchResults.length} business{searchResults.length !== 1 ? 'es' : ''} found
+                  </p>
                   {searchResults.map((result) => (
                     <button
                       key={result.id}
                       onClick={() => selectShop(result)}
-                      className="w-full p-3 text-left border rounded-lg hover:bg-amber-50 hover:border-amber-300 transition-colors"
+                      className="w-full p-4 text-left border rounded-lg hover:bg-amber-50 hover:border-amber-300 transition-colors group"
                     >
-                      <div className="font-medium">{result.name}</div>
-                      {result.city && result.state && (
-                        <div className="text-sm text-muted-foreground">
-                          {result.city}, {result.state}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-foreground group-hover:text-amber-900">
+                            {result.name}
+                          </div>
+                          
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            {result.industry && (
+                              <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800">
+                                <Briefcase className="h-3 w-3 mr-1" />
+                                {result.industry}
+                              </Badge>
+                            )}
+                            {result.city && result.state && (
+                              <span className="text-xs text-muted-foreground flex items-center">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {result.city}, {result.state}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {result.shop_description && (
+                            <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                              {result.shop_description}
+                            </p>
+                          )}
                         </div>
-                      )}
+                        
+                        {result.logo_url && (
+                          <img 
+                            src={result.logo_url} 
+                            alt="" 
+                            className="w-12 h-12 rounded-lg object-contain flex-shrink-0"
+                          />
+                        )}
+                      </div>
                     </button>
                   ))}
                 </div>
               )}
               
-              {searchQuery && searchResults.length === 0 && !searchLoading && (
-                <p className="text-center text-muted-foreground text-sm py-4">
-                  No businesses found. Try a different search term.
-                </p>
+              {/* No Results Message */}
+              {hasSearched && searchResults.length === 0 && !searchLoading && (
+                <div className="text-center py-6">
+                  <Building2 className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-muted-foreground text-sm">
+                    No businesses found matching your search.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Try a different name, location, or service type.
+                  </p>
+                </div>
+              )}
+              
+              {/* Initial State - No Search Yet */}
+              {!hasSearched && !searchLoading && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">
+                    Start typing to search all registered businesses
+                  </p>
+                </div>
               )}
             </div>
           )}
