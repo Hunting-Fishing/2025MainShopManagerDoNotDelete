@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { SidebarProvider, useSidebar } from '@/hooks/use-sidebar';
 import { AppSidebar } from './AppSidebar';
 import { Header } from './Header';
+import { AppFooter } from './AppFooter';
 import { MobileLayout } from '@/components/mobile/MobileLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -39,6 +39,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <main className="flex-1 w-full print:w-full">
           {children}
         </main>
+        <AppFooter />
       </div>
     </div>
   );

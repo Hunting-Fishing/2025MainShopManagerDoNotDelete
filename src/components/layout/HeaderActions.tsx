@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuthUser } from '@/hooks/useAuthUser';
@@ -19,7 +18,8 @@ import {
   Brain,
   AlertCircle,
   ClipboardList,
-  Code
+  Code,
+  MessageSquarePlus
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -37,6 +37,7 @@ import { cleanupAuthState } from '@/utils/authCleanup';
 import { useEnabledModules, useUserShopId } from '@/hooks/useEnabledModules';
 import { MODULE_ROUTES } from '@/config/moduleRoutes';
 import { useQuery } from '@tanstack/react-query';
+import { SubmitChangeRequestDialog } from '@/components/gunsmith/SubmitChangeRequestDialog';
 
 export function HeaderActions() {
   const { isAuthenticated, userName, isLoading } = useAuthUser();
@@ -46,6 +47,18 @@ export function HeaderActions() {
   const { data: shopId } = useUserShopId();
   const navigate = useNavigate();
   const location = useLocation();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+
+  // Auto-detect module from current path
+  const getDefaultModule = (): 'gunsmith' | 'power_washing' | 'automotive' | 'marine' | 'fuel_delivery' | 'general' => {
+    const path = location.pathname;
+    if (path.startsWith('/gunsmith')) return 'gunsmith';
+    if (path.startsWith('/power-washing')) return 'power_washing';
+    if (path.startsWith('/automotive')) return 'automotive';
+    if (path.startsWith('/marine')) return 'marine';
+    if (path.startsWith('/fuel-delivery')) return 'fuel_delivery';
+    return 'general';
+  };
 
   type AccountMenuSettings = {
     hidden_items?: string[];
@@ -174,6 +187,7 @@ export function HeaderActions() {
   // Build account items - add Developer Portal for platform developers
   const accountItems = [
     { id: 'profile', label: 'Profile', path: '/profile', icon: UserCircle },
+    { id: 'feedback', label: 'Feedback', path: null, icon: MessageSquarePlus, action: 'openFeedback' },
     { id: 'settings', label: 'Settings', path: '/settings', icon: SettingsIcon },
     ...(isDeveloper ? [{ id: 'developer_portal', label: 'Developer Portal', path: '/developer', icon: Code }] : []),
     { id: 'ai_hub', label: 'AI Hub', path: '/ai-hub', icon: Brain, permission: '/ai-hub' },
@@ -264,8 +278,15 @@ export function HeaderActions() {
           <DropdownMenuGroup>
             {accountItems.filter(isAccountItemVisible).map((item) => {
               const Icon = item.icon;
+              const handleClick = () => {
+                if ((item as any).action === 'openFeedback') {
+                  setFeedbackOpen(true);
+                } else if (item.path) {
+                  navigate(item.path);
+                }
+              };
               return (
-                <DropdownMenuItem key={item.id} onClick={() => navigate(item.path)}>
+                <DropdownMenuItem key={item.id} onClick={handleClick}>
                   <Icon className="mr-2 h-4 w-4" />
                   {item.label}
                 </DropdownMenuItem>
@@ -280,6 +301,12 @@ export function HeaderActions() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <SubmitChangeRequestDialog 
+        open={feedbackOpen} 
+        onOpenChange={setFeedbackOpen}
+        defaultModule={getDefaultModule()}
+      />
     </div>
   );
 }

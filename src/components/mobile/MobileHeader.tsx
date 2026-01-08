@@ -13,6 +13,7 @@ import {
   Receipt,
   Calendar,
   UserCircle,
+  MessageSquarePlus,
   LucideIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import { hasRoutePermission } from '@/utils/routeGuards';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { useActiveModuleNavigation, getModuleGroupedSections } from '@/hooks/useActiveModuleNavigation';
+import { SubmitChangeRequestDialog } from '@/components/gunsmith/SubmitChangeRequestDialog';
 
 interface MobileHeaderProps {
   title?: string;
@@ -51,7 +53,19 @@ export function MobileHeader({
   const { user } = useAuthUser();
   const { data: userRoles = [] } = useUserRoles();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { slug: activeModuleSlug, config: activeModuleConfig, isInModule } = useActiveModuleNavigation();
+
+  // Auto-detect module from current path
+  const getDefaultModule = (): 'gunsmith' | 'power_washing' | 'automotive' | 'marine' | 'fuel_delivery' | 'general' => {
+    const path = location.pathname;
+    if (path.startsWith('/gunsmith')) return 'gunsmith';
+    if (path.startsWith('/power-washing')) return 'power_washing';
+    if (path.startsWith('/automotive')) return 'automotive';
+    if (path.startsWith('/marine')) return 'marine';
+    if (path.startsWith('/fuel-delivery')) return 'fuel_delivery';
+    return 'general';
+  };
 
   const getPageTitle = () => {
     if (title) return title;
@@ -156,16 +170,24 @@ export function MobileHeader({
   // User Profile items
   const profileItems = [
     { label: 'Profile', icon: UserCircle, path: '/profile' },
+    { label: 'Feedback', icon: MessageSquarePlus, path: null, action: 'openFeedback' },
     { label: 'Notifications', icon: Bell, path: '/notifications' },
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];
 
-  const handleMenuItemClick = (path: string) => {
-    console.log('📱 Mobile menu navigation clicked:', path);
-    console.log('📍 Current location:', location.pathname);
-    console.log('🔑 User roles:', userRoles);
-    navigate(path);
-    setIsMenuOpen(false);
+  const handleMenuItemClick = (path: string | null, action?: string) => {
+    if (action === 'openFeedback') {
+      setFeedbackOpen(true);
+      setIsMenuOpen(false);
+      return;
+    }
+    if (path) {
+      console.log('📱 Mobile menu navigation clicked:', path);
+      console.log('📍 Current location:', location.pathname);
+      console.log('🔑 User roles:', userRoles);
+      navigate(path);
+      setIsMenuOpen(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -309,11 +331,11 @@ export function MobileHeader({
                       <div className="space-y-1">
                         {profileItems.map((item) => (
                           <button
-                            key={item.path}
-                            onClick={() => handleMenuItemClick(item.path)}
+                            key={item.label}
+                            onClick={() => handleMenuItemClick(item.path, (item as any).action)}
                             className={cn(
                               "w-full flex items-center space-x-3 px-3 py-2.5 text-left rounded-md hover:bg-accent transition-colors",
-                              location.pathname === item.path && "bg-accent text-accent-foreground"
+                              item.path && location.pathname === item.path && "bg-accent text-accent-foreground"
                             )}
                           >
                             <item.icon className="h-4 w-4 text-muted-foreground" />
@@ -340,6 +362,12 @@ export function MobileHeader({
           )}
         </div>
       </div>
+
+      <SubmitChangeRequestDialog 
+        open={feedbackOpen} 
+        onOpenChange={setFeedbackOpen}
+        defaultModule={getDefaultModule()}
+      />
     </header>
   );
 }
