@@ -19,7 +19,8 @@ import {
   CalendarDays,
   ShoppingBag,
   BarChart3,
-  Link
+  Link,
+  MessageSquarePlus
 } from 'lucide-react';
 import { useGunsmithStats, useGunsmithJobs, useGunsmithAppointments, useGunsmithConsignments, useGunsmithTransfers } from '@/hooks/useGunsmith';
 import { useNavigate } from 'react-router-dom';
@@ -309,6 +310,14 @@ export default function GunsmithDashboard() {
         >
           <Link className="h-5 w-5 md:h-6 md:w-6 text-slate-500" />
           <span className="text-[10px] md:text-xs">Resources</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-16 md:h-24 flex flex-col gap-1 md:gap-2 p-1 md:p-2 border-yellow-500/30 hover:bg-yellow-500/5"
+          onClick={() => navigate('/gunsmith/change-log')}
+        >
+          <MessageSquarePlus className="h-5 w-5 md:h-6 md:w-6 text-yellow-500" />
+          <span className="text-[10px] md:text-xs">Feedback</span>
         </Button>
       </div>
 
