@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,6 @@ import {
   Users, 
   Plus, 
   Search, 
-  ArrowLeft,
   Phone,
   Mail,
   Crosshair,
@@ -18,6 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { QuickAddCustomerDialog } from '@/components/gunsmith/QuickAddCustomerDialog';
+import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
+import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
 
 export default function GunsmithCustomers() {
   const navigate = useNavigate();
@@ -58,28 +59,26 @@ export default function GunsmithCustomers() {
   });
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/gunsmith')}>
-            <ArrowLeft className="h-5 w-5" />
+    <MobilePageContainer>
+      <MobilePageHeader
+        title="Customers"
+        subtitle="Manage customer records and firearms"
+        icon={<Users className="h-6 w-6 md:h-8 md:w-8 text-amber-600" />}
+        onBack={() => navigate('/gunsmith')}
+        actions={
+          <Button 
+            onClick={() => navigate('/gunsmith/customers/new')} 
+            className="bg-amber-600 hover:bg-amber-700 w-full md:w-auto"
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Add </span>Customer
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <Users className="h-8 w-8 text-amber-600" />
-              Gunsmith Customers
-            </h1>
-            <p className="text-muted-foreground mt-1">Manage customer records and firearms</p>
-          </div>
-        </div>
-        <Button onClick={() => navigate('/gunsmith/customers/new')} className="bg-amber-600 hover:bg-amber-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Customer
-        </Button>
-      </div>
+        }
+      />
 
       {/* Search */}
-      <div className="mb-6 relative">
+      <div className="mb-4 md:mb-6 relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search by name, email, or phone..."
@@ -91,26 +90,27 @@ export default function GunsmithCustomers() {
 
       {/* Customers List */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+        <CardHeader className="px-3 md:px-6 py-3 md:py-4">
+          <CardTitle className="flex items-center justify-between text-base md:text-lg">
             <span>All Customers</span>
             {customers && (
-              <Badge variant="secondary">{customers.length} customers</Badge>
+              <Badge variant="secondary" className="text-xs">{customers.length} customers</Badge>
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
           {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-20 w-full" />)}
+            <div className="space-y-2 md:space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-16 md:h-20 w-full" />)}
             </div>
           ) : filteredCustomers?.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No customers found</p>
+            <div className="text-center py-8 md:py-12 text-muted-foreground">
+              <Users className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 md:mb-4 opacity-50" />
+              <p className="text-sm md:text-base">No customers found</p>
               <Button 
                 variant="outline" 
-                className="mt-4"
+                className="mt-3 md:mt-4"
+                size="sm"
                 onClick={() => navigate('/gunsmith/customers/new')}
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -118,54 +118,57 @@ export default function GunsmithCustomers() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 md:space-y-3">
               {filteredCustomers?.map((customer) => {
                 const firearmsCount = customer.gunsmith_firearms?.[0]?.count || 0;
                 
                 return (
                   <div 
                     key={customer.id} 
-                    className="flex items-center justify-between p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+                    className="p-3 md:p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="font-medium text-lg">
-                          {customer.first_name} {customer.last_name}
-                        </span>
-                        {firearmsCount > 0 && (
-                          <Badge className="bg-amber-500/20 text-amber-700 border-amber-500/30">
-                            <Crosshair className="h-3 w-3 mr-1" />
-                            {firearmsCount} firearm{firearmsCount !== 1 ? 's' : ''}
-                          </Badge>
+                    {/* Mobile: Stack layout */}
+                    <div className="space-y-2 md:space-y-0 md:flex md:items-center md:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-medium text-base md:text-lg truncate">
+                            {customer.first_name} {customer.last_name}
+                          </span>
+                          {firearmsCount > 0 && (
+                            <Badge className="bg-amber-500/20 text-amber-700 border-amber-500/30 text-xs shrink-0">
+                              <Crosshair className="h-3 w-3 mr-1" />
+                              {firearmsCount}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:text-sm text-muted-foreground">
+                          {customer.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{customer.phone}</span>
+                            </span>
+                          )}
+                          {customer.email && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="h-3 w-3 shrink-0" />
+                              <span className="truncate max-w-[180px] md:max-w-none">{customer.email}</span>
+                            </span>
+                          )}
+                        </div>
+                        {customer.address && (
+                          <p className="text-xs md:text-sm text-muted-foreground mt-1 truncate">{customer.address}</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        {customer.phone && (
-                          <span className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {customer.phone}
-                          </span>
-                        )}
-                        {customer.email && (
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {customer.email}
-                          </span>
-                        )}
-                      </div>
-                      {customer.address && (
-                        <p className="text-sm text-muted-foreground mt-1">{customer.address}</p>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/gunsmith/customers/${customer.id}`)}
+                        className="text-amber-600 border-amber-600/30 hover:bg-amber-600/10 w-full md:w-auto mt-2 md:mt-0 shrink-0"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Details
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/gunsmith/customers/${customer.id}`)}
-                      className="text-amber-600 border-amber-600/30 hover:bg-amber-600/10"
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
                   </div>
                 );
               })}
@@ -179,6 +182,6 @@ export default function GunsmithCustomers() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
       />
-    </div>
+    </MobilePageContainer>
   );
 }

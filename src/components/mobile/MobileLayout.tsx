@@ -26,7 +26,7 @@ export function MobileLayout({
   const { isInstallable, isStandalone } = usePWA();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Mobile Header */}
       <MobileHeader
         title={title}
@@ -50,7 +50,8 @@ export function MobileLayout({
       <main className={cn(
         "mobile-container",
         "min-h-[calc(100vh-3.5rem-4rem)]", // Account for header and bottom nav
-        "p-4"
+        "px-3 py-4 md:p-4", // Smaller padding on mobile
+        "overflow-x-hidden max-w-full" // Prevent horizontal scroll
       )}>
         {children}
       </main>

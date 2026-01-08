@@ -1,5 +1,11 @@
 /* Mobile-specific styles and utilities */
 
+/* Prevent horizontal scroll globally on mobile pages */
+.mobile-page {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 /* Safe area handling for mobile devices */
 .safe-area-top {
   padding-top: env(safe-area-inset-top);
@@ -20,6 +26,17 @@
 /* Mobile app spacing */
 .mobile-container {
   padding-bottom: 5rem; /* Space for bottom navigation */
+}
+
+/* Responsive container padding */
+.responsive-container {
+  padding: 0.75rem; /* 12px on mobile */
+}
+
+@media (min-width: 768px) {
+  .responsive-container {
+    padding: 1.5rem; /* 24px on tablet+ */
+  }
 }
 
 /* Touch-friendly buttons */
@@ -60,6 +77,52 @@ input, select, textarea {
   z-index: 9999;
 }
 
+/* Mobile-friendly flex layouts - stacks on mobile, row on desktop */
+.mobile-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .mobile-stack {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* Text truncation for mobile */
+.mobile-truncate {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Mobile-friendly scrollable tabs */
+.mobile-tabs-scroll {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Mobile-first breakpoints */
 @media (max-width: 640px) {
   .mobile-grid {
@@ -74,6 +137,16 @@ input, select, textarea {
   .mobile-text-sm {
     font-size: 0.875rem;
   }
+  
+  /* Full-width buttons on mobile */
+  .mobile-full-width {
+    width: 100%;
+  }
+  
+  /* Smaller gaps on mobile */
+  .mobile-gap-sm {
+    gap: 0.5rem;
+  }
 }
 
 /* iOS specific styles */
@@ -84,5 +157,33 @@ input, select, textarea {
   
   .ios-bounce-fix {
     overflow: hidden;
+  }
+}
+
+/* Card responsive styles */
+.mobile-card {
+  padding: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .mobile-card {
+    padding: 1.5rem;
+  }
+}
+
+/* List item responsive styles */
+.mobile-list-item {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .mobile-list-item {
+    padding: 1rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 }
