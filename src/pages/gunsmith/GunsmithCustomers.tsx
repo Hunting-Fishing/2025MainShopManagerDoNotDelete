@@ -72,7 +72,7 @@ export default function GunsmithCustomers() {
             <p className="text-muted-foreground mt-1">Manage customer records and firearms</p>
           </div>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)} className="bg-amber-600 hover:bg-amber-700">
+        <Button onClick={() => navigate('/gunsmith/customers/new')} className="bg-amber-600 hover:bg-amber-700">
           <Plus className="h-4 w-4 mr-2" />
           Add Customer
         </Button>
@@ -111,7 +111,7 @@ export default function GunsmithCustomers() {
               <Button 
                 variant="outline" 
                 className="mt-4"
-                onClick={() => setIsAddDialogOpen(true)}
+                onClick={() => navigate('/gunsmith/customers/new')}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add First Customer
