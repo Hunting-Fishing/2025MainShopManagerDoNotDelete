@@ -102,9 +102,10 @@ export function useModuleCalendarEvents({ moduleType, currentDate, view }: UseMo
   return { events, loading, error, moduleType: detectedModule };
 }
 
-// Fetch gunsmith appointments
+// Fetch gunsmith appointments AND jobs
 async function fetchGunsmithEvents(shopId: string, dateRange: { start: Date; end: Date }): Promise<CalendarEvent[]> {
-  const { data, error } = await supabase
+  // Fetch appointments
+  const { data: appointments, error: aptError } = await supabase
     .from('gunsmith_appointments')
     .select(`
       id,
@@ -122,9 +123,31 @@ async function fetchGunsmithEvents(shopId: string, dateRange: { start: Date; end
     .gte('appointment_date', dateRange.start.toISOString().split('T')[0])
     .lte('appointment_date', dateRange.end.toISOString().split('T')[0]);
 
-  if (error) throw error;
+  if (aptError) throw aptError;
 
-  return (data || []).map(apt => {
+  // Fetch jobs (work orders) - include received_date AND estimated_completion
+  const { data: jobs, error: jobError } = await supabase
+    .from('gunsmith_jobs')
+    .select(`
+      id,
+      job_number,
+      job_type,
+      status,
+      priority,
+      received_date,
+      estimated_completion,
+      notes,
+      customer:customers(first_name, last_name),
+      technician:profiles!gunsmith_jobs_assigned_to_fkey(first_name, last_name)
+    `)
+    .eq('shop_id', shopId)
+    .or(`received_date.gte.${dateRange.start.toISOString().split('T')[0]},estimated_completion.gte.${dateRange.start.toISOString().split('T')[0]}`)
+    .or(`received_date.lte.${dateRange.end.toISOString().split('T')[0]},estimated_completion.lte.${dateRange.end.toISOString().split('T')[0]}`);
+
+  if (jobError) throw jobError;
+
+  // Convert appointments to calendar events
+  const appointmentEvents: CalendarEvent[] = (appointments || []).map(apt => {
     const startTime = apt.appointment_time || '09:00';
     const endTime = calculateEndTime(startTime, apt.duration_minutes || 60);
     
@@ -141,6 +164,45 @@ async function fetchGunsmithEvents(shopId: string, dateRange: { start: Date; end
       description: apt.notes,
     };
   });
+
+  // Convert jobs to calendar events - show on received_date
+  const jobEvents: CalendarEvent[] = (jobs || []).map(job => {
+    const jobDate = job.received_date || job.estimated_completion;
+    
+    return {
+      id: job.id,
+      title: `${job.job_type || 'Job'} - ${job.job_number}`,
+      start: `${jobDate}T09:00`,
+      end: `${jobDate}T17:00`,
+      customer: job.customer ? `${job.customer.first_name} ${job.customer.last_name}` : undefined,
+      technician: job.technician ? `${job.technician.first_name} ${job.technician.last_name}` : undefined,
+      status: job.status || 'pending',
+      priority: job.priority,
+      type: 'work-order',
+      color: getJobStatusColor(job.status),
+      description: job.notes,
+    };
+  });
+
+  return [...appointmentEvents, ...jobEvents];
+}
+
+// Helper to get color for job status
+function getJobStatusColor(status?: string | null): string {
+  switch (status?.toLowerCase()) {
+    case 'completed':
+      return 'hsl(142, 71%, 45%)'; // Green
+    case 'in_progress':
+    case 'in-progress':
+      return 'hsl(221, 83%, 53%)'; // Blue
+    case 'pending':
+      return 'hsl(38, 92%, 50%)'; // Amber/Orange
+    case 'cancelled':
+    case 'canceled':
+      return 'hsl(0, 84%, 60%)'; // Red
+    default:
+      return 'hsl(38, 92%, 50%)'; // Amber default
+  }
 }
 
 // Fetch power washing jobs/schedule
