@@ -3,6 +3,7 @@ import { MobileHeader } from './MobileHeader';
 import { MobileNavigation } from './MobileNavigation';
 import { OfflineManager } from './OfflineManager';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
+import { AppFooter } from '@/components/layout/AppFooter';
 import { usePWA } from '@/hooks/usePWA';
 import { cn } from '@/lib/utils';
 
@@ -51,10 +52,16 @@ export function MobileLayout({
         "mobile-container",
         "min-h-[calc(100vh-3.5rem-4rem)]", // Account for header and bottom nav
         "px-3 py-4 md:p-4", // Smaller padding on mobile
-        "overflow-x-hidden max-w-full" // Prevent horizontal scroll
+        "overflow-x-hidden max-w-full", // Prevent horizontal scroll
+        "pb-24" // Extra padding for footer + bottom nav
       )}>
         {children}
       </main>
+
+      {/* App Footer */}
+      <div className="pb-16">
+        <AppFooter />
+      </div>
 
       {/* Bottom Navigation */}
       <MobileNavigation />

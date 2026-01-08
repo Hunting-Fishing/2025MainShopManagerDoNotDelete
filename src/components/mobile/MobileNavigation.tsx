@@ -7,6 +7,8 @@ import {
   Briefcase,
   Users,
   Package,
+  MessageSquarePlus,
+  Settings,
   LucideIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,6 +23,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SubmitChangeRequestDialog } from '@/components/gunsmith/SubmitChangeRequestDialog';
 
 interface NavItem {
   id: string;
@@ -35,7 +38,19 @@ export function MobileNavigation() {
   const location = useLocation();
   const { unreadCount } = useNotifications();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { slug: activeModuleSlug, config: activeModuleConfig, isInModule } = useActiveModuleNavigation();
+
+  // Auto-detect module from current path
+  const getDefaultModule = (): 'gunsmith' | 'power_washing' | 'automotive' | 'marine' | 'fuel_delivery' | 'general' => {
+    const path = location.pathname;
+    if (path.startsWith('/gunsmith')) return 'gunsmith';
+    if (path.startsWith('/power-washing')) return 'power_washing';
+    if (path.startsWith('/automotive')) return 'automotive';
+    if (path.startsWith('/marine')) return 'marine';
+    if (path.startsWith('/fuel-delivery')) return 'fuel_delivery';
+    return 'general';
+  };
 
   // Build nav items based on active module
   const navItems: NavItem[] = React.useMemo(() => {
@@ -252,10 +267,21 @@ export function MobileNavigation() {
                             <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
                           </button>
                           <button
+                            onClick={() => {
+                              setFeedbackOpen(true);
+                              setMoreOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted"
+                          >
+                            <MessageSquarePlus className="h-5 w-5 flex-shrink-0" />
+                            <span className="font-medium">Feedback</span>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
+                          </button>
+                          <button
                             onClick={() => handleNavigation('/settings')}
                             className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted"
                           >
-                            <Package className="h-5 w-5 flex-shrink-0" />
+                            <Settings className="h-5 w-5 flex-shrink-0" />
                             <span className="font-medium">Settings</span>
                             <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
                           </button>
@@ -305,6 +331,12 @@ export function MobileNavigation() {
           );
         })}
       </div>
+
+      <SubmitChangeRequestDialog 
+        open={feedbackOpen} 
+        onOpenChange={setFeedbackOpen}
+        defaultModule={getDefaultModule()}
+      />
     </div>
   );
 }
