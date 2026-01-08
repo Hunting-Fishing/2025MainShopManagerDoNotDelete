@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, LogIn, Building2, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { getShopBySlug, ShopPublicInfo } from '@/services/shopLookupService';
+import { CustomerPortalLayout } from '@/components/customer-portal/CustomerPortalLayout';
 
 export default function CustomerPortalLogin() {
   const navigate = useNavigate();
@@ -140,14 +141,15 @@ export default function CustomerPortalLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
-      {/* Background decoration */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-      </div>
+    <CustomerPortalLayout>
+      <div className="flex-1 flex items-center justify-center p-4 py-12">
+        {/* Background decoration */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        </div>
 
-      <div className="w-full max-w-md relative z-10 fade-in">
+        <div className="w-full max-w-md relative z-10 fade-in">
         {/* Back link */}
         <Link 
           to="/customer-portal" 
@@ -280,11 +282,12 @@ export default function CustomerPortalLogin() {
           </div>
         </div>
 
-        {/* Footer text */}
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          By signing in, you agree to our Terms of Service and Privacy Policy
-        </p>
+          {/* Footer text */}
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            By signing in, you agree to our Terms of Service and Privacy Policy
+          </p>
+        </div>
       </div>
-    </div>
+    </CustomerPortalLayout>
   );
 }
