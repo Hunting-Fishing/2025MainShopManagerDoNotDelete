@@ -1572,6 +1572,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Consignments', href: '/gunsmith/consignments', icon: ShoppingBag, group: 'Compliance' },
       // Resources
       { title: 'Resources', href: '/gunsmith/resources', icon: Link, group: 'Resources' },
+      { title: 'Change Log', href: '/gunsmith/change-log', icon: ClipboardList, group: 'Resources' },
     ],
   },
   marine: {
