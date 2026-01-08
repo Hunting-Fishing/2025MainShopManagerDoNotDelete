@@ -71,7 +71,9 @@ export function ModuleSections() {
     'Services', 
     'Customers',
     'Inventory',
+    'Billing',
     'Scheduling',
+    'Compliance',
     'Communications',
     'Marketing',
     'Operations',
@@ -79,6 +81,7 @@ export function ModuleSections() {
     'Fleet',
     'Safety & Compliance',
     'Company',
+    'Resources',
     'Automotive',
     'General'
   ];
