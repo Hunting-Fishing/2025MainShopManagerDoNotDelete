@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthUser } from '@/hooks/useAuthUser';
-
+import staffLoginBg from '@/assets/staff-login-bg.jpg';
 export default function StaffLogin() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading } = useAuthUser();
@@ -91,10 +91,17 @@ export default function StaffLogin() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left Side - Branding & Features */}
+      {/* Left Side - Branding & Features with Background Image */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Animated background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/80 to-primary/60" />
+        {/* Background Image */}
+        <img 
+          src={staffLoginBg} 
+          alt="Professional team collaboration" 
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        
+        {/* Gradient overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/75 to-primary/60" />
         
         {/* Decorative elements */}
         <div className="absolute inset-0">
