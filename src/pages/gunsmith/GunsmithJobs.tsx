@@ -5,11 +5,22 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   ClipboardList,
   Plus,
-  Search
+  Search,
+  Trash2
 } from 'lucide-react';
-import { useGunsmithJobs, useUpdateGunsmithJob } from '@/hooks/useGunsmith';
+import { useGunsmithJobs, useUpdateGunsmithJob, useDeleteGunsmithJob } from '@/hooks/useGunsmith';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,9 +42,26 @@ export default function GunsmithJobs() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [dueFilter, setDueFilter] = useState('all');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<{ id: string; jobNumber: string } | null>(null);
 
   const { data: jobs, isLoading } = useGunsmithJobs(statusFilter === 'all' ? undefined : statusFilter);
   const updateJob = useUpdateGunsmithJob();
+  const deleteJob = useDeleteGunsmithJob();
+
+  const handleDeleteClick = (e: React.MouseEvent, job: { id: string; job_number: string }) => {
+    e.stopPropagation();
+    setJobToDelete({ id: job.id, jobNumber: job.job_number });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (jobToDelete) {
+      deleteJob.mutate(jobToDelete.id);
+      setDeleteDialogOpen(false);
+      setJobToDelete(null);
+    }
+  };
 
   const assigneeOptions = useMemo(() => {
     const assignees = new Set<string>();
@@ -210,23 +238,33 @@ export default function GunsmithJobs() {
                       <p className="text-xs text-muted-foreground">
                         {job.received_date && format(new Date(job.received_date), 'MMM d, yyyy')}
                       </p>
-                      <Select
-                        value={job.status}
-                        onValueChange={(v) => {
-                          updateJob.mutate({ id: job.id, status: v });
-                        }}
-                      >
-                        <SelectTrigger className="w-28 md:w-36 h-8 text-xs" onClick={(e) => e.stopPropagation()}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {JOB_STATUSES.filter(s => s.value !== 'all').map((status) => (
-                            <SelectItem key={status.value} value={status.value}>
-                              {status.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={job.status}
+                          onValueChange={(v) => {
+                            updateJob.mutate({ id: job.id, status: v });
+                          }}
+                        >
+                          <SelectTrigger className="w-28 md:w-36 h-8 text-xs" onClick={(e) => e.stopPropagation()}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {JOB_STATUSES.filter(s => s.value !== 'all').map((status) => (
+                              <SelectItem key={status.value} value={status.value}>
+                                {status.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => handleDeleteClick(e, job)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -235,6 +273,28 @@ export default function GunsmithJobs() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Work Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete job <strong>{jobToDelete?.jobNumber}</strong>? 
+              This action cannot be undone and will permanently remove this work order and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MobilePageContainer>
   );
 }
