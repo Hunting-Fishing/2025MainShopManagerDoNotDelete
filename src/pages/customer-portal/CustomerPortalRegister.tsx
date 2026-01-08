@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, UserPlus, Building2, CheckCircle, KeyRound } from 'lucide-react';
 import { getShopBySlug, getShopByInviteCode, ShopPublicInfo } from '@/services/shopLookupService';
+import { CustomerPortalLayout } from '@/components/customer-portal/CustomerPortalLayout';
 
 export default function CustomerPortalRegister() {
   const navigate = useNavigate();
@@ -214,249 +215,240 @@ export default function CustomerPortalRegister() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
-      </div>
+      <CustomerPortalLayout>
+        <div className="flex-1 flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </CustomerPortalLayout>
     );
   }
 
   if (registrationComplete) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 p-4">
-        <Card className="w-full max-w-md shadow-xl border-amber-200">
-          <CardHeader className="text-center space-y-2">
-            <div className="mx-auto w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-2">
-              <CheckCircle className="h-8 w-8 text-white" />
-            </div>
-            <CardTitle className="text-2xl font-bold text-green-700">
-              Registration Complete!
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Please check your email to verify your account, then you can sign in.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="flex flex-col gap-4">
-            <Button 
-              onClick={() => navigate('/customer-portal/login')}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-            >
-              Go to Sign In
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
+      <CustomerPortalLayout>
+        <div className="flex-1 flex items-center justify-center py-12 px-4">
+          <Card className="w-full max-w-md shadow-xl bg-card/95 backdrop-blur-sm border-border/50">
+            <CardHeader className="text-center space-y-2">
+              <div className="mx-auto w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-2">
+                <CheckCircle className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-green-700">
+                Registration Complete!
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Please check your email to verify your account, then you can sign in.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="flex flex-col gap-4">
+              <Button 
+                onClick={() => navigate('/customer-portal/login')}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Go to Sign In
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </CustomerPortalLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 p-4">
-      <Card className="w-full max-w-md shadow-xl border-amber-200">
-        <CardHeader className="text-center space-y-2">
-          {shop ? (
-            <>
-              {shop.logo_url ? (
-                <img 
-                  src={shop.logo_url} 
-                  alt={shop.name} 
-                  className="w-16 h-16 mx-auto object-contain rounded-lg"
-                />
-              ) : (
-                <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
-                  <Building2 className="h-8 w-8 text-white" />
+    <CustomerPortalLayout>
+      <div className="flex-1 flex items-center justify-center py-12 px-4">
+        <Card className="w-full max-w-md shadow-xl bg-card/95 backdrop-blur-sm border-border/50">
+          <CardHeader className="text-center space-y-2">
+            {shop ? (
+              <>
+                {shop.logo_url ? (
+                  <img 
+                    src={shop.logo_url} 
+                    alt={shop.name} 
+                    className="w-16 h-16 mx-auto object-contain rounded-lg"
+                  />
+                ) : (
+                  <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-2">
+                    <Building2 className="h-8 w-8 text-primary-foreground" />
+                  </div>
+                )}
+                <div>
+                  <CardTitle className="text-2xl font-bold">
+                    Create Account
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Register with {shop.name}
+                  </CardDescription>
                 </div>
-              )}
-              <div>
-                <CardTitle className="text-2xl font-bold text-amber-900">
+              </>
+            ) : (
+              <>
+                <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-2">
+                  <UserPlus className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-bold">
                   Create Account
                 </CardTitle>
-                <CardDescription className="text-amber-700">
-                  Register with {shop.name}
+                <CardDescription className="text-muted-foreground">
+                  Register for customer portal access
                 </CardDescription>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
-                <UserPlus className="h-8 w-8 text-white" />
-              </div>
-              <CardTitle className="text-2xl font-bold text-amber-900">
-                Create Account
-              </CardTitle>
-              <CardDescription className="text-amber-700">
-                Register for customer portal access
-              </CardDescription>
-            </>
-          )}
-        </CardHeader>
-        
-        <form onSubmit={handleRegister}>
-          <CardContent className="space-y-4">
-            {/* Shop context display or invite code entry */}
-            {!shop && !shopLoading && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                {showInviteCode ? (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-amber-900">Enter Business Code</label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={formData.inviteCode}
-                        onChange={(e) => setFormData({ ...formData, inviteCode: e.target.value.toUpperCase() })}
-                        placeholder="e.g., BUCKS1"
-                        className="uppercase tracking-widest text-center"
-                        maxLength={10}
-                      />
-                      <Button 
-                        type="button"
-                        onClick={validateInviteCode}
-                        disabled={codeValidating || !formData.inviteCode.trim()}
-                        size="sm"
-                        className="bg-amber-600 hover:bg-amber-700"
-                      >
-                        {codeValidating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify'}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowInviteCode(true)}
-                    className="w-full flex items-center justify-center gap-2 text-amber-700 hover:text-amber-800 text-sm"
-                  >
-                    <KeyRound className="h-4 w-4" />
-                    Have a business code? Enter it here
-                  </button>
-                )}
-              </div>
+              </>
             )}
-            
-            {shop && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-                <div className="text-sm">
-                  <span className="text-green-700">Registering with </span>
-                  <span className="font-medium text-green-800">{shop.name}</span>
+          </CardHeader>
+          
+          <form onSubmit={handleRegister}>
+            <CardContent className="space-y-4">
+              {/* Shop context display or invite code entry */}
+              {!shop && !shopLoading && (
+                <div className="bg-muted/50 border border-border/50 rounded-lg p-3">
+                  {showInviteCode ? (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Enter Business Code</label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={formData.inviteCode}
+                          onChange={(e) => setFormData({ ...formData, inviteCode: e.target.value.toUpperCase() })}
+                          placeholder="e.g., BUCKS1"
+                          className="uppercase tracking-widest text-center"
+                          maxLength={10}
+                        />
+                        <Button 
+                          type="button"
+                          onClick={validateInviteCode}
+                          disabled={codeValidating || !formData.inviteCode.trim()}
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          {codeValidating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify'}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowInviteCode(true)}
+                      className="w-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground text-sm"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      Have a business code? Enter it here
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              {shop && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Registering with </span>
+                    <span className="font-medium text-foreground">{shop.name}</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name *</Label>
+                  <Input
+                    id="firstName"
+                    placeholder="John"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Doe"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    required
+                  />
                 </div>
               </div>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4">
+              
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name *</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
-                  id="firstName"
-                  placeholder="John"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
-                  className="border-amber-200 focus:border-amber-500"
                 />
               </div>
+              
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name *</Label>
+                <Label htmlFor="phone">Phone</Label>
                 <Input
-                  id="lastName"
-                  placeholder="Doe"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  required
-                  className="border-amber-200 focus:border-amber-500"
+                  id="phone"
+                  type="tel"
+                  placeholder="(555) 123-4567"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
               </div>
-            </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  minLength={6}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  required
+                />
+              </div>
+            </CardContent>
             
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-                className="border-amber-200 focus:border-amber-500"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="border-amber-200 focus:border-amber-500"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password *</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                minLength={6}
-                className="border-amber-200 focus:border-amber-500"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password *</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-                className="border-amber-200 focus:border-amber-500"
-              />
-            </div>
-          </CardContent>
-          
-          <CardFooter className="flex flex-col gap-4">
-            <Button 
-              type="submit" 
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating Account...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Create Account
-                </>
-              )}
-            </Button>
-            
-            <div className="text-center text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <Link 
-                to={shop ? `/customer-portal/login?shop=${shop.slug}` : '/customer-portal/login'} 
-                className="text-amber-600 hover:text-amber-700 font-medium"
+            <CardFooter className="flex flex-col gap-4">
+              <Button 
+                type="submit" 
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                disabled={loading}
               >
-                Sign in here
-              </Link>
-            </div>
-            
-            <div className="text-center">
-              <Link 
-                to="/customer-portal" 
-                className="text-sm text-muted-foreground hover:text-amber-600"
-              >
-                ← Back to Customer Portal
-              </Link>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Create Account
+                  </>
+                )}
+              </Button>
+              
+              <div className="text-center text-sm text-muted-foreground">
+                Already have an account?{' '}
+                <Link 
+                  to={shop ? `/customer-portal/login?shop=${shop.slug}` : '/customer-portal/login'} 
+                  className="text-primary hover:text-primary/80 font-medium"
+                >
+                  Sign in here
+                </Link>
+              </div>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
+    </CustomerPortalLayout>
   );
 }
