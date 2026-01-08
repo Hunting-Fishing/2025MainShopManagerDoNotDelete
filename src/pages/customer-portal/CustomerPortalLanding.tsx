@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, KeyRound, Building2, Crosshair, ArrowRight, UserPlus, LogIn, MapPin, Briefcase } from 'lucide-react';
 import { getShopBySlug, getShopByInviteCode, enhancedSearchShops, getAvailableIndustries, ShopPublicInfo } from '@/services/shopLookupService';
 import { useToast } from '@/hooks/use-toast';
+import { CustomerPortalLayout } from '@/components/customer-portal/CustomerPortalLayout';
 
 type ConnectionMethod = 'code' | 'search' | null;
 
@@ -161,17 +162,20 @@ export default function CustomerPortalLanding() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
-      </div>
+      <CustomerPortalLayout>
+        <div className="flex-1 flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </CustomerPortalLayout>
     );
   }
 
   // If we have a shop context, show business-branded welcome
   if (shop) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 p-4">
-        <Card className="w-full max-w-md shadow-xl border-amber-200">
+      <CustomerPortalLayout>
+        <div className="flex-1 flex items-center justify-center p-4 py-12">
+          <Card className="w-full max-w-md shadow-xl border-border">
           <CardHeader className="text-center space-y-4">
             {shop.logo_url ? (
               <img 
@@ -180,20 +184,20 @@ export default function CustomerPortalLanding() {
                 className="w-20 h-20 mx-auto object-contain rounded-lg"
               />
             ) : (
-              <div className="mx-auto w-20 h-20 bg-amber-600 rounded-full flex items-center justify-center">
-                <Building2 className="h-10 w-10 text-white" />
+              <div className="mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center">
+                <Building2 className="h-10 w-10 text-primary-foreground" />
               </div>
             )}
             <div>
-              <CardTitle className="text-2xl font-bold text-amber-900">
+              <CardTitle className="text-2xl font-bold text-foreground">
                 {shop.name}
               </CardTitle>
               {shop.industry && (
-                <Badge variant="secondary" className="mt-2 bg-amber-100 text-amber-800">
+                <Badge variant="secondary" className="mt-2">
                   {shop.industry}
                 </Badge>
               )}
-              <CardDescription className="text-amber-700 mt-2">
+              <CardDescription className="mt-2">
                 Welcome to our Customer Portal
               </CardDescription>
             </div>
@@ -207,7 +211,7 @@ export default function CustomerPortalLanding() {
             <div className="space-y-3">
               <Button 
                 onClick={proceedToRegister}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                className="w-full"
                 size="lg"
               >
                 <UserPlus className="h-5 w-5 mr-2" />
@@ -217,7 +221,7 @@ export default function CustomerPortalLanding() {
               <Button 
                 onClick={proceedToLogin}
                 variant="outline"
-                className="w-full border-amber-300 hover:bg-amber-50"
+                className="w-full"
                 size="lg"
               >
                 <LogIn className="h-5 w-5 mr-2" />
@@ -236,22 +240,24 @@ export default function CustomerPortalLanding() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </CustomerPortalLayout>
     );
   }
 
   // No shop context - show connection options
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 p-4">
-      <Card className="w-full max-w-lg shadow-xl border-amber-200">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mb-2">
-            <Crosshair className="h-8 w-8 text-white" />
+    <CustomerPortalLayout>
+      <div className="flex-1 flex items-center justify-center p-4 py-12">
+        <Card className="w-full max-w-lg shadow-xl border-border">
+          <CardHeader className="text-center space-y-2">
+            <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-2">
+              <Crosshair className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold text-amber-900">
+          <CardTitle className="text-2xl font-bold text-foreground">
             Customer Portal
           </CardTitle>
-          <CardDescription className="text-amber-700">
+          <CardDescription>
             Connect with your service provider to book services and manage your account
           </CardDescription>
         </CardHeader>
@@ -262,11 +268,11 @@ export default function CustomerPortalLanding() {
               <Button 
                 onClick={() => setConnectionMethod('code')}
                 variant="outline"
-                className="w-full justify-between h-auto py-4 px-4 border-amber-200 hover:bg-amber-50"
+                className="w-full justify-between h-auto py-4 px-4 hover:bg-muted"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                    <KeyRound className="h-5 w-5 text-amber-600" />
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <KeyRound className="h-5 w-5 text-primary" />
                   </div>
                   <div className="text-left">
                     <div className="font-medium">I have a business code</div>
@@ -279,11 +285,11 @@ export default function CustomerPortalLanding() {
               <Button 
                 onClick={() => setConnectionMethod('search')}
                 variant="outline"
-                className="w-full justify-between h-auto py-4 px-4 border-amber-200 hover:bg-amber-50"
+                className="w-full justify-between h-auto py-4 px-4 hover:bg-muted"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                    <Search className="h-5 w-5 text-amber-600" />
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Search className="h-5 w-5 text-primary" />
                   </div>
                   <div className="text-left">
                     <div className="font-medium">Find a business</div>
@@ -327,7 +333,7 @@ export default function CustomerPortalLanding() {
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                     placeholder="e.g., BUCKS1"
-                    className="text-center text-lg tracking-widest uppercase border-amber-200 focus:border-amber-500"
+                    className="text-center text-lg tracking-widest uppercase"
                     maxLength={10}
                   />
                   <p className="text-xs text-muted-foreground text-center">
@@ -337,7 +343,7 @@ export default function CustomerPortalLanding() {
                 
                 <Button 
                   type="submit" 
-                  className="w-full bg-amber-600 hover:bg-amber-700"
+                  className="w-full"
                   disabled={codeLoading || !inviteCode.trim()}
                 >
                   {codeLoading ? (
@@ -377,10 +383,10 @@ export default function CustomerPortalLanding() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by name, location, or service type..."
-                    className="pl-10 border-amber-200 focus:border-amber-500"
+                    className="pl-10"
                   />
                   {searchLoading && (
-                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-amber-600" />
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
                   )}
                 </div>
                 
@@ -391,8 +397,8 @@ export default function CustomerPortalLanding() {
                       onClick={() => setSelectedIndustry('all')}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                         selectedIndustry === 'all'
-                          ? 'bg-amber-600 text-white'
-                          : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
                       }`}
                     >
                       All
@@ -403,8 +409,8 @@ export default function CustomerPortalLanding() {
                         onClick={() => setSelectedIndustry(ind)}
                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                           selectedIndustry === ind
-                            ? 'bg-amber-600 text-white'
-                            : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
                         }`}
                       >
                         {ind}
@@ -424,17 +430,17 @@ export default function CustomerPortalLanding() {
                     <button
                       key={result.id}
                       onClick={() => selectShop(result)}
-                      className="w-full p-4 text-left border rounded-lg hover:bg-amber-50 hover:border-amber-300 transition-colors group"
+                      className="w-full p-4 text-left border rounded-lg hover:bg-muted hover:border-primary/30 transition-colors group"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-foreground group-hover:text-amber-900">
+                          <div className="font-medium text-foreground group-hover:text-primary">
                             {result.name}
                           </div>
                           
                           <div className="flex flex-wrap items-center gap-2 mt-1">
                             {result.industry && (
-                              <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800">
+                              <Badge variant="secondary" className="text-xs">
                                 <Briefcase className="h-3 w-3 mr-1" />
                                 {result.industry}
                               </Badge>
@@ -494,13 +500,14 @@ export default function CustomerPortalLanding() {
           <div className="text-center pt-4">
             <Link 
               to="/" 
-              className="text-sm text-muted-foreground hover:text-amber-600"
+              className="text-sm text-muted-foreground hover:text-foreground"
             >
               ← Back to home
             </Link>
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </CustomerPortalLayout>
   );
 }
