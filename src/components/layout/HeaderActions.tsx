@@ -184,6 +184,13 @@ export function HeaderActions() {
           { label: 'Daily Logs', path: '/daily-logs', icon: ClipboardList, permission: '/daily-logs' },
         ];
 
+  // Build dynamic team path based on active module
+  const teamPath = moduleContext === 'gunsmith' 
+    ? '/gunsmith/team'
+    : moduleContext === 'power_washing'
+      ? '/power-washing/team'
+      : '/team';
+
   // Build account items - add Developer Portal for platform developers
   const accountItems = [
     { id: 'profile', label: 'Profile', path: '/profile', icon: UserCircle },
@@ -192,7 +199,7 @@ export function HeaderActions() {
     ...(isDeveloper ? [{ id: 'developer_portal', label: 'Developer Portal', path: '/developer', icon: Code }] : []),
     { id: 'ai_hub', label: 'AI Hub', path: '/ai-hub', icon: Brain, permission: '/ai-hub' },
     { id: 'reports', label: 'Reports', path: '/reports', icon: BarChart3, permission: '/reports' },
-    { id: 'team', label: 'Team', path: '/team', icon: Users, permission: '/team' },
+    { id: 'team', label: 'Team', path: teamPath, icon: Users, permission: '/team' },
   ];
 
   const accountMenuOverrides = accountMenuSettings?.item_overrides ?? {};
