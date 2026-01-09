@@ -9,7 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useGunsmithRoles, useCreateGunsmithRole, useUpdateGunsmithRole, useDeleteGunsmithRole, GunsmithRole } from '@/hooks/gunsmith/useGunsmithRoles';
-import { Loader2, Plus, Shield, Edit, Trash2, Lock, Users, Briefcase, Package, Receipt, FileCheck } from 'lucide-react';
+import { Loader2, Plus, Shield, Edit, Trash2, Lock, Users, Briefcase, Package, Receipt, FileCheck, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const PERMISSION_CATEGORIES = [
@@ -146,6 +147,15 @@ export default function GunsmithRoles() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <div className="mb-4">
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/gunsmith/team">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Team
+          </Link>
+        </Button>
+      </div>
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Gunsmith Roles</h1>
