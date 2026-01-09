@@ -153,7 +153,19 @@ export function HeaderActions() {
       config: MODULE_ROUTES[slug],
     }))
     .filter((item) => item.config);
-  const activeModuleSlug = Object.keys(MODULE_ROUTES).find((slug) => {
+  // Detect module from current path - check module prefix first
+  const getModuleFromPath = () => {
+    const path = location.pathname;
+    if (path.startsWith('/gunsmith')) return 'gunsmith';
+    if (path.startsWith('/power-washing')) return 'power_washing';
+    if (path.startsWith('/automotive')) return 'automotive';
+    if (path.startsWith('/marine')) return 'marine';
+    if (path.startsWith('/fuel-delivery')) return 'fuel_delivery';
+    return null;
+  };
+  
+  const pathBasedModule = getModuleFromPath();
+  const activeModuleSlug = pathBasedModule ?? Object.keys(MODULE_ROUTES).find((slug) => {
     const config = MODULE_ROUTES[slug];
     return (
       location.pathname === config.dashboardRoute ||
