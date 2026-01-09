@@ -15630,6 +15630,53 @@ export type Database = {
           },
         ]
       }
+      gunsmith_roles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_system: boolean | null
+          name: string
+          permissions: Json | null
+          role_type: Database["public"]["Enums"]["gunsmith_role_type"] | null
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_system?: boolean | null
+          name: string
+          permissions?: Json | null
+          role_type?: Database["public"]["Enums"]["gunsmith_role_type"] | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_system?: boolean | null
+          name?: string
+          permissions?: Json | null
+          role_type?: Database["public"]["Enums"]["gunsmith_role_type"] | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_roles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gunsmith_serialized_items: {
         Row: {
           acquisition_date: string | null
@@ -15710,6 +15757,68 @@ export type Database = {
           },
         ]
       }
+      gunsmith_settings: {
+        Row: {
+          appointment_duration_minutes: number | null
+          auto_generate_invoice: boolean | null
+          business_name: string | null
+          compliance_reminder_days: number | null
+          created_at: string | null
+          default_labor_rate: number | null
+          deposit_percentage: number | null
+          ffl_number: string | null
+          id: string
+          require_deposit: boolean | null
+          shop_id: string | null
+          tax_rate: number | null
+          updated_at: string | null
+          work_hours_end: string | null
+          work_hours_start: string | null
+        }
+        Insert: {
+          appointment_duration_minutes?: number | null
+          auto_generate_invoice?: boolean | null
+          business_name?: string | null
+          compliance_reminder_days?: number | null
+          created_at?: string | null
+          default_labor_rate?: number | null
+          deposit_percentage?: number | null
+          ffl_number?: string | null
+          id?: string
+          require_deposit?: boolean | null
+          shop_id?: string | null
+          tax_rate?: number | null
+          updated_at?: string | null
+          work_hours_end?: string | null
+          work_hours_start?: string | null
+        }
+        Update: {
+          appointment_duration_minutes?: number | null
+          auto_generate_invoice?: boolean | null
+          business_name?: string | null
+          compliance_reminder_days?: number | null
+          created_at?: string | null
+          default_labor_rate?: number | null
+          deposit_percentage?: number | null
+          ffl_number?: string | null
+          id?: string
+          require_deposit?: boolean | null
+          shop_id?: string | null
+          tax_rate?: number | null
+          updated_at?: string | null
+          work_hours_end?: string | null
+          work_hours_start?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gunsmith_stock_movements: {
         Row: {
           created_at: string
@@ -15780,6 +15889,64 @@ export type Database = {
           },
           {
             foreignKeyName: "gunsmith_stock_movements_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gunsmith_team_members: {
+        Row: {
+          created_at: string | null
+          hire_date: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          profile_id: string | null
+          role_id: string | null
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          profile_id?: string | null
+          role_id?: string | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          profile_id?: string | null
+          role_id?: string | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_team_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_team_members_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_team_members_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -41751,6 +41918,13 @@ export type Database = {
           vehicle_year: string
         }[]
       }
+      has_gunsmith_role: {
+        Args: {
+          _role_type: Database["public"]["Enums"]["gunsmith_role_type"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_permission:
         | {
             Args: {
@@ -42358,6 +42532,13 @@ export type Database = {
         | "phone"
         | "file"
         | "signature"
+      gunsmith_role_type:
+        | "shop_owner"
+        | "master_gunsmith"
+        | "gunsmith"
+        | "apprentice"
+        | "counter_staff"
+        | "parts_manager"
       job_line_status:
         | "pending"
         | "signed-onto-task"
@@ -42621,6 +42802,14 @@ export const Constants = {
         "phone",
         "file",
         "signature",
+      ],
+      gunsmith_role_type: [
+        "shop_owner",
+        "master_gunsmith",
+        "gunsmith",
+        "apprentice",
+        "counter_staff",
+        "parts_manager",
       ],
       job_line_status: [
         "pending",
