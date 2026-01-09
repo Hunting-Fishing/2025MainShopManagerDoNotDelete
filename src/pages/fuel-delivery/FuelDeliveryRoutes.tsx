@@ -8,20 +8,42 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Route, ArrowLeft, MapPin } from 'lucide-react';
-import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks } from '@/hooks/useFuelDelivery';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Search, Route, ArrowLeft, MapPin, Map } from 'lucide-react';
+import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks, useFuelDeliveryLocations } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { RouteMap } from '@/components/fuel-delivery/RouteMap';
+import { Location } from '@/hooks/useMapbox';
 
 export default function FuelDeliveryRoutes() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('list');
   const { data: routes, isLoading } = useFuelDeliveryRoutes();
   const { data: drivers } = useFuelDeliveryDrivers();
   const { data: trucks } = useFuelDeliveryTrucks();
+  const { data: locations } = useFuelDeliveryLocations();
   const createRoute = useCreateFuelDeliveryRoute();
+
+  // Convert locations to map format
+  const mapDestinations: Location[] = (locations || [])
+    .filter(loc => loc.latitude && loc.longitude)
+    .slice(0, 12) // Mapbox optimization supports up to 12 waypoints
+    .map(loc => ({
+      id: loc.id,
+      address: loc.address || '',
+      coordinates: [loc.longitude!, loc.latitude!] as [number, number],
+      name: loc.location_name || loc.address || 'Unknown',
+      priority: 'normal' as const,
+    }));
+
+  // Default origin - first location or center of US
+  const mapOrigin: [number, number] = mapDestinations.length > 0 
+    ? mapDestinations[0].coordinates 
+    : [-98.5795, 39.8283];
 
   const [formData, setFormData] = useState({
     route_name: '',
@@ -164,76 +186,134 @@ export default function FuelDeliveryRoutes() {
         </div>
       </div>
 
-      {/* Search */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search routes..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs for List/Map view */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="list" className="flex items-center gap-2">
+            <Route className="h-4 w-4" />
+            Routes List
+          </TabsTrigger>
+          <TabsTrigger value="map" className="flex items-center gap-2">
+            <Map className="h-4 w-4" />
+            Route Planner
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Routes Table */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-6 space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : filteredRoutes && filteredRoutes.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Route Name</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Driver</TableHead>
-                  <TableHead>Truck</TableHead>
-                  <TableHead>Stops</TableHead>
-                  <TableHead>Gallons</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRoutes.map((route) => (
-                  <TableRow key={route.id} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell className="font-medium">{route.route_name}</TableCell>
-                    <TableCell>{format(new Date(route.route_date), 'MMM d, yyyy')}</TableCell>
-                    <TableCell>
-                      {route.fuel_delivery_drivers 
-                        ? `${route.fuel_delivery_drivers.first_name} ${route.fuel_delivery_drivers.last_name}`
-                        : '-'}
-                    </TableCell>
-                    <TableCell>{route.fuel_delivery_trucks?.truck_number || '-'}</TableCell>
-                    <TableCell>
-                      {route.completed_stops || 0}/{route.total_stops || 0}
-                    </TableCell>
-                    <TableCell>
-                      {route.total_gallons_delivered?.toLocaleString() || 0}/{route.total_gallons_planned?.toLocaleString() || 0}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(route.status)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Route className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No routes found</p>
-              <Button variant="link" onClick={() => setIsDialogOpen(true)}>
-                Create your first route
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <TabsContent value="list" className="space-y-4">
+          {/* Search */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search routes..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Routes Table */}
+          <Card>
+            <CardContent className="p-0">
+              {isLoading ? (
+                <div className="p-6 space-y-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : filteredRoutes && filteredRoutes.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Route Name</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Driver</TableHead>
+                      <TableHead>Truck</TableHead>
+                      <TableHead>Stops</TableHead>
+                      <TableHead>Gallons</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRoutes.map((route) => (
+                      <TableRow key={route.id} className="cursor-pointer hover:bg-muted/50">
+                        <TableCell className="font-medium">{route.route_name}</TableCell>
+                        <TableCell>{format(new Date(route.route_date), 'MMM d, yyyy')}</TableCell>
+                        <TableCell>
+                          {route.fuel_delivery_drivers 
+                            ? `${route.fuel_delivery_drivers.first_name} ${route.fuel_delivery_drivers.last_name}`
+                            : '-'}
+                        </TableCell>
+                        <TableCell>{route.fuel_delivery_trucks?.truck_number || '-'}</TableCell>
+                        <TableCell>
+                          {route.completed_stops || 0}/{route.total_stops || 0}
+                        </TableCell>
+                        <TableCell>
+                          {route.total_gallons_delivered?.toLocaleString() || 0}/{route.total_gallons_planned?.toLocaleString() || 0}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(route.status)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Route className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No routes found</p>
+                  <Button variant="link" onClick={() => setIsDialogOpen(true)}>
+                    Create your first route
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="map" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Map className="h-5 w-5 text-orange-500" />
+                Route Optimization Planner
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Optimize delivery routes for multiple stops. Click "Optimize Route" to find the fastest path.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {mapDestinations.length > 0 ? (
+                <RouteMap
+                  origin={mapOrigin}
+                  destinations={mapDestinations.slice(1)} // Skip first as it's the origin
+                  showOptimizeButton={true}
+                  onOptimizedRoute={(result) => {
+                    console.log('Route optimized:', result);
+                  }}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                  <MapPin className="h-12 w-12 mb-3 opacity-50" />
+                  <p className="font-medium">No Locations with Coordinates</p>
+                  <p className="text-sm text-center mt-1">
+                    Add locations with latitude/longitude to use route optimization
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => navigate('/fuel-delivery/locations')}
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Manage Locations
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -42,3 +42,9 @@ verify_jwt = false
 
 [functions.send-sms]
 verify_jwt = false
+
+[functions.mapbox-route-optimization]
+verify_jwt = false
+
+[functions.mapbox-geocode]
+verify_jwt = false
