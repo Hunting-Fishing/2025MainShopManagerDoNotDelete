@@ -68,6 +68,9 @@ export interface FuelDeliveryLocation {
   special_equipment_needed?: string;
   last_delivery_date?: string;
   is_active?: boolean;
+  delivery_days?: number[];
+  delivery_frequency?: 'weekly' | 'bi_weekly' | 'monthly' | 'on_demand';
+  preferred_delivery_time?: string;
   fuel_delivery_customers?: FuelDeliveryCustomer;
 }
 
