@@ -22,6 +22,9 @@ import categoryFood from '@/assets/category-food.jpg';
 import categoryAdventure from '@/assets/category-adventure.jpg';
 import categoryFarming from '@/assets/category-farming.jpg';
 
+// Mobile background
+import mobileBgHome from '@/assets/mobile-bg-home.jpg';
+
 // Map category names to images
 const categoryImages: Record<string, string> = {
   'Automotive & Fleet': categoryAutomotive,
@@ -198,9 +201,16 @@ export default function Index() {
     filteredComingSoonCategories.reduce((acc, cat) => acc + cat.modules.length, 0);
 
   return (
-    <div className="min-h-screen bg-background font-['Space_Grotesk',sans-serif]">
+    <div className="min-h-screen bg-background font-['Space_Grotesk',sans-serif] relative">
+      {/* Mobile Background Image */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat md:hidden z-0"
+        style={{ backgroundImage: `url(${mobileBgHome})` }}
+      >
+        <div className="absolute inset-0 bg-background/85 backdrop-blur-sm" />
+      </div>
       {/* Header */}
-      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b">
+      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b relative">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
