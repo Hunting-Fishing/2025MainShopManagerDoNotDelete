@@ -9,12 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, Route, ArrowLeft, MapPin, Map } from 'lucide-react';
-import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks, useFuelDeliveryLocations } from '@/hooks/useFuelDelivery';
+import { Plus, Search, Route, ArrowLeft, MapPin, Map, Users } from 'lucide-react';
+import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks, useFuelDeliveryLocations, useFuelDeliveryCustomers } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { RouteMap } from '@/components/fuel-delivery/RouteMap';
+import { CustomerMap } from '@/components/fuel-delivery/CustomerMap';
 import { Location } from '@/hooks/useMapbox';
 
 export default function FuelDeliveryRoutes() {
@@ -26,6 +27,7 @@ export default function FuelDeliveryRoutes() {
   const { data: drivers } = useFuelDeliveryDrivers();
   const { data: trucks } = useFuelDeliveryTrucks();
   const { data: locations } = useFuelDeliveryLocations();
+  const { data: customers } = useFuelDeliveryCustomers();
   const createRoute = useCreateFuelDeliveryRoute();
 
   // Convert locations to map format
@@ -188,10 +190,14 @@ export default function FuelDeliveryRoutes() {
 
       {/* Tabs for List/Map view */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-xl grid-cols-3">
           <TabsTrigger value="list" className="flex items-center gap-2">
             <Route className="h-4 w-4" />
             Routes List
+          </TabsTrigger>
+          <TabsTrigger value="customers" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Customer Map
           </TabsTrigger>
           <TabsTrigger value="map" className="flex items-center gap-2">
             <Map className="h-4 w-4" />
@@ -265,6 +271,47 @@ export default function FuelDeliveryRoutes() {
                   <p>No routes found</p>
                   <Button variant="link" onClick={() => setIsDialogOpen(true)}>
                     Create your first route
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="customers" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-500" />
+                Customer Locations
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                View all customer delivery locations on the map. Red markers indicate low fuel levels.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {locations && locations.length > 0 ? (
+                <CustomerMap
+                  locations={locations}
+                  customers={customers || []}
+                  onLocationClick={(loc) => {
+                    console.log('Location clicked:', loc);
+                  }}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                  <MapPin className="h-12 w-12 mb-3 opacity-50" />
+                  <p className="font-medium">No Locations Found</p>
+                  <p className="text-sm text-center mt-1">
+                    Add customer locations with coordinates to see them on the map
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => navigate('/fuel-delivery/locations')}
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Manage Locations
                   </Button>
                 </div>
               )}

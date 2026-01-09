@@ -7,3 +7,4 @@ export { FuelTypeSelect, FUEL_TYPE_OPTIONS, getFuelTypeLabel } from './FuelTypeS
 export { CustomerVehicleForm } from './CustomerVehicleForm';
 export type { VehicleFormData } from './CustomerVehicleForm';
 export { LicenseClassSelect, getJurisdiction } from './LicenseClassSelect';
+export { CustomerMap } from './CustomerMap';
