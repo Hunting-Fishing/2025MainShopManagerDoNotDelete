@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, Users, ArrowLeft, MapPin } from 'lucide-react';
-import { useFuelDeliveryCustomers, useCreateFuelDeliveryCustomer } from '@/hooks/useFuelDelivery';
+import { Plus, Search, Users, ArrowLeft, MapPin, Pencil } from 'lucide-react';
+import { useFuelDeliveryCustomers, useCreateFuelDeliveryCustomer, useUpdateFuelDeliveryCustomer, FuelDeliveryCustomer } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddressAutocomplete, AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
@@ -21,8 +21,10 @@ export default function FuelDeliveryCustomers() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<FuelDeliveryCustomer | null>(null);
   const { data: customers, isLoading } = useFuelDeliveryCustomers();
   const createCustomer = useCreateFuelDeliveryCustomer();
+  const updateCustomer = useUpdateFuelDeliveryCustomer();
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -83,35 +85,66 @@ export default function FuelDeliveryCustomers() {
       notes: ''
     });
     setVehicles([]);
+    setEditingCustomer(null);
+  };
+
+  const openEditDialog = (customer: FuelDeliveryCustomer) => {
+    setEditingCustomer(customer);
+    setFormData({
+      company_name: customer.company_name || '',
+      contact_name: customer.contact_name || '',
+      phone: customer.phone || '',
+      email: customer.email || '',
+      billing_address: customer.billing_address || '',
+      billing_latitude: null,
+      billing_longitude: null,
+      payment_terms: customer.payment_terms || 'net30',
+      credit_limit: customer.credit_limit?.toString() || '',
+      tax_exempt: customer.tax_exempt || false,
+      auto_delivery: customer.auto_delivery || false,
+      preferred_fuel_type: customer.preferred_fuel_type || '',
+      delivery_instructions: customer.delivery_instructions || '',
+      notes: customer.notes || ''
+    });
+    setIsDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      // Create customer first
-      const newCustomer = await createCustomer.mutateAsync({
-        ...formData,
-        credit_limit: parseFloat(formData.credit_limit) || 0,
-      });
+      if (editingCustomer) {
+        // Update existing customer
+        await updateCustomer.mutateAsync({
+          id: editingCustomer.id,
+          ...formData,
+          credit_limit: parseFloat(formData.credit_limit) || 0,
+        });
+      } else {
+        // Create customer first
+        const newCustomer = await createCustomer.mutateAsync({
+          ...formData,
+          credit_limit: parseFloat(formData.credit_limit) || 0,
+        });
 
-      // If vehicles were added, save them linked to the customer
-      if (vehicles.length > 0 && newCustomer?.id) {
-        for (const vehicle of vehicles) {
-          const { error } = await supabase.from('vehicles').insert({
-            customer_id: newCustomer.id,
-            owner_type: 'customer',
-            vin: vehicle.vin || null,
-            year: vehicle.year ? parseInt(vehicle.year) : null,
-            make: vehicle.make || null,
-            model: vehicle.model || null,
-            fuel_type: vehicle.fuel_type || null,
-            license_plate: vehicle.license_plate || null,
-            color: vehicle.color || null,
-            body_type: vehicle.body_style || null,
-            notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
-          });
-          if (error) throw error;
+        // If vehicles were added, save them linked to the customer
+        if (vehicles.length > 0 && newCustomer?.id) {
+          for (const vehicle of vehicles) {
+            const { error } = await supabase.from('vehicles').insert({
+              customer_id: newCustomer.id,
+              owner_type: 'customer',
+              vin: vehicle.vin || null,
+              year: vehicle.year ? parseInt(vehicle.year) : null,
+              make: vehicle.make || null,
+              model: vehicle.model || null,
+              fuel_type: vehicle.fuel_type || null,
+              license_plate: vehicle.license_plate || null,
+              color: vehicle.color || null,
+              body_type: vehicle.body_style || null,
+              notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
+            });
+            if (error) throw error;
+          }
         }
       }
 
@@ -119,7 +152,14 @@ export default function FuelDeliveryCustomers() {
       resetForm();
     } catch (err) {
       // keep dialog open; the mutation already shows a toast
-      console.error('Failed to create fuel delivery customer', err);
+      console.error('Failed to save fuel delivery customer', err);
+    }
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      resetForm();
     }
   };
 
@@ -141,16 +181,16 @@ export default function FuelDeliveryCustomers() {
               Manage fuel delivery customers and accounts
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Customer
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add New Customer</DialogTitle>
+                <DialogTitle>{editingCustomer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -271,11 +311,13 @@ export default function FuelDeliveryCustomers() {
                   />
                 </div>
                 <div className="flex justify-end gap-3">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => handleDialogChange(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={createCustomer.isPending}>
-                    {createCustomer.isPending ? 'Creating...' : 'Create Customer'}
+                  <Button type="submit" disabled={createCustomer.isPending || updateCustomer.isPending}>
+                    {editingCustomer
+                      ? updateCustomer.isPending ? 'Saving...' : 'Save Changes'
+                      : createCustomer.isPending ? 'Creating...' : 'Create Customer'}
                   </Button>
                 </div>
               </form>
@@ -319,11 +361,12 @@ export default function FuelDeliveryCustomers() {
                   <TableHead>Terms</TableHead>
                   <TableHead>Balance</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCustomers.map((customer) => (
-                  <TableRow key={customer.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableRow key={customer.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">{customer.company_name || '-'}</TableCell>
                     <TableCell>{customer.contact_name}</TableCell>
                     <TableCell>{customer.phone || '-'}</TableCell>
@@ -336,6 +379,15 @@ export default function FuelDeliveryCustomers() {
                       ) : (
                         <Badge variant="outline">Inactive</Badge>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(customer)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
