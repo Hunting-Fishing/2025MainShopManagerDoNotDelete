@@ -55,17 +55,103 @@ export default function FuelDeliveryRoutes() {
     notes: ''
   });
 
+  // Selected locations/customers for the route
+  const [selectedStops, setSelectedStops] = useState<string[]>([]);
+
+  // Available stops: prefer locations with coords, else use customers with coords
+  const availableStops = React.useMemo(() => {
+    const stops: Array<{
+      id: string;
+      type: 'location' | 'customer';
+      name: string;
+      address: string;
+      latitude: number;
+      longitude: number;
+      customerId?: string;
+      fuelType?: string;
+    }> = [];
+
+    // Add locations with coordinates
+    (locations || []).forEach(loc => {
+      if (loc.latitude && loc.longitude) {
+        const customer = customers?.find(c => c.id === loc.customer_id);
+        stops.push({
+          id: loc.id,
+          type: 'location',
+          name: `${customer?.company_name || customer?.contact_name || 'Unknown'} - ${loc.location_name}`,
+          address: loc.address || '',
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          customerId: loc.customer_id,
+          fuelType: loc.fuel_type,
+        });
+      }
+    });
+
+    // Add customers with coordinates that don't have a location entry
+    const locationCustomerIds = new Set((locations || []).map(l => l.customer_id).filter(Boolean));
+    (customers || []).forEach(cust => {
+      if (cust.billing_latitude && cust.billing_longitude && !locationCustomerIds.has(cust.id)) {
+        stops.push({
+          id: `customer-${cust.id}`,
+          type: 'customer',
+          name: cust.company_name || cust.contact_name || 'Unknown Customer',
+          address: cust.billing_address || '',
+          latitude: cust.billing_latitude,
+          longitude: cust.billing_longitude,
+          customerId: cust.id,
+          fuelType: cust.preferred_fuel_type,
+        });
+      }
+    });
+
+    return stops;
+  }, [locations, customers]);
+
+  const toggleStop = (stopId: string) => {
+    setSelectedStops(prev => 
+      prev.includes(stopId) 
+        ? prev.filter(id => id !== stopId) 
+        : [...prev, stopId]
+    );
+  };
+
   const filteredRoutes = routes?.filter(route =>
     route.route_name?.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createRoute.mutateAsync({
+    const newRoute = await createRoute.mutateAsync({
       ...formData,
       driver_id: formData.driver_id || undefined,
-      truck_id: formData.truck_id || undefined
+      truck_id: formData.truck_id || undefined,
+      total_stops: selectedStops.length
     });
+
+    // Create route stops if route was created and stops were selected
+    if (newRoute?.id && selectedStops.length > 0) {
+      const { supabase } = await import('@/integrations/supabase/client');
+      for (let i = 0; i < selectedStops.length; i++) {
+        const stopId = selectedStops[i];
+        const stop = availableStops.find(s => s.id === stopId);
+        if (!stop) continue;
+
+        // For location-based stops, use the location_id directly
+        // For customer-based stops, we need to handle differently
+        const isCustomerStop = stopId.startsWith('customer-');
+        const locationId = isCustomerStop ? null : stopId;
+
+        await (supabase as any).from('fuel_delivery_route_stops').insert({
+          route_id: newRoute.id,
+          location_id: locationId,
+          stop_order: i + 1,
+          status: 'pending',
+          planned_gallons: 0, // User can update later
+        });
+      }
+    }
+
     setIsDialogOpen(false);
     setFormData({
       route_name: '',
@@ -74,6 +160,7 @@ export default function FuelDeliveryRoutes() {
       truck_id: '',
       notes: ''
     });
+    setSelectedStops([]);
   };
 
   const getStatusBadge = (status?: string) => {
@@ -172,6 +259,52 @@ export default function FuelDeliveryRoutes() {
                       onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                       placeholder="Route notes..."
                     />
+                  </div>
+                  
+                  {/* Stop Selection */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-orange-500" />
+                      Select Delivery Stops ({selectedStops.length} selected)
+                    </Label>
+                    {availableStops.length > 0 ? (
+                      <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1">
+                        {availableStops.map((stop) => (
+                          <div
+                            key={stop.id}
+                            className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
+                              selectedStops.includes(stop.id) 
+                                ? 'bg-primary/10 border border-primary' 
+                                : 'hover:bg-muted border border-transparent'
+                            }`}
+                            onClick={() => toggleStop(stop.id)}
+                          >
+                            <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                              selectedStops.includes(stop.id) ? 'bg-primary border-primary' : 'border-muted-foreground'
+                            }`}>
+                              {selectedStops.includes(stop.id) && (
+                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm truncate">{stop.name}</div>
+                              <div className="text-xs text-muted-foreground truncate">{stop.address}</div>
+                            </div>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {stop.fuelType || 'diesel'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground p-4 border rounded-md text-center">
+                        No locations or customers with coordinates available.
+                        <br />
+                        <span className="text-xs">Add customers with addresses to see them here.</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex justify-end gap-3">

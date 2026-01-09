@@ -14,6 +14,7 @@ import { useFuelDeliveryLocations, useCreateFuelDeliveryLocation, useFuelDeliver
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { AddressAutocomplete, AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
 
 export default function FuelDeliveryLocations() {
   const navigate = useNavigate();
@@ -27,6 +28,8 @@ export default function FuelDeliveryLocations() {
     customer_id: '',
     location_name: '',
     address: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     city: '',
     state: '',
     zip_code: '',
@@ -40,25 +43,28 @@ export default function FuelDeliveryLocations() {
     requires_appointment: false
   });
 
+  const handleAddressSelect = (result: AddressResult) => {
+    setFormData(prev => ({
+      ...prev,
+      address: result.address,
+      longitude: result.coordinates[0],
+      latitude: result.coordinates[1],
+    }));
+  };
+
   const filteredLocations = locations?.filter(location =>
     location.location_name?.toLowerCase().includes(search.toLowerCase()) ||
     location.address?.toLowerCase().includes(search.toLowerCase()) ||
     location.fuel_delivery_customers?.company_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await createLocation.mutateAsync({
-      ...formData,
-      customer_id: formData.customer_id || undefined,
-      tank_capacity_gallons: parseFloat(formData.tank_capacity_gallons) || undefined,
-      current_level_gallons: parseFloat(formData.current_level_gallons) || undefined
-    });
-    setIsDialogOpen(false);
+  const resetForm = () => {
     setFormData({
       customer_id: '',
       location_name: '',
       address: '',
+      latitude: null,
+      longitude: null,
       city: '',
       state: '',
       zip_code: '',
@@ -71,6 +77,20 @@ export default function FuelDeliveryLocations() {
       contact_phone: '',
       requires_appointment: false
     });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await createLocation.mutateAsync({
+      ...formData,
+      customer_id: formData.customer_id || undefined,
+      latitude: formData.latitude || undefined,
+      longitude: formData.longitude || undefined,
+      tank_capacity_gallons: parseFloat(formData.tank_capacity_gallons) || undefined,
+      current_level_gallons: parseFloat(formData.current_level_gallons) || undefined
+    });
+    setIsDialogOpen(false);
+    resetForm();
   };
 
   return (
@@ -143,13 +163,22 @@ export default function FuelDeliveryLocations() {
                     </Select>
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label>Address *</Label>
-                    <Input
+                    <Label className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-orange-500" />
+                      Address *
+                    </Label>
+                    <AddressAutocomplete
                       value={formData.address}
-                      onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                      placeholder="123 Farm Road"
-                      required
+                      onChange={(address) => setFormData(prev => ({ ...prev, address }))}
+                      onSelect={handleAddressSelect}
+                      placeholder="Start typing an address..."
                     />
+                    {formData.latitude && formData.longitude && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                        Coordinates captured: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>City</Label>
