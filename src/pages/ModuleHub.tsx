@@ -270,21 +270,39 @@ export default function ModuleHub() {
         {/* Upcoming Modules Section - Exciting Design */}
         {displayUpcomingCategories.length > 0 && (
           <section className="mb-10">
-            {/* Hero Header for Upcoming */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 p-6 md:p-8 mb-6">
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-30" />
+            {/* Hero Header for Upcoming - Premium Glass Design */}
+            <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 mb-6">
+              {/* Mesh gradient background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-500 to-fuchsia-500" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-amber-400/40 via-transparent to-cyan-400/30" />
+              <div className="absolute inset-0 bg-gradient-to-bl from-rose-500/30 via-transparent to-indigo-600/40" />
+              
+              {/* Animated orbs */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+              <div className="absolute top-1/2 left-1/3 w-32 h-32 bg-yellow-300/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
+              
+              {/* Glass overlay */}
+              <div className="absolute inset-0 backdrop-blur-[1px] bg-white/5" />
+              
+              {/* Pattern overlay */}
+              <div className="absolute inset-0 opacity-10" style={{
+                backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+                backgroundSize: '24px 24px'
+              }} />
+              
               <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center animate-pulse">
-                    <Sparkles className="w-8 h-8 text-white" />
+                  <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-2xl shadow-purple-500/25 border border-white/20">
+                    <Sparkles className="w-8 h-8 text-white drop-shadow-lg" />
                   </div>
                   <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+                    <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2 drop-shadow-lg">
                       Upcoming Modules
-                      <Flame className="w-6 h-6 text-yellow-300 animate-pulse" />
+                      <Flame className="w-6 h-6 text-yellow-300 drop-shadow-lg animate-pulse" />
                     </h2>
-                    <p className="text-white/80 text-sm md:text-base mt-1">
-                      <span className="font-semibold">{totalUpcoming}</span> exciting modules coming soon across <span className="font-semibold">{displayUpcomingCategories.length}</span> categories
+                    <p className="text-white/90 text-sm md:text-base mt-1 drop-shadow">
+                      <span className="font-semibold text-yellow-200">{totalUpcoming}</span> exciting modules coming soon across <span className="font-semibold text-cyan-200">{displayUpcomingCategories.length}</span> categories
                     </p>
                   </div>
                 </div>
@@ -293,7 +311,7 @@ export default function ModuleHub() {
                     variant="secondary" 
                     size="sm" 
                     onClick={expandAllCategories}
-                    className="bg-white/20 hover:bg-white/30 text-white border-0"
+                    className="bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-sm shadow-lg"
                   >
                     Expand All
                   </Button>
@@ -301,12 +319,12 @@ export default function ModuleHub() {
                     variant="secondary" 
                     size="sm" 
                     onClick={collapseAllCategories}
-                    className="bg-white/20 hover:bg-white/30 text-white border-0"
+                    className="bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-sm shadow-lg"
                   >
                     Collapse All
                   </Button>
                   {!isSearching && (
-                    <Button variant="secondary" size="sm" asChild className="bg-white text-orange-600 hover:bg-white/90">
+                    <Button variant="secondary" size="sm" asChild className="bg-white/90 text-purple-700 hover:bg-white shadow-lg font-semibold">
                       <Link to="/upcoming-modules">View All</Link>
                     </Button>
                   )}
@@ -325,30 +343,43 @@ export default function ModuleHub() {
                   <Collapsible key={category} open={isExpanded} onOpenChange={() => toggleCategory(category)}>
                     <CollapsibleTrigger asChild>
                       <button 
-                        className={`group flex items-center justify-between w-full p-4 rounded-xl bg-gradient-to-r ${config.gradient} hover:shadow-lg hover:scale-[1.01] transition-all duration-300 text-left`}
+                        className="group relative flex items-center justify-between w-full p-4 rounded-2xl text-left overflow-hidden transition-all duration-300 hover:scale-[1.01]"
                         style={{ animationDelay: `${idx * 50}ms` }}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <CategoryIcon className="h-6 w-6 text-white" />
+                        {/* Multi-layer gradient background */}
+                        <div className={`absolute inset-0 bg-gradient-to-r ${config.gradient}`} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/10" />
+                        
+                        {/* Glass reflection */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-60" />
+                        
+                        {/* Hover glow effect */}
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
+                        
+                        {/* Shadow depth */}
+                        <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),inset_0_-1px_0_rgba(0,0,0,0.1)] rounded-2xl" />
+                        
+                        <div className="relative flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg border border-white/20">
+                            <CategoryIcon className="h-6 w-6 text-white drop-shadow" />
                           </div>
                           <div>
-                            <span className="font-semibold text-white text-lg flex items-center gap-2">
+                            <span className="font-semibold text-white text-lg flex items-center gap-2 drop-shadow">
                               {config.emoji} {category}
                             </span>
-                            <span className="text-white/70 text-sm">
+                            <span className="text-white/80 text-sm drop-shadow-sm">
                               {modules.length} module{modules.length !== 1 ? 's' : ''} coming soon
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Badge className="bg-white/20 text-white border-0 hover:bg-white/30">
+                        <div className="relative flex items-center gap-3">
+                          <Badge className="bg-white/25 text-white border border-white/30 backdrop-blur-sm shadow-lg font-semibold">
                             {modules.length}
                           </Badge>
                           {isExpanded ? (
-                            <ChevronDown className="h-5 w-5 text-white transition-transform" />
+                            <ChevronDown className="h-5 w-5 text-white drop-shadow transition-transform" />
                           ) : (
-                            <ChevronRight className="h-5 w-5 text-white group-hover:translate-x-1 transition-transform" />
+                            <ChevronRight className="h-5 w-5 text-white drop-shadow group-hover:translate-x-1 transition-transform" />
                           )}
                         </div>
                       </button>
@@ -360,36 +391,47 @@ export default function ModuleHub() {
                           return (
                             <Card 
                               key={module.slug} 
-                              className="group relative overflow-hidden border-0 bg-gradient-to-br from-background to-muted/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+                              className="group relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-background via-background to-muted/30 hover:shadow-2xl hover:shadow-primary/10 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
                               style={{ animationDelay: `${moduleIdx * 30}ms` }}
                             >
-                              {/* Gradient overlay on hover */}
-                              <div className={`absolute inset-0 bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+                              {/* Glassmorphism overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent" />
                               
-                              {/* Expected date badge */}
-                              <div className="absolute top-3 right-3">
-                                <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-xs shadow-lg">
+                              {/* Gradient glow on hover */}
+                              <div className={`absolute -inset-1 bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500`} />
+                              
+                              {/* Inner gradient overlay on hover */}
+                              <div className={`absolute inset-0 bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} opacity-0 group-hover:opacity-[0.08] transition-opacity duration-300`} />
+                              
+                              {/* Expected date badge - premium glass */}
+                              <div className="absolute top-3 right-3 z-10">
+                                <Badge className="bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 text-white border-0 text-xs shadow-lg shadow-purple-500/25 backdrop-blur-sm">
                                   <Star className="w-3 h-3 mr-1" />
                                   {module.expectedDate || 'Coming Soon'}
                                 </Badge>
                               </div>
                               
-                              <CardHeader className="pb-2 pt-4">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} mb-3 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg`}>
-                                  <Icon className="h-6 w-6 text-white" />
+                              <CardHeader className="relative pb-2 pt-4">
+                                {/* Icon with glow */}
+                                <div className="relative">
+                                  <div className={`absolute inset-0 w-12 h-12 bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} blur-lg opacity-40 group-hover:opacity-60 transition-opacity`} />
+                                  <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} mb-3 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg border border-white/20`}>
+                                    <Icon className="h-6 w-6 text-white drop-shadow" />
+                                  </div>
                                 </div>
-                                <CardTitle className="text-base group-hover:text-primary transition-colors">
+                                <CardTitle className="text-base group-hover:text-primary transition-colors font-semibold">
                                   {module.name}
                                 </CardTitle>
                               </CardHeader>
-                              <CardContent className="pb-4">
-                                <CardDescription className="text-xs line-clamp-2">
+                              <CardContent className="relative pb-4">
+                                <CardDescription className="text-xs line-clamp-2 text-muted-foreground/80">
                                   {module.description}
                                 </CardDescription>
                               </CardContent>
                               
-                              {/* Bottom gradient bar */}
+                              {/* Bottom gradient bar with glow */}
                               <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${module.gradientFrom} ${module.gradientTo} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                              <div className={`absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t ${module.gradientFrom} ${module.gradientTo} opacity-0 group-hover:opacity-10 blur-md transition-opacity duration-300`} />
                             </Card>
                           );
                         })}
