@@ -104,7 +104,7 @@ export function useFeatureRequests(moduleFilter?: ModuleType) {
           subject: `New Feature Request: ${request.title}`,
           body: `A new feature request has been submitted:
 
-ID: FR-${String(request.request_number).padStart(3, '0')}
+ID: RQ-${request.request_number}
 Title: ${request.title}
 Module: ${request.module}
 Priority: ${request.priority}
@@ -279,7 +279,7 @@ Email: ${request.submitter_email || 'Not provided'}`,
     }
 
     const exportData = featureRequests.map((request) => ({
-      ID: `FR-${String(request.request_number).padStart(3, '0')}`,
+      ID: `RQ-${request.request_number}`,
       DATE: new Date(request.created_at).toLocaleDateString(),
       'REQUESTED BY': request.submitter_name || 'Anonymous',
       MODULE: request.module?.toUpperCase() || 'GENERAL',
