@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, Users, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Users, ArrowLeft, MapPin } from 'lucide-react';
 import { useFuelDeliveryCustomers, useCreateFuelDeliveryCustomer } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddressAutocomplete, AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
 
 export default function FuelDeliveryCustomers() {
   const navigate = useNavigate();
@@ -27,6 +28,8 @@ export default function FuelDeliveryCustomers() {
     phone: '',
     email: '',
     billing_address: '',
+    billing_latitude: null as number | null,
+    billing_longitude: null as number | null,
     payment_terms: 'net30',
     credit_limit: '',
     tax_exempt: false,
@@ -35,6 +38,15 @@ export default function FuelDeliveryCustomers() {
     delivery_instructions: '',
     notes: ''
   });
+
+  const handleAddressSelect = (result: AddressResult) => {
+    setFormData(prev => ({
+      ...prev,
+      billing_address: result.address,
+      billing_longitude: result.coordinates[0],
+      billing_latitude: result.coordinates[1],
+    }));
+  };
 
   const filteredCustomers = customers?.filter(customer =>
     customer.company_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -55,6 +67,8 @@ export default function FuelDeliveryCustomers() {
       phone: '',
       email: '',
       billing_address: '',
+      billing_latitude: null,
+      billing_longitude: null,
       payment_terms: 'net30',
       credit_limit: '',
       tax_exempt: false,
@@ -131,12 +145,22 @@ export default function FuelDeliveryCustomers() {
                     />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label>Billing Address</Label>
-                    <Textarea
+                    <Label className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-orange-500" />
+                      Billing Address
+                    </Label>
+                    <AddressAutocomplete
                       value={formData.billing_address}
-                      onChange={(e) => setFormData(prev => ({ ...prev, billing_address: e.target.value }))}
-                      placeholder="123 Main St, City, State 12345"
+                      onChange={(address) => setFormData(prev => ({ ...prev, billing_address: address }))}
+                      onSelect={handleAddressSelect}
+                      placeholder="Start typing an address..."
                     />
+                    {formData.billing_latitude && formData.billing_longitude && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                        Coordinates captured: {formData.billing_latitude.toFixed(4)}, {formData.billing_longitude.toFixed(4)}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Payment Terms</Label>
