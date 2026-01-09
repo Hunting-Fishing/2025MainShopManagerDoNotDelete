@@ -195,6 +195,7 @@ export default function GunsmithChangeLog() {
                     <TableHead className="min-w-[80px]">Date</TableHead>
                     <TableHead className="min-w-[120px]">Requested By</TableHead>
                     <TableHead className="min-w-[200px]">Description</TableHead>
+                    <TableHead className="min-w-[180px]">Reason</TableHead>
                     <TableHead className="min-w-[80px]">Priority</TableHead>
                     <TableHead className="min-w-[120px]">Status</TableHead>
                     <TableHead className="w-[60px]">Votes</TableHead>
@@ -227,6 +228,11 @@ export default function GunsmithChangeLog() {
                             </p>
                           </div>
                         </TableCell>
+                        <TableCell>
+                          <p className="text-sm text-muted-foreground truncate max-w-[180px]">
+                            {request.reason_for_change || '—'}
+                          </p>
+                        </TableCell>
                         <TableCell>{getPriorityBadge(request.priority)}</TableCell>
                         <TableCell>{getStatusBadge(request.status)}</TableCell>
                         <TableCell>
@@ -245,7 +251,7 @@ export default function GunsmithChangeLog() {
                       </TableRow>,
                       isExpanded && (
                         <TableRow key={`${request.id}-detail`}>
-                          <TableCell colSpan={8} className="bg-muted/30 p-0">
+                          <TableCell colSpan={9} className="bg-muted/30 p-0">
                             <ChangeRequestDetail request={request} />
                           </TableCell>
                         </TableRow>
