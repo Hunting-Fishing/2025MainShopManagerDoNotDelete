@@ -10,6 +10,7 @@ import { Loader2, Navigation, Clock, Route, MapPin, AlertTriangle } from 'lucide
 import { useRouteOptimization, Location, RouteOptimizationResult } from '@/hooks/useMapbox';
 import { cn } from '@/lib/utils';
 import { useMapboxPublicToken } from '@/hooks/useMapboxPublicToken';
+import { validateMapboxPublicToken } from '@/lib/mapbox/validateMapboxPublicToken';
 
 interface RouteMapProps {
   origin?: [number, number];
@@ -48,41 +49,60 @@ export function RouteMap({
   }, [token]);
 
   useEffect(() => {
-    if (!mapContainer.current || !token) return;
+    let cancelled = false;
 
-    setMapLoaded(false);
-    setTokenError(null);
+    const init = async () => {
+      if (!mapContainer.current || !token) return;
 
-    mapboxgl.accessToken = token;
+      setMapLoaded(false);
+      setTokenError(null);
 
-    const instance = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: defaultOrigin,
-      zoom: destinations.length > 0 ? 10 : 4,
-      pitch: 45,
-    });
+      const validation = await validateMapboxPublicToken({ token, styleId: 'mapbox/dark-v11' });
+      if (cancelled) return;
 
-    map.current = instance;
-
-    instance.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    instance.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-
-    instance.on('load', () => {
-      setMapLoaded(true);
-    });
-
-    instance.on('error', (e) => {
-      const err: any = (e as any)?.error;
-      if (!err) return;
-      const msg = (err?.message || String(err) || '').toLowerCase();
-      if (err?.status === 401 || msg.includes('invalid token') || msg.includes('not authorized')) {
-        setTokenError('Invalid Mapbox token.');
+      if (!validation.ok) {
+        setTokenError(validation.message || 'Invalid Mapbox token.');
+        return;
       }
-    });
+
+      mapboxgl.accessToken = token;
+
+      const instance = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: defaultOrigin,
+        zoom: destinations.length > 0 ? 10 : 4,
+        pitch: 45,
+      });
+
+      map.current = instance;
+
+      instance.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      instance.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+
+      instance.on('load', () => {
+        setMapLoaded(true);
+      });
+
+      instance.on('error', (e) => {
+        const err: any = (e as any)?.error;
+        if (!err) return;
+        const msg = (err?.message || String(err) || '').toLowerCase();
+        if (err?.status === 401 || err?.status === 403 || msg.includes('invalid token') || msg.includes('not authorized')) {
+          setTokenError(
+            'Mapbox rejected this token. Verify it is a public token (pk.*) and that any URL restrictions allow this domain.'
+          );
+        }
+      });
+    };
+
+    init();
 
     return () => {
-      instance.remove();
+      cancelled = true;
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+      map.current?.remove();
       map.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
