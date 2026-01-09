@@ -14,6 +14,8 @@ import { useFuelDeliveryCustomers, useCreateFuelDeliveryCustomer } from '@/hooks
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddressAutocomplete, AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
+import { FuelTypeSelect, CustomerVehicleForm, VehicleFormData } from '@/components/fuel-delivery';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function FuelDeliveryCustomers() {
   const navigate = useNavigate();
@@ -39,6 +41,8 @@ export default function FuelDeliveryCustomers() {
     notes: ''
   });
 
+  const [vehicles, setVehicles] = useState<VehicleFormData[]>([]);
+
   const handleAddressSelect = (result: AddressResult) => {
     setFormData(prev => ({
       ...prev,
@@ -48,19 +52,20 @@ export default function FuelDeliveryCustomers() {
     }));
   };
 
+  const handleFuelTypeDetected = (fuelType: string) => {
+    // Auto-set preferred fuel type if not already set
+    if (!formData.preferred_fuel_type) {
+      setFormData(prev => ({ ...prev, preferred_fuel_type: fuelType }));
+    }
+  };
+
   const filteredCustomers = customers?.filter(customer =>
     customer.company_name?.toLowerCase().includes(search.toLowerCase()) ||
     customer.contact_name?.toLowerCase().includes(search.toLowerCase()) ||
     customer.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await createCustomer.mutateAsync({
-      ...formData,
-      credit_limit: parseFloat(formData.credit_limit) || 0
-    });
-    setIsDialogOpen(false);
+  const resetForm = () => {
     setFormData({
       company_name: '',
       contact_name: '',
@@ -77,6 +82,39 @@ export default function FuelDeliveryCustomers() {
       delivery_instructions: '',
       notes: ''
     });
+    setVehicles([]);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Create customer first
+    const newCustomer = await createCustomer.mutateAsync({
+      ...formData,
+      credit_limit: parseFloat(formData.credit_limit) || 0
+    });
+    
+    // If vehicles were added, save them linked to the customer
+    if (vehicles.length > 0 && newCustomer?.id) {
+      for (const vehicle of vehicles) {
+        await supabase.from('vehicles').insert({
+          customer_id: newCustomer.id,
+          owner_type: 'customer',
+          vin: vehicle.vin || null,
+          year: vehicle.year ? parseInt(vehicle.year) : null,
+          make: vehicle.make || null,
+          model: vehicle.model || null,
+          fuel_type: vehicle.fuel_type || null,
+          license_plate: vehicle.license_plate || null,
+          color: vehicle.color || null,
+          body_type: vehicle.body_style || null,
+          notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
+        });
+      }
+    }
+    
+    setIsDialogOpen(false);
+    resetForm();
   };
 
   return (
@@ -188,18 +226,11 @@ export default function FuelDeliveryCustomers() {
                   </div>
                   <div className="space-y-2">
                     <Label>Preferred Fuel Type</Label>
-                    <Select value={formData.preferred_fuel_type} onValueChange={(v) => setFormData(prev => ({ ...prev, preferred_fuel_type: v }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select fuel type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="diesel">Diesel</SelectItem>
-                        <SelectItem value="gasoline">Gasoline</SelectItem>
-                        <SelectItem value="heating_oil">Heating Oil</SelectItem>
-                        <SelectItem value="propane">Propane</SelectItem>
-                        <SelectItem value="kerosene">Kerosene</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FuelTypeSelect
+                      value={formData.preferred_fuel_type}
+                      onChange={(v) => setFormData(prev => ({ ...prev, preferred_fuel_type: v }))}
+                      placeholder="Select fuel type"
+                    />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -225,6 +256,13 @@ export default function FuelDeliveryCustomers() {
                       placeholder="Special instructions for deliveries..."
                     />
                   </div>
+
+                  {/* Vehicle Section */}
+                  <CustomerVehicleForm
+                    vehicles={vehicles}
+                    onVehiclesChange={setVehicles}
+                    onFuelTypeDetected={handleFuelTypeDetected}
+                  />
                 </div>
                 <div className="flex justify-end gap-3">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
