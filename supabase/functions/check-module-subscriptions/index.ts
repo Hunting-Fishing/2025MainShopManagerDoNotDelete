@@ -64,6 +64,17 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Check if user is a platform developer
+    const { data: platformDev } = await supabaseClient
+      .from('platform_developers')
+      .select('id, is_active')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    const isPlatformDeveloper = !!platformDev;
+    logStep("Platform developer check", { isPlatformDeveloper });
+
     // Get user's shop
     const { data: profile } = await supabaseClient
       .from('profiles')
@@ -113,6 +124,28 @@ serve(async (req) => {
     ).filter(Boolean) || [];
 
     logStep("Enabled modules for shop", { enabledModuleSlugs });
+
+    // Platform developers get access to ALL modules
+    if (isPlatformDeveloper) {
+      // Get all module slugs from the database
+      const { data: allModules } = await supabaseClient
+        .from('business_modules')
+        .select('slug');
+      
+      const allModuleSlugs = allModules?.map(m => m.slug) || [];
+      logStep("Platform developer - granting access to all modules", { allModuleSlugs });
+
+      return new Response(JSON.stringify({
+        subscriptions: [],
+        trial_active: true, // Give trial-like access
+        trial_ends_at: null,
+        enabled_modules: allModuleSlugs,
+        is_platform_developer: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });

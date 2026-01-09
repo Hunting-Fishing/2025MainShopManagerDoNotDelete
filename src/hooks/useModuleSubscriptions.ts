@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { useIsPlatformDeveloper } from '@/hooks/usePlatformDeveloper';
 import { MODULE_CONFIGS, TIER_CONFIGS, TierSlug } from '@/config/moduleSubscriptions';
 import { toast } from 'sonner';
 
@@ -73,8 +74,12 @@ export function useSubscribeToModule() {
 
 export function useModuleAccess() {
   const { data: subscriptionStatus, isLoading } = useModuleSubscriptions();
+  const { data: isPlatformDeveloper, isLoading: isDevLoading } = useIsPlatformDeveloper();
 
   const hasModuleAccess = (moduleSlug: string): boolean => {
+    // Platform developers have access to ALL modules
+    if (isPlatformDeveloper) return true;
+    
     if (!subscriptionStatus) return false;
     
     // Must be in enabled_modules list first
@@ -97,6 +102,9 @@ export function useModuleAccess() {
   };
 
   const getModuleTier = (moduleSlug: string): TierSlug => {
+    // Platform developers get business tier access
+    if (isPlatformDeveloper) return 'business';
+    
     if (!subscriptionStatus) return 'free';
     
     // Trial gives Pro tier access
@@ -118,6 +126,7 @@ export function useModuleAccess() {
     trialActive: subscriptionStatus?.trial_active ?? false,
     trialEndsAt: subscriptionStatus?.trial_ends_at ?? null,
     subscriptions: subscriptionStatus?.subscriptions ?? [],
-    isLoading,
+    isPlatformDeveloper: isPlatformDeveloper ?? false,
+    isLoading: isLoading || isDevLoading,
   };
 }
