@@ -52,12 +52,19 @@ export function SidebarContent() {
     return permission?.view === true;
   };
 
+  // Check if we're currently in a module route (e.g., /gunsmith/*, /automotive/*)
+  const moduleRoutePatterns = ['/gunsmith', '/automotive', '/powersports', '/marine'];
+  const isInModuleRoute = moduleRoutePatterns.some(pattern => 
+    location.pathname === pattern || location.pathname.startsWith(pattern + '/')
+  );
+
   // Filter navigation based on:
-  // 1. Shop-level visibility settings (hidden sections)
-  // 2. Role-based section visibility
-  // 3. Module-based view permissions for individual items
-  // 4. Route-based role permissions (fallback)
-  const filteredNavigation = navigation
+  // 1. Hide entirely when inside a module (module sections handle navigation)
+  // 2. Shop-level visibility settings (hidden sections)
+  // 3. Role-based section visibility
+  // 4. Module-based view permissions for individual items
+  // 5. Route-based role permissions (fallback)
+  const filteredNavigation = isInModuleRoute ? [] : navigation
     .filter(section => isVisible(section.title)) // Check shop-level and role-based visibility
     .map(section => ({
       ...section,
