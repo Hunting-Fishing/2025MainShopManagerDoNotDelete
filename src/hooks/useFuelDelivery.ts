@@ -327,10 +327,13 @@ export function useCreateFuelDeliveryCustomer() {
   return useMutation({
     mutationFn: async (customer: Partial<FuelDeliveryCustomer>) => {
       const shopId = await getShopId();
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from('fuel_delivery_customers')
-        .insert({ ...customer, shop_id: shopId });
+        .insert({ ...customer, shop_id: shopId })
+        .select()
+        .single();
       if (error) throw error;
+      return data as FuelDeliveryCustomer;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fuel-delivery-customers'] });
