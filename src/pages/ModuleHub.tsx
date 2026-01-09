@@ -10,12 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LayoutGrid, Sparkles, Search, X } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { LayoutGrid, Sparkles, Search, X, ChevronDown, ChevronRight } from 'lucide-react';
 
 export default function ModuleHub() {
   const { user } = useAuthUser();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const { 
     hasModuleAccess, 
     trialActive, 
@@ -25,15 +27,31 @@ export default function ModuleHub() {
   } = useModuleAccess();
 
   const allModules = getAllModuleRoutes();
+
+  // Group upcoming modules by category
+  const upcomingByCategory = useMemo(() => {
+    const grouped: Record<string, typeof UPCOMING_MODULES> = {};
+    UPCOMING_MODULES.forEach(module => {
+      const category = module.category || 'Other';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(module);
+    });
+    return grouped;
+  }, []);
+
+  const categoryOrder = Object.keys(upcomingByCategory).sort();
   
   // Filter function for modules
   const filterModules = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
-    if (!query) return { accessible: [], locked: [], upcoming: [], hasResults: false, isSearching: false };
+    if (!query) return { accessible: [], locked: [], upcoming: [], upcomingByCategory: {}, hasResults: false, isSearching: false };
     
-    const matchScore = (name: string, description: string) => {
+    const matchScore = (name: string, description: string, category?: string) => {
       const nameLower = name.toLowerCase();
       const descLower = description.toLowerCase();
+      const catLower = (category || '').toLowerCase();
       
       // Exact match in name gets highest score
       if (nameLower === query) return 100;
@@ -41,11 +59,13 @@ export default function ModuleHub() {
       if (nameLower.startsWith(query)) return 80;
       // Contains query in name
       if (nameLower.includes(query)) return 60;
+      // Contains query in category
+      if (catLower.includes(query)) return 50;
       // Contains query in description
       if (descLower.includes(query)) return 40;
       // Partial word match
       const words = query.split(' ');
-      const matchedWords = words.filter(w => nameLower.includes(w) || descLower.includes(w));
+      const matchedWords = words.filter(w => nameLower.includes(w) || descLower.includes(w) || catLower.includes(w));
       if (matchedWords.length > 0) return 20 * (matchedWords.length / words.length);
       
       return 0;
@@ -64,14 +84,25 @@ export default function ModuleHub() {
       .sort((a, b) => b.score - a.score);
 
     const upcomingModules = UPCOMING_MODULES
-      .map(m => ({ ...m, score: matchScore(m.name, m.description) }))
+      .map(m => ({ ...m, score: matchScore(m.name, m.description, m.category) }))
       .filter(m => m.score > 0)
       .sort((a, b) => b.score - a.score);
+
+    // Group filtered upcoming by category
+    const filteredUpcomingByCategory: Record<string, typeof upcomingModules> = {};
+    upcomingModules.forEach(module => {
+      const category = module.category || 'Other';
+      if (!filteredUpcomingByCategory[category]) {
+        filteredUpcomingByCategory[category] = [];
+      }
+      filteredUpcomingByCategory[category].push(module);
+    });
 
     return {
       accessible: accessibleModules,
       locked: lockedModules,
       upcoming: upcomingModules,
+      upcomingByCategory: filteredUpcomingByCategory,
       hasResults: accessibleModules.length > 0 || lockedModules.length > 0 || upcomingModules.length > 0,
       isSearching: true
     };
@@ -85,7 +116,27 @@ export default function ModuleHub() {
   const isSearching = searchQuery.trim().length > 0;
   const displayAccessible = isSearching ? filterModules.accessible : accessibleModules;
   const displayLocked = isSearching ? filterModules.locked : lockedModules;
-  const displayUpcoming = isSearching ? filterModules.upcoming : UPCOMING_MODULES;
+  const displayUpcomingByCategory = isSearching ? filterModules.upcomingByCategory : upcomingByCategory;
+  const displayUpcomingCategories = Object.keys(displayUpcomingByCategory).sort();
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
+  const expandAllCategories = () => {
+    const allExpanded: Record<string, boolean> = {};
+    displayUpcomingCategories.forEach(cat => {
+      allExpanded[cat] = true;
+    });
+    setExpandedCategories(allExpanded);
+  };
+
+  const collapseAllCategories = () => {
+    setExpandedCategories({});
+  };
 
   if (isLoading) {
     return (
@@ -102,6 +153,8 @@ export default function ModuleHub() {
     );
   }
 
+  const totalUpcoming = Object.values(displayUpcomingByCategory).reduce((acc, arr) => acc + arr.length, 0);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="max-w-7xl mx-auto p-6 md:p-8">
@@ -117,7 +170,7 @@ export default function ModuleHub() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search modules... (e.g., auto repair, boat, fleet)"
+              placeholder="Search modules... (e.g., auto repair, plumbing, salon)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-10 h-11"
@@ -134,7 +187,7 @@ export default function ModuleHub() {
           {isSearching && (
             <p className="text-sm text-muted-foreground mt-2">
               {filterModules.hasResults 
-                ? `Found ${displayAccessible.length + displayLocked.length + displayUpcoming.length} matching modules`
+                ? `Found ${displayAccessible.length + displayLocked.length + totalUpcoming} matching modules`
                 : 'No modules found. Try a different search term.'
               }
             </p>
@@ -147,7 +200,7 @@ export default function ModuleHub() {
             <Search className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">No modules found</h3>
             <p className="text-muted-foreground mb-4">
-              Try searching with different keywords like "repair", "fleet", or "boat"
+              Try searching with different keywords like "repair", "fleet", or "salon"
             </p>
             <Button variant="outline" onClick={() => setSearchQuery('')}>
               Clear Search
@@ -201,45 +254,82 @@ export default function ModuleHub() {
           </section>
         )}
 
-        {/* Upcoming Modules Section */}
-        {displayUpcoming.length > 0 && (
+        {/* Upcoming Modules Section - Categorized */}
+        {displayUpcomingCategories.length > 0 && (
           <section className="mb-10">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-500" />
                 <h2 className="text-xl font-semibold text-foreground">Upcoming Modules</h2>
                 <Badge variant="secondary" className="text-xs">
-                  {displayUpcoming.length} {isSearching ? 'Found' : 'Coming Soon'}
+                  {totalUpcoming} {isSearching ? 'Found' : 'Coming Soon'}
                 </Badge>
               </div>
-              {!isSearching && (
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/upcoming-modules">View All</Link>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={expandAllCategories}>
+                  Expand All
                 </Button>
-              )}
+                <Button variant="ghost" size="sm" onClick={collapseAllCategories}>
+                  Collapse All
+                </Button>
+                {!isSearching && (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/upcoming-modules">View All</Link>
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {displayUpcoming.map(module => {
-                const Icon = module.icon;
+
+            <div className="space-y-3">
+              {displayUpcomingCategories.map(category => {
+                const modules = displayUpcomingByCategory[category];
+                const isExpanded = expandedCategories[category] || false;
+                
                 return (
-                  <Card key={module.slug} className="relative overflow-hidden border-dashed opacity-80 hover:opacity-100 transition-opacity">
-                    <div className="absolute top-3 right-3">
-                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
-                        {module.expectedDate || 'Coming Soon'}
-                      </Badge>
-                    </div>
-                    <CardHeader className="pb-3">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} mb-3`}>
-                        <Icon className="h-6 w-6 text-white" />
+                  <Collapsible key={category} open={isExpanded} onOpenChange={() => toggleCategory(category)}>
+                    <CollapsibleTrigger asChild>
+                      <button className="flex items-center justify-between w-full p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors text-left">
+                        <div className="flex items-center gap-3">
+                          {isExpanded ? (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                          )}
+                          <span className="font-medium text-foreground">{category}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {modules.length} module{modules.length !== 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-8">
+                        {modules.map(module => {
+                          const Icon = module.icon;
+                          return (
+                            <Card key={module.slug} className="relative overflow-hidden border-dashed opacity-80 hover:opacity-100 transition-opacity">
+                              <div className="absolute top-3 right-3">
+                                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
+                                  {module.expectedDate || 'Coming Soon'}
+                                </Badge>
+                              </div>
+                              <CardHeader className="pb-2 pt-4">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} mb-2`}>
+                                  <Icon className="h-5 w-5 text-white" />
+                                </div>
+                                <CardTitle className="text-base">{module.name}</CardTitle>
+                              </CardHeader>
+                              <CardContent className="pb-4">
+                                <CardDescription className="text-xs line-clamp-2">
+                                  {module.description}
+                                </CardDescription>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
                       </div>
-                      <CardTitle className="text-lg">{module.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-sm">
-                        {module.description}
-                      </CardDescription>
-                    </CardContent>
-                  </Card>
+                    </CollapsibleContent>
+                  </Collapsible>
                 );
               })}
             </div>
