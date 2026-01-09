@@ -42539,6 +42539,10 @@ export type Database = {
         | "apprentice"
         | "counter_staff"
         | "parts_manager"
+        | "manager"
+        | "sales"
+        | "reception"
+        | "shipping"
       job_line_status:
         | "pending"
         | "signed-onto-task"
@@ -42810,6 +42814,10 @@ export const Constants = {
         "apprentice",
         "counter_staff",
         "parts_manager",
+        "manager",
+        "sales",
+        "reception",
+        "shipping",
       ],
       job_line_status: [
         "pending",
