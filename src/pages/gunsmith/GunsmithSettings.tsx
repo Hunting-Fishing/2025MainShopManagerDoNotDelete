@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -6,14 +6,32 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useGunsmithSettings, useUpdateGunsmithSettings } from '@/hooks/gunsmith/useGunsmithSettings';
+import { useShopName } from '@/hooks/useShopName';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Loader2, Settings, Clock, DollarSign, Shield, Bell } from 'lucide-react';
 
 export default function GunsmithSettings() {
   const { data: settings, isLoading } = useGunsmithSettings();
   const updateSettings = useUpdateGunsmithSettings();
+  const { shopName, updateShopName, loading: shopNameLoading } = useShopName();
+  const { refresh: refreshCompany } = useCompany();
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [businessName, setBusinessName] = useState('');
 
-  const handleSave = () => {
+  // Initialize business name from shop name
+  useEffect(() => {
+    if (shopName && !businessName) {
+      setBusinessName(shopName);
+    }
+  }, [shopName]);
+
+  const handleSave = async () => {
+    // Update shop name if changed
+    if (businessName !== shopName) {
+      await updateShopName(businessName);
+      refreshCompany(); // Refresh company context to update sidebar
+    }
+    // Update other settings
     updateSettings.mutate(formData);
   };
 
@@ -21,7 +39,7 @@ export default function GunsmithSettings() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  if (isLoading) {
+  if (isLoading || shopNameLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -80,9 +98,9 @@ export default function GunsmithSettings() {
                   <Label htmlFor="business_name">Business Name</Label>
                   <Input
                     id="business_name"
-                    value={currentData.business_name || ''}
-                    onChange={(e) => updateField('business_name', e.target.value)}
-                    placeholder="Your Gunsmith Shop"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="Enter your business name"
                   />
                 </div>
                 <div className="space-y-2">
