@@ -1,15 +1,16 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Users, AlertTriangle, Calendar, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FuelDeliveryLocation, FuelDeliveryCustomer } from '@/hooks/useFuelDelivery';
-
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiZGltZW5zaW9uYWx2ZW50dXJlcyIsImEiOiJjbWs2ZnduZzcwaTdnM2twdGVjdzJuMmMwIn0.B_pTNc8NCLb-zp5zZLvCL1bSEWTomIIrzvKRO4LF4';
+import { useMapboxPublicToken } from '@/hooks/useMapboxPublicToken';
 
 const DAYS_OF_WEEK = [
   { value: 0, label: 'Sun', short: 'S' },
@@ -37,42 +38,51 @@ interface CustomerMapProps {
 }
 
 export function CustomerMap({ locations, customers, className, onLocationClick }: CustomerMapProps) {
+  const { token, setToken, hasEnvToken } = useMapboxPublicToken();
+  const [tokenInput, setTokenInput] = useState(token);
+  const [tokenError, setTokenError] = useState<string | null>(null);
+
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
-  
+
   // Filter state
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedFrequency, setSelectedFrequency] = useState<string>('all');
   const [showLowFuelOnly, setShowLowFuelOnly] = useState(false);
 
+  useEffect(() => {
+    setTokenInput(token);
+  }, [token]);
+
   // Filter locations based on criteria
   const filteredLocations = useMemo(() => {
-    return locations.filter(loc => {
+    return locations.filter((loc) => {
       // Must have valid coordinates
       if (!loc.latitude || !loc.longitude) return false;
-      
+
       // Filter by selected days
       if (selectedDays.length > 0) {
         const locDays = loc.delivery_days || [];
-        const hasMatchingDay = selectedDays.some(day => locDays.includes(day));
+        const hasMatchingDay = selectedDays.some((day) => locDays.includes(day));
         if (!hasMatchingDay) return false;
       }
-      
+
       // Filter by frequency
       if (selectedFrequency !== 'all') {
         if (loc.delivery_frequency !== selectedFrequency) return false;
       }
-      
+
       // Filter by low fuel
       if (showLowFuelOnly) {
-        const tankPercent = loc.tank_capacity_gallons && loc.current_level_gallons 
-          ? (loc.current_level_gallons / loc.tank_capacity_gallons) * 100
-          : null;
+        const tankPercent =
+          loc.tank_capacity_gallons && loc.current_level_gallons
+            ? (loc.current_level_gallons / loc.tank_capacity_gallons) * 100
+            : null;
         if (tankPercent === null || tankPercent >= 25) return false;
       }
-      
+
       return true;
     });
   }, [locations, selectedDays, selectedFrequency, showLowFuelOnly]);
@@ -80,7 +90,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
   // Get customer name for a location
   const getCustomerName = (customerId?: string) => {
     if (!customerId) return 'Unknown';
-    const customer = customers.find(c => c.id === customerId);
+    const customer = customers.find((c) => c.id === customerId);
     if (!customer) return 'Unknown';
     return customer.company_name || customer.contact_name || 'Unknown';
   };
@@ -88,25 +98,34 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
   // Calculate center from filtered locations
   const getCenter = (): [number, number] => {
     if (filteredLocations.length === 0) return [-98.5795, 39.8283]; // Center of US
-    const avgLng = filteredLocations.reduce((sum, loc) => sum + (loc.longitude || 0), 0) / filteredLocations.length;
-    const avgLat = filteredLocations.reduce((sum, loc) => sum + (loc.latitude || 0), 0) / filteredLocations.length;
+    const avgLng =
+      filteredLocations.reduce((sum, loc) => sum + (loc.longitude || 0), 0) /
+      filteredLocations.length;
+    const avgLat =
+      filteredLocations.reduce((sum, loc) => sum + (loc.latitude || 0), 0) /
+      filteredLocations.length;
     return [avgLng, avgLat];
   };
 
   // Format delivery schedule for display
   const formatSchedule = (loc: FuelDeliveryLocation) => {
     const days = loc.delivery_days || [];
-    const dayNames = days.map(d => DAYS_OF_WEEK.find(dw => dw.value === d)?.label || '').join(', ');
-    const freq = FREQUENCY_OPTIONS.find(f => f.value === loc.delivery_frequency)?.label || 'Weekly';
+    const dayNames = days
+      .map((d) => DAYS_OF_WEEK.find((dw) => dw.value === d)?.label || '')
+      .join(', ');
+    const freq = FREQUENCY_OPTIONS.find((f) => f.value === loc.delivery_frequency)?.label || 'Weekly';
     return `${freq}${dayNames ? ` (${dayNames})` : ''}`;
   };
 
   useEffect(() => {
-    if (!mapContainer.current || !MAPBOX_TOKEN) return;
+    if (!mapContainer.current || !token) return;
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+    setMapLoaded(false);
+    setTokenError(null);
 
-    map.current = new mapboxgl.Map({
+    mapboxgl.accessToken = token;
+
+    const instance = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
       center: getCenter(),
@@ -114,37 +133,49 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
       pitch: 30,
     });
 
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+    map.current = instance;
 
-    map.current.on('load', () => {
+    instance.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    instance.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+
+    instance.on('load', () => {
       setMapLoaded(true);
     });
 
+    instance.on('error', (e) => {
+      const err: any = (e as any)?.error;
+      if (!err) return;
+      const msg = (err?.message || String(err) || '').toLowerCase();
+      if (err?.status === 401 || msg.includes('invalid token') || msg.includes('not authorized')) {
+        setTokenError('Invalid Mapbox token. Please paste a valid public token.');
+      }
+    });
+
     return () => {
-      map.current?.remove();
+      instance.remove();
+      map.current = null;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   // Update markers when filtered locations change
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
     // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
     // Add location markers
     filteredLocations.forEach((loc) => {
       const customerName = getCustomerName(loc.customer_id);
-      const tankPercent = loc.tank_capacity_gallons && loc.current_level_gallons 
-        ? Math.round((loc.current_level_gallons / loc.tank_capacity_gallons) * 100)
-        : null;
-      
+      const tankPercent =
+        loc.tank_capacity_gallons && loc.current_level_gallons
+          ? Math.round((loc.current_level_gallons / loc.tank_capacity_gallons) * 100)
+          : null;
+
       const isLowFuel = tankPercent !== null && tankPercent < 25;
-      const markerColor = isLowFuel 
-        ? 'from-red-500 to-rose-600' 
-        : 'from-blue-500 to-indigo-600';
+      const markerColor = isLowFuel ? 'from-red-500 to-rose-600' : 'from-blue-500 to-indigo-600';
 
       const el = document.createElement('div');
       el.className = 'cursor-pointer';
@@ -205,8 +236,8 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     // Fit bounds to show all markers
     if (filteredLocations.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
-      filteredLocations.forEach(loc => bounds.extend([loc.longitude!, loc.latitude!]));
-      
+      filteredLocations.forEach((loc) => bounds.extend([loc.longitude!, loc.latitude!]));
+
       map.current.fitBounds(bounds, {
         padding: { top: 50, bottom: 50, left: 50, right: 50 },
         maxZoom: 12,
@@ -221,28 +252,61 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
 
   // Toggle day selection
   const toggleDay = (day: number) => {
-    setSelectedDays(prev => 
-      prev.includes(day) 
-        ? prev.filter(d => d !== day)
-        : [...prev, day]
-    );
+    setSelectedDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
-  if (!MAPBOX_TOKEN) {
-    return (
-      <Card className={cn("", className)}>
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <AlertTriangle className="h-12 w-12 mb-3 text-amber-500" />
-            <p className="font-medium">Mapbox Token Required</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const saveToken = () => {
+    const next = tokenInput.trim();
+    setToken(next);
+    setTokenError(null);
+  };
 
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <div className={cn('flex flex-col gap-4', className)}>
+      {/* Token prompt (needed for tiles/styles) */}
+      {(!token || tokenError) && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Mapbox public token required</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  The map can’t load until a valid Mapbox token is provided.
+                  {' '}
+                  <a className="underline" href="https://account.mapbox.com/access-tokens/" target="_blank" rel="noreferrer">
+                    Get a token
+                  </a>
+                  .
+                </p>
+                {tokenError && <p className="text-xs text-destructive mt-1">{tokenError}</p>}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mapbox-public-token">Mapbox public token</Label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  id="mapbox-public-token"
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value)}
+                  placeholder="pk.eyJ..."
+                  autoComplete="off"
+                />
+                <Button type="button" onClick={saveToken} className="sm:w-28">
+                  Save
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {hasEnvToken
+                  ? 'This project already has VITE_MAPBOX_PUBLIC_TOKEN set; you may be using a browser-stored token overriding it.'
+                  : 'Saved in this browser only. For production, set VITE_MAPBOX_PUBLIC_TOKEN.'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <Card>
         <CardContent className="p-4 space-y-4">
@@ -253,10 +317,10 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
               Delivery Days
             </div>
             <div className="flex flex-wrap gap-2">
-              {DAYS_OF_WEEK.map(day => (
+              {DAYS_OF_WEEK.map((day) => (
                 <Button
                   key={day.value}
-                  variant={selectedDays.includes(day.value) ? "default" : "outline"}
+                  variant={selectedDays.includes(day.value) ? 'default' : 'outline'}
                   size="sm"
                   className="w-12 h-8"
                   onClick={() => toggleDay(day.value)}
@@ -283,19 +347,14 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
               <Filter className="h-4 w-4 text-muted-foreground" />
               Delivery Frequency
             </div>
-            <ToggleGroup 
-              type="single" 
+            <ToggleGroup
+              type="single"
               value={selectedFrequency}
               onValueChange={(v) => v && setSelectedFrequency(v)}
               className="justify-start flex-wrap"
             >
-              {FREQUENCY_OPTIONS.map(freq => (
-                <ToggleGroupItem 
-                  key={freq.value} 
-                  value={freq.value}
-                  size="sm"
-                  className="px-3"
-                >
+              {FREQUENCY_OPTIONS.map((freq) => (
+                <ToggleGroupItem key={freq.value} value={freq.value} size="sm" className="px-3">
                   {freq.label}
                 </ToggleGroupItem>
               ))}
@@ -305,7 +364,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
           {/* Quick Filters */}
           <div className="flex items-center gap-3">
             <Button
-              variant={showLowFuelOnly ? "destructive" : "outline"}
+              variant={showLowFuelOnly ? 'destructive' : 'outline'}
               size="sm"
               onClick={() => setShowLowFuelOnly(!showLowFuelOnly)}
             >
@@ -318,14 +377,26 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
 
       {/* Map */}
       <Card className="overflow-hidden">
-        <div ref={mapContainer} className="h-[500px] w-full" />
+        <div className="relative h-[500px] w-full">
+          <div ref={mapContainer} className="absolute inset-0" />
+          {!token && (
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground p-6 text-center">
+              Enter a Mapbox token above to load the map.
+            </div>
+          )}
+          {tokenError && (
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground p-6 text-center">
+              Map failed to load. Please update the token above.
+            </div>
+          )}
+        </div>
       </Card>
 
       {/* Legend & Stats */}
       <div className="flex flex-wrap gap-3 items-center">
         <Badge variant="outline" className="flex items-center gap-2 px-3 py-1.5">
-          <Users className="h-3.5 w-3.5 text-blue-500" />
-          {filteredLocations.length} of {locations.filter(l => l.latitude && l.longitude).length} Locations
+          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+          {filteredLocations.length} of {locations.filter((l) => l.latitude && l.longitude).length} Locations
         </Badge>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <div className="w-3 h-3 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600" />
