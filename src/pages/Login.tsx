@@ -18,6 +18,9 @@ import {
 } from '@/components/ui/dialog';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 
+// Mobile background
+import mobileBgLogin from '@/assets/mobile-bg-login.jpg';
+
 export default function Login() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthUser();
@@ -95,8 +98,16 @@ export default function Login() {
 
   return (
     <PublicLayout activeLink="login">
+      {/* Mobile Background Image */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat md:hidden z-0"
+        style={{ backgroundImage: `url(${mobileBgLogin})` }}
+      >
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+      </div>
+      
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-4 relative">
+      <div className="flex-1 flex items-center justify-center p-4 relative z-10">
         <div className="relative w-full max-w-md">
         {/* Main Card */}
         <Card className="modern-card-elevated backdrop-blur-sm bg-card/95 border-border/50 shadow-glow">
