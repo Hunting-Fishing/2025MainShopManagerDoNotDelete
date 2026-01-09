@@ -127,23 +127,41 @@ export default function FuelDeliveryCustomers() {
           credit_limit: parseFloat(formData.credit_limit) || 0,
         });
 
-        // If vehicles were added, save them linked to the customer
-        if (vehicles.length > 0 && newCustomer?.id) {
-          for (const vehicle of vehicles) {
-            const { error } = await supabase.from('vehicles').insert({
+        if (newCustomer?.id) {
+          // Auto-create a fuel_delivery_location if customer has coordinates
+          if (formData.billing_latitude && formData.billing_longitude) {
+            const { error: locError } = await (supabase as any).from('fuel_delivery_locations').insert({
               customer_id: newCustomer.id,
-              owner_type: 'customer',
-              vin: vehicle.vin || null,
-              year: vehicle.year ? parseInt(vehicle.year) : null,
-              make: vehicle.make || null,
-              model: vehicle.model || null,
-              fuel_type: vehicle.fuel_type || null,
-              license_plate: vehicle.license_plate || null,
-              color: vehicle.color || null,
-              body_type: vehicle.body_style || null,
-              notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
+              location_name: formData.billing_address || 'Primary Location',
+              address: formData.billing_address || '',
+              latitude: formData.billing_latitude,
+              longitude: formData.billing_longitude,
+              fuel_type: formData.preferred_fuel_type || 'diesel',
+              is_active: true
             });
-            if (error) throw error;
+            if (locError) {
+              console.error('Failed to auto-create delivery location:', locError);
+            }
+          }
+
+          // If vehicles were added, save them linked to the customer
+          if (vehicles.length > 0) {
+            for (const vehicle of vehicles) {
+              const { error } = await supabase.from('vehicles').insert({
+                customer_id: newCustomer.id,
+                owner_type: 'customer',
+                vin: vehicle.vin || null,
+                year: vehicle.year ? parseInt(vehicle.year) : null,
+                make: vehicle.make || null,
+                model: vehicle.model || null,
+                fuel_type: vehicle.fuel_type || null,
+                license_plate: vehicle.license_plate || null,
+                color: vehicle.color || null,
+                body_type: vehicle.body_style || null,
+                notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
+              });
+              if (error) throw error;
+            }
           }
         }
       }

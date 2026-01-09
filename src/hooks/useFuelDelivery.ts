@@ -30,6 +30,8 @@ export interface FuelDeliveryCustomer {
   phone?: string;
   email?: string;
   billing_address?: string;
+  billing_latitude?: number;
+  billing_longitude?: number;
   delivery_instructions?: string;
   payment_terms?: string;
   credit_limit?: number;
@@ -766,10 +768,13 @@ export function useCreateFuelDeliveryRoute() {
   return useMutation({
     mutationFn: async (route: Partial<FuelDeliveryRoute>) => {
       const shopId = await getShopId();
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from('fuel_delivery_routes')
-        .insert({ ...route, shop_id: shopId });
+        .insert({ ...route, shop_id: shopId })
+        .select()
+        .single();
       if (error) throw error;
+      return data as FuelDeliveryRoute;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fuel-delivery-routes'] });

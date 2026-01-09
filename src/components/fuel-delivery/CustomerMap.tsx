@@ -57,36 +57,99 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     setTokenInput(token);
   }, [token]);
 
-  // Filter locations based on criteria
-  const filteredLocations = useMemo(() => {
-    return locations.filter((loc) => {
-      // Must have valid coordinates
-      if (!loc.latitude || !loc.longitude) return false;
+  // Build a combined list of markers from locations + customers (fallback)
+  const allMarkerData = useMemo(() => {
+    const markers: Array<{
+      id: string;
+      type: 'location' | 'customer';
+      latitude: number;
+      longitude: number;
+      customerId?: string;
+      locationName?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      zipCode?: string;
+      fuelType?: string;
+      tankCapacity?: number;
+      currentLevel?: number;
+      deliveryDays?: number[];
+      deliveryFrequency?: string;
+    }> = [];
 
-      // Filter by selected days
+    // Add all locations with coordinates
+    locations.forEach(loc => {
+      if (loc.latitude && loc.longitude) {
+        markers.push({
+          id: loc.id,
+          type: 'location',
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          customerId: loc.customer_id,
+          locationName: loc.location_name,
+          address: loc.address,
+          city: loc.city,
+          state: loc.state,
+          zipCode: loc.zip_code,
+          fuelType: loc.fuel_type,
+          tankCapacity: loc.tank_capacity_gallons,
+          currentLevel: loc.current_level_gallons,
+          deliveryDays: loc.delivery_days,
+          deliveryFrequency: loc.delivery_frequency,
+        });
+      }
+    });
+
+    // Add customers with coordinates who don't have a location entry (fallback)
+    const locationCustomerIds = new Set(locations.map(l => l.customer_id).filter(Boolean));
+    customers.forEach(cust => {
+      if (cust.billing_latitude && cust.billing_longitude && !locationCustomerIds.has(cust.id)) {
+        markers.push({
+          id: `customer-${cust.id}`,
+          type: 'customer',
+          latitude: cust.billing_latitude,
+          longitude: cust.billing_longitude,
+          customerId: cust.id,
+          locationName: 'Primary Location',
+          address: cust.billing_address,
+          fuelType: cust.preferred_fuel_type,
+        });
+      }
+    });
+
+    return markers;
+  }, [locations, customers]);
+
+  // Filter markers based on criteria
+  const filteredMarkers = useMemo(() => {
+    return allMarkerData.filter((marker) => {
+      // Filter by selected days (only applicable to locations)
       if (selectedDays.length > 0) {
-        const locDays = loc.delivery_days || [];
-        const hasMatchingDay = selectedDays.some((day) => locDays.includes(day));
-        if (!hasMatchingDay) return false;
+        const markerDays = marker.deliveryDays || [];
+        const hasMatchingDay = selectedDays.some((day) => markerDays.includes(day));
+        if (!hasMatchingDay && marker.type === 'location') return false;
+        // For customers without location, show them if no day filter applied to their non-existent schedule
+        if (marker.type === 'customer') return true; // Always show customers when filtering by days
       }
 
-      // Filter by frequency
+      // Filter by frequency (only applicable to locations)
       if (selectedFrequency !== 'all') {
-        if (loc.delivery_frequency !== selectedFrequency) return false;
+        if (marker.type === 'location' && marker.deliveryFrequency !== selectedFrequency) return false;
+        // Show customers regardless of frequency since they don't have one set
       }
 
-      // Filter by low fuel
+      // Filter by low fuel (only applicable to locations with tank data)
       if (showLowFuelOnly) {
         const tankPercent =
-          loc.tank_capacity_gallons && loc.current_level_gallons
-            ? (loc.current_level_gallons / loc.tank_capacity_gallons) * 100
+          marker.tankCapacity && marker.currentLevel
+            ? (marker.currentLevel / marker.tankCapacity) * 100
             : null;
         if (tankPercent === null || tankPercent >= 25) return false;
       }
 
       return true;
     });
-  }, [locations, selectedDays, selectedFrequency, showLowFuelOnly]);
+  }, [allMarkerData, selectedDays, selectedFrequency, showLowFuelOnly]);
 
   // Get customer name for a location
   const getCustomerName = (customerId?: string) => {
@@ -96,25 +159,25 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     return customer.company_name || customer.contact_name || 'Unknown';
   };
 
-  // Calculate center from filtered locations
+  // Calculate center from filtered markers
   const getCenter = (): [number, number] => {
-    if (filteredLocations.length === 0) return [-98.5795, 39.8283]; // Center of US
+    if (filteredMarkers.length === 0) return [-98.5795, 39.8283]; // Center of US
     const avgLng =
-      filteredLocations.reduce((sum, loc) => sum + (loc.longitude || 0), 0) /
-      filteredLocations.length;
+      filteredMarkers.reduce((sum, m) => sum + m.longitude, 0) /
+      filteredMarkers.length;
     const avgLat =
-      filteredLocations.reduce((sum, loc) => sum + (loc.latitude || 0), 0) /
-      filteredLocations.length;
+      filteredMarkers.reduce((sum, m) => sum + m.latitude, 0) /
+      filteredMarkers.length;
     return [avgLng, avgLat];
   };
 
   // Format delivery schedule for display
-  const formatSchedule = (loc: FuelDeliveryLocation) => {
-    const days = loc.delivery_days || [];
+  const formatSchedule = (marker: typeof allMarkerData[0]) => {
+    const days = marker.deliveryDays || [];
     const dayNames = days
       .map((d) => DAYS_OF_WEEK.find((dw) => dw.value === d)?.label || '')
       .join(', ');
-    const freq = FREQUENCY_OPTIONS.find((f) => f.value === loc.delivery_frequency)?.label || 'Weekly';
+    const freq = FREQUENCY_OPTIONS.find((f) => f.value === marker.deliveryFrequency)?.label || 'Not set';
     return `${freq}${dayNames ? ` (${dayNames})` : ''}`;
   };
 
@@ -142,7 +205,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/dark-v11',
         center: getCenter(),
-        zoom: filteredLocations.length > 0 ? 8 : 4,
+        zoom: filteredMarkers.length > 0 ? 8 : 4,
         pitch: 30,
       });
 
@@ -179,7 +242,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  // Update markers when filtered locations change
+  // Update markers when filtered markers change
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
@@ -187,16 +250,23 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    // Add location markers
-    filteredLocations.forEach((loc) => {
-      const customerName = getCustomerName(loc.customer_id);
+    // Add markers
+    filteredMarkers.forEach((markerData) => {
+      const customerName = getCustomerName(markerData.customerId);
       const tankPercent =
-        loc.tank_capacity_gallons && loc.current_level_gallons
-          ? Math.round((loc.current_level_gallons / loc.tank_capacity_gallons) * 100)
+        markerData.tankCapacity && markerData.currentLevel
+          ? Math.round((markerData.currentLevel / markerData.tankCapacity) * 100)
           : null;
 
       const isLowFuel = tankPercent !== null && tankPercent < 25;
-      const markerColor = isLowFuel ? 'from-red-500 to-rose-600' : 'from-blue-500 to-indigo-600';
+      const isCustomerFallback = markerData.type === 'customer';
+      
+      // Use different colors: green for customer fallback, blue for locations, red for low fuel
+      const markerColor = isLowFuel 
+        ? 'from-red-500 to-rose-600' 
+        : isCustomerFallback 
+          ? 'from-green-500 to-emerald-600' 
+          : 'from-blue-500 to-indigo-600';
 
       const el = document.createElement('div');
       el.className = 'cursor-pointer';
@@ -208,19 +278,17 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
             </svg>
           </div>
           ${isLowFuel ? '<div class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center animate-pulse"><span class="text-white text-[8px] font-bold">!</span></div>' : ''}
+          ${isCustomerFallback ? '<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center"><span class="text-white text-[8px] font-bold">C</span></div>' : ''}
         </div>
       `;
 
-      if (onLocationClick) {
-        el.addEventListener('click', () => onLocationClick(loc));
-      }
-
-      const schedule = formatSchedule(loc);
+      const schedule = formatSchedule(markerData);
       const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
         <div class="p-3 min-w-[220px]">
           <div class="font-bold text-gray-900">${customerName}</div>
-          <div class="text-sm text-gray-600 mt-1">${loc.location_name || loc.address}</div>
-          <div class="text-xs text-gray-500 mt-1">${loc.city || ''} ${loc.state || ''} ${loc.zip_code || ''}</div>
+          <div class="text-sm text-gray-600 mt-1">${markerData.locationName || markerData.address}</div>
+          <div class="text-xs text-gray-500 mt-1">${markerData.city || ''} ${markerData.state || ''} ${markerData.zipCode || ''}</div>
+          ${isCustomerFallback ? '<div class="text-xs text-yellow-600 mt-1 font-medium">📍 Customer address (no location set)</div>' : ''}
           <div class="mt-2 pt-2 border-t border-gray-100">
             <div class="flex items-center justify-between text-xs">
               <span class="text-gray-500">Schedule:</span>
@@ -228,7 +296,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
             </div>
             <div class="flex items-center justify-between text-xs mt-1">
               <span class="text-gray-500">Fuel Type:</span>
-              <span class="font-medium">${loc.fuel_type || 'N/A'}</span>
+              <span class="font-medium">${markerData.fuelType || 'N/A'}</span>
             </div>
             ${tankPercent !== null ? `
               <div class="flex items-center justify-between text-xs mt-1">
@@ -236,10 +304,10 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
                 <span class="font-medium ${isLowFuel ? 'text-red-600' : ''}">${tankPercent}%</span>
               </div>
             ` : ''}
-            ${loc.tank_capacity_gallons ? `
+            ${markerData.tankCapacity ? `
               <div class="flex items-center justify-between text-xs mt-1">
                 <span class="text-gray-500">Tank Capacity:</span>
-                <span class="font-medium">${loc.tank_capacity_gallons.toLocaleString()} gal</span>
+                <span class="font-medium">${markerData.tankCapacity.toLocaleString()} gal</span>
               </div>
             ` : ''}
           </div>
@@ -247,7 +315,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
       `);
 
       const marker = new mapboxgl.Marker(el)
-        .setLngLat([loc.longitude!, loc.latitude!])
+        .setLngLat([markerData.longitude, markerData.latitude])
         .setPopup(popup)
         .addTo(map.current!);
 
@@ -255,21 +323,21 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     });
 
     // Fit bounds to show all markers
-    if (filteredLocations.length > 1) {
+    if (filteredMarkers.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
-      filteredLocations.forEach((loc) => bounds.extend([loc.longitude!, loc.latitude!]));
+      filteredMarkers.forEach((m) => bounds.extend([m.longitude, m.latitude]));
 
       map.current.fitBounds(bounds, {
         padding: { top: 50, bottom: 50, left: 50, right: 50 },
         maxZoom: 12,
       });
-    } else if (filteredLocations.length === 1) {
+    } else if (filteredMarkers.length === 1) {
       map.current.flyTo({
-        center: [filteredLocations[0].longitude!, filteredLocations[0].latitude!],
+        center: [filteredMarkers[0].longitude, filteredMarkers[0].latitude],
         zoom: 12,
       });
     }
-  }, [filteredLocations, customers, mapLoaded]);
+  }, [filteredMarkers, customers, mapLoaded]);
 
   // Toggle day selection
   const toggleDay = (day: number) => {
@@ -417,11 +485,15 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
       <div className="flex flex-wrap gap-3 items-center">
         <Badge variant="outline" className="flex items-center gap-2 px-3 py-1.5">
           <Users className="h-3.5 w-3.5 text-muted-foreground" />
-          {filteredLocations.length} of {locations.filter((l) => l.latitude && l.longitude).length} Locations
+          {filteredMarkers.length} of {allMarkerData.length} Locations/Customers
         </Badge>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <div className="w-3 h-3 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600" />
-          <span>Normal</span>
+          <span>Location</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="w-3 h-3 rounded-full bg-gradient-to-br from-green-500 to-emerald-600" />
+          <span>Customer (no location)</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <div className="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-rose-600" />
