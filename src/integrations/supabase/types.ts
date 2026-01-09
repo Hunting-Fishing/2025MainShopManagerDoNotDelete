@@ -15106,6 +15106,7 @@ export type Database = {
           parts_used: Json | null
           priority: string | null
           received_date: string | null
+          ro_number: string
           shop_id: string | null
           status: string
           total_cost: number | null
@@ -15131,6 +15132,7 @@ export type Database = {
           parts_used?: Json | null
           priority?: string | null
           received_date?: string | null
+          ro_number: string
           shop_id?: string | null
           status?: string
           total_cost?: number | null
@@ -15156,6 +15158,7 @@ export type Database = {
           parts_used?: Json | null
           priority?: string | null
           received_date?: string | null
+          ro_number?: string
           shop_id?: string | null
           status?: string
           total_cost?: number | null

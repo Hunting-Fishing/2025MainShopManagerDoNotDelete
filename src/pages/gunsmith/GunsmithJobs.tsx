@@ -212,7 +212,7 @@ export default function GunsmithJobs() {
                   <div className="space-y-2 md:space-y-0 md:flex md:items-center md:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-medium text-sm md:text-base">{job.job_number}</span>
+                        <span className="font-medium text-sm md:text-base">{job.ro_number || job.job_number}</span>
                         <Badge className={`${getStatusColor(job.status)} text-white text-xs`}>
                           {job.status.replace('_', ' ')}
                         </Badge>
