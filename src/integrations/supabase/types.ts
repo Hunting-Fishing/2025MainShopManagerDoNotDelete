@@ -12813,6 +12813,8 @@ export type Database = {
           created_at: string
           current_level_gallons: number | null
           customer_id: string | null
+          delivery_days: number[] | null
+          delivery_frequency: string | null
           fuel_type: string
           id: string
           is_active: boolean | null
@@ -12820,6 +12822,7 @@ export type Database = {
           latitude: number | null
           location_name: string
           longitude: number | null
+          preferred_delivery_time: string | null
           requires_appointment: boolean | null
           shop_id: string
           special_equipment_needed: string | null
@@ -12838,6 +12841,8 @@ export type Database = {
           created_at?: string
           current_level_gallons?: number | null
           customer_id?: string | null
+          delivery_days?: number[] | null
+          delivery_frequency?: string | null
           fuel_type: string
           id?: string
           is_active?: boolean | null
@@ -12845,6 +12850,7 @@ export type Database = {
           latitude?: number | null
           location_name: string
           longitude?: number | null
+          preferred_delivery_time?: string | null
           requires_appointment?: boolean | null
           shop_id: string
           special_equipment_needed?: string | null
@@ -12863,6 +12869,8 @@ export type Database = {
           created_at?: string
           current_level_gallons?: number | null
           customer_id?: string | null
+          delivery_days?: number[] | null
+          delivery_frequency?: string | null
           fuel_type?: string
           id?: string
           is_active?: boolean | null
@@ -12870,6 +12878,7 @@ export type Database = {
           latitude?: number | null
           location_name?: string
           longitude?: number | null
+          preferred_delivery_time?: string | null
           requires_appointment?: boolean | null
           shop_id?: string
           special_equipment_needed?: string | null

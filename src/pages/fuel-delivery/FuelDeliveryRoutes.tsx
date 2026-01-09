@@ -283,10 +283,10 @@ export default function FuelDeliveryRoutes() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-blue-500" />
-                Customer Locations
+                Customer Locations Map
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                View all customer delivery locations on the map. Red markers indicate low fuel levels.
+                Filter customers by delivery schedule (days, frequency) for route planning. Red markers indicate low fuel levels.
               </p>
             </CardHeader>
             <CardContent>
