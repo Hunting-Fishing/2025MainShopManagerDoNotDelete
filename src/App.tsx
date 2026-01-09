@@ -281,6 +281,7 @@ import FuelDeliveryTankFills from '@/pages/fuel-delivery/FuelDeliveryTankFills';
 import FuelDeliveryEquipment from '@/pages/fuel-delivery/FuelDeliveryEquipment';
 import FuelDeliveryEquipmentFilters from '@/pages/fuel-delivery/FuelDeliveryEquipmentFilters';
 import FuelDeliveryQuotes from '@/pages/fuel-delivery/FuelDeliveryQuotes';
+import { FuelDeliveryLayout } from '@/components/fuel-delivery';
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1224,35 +1225,46 @@ function App() {
                   <Route path="/gunsmith/team" element={<GunsmithTeam />} />
                   <Route path="/gunsmith/roles" element={<GunsmithRoles />} />
                   
-                  {/* Fuel Delivery Routes */}
-                  <Route path="/fuel-delivery" element={<FuelDeliveryDashboard />} />
-                  <Route path="/fuel-delivery/orders" element={<FuelDeliveryOrders />} />
-                  <Route path="/fuel-delivery/orders/new" element={<FuelDeliveryOrderForm />} />
-                  <Route path="/fuel-delivery/orders/:id" element={<FuelDeliveryOrders />} />
-                  <Route path="/fuel-delivery/customers" element={<FuelDeliveryCustomers />} />
-                  <Route path="/fuel-delivery/locations" element={<FuelDeliveryLocations />} />
-                  <Route path="/fuel-delivery/products" element={<FuelDeliveryProducts />} />
-                  <Route path="/fuel-delivery/trucks" element={<FuelDeliveryTrucks />} />
-                  <Route path="/fuel-delivery/drivers" element={<FuelDeliveryDrivers />} />
-                  <Route path="/fuel-delivery/routes" element={<FuelDeliveryRoutes />} />
-                  <Route path="/fuel-delivery/routes/new" element={<FuelDeliveryRoutes />} />
-                  <Route path="/fuel-delivery/deliveries" element={<FuelDeliveryCompletions />} />
-                  <Route path="/fuel-delivery/inventory" element={<FuelDeliveryInventory />} />
-                  <Route path="/fuel-delivery/invoices" element={<FuelDeliveryInvoices />} />
-                  <Route path="/fuel-delivery/invoices/new" element={<FuelDeliveryInvoices />} />
-                  <Route path="/fuel-delivery/driver-app" element={<FuelDeliveryDriverApp />} />
-                  <Route path="/fuel-delivery/pricing" element={<FuelDeliveryPricing />} />
-                  <Route path="/fuel-delivery/tanks" element={<FuelDeliveryTanks />} />
-                  <Route path="/fuel-delivery/tidy-tanks" element={<FuelDeliveryTidyTanks />} />
-                  <Route path="/fuel-delivery/tank-fills" element={<FuelDeliveryTankFills />} />
-                  <Route path="/fuel-delivery/equipment" element={<FuelDeliveryEquipment />} />
-                  <Route path="/fuel-delivery/equipment-filters" element={<FuelDeliveryEquipmentFilters />} />
-                  <Route path="/fuel-delivery/quotes" element={<FuelDeliveryQuotes />} />
-                  
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>
+            </AuthGate>
+          }
+        />
+        
+        {/* Fuel Delivery Module - Separate Layout */}
+        <Route
+          path="/fuel-delivery/*"
+          element={
+            <AuthGate>
+              <FuelDeliveryLayout>
+                <Routes>
+                  <Route path="/" element={<FuelDeliveryDashboard />} />
+                  <Route path="/orders" element={<FuelDeliveryOrders />} />
+                  <Route path="/orders/new" element={<FuelDeliveryOrderForm />} />
+                  <Route path="/orders/:id" element={<FuelDeliveryOrders />} />
+                  <Route path="/customers" element={<FuelDeliveryCustomers />} />
+                  <Route path="/locations" element={<FuelDeliveryLocations />} />
+                  <Route path="/products" element={<FuelDeliveryProducts />} />
+                  <Route path="/trucks" element={<FuelDeliveryTrucks />} />
+                  <Route path="/drivers" element={<FuelDeliveryDrivers />} />
+                  <Route path="/routes" element={<FuelDeliveryRoutes />} />
+                  <Route path="/routes/new" element={<FuelDeliveryRoutes />} />
+                  <Route path="/deliveries" element={<FuelDeliveryCompletions />} />
+                  <Route path="/inventory" element={<FuelDeliveryInventory />} />
+                  <Route path="/invoices" element={<FuelDeliveryInvoices />} />
+                  <Route path="/invoices/new" element={<FuelDeliveryInvoices />} />
+                  <Route path="/driver-app" element={<FuelDeliveryDriverApp />} />
+                  <Route path="/pricing" element={<FuelDeliveryPricing />} />
+                  <Route path="/tanks" element={<FuelDeliveryTanks />} />
+                  <Route path="/tidy-tanks" element={<FuelDeliveryTidyTanks />} />
+                  <Route path="/tank-fills" element={<FuelDeliveryTankFills />} />
+                  <Route path="/equipment" element={<FuelDeliveryEquipment />} />
+                  <Route path="/equipment-filters" element={<FuelDeliveryEquipmentFilters />} />
+                  <Route path="/quotes" element={<FuelDeliveryQuotes />} />
+                </Routes>
+              </FuelDeliveryLayout>
             </AuthGate>
           }
         />
