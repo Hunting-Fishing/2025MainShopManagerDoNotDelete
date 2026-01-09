@@ -11,7 +11,29 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { LayoutGrid, Sparkles, Search, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { 
+  LayoutGrid, Sparkles, Search, X, ChevronDown, ChevronRight, 
+  Home, HardHat, Car, Scissors, Dog, UtensilsCrossed, Monitor, 
+  Key, Tractor, Briefcase, Heart, Baby, Rocket, LucideIcon,
+  Zap, Flame, Star
+} from 'lucide-react';
+
+// Category icons and colors
+const CATEGORY_CONFIG: Record<string, { icon: LucideIcon; gradient: string; emoji: string }> = {
+  'Home & Property Services': { icon: Home, gradient: 'from-blue-500 to-cyan-500', emoji: '🏠' },
+  'Construction & Trade': { icon: HardHat, gradient: 'from-orange-500 to-amber-500', emoji: '🏗️' },
+  'Automotive & Transportation': { icon: Car, gradient: 'from-red-500 to-pink-500', emoji: '🚗' },
+  'Personal Services': { icon: Scissors, gradient: 'from-purple-500 to-violet-500', emoji: '✨' },
+  'Pet Services': { icon: Dog, gradient: 'from-amber-500 to-yellow-500', emoji: '🐾' },
+  'Food & Beverage': { icon: UtensilsCrossed, gradient: 'from-rose-500 to-orange-500', emoji: '🍽️' },
+  'Technology & Electronics': { icon: Monitor, gradient: 'from-indigo-500 to-blue-500', emoji: '💻' },
+  'Specialty & Niche': { icon: Key, gradient: 'from-emerald-500 to-teal-500', emoji: '🔑' },
+  'Agriculture & Outdoor': { icon: Tractor, gradient: 'from-green-500 to-lime-500', emoji: '🌿' },
+  'Professional Services': { icon: Briefcase, gradient: 'from-slate-500 to-gray-600', emoji: '💼' },
+  'Healthcare & Wellness': { icon: Heart, gradient: 'from-pink-500 to-rose-500', emoji: '❤️' },
+  'Childcare & Education': { icon: Baby, gradient: 'from-pink-400 to-purple-500', emoji: '👶' },
+  'Other': { icon: Rocket, gradient: 'from-violet-500 to-purple-600', emoji: '🚀' },
+};
 
 export default function ModuleHub() {
   const { user } = useAuthUser();
@@ -53,17 +75,11 @@ export default function ModuleHub() {
       const descLower = description.toLowerCase();
       const catLower = (category || '').toLowerCase();
       
-      // Exact match in name gets highest score
       if (nameLower === query) return 100;
-      // Starts with query
       if (nameLower.startsWith(query)) return 80;
-      // Contains query in name
       if (nameLower.includes(query)) return 60;
-      // Contains query in category
       if (catLower.includes(query)) return 50;
-      // Contains query in description
       if (descLower.includes(query)) return 40;
-      // Partial word match
       const words = query.split(' ');
       const matchedWords = words.filter(w => nameLower.includes(w) || descLower.includes(w) || catLower.includes(w));
       if (matchedWords.length > 0) return 20 * (matchedWords.length / words.length);
@@ -88,7 +104,6 @@ export default function ModuleHub() {
       .filter(m => m.score > 0)
       .sort((a, b) => b.score - a.score);
 
-    // Group filtered upcoming by category
     const filteredUpcomingByCategory: Record<string, typeof upcomingModules> = {};
     upcomingModules.forEach(module => {
       const category = module.category || 'Other';
@@ -108,11 +123,9 @@ export default function ModuleHub() {
     };
   }, [searchQuery, allModules, hasModuleAccess]);
 
-  // Default modules when not searching
   const accessibleModules = allModules.filter(m => hasModuleAccess(m.slug));
   const lockedModules = allModules.filter(m => !hasModuleAccess(m.slug));
 
-  // Determine what to display
   const isSearching = searchQuery.trim().length > 0;
   const displayAccessible = isSearching ? filterModules.accessible : accessibleModules;
   const displayLocked = isSearching ? filterModules.locked : lockedModules;
@@ -254,76 +267,129 @@ export default function ModuleHub() {
           </section>
         )}
 
-        {/* Upcoming Modules Section - Categorized */}
+        {/* Upcoming Modules Section - Exciting Design */}
         {displayUpcomingCategories.length > 0 && (
           <section className="mb-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-500" />
-                <h2 className="text-xl font-semibold text-foreground">Upcoming Modules</h2>
-                <Badge variant="secondary" className="text-xs">
-                  {totalUpcoming} {isSearching ? 'Found' : 'Coming Soon'}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={expandAllCategories}>
-                  Expand All
-                </Button>
-                <Button variant="ghost" size="sm" onClick={collapseAllCategories}>
-                  Collapse All
-                </Button>
-                {!isSearching && (
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/upcoming-modules">View All</Link>
+            {/* Hero Header for Upcoming */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 p-6 md:p-8 mb-6">
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-30" />
+              <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center animate-pulse">
+                    <Sparkles className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+                      Upcoming Modules
+                      <Flame className="w-6 h-6 text-yellow-300 animate-pulse" />
+                    </h2>
+                    <p className="text-white/80 text-sm md:text-base mt-1">
+                      <span className="font-semibold">{totalUpcoming}</span> exciting modules coming soon across <span className="font-semibold">{displayUpcomingCategories.length}</span> categories
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    onClick={expandAllCategories}
+                    className="bg-white/20 hover:bg-white/30 text-white border-0"
+                  >
+                    Expand All
                   </Button>
-                )}
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    onClick={collapseAllCategories}
+                    className="bg-white/20 hover:bg-white/30 text-white border-0"
+                  >
+                    Collapse All
+                  </Button>
+                  {!isSearching && (
+                    <Button variant="secondary" size="sm" asChild className="bg-white text-orange-600 hover:bg-white/90">
+                      <Link to="/upcoming-modules">View All</Link>
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              {displayUpcomingCategories.map(category => {
+            <div className="grid gap-4">
+              {displayUpcomingCategories.map((category, idx) => {
                 const modules = displayUpcomingByCategory[category];
                 const isExpanded = expandedCategories[category] || false;
+                const config = CATEGORY_CONFIG[category] || CATEGORY_CONFIG['Other'];
+                const CategoryIcon = config.icon;
                 
                 return (
                   <Collapsible key={category} open={isExpanded} onOpenChange={() => toggleCategory(category)}>
                     <CollapsibleTrigger asChild>
-                      <button className="flex items-center justify-between w-full p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors text-left">
+                      <button 
+                        className={`group flex items-center justify-between w-full p-4 rounded-xl bg-gradient-to-r ${config.gradient} hover:shadow-lg hover:scale-[1.01] transition-all duration-300 text-left`}
+                        style={{ animationDelay: `${idx * 50}ms` }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <CategoryIcon className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <span className="font-semibold text-white text-lg flex items-center gap-2">
+                              {config.emoji} {category}
+                            </span>
+                            <span className="text-white/70 text-sm">
+                              {modules.length} module{modules.length !== 1 ? 's' : ''} coming soon
+                            </span>
+                          </div>
+                        </div>
                         <div className="flex items-center gap-3">
-                          {isExpanded ? (
-                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                          )}
-                          <span className="font-medium text-foreground">{category}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {modules.length} module{modules.length !== 1 ? 's' : ''}
+                          <Badge className="bg-white/20 text-white border-0 hover:bg-white/30">
+                            {modules.length}
                           </Badge>
+                          {isExpanded ? (
+                            <ChevronDown className="h-5 w-5 text-white transition-transform" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-white group-hover:translate-x-1 transition-transform" />
+                          )}
                         </div>
                       </button>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="pt-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-8">
-                        {modules.map(module => {
+                    <CollapsibleContent className="pt-4 animate-fade-in">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pl-2">
+                        {modules.map((module, moduleIdx) => {
                           const Icon = module.icon;
                           return (
-                            <Card key={module.slug} className="relative overflow-hidden border-dashed opacity-80 hover:opacity-100 transition-opacity">
+                            <Card 
+                              key={module.slug} 
+                              className="group relative overflow-hidden border-0 bg-gradient-to-br from-background to-muted/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+                              style={{ animationDelay: `${moduleIdx * 30}ms` }}
+                            >
+                              {/* Gradient overlay on hover */}
+                              <div className={`absolute inset-0 bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+                              
+                              {/* Expected date badge */}
                               <div className="absolute top-3 right-3">
-                                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
+                                <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-xs shadow-lg">
+                                  <Star className="w-3 h-3 mr-1" />
                                   {module.expectedDate || 'Coming Soon'}
                                 </Badge>
                               </div>
+                              
                               <CardHeader className="pb-2 pt-4">
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} mb-2`}>
-                                  <Icon className="h-5 w-5 text-white" />
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${module.gradientFrom} ${module.gradientTo} mb-3 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg`}>
+                                  <Icon className="h-6 w-6 text-white" />
                                 </div>
-                                <CardTitle className="text-base">{module.name}</CardTitle>
+                                <CardTitle className="text-base group-hover:text-primary transition-colors">
+                                  {module.name}
+                                </CardTitle>
                               </CardHeader>
                               <CardContent className="pb-4">
                                 <CardDescription className="text-xs line-clamp-2">
                                   {module.description}
                                 </CardDescription>
                               </CardContent>
+                              
+                              {/* Bottom gradient bar */}
+                              <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${module.gradientFrom} ${module.gradientTo} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
                             </Card>
                           );
                         })}
@@ -336,7 +402,7 @@ export default function ModuleHub() {
           </section>
         )}
 
-        {/* Empty State - only show when not searching */}
+        {/* Empty State */}
         {!isSearching && accessibleModules.length === 0 && lockedModules.length === 0 && (
           <div className="text-center py-16">
             <LayoutGrid className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
