@@ -6,3 +6,4 @@ export { AddressAutocomplete } from './AddressAutocomplete';
 export { FuelTypeSelect, FUEL_TYPE_OPTIONS, getFuelTypeLabel } from './FuelTypeSelect';
 export { CustomerVehicleForm } from './CustomerVehicleForm';
 export type { VehicleFormData } from './CustomerVehicleForm';
+export { LicenseClassSelect, getJurisdiction } from './LicenseClassSelect';

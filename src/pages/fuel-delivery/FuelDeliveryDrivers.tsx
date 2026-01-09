@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { useFuelDeliveryDrivers, useCreateFuelDeliveryDriver } from '@/hooks/use
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, isBefore, addDays } from 'date-fns';
+import { LicenseClassSelect, getJurisdiction } from '@/components/fuel-delivery/LicenseClassSelect';
 
 export default function FuelDeliveryDrivers() {
   const navigate = useNavigate();
@@ -181,24 +182,32 @@ export default function FuelDeliveryDrivers() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>CDL Class</Label>
-                    <Select value={formData.cdl_class} onValueChange={(v) => setFormData(prev => ({ ...prev, cdl_class: v }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select class" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A">Class A</SelectItem>
-                        <SelectItem value="B">Class B</SelectItem>
-                        <SelectItem value="C">Class C</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>CDL State</Label>
+                    <Label>CDL State/Province</Label>
                     <Input
                       value={formData.cdl_state}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cdl_state: e.target.value }))}
-                      placeholder="TX"
+                      onChange={(e) => {
+                        const newState = e.target.value.toUpperCase();
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          cdl_state: newState,
+                          // Reset CDL class when jurisdiction changes
+                          cdl_class: getJurisdiction(newState) !== getJurisdiction(prev.cdl_state) ? '' : prev.cdl_class
+                        }));
+                      }}
+                      placeholder="e.g. BC, TX, ON"
+                      maxLength={2}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter 2-letter code (e.g., BC, AB, TX, CA)
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>License Class</Label>
+                    <LicenseClassSelect
+                      value={formData.cdl_class}
+                      onChange={(v) => setFormData(prev => ({ ...prev, cdl_class: v }))}
+                      stateProvince={formData.cdl_state}
+                      placeholder="Select license class"
                     />
                   </div>
                   <div className="space-y-2">
