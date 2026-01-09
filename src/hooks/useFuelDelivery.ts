@@ -4,8 +4,20 @@ import { useToast } from '@/hooks/use-toast';
 
 // Helper to get current user's shop_id
 async function getShopId(): Promise<string | null> {
-  const { data } = await supabase.from('profiles').select('shop_id').single();
-  return data?.shop_id || null;
+  const { data: userRes, error: userErr } = await supabase.auth.getUser();
+  if (userErr) throw userErr;
+
+  const user = userRes.user;
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('shop_id')
+    .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.shop_id ?? null;
 }
 
 // Types
@@ -327,6 +339,10 @@ export function useCreateFuelDeliveryCustomer() {
   return useMutation({
     mutationFn: async (customer: Partial<FuelDeliveryCustomer>) => {
       const shopId = await getShopId();
+      if (!shopId) {
+        throw new Error('No shop found for the current user.');
+      }
+
       const { data, error } = await (supabase as any)
         .from('fuel_delivery_customers')
         .insert({ ...customer, shop_id: shopId })
