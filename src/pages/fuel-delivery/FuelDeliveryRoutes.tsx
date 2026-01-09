@@ -290,31 +290,13 @@ export default function FuelDeliveryRoutes() {
               </p>
             </CardHeader>
             <CardContent>
-              {locations && locations.length > 0 ? (
-                <CustomerMap
-                  locations={locations}
-                  customers={customers || []}
-                  onLocationClick={(loc) => {
-                    console.log('Location clicked:', loc);
-                  }}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-                  <MapPin className="h-12 w-12 mb-3 opacity-50" />
-                  <p className="font-medium">No Locations Found</p>
-                  <p className="text-sm text-center mt-1">
-                    Add customer locations with coordinates to see them on the map
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => navigate('/fuel-delivery/locations')}
-                  >
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Manage Locations
-                  </Button>
-                </div>
-              )}
+              <CustomerMap
+                locations={locations || []}
+                customers={customers || []}
+                onLocationClick={(loc) => {
+                  console.log('Location clicked:', loc);
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>
