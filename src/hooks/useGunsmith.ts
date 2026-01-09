@@ -239,7 +239,25 @@ export function useCreateGunsmithJob() {
   return useMutation({
     mutationFn: async (job: Partial<GunsmithJob>) => {
       const shopId = await getShopId();
-      const jobNumber = `GS-${Date.now().toString(36).toUpperCase()}`;
+      
+      // Get the next sequential job number
+      const { data: lastJob } = await (supabase as any)
+        .from('gunsmith_jobs')
+        .select('job_number')
+        .like('job_number', 'RO#%')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      let nextNumber = 1;
+      if (lastJob?.job_number) {
+        const match = lastJob.job_number.match(/RO#(\d+)/);
+        if (match) {
+          nextNumber = parseInt(match[1], 10) + 1;
+        }
+      }
+      const jobNumber = `RO#${nextNumber}`;
+      
       const { error } = await (supabase as any)
         .from('gunsmith_jobs')
         .insert({ ...job, job_number: jobNumber, shop_id: shopId });
