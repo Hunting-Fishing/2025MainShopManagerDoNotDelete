@@ -5,10 +5,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { useGunsmithTeam, useAddGunsmithTeamMember, useUpdateGunsmithTeamMember, useRemoveGunsmithTeamMember } from '@/hooks/gunsmith/useGunsmithTeam';
+import { useGunsmithTeam, useAddGunsmithTeamMember, useUpdateGunsmithTeamMember, useRemoveGunsmithTeamMember, GunsmithTeamMember } from '@/hooks/gunsmith/useGunsmithTeam';
 import { useGunsmithRoles } from '@/hooks/gunsmith/useGunsmithRoles';
 import { Loader2, Plus, UserPlus, MoreVertical, Edit, Trash2, Phone, Mail, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -24,10 +25,15 @@ export default function GunsmithTeam() {
   const removeMember = useRemoveGunsmithTeamMember();
   
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
+  const [memberToEdit, setMemberToEdit] = useState<GunsmithTeamMember | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState('');
   const [selectedRoleId, setSelectedRoleId] = useState('');
+  const [editRoleId, setEditRoleId] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editHireDate, setEditHireDate] = useState('');
 
   // Get available profiles that aren't already team members
   const { data: profiles } = useQuery({
@@ -58,6 +64,30 @@ export default function GunsmithTeam() {
         setAddDialogOpen(false);
         setSelectedProfileId('');
         setSelectedRoleId('');
+      }
+    });
+  };
+
+  const handleEditMember = (member: GunsmithTeamMember) => {
+    setMemberToEdit(member);
+    setEditRoleId(member.role_id || '');
+    setEditNotes(member.notes || '');
+    setEditHireDate(member.hire_date || '');
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!memberToEdit) return;
+    
+    updateMember.mutate({
+      id: memberToEdit.id,
+      role_id: editRoleId || null,
+      notes: editNotes || null,
+      hire_date: editHireDate || null,
+    }, {
+      onSuccess: () => {
+        setEditDialogOpen(false);
+        setMemberToEdit(null);
       }
     });
   };
@@ -187,6 +217,10 @@ export default function GunsmithTeam() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditMember(member)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleActive(member.id, true)}>
                             Deactivate
                           </DropdownMenuItem>
@@ -286,6 +320,61 @@ export default function GunsmithTeam() {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Member Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Team Member</DialogTitle>
+            <DialogDescription>
+              Update {memberToEdit?.profile?.first_name} {memberToEdit?.profile?.last_name}'s information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={editRoleId} onValueChange={setEditRoleId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles?.map(role => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Hire Date</Label>
+              <Input 
+                type="date" 
+                value={editHireDate} 
+                onChange={(e) => setEditHireDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea 
+                placeholder="Add notes about this team member..."
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={updateMember.isPending}>
+              {updateMember.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
