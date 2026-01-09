@@ -102,6 +102,18 @@ serve(async (req) => {
 
     logStep("Trial status", { trialActive, trialEndsAt });
 
+    // Get shop enabled modules - these determine which modules the shop has access to
+    const { data: enabledModules } = await supabaseClient
+      .from('shop_enabled_modules')
+      .select('module_id, business_modules(slug)')
+      .eq('shop_id', profile.shop_id);
+
+    const enabledModuleSlugs = enabledModules?.map(em => 
+      (em.business_modules as any)?.slug
+    ).filter(Boolean) || [];
+
+    logStep("Enabled modules for shop", { enabledModuleSlugs });
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
@@ -110,7 +122,8 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         subscriptions: [],
         trial_active: trialActive,
-        trial_ends_at: trialEndsAt 
+        trial_ends_at: trialEndsAt,
+        enabled_modules: enabledModuleSlugs,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -205,6 +218,7 @@ serve(async (req) => {
       trial_active: trialActive,
       trial_ends_at: trialEndsAt,
       usage: usageData || [],
+      enabled_modules: enabledModuleSlugs,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

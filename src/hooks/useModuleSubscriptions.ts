@@ -17,6 +17,7 @@ export interface ModuleSubscriptionStatus {
   subscriptions: ModuleSubscription[];
   trial_active: boolean;
   trial_ends_at: string | null;
+  enabled_modules: string[];
 }
 
 export function useModuleSubscriptions() {
@@ -76,7 +77,13 @@ export function useModuleAccess() {
   const hasModuleAccess = (moduleSlug: string): boolean => {
     if (!subscriptionStatus) return false;
     
-    // Trial is active - grant access to all modules at Pro tier
+    // Must be in enabled_modules list first
+    const enabledModules = subscriptionStatus.enabled_modules || [];
+    if (enabledModules.length > 0 && !enabledModules.includes(moduleSlug)) {
+      return false;
+    }
+    
+    // Trial is active - grant access to enabled modules at Pro tier
     if (subscriptionStatus.trial_active) return true;
     
     // Check for active subscription
