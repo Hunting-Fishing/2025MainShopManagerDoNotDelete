@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useGunsmithTeam, useAddGunsmithTeamMember, useUpdateGunsmithTeamMember, useRemoveGunsmithTeamMember } from '@/hooks/gunsmith/useGunsmithTeam';
 import { useGunsmithRoles } from '@/hooks/gunsmith/useGunsmithRoles';
-import { Loader2, Plus, UserPlus, MoreVertical, Edit, Trash2, Phone, Mail } from 'lucide-react';
+import { Loader2, Plus, UserPlus, MoreVertical, Edit, Trash2, Phone, Mail, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,13 +95,21 @@ export default function GunsmithTeam() {
           <p className="text-muted-foreground">Manage your gunsmith shop team members</p>
         </div>
         
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Team Member
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/gunsmith/roles">
+              <Shield className="mr-2 h-4 w-4" />
+              Manage Roles
+            </Link>
+          </Button>
+          
+          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Team Member
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Team Member</DialogTitle>
@@ -150,7 +159,8 @@ export default function GunsmithTeam() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Active Members */}
