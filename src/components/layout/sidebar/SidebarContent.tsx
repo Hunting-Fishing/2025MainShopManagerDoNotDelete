@@ -58,13 +58,16 @@ export function SidebarContent() {
     location.pathname === pattern || location.pathname.startsWith(pattern + '/')
   );
 
+  // Check if we're on the module hub page
+  const isOnModuleHub = location.pathname === '/module-hub';
+
   // Filter navigation based on:
-  // 1. Hide entirely when inside a module (module sections handle navigation)
+  // 1. Hide entirely when inside a module or on module hub (module sections handle navigation)
   // 2. Shop-level visibility settings (hidden sections)
   // 3. Role-based section visibility
   // 4. Module-based view permissions for individual items
   // 5. Route-based role permissions (fallback)
-  const filteredNavigation = isInModuleRoute ? [] : navigation
+  const filteredNavigation = (isInModuleRoute || isOnModuleHub) ? [] : navigation
     .filter(section => isVisible(section.title)) // Check shop-level and role-based visibility
     .map(section => ({
       ...section,
