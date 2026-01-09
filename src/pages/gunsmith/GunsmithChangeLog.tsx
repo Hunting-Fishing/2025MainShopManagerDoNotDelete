@@ -202,9 +202,11 @@ export default function GunsmithChangeLog() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRequests.map((request) => (
-                    <React.Fragment key={request.id}>
+                  {filteredRequests.map((request) => {
+                    const isExpanded = expandedRequestId === request.id;
+                    return [
                       <TableRow
+                        key={request.id}
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => toggleExpanded(request.id)}
                       >
@@ -234,22 +236,22 @@ export default function GunsmithChangeLog() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {expandedRequestId === request.id ? (
+                          {isExpanded ? (
                             <ChevronUp className="h-4 w-4 text-muted-foreground" />
                           ) : (
                             <ChevronDown className="h-4 w-4 text-muted-foreground" />
                           )}
                         </TableCell>
-                      </TableRow>
-                      {expandedRequestId === request.id && (
-                        <TableRow>
+                      </TableRow>,
+                      isExpanded && (
+                        <TableRow key={`${request.id}-detail`}>
                           <TableCell colSpan={8} className="bg-muted/30 p-0">
                             <ChangeRequestDetail request={request} />
                           </TableCell>
                         </TableRow>
-                      )}
-                    </React.Fragment>
-                  ))}
+                      ),
+                    ];
+                  })}
                 </TableBody>
               </Table>
             </div>
