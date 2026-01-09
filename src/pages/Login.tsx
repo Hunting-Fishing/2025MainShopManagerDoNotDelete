@@ -55,6 +55,29 @@ export default function Login() {
             .single();
           
           if (profile?.shop_id) {
+            // Get enabled modules for the shop
+            const { data: enabledModules } = await supabase
+              .from('shop_enabled_modules')
+              .select('module_id')
+              .eq('shop_id', profile.shop_id);
+            
+            // Get module details to find the slug
+            if (enabledModules && enabledModules.length > 0) {
+              const { data: modules } = await supabase
+                .from('business_modules')
+                .select('slug')
+                .in('id', enabledModules.map(em => em.module_id))
+                .order('display_order')
+                .limit(1);
+              
+              if (modules && modules.length > 0) {
+                // Redirect to the first enabled module
+                navigate(`/${modules[0].slug}`, { replace: true });
+                return;
+              }
+            }
+            
+            // Fallback to module-hub if no enabled modules found
             navigate('/module-hub', { replace: true });
           } else {
             navigate('/onboarding', { replace: true });
