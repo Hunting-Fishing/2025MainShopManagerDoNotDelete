@@ -15896,6 +15896,42 @@ export type Database = {
           },
         ]
       }
+      gunsmith_team_member_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role_id: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role_id: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role_id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gunsmith_team_member_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gunsmith_team_member_roles_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "gunsmith_team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gunsmith_team_members: {
         Row: {
           created_at: string | null
