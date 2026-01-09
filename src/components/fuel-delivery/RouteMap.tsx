@@ -4,12 +4,12 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Navigation, Clock, Route, MapPin, Fuel, AlertTriangle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, Navigation, Clock, Route, MapPin, AlertTriangle } from 'lucide-react';
 import { useRouteOptimization, Location, RouteOptimizationResult } from '@/hooks/useMapbox';
 import { cn } from '@/lib/utils';
-
-// Mapbox public token
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiZGltZW5zaW9uYWx2ZW50dXJlcyIsImEiOiJjbWs2ZnduZzcwaTdnM2twdGVjdzJuMmMwIn0.B_pTNc8NCLb99vObyzet3Q';
+import { useMapboxPublicToken } from '@/hooks/useMapboxPublicToken';
 
 interface RouteMapProps {
   origin?: [number, number];
@@ -28,23 +28,34 @@ export function RouteMap({
   showOptimizeButton = true,
   autoOptimize = false,
 }: RouteMapProps) {
+  const { token, setToken } = useMapboxPublicToken();
+  const [tokenInput, setTokenInput] = useState(token);
+  const [tokenError, setTokenError] = useState<string | null>(null);
+
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [optimizedResult, setOptimizedResult] = useState<RouteOptimizationResult | null>(null);
-  
+
   const routeOptimization = useRouteOptimization();
 
   // Default origin (can be set to shop location)
   const defaultOrigin: [number, number] = origin || [-98.5795, 39.8283]; // Center of US
 
   useEffect(() => {
-    if (!mapContainer.current || !MAPBOX_TOKEN) return;
+    setTokenInput(token);
+  }, [token]);
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+  useEffect(() => {
+    if (!mapContainer.current || !token) return;
 
-    map.current = new mapboxgl.Map({
+    setMapLoaded(false);
+    setTokenError(null);
+
+    mapboxgl.accessToken = token;
+
+    const instance = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
       center: defaultOrigin,
@@ -52,24 +63,37 @@ export function RouteMap({
       pitch: 45,
     });
 
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+    map.current = instance;
 
-    map.current.on('load', () => {
+    instance.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    instance.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+
+    instance.on('load', () => {
       setMapLoaded(true);
     });
 
+    instance.on('error', (e) => {
+      const err: any = (e as any)?.error;
+      if (!err) return;
+      const msg = (err?.message || String(err) || '').toLowerCase();
+      if (err?.status === 401 || msg.includes('invalid token') || msg.includes('not authorized')) {
+        setTokenError('Invalid Mapbox token.');
+      }
+    });
+
     return () => {
-      map.current?.remove();
+      instance.remove();
+      map.current = null;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   // Update markers when destinations change
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
     // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
     // Add origin marker
@@ -84,24 +108,27 @@ export function RouteMap({
           </svg>
         </div>
       `;
-      
+
       const originMarker = new mapboxgl.Marker(originEl)
         .setLngLat(origin)
         .setPopup(new mapboxgl.Popup().setHTML('<strong>Start Location</strong>'))
         .addTo(map.current);
-      
+
       markersRef.current.push(originMarker);
     }
 
     // Add destination markers
     const displayOrder = optimizedResult?.optimizedOrder || destinations;
-    
+
     displayOrder.forEach((dest, index) => {
       const el = document.createElement('div');
-      const priorityColor = dest.priority === 'high' ? 'from-red-500 to-rose-600' : 
-                           dest.priority === 'low' ? 'from-slate-400 to-slate-500' :
-                           'from-orange-500 to-amber-600';
-      
+      const priorityColor =
+        dest.priority === 'high'
+          ? 'from-red-500 to-rose-600'
+          : dest.priority === 'low'
+            ? 'from-slate-400 to-slate-500'
+            : 'from-orange-500 to-amber-600';
+
       el.innerHTML = `
         <div class="relative">
           <div class="w-10 h-10 rounded-full bg-gradient-to-br ${priorityColor} flex items-center justify-center shadow-lg border-2 border-white text-white font-bold text-sm">
@@ -131,8 +158,8 @@ export function RouteMap({
     if (destinations.length > 0) {
       const bounds = new mapboxgl.LngLatBounds();
       if (origin) bounds.extend(origin);
-      destinations.forEach(dest => bounds.extend(dest.coordinates));
-      
+      destinations.forEach((dest) => bounds.extend(dest.coordinates));
+
       map.current.fitBounds(bounds, {
         padding: { top: 50, bottom: 50, left: 50, right: 50 },
         maxZoom: 14,
@@ -178,7 +205,6 @@ export function RouteMap({
         'line-opacity': 0.8,
       },
     });
-
   }, [optimizedResult, mapLoaded]);
 
   // Auto-optimize on mount if enabled
@@ -197,7 +223,7 @@ export function RouteMap({
         destinations,
         returnToOrigin: true,
       });
-      
+
       setOptimizedResult(result);
       onOptimizedRoute?.(result);
     } catch (error) {
@@ -205,27 +231,67 @@ export function RouteMap({
     }
   };
 
-  if (!MAPBOX_TOKEN) {
-    return (
-      <Card className={cn("", className)}>
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <AlertTriangle className="h-12 w-12 mb-3 text-amber-500" />
-            <p className="font-medium">Mapbox Token Required</p>
-            <p className="text-sm text-center mt-1">
-              Add VITE_MAPBOX_PUBLIC_TOKEN to your environment variables
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const saveToken = () => {
+    const next = tokenInput.trim();
+    setToken(next);
+    setTokenError(null);
+  };
 
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <div className={cn('flex flex-col gap-4', className)}>
+      {(!token || tokenError) && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Mapbox public token required</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Add a valid Mapbox token to load the map.
+                  {' '}
+                  <a className="underline" href="https://account.mapbox.com/access-tokens/" target="_blank" rel="noreferrer">
+                    Get a token
+                  </a>
+                  .
+                </p>
+                {tokenError && <p className="text-xs text-destructive mt-1">{tokenError}</p>}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mapbox-route-token">Mapbox public token</Label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  id="mapbox-route-token"
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value)}
+                  placeholder="pk.eyJ..."
+                  autoComplete="off"
+                />
+                <Button type="button" onClick={saveToken} className="sm:w-28">
+                  Save
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Map */}
       <Card className="overflow-hidden">
-        <div ref={mapContainer} className="h-[400px] w-full" />
+        <div className="relative h-[400px] w-full">
+          <div ref={mapContainer} className="absolute inset-0" />
+          {!token && (
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground p-6 text-center">
+              Enter a Mapbox token above to load the map.
+            </div>
+          )}
+          {tokenError && (
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground p-6 text-center">
+              Map failed to load. Please update the token above.
+            </div>
+          )}
+        </div>
       </Card>
 
       {/* Controls & Stats */}
@@ -253,15 +319,15 @@ export function RouteMap({
         {optimizedResult && (
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline" className="flex items-center gap-1 px-3 py-1.5">
-              <Navigation className="h-3.5 w-3.5 text-orange-500" />
+              <Navigation className="h-3.5 w-3.5 text-muted-foreground" />
               {optimizedResult.optimizedRoute.distanceMiles} mi
             </Badge>
             <Badge variant="outline" className="flex items-center gap-1 px-3 py-1.5">
-              <Clock className="h-3.5 w-3.5 text-blue-500" />
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
               {optimizedResult.optimizedRoute.durationMinutes} min
             </Badge>
             <Badge variant="outline" className="flex items-center gap-1 px-3 py-1.5">
-              <MapPin className="h-3.5 w-3.5 text-emerald-500" />
+              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
               {destinations.length} stops
             </Badge>
           </div>
@@ -273,7 +339,7 @@ export function RouteMap({
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Route className="h-4 w-4 text-orange-500" />
+              <Route className="h-4 w-4 text-muted-foreground" />
               Optimized Route Order
             </CardTitle>
           </CardHeader>
@@ -303,3 +369,4 @@ export function RouteMap({
     </div>
   );
 }
+

@@ -3,8 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, MapPin, X, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiZGltZW5zaW9uYWx2ZW50dXJlcyIsImEiOiJjbWs2ZnduZzcwaTdnM2twdGVjdzJuMmMwIn0.B_pTNc8NCLb99vObyzet3Q';
+import { useMapboxPublicToken } from '@/hooks/useMapboxPublicToken';
 
 export interface AddressResult {
   placeName: string;
@@ -31,10 +30,12 @@ export function AddressAutocomplete({
   value,
   onChange,
   onSelect,
-  placeholder = "Start typing an address...",
+  placeholder = 'Start typing an address...',
   className,
   disabled = false,
 }: AddressAutocompleteProps) {
+  const { token } = useMapboxPublicToken();
+
   const [suggestions, setSuggestions] = useState<AddressResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -61,6 +62,11 @@ export function AddressAutocomplete({
   }, []);
 
   const searchAddress = async (query: string) => {
+    if (!token) {
+      setSuggestions([]);
+      return;
+    }
+
     if (query.length < 3) {
       setSuggestions([]);
       return;
@@ -69,8 +75,8 @@ export function AddressAutocomplete({
     setIsLoading(true);
     try {
       const encodedQuery = encodeURIComponent(query);
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedQuery}.json?access_token=${MAPBOX_TOKEN}&limit=5&country=US,CA&types=address,place,poi`;
-      
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedQuery}.json?access_token=${token}&limit=5&country=US,CA&types=address,place,poi`;
+
       const response = await fetch(url);
       const data = await response.json();
 
@@ -127,13 +133,11 @@ export function AddressAutocomplete({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => 
-          prev < suggestions.length - 1 ? prev + 1 : prev
-        );
+        setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
         break;
       case 'Enter':
         e.preventDefault();
@@ -155,7 +159,7 @@ export function AddressAutocomplete({
   };
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn('relative', className)}>
       <div className="relative">
         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -164,14 +168,12 @@ export function AddressAutocomplete({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          placeholder={placeholder}
+          placeholder={token ? placeholder : 'Set Mapbox token to enable search'}
           disabled={disabled}
           className="pl-10 pr-16"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {isLoading && (
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          )}
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           {value && !isLoading && (
             <Button
               type="button"
@@ -197,12 +199,12 @@ export function AddressAutocomplete({
               key={index}
               type="button"
               className={cn(
-                "w-full px-3 py-2.5 text-left flex items-start gap-3 hover:bg-accent transition-colors",
-                selectedIndex === index && "bg-accent"
+                'w-full px-3 py-2.5 text-left flex items-start gap-3 hover:bg-accent transition-colors',
+                selectedIndex === index && 'bg-accent'
               )}
               onClick={() => handleSelectSuggestion(result)}
             >
-              <Navigation className="h-4 w-4 mt-0.5 text-orange-500 flex-shrink-0" />
+              <Navigation className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{result.placeName}</p>
                 {result.context && (
@@ -216,9 +218,9 @@ export function AddressAutocomplete({
             </button>
           ))}
           <div className="px-3 py-1.5 bg-muted/50 text-[10px] text-muted-foreground flex items-center gap-1">
-            <img 
-              src="https://docs.mapbox.com/help/demos/custom-markers-gl-js/mapbox-icon.png" 
-              alt="Mapbox" 
+            <img
+              src="https://docs.mapbox.com/help/demos/custom-markers-gl-js/mapbox-icon.png"
+              alt="Mapbox"
               className="h-3 w-3"
             />
             Powered by Mapbox
@@ -228,3 +230,4 @@ export function AddressAutocomplete({
     </div>
   );
 }
+
