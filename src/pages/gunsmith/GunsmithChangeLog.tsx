@@ -52,7 +52,7 @@ export default function GunsmithChangeLog() {
         request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         request.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         request.submitter_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        `FR-${String(request.request_number).padStart(3, '0')}`.toLowerCase().includes(searchTerm.toLowerCase());
+        `RQ-${request.request_number}`.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
 
@@ -209,7 +209,7 @@ export default function GunsmithChangeLog() {
                         onClick={() => toggleExpanded(request.id)}
                       >
                         <TableCell className="font-mono text-sm">
-                          FR-{String(request.request_number).padStart(3, '0')}
+                          RQ-{request.request_number}
                         </TableCell>
                         <TableCell className="text-sm">
                           {format(new Date(request.created_at), 'MMM d, yyyy')}
