@@ -69,7 +69,7 @@ export function AddressAutocomplete({
     setIsLoading(true);
     try {
       const encodedQuery = encodeURIComponent(query);
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedQuery}.json?access_token=${MAPBOX_TOKEN}&limit=5&country=US&types=address,place,poi`;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedQuery}.json?access_token=${MAPBOX_TOKEN}&limit=5&country=US,CA&types=address,place,poi`;
       
       const response = await fetch(url);
       const data = await response.json();
