@@ -94,15 +94,15 @@ export function useFeatureRequests(moduleFilter?: ModuleType) {
 
   const notifyDeveloper = async (request: FeatureRequest): Promise<boolean> => {
     try {
-      // Insert notification record
+      // Insert notification record - store subject/body in notification_data jsonb column
       const { error } = await supabase.from('feature_request_notifications').insert({
         feature_request_id: request.id,
         recipient_email: 'jordilwbailey@gmail.com',
         recipient_type: 'developer',
         notification_type: 'new_request',
-        subject: `New Feature Request: ${request.title}`,
-        body: `
-A new feature request has been submitted:
+        notification_data: {
+          subject: `New Feature Request: ${request.title}`,
+          body: `A new feature request has been submitted:
 
 ID: FR-${String(request.request_number).padStart(3, '0')}
 Title: ${request.title}
@@ -116,8 +116,8 @@ ${request.description}
 ${request.reason_for_change ? `Reason for Change:\n${request.reason_for_change}` : ''}
 
 Submitted by: ${request.submitter_name || 'Anonymous'}
-Email: ${request.submitter_email || 'Not provided'}
-        `.trim(),
+Email: ${request.submitter_email || 'Not provided'}`,
+        },
       });
 
       if (error) {
