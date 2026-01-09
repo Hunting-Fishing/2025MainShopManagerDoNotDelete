@@ -12211,6 +12211,8 @@ export type Database = {
         Row: {
           auto_delivery: boolean | null
           billing_address: string | null
+          billing_latitude: number | null
+          billing_longitude: number | null
           company_name: string | null
           contact_name: string
           created_at: string
@@ -12235,6 +12237,8 @@ export type Database = {
         Insert: {
           auto_delivery?: boolean | null
           billing_address?: string | null
+          billing_latitude?: number | null
+          billing_longitude?: number | null
           company_name?: string | null
           contact_name: string
           created_at?: string
@@ -12259,6 +12263,8 @@ export type Database = {
         Update: {
           auto_delivery?: boolean | null
           billing_address?: string | null
+          billing_latitude?: number | null
+          billing_longitude?: number | null
           company_name?: string | null
           contact_name?: string
           created_at?: string
