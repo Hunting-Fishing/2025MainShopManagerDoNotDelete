@@ -87,34 +87,40 @@ export default function FuelDeliveryCustomers() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Create customer first
-    const newCustomer = await createCustomer.mutateAsync({
-      ...formData,
-      credit_limit: parseFloat(formData.credit_limit) || 0
-    });
-    
-    // If vehicles were added, save them linked to the customer
-    if (vehicles.length > 0 && newCustomer?.id) {
-      for (const vehicle of vehicles) {
-        await supabase.from('vehicles').insert({
-          customer_id: newCustomer.id,
-          owner_type: 'customer',
-          vin: vehicle.vin || null,
-          year: vehicle.year ? parseInt(vehicle.year) : null,
-          make: vehicle.make || null,
-          model: vehicle.model || null,
-          fuel_type: vehicle.fuel_type || null,
-          license_plate: vehicle.license_plate || null,
-          color: vehicle.color || null,
-          body_type: vehicle.body_style || null,
-          notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
-        });
+
+    try {
+      // Create customer first
+      const newCustomer = await createCustomer.mutateAsync({
+        ...formData,
+        credit_limit: parseFloat(formData.credit_limit) || 0,
+      });
+
+      // If vehicles were added, save them linked to the customer
+      if (vehicles.length > 0 && newCustomer?.id) {
+        for (const vehicle of vehicles) {
+          const { error } = await supabase.from('vehicles').insert({
+            customer_id: newCustomer.id,
+            owner_type: 'customer',
+            vin: vehicle.vin || null,
+            year: vehicle.year ? parseInt(vehicle.year) : null,
+            make: vehicle.make || null,
+            model: vehicle.model || null,
+            fuel_type: vehicle.fuel_type || null,
+            license_plate: vehicle.license_plate || null,
+            color: vehicle.color || null,
+            body_type: vehicle.body_style || null,
+            notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
+          });
+          if (error) throw error;
+        }
       }
+
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (err) {
+      // keep dialog open; the mutation already shows a toast
+      console.error('Failed to create fuel delivery customer', err);
     }
-    
-    setIsDialogOpen(false);
-    resetForm();
   };
 
   return (
