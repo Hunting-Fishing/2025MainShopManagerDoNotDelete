@@ -8,8 +8,8 @@ import { Loader2, Navigation, Clock, Route, MapPin, Fuel, AlertTriangle } from '
 import { useRouteOptimization, Location, RouteOptimizationResult } from '@/hooks/useMapbox';
 import { cn } from '@/lib/utils';
 
-// Get token from environment
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
+// Mapbox public token
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiZGltZW5zaW9uYWx2ZW50dXJlcyIsImEiOiJjbWs2ZnduZzcwaTdnM2twdGVjdzJuMmMwIn0.B_pTNc8NCLb99vObyzet3Q';
 
 interface RouteMapProps {
   origin?: [number, number];
