@@ -246,6 +246,9 @@ import GunsmithPurchaseOrderForm from '@/pages/gunsmith/GunsmithPurchaseOrderFor
 import GunsmithSerializedForm from '@/pages/gunsmith/GunsmithSerializedForm';
 import GunsmithUsefulLinks from '@/pages/gunsmith/GunsmithUsefulLinks';
 import GunsmithChangeLog from '@/pages/gunsmith/GunsmithChangeLog';
+import GunsmithSettings from '@/pages/gunsmith/GunsmithSettings';
+import GunsmithTeam from '@/pages/gunsmith/GunsmithTeam';
+import GunsmithRoles from '@/pages/gunsmith/GunsmithRoles';
 
 // Automotive
 import AutomotiveDashboard from '@/pages/automotive/AutomotiveDashboard';
@@ -1217,6 +1220,9 @@ function App() {
                   <Route path="/gunsmith/resources" element={<GunsmithUsefulLinks />} />
                   <Route path="/gunsmith/useful-links" element={<Navigate to="/gunsmith/resources" replace />} />
                   <Route path="/gunsmith/change-log" element={<GunsmithChangeLog />} />
+                  <Route path="/gunsmith/settings" element={<GunsmithSettings />} />
+                  <Route path="/gunsmith/team" element={<GunsmithTeam />} />
+                  <Route path="/gunsmith/roles" element={<GunsmithRoles />} />
                   
                   {/* Fuel Delivery Routes */}
                   <Route path="/fuel-delivery" element={<FuelDeliveryDashboard />} />

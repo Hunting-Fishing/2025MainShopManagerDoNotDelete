@@ -1573,6 +1573,10 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       // Resources
       { title: 'Resources', href: '/gunsmith/resources', icon: Link, group: 'Resources' },
       { title: 'Feedback Log', href: '/gunsmith/change-log', icon: ClipboardList, group: 'Resources' },
+      // Settings
+      { title: 'Settings', href: '/gunsmith/settings', icon: Settings, group: 'Settings' },
+      { title: 'Team', href: '/gunsmith/team', icon: Users, group: 'Settings' },
+      { title: 'Roles', href: '/gunsmith/roles', icon: Shield, group: 'Settings' },
     ],
   },
   marine: {
