@@ -206,7 +206,6 @@ export default function GunsmithTeam() {
                     
                     <div className="flex items-center gap-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={member.profile?.avatar_url || ''} />
                         <AvatarFallback>
                           {member.profile?.first_name?.[0]}{member.profile?.last_name?.[0]}
                         </AvatarFallback>
@@ -267,7 +266,6 @@ export default function GunsmithTeam() {
                     
                     <div className="flex items-center gap-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={member.profile?.avatar_url || ''} />
                         <AvatarFallback>
                           {member.profile?.first_name?.[0]}{member.profile?.last_name?.[0]}
                         </AvatarFallback>

@@ -17,7 +17,6 @@ export interface GunsmithTeamMember {
     first_name: string | null;
     last_name: string | null;
     email: string | null;
-    avatar_url: string | null;
     phone: string | null;
   };
   role?: {
@@ -35,7 +34,7 @@ export function useGunsmithTeam() {
         .from('gunsmith_team_members')
         .select(`
           *,
-          profile:profiles(id, first_name, last_name, email, avatar_url, phone),
+          profile:profiles(id, first_name, last_name, email, phone),
           role:gunsmith_roles(id, name, role_type)
         `)
         .order('created_at', { ascending: false });
