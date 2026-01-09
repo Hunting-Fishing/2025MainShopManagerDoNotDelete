@@ -12,6 +12,7 @@ async function getShopId(): Promise<string | null> {
 export interface GunsmithJob {
   id: string;
   job_number: string;
+  ro_number: string;
   customer_id?: string;
   firearm_id?: string;
   status: string;
