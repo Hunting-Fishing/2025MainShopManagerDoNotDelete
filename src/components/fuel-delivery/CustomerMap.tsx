@@ -422,12 +422,21 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
       `;
 
       const schedule = formatSchedule(markerData);
+      // For customers, show address; for locations, show location name with address
+      const displayLocation = isCustomerFallback 
+        ? markerData.address || 'No address'
+        : markerData.locationName || markerData.address || 'Unknown location';
+      const displayAddress = !isCustomerFallback && markerData.address && markerData.locationName !== markerData.address
+        ? markerData.address 
+        : '';
+      
       const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
         <div class="p-3 min-w-[220px]">
           <div class="font-bold text-gray-900">${customerName}</div>
-          <div class="text-sm text-gray-600 mt-1">${markerData.locationName || markerData.address}</div>
+          <div class="text-sm text-gray-600 mt-1">${displayLocation}</div>
+          ${displayAddress ? `<div class="text-xs text-gray-500 mt-0.5">${displayAddress}</div>` : ''}
           <div class="text-xs text-gray-500 mt-1">${markerData.city || ''} ${markerData.state || ''} ${markerData.zipCode || ''}</div>
-          ${isCustomerFallback ? '<div class="text-xs text-yellow-600 mt-1 font-medium">📍 Customer address (no location set)</div>' : ''}
+          ${isCustomerFallback ? '<div class="text-xs text-amber-600 mt-1 font-medium">📍 No delivery location set - using billing address</div>' : ''}
           <div class="mt-2 pt-2 border-t border-gray-100">
             <div class="flex items-center justify-between text-xs">
               <span class="text-gray-500">Schedule:</span>
