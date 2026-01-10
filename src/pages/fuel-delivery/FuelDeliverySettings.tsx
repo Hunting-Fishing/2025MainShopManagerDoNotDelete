@@ -192,19 +192,43 @@ export default function FuelDeliverySettings() {
         return;
       }
 
-      // Update the shop_enabled_modules record
-      const { error } = await supabase
+      // Check if record exists
+      const { data: existing } = await supabase
         .from('shop_enabled_modules')
-        .update({
-          display_name: displayName || null,
-          display_phone: displayPhone || null,
-          display_email: displayEmail || null,
-          display_description: displayDescription || null,
-        })
+        .select('id')
         .eq('shop_id', shopId)
-        .eq('module_id', module.id);
+        .eq('module_id', module.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existing) {
+        // Update existing record
+        const { error } = await supabase
+          .from('shop_enabled_modules')
+          .update({
+            display_name: displayName || null,
+            display_phone: displayPhone || null,
+            display_email: displayEmail || null,
+            display_description: displayDescription || null,
+          })
+          .eq('id', existing.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('shop_enabled_modules')
+          .insert({
+            shop_id: shopId,
+            module_id: module.id,
+            is_enabled: true,
+            display_name: displayName || null,
+            display_phone: displayPhone || null,
+            display_email: displayEmail || null,
+            display_description: displayDescription || null,
+          });
+
+        if (error) throw error;
+      }
       
       await refetchModuleInfo();
       queryClient.invalidateQueries({ queryKey: ['module-display-info'] });
