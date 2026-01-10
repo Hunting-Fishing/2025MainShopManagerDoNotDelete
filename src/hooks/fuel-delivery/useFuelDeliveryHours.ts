@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -33,8 +34,8 @@ export function useFuelDeliveryHours(shopId: string | null) {
     enabled: !!shopId,
   });
 
-  // Initialize with default hours if none exist
-  const getHoursWithDefaults = (): FuelDeliveryHour[] => {
+  // Memoize hours with defaults to prevent infinite re-renders
+  const hoursWithDefaults = useMemo(() => {
     const existingHours = query.data || [];
     
     return DAY_NAMES.map((_, index) => {
@@ -51,7 +52,7 @@ export function useFuelDeliveryHours(shopId: string | null) {
         is_closed: isWeekend,
       };
     });
-  };
+  }, [query.data, shopId]);
 
   const saveMutation = useMutation({
     mutationFn: async (hours: FuelDeliveryHour[]) => {
@@ -85,7 +86,7 @@ export function useFuelDeliveryHours(shopId: string | null) {
   });
 
   return {
-    hours: getHoursWithDefaults(),
+    hours: hoursWithDefaults,
     isLoading: query.isLoading,
     isSaving: saveMutation.isPending,
     saveHours: saveMutation.mutate,
