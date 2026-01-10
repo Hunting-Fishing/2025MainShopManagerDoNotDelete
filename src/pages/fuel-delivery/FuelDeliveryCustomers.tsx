@@ -115,7 +115,7 @@ export default function FuelDeliveryCustomers() {
     setEditingCustomer(null);
   };
 
-  const openEditDialog = (customer: FuelDeliveryCustomer) => {
+  const openEditDialog = async (customer: FuelDeliveryCustomer) => {
     setEditingCustomer(customer);
     setFormData({
       company_name: customer.company_name || '',
@@ -132,11 +132,40 @@ export default function FuelDeliveryCustomers() {
       preferred_fuel_type: customer.preferred_fuel_type || '',
       delivery_instructions: customer.delivery_instructions || '',
       notes: customer.notes || '',
-      delivery_days: [],
+      delivery_days: Array.isArray(customer.delivery_days) ? customer.delivery_days : [],
       delivery_frequency: customer.delivery_frequency || 'on_demand',
-      preferred_delivery_time: 'any',
+      preferred_delivery_time: customer.preferred_delivery_time || 'any',
       minimum_delivery_gallons: customer.minimum_delivery_gallons?.toString() || ''
     });
+
+    // Fetch existing vehicles for this customer
+    try {
+      const { data: existingVehicles } = await supabase
+        .from('vehicles')
+        .select('*')
+        .eq('customer_id', customer.id);
+      
+      if (existingVehicles && existingVehicles.length > 0) {
+        setVehicles(existingVehicles.map(v => ({
+          id: v.id,
+          vin: v.vin || '',
+          year: v.year?.toString() || '',
+          make: v.make || '',
+          model: v.model || '',
+          fuel_type: v.fuel_type || '',
+          license_plate: v.license_plate || '',
+          color: v.color || '',
+          tank_capacity: '', // Extract from notes if available
+          body_style: v.body_style || '',
+        })));
+      } else {
+        setVehicles([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch customer vehicles:', err);
+      setVehicles([]);
+    }
+
     setIsDialogOpen(true);
   };
 
@@ -171,6 +200,49 @@ export default function FuelDeliveryCustomers() {
           id: editingCustomer.id,
           ...customerPayload
         });
+
+        // Handle vehicles for existing customer: delete old ones, insert new/updated ones
+        // First, get existing vehicle IDs from form (these have real UUIDs from DB)
+        const existingVehicleIds = vehicles
+          .filter(v => !v.id.includes('-') || v.id.length === 36) // Real UUIDs are 36 chars
+          .map(v => v.id);
+
+        // Delete vehicles that were removed (not in current form)
+        const { data: dbVehicles } = await supabase
+          .from('vehicles')
+          .select('id')
+          .eq('customer_id', editingCustomer.id);
+
+        const dbVehicleIds = (dbVehicles || []).map(v => v.id);
+        const vehiclesToDelete = dbVehicleIds.filter(id => !existingVehicleIds.includes(id));
+
+        if (vehiclesToDelete.length > 0) {
+          await supabase.from('vehicles').delete().in('id', vehiclesToDelete);
+        }
+
+        // Upsert vehicles (update existing, insert new)
+        for (const vehicle of vehicles) {
+          const isExisting = dbVehicleIds.includes(vehicle.id);
+          const vehicleData = {
+            customer_id: editingCustomer.id,
+            owner_type: 'customer',
+            vin: vehicle.vin || null,
+            year: vehicle.year ? parseInt(vehicle.year) : null,
+            make: vehicle.make || null,
+            model: vehicle.model || null,
+            fuel_type: vehicle.fuel_type || null,
+            license_plate: vehicle.license_plate || null,
+            color: vehicle.color || null,
+            body_style: vehicle.body_style || null,
+            notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
+          };
+
+          if (isExisting) {
+            await supabase.from('vehicles').update(vehicleData).eq('id', vehicle.id);
+          } else {
+            await supabase.from('vehicles').insert(vehicleData);
+          }
+        }
       } else {
         // Create customer first
         const newCustomer = await createCustomer.mutateAsync(customerPayload);
