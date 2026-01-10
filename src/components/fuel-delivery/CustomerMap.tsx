@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Users, AlertTriangle, Calendar, Filter } from 'lucide-react';
+import { Users, AlertTriangle, Calendar, Filter, Sun, Moon } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { FuelDeliveryLocation, FuelDeliveryCustomer } from '@/hooks/useFuelDelivery';
 import { useMapboxPublicToken } from '@/hooks/useMapboxPublicToken';
@@ -33,6 +34,11 @@ const FREQUENCY_OPTIONS = [
   { value: 'on_demand', label: 'On Demand' },
 ];
 
+const MAP_STYLES = {
+  light: 'mapbox://styles/mapbox/streets-v12',
+  dark: 'mapbox://styles/mapbox/dark-v11',
+} as const;
+
 interface CustomerMapProps {
   locations: FuelDeliveryLocation[];
   customers: FuelDeliveryCustomer[];
@@ -54,6 +60,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedFrequency, setSelectedFrequency] = useState<string>('all');
   const [showLowFuelOnly, setShowLowFuelOnly] = useState(false);
+  const [mapStyle, setMapStyle] = useState<'light' | 'dark'>('light');
 
   // Fetch business location from settings
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
@@ -252,7 +259,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
       setTokenError(null);
 
       // Proactively validate the token so we can show a clear UI instead of a blank map.
-      const validation = await validateMapboxPublicToken({ token, styleId: 'mapbox/streets-v12' });
+      const validation = await validateMapboxPublicToken({ token, styleId: mapStyle === 'dark' ? 'mapbox/dark-v11' : 'mapbox/streets-v12' });
       if (cancelled) return;
 
       if (!validation.ok) {
@@ -268,7 +275,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
 
       const instance = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: MAP_STYLES[mapStyle],
         center: getCenter(),
         zoom: defaultZoom,
         pitch: 30,
@@ -307,6 +314,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     token,
+    mapStyle,
     isLoadingSettings,
     isFetchingBusinessCenter,
     (settings as any)?.business_address,
@@ -539,15 +547,30 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
           </div>
 
           {/* Quick Filters */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant={showLowFuelOnly ? 'destructive' : 'outline'}
-              size="sm"
-              onClick={() => setShowLowFuelOnly(!showLowFuelOnly)}
-            >
-              <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
-              Low Fuel Only
-            </Button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant={showLowFuelOnly ? 'destructive' : 'outline'}
+                size="sm"
+                onClick={() => setShowLowFuelOnly(!showLowFuelOnly)}
+              >
+                <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
+                Low Fuel Only
+              </Button>
+            </div>
+
+            {/* Map Style Toggle */}
+            <div className="flex items-center gap-2">
+              <Sun className="h-4 w-4 text-amber-500" />
+              <Switch
+                checked={mapStyle === 'dark'}
+                onCheckedChange={(checked) => setMapStyle(checked ? 'dark' : 'light')}
+              />
+              <Moon className="h-4 w-4 text-indigo-400" />
+              <span className="text-sm text-muted-foreground ml-1">
+                {mapStyle === 'dark' ? 'Dark' : 'Light'} Map
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
