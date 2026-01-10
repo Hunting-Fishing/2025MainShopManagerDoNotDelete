@@ -14279,8 +14279,111 @@ export type Database = {
         }
         Relationships: []
       }
+      fuel_delivery_vehicles: {
+        Row: {
+          created_at: string | null
+          fuel_capacity_gallons: number | null
+          id: string
+          is_active: boolean | null
+          license_plate: string | null
+          name: string
+          shop_id: string
+          updated_at: string | null
+          vehicle_type: string | null
+          yard_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          fuel_capacity_gallons?: number | null
+          id?: string
+          is_active?: boolean | null
+          license_plate?: string | null
+          name: string
+          shop_id: string
+          updated_at?: string | null
+          vehicle_type?: string | null
+          yard_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          fuel_capacity_gallons?: number | null
+          id?: string
+          is_active?: boolean | null
+          license_plate?: string | null
+          name?: string
+          shop_id?: string
+          updated_at?: string | null
+          vehicle_type?: string | null
+          yard_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_vehicles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_vehicles_yard_id_fkey"
+            columns: ["yard_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_yards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_yards: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_primary: boolean | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_yards_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_delivery_zones: {
         Row: {
+          center_latitude: number | null
+          center_longitude: number | null
           created_at: string | null
           delivery_fee: number
           description: string | null
@@ -14291,11 +14394,16 @@ export type Database = {
           min_distance_miles: number | null
           minimum_order: number | null
           name: string
+          origin_id: string | null
+          origin_type: string | null
           per_mile_rate: number | null
           shop_id: string
           updated_at: string | null
+          zone_color: string | null
         }
         Insert: {
+          center_latitude?: number | null
+          center_longitude?: number | null
           created_at?: string | null
           delivery_fee?: number
           description?: string | null
@@ -14306,11 +14414,16 @@ export type Database = {
           min_distance_miles?: number | null
           minimum_order?: number | null
           name: string
+          origin_id?: string | null
+          origin_type?: string | null
           per_mile_rate?: number | null
           shop_id: string
           updated_at?: string | null
+          zone_color?: string | null
         }
         Update: {
+          center_latitude?: number | null
+          center_longitude?: number | null
           created_at?: string | null
           delivery_fee?: number
           description?: string | null
@@ -14321,9 +14434,12 @@ export type Database = {
           min_distance_miles?: number | null
           minimum_order?: number | null
           name?: string
+          origin_id?: string | null
+          origin_type?: string | null
           per_mile_rate?: number | null
           shop_id?: string
           updated_at?: string | null
+          zone_color?: string | null
         }
         Relationships: [
           {

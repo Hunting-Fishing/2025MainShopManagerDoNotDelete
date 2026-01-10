@@ -14,6 +14,11 @@ export interface DeliveryZone {
   minimum_order?: number;
   is_active: boolean;
   display_order: number;
+  origin_type?: string;
+  origin_id?: string;
+  center_latitude?: number;
+  center_longitude?: number;
+  zone_color?: string;
 }
 
 export function useDeliveryZones(shopId: string | null) {
