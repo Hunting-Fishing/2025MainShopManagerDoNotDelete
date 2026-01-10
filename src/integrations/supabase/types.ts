@@ -13320,6 +13320,7 @@ export type Database = {
         Row: {
           actual_arrival: string | null
           created_at: string
+          customer_id: string | null
           estimated_arrival: string | null
           id: string
           notes: string | null
@@ -13332,6 +13333,7 @@ export type Database = {
         Insert: {
           actual_arrival?: string | null
           created_at?: string
+          customer_id?: string | null
           estimated_arrival?: string | null
           id?: string
           notes?: string | null
@@ -13344,6 +13346,7 @@ export type Database = {
         Update: {
           actual_arrival?: string | null
           created_at?: string
+          customer_id?: string | null
           estimated_arrival?: string | null
           id?: string
           notes?: string | null
@@ -13354,6 +13357,13 @@ export type Database = {
           stop_sequence?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_route_stops_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fuel_delivery_route_stops_order_id_fkey"
             columns: ["order_id"]
