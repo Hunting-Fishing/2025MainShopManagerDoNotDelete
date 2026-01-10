@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,26 +9,166 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, Route, ArrowLeft, MapPin, Map, Users } from 'lucide-react';
-import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks, useFuelDeliveryLocations, useFuelDeliveryCustomers } from '@/hooks/useFuelDelivery';
+import { Plus, Search, Route, ArrowLeft, MapPin, Map, Users, Edit, Trash2, Eye, X, Save } from 'lucide-react';
+import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks, useFuelDeliveryLocations, useFuelDeliveryCustomers, FuelDeliveryRoute } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { RouteMap } from '@/components/fuel-delivery/RouteMap';
 import { CustomerMap } from '@/components/fuel-delivery/CustomerMap';
 import { Location } from '@/hooks/useMapbox';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function FuelDeliveryRoutes() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('list');
+  const [selectedRoute, setSelectedRoute] = useState<FuelDeliveryRoute | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [routeStops, setRouteStops] = useState<any[]>([]);
   const { data: routes, isLoading } = useFuelDeliveryRoutes();
   const { data: drivers } = useFuelDeliveryDrivers();
   const { data: trucks } = useFuelDeliveryTrucks();
   const { data: locations } = useFuelDeliveryLocations();
   const { data: customers } = useFuelDeliveryCustomers();
   const createRoute = useCreateFuelDeliveryRoute();
+
+  // Edit form state
+  const [editFormData, setEditFormData] = useState({
+    route_name: '',
+    route_date: '',
+    driver_id: '',
+    truck_id: '',
+    status: 'planned',
+    notes: ''
+  });
+  const [editSelectedStops, setEditSelectedStops] = useState<string[]>([]);
+
+  // Load route stops when a route is selected
+  useEffect(() => {
+    if (selectedRoute?.id) {
+      loadRouteStops(selectedRoute.id);
+    }
+  }, [selectedRoute?.id]);
+
+  const loadRouteStops = async (routeId: string) => {
+    const { data, error } = await supabase
+      .from('fuel_delivery_route_stops')
+      .select('*, fuel_delivery_orders(*, fuel_delivery_locations(*))')
+      .eq('route_id', routeId)
+      .order('stop_sequence');
+    
+    if (!error && data) {
+      setRouteStops(data);
+      // Set selected stops for editing based on order's location
+      setEditSelectedStops(data.map(s => s.fuel_delivery_orders?.fuel_delivery_locations?.id).filter(Boolean));
+    }
+  };
+
+  const handleRouteClick = (route: FuelDeliveryRoute) => {
+    setSelectedRoute(route);
+    setEditFormData({
+      route_name: route.route_name || '',
+      route_date: route.route_date || '',
+      driver_id: route.driver_id || '',
+      truck_id: route.truck_id || '',
+      status: route.status || 'planned',
+      notes: route.notes || ''
+    });
+    setIsEditMode(false);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleUpdateRoute = async () => {
+    if (!selectedRoute?.id) return;
+    setIsSaving(true);
+
+    try {
+      // Update route details
+      const { error: routeError } = await supabase
+        .from('fuel_delivery_routes')
+        .update({
+          route_name: editFormData.route_name,
+          route_date: editFormData.route_date,
+          driver_id: editFormData.driver_id || null,
+          truck_id: editFormData.truck_id || null,
+          status: editFormData.status,
+          notes: editFormData.notes,
+          total_stops: editSelectedStops.length
+        })
+        .eq('id', selectedRoute.id);
+
+      if (routeError) throw routeError;
+
+      // Update stops - delete existing and recreate
+      await supabase
+        .from('fuel_delivery_route_stops')
+        .delete()
+        .eq('route_id', selectedRoute.id);
+
+      // Insert new stops (using stop_sequence as per schema)
+      if (editSelectedStops.length > 0) {
+        const stopsToInsert = editSelectedStops.map((stopId, index) => ({
+          route_id: selectedRoute.id,
+          stop_sequence: index + 1,
+          status: 'pending'
+        }));
+
+        await supabase.from('fuel_delivery_route_stops').insert(stopsToInsert);
+      }
+
+      toast({ title: 'Route updated successfully' });
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-routes'] });
+      setIsViewDialogOpen(false);
+      setSelectedRoute(null);
+    } catch (error: any) {
+      toast({ title: 'Error updating route', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteRoute = async () => {
+    if (!selectedRoute?.id) return;
+    if (!confirm('Are you sure you want to delete this route?')) return;
+
+    try {
+      // Delete stops first
+      await supabase
+        .from('fuel_delivery_route_stops')
+        .delete()
+        .eq('route_id', selectedRoute.id);
+
+      // Delete route
+      const { error } = await supabase
+        .from('fuel_delivery_routes')
+        .delete()
+        .eq('id', selectedRoute.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Route deleted successfully' });
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-routes'] });
+      setIsViewDialogOpen(false);
+      setSelectedRoute(null);
+    } catch (error: any) {
+      toast({ title: 'Error deleting route', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const toggleEditStop = (stopId: string) => {
+    setEditSelectedStops(prev => 
+      prev.includes(stopId) 
+        ? prev.filter(id => id !== stopId) 
+        : [...prev, stopId]
+    );
+  };
 
   // Convert locations to map format
   const mapDestinations: Location[] = (locations || [])
@@ -376,9 +516,13 @@ export default function FuelDeliveryRoutes() {
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                <TableBody>
                     {filteredRoutes.map((route) => (
-                      <TableRow key={route.id} className="cursor-pointer hover:bg-muted/50">
+                      <TableRow 
+                        key={route.id} 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleRouteClick(route)}
+                      >
                         <TableCell className="font-medium">{route.route_name}</TableCell>
                         <TableCell>{format(new Date(route.route_date), 'MMM d, yyyy')}</TableCell>
                         <TableCell>
@@ -476,6 +620,276 @@ export default function FuelDeliveryRoutes() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* View/Edit Route Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Route className="h-5 w-5" />
+                {isEditMode ? 'Edit Route' : 'Route Details'}
+              </span>
+              <div className="flex items-center gap-2">
+                {!isEditMode ? (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => setIsEditMode(true)}>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={handleDeleteRoute}>
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => setIsEditMode(false)}>
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleUpdateRoute} disabled={isSaving}>
+                      <Save className="h-4 w-4 mr-1" />
+                      {isSaving ? 'Saving...' : 'Save'}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedRoute && (
+            <div className="space-y-6">
+              {isEditMode ? (
+                // Edit Mode Form
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Route Name *</Label>
+                      <Input
+                        value={editFormData.route_name}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, route_name: e.target.value }))}
+                        placeholder="Route name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Route Date *</Label>
+                      <Input
+                        type="date"
+                        value={editFormData.route_date}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, route_date: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Driver</Label>
+                      <Select 
+                        value={editFormData.driver_id} 
+                        onValueChange={(v) => setEditFormData(prev => ({ ...prev, driver_id: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select driver" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">No driver</SelectItem>
+                          {drivers?.filter(d => d.status === 'active').map(driver => (
+                            <SelectItem key={driver.id} value={driver.id}>
+                              {driver.first_name} {driver.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Truck</Label>
+                      <Select 
+                        value={editFormData.truck_id} 
+                        onValueChange={(v) => setEditFormData(prev => ({ ...prev, truck_id: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select truck" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">No truck</SelectItem>
+                          {trucks?.map(truck => (
+                            <SelectItem key={truck.id} value={truck.id}>
+                              {truck.truck_number} - {truck.make} {truck.model}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select 
+                      value={editFormData.status} 
+                      onValueChange={(v) => setEditFormData(prev => ({ ...prev, status: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="planned">Planned</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Notes</Label>
+                    <Textarea
+                      value={editFormData.notes}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Route notes..."
+                    />
+                  </div>
+
+                  {/* Edit Stops */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-orange-500" />
+                      Delivery Stops ({editSelectedStops.length} selected)
+                    </Label>
+                    {availableStops.length > 0 ? (
+                      <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1">
+                        {availableStops.map((stop) => (
+                          <div
+                            key={stop.id}
+                            className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
+                              editSelectedStops.includes(stop.id) 
+                                ? 'bg-primary/10 border border-primary' 
+                                : 'hover:bg-muted border border-transparent'
+                            }`}
+                            onClick={() => toggleEditStop(stop.id)}
+                          >
+                            <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                              editSelectedStops.includes(stop.id) ? 'bg-primary border-primary' : 'border-muted-foreground'
+                            }`}>
+                              {editSelectedStops.includes(stop.id) && (
+                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm truncate">{stop.name}</div>
+                              <div className="text-xs text-muted-foreground truncate">{stop.address}</div>
+                            </div>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {stop.fuelType || 'diesel'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground p-4 border rounded-md text-center">
+                        No locations available
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                // View Mode
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Route Name</Label>
+                      <p className="font-medium">{selectedRoute.route_name}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Date</Label>
+                      <p className="font-medium">{format(new Date(selectedRoute.route_date), 'MMMM d, yyyy')}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Driver</Label>
+                      <p className="font-medium">
+                        {selectedRoute.fuel_delivery_drivers 
+                          ? `${selectedRoute.fuel_delivery_drivers.first_name} ${selectedRoute.fuel_delivery_drivers.last_name}`
+                          : 'Not assigned'}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Truck</Label>
+                      <p className="font-medium">{selectedRoute.fuel_delivery_trucks?.truck_number || 'Not assigned'}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Status</Label>
+                      <div className="mt-1">{getStatusBadge(selectedRoute.status)}</div>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Stops</Label>
+                      <p className="font-medium">{selectedRoute.completed_stops || 0}/{selectedRoute.total_stops || 0}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Gallons</Label>
+                      <p className="font-medium">
+                        {selectedRoute.total_gallons_delivered?.toLocaleString() || 0}/
+                        {selectedRoute.total_gallons_planned?.toLocaleString() || 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedRoute.notes && (
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Notes</Label>
+                      <p className="text-sm mt-1">{selectedRoute.notes}</p>
+                    </div>
+                  )}
+
+                  {/* Route Stops List */}
+                  <div>
+                    <Label className="text-muted-foreground text-xs flex items-center gap-2 mb-2">
+                      <MapPin className="h-4 w-4" />
+                      Delivery Stops
+                    </Label>
+                    {routeStops.length > 0 ? (
+                      <div className="border rounded-md divide-y">
+                        {routeStops.map((stop, index) => {
+                          const order = stop.fuel_delivery_orders;
+                          const location = order?.fuel_delivery_locations;
+                          const customer = customers?.find(c => c.id === location?.customer_id);
+                          return (
+                            <div key={stop.id} className="p-3 flex items-center gap-3">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                                {index + 1}
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">
+                                  {customer?.company_name || customer?.contact_name || location?.location_name || 'Unknown Stop'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{location?.address || 'No address'}</p>
+                              </div>
+                              <Badge variant={stop.status === 'completed' ? 'default' : 'outline'} className="capitalize">
+                                {stop.status || 'pending'}
+                              </Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground p-4 border rounded-md text-center">
+                        No stops added to this route
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
