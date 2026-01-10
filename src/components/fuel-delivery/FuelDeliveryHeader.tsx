@@ -11,11 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Menu, Search, Settings, LogOut, User } from 'lucide-react';
+import { Bell, Menu, Search, Settings, LogOut, User, Fuel } from 'lucide-react';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 interface FuelDeliveryHeaderProps {
   onMenuToggle: () => void;
@@ -25,6 +27,8 @@ export function FuelDeliveryHeader({ onMenuToggle }: FuelDeliveryHeaderProps) {
   const navigate = useNavigate();
   const { user } = useAuthUser();
   const isMobile = useIsMobile();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel-delivery');
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -34,14 +38,28 @@ export function FuelDeliveryHeader({ onMenuToggle }: FuelDeliveryHeaderProps) {
   return (
     <header className="sticky top-0 z-20 bg-card border-b border-border">
       <div className="flex items-center justify-between h-14 px-4">
-        {/* Left side */}
+        {/* Left side - Business name and search */}
         <div className="flex items-center gap-4">
           {isMobile && (
             <Button variant="ghost" size="icon" onClick={onMenuToggle}>
               <Menu className="h-5 w-5" />
             </Button>
           )}
-          <div className="relative hidden md:block">
+          
+          {/* Business Name */}
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/fuel-delivery')}
+          >
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
+              <Fuel className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-semibold text-foreground hidden sm:block truncate max-w-[180px]">
+              {moduleInfo?.displayName || 'Fuel Delivery'}
+            </span>
+          </div>
+
+          <div className="relative hidden lg:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search orders, customers..."
