@@ -13,10 +13,20 @@ interface BusinessHoursTabProps {
 export function BusinessHoursTab({ shopId }: BusinessHoursTabProps) {
   const { hours, isLoading, isSaving, saveHours, dayNames } = useFuelDeliveryHours(shopId);
   const [localHours, setLocalHours] = useState<FuelDeliveryHour[]>([]);
+  const [initialized, setInitialized] = useState(false);
 
+  // Only sync from server once when data loads, or when shopId changes
   useEffect(() => {
-    setLocalHours(hours);
-  }, [hours]);
+    if (hours.length > 0 && !initialized) {
+      setLocalHours(hours);
+      setInitialized(true);
+    }
+  }, [hours, initialized]);
+
+  // Reset initialization when shopId changes
+  useEffect(() => {
+    setInitialized(false);
+  }, [shopId]);
 
   const handleTimeChange = (dayIndex: number, field: 'open_time' | 'close_time', value: string) => {
     setLocalHours(prev => prev.map(h => 
