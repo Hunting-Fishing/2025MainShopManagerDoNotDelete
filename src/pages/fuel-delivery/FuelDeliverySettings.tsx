@@ -6,15 +6,20 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Settings, Bell, MapPin, Fuel, Truck, DollarSign, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Settings, Bell, MapPin, Fuel, Truck, DollarSign, Save, Loader2, Ruler } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AddressAutocomplete } from '@/components/fuel-delivery/AddressAutocomplete';
+import { useFuelUnits, UnitSystem } from '@/hooks/fuel-delivery/useFuelUnits';
 
 export default function FuelDeliverySettings() {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Unit Preferences
+  const { unitSystem, volumeUnit, setUnitSystem, getUnitLabel } = useFuelUnits();
   
   // Business Location Settings
   const [businessAddress, setBusinessAddress] = useState('');
@@ -34,7 +39,7 @@ export default function FuelDeliverySettings() {
   const [defaultDeliveryWindow, setDefaultDeliveryWindow] = useState('morning');
   
   // Pricing Settings
-  const [basePricePerGallon, setBasePricePerGallon] = useState('');
+  const [basePricePerUnit, setBasePricePerUnit] = useState('');
   const [deliveryFee, setDeliveryFee] = useState('');
   const [rushDeliveryFee, setRushDeliveryFee] = useState('');
 
@@ -55,6 +60,11 @@ export default function FuelDeliverySettings() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleUnitSystemChange = (value: string) => {
+    setUnitSystem(value as UnitSystem);
+    toast.success(`Switched to ${value === 'metric' ? 'Metric (Litres)' : 'Imperial (Gallons)'}`);
   };
 
   return (
@@ -81,13 +91,73 @@ export default function FuelDeliverySettings() {
         </div>
       </div>
 
-      <Tabs defaultValue="business" className="space-y-6">
-        <TabsList className="grid grid-cols-4 w-full max-w-lg">
+      <Tabs defaultValue="units" className="space-y-6">
+        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+          <TabsTrigger value="units">Units</TabsTrigger>
           <TabsTrigger value="business">Business</TabsTrigger>
           <TabsTrigger value="notifications">Alerts</TabsTrigger>
           <TabsTrigger value="defaults">Defaults</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
         </TabsList>
+
+        {/* Units Tab */}
+        <TabsContent value="units" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Ruler className="h-5 w-5 text-orange-500" />
+                <CardTitle>Unit Preferences</CardTitle>
+              </div>
+              <CardDescription>
+                Choose between Metric (Litres) or Imperial (Gallons) measurements
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <RadioGroup 
+                value={unitSystem} 
+                onValueChange={handleUnitSystemChange}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
+                <div className={`flex items-center space-x-4 p-4 rounded-lg border-2 transition-colors cursor-pointer ${
+                  unitSystem === 'metric' 
+                    ? 'border-orange-500 bg-orange-500/10' 
+                    : 'border-border hover:border-muted-foreground'
+                }`}>
+                  <RadioGroupItem value="metric" id="metric" />
+                  <Label htmlFor="metric" className="flex-1 cursor-pointer">
+                    <div className="font-semibold text-lg">Metric</div>
+                    <div className="text-sm text-muted-foreground">
+                      Litres (L) - Used in Canada, Europe, and most of the world
+                    </div>
+                  </Label>
+                </div>
+                <div className={`flex items-center space-x-4 p-4 rounded-lg border-2 transition-colors cursor-pointer ${
+                  unitSystem === 'imperial' 
+                    ? 'border-orange-500 bg-orange-500/10' 
+                    : 'border-border hover:border-muted-foreground'
+                }`}>
+                  <RadioGroupItem value="imperial" id="imperial" />
+                  <Label htmlFor="imperial" className="flex-1 cursor-pointer">
+                    <div className="font-semibold text-lg">Imperial</div>
+                    <div className="text-sm text-muted-foreground">
+                      Gallons (gal) - Used in the United States
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+              
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm">
+                  <span className="font-medium">Current setting:</span> All volumes will be displayed in{' '}
+                  <span className="font-semibold text-orange-600">{getUnitLabel(false)}</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  This affects tank capacities, delivery amounts, and pricing displays throughout the module.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Business Location Tab */}
         <TabsContent value="business" className="space-y-4">
@@ -200,12 +270,12 @@ export default function FuelDeliverySettings() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Default Tank Capacity (gallons)</Label>
+                  <Label>Default Tank Capacity ({getUnitLabel(false)})</Label>
                   <Input
                     type="number"
                     value={defaultTankCapacity}
                     onChange={(e) => setDefaultTankCapacity(e.target.value)}
-                    placeholder="500"
+                    placeholder={getUnitLabel(false) === 'Litres' ? '2000' : '500'}
                   />
                 </div>
                 <div className="space-y-2">
@@ -252,13 +322,13 @@ export default function FuelDeliverySettings() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Base Price per Gallon ($)</Label>
+                  <Label>Base Price {getUnitLabel(false) === 'Litres' ? 'per Litre' : 'per Gallon'} ($)</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={basePricePerGallon}
-                    onChange={(e) => setBasePricePerGallon(e.target.value)}
-                    placeholder="3.50"
+                    value={basePricePerUnit}
+                    onChange={(e) => setBasePricePerUnit(e.target.value)}
+                    placeholder={getUnitLabel(false) === 'Litres' ? '1.50' : '3.50'}
                   />
                 </div>
                 <div className="space-y-2">
