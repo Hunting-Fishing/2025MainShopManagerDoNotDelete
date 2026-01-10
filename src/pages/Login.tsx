@@ -61,18 +61,21 @@ export default function Login() {
               .select('module_id')
               .eq('shop_id', profile.shop_id);
             
-            // Get module details to find the slug
+            // Get module details to find the slugs
             if (enabledModules && enabledModules.length > 0) {
               const { data: modules } = await supabase
                 .from('business_modules')
                 .select('slug')
                 .in('id', enabledModules.map(em => em.module_id))
-                .order('display_order')
-                .limit(1);
+                .order('display_order');
               
-              if (modules && modules.length > 0) {
-                // Redirect to the first enabled module
+              if (modules && modules.length === 1) {
+                // Only 1 module - go directly to it
                 navigate(`/${modules[0].slug}`, { replace: true });
+                return;
+              } else if (modules && modules.length > 1) {
+                // Multiple modules - go to module hub to choose
+                navigate('/module-hub', { replace: true });
                 return;
               }
             }
