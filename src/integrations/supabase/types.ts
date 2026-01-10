@@ -12207,6 +12207,87 @@ export type Database = {
           },
         ]
       }
+      fuel_delivery_customer_vehicles: {
+        Row: {
+          body_style: string | null
+          color: string | null
+          created_at: string | null
+          customer_id: string
+          equipment_type: string
+          fuel_type: string | null
+          id: string
+          is_active: boolean | null
+          license_plate: string | null
+          location_notes: string | null
+          make: string | null
+          model: string | null
+          name: string | null
+          notes: string | null
+          shop_id: string
+          tank_capacity_gallons: number | null
+          updated_at: string | null
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          body_style?: string | null
+          color?: string | null
+          created_at?: string | null
+          customer_id: string
+          equipment_type?: string
+          fuel_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_plate?: string | null
+          location_notes?: string | null
+          make?: string | null
+          model?: string | null
+          name?: string | null
+          notes?: string | null
+          shop_id: string
+          tank_capacity_gallons?: number | null
+          updated_at?: string | null
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          body_style?: string | null
+          color?: string | null
+          created_at?: string | null
+          customer_id?: string
+          equipment_type?: string
+          fuel_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_plate?: string | null
+          location_notes?: string | null
+          make?: string | null
+          model?: string | null
+          name?: string | null
+          notes?: string | null
+          shop_id?: string
+          tank_capacity_gallons?: number | null
+          updated_at?: string | null
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_customer_vehicles_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_customer_vehicles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_delivery_customers: {
         Row: {
           auto_delivery: boolean | null
@@ -12223,8 +12304,10 @@ export type Database = {
           delivery_frequency: string | null
           delivery_instructions: string | null
           email: string | null
+          first_name: string | null
           id: string
           is_active: boolean | null
+          last_name: string | null
           minimum_delivery_gallons: number | null
           notes: string | null
           payment_terms: string | null
@@ -12252,8 +12335,10 @@ export type Database = {
           delivery_frequency?: string | null
           delivery_instructions?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
           is_active?: boolean | null
+          last_name?: string | null
           minimum_delivery_gallons?: number | null
           notes?: string | null
           payment_terms?: string | null
@@ -12281,8 +12366,10 @@ export type Database = {
           delivery_frequency?: string | null
           delivery_instructions?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
           is_active?: boolean | null
+          last_name?: string | null
           minimum_delivery_gallons?: number | null
           notes?: string | null
           payment_terms?: string | null
