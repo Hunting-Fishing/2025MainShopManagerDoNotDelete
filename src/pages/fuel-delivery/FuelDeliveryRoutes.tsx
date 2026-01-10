@@ -205,9 +205,11 @@ export default function FuelDeliveryRoutes() {
     );
   };
 
-  // Get customers with delivery locations configured
+  // Get customers who can be added to a route (have a location entry, or have billing address/coordinates)
   const customersWithLocations = customers?.filter(c => 
-    locations?.some(l => l.customer_id === c.id)
+    locations?.some(l => l.customer_id === c.id) || 
+    c.billing_address || 
+    (c.billing_latitude && c.billing_longitude)
   ) || [];
 
   // Convert locations to map format
