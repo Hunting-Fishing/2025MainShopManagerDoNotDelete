@@ -14,10 +14,9 @@ import { format } from 'date-fns';
 interface DeliveryOrder {
   id: string;
   order_date: string;
-  status: string;
+  status: string | null;
   product_id: string | null;
-  requested_gallons: number | null;
-  delivered_gallons: number | null;
+  quantity_ordered: number;
   total_amount: number | null;
   internal_notes: string | null;
 }
@@ -170,7 +169,7 @@ export default function FuelDeliveryPortalOrders() {
                         <h3 className="font-semibold">
                           Fuel Delivery
                         </h3>
-                        <Badge className={getStatusColor(order.status)}>
+                        <Badge className={getStatusColor(order.status || 'pending')}>
                           {order.status.replace('_', ' ')}
                         </Badge>
                       </div>
@@ -179,11 +178,9 @@ export default function FuelDeliveryPortalOrders() {
                           <Calendar className="h-3.5 w-3.5" />
                           {format(new Date(order.order_date), 'MMM d, yyyy')}
                         </span>
-                        {(order.delivered_gallons || order.requested_gallons) && (
-                          <span>
-                              {order.delivered_gallons || order.requested_gallons} gallons
-                            </span>
-                          )}
+                        <span>
+                          {order.quantity_ordered} gallons
+                        </span>
                         </div>
                       {order.internal_notes && (
                         <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
