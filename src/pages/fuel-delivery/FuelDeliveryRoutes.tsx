@@ -51,6 +51,8 @@ export default function FuelDeliveryRoutes() {
   });
   // Store order IDs for editing stops (since route_stops uses order_id)
   const [editSelectedOrderIds, setEditSelectedOrderIds] = useState<string[]>([]);
+  // Store customer IDs for manual customer selection
+  const [editSelectedCustomerIds, setEditSelectedCustomerIds] = useState<string[]>([]);
 
   // Load route stops when a route is selected
   useEffect(() => {
@@ -70,6 +72,8 @@ export default function FuelDeliveryRoutes() {
       setRouteStops(data);
       // Set selected order IDs for editing
       setEditSelectedOrderIds(data.map(s => s.order_id).filter(Boolean));
+      // Set selected customer IDs for editing
+      setEditSelectedCustomerIds(data.map(s => s.customer_id).filter(Boolean));
     }
   };
 
@@ -174,6 +178,19 @@ export default function FuelDeliveryRoutes() {
         : [...prev, orderId]
     );
   };
+
+  const toggleEditCustomer = (customerId: string) => {
+    setEditSelectedCustomerIds(prev => 
+      prev.includes(customerId) 
+        ? prev.filter(id => id !== customerId) 
+        : [...prev, customerId]
+    );
+  };
+
+  // Get customers with delivery locations configured
+  const customersWithLocations = customers?.filter(c => 
+    locations?.some(l => l.customer_id === c.id)
+  ) || [];
 
   // Convert locations to map format
   const mapDestinations: Location[] = (locations || [])
