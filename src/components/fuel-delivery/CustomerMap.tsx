@@ -216,6 +216,8 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
           locationName: 'Primary Location',
           address: cust.billing_address,
           fuelType: cust.preferred_fuel_type,
+          deliveryDays: cust.delivery_days,
+          deliveryFrequency: cust.delivery_frequency,
         });
       } 
       // Check for geocoded coordinates
@@ -230,6 +232,8 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
           locationName: 'Primary Location',
           address: cust.billing_address,
           fuelType: cust.preferred_fuel_type,
+          deliveryDays: cust.delivery_days,
+          deliveryFrequency: cust.delivery_frequency,
         });
       }
     });

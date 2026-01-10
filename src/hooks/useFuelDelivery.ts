@@ -41,6 +41,8 @@ export interface FuelDeliveryCustomer {
   preferred_fuel_type?: string;
   auto_delivery?: boolean;
   delivery_frequency?: string;
+  delivery_days?: number[];
+  preferred_delivery_time?: string;
   minimum_delivery_gallons?: number;
   is_active?: boolean;
   notes?: string;
