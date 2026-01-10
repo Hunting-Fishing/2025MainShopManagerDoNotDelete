@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Settings, Bell, MapPin, Fuel, DollarSign, Save, Loader2, Ruler } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { AddressAutocomplete } from '@/components/fuel-delivery/AddressAutocomplete';
+import { AddressAutocomplete, type AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
 import { useFuelUnits, UnitSystem } from '@/hooks/fuel-delivery/useFuelUnits';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -144,10 +144,11 @@ export default function FuelDeliverySettings() {
     },
   });
 
-  const handleAddressSelect = (result: any) => {
+  const handleAddressSelect = (result: AddressResult) => {
     setBusinessAddress(result.address);
-    setBusinessLatitude(result.latitude);
-    setBusinessLongitude(result.longitude);
+    const [lng, lat] = result.coordinates;
+    setBusinessLatitude(lat);
+    setBusinessLongitude(lng);
   };
 
   const handleSaveBusinessLocation = () => {
@@ -317,7 +318,7 @@ export default function FuelDeliverySettings() {
                   placeholder="Enter your business address"
                 />
               </div>
-              {businessLatitude && businessLongitude && (
+              {businessLatitude !== null && businessLongitude !== null && (
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">
                     Coordinates: {businessLatitude.toFixed(6)}, {businessLongitude.toFixed(6)}

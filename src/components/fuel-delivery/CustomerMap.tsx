@@ -56,15 +56,51 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
   const [showLowFuelOnly, setShowLowFuelOnly] = useState(false);
 
   // Fetch business location from settings
-  const { data: settings } = useQuery({
+  const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['fuel-delivery-settings'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fuel_delivery_settings')
-        .select('business_latitude, business_longitude')
+        .select('business_address, business_latitude, business_longitude')
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+  });
+
+  const toFiniteNumber = (value: unknown): number | null => {
+    const n = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const { data: businessCenter, isFetching: isFetchingBusinessCenter } = useQuery({
+    queryKey: [
+      'fuel-delivery-business-center',
+      token,
+      settings?.business_address,
+      settings?.business_latitude,
+      settings?.business_longitude,
+    ],
+    enabled: Boolean(token) && !isLoadingSettings,
+    queryFn: async () => {
+      const lat = toFiniteNumber((settings as any)?.business_latitude);
+      const lng = toFiniteNumber((settings as any)?.business_longitude);
+
+      if (lat !== null && lng !== null) return [lng, lat] as [number, number];
+
+      const address = ((settings as any)?.business_address as string | null) || '';
+      if (!address || !token) return null;
+
+      const encoded = encodeURIComponent(address);
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encoded}.json?access_token=${token}&limit=1&country=US,CA&types=address,place,poi`;
+
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const json = await res.json();
+      const feature = json?.features?.[0];
+      const center = feature?.center as [number, number] | undefined;
+      if (!center || center.length < 2) return null;
+      return [center[0], center[1]] as [number, number];
     },
   });
 
@@ -176,20 +212,16 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
 
   // Calculate center from filtered markers or use business location
   const getCenter = (): [number, number] => {
-    // First priority: use business location from settings if available
-    if (settings?.business_longitude && settings?.business_latitude) {
-      return [settings.business_longitude, settings.business_latitude];
-    }
+    // First priority: business center (lat/lng or geocoded from address)
+    if (businessCenter) return businessCenter;
+
     // Second priority: center of markers if available
     if (filteredMarkers.length > 0) {
-      const avgLng =
-        filteredMarkers.reduce((sum, m) => sum + m.longitude, 0) /
-        filteredMarkers.length;
-      const avgLat =
-        filteredMarkers.reduce((sum, m) => sum + m.latitude, 0) /
-        filteredMarkers.length;
+      const avgLng = filteredMarkers.reduce((sum, m) => sum + m.longitude, 0) / filteredMarkers.length;
+      const avgLat = filteredMarkers.reduce((sum, m) => sum + m.latitude, 0) / filteredMarkers.length;
       return [avgLng, avgLat];
     }
+
     // Fallback: Center of US
     return [-98.5795, 39.8283];
   };
@@ -209,6 +241,12 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
 
     const init = async () => {
       if (!mapContainer.current || !token) return;
+      if (isLoadingSettings) return;
+
+      // If the user has a business address but no coordinates saved yet, wait for the geocode attempt
+      // so we don't initialize at the US fallback.
+      const hasBusinessAddress = Boolean((settings as any)?.business_address);
+      if (hasBusinessAddress && !businessCenter && isFetchingBusinessCenter) return;
 
       setMapLoaded(false);
       setTokenError(null);
@@ -225,7 +263,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
       mapboxgl.accessToken = token;
 
       // Determine zoom level based on available data
-      const hasBusinessLocation = settings?.business_longitude && settings?.business_latitude;
+      const hasBusinessLocation = Boolean(businessCenter);
       const defaultZoom = hasBusinessLocation ? 10 : (filteredMarkers.length > 0 ? 8 : 4);
 
       const instance = new mapboxgl.Map({
@@ -267,7 +305,14 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
       map.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, settings?.business_latitude, settings?.business_longitude]);
+  }, [
+    token,
+    isLoadingSettings,
+    isFetchingBusinessCenter,
+    (settings as any)?.business_address,
+    businessCenter?.[0],
+    businessCenter?.[1],
+  ]);
 
   // Update markers when filtered markers change
   useEffect(() => {
