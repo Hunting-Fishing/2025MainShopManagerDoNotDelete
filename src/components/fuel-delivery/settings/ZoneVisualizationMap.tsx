@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { DeliveryZone } from '@/hooks/fuel-delivery/useDeliveryZones';
 import { FuelDeliveryYard } from '@/hooks/fuel-delivery/useFuelDeliveryYards';
 import { BusinessLocation } from '@/hooks/fuel-delivery/useBusinessLocation';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 import * as turf from '@turf/turf';
 
 interface ZoneVisualizationMapProps {
@@ -41,6 +42,7 @@ export function ZoneVisualizationMap({
   height = '400px',
 }: ZoneVisualizationMapProps) {
   const { token, isLoading: isLoadingToken } = useMapboxPublicToken();
+  const { getTurfDistanceUnit } = useFuelUnits();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -147,10 +149,11 @@ export function ZoneVisualizationMap({
       const origin = getZoneOrigin(zone);
       if (!origin) return;
 
+      // Zone distances are stored in miles, turf expects consistent units
       const maxDistance = zone.max_distance_miles || zone.min_distance_miles + 25;
       const color = (zone as any).zone_color || ZONE_COLORS[idx % ZONE_COLORS.length];
 
-      // Create outer circle (max distance)
+      // Create outer circle (max distance) - always use miles since that's how data is stored
       const outerCircle = turf.circle(origin, maxDistance, { units: 'miles', steps: 64 });
       
       const sourceId = `zone-${idx}`;

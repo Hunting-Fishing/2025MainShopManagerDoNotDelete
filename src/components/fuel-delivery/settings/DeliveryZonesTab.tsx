@@ -11,6 +11,7 @@ import { MapPin, Plus, Pencil, Trash2, Loader2, Building2, Truck } from 'lucide-
 import { useDeliveryZones, DeliveryZone } from '@/hooks/fuel-delivery/useDeliveryZones';
 import { useFuelDeliveryYards } from '@/hooks/fuel-delivery/useFuelDeliveryYards';
 import { useBusinessLocation } from '@/hooks/fuel-delivery/useBusinessLocation';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 import { BusinessLocationCard } from './BusinessLocationCard';
 import { YardLocationCard } from './YardLocationCard';
 import { ZoneVisualizationMap } from './ZoneVisualizationMap';
@@ -34,6 +35,7 @@ export function DeliveryZonesTab({ shopId }: DeliveryZonesTabProps) {
   const { zones, isLoading, createZone, updateZone, deleteZone, isCreating, isUpdating } = useDeliveryZones(shopId);
   const { yards } = useFuelDeliveryYards(shopId);
   const { location: businessLocation } = useBusinessLocation(shopId);
+  const { getDistanceLabel, getDistanceRateLabel, convertFromMiles, convertToMiles, formatDistance, isMetric } = useFuelUnits();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
 
@@ -70,11 +72,12 @@ export function DeliveryZonesTab({ shopId }: DeliveryZonesTabProps) {
 
   const openEditDialog = (zone: DeliveryZone) => {
     setEditingZone(zone);
+    // Convert stored miles to display units
     setFormData({
       name: zone.name,
       description: zone.description || '',
-      min_distance_miles: String(zone.min_distance_miles),
-      max_distance_miles: zone.max_distance_miles ? String(zone.max_distance_miles) : '',
+      min_distance_miles: String(convertFromMiles(zone.min_distance_miles).toFixed(1)),
+      max_distance_miles: zone.max_distance_miles ? String(convertFromMiles(zone.max_distance_miles).toFixed(1)) : '',
       delivery_fee: String(zone.delivery_fee),
       per_mile_rate: String(zone.per_mile_rate),
       minimum_order: zone.minimum_order ? String(zone.minimum_order) : '',
@@ -89,12 +92,18 @@ export function DeliveryZonesTab({ shopId }: DeliveryZonesTabProps) {
   const handleSubmit = () => {
     if (!shopId) return;
 
+    // Convert display units back to miles for storage
+    const minDistanceInMiles = convertToMiles(parseFloat(formData.min_distance_miles) || 0);
+    const maxDistanceInMiles = formData.max_distance_miles 
+      ? convertToMiles(parseFloat(formData.max_distance_miles)) 
+      : undefined;
+
     const zoneData: Omit<DeliveryZone, 'id'> = {
       shop_id: shopId,
       name: formData.name,
       description: formData.description || undefined,
-      min_distance_miles: parseFloat(formData.min_distance_miles) || 0,
-      max_distance_miles: formData.max_distance_miles ? parseFloat(formData.max_distance_miles) : undefined,
+      min_distance_miles: minDistanceInMiles,
+      max_distance_miles: maxDistanceInMiles,
       delivery_fee: parseFloat(formData.delivery_fee) || 0,
       per_mile_rate: parseFloat(formData.per_mile_rate) || 0,
       minimum_order: formData.minimum_order ? parseFloat(formData.minimum_order) : undefined,
@@ -271,7 +280,7 @@ export function DeliveryZonesTab({ shopId }: DeliveryZonesTabProps) {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Min Distance (miles)</Label>
+                      <Label>Min Distance ({getDistanceLabel()})</Label>
                       <Input
                         type="number"
                         value={formData.min_distance_miles}
@@ -279,7 +288,7 @@ export function DeliveryZonesTab({ shopId }: DeliveryZonesTabProps) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Max Distance (miles)</Label>
+                      <Label>Max Distance ({getDistanceLabel()})</Label>
                       <Input
                         type="number"
                         value={formData.max_distance_miles}
@@ -300,7 +309,7 @@ export function DeliveryZonesTab({ shopId }: DeliveryZonesTabProps) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Per Mile Rate ($)</Label>
+                      <Label>Per {getDistanceLabel(false)} Rate ($)</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -372,9 +381,9 @@ export function DeliveryZonesTab({ shopId }: DeliveryZonesTabProps) {
                         )}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {zone.min_distance_miles} - {zone.max_distance_miles || '∞'} miles | 
+                        {formatDistance(zone.min_distance_miles, 0)} - {zone.max_distance_miles ? formatDistance(zone.max_distance_miles, 0) : '∞'} | 
                         ${zone.delivery_fee.toFixed(2)} base
-                        {zone.per_mile_rate > 0 && ` + $${zone.per_mile_rate.toFixed(2)}/mile`}
+                        {zone.per_mile_rate > 0 && ` + $${zone.per_mile_rate.toFixed(2)}${getDistanceRateLabel()}`}
                       </div>
                     </div>
                   </div>
