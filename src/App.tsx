@@ -281,6 +281,8 @@ import FuelDeliveryTankFills from '@/pages/fuel-delivery/FuelDeliveryTankFills';
 import FuelDeliveryEquipment from '@/pages/fuel-delivery/FuelDeliveryEquipment';
 import FuelDeliveryEquipmentFilters from '@/pages/fuel-delivery/FuelDeliveryEquipmentFilters';
 import FuelDeliveryQuotes from '@/pages/fuel-delivery/FuelDeliveryQuotes';
+import FuelDeliveryProfile from '@/pages/fuel-delivery/FuelDeliveryProfile';
+import FuelDeliverySettings from '@/pages/fuel-delivery/FuelDeliverySettings';
 import { FuelDeliveryLayout } from '@/components/fuel-delivery';
 function App() {
   useEffect(() => {
@@ -1263,6 +1265,8 @@ function App() {
                   <Route path="/equipment" element={<FuelDeliveryEquipment />} />
                   <Route path="/equipment-filters" element={<FuelDeliveryEquipmentFilters />} />
                   <Route path="/quotes" element={<FuelDeliveryQuotes />} />
+                  <Route path="/profile" element={<FuelDeliveryProfile />} />
+                  <Route path="/settings" element={<FuelDeliverySettings />} />
                 </Routes>
               </FuelDeliveryLayout>
             </AuthGate>
