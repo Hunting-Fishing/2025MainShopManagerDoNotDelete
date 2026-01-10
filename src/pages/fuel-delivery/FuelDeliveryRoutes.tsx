@@ -887,7 +887,7 @@ export default function FuelDeliveryRoutes() {
                                   {customer.company_name || customer.contact_name || 'Unknown Customer'}
                                 </div>
                                 <div className="text-xs text-muted-foreground truncate">
-                                  {primaryLocation?.address || 'No address'}
+                                  {primaryLocation?.address || customer.billing_address || 'No address'}
                                 </div>
                               </div>
                               <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
