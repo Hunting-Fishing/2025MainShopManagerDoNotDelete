@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { FuelDeliveryLocation, FuelDeliveryCustomer } from '@/hooks/useFuelDelivery';
 import { useMapboxPublicToken } from '@/hooks/useMapboxPublicToken';
 import { validateMapboxPublicToken } from '@/lib/mapbox/validateMapboxPublicToken';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const DAYS_OF_WEEK = [
   { value: 0, label: 'Sun', short: 'S' },
@@ -52,6 +54,19 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedFrequency, setSelectedFrequency] = useState<string>('all');
   const [showLowFuelOnly, setShowLowFuelOnly] = useState(false);
+
+  // Fetch business location from settings
+  const { data: settings } = useQuery({
+    queryKey: ['fuel-delivery-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fuel_delivery_settings')
+        .select('business_latitude, business_longitude')
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   useEffect(() => {
     setTokenInput(token);
@@ -159,16 +174,24 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     return customer.company_name || customer.contact_name || 'Unknown';
   };
 
-  // Calculate center from filtered markers
+  // Calculate center from filtered markers or use business location
   const getCenter = (): [number, number] => {
-    if (filteredMarkers.length === 0) return [-98.5795, 39.8283]; // Center of US
-    const avgLng =
-      filteredMarkers.reduce((sum, m) => sum + m.longitude, 0) /
-      filteredMarkers.length;
-    const avgLat =
-      filteredMarkers.reduce((sum, m) => sum + m.latitude, 0) /
-      filteredMarkers.length;
-    return [avgLng, avgLat];
+    // First priority: use business location from settings if available
+    if (settings?.business_longitude && settings?.business_latitude) {
+      return [settings.business_longitude, settings.business_latitude];
+    }
+    // Second priority: center of markers if available
+    if (filteredMarkers.length > 0) {
+      const avgLng =
+        filteredMarkers.reduce((sum, m) => sum + m.longitude, 0) /
+        filteredMarkers.length;
+      const avgLat =
+        filteredMarkers.reduce((sum, m) => sum + m.latitude, 0) /
+        filteredMarkers.length;
+      return [avgLng, avgLat];
+    }
+    // Fallback: Center of US
+    return [-98.5795, 39.8283];
   };
 
   // Format delivery schedule for display
@@ -201,11 +224,15 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
 
       mapboxgl.accessToken = token;
 
+      // Determine zoom level based on available data
+      const hasBusinessLocation = settings?.business_longitude && settings?.business_latitude;
+      const defaultZoom = hasBusinessLocation ? 10 : (filteredMarkers.length > 0 ? 8 : 4);
+
       const instance = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/dark-v11',
         center: getCenter(),
-        zoom: filteredMarkers.length > 0 ? 8 : 4,
+        zoom: defaultZoom,
         pitch: 30,
       });
 
@@ -240,7 +267,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
       map.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, settings?.business_latitude, settings?.business_longitude]);
 
   // Update markers when filtered markers change
   useEffect(() => {
