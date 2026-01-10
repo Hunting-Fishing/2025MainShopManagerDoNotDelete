@@ -27,9 +27,13 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomerPortalQRCode } from '@/components/fuel-delivery/CustomerPortalQRCode';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 export default function FuelDeliveryDashboard() {
   const navigate = useNavigate();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel-delivery');
   const { data: stats, isLoading: statsLoading } = useFuelDeliveryStats();
   const { data: recentOrders, isLoading: ordersLoading } = useFuelDeliveryOrders();
 
@@ -364,7 +368,12 @@ export default function FuelDeliveryDashboard() {
         </Card>
 
         {/* Customer Portal QR Code */}
-        <CustomerPortalQRCode businessName="Fuel Delivery Service" />
+        {shopId && (
+          <CustomerPortalQRCode 
+            shopId={shopId}
+            businessName={moduleInfo?.displayName || 'Fuel Delivery Service'}
+          />
+        )}
       </div>
     </div>
   );

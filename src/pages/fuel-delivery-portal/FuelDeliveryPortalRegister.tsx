@@ -49,8 +49,9 @@ export default function FuelDeliveryPortalRegister() {
   const [loading, setLoading] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [shops, setShops] = useState<Array<{ id: string; name: string }>>([]);
+  const [shops, setShops] = useState<Array<{ id: string; name: string; displayName?: string }>>([]);
   const [selectedShopId, setSelectedShopId] = useState<string>('');
+  const [shopFromQR, setShopFromQR] = useState<{ id: string; name: string; displayName?: string } | null>(null);
   
   // Section expansion state
   const [sections, setSections] = useState<FormSection[]>([
@@ -65,28 +66,59 @@ export default function FuelDeliveryPortalRegister() {
     setSections(sections.map(s => s.id === id ? { ...s, isOpen: !s.isOpen } : s));
   };
 
-  // Load available shops
+  // Load available shops with module display names
   useEffect(() => {
     const loadShops = async () => {
-      const { data } = await supabase
+      // Get shops
+      const { data: shopData } = await supabase
         .from('shops')
         .select('id, name')
         .eq('is_active', true)
         .order('name');
       
-      if (data && data.length > 0) {
-        setShops(data);
-        const shopParam = searchParams.get('shop');
-        if (shopParam) {
-          const matchingShop = data.find(s => s.id === shopParam);
-          if (matchingShop) setSelectedShopId(matchingShop.id);
-        } else if (data.length === 1) {
-          setSelectedShopId(data[0].id);
+      if (!shopData || shopData.length === 0) return;
+
+      // Get module display names for fuel-delivery module
+      const { data: moduleData } = await supabase
+        .from('shop_enabled_modules')
+        .select(`
+          shop_id,
+          display_name,
+          business_modules!inner(slug)
+        `)
+        .eq('business_modules.slug', 'fuel-delivery');
+
+      // Map display names to shops
+      const displayNameMap = new Map<string, string>();
+      if (moduleData) {
+        moduleData.forEach((m: any) => {
+          if (m.display_name) {
+            displayNameMap.set(m.shop_id, m.display_name);
+          }
+        });
+      }
+
+      const enrichedShops = shopData.map(shop => ({
+        ...shop,
+        displayName: displayNameMap.get(shop.id) || shop.name,
+      }));
+
+      setShops(enrichedShops);
+      
+      const shopParam = searchParams.get('shop');
+      if (shopParam) {
+        const matchingShop = enrichedShops.find(s => s.id === shopParam);
+        if (matchingShop) {
+          setSelectedShopId(matchingShop.id);
+          setShopFromQR(matchingShop); // Track that this came from QR
         }
+      } else if (enrichedShops.length === 1) {
+        setSelectedShopId(enrichedShops[0].id);
       }
     };
     loadShops();
   }, [searchParams]);
+
 
   useEffect(() => {
     const checkExistingSession = async () => {
@@ -416,7 +448,17 @@ export default function FuelDeliveryPortalRegister() {
           <form onSubmit={handleRegister}>
             <CardContent className="space-y-4">
               {/* Business Selection */}
-              {shops.length > 1 && (
+              {shopFromQR ? (
+                // User came from QR code - show the business they're registering with
+                <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 flex items-center gap-3">
+                  <Building2 className="h-5 w-5 text-primary shrink-0" />
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Registering with </span>
+                    <span className="font-medium text-foreground">{shopFromQR.displayName || shopFromQR.name}</span>
+                  </div>
+                </div>
+              ) : shops.length > 1 ? (
+                // Multiple shops and not from QR - show selector
                 <div className="space-y-2">
                   <Label htmlFor="shop" className="text-sm">Select Provider *</Label>
                   <Select value={selectedShopId} onValueChange={setSelectedShopId}>
@@ -426,23 +468,22 @@ export default function FuelDeliveryPortalRegister() {
                     <SelectContent>
                       {shops.map(shop => (
                         <SelectItem key={shop.id} value={shop.id}>
-                          {shop.name}
+                          {shop.displayName || shop.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-
-              {shops.length === 1 && (
+              ) : shops.length === 1 ? (
+                // Single shop - show confirmation
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center gap-3">
                   <Building2 className="h-5 w-5 text-green-600 shrink-0" />
                   <div className="text-sm">
                     <span className="text-muted-foreground">Registering with </span>
-                    <span className="font-medium text-foreground">{shops[0].name}</span>
+                    <span className="font-medium text-foreground">{shops[0].displayName || shops[0].name}</span>
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {/* Account Section */}
               {renderSection(sections[0], (

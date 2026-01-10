@@ -13,21 +13,24 @@ import {
 import { toast } from 'sonner';
 
 interface CustomerPortalQRCodeProps {
-  portalUrl?: string;
+  shopId: string;
   businessName?: string;
+  baseUrl?: string;
   compact?: boolean;
 }
 
 export function CustomerPortalQRCode({ 
-  portalUrl,
+  shopId,
   businessName = 'Your Fuel Delivery',
+  baseUrl,
   compact = false
 }: CustomerPortalQRCodeProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = React.useState(false);
 
-  // Generate the portal URL dynamically
-  const fullPortalUrl = portalUrl || `${window.location.origin}/fuel-delivery-portal`;
+  // Generate the portal URL with shop ID parameter
+  const base = baseUrl || window.location.origin;
+  const fullPortalUrl = `${base}/fuel-delivery-portal/register?shop=${shopId}`;
 
   const handleDownload = () => {
     const canvas = canvasRef.current?.querySelector('canvas');
