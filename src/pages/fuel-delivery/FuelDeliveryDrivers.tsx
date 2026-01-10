@@ -9,12 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, Users, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Users, ArrowLeft, AlertTriangle, MapPin } from 'lucide-react';
 import { useFuelDeliveryDrivers, useCreateFuelDeliveryDriver } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, isBefore, addDays } from 'date-fns';
 import { LicenseClassSelect, getJurisdiction } from '@/components/fuel-delivery/LicenseClassSelect';
+import { AddressAutocomplete, AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
 
 export default function FuelDeliveryDrivers() {
   const navigate = useNavigate();
@@ -42,8 +43,20 @@ export default function FuelDeliveryDrivers() {
     status: 'active',
     emergency_contact_name: '',
     emergency_contact_phone: '',
-    notes: ''
+    notes: '',
+    home_address: '',
+    home_latitude: null as number | null,
+    home_longitude: null as number | null
   });
+
+  const handleHomeAddressSelect = (result: AddressResult) => {
+    setFormData(prev => ({
+      ...prev,
+      home_address: result.address,
+      home_longitude: result.coordinates[0],
+      home_latitude: result.coordinates[1],
+    }));
+  };
 
   const filteredDrivers = drivers?.filter(driver =>
     driver.first_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -59,7 +72,10 @@ export default function FuelDeliveryDrivers() {
       cdl_expiry: formData.cdl_expiry || undefined,
       hazmat_expiry: formData.hazmat_expiry || undefined,
       medical_card_expiry: formData.medical_card_expiry || undefined,
-      hire_date: formData.hire_date || undefined
+      hire_date: formData.hire_date || undefined,
+      home_address: formData.home_address || undefined,
+      home_latitude: formData.home_latitude || undefined,
+      home_longitude: formData.home_longitude || undefined
     });
     setIsDialogOpen(false);
     setFormData({
@@ -81,7 +97,10 @@ export default function FuelDeliveryDrivers() {
       status: 'active',
       emergency_contact_name: '',
       emergency_contact_phone: '',
-      notes: ''
+      notes: '',
+      home_address: '',
+      home_latitude: null,
+      home_longitude: null
     });
   };
 
@@ -274,6 +293,32 @@ export default function FuelDeliveryDrivers() {
                       onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                       placeholder="Additional notes..."
                     />
+                  </div>
+
+                  {/* Home Base Location */}
+                  <div className="col-span-2 border-t pt-4 mt-2">
+                    <h3 className="font-medium text-sm mb-3 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-green-500" />
+                      Home Base Location
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Used as the starting point for route optimization
+                    </p>
+                    <div className="space-y-2">
+                      <Label>Home Address</Label>
+                      <AddressAutocomplete
+                        value={formData.home_address}
+                        onChange={(address) => setFormData(prev => ({ ...prev, home_address: address }))}
+                        onSelect={handleHomeAddressSelect}
+                        placeholder="Enter driver's home address..."
+                      />
+                      {formData.home_latitude && formData.home_longitude && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                          Coordinates captured: {formData.home_latitude.toFixed(4)}, {formData.home_longitude.toFixed(4)}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex justify-end gap-3">
