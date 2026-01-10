@@ -691,14 +691,14 @@ export default function FuelDeliveryRoutes() {
                     <div className="space-y-2">
                       <Label>Driver</Label>
                       <Select 
-                        value={editFormData.driver_id} 
-                        onValueChange={(v) => setEditFormData(prev => ({ ...prev, driver_id: v }))}
+                        value={editFormData.driver_id || 'none'} 
+                        onValueChange={(v) => setEditFormData(prev => ({ ...prev, driver_id: v === 'none' ? '' : v }))}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select driver" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No driver</SelectItem>
+                          <SelectItem value="none">No driver</SelectItem>
                           {drivers?.filter(d => d.status === 'active').map(driver => (
                             <SelectItem key={driver.id} value={driver.id}>
                               {driver.first_name} {driver.last_name}
@@ -710,14 +710,14 @@ export default function FuelDeliveryRoutes() {
                     <div className="space-y-2">
                       <Label>Truck</Label>
                       <Select 
-                        value={editFormData.truck_id} 
-                        onValueChange={(v) => setEditFormData(prev => ({ ...prev, truck_id: v }))}
+                        value={editFormData.truck_id || 'none'} 
+                        onValueChange={(v) => setEditFormData(prev => ({ ...prev, truck_id: v === 'none' ? '' : v }))}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select truck" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No truck</SelectItem>
+                          <SelectItem value="none">No truck</SelectItem>
                           {trucks?.map(truck => (
                             <SelectItem key={truck.id} value={truck.id}>
                               {truck.truck_number} - {truck.make} {truck.model}
