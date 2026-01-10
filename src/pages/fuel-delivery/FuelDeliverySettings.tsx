@@ -9,14 +9,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Settings, Bell, MapPin, Fuel, Truck, DollarSign, Save, Loader2, Ruler } from 'lucide-react';
+import { ArrowLeft, Settings, Bell, MapPin, Fuel, DollarSign, Save, Loader2, Ruler } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AddressAutocomplete } from '@/components/fuel-delivery/AddressAutocomplete';
 import { useFuelUnits, UnitSystem } from '@/hooks/fuel-delivery/useFuelUnits';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+// Default shop_id for now - in production this would come from user context
+const DEFAULT_SHOP_ID = '00000000-0000-0000-0000-000000000001';
+
+interface FuelDeliverySettingsData {
+  id?: string;
+  shop_id: string;
+  unit_system: string;
+  volume_unit: string;
+  business_address: string | null;
+  business_latitude: number | null;
+  business_longitude: number | null;
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  low_fuel_alerts: boolean;
+  delivery_reminders: boolean;
+  default_fuel_type: string;
+  default_tank_capacity: number;
+  low_fuel_threshold: number;
+  default_delivery_window: string;
+  base_price_per_unit: number | null;
+  delivery_fee: number | null;
+  rush_delivery_fee: number | null;
+}
 
 export default function FuelDeliverySettings() {
   const navigate = useNavigate();
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(true);
   
   // Unit Preferences
   const { unitSystem, volumeUnit, setUnitSystem, getUnitLabel } = useFuelUnits();
@@ -42,6 +68,81 @@ export default function FuelDeliverySettings() {
   const [basePricePerUnit, setBasePricePerUnit] = useState('');
   const [deliveryFee, setDeliveryFee] = useState('');
   const [rushDeliveryFee, setRushDeliveryFee] = useState('');
+  
+  // Settings ID for updates
+  const [settingsId, setSettingsId] = useState<string | null>(null);
+
+  // Fetch existing settings
+  const { data: existingSettings } = useQuery({
+    queryKey: ['fuel-delivery-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fuel_delivery_settings')
+        .select('*')
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as FuelDeliverySettingsData | null;
+    },
+  });
+
+  // Load settings into state when fetched
+  useEffect(() => {
+    if (existingSettings) {
+      setSettingsId(existingSettings.id || null);
+      setBusinessAddress(existingSettings.business_address || '');
+      setBusinessLatitude(existingSettings.business_latitude);
+      setBusinessLongitude(existingSettings.business_longitude);
+      setEmailNotifications(existingSettings.email_notifications ?? true);
+      setSmsNotifications(existingSettings.sms_notifications ?? false);
+      setLowFuelAlerts(existingSettings.low_fuel_alerts ?? true);
+      setDeliveryReminders(existingSettings.delivery_reminders ?? true);
+      setDefaultFuelType(existingSettings.default_fuel_type || 'diesel');
+      setDefaultTankCapacity(String(existingSettings.default_tank_capacity || 500));
+      setLowFuelThreshold(String(existingSettings.low_fuel_threshold || 25));
+      setDefaultDeliveryWindow(existingSettings.default_delivery_window || 'morning');
+      setBasePricePerUnit(existingSettings.base_price_per_unit ? String(existingSettings.base_price_per_unit) : '');
+      setDeliveryFee(existingSettings.delivery_fee ? String(existingSettings.delivery_fee) : '');
+      setRushDeliveryFee(existingSettings.rush_delivery_fee ? String(existingSettings.rush_delivery_fee) : '');
+      
+      // Sync unit system from DB
+      if (existingSettings.unit_system) {
+        setUnitSystem(existingSettings.unit_system as UnitSystem);
+      }
+    }
+    setIsLoading(false);
+  }, [existingSettings, setUnitSystem]);
+
+  // Save mutation
+  const saveMutation = useMutation({
+    mutationFn: async (settings: Partial<FuelDeliverySettingsData>) => {
+      if (settingsId) {
+        // Update existing
+        const { error } = await supabase
+          .from('fuel_delivery_settings')
+          .update(settings)
+          .eq('id', settingsId);
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { data, error } = await supabase
+          .from('fuel_delivery_settings')
+          .insert({ ...settings, shop_id: DEFAULT_SHOP_ID })
+          .select()
+          .single();
+        if (error) throw error;
+        if (data) setSettingsId(data.id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-settings'] });
+      toast.success('Settings saved successfully');
+    },
+    onError: (error: any) => {
+      console.error('Save error:', error);
+      toast.error('Failed to save settings');
+    },
+  });
 
   const handleAddressSelect = (result: any) => {
     setBusinessAddress(result.address);
@@ -49,23 +150,58 @@ export default function FuelDeliverySettings() {
     setBusinessLongitude(result.longitude);
   };
 
-  const handleSaveSettings = async () => {
-    setIsSaving(true);
-    try {
-      // TODO: Save settings to database
-      // For now, just show success message
-      toast.success('Settings saved successfully');
-    } catch (error) {
-      toast.error('Failed to save settings');
-    } finally {
-      setIsSaving(false);
-    }
+  const handleSaveBusinessLocation = () => {
+    saveMutation.mutate({
+      business_address: businessAddress,
+      business_latitude: businessLatitude,
+      business_longitude: businessLongitude,
+    });
+  };
+
+  const handleSaveNotifications = () => {
+    saveMutation.mutate({
+      email_notifications: emailNotifications,
+      sms_notifications: smsNotifications,
+      low_fuel_alerts: lowFuelAlerts,
+      delivery_reminders: deliveryReminders,
+    });
+  };
+
+  const handleSaveDefaults = () => {
+    saveMutation.mutate({
+      default_fuel_type: defaultFuelType,
+      default_tank_capacity: parseFloat(defaultTankCapacity) || 500,
+      low_fuel_threshold: parseInt(lowFuelThreshold) || 25,
+      default_delivery_window: defaultDeliveryWindow,
+    });
+  };
+
+  const handleSavePricing = () => {
+    saveMutation.mutate({
+      base_price_per_unit: basePricePerUnit ? parseFloat(basePricePerUnit) : null,
+      delivery_fee: deliveryFee ? parseFloat(deliveryFee) : null,
+      rush_delivery_fee: rushDeliveryFee ? parseFloat(rushDeliveryFee) : null,
+    });
   };
 
   const handleUnitSystemChange = (value: string) => {
-    setUnitSystem(value as UnitSystem);
-    toast.success(`Switched to ${value === 'metric' ? 'Metric (Litres)' : 'Imperial (Gallons)'}`);
+    const newSystem = value as UnitSystem;
+    setUnitSystem(newSystem);
+    
+    // Save to database
+    saveMutation.mutate({
+      unit_system: newSystem,
+      volume_unit: newSystem === 'metric' ? 'litres' : 'gallons',
+    });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
@@ -188,8 +324,12 @@ export default function FuelDeliverySettings() {
                   </p>
                 </div>
               )}
-              <Button onClick={handleSaveSettings} disabled={isSaving} className="bg-orange-500 hover:bg-orange-600">
-                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              <Button 
+                onClick={handleSaveBusinessLocation} 
+                disabled={saveMutation.isPending} 
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                 Save Location
               </Button>
             </CardContent>
@@ -235,8 +375,12 @@ export default function FuelDeliverySettings() {
                 </div>
                 <Switch checked={deliveryReminders} onCheckedChange={setDeliveryReminders} />
               </div>
-              <Button onClick={handleSaveSettings} disabled={isSaving} className="bg-orange-500 hover:bg-orange-600">
-                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              <Button 
+                onClick={handleSaveNotifications} 
+                disabled={saveMutation.isPending} 
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                 Save Preferences
               </Button>
             </CardContent>
@@ -301,8 +445,12 @@ export default function FuelDeliverySettings() {
                   </Select>
                 </div>
               </div>
-              <Button onClick={handleSaveSettings} disabled={isSaving} className="bg-orange-500 hover:bg-orange-600">
-                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              <Button 
+                onClick={handleSaveDefaults} 
+                disabled={saveMutation.isPending} 
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                 Save Defaults
               </Button>
             </CardContent>
@@ -352,8 +500,12 @@ export default function FuelDeliverySettings() {
                   />
                 </div>
               </div>
-              <Button onClick={handleSaveSettings} disabled={isSaving} className="bg-orange-500 hover:bg-orange-600">
-                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              <Button 
+                onClick={handleSavePricing} 
+                disabled={saveMutation.isPending} 
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                 Save Pricing
               </Button>
             </CardContent>

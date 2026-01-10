@@ -13448,6 +13448,75 @@ export type Database = {
           },
         ]
       }
+      fuel_delivery_settings: {
+        Row: {
+          base_price_per_unit: number | null
+          business_address: string | null
+          business_latitude: number | null
+          business_longitude: number | null
+          created_at: string
+          default_delivery_window: string | null
+          default_fuel_type: string | null
+          default_tank_capacity: number | null
+          delivery_fee: number | null
+          delivery_reminders: boolean | null
+          email_notifications: boolean | null
+          id: string
+          low_fuel_alerts: boolean | null
+          low_fuel_threshold: number | null
+          rush_delivery_fee: number | null
+          shop_id: string
+          sms_notifications: boolean | null
+          unit_system: string
+          updated_at: string
+          volume_unit: string
+        }
+        Insert: {
+          base_price_per_unit?: number | null
+          business_address?: string | null
+          business_latitude?: number | null
+          business_longitude?: number | null
+          created_at?: string
+          default_delivery_window?: string | null
+          default_fuel_type?: string | null
+          default_tank_capacity?: number | null
+          delivery_fee?: number | null
+          delivery_reminders?: boolean | null
+          email_notifications?: boolean | null
+          id?: string
+          low_fuel_alerts?: boolean | null
+          low_fuel_threshold?: number | null
+          rush_delivery_fee?: number | null
+          shop_id: string
+          sms_notifications?: boolean | null
+          unit_system?: string
+          updated_at?: string
+          volume_unit?: string
+        }
+        Update: {
+          base_price_per_unit?: number | null
+          business_address?: string | null
+          business_latitude?: number | null
+          business_longitude?: number | null
+          created_at?: string
+          default_delivery_window?: string | null
+          default_fuel_type?: string | null
+          default_tank_capacity?: number | null
+          delivery_fee?: number | null
+          delivery_reminders?: boolean | null
+          email_notifications?: boolean | null
+          id?: string
+          low_fuel_alerts?: boolean | null
+          low_fuel_threshold?: number | null
+          rush_delivery_fee?: number | null
+          shop_id?: string
+          sms_notifications?: boolean | null
+          unit_system?: string
+          updated_at?: string
+          volume_unit?: string
+        }
+        Relationships: []
+      }
       fuel_delivery_tank_fills: {
         Row: {
           created_at: string
