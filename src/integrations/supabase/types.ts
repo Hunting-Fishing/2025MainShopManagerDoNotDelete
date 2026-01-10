@@ -12724,6 +12724,47 @@ export type Database = {
           },
         ]
       }
+      fuel_delivery_hours: {
+        Row: {
+          close_time: string
+          created_at: string | null
+          day_of_week: number
+          id: string
+          is_closed: boolean
+          open_time: string
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          close_time?: string
+          created_at?: string | null
+          day_of_week: number
+          id?: string
+          is_closed?: boolean
+          open_time?: string
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          close_time?: string
+          created_at?: string | null
+          day_of_week?: number
+          id?: string
+          is_closed?: boolean
+          open_time?: string
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_hours_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_delivery_inventory: {
         Row: {
           created_at: string
@@ -12904,6 +12945,50 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_labor_rates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          hourly_rate: number
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          hourly_rate: number
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name: string
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          hourly_rate?: number
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_labor_rates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -13687,6 +13772,59 @@ export type Database = {
         }
         Relationships: []
       }
+      fuel_delivery_special_rates: {
+        Row: {
+          applies_to: string[] | null
+          created_at: string | null
+          days_of_week: number[] | null
+          end_time: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          rate_type: string
+          rate_value: number
+          shop_id: string
+          start_time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          applies_to?: string[] | null
+          created_at?: string | null
+          days_of_week?: number[] | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          rate_type: string
+          rate_value: number
+          shop_id: string
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          applies_to?: string[] | null
+          created_at?: string | null
+          days_of_week?: number[] | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          rate_type?: string
+          rate_value?: number
+          shop_id?: string
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_special_rates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_delivery_tank_fills: {
         Row: {
           created_at: string
@@ -14140,6 +14278,62 @@ export type Database = {
           year?: number | null
         }
         Relationships: []
+      }
+      fuel_delivery_zones: {
+        Row: {
+          created_at: string | null
+          delivery_fee: number
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          max_distance_miles: number | null
+          min_distance_miles: number | null
+          minimum_order: number | null
+          name: string
+          per_mile_rate: number | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_fee?: number
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_distance_miles?: number | null
+          min_distance_miles?: number | null
+          minimum_order?: number | null
+          name: string
+          per_mile_rate?: number | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delivery_fee?: number
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_distance_miles?: number | null
+          min_distance_miles?: number | null
+          minimum_order?: number | null
+          name?: string
+          per_mile_rate?: number | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_zones_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fuel_entries: {
         Row: {
