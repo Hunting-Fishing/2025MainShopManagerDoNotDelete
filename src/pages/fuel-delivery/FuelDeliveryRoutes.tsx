@@ -20,6 +20,7 @@ import { Location } from '@/hooks/useMapbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { geocodeAddress } from '@/utils/geocoding';
 
 export default function FuelDeliveryRoutes() {
   const navigate = useNavigate();
@@ -214,12 +215,38 @@ export default function FuelDeliveryRoutes() {
     }
 
     try {
+      // Get coordinates - use existing or geocode the address
+      let latitude = customer.billing_latitude;
+      let longitude = customer.billing_longitude;
+      
+      if (!latitude || !longitude) {
+        const geocoded = await geocodeAddress(customer.billing_address);
+        if (geocoded) {
+          latitude = geocoded.latitude;
+          longitude = geocoded.longitude;
+          
+          // Also update the customer record with geocoded coordinates
+          await supabase
+            .from('fuel_delivery_customers')
+            .update({ 
+              billing_latitude: latitude, 
+              billing_longitude: longitude 
+            })
+            .eq('id', customer.id);
+            
+          toast({ title: 'Address geocoded', description: 'Coordinates obtained from billing address' });
+        } else {
+          toast({ title: 'Geocoding failed', description: 'Could not get coordinates for this address. Please enter a valid address.', variant: 'destructive' });
+          return;
+        }
+      }
+
       await createLocation.mutateAsync({
         customer_id: customer.id,
         location_name: customer.billing_address?.split(',')[0] || 'Primary Location',
         address: customer.billing_address,
-        latitude: customer.billing_latitude || undefined,
-        longitude: customer.billing_longitude || undefined,
+        latitude: latitude,
+        longitude: longitude,
         fuel_type: customer.preferred_fuel_type || 'diesel',
         is_active: true,
         delivery_days: customer.delivery_days,
@@ -229,6 +256,7 @@ export default function FuelDeliveryRoutes() {
       
       toast({ title: 'Delivery location created', description: `Location created for ${customer.contact_name}` });
       queryClient.invalidateQueries({ queryKey: ['fuel-delivery-locations'] });
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-customers'] });
     } catch (error: any) {
       toast({ title: 'Error creating location', description: error.message, variant: 'destructive' });
     }
