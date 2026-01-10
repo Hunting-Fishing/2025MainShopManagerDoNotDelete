@@ -44,9 +44,10 @@ interface CustomerMapProps {
   customers: FuelDeliveryCustomer[];
   className?: string;
   onLocationClick?: (location: FuelDeliveryLocation) => void;
+  onCreateLocationFromCustomer?: (customer: FuelDeliveryCustomer) => void;
 }
 
-export function CustomerMap({ locations, customers, className, onLocationClick }: CustomerMapProps) {
+export function CustomerMap({ locations, customers, className, onLocationClick, onCreateLocationFromCustomer }: CustomerMapProps) {
   const { token, setToken, hasEnvToken, isLoading: isLoadingToken } = useMapboxPublicToken();
   const [tokenInput, setTokenInput] = useState(token);
   const [tokenError, setTokenError] = useState<string | null>(null);
@@ -440,7 +441,15 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
           <div class="text-sm text-gray-600 mt-1">${displayLocation}</div>
           ${displayAddress ? `<div class="text-xs text-gray-500 mt-0.5">${displayAddress}</div>` : ''}
           <div class="text-xs text-gray-500 mt-1">${markerData.city || ''} ${markerData.state || ''} ${markerData.zipCode || ''}</div>
-          ${isCustomerFallback ? '<div class="text-xs text-amber-600 mt-1 font-medium">📍 No delivery location set - using billing address</div>' : ''}
+          ${isCustomerFallback ? `
+            <div class="text-xs text-amber-600 mt-1 font-medium">📍 No delivery location set - using billing address</div>
+            <button 
+              data-customer-id="${markerData.customerId}" 
+              class="create-location-btn mt-2 w-full px-3 py-1.5 text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-md transition-colors"
+            >
+              + Create Delivery Location
+            </button>
+          ` : ''}
           <div class="mt-2 pt-2 border-t border-gray-100">
             <div class="flex items-center justify-between text-xs">
               <span class="text-gray-500">Schedule:</span>
@@ -465,6 +474,20 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
           </div>
         </div>
       `);
+
+      // Add click handler for the create location button
+      popup.on('open', () => {
+        const btn = document.querySelector(`[data-customer-id="${markerData.customerId}"].create-location-btn`);
+        if (btn && onCreateLocationFromCustomer) {
+          btn.addEventListener('click', () => {
+            const customer = customers.find(c => c.id === markerData.customerId);
+            if (customer) {
+              onCreateLocationFromCustomer(customer);
+              popup.remove();
+            }
+          });
+        }
+      });
 
       const marker = new mapboxgl.Marker(el)
         .setLngLat([markerData.longitude, markerData.latitude])
