@@ -26,6 +26,7 @@ import { useFuelDeliveryStats, useFuelDeliveryOrders } from '@/hooks/useFuelDeli
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CustomerPortalQRCode } from '@/components/fuel-delivery/CustomerPortalQRCode';
 
 export default function FuelDeliveryDashboard() {
   const navigate = useNavigate();
@@ -361,6 +362,9 @@ export default function FuelDeliveryDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Customer Portal QR Code */}
+        <CustomerPortalQRCode businessName="Fuel Delivery Service" />
       </div>
     </div>
   );
