@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'mapbox_public_token';
 
@@ -13,9 +14,34 @@ export function useMapboxPublicToken() {
     }
   });
 
-  const token = useMemo(() => {
-    return (envToken || storedToken || '').trim();
+  const [edgeFunctionToken, setEdgeFunctionToken] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch token from edge function if no local token available
+  useEffect(() => {
+    const fetchTokenFromEdge = async () => {
+      // Only fetch if we don't already have a token
+      if (envToken || storedToken) return;
+      
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        if (!error && data?.token) {
+          setEdgeFunctionToken(data.token);
+        }
+      } catch (err) {
+        console.log('Could not fetch Mapbox token from edge function');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTokenFromEdge();
   }, [envToken, storedToken]);
+
+  const token = useMemo(() => {
+    return (envToken || storedToken || edgeFunctionToken || '').trim();
+  }, [envToken, storedToken, edgeFunctionToken]);
 
   const setToken = useCallback((nextToken: string) => {
     const trimmed = (nextToken || '').trim();
@@ -33,5 +59,6 @@ export function useMapboxPublicToken() {
     token,
     setToken,
     hasEnvToken: Boolean(envToken && envToken.trim()),
+    isLoading,
   };
 }

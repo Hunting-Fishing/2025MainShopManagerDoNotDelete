@@ -39,7 +39,7 @@ interface CustomerMapProps {
 }
 
 export function CustomerMap({ locations, customers, className, onLocationClick }: CustomerMapProps) {
-  const { token, setToken, hasEnvToken } = useMapboxPublicToken();
+  const { token, setToken, hasEnvToken, isLoading: isLoadingToken } = useMapboxPublicToken();
   const [tokenInput, setTokenInput] = useState(token);
   const [tokenError, setTokenError] = useState<string | null>(null);
 
@@ -350,6 +350,22 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     setTokenError(null);
   };
 
+  // Show loading state while fetching token
+  if (isLoadingToken) {
+    return (
+      <div className={cn('flex flex-col gap-4', className)}>
+        <Card>
+          <CardContent className="p-8 flex items-center justify-center">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="text-muted-foreground">Loading map...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       {/* Token prompt (needed for tiles/styles) */}
@@ -361,7 +377,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
               <div className="flex-1">
                 <p className="text-sm font-medium">Mapbox public token required</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  The map can’t load until a valid Mapbox token is provided.
+                  The map can't load until a valid Mapbox token is provided.
                   {' '}
                   <a className="underline" href="https://account.mapbox.com/access-tokens/" target="_blank" rel="noreferrer">
                     Get a token
