@@ -64,16 +64,16 @@ export default function FuelDeliveryRoutes() {
   const loadRouteStops = async (routeId: string) => {
     const { data, error } = await supabase
       .from('fuel_delivery_route_stops')
-      .select('*, fuel_delivery_orders(*, fuel_delivery_locations(*))')
+      .select('*, fuel_delivery_orders(*, fuel_delivery_locations(*)), fuel_delivery_customers(*)')
       .eq('route_id', routeId)
       .order('stop_sequence');
     
     if (!error && data) {
       setRouteStops(data);
       // Set selected order IDs for editing
-      setEditSelectedOrderIds(data.map(s => s.order_id).filter(Boolean));
+      setEditSelectedOrderIds(data.map((s: any) => s.order_id).filter(Boolean));
       // Set selected customer IDs for editing
-      setEditSelectedCustomerIds(data.map(s => s.customer_id).filter(Boolean));
+      setEditSelectedCustomerIds(data.map((s: any) => s.customer_id).filter(Boolean));
     }
   };
 
@@ -97,6 +97,8 @@ export default function FuelDeliveryRoutes() {
 
     try {
       // Update route details
+      const totalStops = editSelectedOrderIds.length + editSelectedCustomerIds.length;
+      
       const { error: routeError } = await supabase
         .from('fuel_delivery_routes')
         .update({
@@ -106,7 +108,7 @@ export default function FuelDeliveryRoutes() {
           truck_id: editFormData.truck_id || null,
           status: editFormData.status,
           notes: editFormData.notes,
-          total_stops: editSelectedOrderIds.length
+          total_stops: totalStops
         })
         .eq('id', selectedRoute.id);
 
@@ -118,17 +120,33 @@ export default function FuelDeliveryRoutes() {
         .delete()
         .eq('route_id', selectedRoute.id);
 
-      // Insert new stops using order_id as per schema
+      // Insert order-based stops
+      let stopSequence = 1;
       if (editSelectedOrderIds.length > 0) {
-        const stopsToInsert = editSelectedOrderIds.map((orderId, index) => ({
+        const orderStopsToInsert = editSelectedOrderIds.map((orderId) => ({
           route_id: selectedRoute.id,
           order_id: orderId,
-          stop_sequence: index + 1,
+          customer_id: null,
+          stop_sequence: stopSequence++,
           status: 'pending'
         }));
 
-        const { error: stopsError } = await supabase.from('fuel_delivery_route_stops').insert(stopsToInsert);
-        if (stopsError) throw stopsError;
+        const { error: orderStopsError } = await supabase.from('fuel_delivery_route_stops').insert(orderStopsToInsert);
+        if (orderStopsError) throw orderStopsError;
+      }
+
+      // Insert customer-based stops (without orders)
+      if (editSelectedCustomerIds.length > 0) {
+        const customerStopsToInsert = editSelectedCustomerIds.map((customerId) => ({
+          route_id: selectedRoute.id,
+          order_id: null,
+          customer_id: customerId,
+          stop_sequence: stopSequence++,
+          status: 'pending'
+        }));
+
+        const { error: customerStopsError } = await supabase.from('fuel_delivery_route_stops').insert(customerStopsToInsert);
+        if (customerStopsError) throw customerStopsError;
       }
 
       toast({ title: 'Route updated successfully' });
@@ -820,7 +838,66 @@ export default function FuelDeliveryRoutes() {
                       </div>
                     ) : (
                       <div className="text-sm text-muted-foreground p-4 border rounded-md text-center">
-                        No orders available. Create orders first to add stops.
+                        No orders available.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add Customers Directly */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-blue-500" />
+                      Add Customers ({editSelectedCustomerIds.length} selected)
+                    </Label>
+                    {customersWithLocations.length > 0 ? (
+                      <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1">
+                        {customersWithLocations.map((customer) => {
+                          const customerLocations = locations?.filter(l => l.customer_id === customer.id) || [];
+                          const primaryLocation = customerLocations[0];
+                          const isSelected = editSelectedCustomerIds.includes(customer.id);
+                          // Don't show customers that already have orders selected
+                          const hasOrderSelected = orders?.some(o => 
+                            o.customer_id === customer.id && editSelectedOrderIds.includes(o.id)
+                          );
+                          if (hasOrderSelected) return null;
+                          
+                          return (
+                            <div
+                              key={customer.id}
+                              className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
+                                isSelected 
+                                  ? 'bg-blue-500/10 border border-blue-500' 
+                                  : 'hover:bg-muted border border-transparent'
+                              }`}
+                              onClick={() => toggleEditCustomer(customer.id)}
+                            >
+                              <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                                isSelected ? 'bg-blue-500 border-blue-500' : 'border-muted-foreground'
+                              }`}>
+                                {isSelected && (
+                                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm truncate">
+                                  {customer.company_name || customer.contact_name || 'Unknown Customer'}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {primaryLocation?.address || 'No address'}
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                Direct
+                              </Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground p-4 border rounded-md text-center">
+                        No customers with delivery locations configured.
                       </div>
                     )}
                   </div>
