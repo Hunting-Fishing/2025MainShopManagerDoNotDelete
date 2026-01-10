@@ -969,7 +969,11 @@ export default function FuelDeliveryRoutes() {
                         {routeStops.map((stop, index) => {
                           const order = stop.fuel_delivery_orders;
                           const location = order?.fuel_delivery_locations;
-                          const customer = customers?.find(c => c.id === location?.customer_id);
+                          // For order-based stops, get customer from location; for customer-based stops, use directly from join
+                          const customer = stop.fuel_delivery_customers || customers?.find(c => c.id === location?.customer_id);
+                          // Get address from location, or fall back to customer's billing address
+                          const displayAddress = location?.address || customer?.billing_address || 'No address';
+                          const displayName = customer?.company_name || customer?.contact_name || location?.location_name || 'Unknown Stop';
                           return (
                             <div key={stop.id} className="p-3 flex items-center gap-3">
                               <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
@@ -977,9 +981,9 @@ export default function FuelDeliveryRoutes() {
                               </div>
                               <div className="flex-1">
                                 <p className="font-medium text-sm">
-                                  {customer?.company_name || customer?.contact_name || location?.location_name || 'Unknown Stop'}
+                                  {displayName}
                                 </p>
-                                <p className="text-xs text-muted-foreground">{location?.address || 'No address'}</p>
+                                <p className="text-xs text-muted-foreground">{displayAddress}</p>
                               </div>
                               <Badge variant={stop.status === 'completed' ? 'default' : 'outline'} className="capitalize">
                                 {stop.status || 'pending'}
