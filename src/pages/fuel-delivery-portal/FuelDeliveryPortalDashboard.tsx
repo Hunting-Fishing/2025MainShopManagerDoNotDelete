@@ -36,10 +36,10 @@ interface DeliveryRequest {
 interface DeliveryOrder {
   id: string;
   order_date: string;
-  status: string;
+  status: string | null;
   product_id: string | null;
-  requested_gallons: number | null;
-  delivered_gallons: number | null;
+  quantity_ordered: number;
+  total_amount: number | null;
 }
 
 export default function FuelDeliveryPortalDashboard() {
@@ -305,7 +305,7 @@ export default function FuelDeliveryPortalDashboard() {
                       </div>
                       <div>
                         <p className="font-medium text-sm">
-                          Fuel Delivery - {order.delivered_gallons || order.requested_gallons || '?'} gallons
+                          Fuel Delivery - {order.quantity_ordered} gallons
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(order.order_date), 'MMM d, yyyy')}
