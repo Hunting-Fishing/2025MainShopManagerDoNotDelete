@@ -115,6 +115,50 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     setTokenInput(token);
   }, [token]);
 
+  // Geocode customers without coordinates but with addresses
+  const customersNeedingGeocode = useMemo(() => {
+    const locationCustomerIds = new Set(locations.map(l => l.customer_id).filter(Boolean));
+    return customers.filter(cust => 
+      !cust.billing_latitude && 
+      !cust.billing_longitude && 
+      cust.billing_address && 
+      !locationCustomerIds.has(cust.id)
+    );
+  }, [customers, locations]);
+
+  // Geocode addresses for customers without coordinates
+  const { data: geocodedCustomers } = useQuery({
+    queryKey: ['geocode-customers', customersNeedingGeocode.map(c => c.id), token],
+    enabled: Boolean(token) && customersNeedingGeocode.length > 0,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    queryFn: async () => {
+      const results: Map<string, [number, number]> = new Map();
+      
+      // Geocode up to 10 customers at a time to avoid rate limits
+      const toGeocode = customersNeedingGeocode.slice(0, 10);
+      
+      for (const cust of toGeocode) {
+        if (!cust.billing_address) continue;
+        try {
+          const encoded = encodeURIComponent(cust.billing_address);
+          const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encoded}.json?access_token=${token}&limit=1&country=US,CA&types=address,place,poi`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const json = await res.json();
+            const center = json?.features?.[0]?.center as [number, number] | undefined;
+            if (center && center.length >= 2) {
+              results.set(cust.id, [center[0], center[1]]);
+            }
+          }
+        } catch (e) {
+          console.warn('Geocoding failed for customer:', cust.id, e);
+        }
+      }
+      
+      return results;
+    },
+  });
+
   // Build a combined list of markers from locations + customers (fallback)
   const allMarkerData = useMemo(() => {
     const markers: Array<{
@@ -161,6 +205,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
     // Add customers with coordinates who don't have a location entry (fallback)
     const locationCustomerIds = new Set(locations.map(l => l.customer_id).filter(Boolean));
     customers.forEach(cust => {
+      // Check for existing coordinates
       if (cust.billing_latitude && cust.billing_longitude && !locationCustomerIds.has(cust.id)) {
         markers.push({
           id: `customer-${cust.id}`,
@@ -172,11 +217,25 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
           address: cust.billing_address,
           fuelType: cust.preferred_fuel_type,
         });
+      } 
+      // Check for geocoded coordinates
+      else if (geocodedCustomers?.has(cust.id) && !locationCustomerIds.has(cust.id)) {
+        const coords = geocodedCustomers.get(cust.id)!;
+        markers.push({
+          id: `customer-${cust.id}`,
+          type: 'customer',
+          latitude: coords[1],
+          longitude: coords[0],
+          customerId: cust.id,
+          locationName: 'Primary Location',
+          address: cust.billing_address,
+          fuelType: cust.preferred_fuel_type,
+        });
       }
     });
 
     return markers;
-  }, [locations, customers]);
+  }, [locations, customers, geocodedCustomers]);
 
   // Filter markers based on criteria
   const filteredMarkers = useMemo(() => {
