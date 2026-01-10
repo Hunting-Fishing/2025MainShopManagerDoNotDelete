@@ -8,15 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Settings, Bell, MapPin, Fuel, DollarSign, Save, Loader2, Ruler, Building2 } from 'lucide-react';
+import { ArrowLeft, Settings, Bell, MapPin, Fuel, DollarSign, Save, Loader2, Ruler, Building2, Clock, Percent } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AddressAutocomplete, type AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
 import { useFuelUnits, UnitSystem } from '@/hooks/fuel-delivery/useFuelUnits';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
+import { BusinessHoursTab } from '@/components/fuel-delivery/settings/BusinessHoursTab';
+import { DeliveryZonesTab } from '@/components/fuel-delivery/settings/DeliveryZonesTab';
+import { SpecialRatesTab } from '@/components/fuel-delivery/settings/SpecialRatesTab';
+import { LaborRatesTab } from '@/components/fuel-delivery/settings/LaborRatesTab';
 
 interface FuelDeliverySettingsData {
   id?: string;
@@ -297,14 +302,21 @@ export default function FuelDeliverySettings() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="units">Units</TabsTrigger>
-          <TabsTrigger value="business">Location</TabsTrigger>
-          <TabsTrigger value="notifications">Alerts</TabsTrigger>
-          <TabsTrigger value="defaults">Defaults</TabsTrigger>
-          <TabsTrigger value="pricing">Pricing</TabsTrigger>
-        </TabsList>
+        <ScrollArea className="w-full">
+          <TabsList className="inline-flex w-max">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="hours">Hours</TabsTrigger>
+            <TabsTrigger value="zones">Zones</TabsTrigger>
+            <TabsTrigger value="special-rates">Special Rates</TabsTrigger>
+            <TabsTrigger value="labor">Labor Rates</TabsTrigger>
+            <TabsTrigger value="units">Units</TabsTrigger>
+            <TabsTrigger value="business">Location</TabsTrigger>
+            <TabsTrigger value="notifications">Alerts</TabsTrigger>
+            <TabsTrigger value="defaults">Defaults</TabsTrigger>
+            <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          </TabsList>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
 
         {/* Business Profile Tab */}
         <TabsContent value="profile" className="space-y-4">
@@ -393,6 +405,26 @@ export default function FuelDeliverySettings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Hours Tab */}
+        <TabsContent value="hours" className="space-y-4">
+          <BusinessHoursTab shopId={shopId} />
+        </TabsContent>
+
+        {/* Zones Tab */}
+        <TabsContent value="zones" className="space-y-4">
+          <DeliveryZonesTab shopId={shopId} />
+        </TabsContent>
+
+        {/* Special Rates Tab */}
+        <TabsContent value="special-rates" className="space-y-4">
+          <SpecialRatesTab shopId={shopId} />
+        </TabsContent>
+
+        {/* Labor Rates Tab */}
+        <TabsContent value="labor" className="space-y-4">
+          <LaborRatesTab shopId={shopId} />
         </TabsContent>
 
         {/* Units Tab */}
