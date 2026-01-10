@@ -127,6 +127,15 @@ export function CustomerMap({ locations, customers, className, onLocationClick, 
     );
   }, [customers, locations]);
 
+  // Geocode locations without coordinates but with addresses
+  const locationsNeedingGeocode = useMemo(() => {
+    return locations.filter(loc => 
+      !loc.latitude && 
+      !loc.longitude && 
+      loc.address
+    );
+  }, [locations]);
+
   // Geocode addresses for customers without coordinates
   const { data: geocodedCustomers } = useQuery({
     queryKey: ['geocode-customers', customersNeedingGeocode.map(c => c.id), token],
@@ -160,6 +169,47 @@ export function CustomerMap({ locations, customers, className, onLocationClick, 
     },
   });
 
+  // Geocode addresses for locations without coordinates
+  const { data: geocodedLocations } = useQuery({
+    queryKey: ['geocode-locations', locationsNeedingGeocode.map(l => l.id), token],
+    enabled: Boolean(token) && locationsNeedingGeocode.length > 0,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    queryFn: async () => {
+      const results: Map<string, [number, number]> = new Map();
+      
+      // Geocode up to 10 locations at a time to avoid rate limits
+      const toGeocode = locationsNeedingGeocode.slice(0, 10);
+      
+      for (const loc of toGeocode) {
+        if (!loc.address) continue;
+        try {
+          const encoded = encodeURIComponent(loc.address);
+          const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encoded}.json?access_token=${token}&limit=1&country=US,CA&types=address,place,poi`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const json = await res.json();
+            const center = json?.features?.[0]?.center as [number, number] | undefined;
+            if (center && center.length >= 2) {
+              results.set(loc.id, [center[0], center[1]]);
+              // Also update the database with the geocoded coordinates
+              supabase
+                .from('fuel_delivery_locations')
+                .update({ latitude: center[1], longitude: center[0] })
+                .eq('id', loc.id)
+                .then(({ error }) => {
+                  if (error) console.warn('Failed to update location coordinates:', loc.id, error);
+                });
+            }
+          }
+        } catch (e) {
+          console.warn('Geocoding failed for location:', loc.id, e);
+        }
+      }
+      
+      return results;
+    },
+  });
+
   // Build a combined list of markers from locations + customers (fallback)
   const allMarkerData = useMemo(() => {
     const markers: Array<{
@@ -180,14 +230,24 @@ export function CustomerMap({ locations, customers, className, onLocationClick, 
       deliveryFrequency?: string;
     }> = [];
 
-    // Add all locations with coordinates
+    // Add all locations with coordinates (either stored or geocoded)
     locations.forEach(loc => {
-      if (loc.latitude && loc.longitude) {
+      let lat = loc.latitude;
+      let lng = loc.longitude;
+      
+      // Check if we have geocoded coordinates for this location
+      if ((!lat || !lng) && geocodedLocations?.has(loc.id)) {
+        const coords = geocodedLocations.get(loc.id)!;
+        lng = coords[0];
+        lat = coords[1];
+      }
+      
+      if (lat && lng) {
         markers.push({
           id: loc.id,
           type: 'location',
-          latitude: loc.latitude,
-          longitude: loc.longitude,
+          latitude: lat,
+          longitude: lng,
           customerId: loc.customer_id,
           locationName: loc.location_name,
           address: loc.address,
@@ -206,8 +266,15 @@ export function CustomerMap({ locations, customers, className, onLocationClick, 
     // Add customers with coordinates who don't have a location entry (fallback)
     const locationCustomerIds = new Set(locations.map(l => l.customer_id).filter(Boolean));
     customers.forEach(cust => {
+      // Skip if this customer already has a location displayed
+      if (locationCustomerIds.has(cust.id)) {
+        // Check if the location for this customer is in our markers (has coordinates)
+        const customerHasVisibleLocation = markers.some(m => m.customerId === cust.id && m.type === 'location');
+        if (customerHasVisibleLocation) return;
+      }
+      
       // Check for existing coordinates
-      if (cust.billing_latitude && cust.billing_longitude && !locationCustomerIds.has(cust.id)) {
+      if (cust.billing_latitude && cust.billing_longitude) {
         markers.push({
           id: `customer-${cust.id}`,
           type: 'customer',
@@ -222,7 +289,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick, 
         });
       } 
       // Check for geocoded coordinates
-      else if (geocodedCustomers?.has(cust.id) && !locationCustomerIds.has(cust.id)) {
+      else if (geocodedCustomers?.has(cust.id)) {
         const coords = geocodedCustomers.get(cust.id)!;
         markers.push({
           id: `customer-${cust.id}`,
@@ -240,7 +307,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick, 
     });
 
     return markers;
-  }, [locations, customers, geocodedCustomers]);
+  }, [locations, customers, geocodedCustomers, geocodedLocations]);
 
   // Filter markers based on criteria
   const filteredMarkers = useMemo(() => {
