@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Search, Route, ArrowLeft, MapPin, Map, Users, Edit, Trash2, Eye, X, Save } from 'lucide-react';
-import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks, useFuelDeliveryLocations, useFuelDeliveryCustomers, FuelDeliveryRoute } from '@/hooks/useFuelDelivery';
+import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks, useFuelDeliveryLocations, useFuelDeliveryCustomers, useFuelDeliveryOrders, FuelDeliveryRoute } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -37,6 +37,7 @@ export default function FuelDeliveryRoutes() {
   const { data: trucks } = useFuelDeliveryTrucks();
   const { data: locations } = useFuelDeliveryLocations();
   const { data: customers } = useFuelDeliveryCustomers();
+  const { data: orders } = useFuelDeliveryOrders();
   const createRoute = useCreateFuelDeliveryRoute();
 
   // Edit form state
@@ -48,7 +49,8 @@ export default function FuelDeliveryRoutes() {
     status: 'planned',
     notes: ''
   });
-  const [editSelectedStops, setEditSelectedStops] = useState<string[]>([]);
+  // Store order IDs for editing stops (since route_stops uses order_id)
+  const [editSelectedOrderIds, setEditSelectedOrderIds] = useState<string[]>([]);
 
   // Load route stops when a route is selected
   useEffect(() => {
@@ -66,8 +68,8 @@ export default function FuelDeliveryRoutes() {
     
     if (!error && data) {
       setRouteStops(data);
-      // Set selected stops for editing based on order's location
-      setEditSelectedStops(data.map(s => s.fuel_delivery_orders?.fuel_delivery_locations?.id).filter(Boolean));
+      // Set selected order IDs for editing
+      setEditSelectedOrderIds(data.map(s => s.order_id).filter(Boolean));
     }
   };
 
@@ -100,7 +102,7 @@ export default function FuelDeliveryRoutes() {
           truck_id: editFormData.truck_id || null,
           status: editFormData.status,
           notes: editFormData.notes,
-          total_stops: editSelectedStops.length
+          total_stops: editSelectedOrderIds.length
         })
         .eq('id', selectedRoute.id);
 
@@ -112,15 +114,17 @@ export default function FuelDeliveryRoutes() {
         .delete()
         .eq('route_id', selectedRoute.id);
 
-      // Insert new stops (using stop_sequence as per schema)
-      if (editSelectedStops.length > 0) {
-        const stopsToInsert = editSelectedStops.map((stopId, index) => ({
+      // Insert new stops using order_id as per schema
+      if (editSelectedOrderIds.length > 0) {
+        const stopsToInsert = editSelectedOrderIds.map((orderId, index) => ({
           route_id: selectedRoute.id,
+          order_id: orderId,
           stop_sequence: index + 1,
           status: 'pending'
         }));
 
-        await supabase.from('fuel_delivery_route_stops').insert(stopsToInsert);
+        const { error: stopsError } = await supabase.from('fuel_delivery_route_stops').insert(stopsToInsert);
+        if (stopsError) throw stopsError;
       }
 
       toast({ title: 'Route updated successfully' });
@@ -128,6 +132,7 @@ export default function FuelDeliveryRoutes() {
       setIsViewDialogOpen(false);
       setSelectedRoute(null);
     } catch (error: any) {
+      console.error('Update route error:', error);
       toast({ title: 'Error updating route', description: error.message, variant: 'destructive' });
     } finally {
       setIsSaving(false);
@@ -162,11 +167,11 @@ export default function FuelDeliveryRoutes() {
     }
   };
 
-  const toggleEditStop = (stopId: string) => {
-    setEditSelectedStops(prev => 
-      prev.includes(stopId) 
-        ? prev.filter(id => id !== stopId) 
-        : [...prev, stopId]
+  const toggleEditOrder = (orderId: string) => {
+    setEditSelectedOrderIds(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId) 
+        : [...prev, orderId]
     );
   };
 
@@ -750,46 +755,55 @@ export default function FuelDeliveryRoutes() {
                     />
                   </div>
 
-                  {/* Edit Stops */}
+                  {/* Edit Stops - Show available orders */}
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-orange-500" />
-                      Delivery Stops ({editSelectedStops.length} selected)
+                      Delivery Orders ({editSelectedOrderIds.length} selected)
                     </Label>
-                    {availableStops.length > 0 ? (
+                    {(orders && orders.length > 0) ? (
                       <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1">
-                        {availableStops.map((stop) => (
-                          <div
-                            key={stop.id}
-                            className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
-                              editSelectedStops.includes(stop.id) 
-                                ? 'bg-primary/10 border border-primary' 
-                                : 'hover:bg-muted border border-transparent'
-                            }`}
-                            onClick={() => toggleEditStop(stop.id)}
-                          >
-                            <div className={`w-5 h-5 rounded border flex items-center justify-center ${
-                              editSelectedStops.includes(stop.id) ? 'bg-primary border-primary' : 'border-muted-foreground'
-                            }`}>
-                              {editSelectedStops.includes(stop.id) && (
-                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              )}
+                        {orders.map((order) => {
+                          const location = locations?.find(l => l.id === order.location_id);
+                          const customer = customers?.find(c => c.id === order.customer_id);
+                          const isSelected = editSelectedOrderIds.includes(order.id);
+                          return (
+                            <div
+                              key={order.id}
+                              className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
+                                isSelected 
+                                  ? 'bg-primary/10 border border-primary' 
+                                  : 'hover:bg-muted border border-transparent'
+                              }`}
+                              onClick={() => toggleEditOrder(order.id)}
+                            >
+                              <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                                isSelected ? 'bg-primary border-primary' : 'border-muted-foreground'
+                              }`}>
+                                {isSelected && (
+                                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm truncate">
+                                  {order.order_number} - {customer?.company_name || customer?.contact_name || 'Unknown'}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {location?.address || 'No location'} • {order.quantity_ordered} gal
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="text-xs capitalize">
+                                {order.status || 'pending'}
+                              </Badge>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm truncate">{stop.name}</div>
-                              <div className="text-xs text-muted-foreground truncate">{stop.address}</div>
-                            </div>
-                            <Badge variant="outline" className="text-xs capitalize">
-                              {stop.fuelType || 'diesel'}
-                            </Badge>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="text-sm text-muted-foreground p-4 border rounded-md text-center">
-                        No locations available
+                        No orders available. Create orders first to add stops.
                       </div>
                     )}
                   </div>
