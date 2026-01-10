@@ -284,6 +284,17 @@ import FuelDeliveryQuotes from '@/pages/fuel-delivery/FuelDeliveryQuotes';
 import FuelDeliveryProfile from '@/pages/fuel-delivery/FuelDeliveryProfile';
 import FuelDeliverySettings from '@/pages/fuel-delivery/FuelDeliverySettings';
 import { FuelDeliveryLayout } from '@/components/fuel-delivery';
+
+// Fuel Delivery Portal (Customer-facing)
+import FuelDeliveryPortalLanding from '@/pages/fuel-delivery-portal/FuelDeliveryPortalLanding';
+import FuelDeliveryPortalRegister from '@/pages/fuel-delivery-portal/FuelDeliveryPortalRegister';
+import FuelDeliveryPortalLogin from '@/pages/fuel-delivery-portal/FuelDeliveryPortalLogin';
+import FuelDeliveryPortalDashboard from '@/pages/fuel-delivery-portal/FuelDeliveryPortalDashboard';
+import FuelDeliveryPortalRequest from '@/pages/fuel-delivery-portal/FuelDeliveryPortalRequest';
+import FuelDeliveryPortalOrders from '@/pages/fuel-delivery-portal/FuelDeliveryPortalOrders';
+import FuelDeliveryPortalLocations from '@/pages/fuel-delivery-portal/FuelDeliveryPortalLocations';
+import FuelDeliveryPortalAccount from '@/pages/fuel-delivery-portal/FuelDeliveryPortalAccount';
+
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -311,6 +322,16 @@ function App() {
         <Route path="/customer-portal" element={<CustomerPortalLanding />} />
         <Route path="/customer-portal/login" element={<CustomerPortalAuthLogin />} />
         <Route path="/customer-portal/register" element={<CustomerPortalRegister />} />
+        
+        {/* Fuel Delivery Customer Portal - Public routes */}
+        <Route path="/fuel-delivery-portal" element={<FuelDeliveryPortalLanding />} />
+        <Route path="/fuel-delivery-portal/register" element={<FuelDeliveryPortalRegister />} />
+        <Route path="/fuel-delivery-portal/login" element={<FuelDeliveryPortalLogin />} />
+        <Route path="/fuel-delivery-portal/dashboard" element={<FuelDeliveryPortalDashboard />} />
+        <Route path="/fuel-delivery-portal/request" element={<FuelDeliveryPortalRequest />} />
+        <Route path="/fuel-delivery-portal/orders" element={<FuelDeliveryPortalOrders />} />
+        <Route path="/fuel-delivery-portal/locations" element={<FuelDeliveryPortalLocations />} />
+        <Route path="/fuel-delivery-portal/account" element={<FuelDeliveryPortalAccount />} />
         <Route path="/customer-portal/dashboard" element={<CustomerPortalDashboard />} />
         <Route path="/b/:slug" element={<BusinessLanding />} />
         <Route path="/staff-login" element={<StaffLogin />} />

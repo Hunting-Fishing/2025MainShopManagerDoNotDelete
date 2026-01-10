@@ -12235,6 +12235,7 @@ export type Database = {
           tax_exempt: boolean | null
           tax_exempt_number: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           auto_delivery?: boolean | null
@@ -12263,6 +12264,7 @@ export type Database = {
           tax_exempt?: boolean | null
           tax_exempt_number?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           auto_delivery?: boolean | null
@@ -12291,6 +12293,7 @@ export type Database = {
           tax_exempt?: boolean | null
           tax_exempt_number?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -13312,6 +13315,76 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "fuel_delivery_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_requests: {
+        Row: {
+          created_at: string | null
+          customer_id: string
+          estimated_gallons: number | null
+          fuel_type: string | null
+          id: string
+          location_id: string | null
+          notes: string | null
+          requested_date: string | null
+          requested_time_window: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string | null
+          urgency: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id: string
+          estimated_gallons?: number | null
+          fuel_type?: string | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          requested_date?: string | null
+          requested_time_window?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string | null
+          urgency?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string
+          estimated_gallons?: number | null
+          fuel_type?: string | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          requested_date?: string | null
+          requested_time_window?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string | null
+          urgency?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_requests_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_requests_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
