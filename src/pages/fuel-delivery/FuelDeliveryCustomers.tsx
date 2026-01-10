@@ -9,13 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, Users, ArrowLeft, MapPin, Pencil } from 'lucide-react';
-import { useFuelDeliveryCustomers, useCreateFuelDeliveryCustomer, useUpdateFuelDeliveryCustomer, FuelDeliveryCustomer } from '@/hooks/useFuelDelivery';
+import { Plus, Search, Users, ArrowLeft, MapPin, Pencil, Trash2, Fuel } from 'lucide-react';
+import { useFuelDeliveryCustomers, useCreateFuelDeliveryCustomer, useUpdateFuelDeliveryCustomer, useFuelDeliveryLocations, FuelDeliveryCustomer } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddressAutocomplete, AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
 import { FuelTypeSelect, CustomerVehicleForm, VehicleFormData } from '@/components/fuel-delivery';
 import { supabase } from '@/integrations/supabase/client';
+import { geocodeAddress } from '@/utils/geocoding';
+import { toast } from '@/hooks/use-toast';
 
 export default function FuelDeliveryCustomers() {
   const navigate = useNavigate();
@@ -23,8 +25,12 @@ export default function FuelDeliveryCustomers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<FuelDeliveryCustomer | null>(null);
   const { data: customers, isLoading } = useFuelDeliveryCustomers();
+  const { data: allLocations } = useFuelDeliveryLocations();
   const createCustomer = useCreateFuelDeliveryCustomer();
   const updateCustomer = useUpdateFuelDeliveryCustomer();
+  
+  // Track original vehicle IDs from DB to distinguish new vs existing
+  const [originalVehicleIds, setOriginalVehicleIds] = useState<Set<string>>(new Set());
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -67,6 +73,11 @@ export default function FuelDeliveryCustomers() {
   };
 
   const [vehicles, setVehicles] = useState<VehicleFormData[]>([]);
+  
+  // Delivery locations for the current customer being edited
+  const customerLocations = editingCustomer 
+    ? allLocations?.filter(loc => loc.customer_id === editingCustomer.id) || []
+    : [];
 
   const handleAddressSelect = (result: AddressResult) => {
     setFormData(prev => ({
@@ -112,6 +123,7 @@ export default function FuelDeliveryCustomers() {
       minimum_delivery_gallons: ''
     });
     setVehicles([]);
+    setOriginalVehicleIds(new Set());
     setEditingCustomer(null);
   };
 
@@ -146,6 +158,8 @@ export default function FuelDeliveryCustomers() {
         .eq('customer_id', customer.id);
       
       if (existingVehicles && existingVehicles.length > 0) {
+        // Store the IDs of vehicles from DB to track new vs existing
+        setOriginalVehicleIds(new Set(existingVehicles.map(v => v.id)));
         setVehicles(existingVehicles.map(v => ({
           id: v.id,
           vin: v.vin || '',
@@ -159,10 +173,12 @@ export default function FuelDeliveryCustomers() {
           body_style: v.body_style || '',
         })));
       } else {
+        setOriginalVehicleIds(new Set());
         setVehicles([]);
       }
     } catch (err) {
       console.error('Failed to fetch customer vehicles:', err);
+      setOriginalVehicleIds(new Set());
       setVehicles([]);
     }
 
@@ -173,14 +189,27 @@ export default function FuelDeliveryCustomers() {
     e.preventDefault();
 
     try {
+      // Geocode address if we have address but no coordinates
+      let latitude = formData.billing_latitude;
+      let longitude = formData.billing_longitude;
+      
+      if (formData.billing_address && (!latitude || !longitude)) {
+        const geocoded = await geocodeAddress(formData.billing_address);
+        if (geocoded) {
+          latitude = geocoded.latitude;
+          longitude = geocoded.longitude;
+          toast({ title: 'Address geocoded', description: 'Coordinates captured from address' });
+        }
+      }
+      
       const customerPayload = {
         company_name: formData.company_name,
         contact_name: formData.contact_name,
         phone: formData.phone,
         email: formData.email,
         billing_address: formData.billing_address,
-        billing_latitude: formData.billing_latitude,
-        billing_longitude: formData.billing_longitude,
+        billing_latitude: latitude,
+        billing_longitude: longitude,
         payment_terms: formData.payment_terms,
         credit_limit: parseFloat(formData.credit_limit) || 0,
         tax_exempt: formData.tax_exempt,
@@ -201,28 +230,20 @@ export default function FuelDeliveryCustomers() {
           ...customerPayload
         });
 
-        // Handle vehicles for existing customer: delete old ones, insert new/updated ones
-        // First, get existing vehicle IDs from form (these have real UUIDs from DB)
-        const existingVehicleIds = vehicles
-          .filter(v => !v.id.includes('-') || v.id.length === 36) // Real UUIDs are 36 chars
-          .map(v => v.id);
-
-        // Delete vehicles that were removed (not in current form)
-        const { data: dbVehicles } = await supabase
-          .from('vehicles')
-          .select('id')
-          .eq('customer_id', editingCustomer.id);
-
-        const dbVehicleIds = (dbVehicles || []).map(v => v.id);
-        const vehiclesToDelete = dbVehicleIds.filter(id => !existingVehicleIds.includes(id));
-
+        // Handle vehicles for existing customer using originalVehicleIds to track new vs existing
+        // Get current vehicle IDs that are still in the form
+        const currentVehicleIds = vehicles.map(v => v.id);
+        
+        // Delete vehicles that were removed (in originalVehicleIds but not in current form)
+        const vehiclesToDelete = Array.from(originalVehicleIds).filter(id => !currentVehicleIds.includes(id));
+        
         if (vehiclesToDelete.length > 0) {
           await supabase.from('vehicles').delete().in('id', vehiclesToDelete);
         }
 
-        // Upsert vehicles (update existing, insert new)
+        // Upsert vehicles (update existing from DB, insert new ones)
         for (const vehicle of vehicles) {
-          const isExisting = dbVehicleIds.includes(vehicle.id);
+          const isExistingInDb = originalVehicleIds.has(vehicle.id);
           const vehicleData = {
             customer_id: editingCustomer.id,
             owner_type: 'customer',
@@ -237,9 +258,11 @@ export default function FuelDeliveryCustomers() {
             notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
           };
 
-          if (isExisting) {
+          if (isExistingInDb) {
+            // Update existing vehicle in DB
             await supabase.from('vehicles').update(vehicleData).eq('id', vehicle.id);
           } else {
+            // Insert new vehicle (don't use the temp ID, let DB generate it)
             await supabase.from('vehicles').insert(vehicleData);
           }
         }
@@ -514,6 +537,66 @@ export default function FuelDeliveryCustomers() {
                     onVehiclesChange={setVehicles}
                     onFuelTypeDetected={handleFuelTypeDetected}
                   />
+                  
+                  {/* Delivery Locations Section - Only show when editing */}
+                  {editingCustomer && (
+                    <div className="col-span-2 border-t pt-4 mt-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium text-sm flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-orange-500" />
+                          Delivery Locations ({customerLocations.length})
+                        </h3>
+                      </div>
+                      {customerLocations.length > 0 ? (
+                        <div className="space-y-2">
+                          {customerLocations.map((location) => (
+                            <div 
+                              key={location.id} 
+                              className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{location.location_name || location.address}</p>
+                                <p className="text-xs text-muted-foreground">{location.address}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  {location.fuel_type && (
+                                    <Badge variant="outline" className="text-xs">
+                                      <Fuel className="h-3 w-3 mr-1" />
+                                      {location.fuel_type}
+                                    </Badge>
+                                  )}
+                                  {location.latitude && location.longitude && (
+                                    <span className="text-xs text-green-600 flex items-center gap-1">
+                                      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                                      Has coordinates
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={async () => {
+                                  if (confirm('Delete this delivery location?')) {
+                                    await supabase.from('fuel_delivery_locations').delete().eq('id', location.id);
+                                    toast({ title: 'Location deleted' });
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-muted-foreground bg-muted/30 rounded-lg border border-dashed">
+                          <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No delivery locations set</p>
+                          <p className="text-xs mt-1">Use the Routes map to create a delivery location from the billing address</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-end gap-3">
                   <Button type="button" variant="outline" onClick={() => handleDialogChange(false)}>
