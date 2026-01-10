@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Search, Route, ArrowLeft, MapPin, Map, Users, Edit, Trash2, Eye, X, Save } from 'lucide-react';
-import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks, useFuelDeliveryLocations, useFuelDeliveryCustomers, useFuelDeliveryOrders, FuelDeliveryRoute } from '@/hooks/useFuelDelivery';
+import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks, useFuelDeliveryLocations, useFuelDeliveryCustomers, useFuelDeliveryOrders, useCreateFuelDeliveryLocation, FuelDeliveryRoute, FuelDeliveryCustomer } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -39,6 +39,7 @@ export default function FuelDeliveryRoutes() {
   const { data: customers } = useFuelDeliveryCustomers();
   const { data: orders } = useFuelDeliveryOrders();
   const createRoute = useCreateFuelDeliveryRoute();
+  const createLocation = useCreateFuelDeliveryLocation();
 
   // Edit form state
   const [editFormData, setEditFormData] = useState({
@@ -203,6 +204,34 @@ export default function FuelDeliveryRoutes() {
         ? prev.filter(id => id !== customerId) 
         : [...prev, customerId]
     );
+  };
+
+  // Handle creating a delivery location from a customer's billing address
+  const handleCreateLocationFromCustomer = async (customer: FuelDeliveryCustomer) => {
+    if (!customer.billing_address) {
+      toast({ title: 'No billing address', description: 'Customer has no billing address to use as delivery location', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      await createLocation.mutateAsync({
+        customer_id: customer.id,
+        location_name: customer.billing_address?.split(',')[0] || 'Primary Location',
+        address: customer.billing_address,
+        latitude: customer.billing_latitude || undefined,
+        longitude: customer.billing_longitude || undefined,
+        fuel_type: customer.preferred_fuel_type || 'diesel',
+        is_active: true,
+        delivery_days: customer.delivery_days,
+        delivery_frequency: customer.delivery_frequency as any,
+        preferred_delivery_time: customer.preferred_delivery_time,
+      });
+      
+      toast({ title: 'Delivery location created', description: `Location created for ${customer.contact_name}` });
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-locations'] });
+    } catch (error: any) {
+      toast({ title: 'Error creating location', description: error.message, variant: 'destructive' });
+    }
   };
 
   // Get customers who can be added to a route (have a location entry, or have billing address/coordinates)
@@ -615,6 +644,7 @@ export default function FuelDeliveryRoutes() {
                 onLocationClick={(loc) => {
                   console.log('Location clicked:', loc);
                 }}
+                onCreateLocationFromCustomer={handleCreateLocationFromCustomer}
               />
             </CardContent>
           </Card>
