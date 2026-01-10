@@ -11,6 +11,7 @@ import { useRouteOptimization, Location, RouteOptimizationResult } from '@/hooks
 import { cn } from '@/lib/utils';
 import { useMapboxPublicToken } from '@/hooks/useMapboxPublicToken';
 import { validateMapboxPublicToken } from '@/lib/mapbox/validateMapboxPublicToken';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 interface RouteMapProps {
   origin?: [number, number];
@@ -32,6 +33,7 @@ export function RouteMap({
   const { token, setToken } = useMapboxPublicToken();
   const [tokenInput, setTokenInput] = useState(token);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const { formatDistance, getDistanceLabel } = useFuelUnits();
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -340,7 +342,7 @@ export function RouteMap({
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline" className="flex items-center gap-1 px-3 py-1.5">
               <Navigation className="h-3.5 w-3.5 text-muted-foreground" />
-              {optimizedResult.optimizedRoute.distanceMiles} mi
+              {formatDistance(optimizedResult.optimizedRoute.distanceMiles)}
             </Badge>
             <Badge variant="outline" className="flex items-center gap-1 px-3 py-1.5">
               <Clock className="h-3.5 w-3.5 text-muted-foreground" />
@@ -377,7 +379,7 @@ export function RouteMap({
                     <span className="truncate max-w-[200px]">{leg.to}</span>
                   </div>
                   <div className="flex items-center gap-3 text-muted-foreground">
-                    <span>{leg.distanceMiles} mi</span>
+                    <span>{formatDistance(leg.distanceMiles)}</span>
                     <span>{leg.durationMinutes} min</span>
                   </div>
                 </div>
