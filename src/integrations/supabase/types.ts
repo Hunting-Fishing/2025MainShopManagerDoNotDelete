@@ -33394,6 +33394,12 @@ export type Database = {
       }
       shop_enabled_modules: {
         Row: {
+          display_address: string | null
+          display_description: string | null
+          display_email: string | null
+          display_logo_url: string | null
+          display_name: string | null
+          display_phone: string | null
           enabled_at: string | null
           enabled_by: string | null
           id: string
@@ -33401,6 +33407,12 @@ export type Database = {
           shop_id: string
         }
         Insert: {
+          display_address?: string | null
+          display_description?: string | null
+          display_email?: string | null
+          display_logo_url?: string | null
+          display_name?: string | null
+          display_phone?: string | null
           enabled_at?: string | null
           enabled_by?: string | null
           id?: string
@@ -33408,6 +33420,12 @@ export type Database = {
           shop_id: string
         }
         Update: {
+          display_address?: string | null
+          display_description?: string | null
+          display_email?: string | null
+          display_logo_url?: string | null
+          display_name?: string | null
+          display_phone?: string | null
           enabled_at?: string | null
           enabled_by?: string | null
           id?: string

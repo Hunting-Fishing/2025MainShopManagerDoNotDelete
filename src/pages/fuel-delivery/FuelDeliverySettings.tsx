@@ -7,16 +7,16 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Settings, Bell, MapPin, Fuel, DollarSign, Save, Loader2, Ruler } from 'lucide-react';
+import { ArrowLeft, Settings, Bell, MapPin, Fuel, DollarSign, Save, Loader2, Ruler, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AddressAutocomplete, type AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
 import { useFuelUnits, UnitSystem } from '@/hooks/fuel-delivery/useFuelUnits';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-// Default shop_id for now - in production this would come from user context
-const DEFAULT_SHOP_ID = '00000000-0000-0000-0000-000000000001';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 interface FuelDeliverySettingsData {
   id?: string;
@@ -43,6 +43,16 @@ export default function FuelDeliverySettings() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Get current shop ID
+  const { shopId } = useShopId();
+  const { data: moduleInfo, refetch: refetchModuleInfo } = useModuleDisplayInfo(shopId, 'fuel-delivery');
+  
+  // Business Profile (module-specific branding)
+  const [displayName, setDisplayName] = useState('');
+  const [displayPhone, setDisplayPhone] = useState('');
+  const [displayEmail, setDisplayEmail] = useState('');
+  const [displayDescription, setDisplayDescription] = useState('');
   
   // Unit Preferences
   const { unitSystem, volumeUnit, setUnitSystem, getUnitLabel } = useFuelUnits();
@@ -71,6 +81,16 @@ export default function FuelDeliverySettings() {
   
   // Settings ID for updates
   const [settingsId, setSettingsId] = useState<string | null>(null);
+  
+  // Load module display info into form
+  useEffect(() => {
+    if (moduleInfo) {
+      setDisplayName(moduleInfo.displayName !== moduleInfo.shopName ? moduleInfo.displayName : '');
+      setDisplayPhone(moduleInfo.displayPhone || '');
+      setDisplayEmail(moduleInfo.displayEmail || '');
+      setDisplayDescription(moduleInfo.displayDescription || '');
+    }
+  }, [moduleInfo]);
 
   // Fetch existing settings
   const { data: existingSettings } = useQuery({
@@ -127,7 +147,7 @@ export default function FuelDeliverySettings() {
         // Insert new
         const { data, error } = await supabase
           .from('fuel_delivery_settings')
-          .insert({ ...settings, shop_id: DEFAULT_SHOP_ID })
+          .insert({ ...settings, shop_id: shopId || '00000000-0000-0000-0000-000000000001' })
           .select()
           .single();
         if (error) throw error;
@@ -143,6 +163,54 @@ export default function FuelDeliverySettings() {
       toast.error('Failed to save settings');
     },
   });
+
+  // Business Profile save state
+  const [profileSaving, setProfileSaving] = useState(false);
+
+  const handleSaveBusinessProfile = async () => {
+    if (!shopId) {
+      toast.error('Shop ID not found');
+      return;
+    }
+    
+    setProfileSaving(true);
+    try {
+      // Get the fuel-delivery module ID
+      const { data: module } = await supabase
+        .from('business_modules')
+        .select('id')
+        .eq('slug', 'fuel-delivery')
+        .single();
+
+      if (!module) {
+        toast.error('Fuel delivery module not found');
+        return;
+      }
+
+      // Update the shop_enabled_modules record
+      const { error } = await supabase
+        .from('shop_enabled_modules')
+        .update({
+          display_name: displayName || null,
+          display_phone: displayPhone || null,
+          display_email: displayEmail || null,
+          display_description: displayDescription || null,
+        })
+        .eq('shop_id', shopId)
+        .eq('module_id', module.id);
+
+      if (error) throw error;
+      
+      await refetchModuleInfo();
+      queryClient.invalidateQueries({ queryKey: ['module-display-info'] });
+      toast.success('Business profile saved');
+    } catch (error: any) {
+      console.error('Profile save error:', error);
+      toast.error('Failed to save business profile');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const handleAddressSelect = (result: AddressResult) => {
     setBusinessAddress(result.address);
@@ -228,14 +296,104 @@ export default function FuelDeliverySettings() {
         </div>
       </div>
 
-      <Tabs defaultValue="units" className="space-y-6">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
+          <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="units">Units</TabsTrigger>
-          <TabsTrigger value="business">Business</TabsTrigger>
+          <TabsTrigger value="business">Location</TabsTrigger>
           <TabsTrigger value="notifications">Alerts</TabsTrigger>
           <TabsTrigger value="defaults">Defaults</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
         </TabsList>
+
+        {/* Business Profile Tab */}
+        <TabsContent value="profile" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-orange-500" />
+                <CardTitle>Business Profile</CardTitle>
+              </div>
+              <CardDescription>
+                Customize how your fuel delivery service appears to customers. This allows you to use a different business name than your main shop.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Display Name</Label>
+                <Input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder={moduleInfo?.shopName || 'Enter business name for fuel delivery'}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use your main shop name: <span className="font-medium">{moduleInfo?.shopName}</span>
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Contact Phone</Label>
+                  <Input
+                    type="tel"
+                    value={displayPhone}
+                    onChange={(e) => setDisplayPhone(e.target.value)}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Contact Email</Label>
+                  <Input
+                    type="email"
+                    value={displayEmail}
+                    onChange={(e) => setDisplayEmail(e.target.value)}
+                    placeholder="fuel@yourcompany.com"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Business Description</Label>
+                <Textarea
+                  value={displayDescription}
+                  onChange={(e) => setDisplayDescription(e.target.value)}
+                  placeholder="Brief description of your fuel delivery service..."
+                  rows={3}
+                />
+              </div>
+
+              <Button 
+                onClick={handleSaveBusinessProfile} 
+                disabled={profileSaving} 
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                {profileSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Profile
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Preview Card */}
+          <Card className="border-dashed">
+            <CardHeader>
+              <CardTitle className="text-sm">Customer Portal Preview</CardTitle>
+              <CardDescription className="text-xs">
+                This is how customers will see your business when registering
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 flex items-center gap-3">
+                <Building2 className="h-5 w-5 text-primary shrink-0" />
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Registering with </span>
+                  <span className="font-medium text-foreground">
+                    {displayName || moduleInfo?.shopName || 'Your Business Name'}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Units Tab */}
         <TabsContent value="units" className="space-y-4">
