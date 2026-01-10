@@ -172,6 +172,9 @@ export interface FuelDeliveryDriver {
   notes?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
+  home_address?: string;
+  home_latitude?: number;
+  home_longitude?: number;
 }
 
 export interface FuelDeliveryCompletion {

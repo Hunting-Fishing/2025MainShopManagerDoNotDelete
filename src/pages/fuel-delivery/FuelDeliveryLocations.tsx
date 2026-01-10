@@ -40,8 +40,30 @@ export default function FuelDeliveryLocations() {
     access_instructions: '',
     contact_on_site: '',
     contact_phone: '',
-    requires_appointment: false
+    requires_appointment: false,
+    delivery_days: [] as number[],
+    delivery_frequency: 'on_demand',
+    preferred_delivery_time: 'any'
   });
+
+  const DAYS_OF_WEEK = [
+    { value: 0, label: 'Sun' },
+    { value: 1, label: 'Mon' },
+    { value: 2, label: 'Tue' },
+    { value: 3, label: 'Wed' },
+    { value: 4, label: 'Thu' },
+    { value: 5, label: 'Fri' },
+    { value: 6, label: 'Sat' },
+  ];
+
+  const toggleDay = (day: number) => {
+    setFormData(prev => ({
+      ...prev,
+      delivery_days: prev.delivery_days.includes(day)
+        ? prev.delivery_days.filter(d => d !== day)
+        : [...prev.delivery_days, day]
+    }));
+  };
 
   const handleAddressSelect = (result: AddressResult) => {
     setFormData(prev => ({
@@ -75,7 +97,10 @@ export default function FuelDeliveryLocations() {
       access_instructions: '',
       contact_on_site: '',
       contact_phone: '',
-      requires_appointment: false
+      requires_appointment: false,
+      delivery_days: [],
+      delivery_frequency: 'on_demand',
+      preferred_delivery_time: 'any'
     });
   };
 
@@ -87,7 +112,10 @@ export default function FuelDeliveryLocations() {
       latitude: formData.latitude || undefined,
       longitude: formData.longitude || undefined,
       tank_capacity_gallons: parseFloat(formData.tank_capacity_gallons) || undefined,
-      current_level_gallons: parseFloat(formData.current_level_gallons) || undefined
+      current_level_gallons: parseFloat(formData.current_level_gallons) || undefined,
+      delivery_days: formData.delivery_days.length > 0 ? formData.delivery_days : undefined,
+      delivery_frequency: formData.delivery_frequency as 'weekly' | 'bi_weekly' | 'monthly' | 'on_demand',
+      preferred_delivery_time: formData.preferred_delivery_time
     });
     setIsDialogOpen(false);
     resetForm();
@@ -260,6 +288,73 @@ export default function FuelDeliveryLocations() {
                       onChange={(e) => setFormData(prev => ({ ...prev, access_instructions: e.target.value }))}
                       placeholder="Gate code, directions, etc..."
                     />
+                  </div>
+
+                  {/* Scheduling Section */}
+                  <div className="col-span-2 border-t pt-4 mt-2">
+                    <h3 className="font-medium text-sm mb-3">Delivery Schedule</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2 col-span-2">
+                        <Label>Preferred Delivery Days</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {DAYS_OF_WEEK.map((day) => (
+                            <Button
+                              key={day.value}
+                              type="button"
+                              variant={formData.delivery_days.includes(day.value) ? 'default' : 'outline'}
+                              size="sm"
+                              className="w-12 h-8"
+                              onClick={() => toggleDay(day.value)}
+                            >
+                              {day.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Delivery Frequency</Label>
+                        <Select 
+                          value={formData.delivery_frequency} 
+                          onValueChange={(v) => setFormData(prev => ({ ...prev, delivery_frequency: v }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="bi_weekly">Bi-Weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                            <SelectItem value="on_demand">On Demand</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Preferred Time</Label>
+                        <Select 
+                          value={formData.preferred_delivery_time} 
+                          onValueChange={(v) => setFormData(prev => ({ ...prev, preferred_delivery_time: v }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="morning">Morning (6am-12pm)</SelectItem>
+                            <SelectItem value="afternoon">Afternoon (12pm-5pm)</SelectItem>
+                            <SelectItem value="evening">Evening (5pm-9pm)</SelectItem>
+                            <SelectItem value="any">Any Time</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Current Tank Level (gal)</Label>
+                        <Input
+                          type="number"
+                          value={formData.current_level_gallons}
+                          onChange={(e) => setFormData(prev => ({ ...prev, current_level_gallons: e.target.value }))}
+                          placeholder="250"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex justify-end gap-3">

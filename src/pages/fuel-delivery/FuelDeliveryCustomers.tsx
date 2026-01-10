@@ -40,8 +40,31 @@ export default function FuelDeliveryCustomers() {
     auto_delivery: false,
     preferred_fuel_type: '',
     delivery_instructions: '',
-    notes: ''
+    notes: '',
+    delivery_days: [] as number[],
+    delivery_frequency: 'on_demand',
+    preferred_delivery_time: 'any',
+    minimum_delivery_gallons: ''
   });
+
+  const DAYS_OF_WEEK = [
+    { value: 0, label: 'Sun' },
+    { value: 1, label: 'Mon' },
+    { value: 2, label: 'Tue' },
+    { value: 3, label: 'Wed' },
+    { value: 4, label: 'Thu' },
+    { value: 5, label: 'Fri' },
+    { value: 6, label: 'Sat' },
+  ];
+
+  const toggleDay = (day: number) => {
+    setFormData(prev => ({
+      ...prev,
+      delivery_days: prev.delivery_days.includes(day)
+        ? prev.delivery_days.filter(d => d !== day)
+        : [...prev.delivery_days, day]
+    }));
+  };
 
   const [vehicles, setVehicles] = useState<VehicleFormData[]>([]);
 
@@ -82,7 +105,11 @@ export default function FuelDeliveryCustomers() {
       auto_delivery: false,
       preferred_fuel_type: '',
       delivery_instructions: '',
-      notes: ''
+      notes: '',
+      delivery_days: [],
+      delivery_frequency: 'on_demand',
+      preferred_delivery_time: 'any',
+      minimum_delivery_gallons: ''
     });
     setVehicles([]);
     setEditingCustomer(null);
@@ -96,15 +123,19 @@ export default function FuelDeliveryCustomers() {
       phone: customer.phone || '',
       email: customer.email || '',
       billing_address: customer.billing_address || '',
-      billing_latitude: null,
-      billing_longitude: null,
+      billing_latitude: customer.billing_latitude || null,
+      billing_longitude: customer.billing_longitude || null,
       payment_terms: customer.payment_terms || 'net30',
       credit_limit: customer.credit_limit?.toString() || '',
       tax_exempt: customer.tax_exempt || false,
       auto_delivery: customer.auto_delivery || false,
       preferred_fuel_type: customer.preferred_fuel_type || '',
       delivery_instructions: customer.delivery_instructions || '',
-      notes: customer.notes || ''
+      notes: customer.notes || '',
+      delivery_days: [],
+      delivery_frequency: customer.delivery_frequency || 'on_demand',
+      preferred_delivery_time: 'any',
+      minimum_delivery_gallons: customer.minimum_delivery_gallons?.toString() || ''
     });
     setIsDialogOpen(true);
   };
@@ -113,20 +144,37 @@ export default function FuelDeliveryCustomers() {
     e.preventDefault();
 
     try {
+      const customerPayload = {
+        company_name: formData.company_name,
+        contact_name: formData.contact_name,
+        phone: formData.phone,
+        email: formData.email,
+        billing_address: formData.billing_address,
+        billing_latitude: formData.billing_latitude,
+        billing_longitude: formData.billing_longitude,
+        payment_terms: formData.payment_terms,
+        credit_limit: parseFloat(formData.credit_limit) || 0,
+        tax_exempt: formData.tax_exempt,
+        auto_delivery: formData.auto_delivery,
+        preferred_fuel_type: formData.preferred_fuel_type,
+        delivery_instructions: formData.delivery_instructions,
+        notes: formData.notes,
+        delivery_days: formData.delivery_days.length > 0 ? formData.delivery_days : undefined,
+        delivery_frequency: formData.delivery_frequency,
+        preferred_delivery_time: formData.preferred_delivery_time,
+        minimum_delivery_gallons: parseFloat(formData.minimum_delivery_gallons) || undefined
+      };
+
       if (editingCustomer) {
         // Update existing customer
         await updateCustomer.mutateAsync({
           id: editingCustomer.id,
-          ...formData,
-          credit_limit: parseFloat(formData.credit_limit) || 0,
+          ...customerPayload
         });
       } else {
         // Create customer first
-        const newCustomer = await createCustomer.mutateAsync({
-          ...formData,
-          credit_limit: parseFloat(formData.credit_limit) || 0,
-        });
-
+        const newCustomer = await createCustomer.mutateAsync(customerPayload);
+        
         if (newCustomer?.id) {
           // Auto-create a fuel_delivery_location if customer has coordinates
           if (formData.billing_latitude && formData.billing_longitude) {
@@ -319,6 +367,73 @@ export default function FuelDeliveryCustomers() {
                       onChange={(e) => setFormData(prev => ({ ...prev, delivery_instructions: e.target.value }))}
                       placeholder="Special instructions for deliveries..."
                     />
+                  </div>
+
+                  {/* Scheduling Section */}
+                  <div className="col-span-2 border-t pt-4 mt-2">
+                    <h3 className="font-medium text-sm mb-3">Delivery Schedule</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2 col-span-2">
+                        <Label>Preferred Delivery Days</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {DAYS_OF_WEEK.map((day) => (
+                            <Button
+                              key={day.value}
+                              type="button"
+                              variant={formData.delivery_days.includes(day.value) ? 'default' : 'outline'}
+                              size="sm"
+                              className="w-12 h-8"
+                              onClick={() => toggleDay(day.value)}
+                            >
+                              {day.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Delivery Frequency</Label>
+                        <Select 
+                          value={formData.delivery_frequency} 
+                          onValueChange={(v) => setFormData(prev => ({ ...prev, delivery_frequency: v }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="bi_weekly">Bi-Weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                            <SelectItem value="on_demand">On Demand</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Preferred Time</Label>
+                        <Select 
+                          value={formData.preferred_delivery_time} 
+                          onValueChange={(v) => setFormData(prev => ({ ...prev, preferred_delivery_time: v }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="morning">Morning (6am-12pm)</SelectItem>
+                            <SelectItem value="afternoon">Afternoon (12pm-5pm)</SelectItem>
+                            <SelectItem value="evening">Evening (5pm-9pm)</SelectItem>
+                            <SelectItem value="any">Any Time</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Minimum Delivery (gallons)</Label>
+                        <Input
+                          type="number"
+                          value={formData.minimum_delivery_gallons}
+                          onChange={(e) => setFormData(prev => ({ ...prev, minimum_delivery_gallons: e.target.value }))}
+                          placeholder="100"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Vehicle Section */}

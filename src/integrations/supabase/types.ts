@@ -12219,6 +12219,7 @@ export type Database = {
           credit_limit: number | null
           current_balance: number | null
           customer_id: string | null
+          delivery_days: number[] | null
           delivery_frequency: string | null
           delivery_instructions: string | null
           email: string | null
@@ -12228,6 +12229,7 @@ export type Database = {
           notes: string | null
           payment_terms: string | null
           phone: string | null
+          preferred_delivery_time: string | null
           preferred_fuel_type: string | null
           shop_id: string
           tax_exempt: boolean | null
@@ -12245,6 +12247,7 @@ export type Database = {
           credit_limit?: number | null
           current_balance?: number | null
           customer_id?: string | null
+          delivery_days?: number[] | null
           delivery_frequency?: string | null
           delivery_instructions?: string | null
           email?: string | null
@@ -12254,6 +12257,7 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          preferred_delivery_time?: string | null
           preferred_fuel_type?: string | null
           shop_id: string
           tax_exempt?: boolean | null
@@ -12271,6 +12275,7 @@ export type Database = {
           credit_limit?: number | null
           current_balance?: number | null
           customer_id?: string | null
+          delivery_days?: number[] | null
           delivery_frequency?: string | null
           delivery_instructions?: string | null
           email?: string | null
@@ -12280,6 +12285,7 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          preferred_delivery_time?: string | null
           preferred_fuel_type?: string | null
           shop_id?: string
           tax_exempt?: boolean | null
@@ -12312,6 +12318,9 @@ export type Database = {
           hazmat_endorsement: boolean | null
           hazmat_expiry: string | null
           hire_date: string | null
+          home_address: string | null
+          home_latitude: number | null
+          home_longitude: number | null
           hourly_rate: number | null
           id: string
           last_name: string
@@ -12339,6 +12348,9 @@ export type Database = {
           hazmat_endorsement?: boolean | null
           hazmat_expiry?: string | null
           hire_date?: string | null
+          home_address?: string | null
+          home_latitude?: number | null
+          home_longitude?: number | null
           hourly_rate?: number | null
           id?: string
           last_name: string
@@ -12366,6 +12378,9 @@ export type Database = {
           hazmat_endorsement?: boolean | null
           hazmat_expiry?: string | null
           hire_date?: string | null
+          home_address?: string | null
+          home_latitude?: number | null
+          home_longitude?: number | null
           hourly_rate?: number | null
           id?: string
           last_name?: string
