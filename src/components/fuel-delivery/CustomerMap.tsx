@@ -252,7 +252,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
       setTokenError(null);
 
       // Proactively validate the token so we can show a clear UI instead of a blank map.
-      const validation = await validateMapboxPublicToken({ token, styleId: 'mapbox/dark-v11' });
+      const validation = await validateMapboxPublicToken({ token, styleId: 'mapbox/streets-v12' });
       if (cancelled) return;
 
       if (!validation.ok) {
@@ -268,7 +268,7 @@ export function CustomerMap({ locations, customers, className, onLocationClick }
 
       const instance = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/dark-v11',
+        style: 'mapbox://styles/mapbox/streets-v12',
         center: getCenter(),
         zoom: defaultZoom,
         pitch: 30,
