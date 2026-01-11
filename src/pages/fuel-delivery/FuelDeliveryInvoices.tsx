@@ -10,12 +10,16 @@ import { useFuelDeliveryInvoices } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 export default function FuelDeliveryInvoices() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { data: invoices, isLoading } = useFuelDeliveryInvoices();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
 
   const filteredInvoices = invoices?.filter(invoice => {
     const matchesSearch = 
@@ -48,10 +52,10 @@ export default function FuelDeliveryInvoices() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Receipt className="h-8 w-8 text-emerald-600" />
-              Invoices
+              {moduleInfo?.displayName || 'Fuel Delivery'} Invoices
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage fuel delivery invoices and billing
+              Manage invoices and billing
             </p>
           </div>
           <Button onClick={() => navigate('/fuel-delivery/invoices/new')}>

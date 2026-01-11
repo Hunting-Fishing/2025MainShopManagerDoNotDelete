@@ -16,6 +16,8 @@ import {
   useCreateFuelDeliveryOrder 
 } from '@/hooks/useFuelDelivery';
 import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 export default function FuelDeliveryOrderForm() {
   const navigate = useNavigate();
@@ -25,6 +27,8 @@ export default function FuelDeliveryOrderForm() {
   const { data: trucks } = useFuelDeliveryTrucks();
   const createOrder = useCreateFuelDeliveryOrder();
   const { getVolumeLabel } = useFuelUnits();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -92,10 +96,10 @@ export default function FuelDeliveryOrderForm() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Fuel className="h-8 w-8 text-orange-600" />
-            New Delivery Order
+            New {moduleInfo?.displayName || 'Fuel Delivery'} Order
           </h1>
           <p className="text-muted-foreground mt-1">
-            Create a new fuel delivery order
+            Create a new delivery order
           </p>
         </div>
 

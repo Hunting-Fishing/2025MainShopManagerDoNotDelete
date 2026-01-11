@@ -320,8 +320,8 @@ export default function FuelDeliverySettings() {
           <Settings className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Fuel Delivery Settings</h1>
-          <p className="text-muted-foreground">Configure your fuel delivery module preferences</p>
+          <h1 className="text-2xl font-bold tracking-tight">{moduleInfo?.displayName || 'Fuel Delivery'} Settings</h1>
+          <p className="text-muted-foreground">Configure your module preferences</p>
         </div>
       </div>
 

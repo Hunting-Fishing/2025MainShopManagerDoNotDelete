@@ -14,6 +14,8 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 interface QuoteLine {
   product_id: string;
@@ -33,6 +35,8 @@ export default function FuelDeliveryQuotes() {
   const { data: products } = useFuelDeliveryProducts();
   const createQuote = useCreateFuelDeliveryQuote();
   const convertToOrder = useConvertQuoteToOrder();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -143,10 +147,10 @@ export default function FuelDeliveryQuotes() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <FileText className="h-8 w-8 text-blue-600" />
-              Quotes
+              {moduleInfo?.displayName || 'Fuel Delivery'} Quotes
             </h1>
             <p className="text-muted-foreground mt-1">
-              Create and manage fuel delivery quotes
+              Create and manage quotes
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

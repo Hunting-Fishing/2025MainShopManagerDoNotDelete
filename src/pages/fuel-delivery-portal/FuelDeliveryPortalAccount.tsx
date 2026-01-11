@@ -166,7 +166,7 @@ export default function FuelDeliveryPortalAccount() {
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <Fuel className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-lg font-bold">Account Settings</span>
+            <span className="text-lg font-bold">My Account</span>
           </div>
         </div>
       </header>

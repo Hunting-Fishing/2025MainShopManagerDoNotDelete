@@ -11,9 +11,11 @@ import {
   User, FileText, Settings, ChevronRight, Loader2 
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { usePortalBusinessInfo } from '@/hooks/usePortalBusinessInfo';
 
 interface CustomerData {
   id: string;
+  shop_id: string;
   company_name: string | null;
   contact_name: string;
   email: string;
@@ -50,6 +52,8 @@ export default function FuelDeliveryPortalDashboard() {
   const [requests, setRequests] = useState<DeliveryRequest[]>([]);
   const [recentOrders, setRecentOrders] = useState<DeliveryOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const { data: businessInfo } = usePortalBusinessInfo(customer?.shop_id || null);
 
   useEffect(() => {
     loadDashboardData();
@@ -66,7 +70,7 @@ export default function FuelDeliveryPortalDashboard() {
       // Load customer data
       const { data: customerData, error: customerError } = await supabase
         .from('fuel_delivery_customers')
-        .select('*')
+        .select('id, shop_id, company_name, contact_name, email, phone, billing_address, preferred_fuel_type')
         .eq('user_id', user.id)
         .single();
 
@@ -143,7 +147,7 @@ export default function FuelDeliveryPortalDashboard() {
               <Fuel className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <span className="text-lg font-bold block">Fuel Delivery Portal</span>
+              <span className="text-lg font-bold block">{businessInfo?.displayName || 'Fuel Delivery Portal'}</span>
               <span className="text-xs text-muted-foreground">
                 {customer?.company_name || customer?.contact_name}
               </span>
