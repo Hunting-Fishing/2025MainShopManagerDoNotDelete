@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { useCreateFuelDeliveryCompletion } from "@/hooks/useFuelDelivery";
 import { LiveClock } from "@/components/fuel-delivery/LiveClock";
 import { DeliveryTimeStats } from "@/components/fuel-delivery/DeliveryTimeStats";
+import { DeliveryCompletionDialog } from "@/components/fuel-delivery/DeliveryCompletionDialog";
 
 // Types
 interface RouteStop {
@@ -266,29 +267,38 @@ export default function FuelDeliveryDriverApp() {
     toast.success("Arrived at stop");
   };
 
-  const handleCompleteStop = async () => {
-    if (!selectedStop || !completionData.gallons_delivered) {
-      toast.error("Please enter gallons delivered");
-      return;
-    }
+  const handleCompleteStop = async (data: {
+    gallonsDelivered: number;
+    productId: string | null;
+    compartmentId: string | null;
+    customProductName: string | null;
+    meterStart: number | null;
+    meterEnd: number | null;
+    tankBefore: number;
+    tankAfter: number;
+    signature: string | null;
+    customerPresent: boolean;
+    notes: string;
+    arrivalTime: string;
+    departureTime: string;
+  }) => {
+    if (!selectedStop) return;
 
-    // Create delivery completion record
     await createCompletion.mutateAsync({
-      gallons_delivered: parseFloat(completionData.gallons_delivered),
-      notes: completionData.delivery_notes,
-      tank_level_before: completionData.tank_level_before ? parseFloat(completionData.tank_level_before) : undefined,
-      tank_level_after: completionData.tank_level_after ? parseFloat(completionData.tank_level_after) : undefined,
+      gallons_delivered: data.gallonsDelivered,
+      notes: data.notes,
+      tank_level_before: data.tankBefore || undefined,
+      tank_level_after: data.tankAfter || undefined,
       delivery_date: new Date().toISOString()
     });
 
     await updateRouteStop.mutateAsync({
       id: selectedStop.id,
       status: 'completed',
-      notes: completionData.delivery_notes,
-      actual_departure: new Date().toISOString()
+      notes: data.notes,
+      actual_departure: data.departureTime
     });
 
-    // Update route completed_stops count
     if (selectedRoute) {
       await updateRoute.mutateAsync({
         id: selectedRoute.id,
@@ -581,75 +591,14 @@ export default function FuelDeliveryDriverApp() {
           </ScrollArea>
         </div>
 
-        {/* Completion Dialog */}
-        <Dialog open={completionDialog} onOpenChange={setCompletionDialog}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Fuel className="h-5 w-5" />
-                Complete Delivery
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Gallons Delivered *</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={completionData.gallons_delivered}
-                  onChange={(e) => setCompletionData({ ...completionData, gallons_delivered: e.target.value })}
-                  placeholder="Enter gallons"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Tank Before (%)</Label>
-                  <Input
-                    type="number"
-                    value={completionData.tank_level_before}
-                    onChange={(e) => setCompletionData({ ...completionData, tank_level_before: e.target.value })}
-                    placeholder="0-100"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tank After (%)</Label>
-                  <Input
-                    type="number"
-                    value={completionData.tank_level_after}
-                    onChange={(e) => setCompletionData({ ...completionData, tank_level_after: e.target.value })}
-                    placeholder="0-100"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Delivery Notes</Label>
-                <Textarea
-                  value={completionData.delivery_notes}
-                  onChange={(e) => setCompletionData({ ...completionData, delivery_notes: e.target.value })}
-                  placeholder="Any notes about the delivery..."
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCompletionDialog(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleCompleteStop}
-                disabled={createCompletion.isPending}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <CheckCircle2 className="h-4 w-4 mr-1" />
-                Complete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Enhanced Completion Dialog */}
+        <DeliveryCompletionDialog
+          open={completionDialog}
+          onOpenChange={setCompletionDialog}
+          stop={selectedStop}
+          route={selectedRoute}
+          onComplete={handleCompleteStop}
+        />
       </div>
     );
   }
