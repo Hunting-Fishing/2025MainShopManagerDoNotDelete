@@ -358,7 +358,7 @@ export function DeliveryCompletionDialog({
                               <div>
                                 <div className="font-medium text-sm">{product.product_name}</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {product.product_code} • ${product.base_price_per_unit?.toFixed(2)}{getPriceLabel()}
+                                  {product.product_code} {product.cost_per_unit ? `• Cost: $${product.cost_per_unit?.toFixed(2)}${getPriceLabel()}` : ''}
                                 </div>
                               </div>
                             </div>
