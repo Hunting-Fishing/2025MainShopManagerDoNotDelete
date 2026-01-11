@@ -8,18 +8,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Truck, ArrowLeft } from 'lucide-react';
-import { useFuelDeliveryTrucks, useCreateFuelDeliveryTruck } from '@/hooks/useFuelDelivery';
+import { Plus, Search, Truck, ArrowLeft, Pencil } from 'lucide-react';
+import { useFuelDeliveryTrucks, useCreateFuelDeliveryTruck, FuelDeliveryTruck } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
+import { TruckEditDialog } from '@/components/fuel-delivery/TruckEditDialog';
 
 export default function FuelDeliveryTrucks() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTruck, setEditingTruck] = useState<FuelDeliveryTruck | null>(null);
   const { data: trucks, isLoading } = useFuelDeliveryTrucks();
   const createTruck = useCreateFuelDeliveryTruck();
   const { shopId } = useShopId();
@@ -289,11 +291,12 @@ export default function FuelDeliveryTrucks() {
                   <TableHead>Current Load</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>DOT Due</TableHead>
+                  <TableHead className="w-16">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTrucks.map((truck) => (
-                  <TableRow key={truck.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableRow key={truck.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">{truck.truck_number}</TableCell>
                     <TableCell>{truck.make} {truck.model} {truck.year}</TableCell>
                     <TableCell>{truck.license_plate || '-'}</TableCell>
@@ -302,6 +305,15 @@ export default function FuelDeliveryTrucks() {
                     <TableCell>{getStatusBadge(truck.status)}</TableCell>
                     <TableCell>
                       {truck.dot_inspection_due ? format(new Date(truck.dot_inspection_due), 'MMM d, yyyy') : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingTruck(truck)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -318,6 +330,13 @@ export default function FuelDeliveryTrucks() {
           )}
         </CardContent>
       </Card>
+      
+      {/* Edit Dialog */}
+      <TruckEditDialog
+        truck={editingTruck}
+        open={!!editingTruck}
+        onOpenChange={(open) => !open && setEditingTruck(null)}
+      />
     </div>
   );
 }
