@@ -95,7 +95,7 @@ export default function FuelManagement() {
       name: newStation.name,
       address: newStation.address || null,
       city: newStation.city || null,
-      state: newStation.state || null,
+      province: newStation.state || null,
       phone: newStation.phone || null
     }, {
       onSuccess: () => {
@@ -500,7 +500,7 @@ export default function FuelManagement() {
                           <p className="font-medium">{station.name}</p>
                           {station.address && (
                             <p className="text-sm text-muted-foreground">
-                              {station.address}{station.city && `, ${station.city}`}{station.state && `, ${station.state}`}
+                              {station.address}{station.city && `, ${station.city}`}{station.province && `, ${station.province}`}
                             </p>
                           )}
                         </div>
