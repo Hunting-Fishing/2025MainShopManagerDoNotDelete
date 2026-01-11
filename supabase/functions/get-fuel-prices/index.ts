@@ -6,34 +6,134 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Canadian cities available from Statistics Canada data
+// Canadian cities available - expanded list including regional centers
 const CANADIAN_CITIES = [
+  // British Columbia - Comprehensive coverage
+  { city: "Campbell River", province: "BC" },
+  { city: "Comox", province: "BC" },
+  { city: "Courtenay", province: "BC" },
+  { city: "Cranbrook", province: "BC" },
+  { city: "Dawson Creek", province: "BC" },
+  { city: "Duncan", province: "BC" },
+  { city: "Fort St. John", province: "BC" },
+  { city: "Kamloops", province: "BC" },
+  { city: "Kelowna", province: "BC" },
+  { city: "Nanaimo", province: "BC" },
+  { city: "Nelson", province: "BC" },
+  { city: "Parksville", province: "BC" },
+  { city: "Penticton", province: "BC" },
+  { city: "Port Alberni", province: "BC" },
+  { city: "Port Hardy", province: "BC" },
+  { city: "Powell River", province: "BC" },
+  { city: "Prince George", province: "BC" },
+  { city: "Prince Rupert", province: "BC" },
+  { city: "Qualicum Beach", province: "BC" },
+  { city: "Revelstoke", province: "BC" },
+  { city: "Salmon Arm", province: "BC" },
+  { city: "Squamish", province: "BC" },
+  { city: "Terrace", province: "BC" },
+  { city: "Tofino", province: "BC" },
+  { city: "Trail", province: "BC" },
   { city: "Vancouver", province: "BC" },
+  { city: "Vernon", province: "BC" },
   { city: "Victoria", province: "BC" },
-  { city: "Edmonton", province: "AB" },
+  { city: "Whistler", province: "BC" },
+  { city: "Williams Lake", province: "BC" },
+  
+  // Alberta
   { city: "Calgary", province: "AB" },
+  { city: "Edmonton", province: "AB" },
+  { city: "Fort McMurray", province: "AB" },
+  { city: "Grande Prairie", province: "AB" },
+  { city: "Lethbridge", province: "AB" },
+  { city: "Medicine Hat", province: "AB" },
+  { city: "Red Deer", province: "AB" },
+  
+  // Saskatchewan
+  { city: "Moose Jaw", province: "SK" },
+  { city: "Prince Albert", province: "SK" },
   { city: "Regina", province: "SK" },
   { city: "Saskatoon", province: "SK" },
+  { city: "Swift Current", province: "SK" },
+  
+  // Manitoba
+  { city: "Brandon", province: "MB" },
+  { city: "Thompson", province: "MB" },
   { city: "Winnipeg", province: "MB" },
-  { city: "Toronto", province: "ON" },
+  
+  // Ontario
+  { city: "Barrie", province: "ON" },
+  { city: "Hamilton", province: "ON" },
+  { city: "Kingston", province: "ON" },
+  { city: "Kitchener", province: "ON" },
+  { city: "London", province: "ON" },
+  { city: "North Bay", province: "ON" },
   { city: "Ottawa", province: "ON" },
+  { city: "Sudbury", province: "ON" },
   { city: "Thunder Bay", province: "ON" },
+  { city: "Toronto", province: "ON" },
+  { city: "Windsor", province: "ON" },
+  
+  // Quebec
+  { city: "Chicoutimi", province: "QC" },
+  { city: "Gatineau", province: "QC" },
   { city: "Montréal", province: "QC" },
   { city: "Québec City", province: "QC" },
-  { city: "Halifax", province: "NS" },
-  { city: "Saint John", province: "NB" },
+  { city: "Rimouski", province: "QC" },
+  { city: "Sherbrooke", province: "QC" },
+  { city: "Trois-Rivières", province: "QC" },
+  
+  // Atlantic Provinces
   { city: "Charlottetown", province: "PE" },
+  { city: "Fredericton", province: "NB" },
+  { city: "Halifax", province: "NS" },
+  { city: "Moncton", province: "NB" },
+  { city: "Saint John", province: "NB" },
   { city: "St. John's", province: "NL" },
+  { city: "Sydney", province: "NS" },
+  
+  // Territories
+  { city: "Iqaluit", province: "NU" },
   { city: "Whitehorse", province: "YT" },
   { city: "Yellowknife", province: "NT" },
 ];
 
+// City-specific adjustments for more granular pricing within provinces
+const CITY_ADJUSTMENTS: Record<string, { regular: number; diesel: number }> = {
+  // BC - Island & remote locations typically higher
+  "Campbell River": { regular: 3, diesel: 2 },
+  "Tofino": { regular: 8, diesel: 6 },
+  "Port Hardy": { regular: 10, diesel: 8 },
+  "Port Alberni": { regular: 4, diesel: 3 },
+  "Powell River": { regular: 5, diesel: 4 },
+  "Whistler": { regular: 6, diesel: 5 },
+  "Prince Rupert": { regular: 8, diesel: 6 },
+  "Terrace": { regular: 6, diesel: 5 },
+  "Fort St. John": { regular: 4, diesel: 3 },
+  "Dawson Creek": { regular: 5, diesel: 4 },
+  "Prince George": { regular: 2, diesel: 1 },
+  "Revelstoke": { regular: 4, diesel: 3 },
+  "Nelson": { regular: 3, diesel: 2 },
+  "Cranbrook": { regular: 2, diesel: 1 },
+  "Williams Lake": { regular: 3, diesel: 2 },
+  // AB - Northern locations higher
+  "Fort McMurray": { regular: 8, diesel: 6 },
+  "Grande Prairie": { regular: 4, diesel: 3 },
+  // MB - Northern locations higher
+  "Thompson": { regular: 15, diesel: 12 },
+  // ON - Northern locations higher
+  "Thunder Bay": { regular: 5, diesel: 4 },
+  "Sudbury": { regular: 3, diesel: 2 },
+  "North Bay": { regular: 2, diesel: 1 },
+  // Territories - all higher
+  "Iqaluit": { regular: 35, diesel: 30 },
+};
+
 // Simulated current prices based on typical Canadian regional variations
-// In production, this would fetch from Statistics Canada API
 function generateRealisticPrices(city: string, province: string): { regular: number; diesel: number } {
   // Base prices (cents per litre) - realistic January 2026 estimates
-  let basePriceRegular = 155; // Base regular gasoline
-  let basePriceDiesel = 165;  // Base diesel
+  const basePriceRegular = 155; // Base regular gasoline
+  const basePriceDiesel = 165;  // Base diesel
   
   // Regional adjustments based on typical Canadian price variations
   const regionalAdjustments: Record<string, { regular: number; diesel: number }> = {
@@ -49,16 +149,18 @@ function generateRealisticPrices(city: string, province: string): { regular: num
     "NL": { regular: 15, diesel: 12 },      // Remote location
     "YT": { regular: 20, diesel: 18 },      // Remote territory
     "NT": { regular: 25, diesel: 22 },      // Remote territory
+    "NU": { regular: 40, diesel: 35 },      // Very remote territory
   };
   
-  const adjustment = regionalAdjustments[province] || { regular: 0, diesel: 0 };
+  const provinceAdj = regionalAdjustments[province] || { regular: 0, diesel: 0 };
+  const cityAdj = CITY_ADJUSTMENTS[city] || { regular: 0, diesel: 0 };
   
   // Add small random variation (±2 cents) to simulate market fluctuations
   const randomVariation = () => Math.floor(Math.random() * 5) - 2;
   
   return {
-    regular: basePriceRegular + adjustment.regular + randomVariation(),
-    diesel: basePriceDiesel + adjustment.diesel + randomVariation(),
+    regular: basePriceRegular + provinceAdj.regular + cityAdj.regular + randomVariation(),
+    diesel: basePriceDiesel + provinceAdj.diesel + cityAdj.diesel + randomVariation(),
   };
 }
 
