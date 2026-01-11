@@ -28,7 +28,7 @@ export function FuelDeliveryHeader({ onMenuToggle }: FuelDeliveryHeaderProps) {
   const { user } = useAuthUser();
   const isMobile = useIsMobile();
   const { shopId } = useShopId();
-  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel-delivery');
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

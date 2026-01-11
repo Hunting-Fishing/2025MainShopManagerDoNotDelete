@@ -86,7 +86,7 @@ export default function FuelDeliveryPortalRegister() {
           display_name,
           business_modules!inner(slug)
         `)
-        .eq('business_modules.slug', 'fuel-delivery');
+        .eq('business_modules.slug', 'fuel_delivery');
 
       // Map display names to shops
       const displayNameMap = new Map<string, string>();

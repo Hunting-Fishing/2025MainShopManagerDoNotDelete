@@ -115,7 +115,7 @@ export function FuelDeliverySidebar({ collapsed = false, onToggle }: FuelDeliver
   const navigate = useNavigate();
   const currentPath = location.pathname;
   const { shopId } = useShopId();
-  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel-delivery');
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
 
   const isActive = (href: string) => {
     if (href === '/fuel-delivery') {
