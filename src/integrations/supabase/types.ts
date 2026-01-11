@@ -12092,6 +12092,62 @@ export type Database = {
           },
         ]
       }
+      fuel_delivery_compartment_history: {
+        Row: {
+          change_amount_gallons: number
+          change_type: string
+          compartment_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          new_level_gallons: number
+          notes: string | null
+          previous_level_gallons: number
+          reference_id: string | null
+          reference_type: string | null
+          shop_id: string
+          truck_id: string
+        }
+        Insert: {
+          change_amount_gallons?: number
+          change_type: string
+          compartment_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_level_gallons?: number
+          notes?: string | null
+          previous_level_gallons?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          shop_id: string
+          truck_id: string
+        }
+        Update: {
+          change_amount_gallons?: number
+          change_type?: string
+          compartment_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_level_gallons?: number
+          notes?: string | null
+          previous_level_gallons?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          shop_id?: string
+          truck_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_compartment_history_compartment_id_fkey"
+            columns: ["compartment_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_truck_compartments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_delivery_completions: {
         Row: {
           arrival_time: string | null
