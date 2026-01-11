@@ -22,7 +22,7 @@ import { useCreateFuelDeliveryCompletion } from "@/hooks/useFuelDelivery";
 import { LiveClock } from "@/components/fuel-delivery/LiveClock";
 import { DeliveryTimeStats } from "@/components/fuel-delivery/DeliveryTimeStats";
 import { DeliveryCompletionDialog } from "@/components/fuel-delivery/DeliveryCompletionDialog";
-import { SkipStopDialog, SkipData } from "@/components/fuel-delivery/SkipStopDialog";
+import { SkipStopDialog, SkipData, NavigationMapDialog } from "@/components/fuel-delivery";
 
 // Types
 interface RouteStop {
@@ -196,6 +196,7 @@ export default function FuelDeliveryDriverApp() {
   const [selectedStop, setSelectedStop] = useState<RouteStop | null>(null);
   const [completionDialog, setCompletionDialog] = useState(false);
   const [skipDialog, setSkipDialog] = useState(false);
+  const [navigationDialog, setNavigationDialog] = useState(false);
   const [skipLoading, setSkipLoading] = useState(false);
   const [completionData, setCompletionData] = useState({
     gallons_delivered: "",
@@ -605,11 +606,8 @@ export default function FuelDeliveryDriverApp() {
                                 variant="outline"
                                 className="flex-1"
                                 onClick={() => {
-                                  const address = stop.fuel_delivery_orders?.fuel_delivery_locations?.address || 
-                                                  stop.fuel_delivery_customers?.billing_address;
-                                  if (address) {
-                                    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
-                                  }
+                                  setSelectedStop(stop);
+                                  setNavigationDialog(true);
                                 }}
                               >
                                 <Navigation className="h-3 w-3 mr-1" />
@@ -706,6 +704,31 @@ export default function FuelDeliveryDriverApp() {
           stop={selectedStop}
           onSkip={(data) => selectedStop && handleSkipStop(selectedStop, data)}
           isLoading={skipLoading}
+        />
+
+        {/* Navigation Map Dialog */}
+        <NavigationMapDialog
+          open={navigationDialog}
+          onOpenChange={setNavigationDialog}
+          stop={selectedStop ? {
+            id: selectedStop.id,
+            address: selectedStop.fuel_delivery_orders?.fuel_delivery_locations?.address || 
+                     selectedStop.fuel_delivery_customers?.billing_address,
+            latitude: selectedStop.fuel_delivery_customers?.billing_latitude,
+            longitude: selectedStop.fuel_delivery_customers?.billing_longitude,
+            customerName: selectedStop.fuel_delivery_customers?.company_name || 
+                          selectedStop.fuel_delivery_customers?.contact_name,
+            phone: selectedStop.fuel_delivery_customers?.phone,
+            fuelType: selectedStop.fuel_delivery_orders?.fuel_delivery_locations?.fuel_type ||
+                      selectedStop.fuel_delivery_orders?.fuel_delivery_products?.fuel_type,
+            quantity: selectedStop.fuel_delivery_orders?.quantity_ordered,
+          } : null}
+          onArrived={() => {
+            if (selectedStop) {
+              handleArriveAtStop(selectedStop);
+              setNavigationDialog(false);
+            }
+          }}
         />
       </div>
     );
