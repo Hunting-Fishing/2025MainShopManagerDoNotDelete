@@ -14590,51 +14590,72 @@ export type Database = {
         Row: {
           accepted_card_types: string[] | null
           address: string | null
+          brand: string | null
           city: string | null
           created_at: string
+          diesel_price: number | null
           id: string
           is_preferred: boolean | null
+          last_price_update: string | null
           latitude: number | null
           longitude: number | null
           name: string
           notes: string | null
+          opening_hours: string | null
+          osm_id: string | null
           phone: string | null
+          premium_price: number | null
+          province: string | null
+          regular_price: number | null
           shop_id: string
-          state: string | null
           updated_at: string
           zip: string | null
         }
         Insert: {
           accepted_card_types?: string[] | null
           address?: string | null
+          brand?: string | null
           city?: string | null
           created_at?: string
+          diesel_price?: number | null
           id?: string
           is_preferred?: boolean | null
+          last_price_update?: string | null
           latitude?: number | null
           longitude?: number | null
           name: string
           notes?: string | null
+          opening_hours?: string | null
+          osm_id?: string | null
           phone?: string | null
+          premium_price?: number | null
+          province?: string | null
+          regular_price?: number | null
           shop_id: string
-          state?: string | null
           updated_at?: string
           zip?: string | null
         }
         Update: {
           accepted_card_types?: string[] | null
           address?: string | null
+          brand?: string | null
           city?: string | null
           created_at?: string
+          diesel_price?: number | null
           id?: string
           is_preferred?: boolean | null
+          last_price_update?: string | null
           latitude?: number | null
           longitude?: number | null
           name?: string
           notes?: string | null
+          opening_hours?: string | null
+          osm_id?: string | null
           phone?: string | null
+          premium_price?: number | null
+          province?: string | null
+          regular_price?: number | null
           shop_id?: string
-          state?: string | null
           updated_at?: string
           zip?: string | null
         }
