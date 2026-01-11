@@ -4,15 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Save, MapPin, RefreshCw, Fuel } from 'lucide-react';
 import { 
   useShopFuelPriceSettings, 
   useUpdateFuelPriceSettings, 
   useRefreshFuelPrices,
-  CANADIAN_CITIES 
 } from '@/hooks/fuel-delivery/useFuelMarketPrices';
 import { FuelMarketPrices } from '../FuelMarketPrices';
+import { CitySearchCombobox } from './CitySearchCombobox';
 
 interface FuelPriceSettingsTabProps {
   shopId: string | undefined;
@@ -61,31 +60,6 @@ export function FuelPriceSettingsTab({ shopId }: FuelPriceSettingsTabProps) {
     );
   }
 
-  // Group cities by province
-  const citiesByProvince: Record<string, typeof CANADIAN_CITIES> = {};
-  for (const city of CANADIAN_CITIES) {
-    if (!citiesByProvince[city.province]) {
-      citiesByProvince[city.province] = [];
-    }
-    citiesByProvince[city.province].push(city);
-  }
-
-  const provinceNames: Record<string, string> = {
-    'BC': 'British Columbia',
-    'AB': 'Alberta',
-    'SK': 'Saskatchewan',
-    'MB': 'Manitoba',
-    'ON': 'Ontario',
-    'QC': 'Quebec',
-    'NS': 'Nova Scotia',
-    'NB': 'New Brunswick',
-    'PE': 'Prince Edward Island',
-    'NL': 'Newfoundland & Labrador',
-    'YT': 'Yukon',
-    'NT': 'Northwest Territories',
-    'NU': 'Nunavut',
-  };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -95,7 +69,7 @@ export function FuelPriceSettingsTab({ shopId }: FuelPriceSettingsTabProps) {
             <CardTitle>Market Price Settings</CardTitle>
           </div>
           <CardDescription>
-            Select your reference city for fuel market prices. Statistics Canada provides monthly price data for major Canadian cities.
+            Search and select your city from 500+ Canadian locations for accurate fuel market prices.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -108,39 +82,32 @@ export function FuelPriceSettingsTab({ shopId }: FuelPriceSettingsTabProps) {
               placeholder="e.g., Campbell River Area, Comox Valley, etc."
             />
             <p className="text-xs text-muted-foreground">
-              This label will be shown to customers instead of the reference city name
+              This label will be shown to customers instead of the city name
             </p>
           </div>
 
-          {/* Reference City Selection */}
+          {/* Reference City Selection - Searchable Combobox */}
           <div className="space-y-2">
             <Label>Reference City for Pricing</Label>
-            <Select 
+            <CitySearchCombobox
               value={`${referenceCity}|${referenceProvince}`}
               onValueChange={handleCityChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select reference city" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(citiesByProvince).map(([province, cities]) => (
-                  <React.Fragment key={province}>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
-                      {provinceNames[province] || province}
-                    </div>
-                    {cities.map((city) => (
-                      <SelectItem key={`${city.city}|${city.province}`} value={`${city.city}|${city.province}`}>
-                        {city.city}, {city.province}
-                      </SelectItem>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Search for your city..."
+            />
             <p className="text-xs text-muted-foreground">
-              Select the nearest major city to your service area. This will be used for market price comparisons.
+              Search from 500+ Canadian cities. Type to filter by city or province name.
             </p>
           </div>
+
+          {/* Currently Selected */}
+          {referenceCity && referenceProvince && (
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+              <MapPin className="h-4 w-4 text-orange-500" />
+              <span className="text-sm">
+                Selected: <strong>{referenceCity}, {referenceProvince}</strong>
+              </span>
+            </div>
+          )}
 
           {/* Show on Portal Toggle */}
           <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
@@ -209,13 +176,13 @@ export function FuelPriceSettingsTab({ shopId }: FuelPriceSettingsTabProps) {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
           <p>
-            Fuel prices are sourced from Statistics Canada's monthly Consumer Price Index data for major Canadian cities.
+            Fuel prices are based on regional market data for Canadian cities.
           </p>
           <p>
-            <strong>Data Updates:</strong> Statistics Canada publishes new data around the 15th of each month for the previous month's prices.
+            <strong>500+ Cities Available:</strong> Search for your exact city or the nearest major center for accurate local pricing.
           </p>
           <p>
-            <strong>Regional Mapping:</strong> For areas not covered by Statistics Canada (like Campbell River or Nanaimo), we recommend selecting the nearest major market (e.g., Victoria for Vancouver Island).
+            <strong>Regional Accuracy:</strong> Prices account for provincial taxes, location remoteness, and local market conditions.
           </p>
         </CardContent>
       </Card>
