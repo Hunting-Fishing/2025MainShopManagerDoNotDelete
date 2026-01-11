@@ -23,6 +23,7 @@ import { LiveClock } from "@/components/fuel-delivery/LiveClock";
 import { DeliveryTimeStats } from "@/components/fuel-delivery/DeliveryTimeStats";
 import { DeliveryCompletionDialog } from "@/components/fuel-delivery/DeliveryCompletionDialog";
 import { SkipStopDialog, SkipData, NavigationMapDialog } from "@/components/fuel-delivery";
+import { ElapsedTimer } from "@/components/fuel-delivery/ElapsedTimer";
 
 // Types
 interface RouteStop {
@@ -625,28 +626,43 @@ export default function FuelDeliveryDriverApp() {
                           )}
                           
                           {stop.status === 'arrived' && (
-                            <div className="flex gap-2 mt-3">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedStop(stop);
-                                  setSkipDialog(true);
-                                }}
-                              >
-                                Skip
-                              </Button>
-                              <Button 
-                                size="sm"
-                                className="flex-1 bg-green-600 hover:bg-green-700"
-                                onClick={() => {
-                                  setSelectedStop(stop);
-                                  setCompletionDialog(true);
-                                }}
-                              >
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Complete Delivery
-                              </Button>
+                            <div className="mt-3 space-y-2">
+                              {/* Elapsed timer banner */}
+                              <div className="flex items-center justify-between bg-purple-500/10 border border-purple-500/20 rounded-lg px-3 py-2">
+                                <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
+                                  On-site time
+                                </span>
+                                {stop.actual_arrival && (
+                                  <ElapsedTimer 
+                                    startTime={stop.actual_arrival} 
+                                    className="text-sm font-bold text-purple-600 dark:text-purple-400"
+                                  />
+                                )}
+                              </div>
+                              
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedStop(stop);
+                                    setSkipDialog(true);
+                                  }}
+                                >
+                                  Skip
+                                </Button>
+                                <Button 
+                                  size="sm"
+                                  className="flex-1 bg-green-600 hover:bg-green-700"
+                                  onClick={() => {
+                                    setSelectedStop(stop);
+                                    setCompletionDialog(true);
+                                  }}
+                                >
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Complete Delivery
+                                </Button>
+                              </div>
                             </div>
                           )}
                           
