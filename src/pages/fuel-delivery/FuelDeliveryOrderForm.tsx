@@ -15,6 +15,7 @@ import {
   useFuelDeliveryTrucks,
   useCreateFuelDeliveryOrder 
 } from '@/hooks/useFuelDelivery';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 export default function FuelDeliveryOrderForm() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function FuelDeliveryOrderForm() {
   const { data: drivers } = useFuelDeliveryDrivers();
   const { data: trucks } = useFuelDeliveryTrucks();
   const createOrder = useCreateFuelDeliveryOrder();
+  const { getVolumeLabel } = useFuelUnits();
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -174,7 +176,7 @@ export default function FuelDeliveryOrderForm() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Quantity (gallons) *</Label>
+                  <Label>Quantity ({getVolumeLabel()}) *</Label>
                   <Input
                     type="number"
                     value={formData.quantity_ordered}
@@ -184,7 +186,7 @@ export default function FuelDeliveryOrderForm() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Price per Gallon</Label>
+                  <Label>Price per {getVolumeLabel(false)}</Label>
                   <Input
                     type="number"
                     step="0.01"

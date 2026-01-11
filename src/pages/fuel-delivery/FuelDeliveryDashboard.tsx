@@ -29,6 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CustomerPortalQRCode } from '@/components/fuel-delivery/CustomerPortalQRCode';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 export default function FuelDeliveryDashboard() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export default function FuelDeliveryDashboard() {
   const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel-delivery');
   const { data: stats, isLoading: statsLoading } = useFuelDeliveryStats();
   const { data: recentOrders, isLoading: ordersLoading } = useFuelDeliveryOrders();
+  const { getVolumeLabel, formatVolume } = useFuelUnits();
 
   const statCards = [
     {
@@ -60,8 +62,8 @@ export default function FuelDeliveryDashboard() {
       bgColor: 'bg-purple-500/10',
     },
     {
-      title: 'Gallons Today',
-      value: `${(stats?.gallonsDeliveredToday || 0).toLocaleString()}`,
+      title: `${getVolumeLabel(true)} Today`,
+      value: formatVolume(stats?.gallonsDeliveredToday || 0),
       icon: Droplets,
       color: 'text-cyan-500',
       bgColor: 'bg-cyan-500/10',
@@ -85,7 +87,7 @@ export default function FuelDeliveryDashboard() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Fuel className="h-8 w-8 text-orange-600" />
-              Fuel Delivery
+              {moduleInfo?.displayName || 'Fuel Delivery'}
             </h1>
             <p className="text-muted-foreground mt-1">
               Manage fuel orders, deliveries, routes, and fleet
@@ -301,7 +303,7 @@ export default function FuelDeliveryDashboard() {
                     <div>
                       <p className="font-medium text-foreground">{order.order_number}</p>
                       <p className="text-sm text-muted-foreground">
-                        {order.fuel_delivery_customers?.company_name || order.fuel_delivery_customers?.contact_name} • {order.quantity_ordered} gal
+                        {order.fuel_delivery_customers?.company_name || order.fuel_delivery_customers?.contact_name} • {formatVolume(order.quantity_ordered)}
                       </p>
                     </div>
                     <div className="text-right">

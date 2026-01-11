@@ -22,9 +22,12 @@ import {
   Home,
   ChevronLeft,
   ChevronRight,
+  Cog,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 interface NavItem {
   title: string;
@@ -94,6 +97,12 @@ const navSections: NavSection[] = [
       { title: 'Invoices', href: '/fuel-delivery/invoices', icon: Receipt, color: 'from-purple-500 to-indigo-600' },
     ],
   },
+  {
+    title: 'Configuration',
+    items: [
+      { title: 'Settings', href: '/fuel-delivery/settings', icon: Cog, color: 'from-slate-500 to-gray-600' },
+    ],
+  },
 ];
 
 interface FuelDeliverySidebarProps {
@@ -105,6 +114,8 @@ export function FuelDeliverySidebar({ collapsed = false, onToggle }: FuelDeliver
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel-delivery');
 
   const isActive = (href: string) => {
     if (href === '/fuel-delivery') {
@@ -131,7 +142,9 @@ export function FuelDeliverySidebar({ collapsed = false, onToggle }: FuelDeliver
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent" />
               </div>
               <div>
-                <h2 className="font-semibold text-white tracking-tight">Fuel Delivery</h2>
+                <h2 className="font-semibold text-white tracking-tight truncate max-w-[140px]">
+                  {moduleInfo?.displayName || 'Fuel Delivery'}
+                </h2>
                 <p className="text-xs text-slate-400">Management Module</p>
               </div>
             </div>

@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useFuelDeliveryCustomers, useFuelDeliveryProducts, useFuelDeliveryDrivers, useFuelDeliveryTrucks } from '@/hooks/useFuelDelivery';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 interface TankFill {
   id: string;
@@ -50,6 +51,7 @@ export default function FuelDeliveryTankFills() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tankType, setTankType] = useState<'fixed' | 'tidy'>('fixed');
   const { toast } = useToast();
+  const { getVolumeLabel, formatVolume } = useFuelUnits();
   const queryClient = useQueryClient();
 
   const { data: fills = [], isLoading } = useQuery({
@@ -281,18 +283,18 @@ export default function FuelDeliveryTankFills() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Level Before (L)</Label>
+                  <Label>Level Before ({getVolumeLabel(true)})</Label>
                   <Input name="liters_before" type="number" step="0.01" placeholder="0" />
                 </div>
                 <div>
-                  <Label>Liters Delivered</Label>
+                  <Label>{getVolumeLabel()} Delivered</Label>
                   <Input name="liters_delivered" type="number" step="0.01" required />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Price per Liter</Label>
+                  <Label>Price per {getVolumeLabel(false)}</Label>
                   <Input name="price_per_liter" type="number" step="0.0001" />
                 </div>
                 <div>
@@ -341,7 +343,7 @@ export default function FuelDeliveryTankFills() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{totalLitersDelivered.toLocaleString()} L</div>
+            <div className="text-2xl font-bold">{formatVolume(totalLitersDelivered)}</div>
             <p className="text-sm text-muted-foreground">Total Delivered</p>
           </CardContent>
         </Card>
@@ -354,7 +356,7 @@ export default function FuelDeliveryTankFills() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">
-              {fills.length > 0 ? Math.round(totalLitersDelivered / fills.length) : 0} L
+              {formatVolume(fills.length > 0 ? Math.round(totalLitersDelivered / fills.length) : 0)}
             </div>
             <p className="text-sm text-muted-foreground">Avg per Fill</p>
           </CardContent>
@@ -383,7 +385,7 @@ export default function FuelDeliveryTankFills() {
                   <TableHead>Tank</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Product</TableHead>
-                  <TableHead>Liters</TableHead>
+                  <TableHead>Volume</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Driver</TableHead>
                   <TableHead>Type</TableHead>
@@ -407,9 +409,9 @@ export default function FuelDeliveryTankFills() {
                     <TableCell>{fill.fuel_delivery_customers?.company_name || '-'}</TableCell>
                     <TableCell>{fill.fuel_delivery_products?.product_name || '-'}</TableCell>
                     <TableCell>
-                      <span className="font-medium">{fill.liters_delivered?.toLocaleString()} L</span>
+                      <span className="font-medium">{formatVolume(fill.liters_delivered || 0)}</span>
                       <span className="text-xs text-muted-foreground block">
-                        {fill.liters_before?.toLocaleString() || 0} → {fill.liters_after?.toLocaleString() || 0}
+                        {formatVolume(fill.liters_before || 0)} → {formatVolume(fill.liters_after || 0)}
                       </span>
                     </TableCell>
                     <TableCell>${fill.total_amount?.toLocaleString() || 0}</TableCell>

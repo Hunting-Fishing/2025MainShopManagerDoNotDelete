@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { AddressAutocomplete, AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 export default function FuelDeliveryLocations() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function FuelDeliveryLocations() {
   const { data: locations, isLoading } = useFuelDeliveryLocations();
   const { data: customers } = useFuelDeliveryCustomers();
   const createLocation = useCreateFuelDeliveryLocation();
+  const { getVolumeLabel } = useFuelUnits();
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -235,7 +237,7 @@ export default function FuelDeliveryLocations() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Tank Capacity (gal)</Label>
+                    <Label>Tank Capacity ({getVolumeLabel(true)})</Label>
                     <Input
                       type="number"
                       value={formData.tank_capacity_gallons}
@@ -346,7 +348,7 @@ export default function FuelDeliveryLocations() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Current Tank Level (gal)</Label>
+                        <Label>Current Tank Level ({getVolumeLabel(true)})</Label>
                         <Input
                           type="number"
                           value={formData.current_level_gallons}

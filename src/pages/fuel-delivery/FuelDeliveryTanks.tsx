@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Fuel, MapPin, AlertTriangle, Droplets, Edit2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useFuelDeliveryCustomers, useFuelDeliveryLocations, useFuelDeliveryProducts } from '@/hooks/useFuelDelivery';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 interface Tank {
   id: string;
@@ -36,6 +37,7 @@ export default function FuelDeliveryTanks() {
   const [editingTank, setEditingTank] = useState<Tank | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { getVolumeLabel, formatVolume } = useFuelUnits();
 
   const { data: tanks = [], isLoading } = useQuery({
     queryKey: ['fuel-delivery-tanks'],
@@ -181,15 +183,15 @@ export default function FuelDeliveryTanks() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label>Capacity (L)</Label>
+                  <Label>Capacity ({getVolumeLabel(true)})</Label>
                   <Input name="capacity_liters" type="number" step="0.01" defaultValue={editingTank?.capacity_liters} required />
                 </div>
                 <div>
-                  <Label>Current Level (L)</Label>
+                  <Label>Current Level ({getVolumeLabel(true)})</Label>
                   <Input name="current_level_liters" type="number" step="0.01" defaultValue={editingTank?.current_level_liters || 0} />
                 </div>
                 <div>
-                  <Label>Min Level (L)</Label>
+                  <Label>Min Level ({getVolumeLabel(true)})</Label>
                   <Input name="minimum_level_liters" type="number" step="0.01" defaultValue={editingTank?.minimum_level_liters || 0} />
                 </div>
               </div>
@@ -276,9 +278,9 @@ export default function FuelDeliveryTanks() {
                     <div className="flex justify-between text-sm mb-1">
                       <span className="flex items-center gap-1">
                         <Droplets className="w-4 h-4" />
-                        {tank.current_level_liters?.toLocaleString() || 0} L
+                        {formatVolume(tank.current_level_liters || 0)}
                       </span>
-                      <span>{tank.capacity_liters?.toLocaleString()} L capacity</span>
+                      <span>{formatVolume(tank.capacity_liters)} capacity</span>
                     </div>
                     <Progress 
                       value={fillPercent} 
