@@ -651,6 +651,35 @@ export default function FuelDeliveryDriverApp() {
                               </Button>
                             </div>
                           )}
+                          
+                          {(stop.status === 'skipped' || stop.status === 'cancelled') && selectedRoute.status === 'in_progress' && (
+                            <div className="mt-3 space-y-2">
+                              {stop.skip_reason && (
+                                <p className="text-xs text-muted-foreground italic">
+                                  Skipped: {stop.skip_reason}
+                                </p>
+                              )}
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="w-full"
+                                onClick={async () => {
+                                  await updateRouteStop.mutateAsync({
+                                    id: stop.id,
+                                    status: 'pending',
+                                    skip_reason: undefined,
+                                    skip_action: undefined,
+                                    skip_notes: undefined,
+                                    reschedule_date: undefined,
+                                  });
+                                  toast.success("Stop reactivated");
+                                }}
+                              >
+                                <Play className="h-3 w-3 mr-1" />
+                                Reactivate Stop
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>
