@@ -319,86 +319,39 @@ serve(async (req) => {
       );
     }
 
-    // Action: Refresh prices for all cities (6-hour scheduled job)
+    // Action: Refresh prices for all cities - generates prices based on regional data
+    // This avoids hitting Overpass API rate limits by using cached/estimated pricing
     if (action === 'refresh') {
-      console.log('Refreshing fuel prices from OpenStreetMap + regional pricing...');
+      console.log('Refreshing fuel prices based on regional pricing data...');
       
       const currentMonth = new Date();
       currentMonth.setDate(1);
       const priceMonth = currentMonth.toISOString().split('T')[0];
       
       const priceRecords = [];
-      const stationRecords = [];
       
-      // Process cities in batches to avoid rate limiting
+      // Generate prices for all cities without hitting Overpass API
+      // This is fast and won't hit rate limits
       for (const location of CANADIAN_CITIES) {
-        try {
-          // Fetch real station locations from OSM
-          const stations = await fetchFuelStationsFromOSM(location.lat, location.lon, 20);
-          
-          // Calculate average price for the city based on all stations
-          const cityPrices = generateRealisticPrices(location.city, location.province);
-          
-          // Store city-level prices
-          priceRecords.push({
-            city: location.city,
-            province: location.province,
-            fuel_type: 'regular_gasoline',
-            price_cents_per_litre: cityPrices.regular,
-            price_month: priceMonth,
-            source: 'osm_nrcan_hybrid',
-          });
-          
-          priceRecords.push({
-            city: location.city,
-            province: location.province,
-            fuel_type: 'diesel',
-            price_cents_per_litre: cityPrices.diesel,
-            price_month: priceMonth,
-            source: 'osm_nrcan_hybrid',
-          });
-          
-          // Store individual station data (first 10 per city to save space)
-          for (const station of stations.slice(0, 10)) {
-            const stationPrices = generateRealisticPrices(location.city, location.province, station.brand);
-            stationRecords.push({
-              osm_id: station.osm_id?.toString(),
-              name: station.name,
-              brand: station.brand,
-              city: location.city,
-              province: location.province,
-              latitude: station.lat,
-              longitude: station.lon,
-              address: station.address,
-              regular_price: stationPrices.regular,
-              diesel_price: stationPrices.diesel,
-              last_updated: new Date().toISOString(),
-            });
-          }
-          
-          // Add 2.5 second delay between cities to respect Overpass API rate limits
-          await wait(2500);
-        } catch (error) {
-          console.error(`Error processing ${location.city}:`, error);
-          // Continue with next city, use fallback pricing
-          const fallbackPrices = generateRealisticPrices(location.city, location.province);
-          priceRecords.push({
-            city: location.city,
-            province: location.province,
-            fuel_type: 'regular_gasoline',
-            price_cents_per_litre: fallbackPrices.regular,
-            price_month: priceMonth,
-            source: 'nrcan_estimate',
-          });
-          priceRecords.push({
-            city: location.city,
-            province: location.province,
-            fuel_type: 'diesel',
-            price_cents_per_litre: fallbackPrices.diesel,
-            price_month: priceMonth,
-            source: 'nrcan_estimate',
-          });
-        }
+        const cityPrices = generateRealisticPrices(location.city, location.province);
+        
+        priceRecords.push({
+          city: location.city,
+          province: location.province,
+          fuel_type: 'regular_gasoline',
+          price_cents_per_litre: cityPrices.regular,
+          price_month: priceMonth,
+          source: 'regional_estimate',
+        });
+        
+        priceRecords.push({
+          city: location.city,
+          province: location.province,
+          fuel_type: 'diesel',
+          price_cents_per_litre: cityPrices.diesel,
+          price_month: priceMonth,
+          source: 'regional_estimate',
+        });
       }
       
       // Upsert market prices
@@ -408,27 +361,18 @@ serve(async (req) => {
       
       if (priceError) {
         console.error('Error upserting prices:', priceError);
+        throw priceError;
       }
       
-      // Upsert station data (if table exists)
-      if (stationRecords.length > 0) {
-        const { error: stationError } = await supabase
-          .from('fuel_stations')
-          .upsert(stationRecords, { onConflict: 'osm_id' });
-        
-        if (stationError) {
-          console.log('Station table may not exist yet:', stationError.message);
-        }
-      }
-      
-      console.log(`Successfully refreshed ${priceRecords.length} price records and ${stationRecords.length} station records`);
+      console.log(`Successfully refreshed ${priceRecords.length} price records for ${CANADIAN_CITIES.length} cities`);
       
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: `Refreshed ${priceRecords.length} prices and ${stationRecords.length} stations`,
+          message: `Refreshed ${priceRecords.length} prices for ${CANADIAN_CITIES.length} cities`,
+          cities_count: CANADIAN_CITIES.length,
           updated_at: new Date().toISOString(),
-          source: 'openstreetmap_overpass',
+          source: 'regional_estimate',
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
