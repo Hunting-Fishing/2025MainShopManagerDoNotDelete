@@ -35,6 +35,7 @@ import { TruckCompartmentSelector } from './TruckCompartmentSelector';
 import { SignaturePad } from './SignaturePad';
 import { useTruckCompartments, TruckCompartment, useUpdateCompartmentLevel } from '@/hooks/useTruckCompartments';
 import { useFuelProducts, FuelProduct } from '@/hooks/useFuelProducts';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 interface RouteStop {
   id: string;
@@ -107,6 +108,7 @@ export function DeliveryCompletionDialog({
   const { data: compartments = [], isLoading: loadingCompartments } = useTruckCompartments(route?.truck_id || undefined);
   const { data: products = [], isLoading: loadingProducts } = useFuelProducts();
   const updateCompartmentLevel = useUpdateCompartmentLevel();
+  const { getUnitLabel, getPriceLabel, formatVolume, convertToGallons, convertFromGallons } = useFuelUnits();
   
   // Time tracking
   const arrivalTime = stop?.actual_arrival ? new Date(stop.actual_arrival) : new Date();
@@ -356,7 +358,7 @@ export function DeliveryCompletionDialog({
                               <div>
                                 <div className="font-medium text-sm">{product.product_name}</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {product.product_code} • ${product.base_price_per_unit?.toFixed(2)}/gal
+                                  {product.product_code} • ${product.base_price_per_unit?.toFixed(2)}{getPriceLabel()}
                                 </div>
                               </div>
                             </div>
@@ -394,7 +396,7 @@ export function DeliveryCompletionDialog({
                   <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
                     <div className="text-sm text-green-800 dark:text-green-200">
                       <strong>Selected:</strong> {selectedCompartment.compartment_name} with{' '}
-                      {selectedCompartment.current_level_gallons.toFixed(0)} gallons available
+                      {formatVolume(selectedCompartment.current_level_gallons, 0)} available
                     </div>
                   </div>
                 )}
@@ -441,7 +443,7 @@ export function DeliveryCompletionDialog({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="gallons">Gallons Delivered</Label>
+                  <Label htmlFor="gallons">{getUnitLabel(false)} Delivered</Label>
                   <div className="relative">
                     <Input
                       id="gallons"
@@ -453,7 +455,7 @@ export function DeliveryCompletionDialog({
                       className="text-2xl h-14 pr-16"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      gallons
+                      {getUnitLabel()}
                     </span>
                   </div>
                 </div>
@@ -463,7 +465,7 @@ export function DeliveryCompletionDialog({
                     <div className="text-sm">
                       <span className="text-muted-foreground">Remaining in tank after delivery:</span>{' '}
                       <span className="font-medium">
-                        {Math.max(0, selectedCompartment.current_level_gallons - parseFloat(gallonsDelivered)).toFixed(0)} gallons
+                        {formatVolume(Math.max(0, selectedCompartment.current_level_gallons - parseFloat(gallonsDelivered)), 0)}
                       </span>
                     </div>
                   </div>
@@ -557,7 +559,7 @@ export function DeliveryCompletionDialog({
                     <div>{useCustomProduct ? customProductName : selectedProduct?.product_name}</div>
                     
                     <div className="text-muted-foreground">Quantity:</div>
-                    <div>{gallonsDelivered} gallons</div>
+                    <div>{gallonsDelivered} {getUnitLabel()}</div>
                     
                     <div className="text-muted-foreground">Duration:</div>
                     <div>{duration} minutes</div>
