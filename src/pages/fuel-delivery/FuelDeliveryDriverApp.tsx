@@ -513,7 +513,6 @@ export default function FuelDeliveryDriverApp() {
                                 </span>
                               )}
                             </div>
-                          )}
                           
                           {stop.status === 'pending' && selectedRoute.status === 'in_progress' && (
                             <div className="flex gap-2 mt-3">
