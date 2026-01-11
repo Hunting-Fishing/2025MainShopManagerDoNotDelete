@@ -178,7 +178,7 @@ export default function FuelDeliveryDriverApp() {
   const updateRouteStop = useUpdateRouteStop();
   const createCompletion = useCreateFuelDeliveryCompletion();
   
-  const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'month'>('today');
+  const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
   const [selectedStop, setSelectedStop] = useState<RouteStop | null>(null);
   const [completionDialog, setCompletionDialog] = useState(false);
@@ -194,6 +194,13 @@ export default function FuelDeliveryDriverApp() {
   // Filter routes based on time period
   const filteredRoutes = useMemo(() => {
     if (!routes) return [];
+    
+    // For 'all', return all non-completed routes first, then completed
+    if (timeFilter === 'all') {
+      return routes
+        .filter(r => r.status !== 'completed')
+        .concat(routes.filter(r => r.status === 'completed').slice(0, 5));
+    }
     
     const now = new Date();
     let start: Date, end: Date;
@@ -665,11 +672,12 @@ export default function FuelDeliveryDriverApp() {
 
       {/* Time Filter Tabs */}
       <div className="px-4 pt-4">
-        <Tabs value={timeFilter} onValueChange={(v) => setTimeFilter(v as 'today' | 'week' | 'month')}>
-          <TabsList className="w-full grid grid-cols-3">
+        <Tabs value={timeFilter} onValueChange={(v) => setTimeFilter(v as 'all' | 'today' | 'week' | 'month')}>
+          <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="week">This Week</TabsTrigger>
-            <TabsTrigger value="month">This Month</TabsTrigger>
+            <TabsTrigger value="week">Week</TabsTrigger>
+            <TabsTrigger value="month">Month</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
