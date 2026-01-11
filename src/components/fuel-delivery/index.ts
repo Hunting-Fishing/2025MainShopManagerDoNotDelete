@@ -11,3 +11,5 @@ export { CustomerMap } from './CustomerMap';
 export { DeliveryCompletionDialog } from './DeliveryCompletionDialog';
 export { TruckCompartmentSelector } from './TruckCompartmentSelector';
 export { SignaturePad } from './SignaturePad';
+export { SkipStopDialog } from './SkipStopDialog';
+export type { SkipData } from './SkipStopDialog';

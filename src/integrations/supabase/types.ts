@@ -13625,7 +13625,10 @@ export type Database = {
           notes: string | null
           order_id: string | null
           preferred_time_window: string | null
+          reschedule_date: string | null
           route_id: string | null
+          skip_action: string | null
+          skip_notes: string | null
           skip_reason: string | null
           status: string | null
           stop_sequence: number
@@ -13641,7 +13644,10 @@ export type Database = {
           notes?: string | null
           order_id?: string | null
           preferred_time_window?: string | null
+          reschedule_date?: string | null
           route_id?: string | null
+          skip_action?: string | null
+          skip_notes?: string | null
           skip_reason?: string | null
           status?: string | null
           stop_sequence: number
@@ -13657,7 +13663,10 @@ export type Database = {
           notes?: string | null
           order_id?: string | null
           preferred_time_window?: string | null
+          reschedule_date?: string | null
           route_id?: string | null
+          skip_action?: string | null
+          skip_notes?: string | null
           skip_reason?: string | null
           status?: string | null
           stop_sequence?: number
