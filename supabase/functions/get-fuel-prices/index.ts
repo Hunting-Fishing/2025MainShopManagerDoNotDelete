@@ -141,13 +141,18 @@ const REGIONAL_ADJUSTMENTS: Record<string, { regular: number; diesel: number }> 
   "NU": { regular: 35, diesel: 30 },
 };
 
-// Fetch fuel stations from OpenStreetMap Overpass API
-async function fetchFuelStationsFromOSM(lat: number, lon: number, radiusKm: number = 25): Promise<any[]> {
+// Helper function to wait with exponential backoff
+async function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Fetch fuel stations from OpenStreetMap Overpass API with retry logic
+async function fetchFuelStationsFromOSM(lat: number, lon: number, radiusKm: number = 20, retries: number = 3): Promise<any[]> {
   const overpassUrl = "https://overpass-api.de/api/interpreter";
   
   // Overpass QL query to find fuel stations within radius
   const query = `
-    [out:json][timeout:25];
+    [out:json][timeout:30];
     (
       node["amenity"="fuel"](around:${radiusKm * 1000},${lat},${lon});
       way["amenity"="fuel"](around:${radiusKm * 1000},${lat},${lon});
@@ -155,53 +160,70 @@ async function fetchFuelStationsFromOSM(lat: number, lon: number, radiusKm: numb
     out center tags;
   `;
   
-  try {
-    console.log(`Fetching fuel stations near ${lat}, ${lon} with radius ${radiusKm}km`);
-    
-    const response = await fetch(overpassUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(query)}`,
-    });
-    
-    if (!response.ok) {
-      console.error(`Overpass API error: ${response.status}`);
-      return [];
-    }
-    
-    const data = await response.json();
-    
-    // Parse station data
-    const stations = data.elements?.map((element: any) => {
-      const lat = element.lat || element.center?.lat;
-      const lon = element.lon || element.center?.lon;
-      const tags = element.tags || {};
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      if (attempt > 0) {
+        // Exponential backoff: 3s, 6s, 12s
+        const backoffMs = 3000 * Math.pow(2, attempt);
+        console.log(`Retry attempt ${attempt + 1} after ${backoffMs}ms delay...`);
+        await wait(backoffMs);
+      }
       
-      return {
-        osm_id: element.id,
-        name: tags.name || tags.brand || 'Unknown Station',
-        brand: tags.brand || tags.operator || null,
-        lat,
-        lon,
-        address: [tags['addr:housenumber'], tags['addr:street'], tags['addr:city']]
-          .filter(Boolean).join(' ') || null,
-        fuel_types: {
-          regular: tags['fuel:octane_87'] === 'yes' || tags['fuel:gasoline'] === 'yes' || true,
-          diesel: tags['fuel:diesel'] === 'yes' || tags.fuel?.includes('diesel') || true,
-          premium: tags['fuel:octane_91'] === 'yes' || tags['fuel:octane_93'] === 'yes' || false,
-        },
-        opening_hours: tags.opening_hours || null,
-        payment_methods: tags.payment || null,
-      };
-    }) || [];
-    
-    console.log(`Found ${stations.length} fuel stations near ${lat}, ${lon}`);
-    return stations;
-    
-  } catch (error) {
-    console.error('Error fetching from Overpass API:', error);
-    return [];
+      console.log(`Fetching fuel stations near ${lat}, ${lon} with radius ${radiusKm}km`);
+      
+      const response = await fetch(overpassUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `data=${encodeURIComponent(query)}`,
+      });
+      
+      if (response.status === 429 || response.status === 504) {
+        console.warn(`Overpass API rate limit/timeout (${response.status}), will retry...`);
+        if (attempt < retries - 1) continue;
+        return [];
+      }
+      
+      if (!response.ok) {
+        console.error(`Overpass API error: ${response.status}`);
+        return [];
+      }
+      
+      const data = await response.json();
+      
+      // Parse station data
+      const stations = data.elements?.map((element: any) => {
+        const lat = element.lat || element.center?.lat;
+        const lon = element.lon || element.center?.lon;
+        const tags = element.tags || {};
+        
+        return {
+          osm_id: element.id,
+          name: tags.name || tags.brand || 'Unknown Station',
+          brand: tags.brand || tags.operator || null,
+          lat,
+          lon,
+          address: [tags['addr:housenumber'], tags['addr:street'], tags['addr:city']]
+            .filter(Boolean).join(' ') || null,
+          fuel_types: {
+            regular: tags['fuel:octane_87'] === 'yes' || tags['fuel:gasoline'] === 'yes' || true,
+            diesel: tags['fuel:diesel'] === 'yes' || tags.fuel?.includes('diesel') || true,
+            premium: tags['fuel:octane_91'] === 'yes' || tags['fuel:octane_93'] === 'yes' || false,
+          },
+          opening_hours: tags.opening_hours || null,
+          payment_methods: tags.payment || null,
+        };
+      }) || [];
+      
+      console.log(`Found ${stations.length} fuel stations near ${lat}, ${lon}`);
+      return stations;
+      
+    } catch (error) {
+      console.error(`Error fetching from Overpass API (attempt ${attempt + 1}):`, error);
+      if (attempt === retries - 1) return [];
+    }
   }
+  
+  return [];
 }
 
 // Generate realistic prices calibrated to NRCAN/GasBuddy data
@@ -354,9 +376,8 @@ serve(async (req) => {
             });
           }
           
-          // Add small delay between cities to respect Overpass API rate limits
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
+          // Add 2.5 second delay between cities to respect Overpass API rate limits
+          await wait(2500);
         } catch (error) {
           console.error(`Error processing ${location.city}:`, error);
           // Continue with next city, use fallback pricing
