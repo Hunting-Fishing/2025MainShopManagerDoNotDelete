@@ -90,6 +90,9 @@ export function useFuelUnits() {
     return preferences.unitSystem === 'metric' ? 'Litres' : 'Gallons';
   }, [preferences.unitSystem]);
 
+  // Alias for getUnitLabel for clarity
+  const getVolumeLabel = getUnitLabel;
+
   // Get price label (per litre or per gallon)
   const getPriceLabel = useCallback((short: boolean = true): string => {
     if (short) {
@@ -158,6 +161,7 @@ export function useFuelUnits() {
     convertToGallons,
     formatVolume,
     getUnitLabel,
+    getVolumeLabel,
     getPriceLabel,
     
     // Distance functions

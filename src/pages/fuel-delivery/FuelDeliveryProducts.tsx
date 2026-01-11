@@ -13,19 +13,21 @@ import { Plus, Search, Package, ArrowLeft } from 'lucide-react';
 import { useFuelDeliveryProducts, useCreateFuelDeliveryProduct } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 export default function FuelDeliveryProducts() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { data: products, isLoading } = useFuelDeliveryProducts();
+  const { volumeUnit } = useFuelUnits();
   const createProduct = useCreateFuelDeliveryProduct();
 
   const [formData, setFormData] = useState({
     product_name: '',
     product_code: '',
     fuel_type: '',
-    unit_of_measure: 'gallon',
+    unit_of_measure: volumeUnit === 'litres' ? 'liter' : 'gallon',
     base_price_per_unit: '',
     cost_per_unit: '',
     tax_rate: '8',
@@ -54,7 +56,7 @@ export default function FuelDeliveryProducts() {
       product_name: '',
       product_code: '',
       fuel_type: '',
-      unit_of_measure: 'gallon',
+      unit_of_measure: volumeUnit === 'litres' ? 'liter' : 'gallon',
       base_price_per_unit: '',
       cost_per_unit: '',
       tax_rate: '8',
