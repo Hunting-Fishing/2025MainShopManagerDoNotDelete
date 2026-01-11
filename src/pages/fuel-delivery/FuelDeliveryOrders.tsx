@@ -10,12 +10,16 @@ import { useFuelDeliveryOrders } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 export default function FuelDeliveryOrders() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { data: orders, isLoading } = useFuelDeliveryOrders();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
 
   const filteredOrders = orders?.filter(order => {
     const matchesSearch = 
@@ -49,10 +53,10 @@ export default function FuelDeliveryOrders() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Fuel className="h-8 w-8 text-orange-600" />
-              Delivery Orders
+              {moduleInfo?.displayName || 'Fuel Delivery'} Orders
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage and track fuel delivery orders
+              Manage and track delivery orders
             </p>
           </div>
           <Button onClick={() => navigate('/fuel-delivery/orders/new')}>

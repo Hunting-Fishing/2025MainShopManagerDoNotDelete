@@ -21,6 +21,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { geocodeAddress } from '@/utils/geocoding';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 export default function FuelDeliveryRoutes() {
   const navigate = useNavigate();
@@ -41,6 +43,8 @@ export default function FuelDeliveryRoutes() {
   const { data: orders } = useFuelDeliveryOrders();
   const createRoute = useCreateFuelDeliveryRoute();
   const createLocation = useCreateFuelDeliveryLocation();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
 
   // Edit form state
   const [editFormData, setEditFormData] = useState({
@@ -424,7 +428,7 @@ export default function FuelDeliveryRoutes() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Route className="h-8 w-8 text-purple-600" />
-              Delivery Routes
+              {moduleInfo?.displayName || 'Fuel Delivery'} Routes
             </h1>
             <p className="text-muted-foreground mt-1">
               Plan and manage delivery routes

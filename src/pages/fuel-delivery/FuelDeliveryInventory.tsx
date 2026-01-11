@@ -12,6 +12,8 @@ import { Plus, Search, BarChart3, ArrowLeft, AlertTriangle, Droplets } from 'luc
 import { useFuelDeliveryInventory, useCreateFuelDeliveryInventory, useFuelDeliveryProducts } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 export default function FuelDeliveryInventory() {
   const navigate = useNavigate();
@@ -20,6 +22,8 @@ export default function FuelDeliveryInventory() {
   const { data: inventory, isLoading } = useFuelDeliveryInventory();
   const { data: products } = useFuelDeliveryProducts();
   const createInventory = useCreateFuelDeliveryInventory();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
 
   const [formData, setFormData] = useState({
     storage_tank_name: '',
@@ -81,7 +85,7 @@ export default function FuelDeliveryInventory() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <BarChart3 className="h-8 w-8 text-amber-600" />
-              Fuel Inventory
+              {moduleInfo?.displayName || 'Fuel Delivery'} Inventory
             </h1>
             <p className="text-muted-foreground mt-1">
               Monitor bulk storage tanks and inventory levels

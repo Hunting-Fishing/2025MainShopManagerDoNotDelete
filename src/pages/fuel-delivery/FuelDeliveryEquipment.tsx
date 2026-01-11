@@ -22,6 +22,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 interface Equipment {
   id: string;
@@ -57,6 +59,8 @@ export default function FuelDeliveryEquipment() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
   const [formData, setFormData] = useState({
     equipment_name: '',
     equipment_type: '',
@@ -171,10 +175,10 @@ export default function FuelDeliveryEquipment() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Settings className="h-8 w-8 text-blue-600" />
-              Equipment Management
+              {moduleInfo?.displayName || 'Fuel Delivery'} Equipment
             </h1>
             <p className="text-muted-foreground mt-1">
-              Track pumps, meters, hoses, and other fuel delivery equipment
+              Track pumps, meters, hoses, and other equipment
             </p>
           </div>
           <div className="flex gap-3">

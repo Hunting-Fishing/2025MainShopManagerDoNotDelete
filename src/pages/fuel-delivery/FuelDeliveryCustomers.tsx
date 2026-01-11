@@ -18,6 +18,8 @@ import { FuelTypeSelect, CustomerVehicleForm, VehicleFormData } from '@/componen
 import { supabase } from '@/integrations/supabase/client';
 import { geocodeAddress } from '@/utils/geocoding';
 import { toast } from '@/hooks/use-toast';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 export default function FuelDeliveryCustomers() {
   const navigate = useNavigate();
@@ -28,6 +30,8 @@ export default function FuelDeliveryCustomers() {
   const { data: allLocations } = useFuelDeliveryLocations();
   const createCustomer = useCreateFuelDeliveryCustomer();
   const updateCustomer = useUpdateFuelDeliveryCustomer();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
   
   // Track original vehicle IDs from DB to distinguish new vs existing
   const [originalVehicleIds, setOriginalVehicleIds] = useState<Set<string>>(new Set());
@@ -336,10 +340,10 @@ export default function FuelDeliveryCustomers() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Users className="h-8 w-8 text-orange-600" />
-              Fuel Delivery Customers
+              {moduleInfo?.displayName || 'Fuel Delivery'} Customers
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage fuel delivery customers and accounts
+              Manage customers and accounts
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>

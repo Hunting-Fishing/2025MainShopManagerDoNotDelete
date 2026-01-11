@@ -16,6 +16,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format, isBefore, addDays } from 'date-fns';
 import { LicenseClassSelect, getJurisdiction } from '@/components/fuel-delivery/LicenseClassSelect';
 import { AddressAutocomplete, AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 export default function FuelDeliveryDrivers() {
   const navigate = useNavigate();
@@ -23,6 +25,8 @@ export default function FuelDeliveryDrivers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { data: drivers, isLoading } = useFuelDeliveryDrivers();
   const createDriver = useCreateFuelDeliveryDriver();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -130,10 +134,10 @@ export default function FuelDeliveryDrivers() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Users className="h-8 w-8 text-green-600" />
-              Delivery Drivers
+              {moduleInfo?.displayName || 'Fuel Delivery'} Drivers
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage fuel delivery drivers and certifications
+              Manage drivers and certifications
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

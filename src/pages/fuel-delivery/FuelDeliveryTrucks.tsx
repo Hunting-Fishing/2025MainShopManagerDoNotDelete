@@ -13,6 +13,8 @@ import { useFuelDeliveryTrucks, useCreateFuelDeliveryTruck } from '@/hooks/useFu
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { useShopId } from '@/hooks/useShopId';
+import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 
 export default function FuelDeliveryTrucks() {
   const navigate = useNavigate();
@@ -20,6 +22,8 @@ export default function FuelDeliveryTrucks() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { data: trucks, isLoading } = useFuelDeliveryTrucks();
   const createTruck = useCreateFuelDeliveryTruck();
+  const { shopId } = useShopId();
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
 
   const [formData, setFormData] = useState({
     truck_number: '',
@@ -102,10 +106,10 @@ export default function FuelDeliveryTrucks() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Truck className="h-8 w-8 text-blue-600" />
-              Delivery Trucks
+              {moduleInfo?.displayName || 'Fuel Delivery'} Trucks
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage fuel delivery trucks and tankers
+              Manage trucks and tankers
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
