@@ -13179,6 +13179,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fuel_delivery_orders_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_drivers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fuel_delivery_orders_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
@@ -13190,6 +13197,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_orders_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_trucks"
             referencedColumns: ["id"]
           },
         ]
