@@ -156,9 +156,19 @@ export function FuelPriceSettingsTab({ shopId }: FuelPriceSettingsTabProps) {
       {/* Preview */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Fuel className="h-5 w-5 text-orange-500" />
-            <CardTitle className="text-base">Price Preview</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Fuel className="h-5 w-5 text-orange-500" />
+              <CardTitle className="text-base">Price Preview</CardTitle>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                <span>OpenStreetMap + NRCAN</span>
+              </div>
+              <span className="text-muted-foreground/60">•</span>
+              <span>Updates every 6 hours</span>
+            </div>
           </div>
           <CardDescription>
             This is how current fuel prices will appear
