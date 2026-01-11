@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Truck, ArrowLeft, Pencil } from 'lucide-react';
+import { Plus, Search, Truck, ArrowLeft, Pencil, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFuelDeliveryTrucks, useCreateFuelDeliveryTruck, FuelDeliveryTruck } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -289,8 +290,45 @@ export default function FuelDeliveryTrucks() {
                   <TableHead>Truck #</TableHead>
                   <TableHead>Make/Model</TableHead>
                   <TableHead>License Plate</TableHead>
-                  <TableHead>Capacity</TableHead>
-                  <TableHead>Current Load</TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      Capacity
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="font-medium mb-1">Total Tank Capacity</p>
+                            <p className="text-xs text-muted-foreground">
+                              Sum of all compartment capacities configured for this truck. 
+                              Edit the truck to manage compartments.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      Current Load
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="font-medium mb-1">Current Fuel Load</p>
+                            <p className="text-xs text-muted-foreground">
+                              Sum of current fuel levels across all compartments. 
+                              Updated when compartments are filled or deliveries are completed.
+                              All changes are tracked in compartment history.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>DOT Due</TableHead>
                   <TableHead className="w-16">Actions</TableHead>
