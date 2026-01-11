@@ -13,12 +13,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Truck, MapPin, Clock, CheckCircle2, AlertCircle, 
   Navigation, Fuel, User, Droplets, Route, Calendar,
-  ChevronRight, Play, ArrowLeft
+  ChevronRight, Play, ArrowLeft, Timer, AlertTriangle
 } from "lucide-react";
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, parseISO, differenceInMinutes, isBefore } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useCreateFuelDeliveryCompletion } from "@/hooks/useFuelDelivery";
+import { LiveClock } from "@/components/fuel-delivery/LiveClock";
+import { DeliveryTimeStats } from "@/components/fuel-delivery/DeliveryTimeStats";
 
 // Types
 interface RouteStop {
@@ -30,8 +32,11 @@ interface RouteStop {
   status: string;
   estimated_arrival?: string;
   actual_arrival?: string;
+  actual_departure?: string;
   notes?: string;
   skip_reason?: string;
+  preferred_time_window?: string;
+  estimated_duration_minutes?: number;
   fuel_delivery_customers?: {
     company_name?: string;
     contact_name: string;
@@ -134,7 +139,7 @@ function useUpdateRouteStop() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; status?: string; actual_arrival?: string; notes?: string; skip_reason?: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; status?: string; actual_arrival?: string; actual_departure?: string; notes?: string; skip_reason?: string }) => {
       const { error } = await (supabase as any)
         .from('fuel_delivery_route_stops')
         .update(updates)
@@ -269,11 +274,11 @@ export default function FuelDeliveryDriverApp() {
       delivery_date: new Date().toISOString()
     });
 
-    // Update stop status
     await updateRouteStop.mutateAsync({
       id: selectedStop.id,
       status: 'completed',
-      notes: completionData.delivery_notes
+      notes: completionData.delivery_notes,
+      actual_departure: new Date().toISOString()
     });
 
     // Update route completed_stops count
@@ -299,9 +304,51 @@ export default function FuelDeliveryDriverApp() {
     await updateRouteStop.mutateAsync({
       id: stop.id,
       status: 'skipped',
-      skip_reason: reason
+      skip_reason: reason,
+      actual_departure: new Date().toISOString()
     });
     toast.info("Stop skipped");
+  };
+
+  // Helper to get ETA status for a stop
+  const getEtaStatus = (stop: RouteStop): { label: string; color: string; isLate: boolean } => {
+    if (!stop.estimated_arrival) {
+      return { label: 'No ETA', color: 'text-muted-foreground', isLate: false };
+    }
+    
+    const now = new Date();
+    const eta = parseISO(stop.estimated_arrival);
+    const diff = differenceInMinutes(eta, now);
+    
+    if (stop.status === 'completed' || stop.status === 'skipped') {
+      if (stop.actual_arrival) {
+        const arrivalDiff = differenceInMinutes(parseISO(stop.actual_arrival), eta);
+        if (arrivalDiff > 15) {
+          return { label: `${arrivalDiff}min late`, color: 'text-red-500', isLate: true };
+        }
+        return { label: 'On time', color: 'text-green-500', isLate: false };
+      }
+      return { label: 'Done', color: 'text-green-500', isLate: false };
+    }
+    
+    if (diff < -15) {
+      return { label: `${Math.abs(diff)}min overdue`, color: 'text-red-500', isLate: true };
+    } else if (diff < 0) {
+      return { label: 'Due now', color: 'text-orange-500', isLate: false };
+    } else if (diff <= 30) {
+      return { label: `In ${diff}min`, color: 'text-yellow-500', isLate: false };
+    }
+    return { label: format(eta, 'h:mm a'), color: 'text-muted-foreground', isLate: false };
+  };
+
+  // Get time window label
+  const getTimeWindowLabel = (window?: string): string => {
+    switch (window) {
+      case 'morning': return '8AM-12PM';
+      case 'afternoon': return '12PM-5PM';
+      case 'evening': return '5PM-8PM';
+      default: return 'Any time';
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -337,6 +384,7 @@ export default function FuelDeliveryDriverApp() {
                 {format(parseISO(selectedRoute.route_date), 'EEEE, MMM d')}
               </p>
             </div>
+            <LiveClock className="text-primary-foreground opacity-90" />
             <Badge variant="secondary" className={getStatusColor(selectedRoute.status)}>
               {selectedRoute.status}
             </Badge>
@@ -433,7 +481,21 @@ export default function FuelDeliveryDriverApp() {
                             </Badge>
                           </div>
                           
-                          {(stop.fuel_delivery_orders?.fuel_delivery_locations || stop.fuel_delivery_orders?.fuel_delivery_products) && (
+                          {/* ETA and Time Window */}
+                          <div className="flex items-center gap-2 mt-1 text-xs">
+                            {stop.preferred_time_window && stop.preferred_time_window !== 'any' && (
+                              <span className="flex items-center gap-1 text-muted-foreground">
+                                <Timer className="h-3 w-3" />
+                                {getTimeWindowLabel(stop.preferred_time_window)}
+                              </span>
+                            )}
+                            {stop.estimated_arrival && (
+                              <span className={`flex items-center gap-1 ${getEtaStatus(stop).color}`}>
+                                {getEtaStatus(stop).isLate && <AlertTriangle className="h-3 w-3" />}
+                                {getEtaStatus(stop).label}
+                              </span>
+                            )}
+                          </div>
                             <div className="flex items-center gap-3 mt-2 text-sm">
                               <span className="flex items-center gap-1">
                                 <Fuel className="h-3 w-3 text-orange-500" />

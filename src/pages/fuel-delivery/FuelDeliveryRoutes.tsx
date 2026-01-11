@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, Route, ArrowLeft, MapPin, Map, Users, Edit, Trash2, Eye, X, Save } from 'lucide-react';
+import { Plus, Search, Route, ArrowLeft, MapPin, Map, Users, Edit, Trash2, Eye, X, Save, Wand2 } from 'lucide-react';
 import { useFuelDeliveryRoutes, useCreateFuelDeliveryRoute, useFuelDeliveryDrivers, useFuelDeliveryTrucks, useFuelDeliveryLocations, useFuelDeliveryCustomers, useFuelDeliveryOrders, useCreateFuelDeliveryLocation, FuelDeliveryRoute, FuelDeliveryCustomer } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,12 +23,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { geocodeAddress } from '@/utils/geocoding';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
+import { GenerateRoutesDialog } from '@/components/fuel-delivery/GenerateRoutesDialog';
 
 export default function FuelDeliveryRoutes() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('list');
   const [selectedRoute, setSelectedRoute] = useState<FuelDeliveryRoute | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -434,13 +436,18 @@ export default function FuelDeliveryRoutes() {
               Plan and manage delivery routes
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                New Route
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsGenerateDialogOpen(true)}>
+              <Wand2 className="h-4 w-4 mr-2" />
+              Generate from Schedule
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Route
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Create New Route</DialogTitle>
@@ -561,6 +568,7 @@ export default function FuelDeliveryRoutes() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </div>
 
@@ -1066,6 +1074,13 @@ export default function FuelDeliveryRoutes() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Generate Routes Dialog */}
+      <GenerateRoutesDialog
+        open={isGenerateDialogOpen}
+        onOpenChange={setIsGenerateDialogOpen}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['fuel-delivery-routes'] })}
+      />
     </div>
   );
 }
