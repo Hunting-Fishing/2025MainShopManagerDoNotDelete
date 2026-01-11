@@ -2,6 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Fuel, Droplet } from 'lucide-react';
 import { TruckCompartment } from '@/hooks/useTruckCompartments';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 interface TruckCompartmentSelectorProps {
   compartments: TruckCompartment[];
@@ -18,6 +19,8 @@ export function TruckCompartmentSelector({
   filterByProductId,
   className
 }: TruckCompartmentSelectorProps) {
+  const { formatVolume, convertFromGallons } = useFuelUnits();
+  
   // Filter compartments if a product filter is provided
   const filteredCompartments = filterByProductId
     ? compartments.filter(c => c.product_id === filterByProductId)
@@ -107,7 +110,7 @@ export function TruckCompartmentSelector({
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Droplet className="h-3 w-3" />
                 <span>
-                  {compartment.current_level_gallons.toFixed(0)} / {compartment.capacity_gallons.toFixed(0)} gal
+                  {formatVolume(compartment.current_level_gallons, 0)} / {formatVolume(compartment.capacity_gallons, 0)}
                 </span>
               </div>
               

@@ -21,6 +21,7 @@ import { toast } from '@/hooks/use-toast';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 import { RouteUpdateConfirmDialog } from '@/components/fuel-delivery/RouteUpdateConfirmDialog';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 import { 
   analyzeRouteChanges, 
   regenerateRoutesForCustomer, 
@@ -40,6 +41,7 @@ export default function FuelDeliveryCustomers() {
   const updateCustomer = useUpdateFuelDeliveryCustomer();
   const { shopId } = useShopId();
   const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
+  const { getVolumeLabel } = useFuelUnits();
   
   // Track original vehicle IDs from DB to distinguish new vs existing
   const [originalVehicleIds, setOriginalVehicleIds] = useState<Set<string>>(new Set());
@@ -282,7 +284,7 @@ export default function FuelDeliveryCustomers() {
             license_plate: vehicle.license_plate || null,
             color: vehicle.color || null,
             body_style: vehicle.body_style || null,
-            notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
+            notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} ${getVolumeLabel()}` : null,
           };
 
           if (isExistingInDb) {
@@ -350,7 +352,7 @@ export default function FuelDeliveryCustomers() {
                 license_plate: vehicle.license_plate || null,
                 color: vehicle.color || null,
                 body_type: vehicle.body_style || null,
-                notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} gal` : null,
+                notes: vehicle.tank_capacity ? `Tank Capacity: ${vehicle.tank_capacity} ${getVolumeLabel()}` : null,
               });
               if (error) throw error;
             }
@@ -606,7 +608,7 @@ export default function FuelDeliveryCustomers() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Minimum Delivery (gallons)</Label>
+                        <Label>Minimum Delivery ({getVolumeLabel(false)})</Label>
                         <Input
                           type="number"
                           value={formData.minimum_delivery_gallons}

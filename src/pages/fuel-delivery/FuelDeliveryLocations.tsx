@@ -24,7 +24,7 @@ export default function FuelDeliveryLocations() {
   const { data: locations, isLoading } = useFuelDeliveryLocations();
   const { data: customers } = useFuelDeliveryCustomers();
   const createLocation = useCreateFuelDeliveryLocation();
-  const { getVolumeLabel } = useFuelUnits();
+  const { getVolumeLabel, formatVolume } = useFuelUnits();
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -421,7 +421,7 @@ export default function FuelDeliveryLocations() {
                       {location.address}, {location.city} {location.state}
                     </TableCell>
                     <TableCell className="capitalize">{location.fuel_type?.replace('_', ' ')}</TableCell>
-                    <TableCell>{location.tank_capacity_gallons?.toLocaleString() || '-'} gal</TableCell>
+                    <TableCell>{location.tank_capacity_gallons ? formatVolume(location.tank_capacity_gallons, 0) : '-'}</TableCell>
                     <TableCell>
                       {location.last_delivery_date 
                         ? format(new Date(location.last_delivery_date), 'MMM d, yyyy') 
