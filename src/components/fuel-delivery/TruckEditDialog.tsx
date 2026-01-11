@@ -168,27 +168,49 @@ export function TruckEditDialog({ truck, open, onOpenChange }: TruckEditDialogPr
         await supabase.from('fuel_delivery_truck_compartments').delete().eq('id', comp.id);
       }
 
+      // Get original compartments for history tracking
+      const originalCompartmentsMap = new Map(compartments.map(c => [c.id, c]));
+
       // Update existing compartments
       const toUpdate = compartmentForms.filter(c => !c.isNew && !c.isDeleted && c.id);
       for (const comp of toUpdate) {
+        const originalComp = originalCompartmentsMap.get(comp.id!);
+        const newLevel = parseFloat(comp.current_level_gallons) || 0;
+        const previousLevel = originalComp?.current_level_gallons || 0;
+        
         await supabase
           .from('fuel_delivery_truck_compartments')
           .update({
             compartment_number: comp.compartment_number,
             compartment_name: comp.compartment_name || null,
             capacity_gallons: parseFloat(comp.capacity_gallons) || 0,
-            current_level_gallons: parseFloat(comp.current_level_gallons) || 0,
+            current_level_gallons: newLevel,
             product_id: comp.product_id || null,
             material: comp.material || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', comp.id);
+        
+        // Log history if level changed
+        if (newLevel !== previousLevel && comp.id) {
+          await supabase.from('fuel_delivery_compartment_history').insert({
+            shop_id: shopId,
+            compartment_id: comp.id,
+            truck_id: truck.id,
+            previous_level_gallons: previousLevel,
+            new_level_gallons: newLevel,
+            change_amount_gallons: newLevel - previousLevel,
+            change_type: 'manual',
+            reference_type: 'manual_adjustment',
+            notes: `Manual level adjustment via truck edit`
+          });
+        }
       }
 
       // Insert new compartments
       const toInsert = compartmentForms.filter(c => c.isNew && !c.isDeleted);
       for (const comp of toInsert) {
-        await supabase.from('fuel_delivery_truck_compartments').insert({
+        const { data: insertedComp } = await supabase.from('fuel_delivery_truck_compartments').insert({
           shop_id: shopId,
           truck_id: truck.id,
           compartment_number: comp.compartment_number,
@@ -197,10 +219,27 @@ export function TruckEditDialog({ truck, open, onOpenChange }: TruckEditDialogPr
           current_level_gallons: parseFloat(comp.current_level_gallons) || 0,
           product_id: comp.product_id || null,
           material: comp.material || null
-        });
+        }).select().single();
+        
+        // Log history for new compartment if it has initial level
+        const initialLevel = parseFloat(comp.current_level_gallons) || 0;
+        if (initialLevel > 0 && insertedComp) {
+          await supabase.from('fuel_delivery_compartment_history').insert({
+            shop_id: shopId,
+            compartment_id: insertedComp.id,
+            truck_id: truck.id,
+            previous_level_gallons: 0,
+            new_level_gallons: initialLevel,
+            change_amount_gallons: initialLevel,
+            change_type: 'manual',
+            reference_type: 'manual_adjustment',
+            notes: `Initial level set when compartment created`
+          });
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ['truck-compartments', truck.id] });
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-trucks'] });
       toast.success('Truck updated successfully');
       onOpenChange(false);
     } catch (error) {

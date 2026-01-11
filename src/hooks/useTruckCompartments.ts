@@ -50,12 +50,25 @@ export function useUpdateCompartmentLevel() {
     mutationFn: async ({ 
       compartmentId, 
       newLevel,
-      truckId 
+      truckId,
+      previousLevel,
+      changeType = 'manual',
+      referenceId,
+      referenceType,
+      notes,
+      shopId
     }: { 
       compartmentId: string; 
       newLevel: number;
       truckId: string;
+      previousLevel?: number;
+      changeType?: string;
+      referenceId?: string;
+      referenceType?: string;
+      notes?: string;
+      shopId?: string;
     }) => {
+      // Update the compartment level
       const { data, error } = await supabase
         .from('fuel_delivery_truck_compartments')
         .update({ 
@@ -67,10 +80,49 @@ export function useUpdateCompartmentLevel() {
         .single();
       
       if (error) throw error;
+      
+      // Log history if we have previous level info
+      if (previousLevel !== undefined && shopId) {
+        await supabase.from('fuel_delivery_compartment_history').insert({
+          shop_id: shopId,
+          compartment_id: compartmentId,
+          truck_id: truckId,
+          previous_level_gallons: previousLevel,
+          new_level_gallons: newLevel,
+          change_amount_gallons: newLevel - previousLevel,
+          change_type: changeType,
+          reference_id: referenceId || null,
+          reference_type: referenceType || null,
+          notes: notes || null
+        });
+      }
+      
       return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['truck-compartments', variables.truckId] });
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-trucks'] });
     }
+  });
+}
+
+// Hook to fetch compartment history
+export function useCompartmentHistory(compartmentId: string | undefined) {
+  return useQuery({
+    queryKey: ['compartment-history', compartmentId],
+    queryFn: async () => {
+      if (!compartmentId) return [];
+      
+      const { data, error } = await supabase
+        .from('fuel_delivery_compartment_history')
+        .select('*')
+        .eq('compartment_id', compartmentId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!compartmentId
   });
 }

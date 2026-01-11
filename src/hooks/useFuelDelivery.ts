@@ -630,12 +630,37 @@ export function useFuelDeliveryTrucks() {
   return useQuery({
     queryKey: ['fuel-delivery-trucks'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      // Fetch trucks with compartment aggregations
+      const { data: trucks, error: trucksError } = await (supabase as any)
         .from('fuel_delivery_trucks')
         .select('*')
         .order('truck_number');
-      if (error) throw error;
-      return data as FuelDeliveryTruck[];
+      if (trucksError) throw trucksError;
+      
+      // Fetch all compartments to aggregate
+      const { data: compartments, error: compError } = await supabase
+        .from('fuel_delivery_truck_compartments')
+        .select('truck_id, capacity_gallons, current_level_gallons');
+      if (compError) throw compError;
+      
+      // Aggregate compartment data per truck
+      const truckAggregates = new Map<string, { totalCapacity: number; currentLoad: number }>();
+      compartments?.forEach((c: any) => {
+        const existing = truckAggregates.get(c.truck_id) || { totalCapacity: 0, currentLoad: 0 };
+        existing.totalCapacity += Number(c.capacity_gallons) || 0;
+        existing.currentLoad += Number(c.current_level_gallons) || 0;
+        truckAggregates.set(c.truck_id, existing);
+      });
+      
+      // Merge aggregates into trucks
+      return (trucks as FuelDeliveryTruck[]).map(truck => {
+        const agg = truckAggregates.get(truck.id);
+        return {
+          ...truck,
+          tank_capacity_gallons: agg?.totalCapacity ?? truck.tank_capacity_gallons,
+          current_fuel_load: agg?.currentLoad ?? truck.current_fuel_load ?? 0
+        };
+      });
     }
   });
 }
