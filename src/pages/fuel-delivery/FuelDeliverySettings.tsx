@@ -215,12 +215,13 @@ export default function FuelDeliverySettings() {
         if (error) throw error;
       } else {
         // Insert new record
+        const { data: authData } = await supabase.auth.getUser();
         const { error } = await supabase
           .from('shop_enabled_modules')
           .insert({
             shop_id: shopId,
             module_id: module.id,
-            is_enabled: true,
+            enabled_by: authData.user?.id || null,
             display_name: displayName || null,
             display_phone: displayPhone || null,
             display_email: displayEmail || null,
