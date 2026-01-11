@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Truck, ArrowLeft, Pencil, Info } from 'lucide-react';
+import { Plus, Search, Truck, ArrowLeft, Pencil, Info, ChevronDown, ChevronRight, Droplets } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useFuelDeliveryTrucks, useCreateFuelDeliveryTruck, FuelDeliveryTruck } from '@/hooks/useFuelDelivery';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useFuelDeliveryTrucks, useCreateFuelDeliveryTruck, FuelDeliveryTruck, TruckCompartmentData } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -24,11 +25,24 @@ export default function FuelDeliveryTrucks() {
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTruck, setEditingTruck] = useState<FuelDeliveryTruck | null>(null);
+  const [expandedTrucks, setExpandedTrucks] = useState<Set<string>>(new Set());
   const { data: trucks, isLoading } = useFuelDeliveryTrucks();
   const createTruck = useCreateFuelDeliveryTruck();
   const { shopId } = useShopId();
   const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
   const { formatVolume, getVolumeLabel, convertFromGallons } = useFuelUnits();
+
+  const toggleExpanded = (truckId: string) => {
+    setExpandedTrucks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(truckId)) {
+        newSet.delete(truckId);
+      } else {
+        newSet.add(truckId);
+      }
+      return newSet;
+    });
+  };
 
   const [formData, setFormData] = useState({
     truck_number: '',
@@ -287,6 +301,7 @@ export default function FuelDeliveryTrucks() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10"></TableHead>
                   <TableHead>Truck #</TableHead>
                   <TableHead>Make/Model</TableHead>
                   <TableHead>License Plate</TableHead>
@@ -302,7 +317,7 @@ export default function FuelDeliveryTrucks() {
                             <p className="font-medium mb-1">Total Tank Capacity</p>
                             <p className="text-xs text-muted-foreground">
                               Sum of all compartment capacities configured for this truck. 
-                              Edit the truck to manage compartments.
+                              Click the arrow to see individual tank breakdown.
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -321,8 +336,7 @@ export default function FuelDeliveryTrucks() {
                             <p className="font-medium mb-1">Current Fuel Load</p>
                             <p className="text-xs text-muted-foreground">
                               Sum of current fuel levels across all compartments. 
-                              Updated when compartments are filled or deliveries are completed.
-                              All changes are tracked in compartment history.
+                              Click the arrow to see individual tank levels.
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -335,28 +349,119 @@ export default function FuelDeliveryTrucks() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTrucks.map((truck) => (
-                  <TableRow key={truck.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium">{truck.truck_number}</TableCell>
-                    <TableCell>{truck.make} {truck.model} {truck.year}</TableCell>
-                    <TableCell>{truck.license_plate || '-'}</TableCell>
-                    <TableCell>{truck.tank_capacity_gallons ? formatVolume(truck.tank_capacity_gallons, 0) : '-'}</TableCell>
-                    <TableCell>{formatVolume(truck.current_fuel_load || 0, 0)}</TableCell>
-                    <TableCell>{getStatusBadge(truck.status)}</TableCell>
-                    <TableCell>
-                      {truck.dot_inspection_due ? format(new Date(truck.dot_inspection_due), 'MMM d, yyyy') : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditingTruck(truck)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredTrucks.map((truck) => {
+                  const hasMultipleCompartments = (truck.compartment_data?.length || 0) > 1;
+                  const isExpanded = expandedTrucks.has(truck.id);
+                  
+                  return (
+                    <React.Fragment key={truck.id}>
+                      <TableRow className="hover:bg-muted/50">
+                        <TableCell className="w-10">
+                          {hasMultipleCompartments ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => toggleExpanded(truck.id)}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="font-medium">{truck.truck_number}</TableCell>
+                        <TableCell>{truck.make} {truck.model} {truck.year}</TableCell>
+                        <TableCell>{truck.license_plate || '-'}</TableCell>
+                        <TableCell>
+                          {truck.tank_capacity_gallons ? formatVolume(truck.tank_capacity_gallons, 0) : '-'}
+                          {hasMultipleCompartments && (
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              ({truck.compartment_data?.length} tanks)
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>{formatVolume(truck.current_fuel_load || 0, 0)}</TableCell>
+                        <TableCell>{getStatusBadge(truck.status)}</TableCell>
+                        <TableCell>
+                          {truck.dot_inspection_due ? format(new Date(truck.dot_inspection_due), 'MMM d, yyyy') : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingTruck(truck)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                      {/* Expanded compartment details */}
+                      {hasMultipleCompartments && isExpanded && (
+                        <TableRow className="bg-muted/30">
+                          <TableCell colSpan={9} className="p-0">
+                            <div className="px-6 py-3 border-l-4 border-primary/30">
+                              <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                                <Droplets className="h-4 w-4 text-blue-500" />
+                                Tank/Compartment Breakdown
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {truck.compartment_data?.map((comp) => {
+                                  const fillPercent = comp.capacity_gallons > 0 
+                                    ? Math.round((comp.current_level_gallons / comp.capacity_gallons) * 100)
+                                    : 0;
+                                  return (
+                                    <div 
+                                      key={comp.id} 
+                                      className="bg-background rounded-lg border p-3"
+                                    >
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                          <p className="font-medium text-sm">
+                                            {comp.compartment_name || `Tank ${comp.compartment_number}`}
+                                          </p>
+                                          {comp.product && (
+                                            <p className="text-xs text-muted-foreground">
+                                              {comp.product.product_name}
+                                            </p>
+                                          )}
+                                        </div>
+                                        <Badge variant={fillPercent < 20 ? 'destructive' : fillPercent < 50 ? 'secondary' : 'default'} className="text-xs">
+                                          {fillPercent}%
+                                        </Badge>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <div className="flex justify-between text-xs">
+                                          <span className="text-muted-foreground">Current:</span>
+                                          <span className="font-medium">{formatVolume(comp.current_level_gallons, 0)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs">
+                                          <span className="text-muted-foreground">Capacity:</span>
+                                          <span>{formatVolume(comp.capacity_gallons, 0)}</span>
+                                        </div>
+                                        <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
+                                          <div 
+                                            className={`h-full transition-all ${
+                                              fillPercent < 20 ? 'bg-red-500' : 
+                                              fillPercent < 50 ? 'bg-amber-500' : 'bg-green-500'
+                                            }`}
+                                            style={{ width: `${fillPercent}%` }}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </TableBody>
             </Table>
           ) : (
