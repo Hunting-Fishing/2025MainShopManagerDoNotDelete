@@ -34,7 +34,7 @@ import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 export default function FuelDeliveryDashboard() {
   const navigate = useNavigate();
   const { shopId } = useShopId();
-  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel-delivery');
+  const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
   const { data: stats, isLoading: statsLoading } = useFuelDeliveryStats();
   const { data: recentOrders, isLoading: ordersLoading } = useFuelDeliveryOrders();
   const { getVolumeLabel, formatVolume } = useFuelUnits();

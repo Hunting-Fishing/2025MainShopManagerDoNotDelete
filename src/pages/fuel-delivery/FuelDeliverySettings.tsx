@@ -51,7 +51,7 @@ export default function FuelDeliverySettings() {
   
   // Get current shop ID
   const { shopId } = useShopId();
-  const { data: moduleInfo, refetch: refetchModuleInfo } = useModuleDisplayInfo(shopId, 'fuel-delivery');
+  const { data: moduleInfo, refetch: refetchModuleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
   
   // Business Profile (module-specific branding)
   const [displayName, setDisplayName] = useState('');
@@ -184,7 +184,7 @@ export default function FuelDeliverySettings() {
       const { data: module } = await supabase
         .from('business_modules')
         .select('id')
-        .eq('slug', 'fuel-delivery')
+        .eq('slug', 'fuel_delivery')
         .single();
 
       if (!module) {
