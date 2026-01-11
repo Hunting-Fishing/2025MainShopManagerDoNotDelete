@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,14 @@ import { geocodeAddress } from '@/utils/geocoding';
 import { toast } from '@/hooks/use-toast';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
+import { RouteUpdateConfirmDialog } from '@/components/fuel-delivery/RouteUpdateConfirmDialog';
+import { 
+  analyzeRouteChanges, 
+  regenerateRoutesForCustomer, 
+  syncLocationSchedulesWithCustomer,
+  deliveryDaysChanged,
+  RouteUpdateSummary 
+} from '@/services/fuelDelivery/RouteScheduleService';
 
 export default function FuelDeliveryCustomers() {
   const navigate = useNavigate();
@@ -35,6 +43,16 @@ export default function FuelDeliveryCustomers() {
   
   // Track original vehicle IDs from DB to distinguish new vs existing
   const [originalVehicleIds, setOriginalVehicleIds] = useState<Set<string>>(new Set());
+  
+  // Track original delivery_days for route update detection
+  const originalDeliveryDaysRef = useRef<number[]>([]);
+  
+  // Route update confirmation dialog state
+  const [routeUpdateDialogOpen, setRouteUpdateDialogOpen] = useState(false);
+  const [routeUpdateSummary, setRouteUpdateSummary] = useState<RouteUpdateSummary | null>(null);
+  const [pendingDeliveryDays, setPendingDeliveryDays] = useState<number[]>([]);
+  const [pendingCustomerId, setPendingCustomerId] = useState<string | null>(null);
+  const [isUpdatingRoutes, setIsUpdatingRoutes] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -133,6 +151,11 @@ export default function FuelDeliveryCustomers() {
 
   const openEditDialog = async (customer: FuelDeliveryCustomer) => {
     setEditingCustomer(customer);
+    
+    // Store original delivery_days for later comparison
+    const originalDays = Array.isArray(customer.delivery_days) ? customer.delivery_days : [];
+    originalDeliveryDaysRef.current = originalDays;
+    
     setFormData({
       company_name: customer.company_name || '',
       contact_name: customer.contact_name || '',
@@ -148,7 +171,7 @@ export default function FuelDeliveryCustomers() {
       preferred_fuel_type: customer.preferred_fuel_type || '',
       delivery_instructions: customer.delivery_instructions || '',
       notes: customer.notes || '',
-      delivery_days: Array.isArray(customer.delivery_days) ? customer.delivery_days : [],
+      delivery_days: originalDays,
       delivery_frequency: customer.delivery_frequency || 'on_demand',
       preferred_delivery_time: customer.preferred_delivery_time || 'any',
       minimum_delivery_gallons: customer.minimum_delivery_gallons?.toString() || ''
@@ -270,6 +293,28 @@ export default function FuelDeliveryCustomers() {
             await supabase.from('vehicles').insert(vehicleData);
           }
         }
+
+        // Check if delivery_days changed and prompt for route update
+        if (shopId && deliveryDaysChanged(originalDeliveryDaysRef.current, formData.delivery_days)) {
+          try {
+            const summary = await analyzeRouteChanges(
+              editingCustomer.id,
+              null,
+              formData.delivery_days,
+              shopId
+            );
+            
+            // Only show dialog if there are actual changes
+            if (summary.stopsToCreate > 0 || summary.stopsToRemove > 0) {
+              setPendingCustomerId(editingCustomer.id);
+              setPendingDeliveryDays(formData.delivery_days);
+              setRouteUpdateSummary(summary);
+              setRouteUpdateDialogOpen(true);
+            }
+          } catch (err) {
+            console.error('Failed to analyze route changes:', err);
+          }
+        }
       } else {
         // Create customer first
         const newCustomer = await createCustomer.mutateAsync(customerPayload);
@@ -319,6 +364,43 @@ export default function FuelDeliveryCustomers() {
       // keep dialog open; the mutation already shows a toast
       console.error('Failed to save fuel delivery customer', err);
     }
+  };
+
+  // Handle route update confirmation
+  const handleRouteUpdateConfirm = async () => {
+    if (!pendingCustomerId || !shopId) return;
+    
+    setIsUpdatingRoutes(true);
+    try {
+      const result = await regenerateRoutesForCustomer(pendingCustomerId, pendingDeliveryDays, shopId);
+      
+      // Also sync locations that inherit customer's schedule
+      await syncLocationSchedulesWithCustomer(pendingCustomerId, pendingDeliveryDays, shopId);
+      
+      toast({ 
+        title: 'Routes updated',
+        description: `Added to ${result.added} routes, removed from ${result.removed} routes`
+      });
+    } catch (err) {
+      console.error('Failed to update routes:', err);
+      toast({ 
+        title: 'Failed to update routes',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUpdatingRoutes(false);
+      setRouteUpdateDialogOpen(false);
+      setPendingCustomerId(null);
+      setPendingDeliveryDays([]);
+      setRouteUpdateSummary(null);
+    }
+  };
+
+  const handleRouteUpdateSkip = () => {
+    setRouteUpdateDialogOpen(false);
+    setPendingCustomerId(null);
+    setPendingDeliveryDays([]);
+    setRouteUpdateSummary(null);
   };
 
   const handleDialogChange = (open: boolean) => {
@@ -696,6 +778,19 @@ export default function FuelDeliveryCustomers() {
           )}
         </CardContent>
       </Card>
+
+      {/* Route Update Confirmation Dialog */}
+      <RouteUpdateConfirmDialog
+        open={routeUpdateDialogOpen}
+        onOpenChange={setRouteUpdateDialogOpen}
+        onConfirm={handleRouteUpdateConfirm}
+        onSkip={handleRouteUpdateSkip}
+        summary={routeUpdateSummary}
+        newDeliveryDays={pendingDeliveryDays}
+        entityName={editingCustomer?.company_name || editingCustomer?.contact_name || 'Customer'}
+        entityType="customer"
+        isProcessing={isUpdatingRoutes}
+      />
     </div>
   );
 }

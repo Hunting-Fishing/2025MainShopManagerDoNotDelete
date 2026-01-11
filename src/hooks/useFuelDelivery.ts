@@ -419,14 +419,39 @@ export function useCreateFuelDeliveryLocation() {
   return useMutation({
     mutationFn: async (location: Partial<FuelDeliveryLocation>) => {
       const shopId = await getShopId();
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from('fuel_delivery_locations')
-        .insert({ ...location, shop_id: shopId });
+        .insert({ ...location, shop_id: shopId })
+        .select()
+        .single();
       if (error) throw error;
+      return data as FuelDeliveryLocation;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fuel-delivery-locations'] });
       toast({ title: 'Location added successfully' });
+    }
+  });
+}
+
+export function useUpdateFuelDeliveryLocation() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<FuelDeliveryLocation> & { id: string }) => {
+      const { data, error } = await (supabase as any)
+        .from('fuel_delivery_locations')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as FuelDeliveryLocation;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fuel-delivery-locations'] });
+      toast({ title: 'Location updated' });
     }
   });
 }
