@@ -83,6 +83,7 @@ export function FuelPriceSettingsTab({ shopId }: FuelPriceSettingsTabProps) {
     'NL': 'Newfoundland & Labrador',
     'YT': 'Yukon',
     'NT': 'Northwest Territories',
+    'NU': 'Nunavut',
   };
 
   return (

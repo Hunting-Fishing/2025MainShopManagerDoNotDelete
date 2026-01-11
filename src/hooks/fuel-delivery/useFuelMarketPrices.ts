@@ -32,23 +32,94 @@ export interface CanadianCity {
 }
 
 // Available Canadian cities for fuel price reference
+// Expanded list including regional centers for more accurate local pricing
 export const CANADIAN_CITIES: CanadianCity[] = [
+  // British Columbia - Comprehensive coverage
+  { city: "Campbell River", province: "BC" },
+  { city: "Comox", province: "BC" },
+  { city: "Courtenay", province: "BC" },
+  { city: "Cranbrook", province: "BC" },
+  { city: "Dawson Creek", province: "BC" },
+  { city: "Duncan", province: "BC" },
+  { city: "Fort St. John", province: "BC" },
+  { city: "Kamloops", province: "BC" },
+  { city: "Kelowna", province: "BC" },
+  { city: "Nanaimo", province: "BC" },
+  { city: "Nelson", province: "BC" },
+  { city: "Parksville", province: "BC" },
+  { city: "Penticton", province: "BC" },
+  { city: "Port Alberni", province: "BC" },
+  { city: "Port Hardy", province: "BC" },
+  { city: "Powell River", province: "BC" },
+  { city: "Prince George", province: "BC" },
+  { city: "Prince Rupert", province: "BC" },
+  { city: "Qualicum Beach", province: "BC" },
+  { city: "Revelstoke", province: "BC" },
+  { city: "Salmon Arm", province: "BC" },
+  { city: "Squamish", province: "BC" },
+  { city: "Terrace", province: "BC" },
+  { city: "Tofino", province: "BC" },
+  { city: "Trail", province: "BC" },
   { city: "Vancouver", province: "BC" },
+  { city: "Vernon", province: "BC" },
   { city: "Victoria", province: "BC" },
-  { city: "Edmonton", province: "AB" },
+  { city: "Whistler", province: "BC" },
+  { city: "Williams Lake", province: "BC" },
+  
+  // Alberta
   { city: "Calgary", province: "AB" },
+  { city: "Edmonton", province: "AB" },
+  { city: "Fort McMurray", province: "AB" },
+  { city: "Grande Prairie", province: "AB" },
+  { city: "Lethbridge", province: "AB" },
+  { city: "Medicine Hat", province: "AB" },
+  { city: "Red Deer", province: "AB" },
+  
+  // Saskatchewan
+  { city: "Moose Jaw", province: "SK" },
+  { city: "Prince Albert", province: "SK" },
   { city: "Regina", province: "SK" },
   { city: "Saskatoon", province: "SK" },
+  { city: "Swift Current", province: "SK" },
+  
+  // Manitoba
+  { city: "Brandon", province: "MB" },
+  { city: "Thompson", province: "MB" },
   { city: "Winnipeg", province: "MB" },
-  { city: "Toronto", province: "ON" },
+  
+  // Ontario
+  { city: "Barrie", province: "ON" },
+  { city: "Hamilton", province: "ON" },
+  { city: "Kingston", province: "ON" },
+  { city: "Kitchener", province: "ON" },
+  { city: "London", province: "ON" },
+  { city: "North Bay", province: "ON" },
   { city: "Ottawa", province: "ON" },
+  { city: "Sudbury", province: "ON" },
   { city: "Thunder Bay", province: "ON" },
+  { city: "Toronto", province: "ON" },
+  { city: "Windsor", province: "ON" },
+  
+  // Quebec
+  { city: "Chicoutimi", province: "QC" },
+  { city: "Gatineau", province: "QC" },
   { city: "Montréal", province: "QC" },
   { city: "Québec City", province: "QC" },
-  { city: "Halifax", province: "NS" },
-  { city: "Saint John", province: "NB" },
+  { city: "Rimouski", province: "QC" },
+  { city: "Sherbrooke", province: "QC" },
+  { city: "Trois-Rivières", province: "QC" },
+  
+  // Atlantic Provinces
   { city: "Charlottetown", province: "PE" },
+  { city: "Fredericton", province: "NB" },
+  { city: "Halifax", province: "NS" },
+  { city: "Moncton", province: "NB" },
+  { city: "Saint John", province: "NB" },
   { city: "St. John's", province: "NL" },
+  { city: "Sydney", province: "NS" },
+  
+  // Territories
+  { city: "Iqaluit", province: "NU" },
   { city: "Whitehorse", province: "YT" },
   { city: "Yellowknife", province: "NT" },
 ];
