@@ -1,10 +1,6 @@
-import { useState } from "react";
-import { 
-  useFuelDeliveryOrders, 
-  useUpdateFuelDeliveryOrder,
-  useFuelDeliveryProducts,
-  useCreateFuelDeliveryCompletion
-} from "@/hooks/useFuelDelivery";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,88 +12,581 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Truck, MapPin, Clock, CheckCircle2, AlertCircle, 
-  Navigation, Fuel, User, Droplets
+  Navigation, Fuel, User, Droplets, Route, Calendar,
+  ChevronRight, Play, ArrowLeft
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useCreateFuelDeliveryCompletion } from "@/hooks/useFuelDelivery";
+
+// Types
+interface RouteStop {
+  id: string;
+  route_id: string;
+  customer_id?: string;
+  order_id?: string;
+  stop_sequence: number;
+  status: string;
+  estimated_arrival?: string;
+  actual_arrival?: string;
+  notes?: string;
+  skip_reason?: string;
+  fuel_delivery_customers?: {
+    company_name?: string;
+    contact_name: string;
+    phone?: string;
+    billing_address?: string;
+    billing_latitude?: number;
+    billing_longitude?: number;
+  };
+  fuel_delivery_orders?: {
+    order_number: string;
+    quantity_ordered: number;
+    special_instructions?: string;
+    fuel_delivery_products?: {
+      product_name: string;
+      fuel_type: string;
+    };
+    fuel_delivery_locations?: {
+      location_name: string;
+      address: string;
+      fuel_type: string;
+      tank_capacity_gallons?: number;
+      current_level_gallons?: number;
+    };
+  };
+}
+
+interface DeliveryRoute {
+  id: string;
+  route_name: string;
+  route_date: string;
+  driver_id?: string;
+  truck_id?: string;
+  status: string;
+  start_time?: string;
+  end_time?: string;
+  total_stops: number;
+  completed_stops: number;
+  total_gallons_planned?: number;
+  total_gallons_delivered?: number;
+  notes?: string;
+  fuel_delivery_drivers?: {
+    first_name: string;
+    last_name: string;
+  };
+  fuel_delivery_trucks?: {
+    truck_number: string;
+  };
+  stops?: RouteStop[];
+}
+
+// Custom hook for driver routes
+function useDriverRoutes() {
+  return useQuery({
+    queryKey: ['driver-routes'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('fuel_delivery_routes')
+        .select(`
+          *,
+          fuel_delivery_drivers(first_name, last_name),
+          fuel_delivery_trucks(truck_number)
+        `)
+        .order('route_date', { ascending: true });
+      if (error) throw error;
+      return data as DeliveryRoute[];
+    }
+  });
+}
+
+// Hook for route stops
+function useRouteStops(routeId: string | null) {
+  return useQuery({
+    queryKey: ['route-stops', routeId],
+    queryFn: async () => {
+      if (!routeId) return [];
+      const { data, error } = await (supabase as any)
+        .from('fuel_delivery_route_stops')
+        .select(`
+          *,
+          fuel_delivery_customers(company_name, contact_name, phone, billing_address, billing_latitude, billing_longitude),
+          fuel_delivery_orders(
+            order_number, 
+            quantity_ordered, 
+            special_instructions,
+            fuel_delivery_products(product_name, fuel_type),
+            fuel_delivery_locations(location_name, address, fuel_type, tank_capacity_gallons, current_level_gallons)
+          )
+        `)
+        .eq('route_id', routeId)
+        .order('stop_sequence', { ascending: true });
+      if (error) throw error;
+      return data as RouteStop[];
+    },
+    enabled: !!routeId
+  });
+}
+
+// Hook to update route stop status
+function useUpdateRouteStop() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; status?: string; actual_arrival?: string; notes?: string; skip_reason?: string }) => {
+      const { error } = await (supabase as any)
+        .from('fuel_delivery_route_stops')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['route-stops'] });
+      queryClient.invalidateQueries({ queryKey: ['driver-routes'] });
+    }
+  });
+}
+
+// Hook to update route status
+function useUpdateRoute() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; status?: string; start_time?: string; end_time?: string; completed_stops?: number }) => {
+      const { error } = await (supabase as any)
+        .from('fuel_delivery_routes')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['driver-routes'] });
+    }
+  });
+}
 
 export default function FuelDeliveryDriverApp() {
-  const { data: orders } = useFuelDeliveryOrders();
-  const updateOrder = useUpdateFuelDeliveryOrder();
+  const navigate = useNavigate();
+  const { data: routes, isLoading } = useDriverRoutes();
+  const updateRoute = useUpdateRoute();
+  const updateRouteStop = useUpdateRouteStop();
   const createCompletion = useCreateFuelDeliveryCompletion();
-  const { data: products } = useFuelDeliveryProducts();
   
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'month'>('today');
+  const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
+  const [selectedStop, setSelectedStop] = useState<RouteStop | null>(null);
   const [completionDialog, setCompletionDialog] = useState(false);
   const [completionData, setCompletionData] = useState({
     gallons_delivered: "",
     delivery_notes: "",
     tank_level_before: "",
-    tank_level_after: "",
-    signature_data: ""
+    tank_level_after: ""
   });
 
-  const todaysOrders = orders?.filter(o => 
-    o.status !== 'completed' && o.status !== 'cancelled' &&
-    format(new Date(o.scheduled_date || o.order_date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-  ) || [];
+  const { data: routeStops } = useRouteStops(selectedRoute?.id || null);
 
-  const completedToday = orders?.filter(o => 
-    o.status === 'completed' &&
-    format(new Date(o.scheduled_date || o.order_date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-  ) || [];
+  // Filter routes based on time period
+  const filteredRoutes = useMemo(() => {
+    if (!routes) return [];
+    
+    const now = new Date();
+    let start: Date, end: Date;
+    
+    switch (timeFilter) {
+      case 'today':
+        start = startOfDay(now);
+        end = endOfDay(now);
+        break;
+      case 'week':
+        start = startOfWeek(now, { weekStartsOn: 0 });
+        end = endOfWeek(now, { weekStartsOn: 0 });
+        break;
+      case 'month':
+        start = startOfMonth(now);
+        end = endOfMonth(now);
+        break;
+    }
+    
+    return routes.filter(route => {
+      const routeDate = parseISO(route.route_date);
+      return isWithinInterval(routeDate, { start, end });
+    });
+  }, [routes, timeFilter]);
 
-  const handleStartDelivery = async (order: any) => {
-    await updateOrder.mutateAsync({ id: order.id, status: 'in_transit' });
-    toast.success("Delivery started - navigate to location");
+  // Stats
+  const stats = useMemo(() => {
+    const planned = filteredRoutes.filter(r => r.status === 'planned').length;
+    const inProgress = filteredRoutes.filter(r => r.status === 'in_progress').length;
+    const completed = filteredRoutes.filter(r => r.status === 'completed').length;
+    const totalStops = filteredRoutes.reduce((sum, r) => sum + (r.total_stops || 0), 0);
+    const completedStops = filteredRoutes.reduce((sum, r) => sum + (r.completed_stops || 0), 0);
+    
+    return { planned, inProgress, completed, totalStops, completedStops };
+  }, [filteredRoutes]);
+
+  const handleStartRoute = async (route: DeliveryRoute) => {
+    await updateRoute.mutateAsync({ 
+      id: route.id, 
+      status: 'in_progress',
+      start_time: new Date().toISOString()
+    });
+    toast.success("Route started!");
+    setSelectedRoute({ ...route, status: 'in_progress' });
   };
 
-  const handleArrived = async (order: any) => {
-    await updateOrder.mutateAsync({ id: order.id, status: 'delivering' });
-    toast.success("Arrived at location");
+  const handleCompleteRoute = async (route: DeliveryRoute) => {
+    await updateRoute.mutateAsync({ 
+      id: route.id, 
+      status: 'completed',
+      end_time: new Date().toISOString()
+    });
+    toast.success("Route completed!");
+    setSelectedRoute(null);
   };
 
-  const handleCompleteDelivery = async () => {
-    if (!selectedOrder || !completionData.gallons_delivered) {
+  const handleArriveAtStop = async (stop: RouteStop) => {
+    await updateRouteStop.mutateAsync({
+      id: stop.id,
+      status: 'arrived',
+      actual_arrival: new Date().toISOString()
+    });
+    toast.success("Arrived at stop");
+  };
+
+  const handleCompleteStop = async () => {
+    if (!selectedStop || !completionData.gallons_delivered) {
       toast.error("Please enter gallons delivered");
       return;
     }
 
+    // Create delivery completion record
     await createCompletion.mutateAsync({
-      order_id: selectedOrder.id,
       gallons_delivered: parseFloat(completionData.gallons_delivered),
       notes: completionData.delivery_notes,
       tank_level_before: completionData.tank_level_before ? parseFloat(completionData.tank_level_before) : undefined,
       tank_level_after: completionData.tank_level_after ? parseFloat(completionData.tank_level_after) : undefined,
-      signature_url: completionData.signature_data || undefined,
       delivery_date: new Date().toISOString()
     });
 
-    await updateOrder.mutateAsync({ id: selectedOrder.id, status: 'completed' });
-    
+    // Update stop status
+    await updateRouteStop.mutateAsync({
+      id: selectedStop.id,
+      status: 'completed',
+      notes: completionData.delivery_notes
+    });
+
+    // Update route completed_stops count
+    if (selectedRoute) {
+      await updateRoute.mutateAsync({
+        id: selectedRoute.id,
+        completed_stops: (selectedRoute.completed_stops || 0) + 1
+      });
+    }
+
     setCompletionDialog(false);
-    setSelectedOrder(null);
+    setSelectedStop(null);
     setCompletionData({
       gallons_delivered: "",
       delivery_notes: "",
       tank_level_before: "",
-      tank_level_after: "",
-      signature_data: ""
+      tank_level_after: ""
     });
-    toast.success("Delivery completed!");
+    toast.success("Stop completed!");
+  };
+
+  const handleSkipStop = async (stop: RouteStop, reason: string) => {
+    await updateRouteStop.mutateAsync({
+      id: stop.id,
+      status: 'skipped',
+      skip_reason: reason
+    });
+    toast.info("Stop skipped");
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-500/10 text-yellow-500';
-      case 'confirmed': return 'bg-blue-500/10 text-blue-500';
-      case 'in_transit': return 'bg-purple-500/10 text-purple-500';
-      case 'delivering': return 'bg-orange-500/10 text-orange-500';
-      case 'completed': return 'bg-green-500/10 text-green-500';
+      case 'planned': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+      case 'in_progress': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+      case 'completed': return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'arrived': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
+      case 'pending': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      case 'skipped': return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
       default: return 'bg-muted text-muted-foreground';
     }
   };
 
+  // Route Detail View
+  if (selectedRoute) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        {/* Header */}
+        <div className="sticky top-0 z-50 bg-primary text-primary-foreground p-4">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-primary-foreground hover:bg-primary-foreground/10"
+              onClick={() => setSelectedRoute(null)}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex-1">
+              <h1 className="font-bold text-lg">{selectedRoute.route_name}</h1>
+              <p className="text-sm opacity-80">
+                {format(parseISO(selectedRoute.route_date), 'EEEE, MMM d')}
+              </p>
+            </div>
+            <Badge variant="secondary" className={getStatusColor(selectedRoute.status)}>
+              {selectedRoute.status}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Route Progress */}
+        <div className="p-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-primary" />
+                  <span className="font-medium">
+                    {selectedRoute.fuel_delivery_trucks?.truck_number || 'No truck assigned'}
+                  </span>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {routeStops?.filter(s => s.status === 'completed').length || 0} / {routeStops?.length || 0} stops
+                </span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full transition-all"
+                  style={{ 
+                    width: `${routeStops?.length ? (routeStops.filter(s => s.status === 'completed').length / routeStops.length) * 100 : 0}%` 
+                  }}
+                />
+              </div>
+              
+              {selectedRoute.status === 'planned' && (
+                <Button 
+                  className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                  onClick={() => handleStartRoute(selectedRoute)}
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Route
+                </Button>
+              )}
+              
+              {selectedRoute.status === 'in_progress' && routeStops?.every(s => s.status === 'completed' || s.status === 'skipped') && (
+                <Button 
+                  className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                  onClick={() => handleCompleteRoute(selectedRoute)}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Complete Route
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Stops List */}
+        <div className="px-4">
+          <h2 className="font-semibold mb-3 flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Delivery Stops
+          </h2>
+          <ScrollArea className="h-[calc(100vh-320px)]">
+            <div className="space-y-3">
+              {!routeStops || routeStops.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center text-muted-foreground">
+                    <MapPin className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No stops on this route</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                routeStops.map((stop, index) => (
+                  <Card key={stop.id} className={`overflow-hidden ${stop.status === 'completed' ? 'opacity-60' : ''}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-medium truncate">
+                                {stop.fuel_delivery_customers?.company_name || 
+                                 stop.fuel_delivery_customers?.contact_name || 
+                                 stop.fuel_delivery_orders?.fuel_delivery_locations?.location_name ||
+                                 'Unknown Stop'}
+                              </h3>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {stop.fuel_delivery_orders?.fuel_delivery_locations?.address || 
+                                 stop.fuel_delivery_customers?.billing_address || 
+                                 'No address'}
+                              </p>
+                            </div>
+                            <Badge className={`shrink-0 ${getStatusColor(stop.status)}`}>
+                              {stop.status}
+                            </Badge>
+                          </div>
+                          
+                          {(stop.fuel_delivery_orders?.fuel_delivery_locations || stop.fuel_delivery_orders?.fuel_delivery_products) && (
+                            <div className="flex items-center gap-3 mt-2 text-sm">
+                              <span className="flex items-center gap-1">
+                                <Fuel className="h-3 w-3 text-orange-500" />
+                                {stop.fuel_delivery_orders?.fuel_delivery_locations?.fuel_type || 
+                                 stop.fuel_delivery_orders?.fuel_delivery_products?.fuel_type || 'Fuel'}
+                              </span>
+                              {stop.fuel_delivery_orders?.fuel_delivery_locations?.tank_capacity_gallons && (
+                                <span className="text-muted-foreground">
+                                  Tank: {stop.fuel_delivery_orders.fuel_delivery_locations.tank_capacity_gallons} gal
+                                </span>
+                              )}
+                              {stop.fuel_delivery_orders?.quantity_ordered && (
+                                <span className="text-muted-foreground">
+                                  Order: {stop.fuel_delivery_orders.quantity_ordered} gal
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
+                          {stop.status === 'pending' && selectedRoute.status === 'in_progress' && (
+                            <div className="flex gap-2 mt-3">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => {
+                                  const address = stop.fuel_delivery_orders?.fuel_delivery_locations?.address || 
+                                                  stop.fuel_delivery_customers?.billing_address;
+                                  if (address) {
+                                    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
+                                  }
+                                }}
+                              >
+                                <Navigation className="h-3 w-3 mr-1" />
+                                Navigate
+                              </Button>
+                              <Button 
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => handleArriveAtStop(stop)}
+                              >
+                                <MapPin className="h-3 w-3 mr-1" />
+                                Arrived
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {stop.status === 'arrived' && (
+                            <div className="flex gap-2 mt-3">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleSkipStop(stop, 'Customer not available')}
+                              >
+                                Skip
+                              </Button>
+                              <Button 
+                                size="sm"
+                                className="flex-1 bg-green-600 hover:bg-green-700"
+                                onClick={() => {
+                                  setSelectedStop(stop);
+                                  setCompletionDialog(true);
+                                }}
+                              >
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Complete Delivery
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Completion Dialog */}
+        <Dialog open={completionDialog} onOpenChange={setCompletionDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Fuel className="h-5 w-5" />
+                Complete Delivery
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Gallons Delivered *</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={completionData.gallons_delivered}
+                  onChange={(e) => setCompletionData({ ...completionData, gallons_delivered: e.target.value })}
+                  placeholder="Enter gallons"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Tank Before (%)</Label>
+                  <Input
+                    type="number"
+                    value={completionData.tank_level_before}
+                    onChange={(e) => setCompletionData({ ...completionData, tank_level_before: e.target.value })}
+                    placeholder="0-100"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tank After (%)</Label>
+                  <Input
+                    type="number"
+                    value={completionData.tank_level_after}
+                    onChange={(e) => setCompletionData({ ...completionData, tank_level_after: e.target.value })}
+                    placeholder="0-100"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Delivery Notes</Label>
+                <Textarea
+                  value={completionData.delivery_notes}
+                  onChange={(e) => setCompletionData({ ...completionData, delivery_notes: e.target.value })}
+                  placeholder="Any notes about the delivery..."
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCompletionDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCompleteStop}
+                disabled={createCompletion.isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-1" />
+                Complete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  // Main Routes List View
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Mobile Header */}
@@ -113,237 +602,121 @@ export default function FuelDeliveryDriverApp() {
         </div>
       </div>
 
+      {/* Time Filter Tabs */}
+      <div className="px-4 pt-4">
+        <Tabs value={timeFilter} onValueChange={(v) => setTimeFilter(v as 'today' | 'week' | 'month')}>
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="today">Today</TabsTrigger>
+            <TabsTrigger value="week">This Week</TabsTrigger>
+            <TabsTrigger value="month">This Month</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 p-4">
-        <Card className="bg-card">
-          <CardContent className="p-4 text-center">
-            <div className="text-3xl font-bold text-primary">{todaysOrders.length}</div>
-            <div className="text-sm text-muted-foreground">Pending</div>
+      <div className="grid grid-cols-3 gap-2 p-4">
+        <Card className="bg-blue-500/10 border-blue-500/20">
+          <CardContent className="p-3 text-center">
+            <div className="text-2xl font-bold text-blue-500">{stats.planned}</div>
+            <div className="text-xs text-muted-foreground">Planned</div>
           </CardContent>
         </Card>
-        <Card className="bg-card">
-          <CardContent className="p-4 text-center">
-            <div className="text-3xl font-bold text-green-500">{completedToday.length}</div>
-            <div className="text-sm text-muted-foreground">Completed</div>
+        <Card className="bg-orange-500/10 border-orange-500/20">
+          <CardContent className="p-3 text-center">
+            <div className="text-2xl font-bold text-orange-500">{stats.inProgress}</div>
+            <div className="text-xs text-muted-foreground">In Progress</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-500/10 border-green-500/20">
+          <CardContent className="p-3 text-center">
+            <div className="text-2xl font-bold text-green-500">{stats.completed}</div>
+            <div className="text-xs text-muted-foreground">Completed</div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="pending" className="px-4">
-        <TabsList className="w-full grid grid-cols-2">
-          <TabsTrigger value="pending">Pending ({todaysOrders.length})</TabsTrigger>
-          <TabsTrigger value="completed">Done ({completedToday.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="pending" className="mt-4">
-          <ScrollArea className="h-[calc(100vh-280px)]">
-            <div className="space-y-3">
-              {todaysOrders.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center text-muted-foreground">
-                    <CheckCircle2 className="h-12 w-12 mx-auto mb-2 text-green-500" />
-                    <p>All deliveries complete!</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                todaysOrders.map((order) => (
-                  <Card key={order.id} className="overflow-hidden">
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            Order #{order.order_number}
-                          </CardTitle>
-                          <Badge className={`mt-1 ${getStatusColor(order.status)}`}>
-                            {order.status}
+      {/* Routes List */}
+      <div className="px-4">
+        <h2 className="font-semibold mb-3 flex items-center gap-2">
+          <Route className="h-4 w-4" />
+          {timeFilter === 'today' ? "Today's Routes" : timeFilter === 'week' ? "This Week's Routes" : "This Month's Routes"}
+        </h2>
+        
+        <ScrollArea className="h-[calc(100vh-350px)]">
+          <div className="space-y-3">
+            {isLoading ? (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  <div className="animate-pulse">Loading routes...</div>
+                </CardContent>
+              </Card>
+            ) : filteredRoutes.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  <Route className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No routes scheduled</p>
+                  <p className="text-sm mt-1">Check back later or contact dispatch</p>
+                </CardContent>
+              </Card>
+            ) : (
+              filteredRoutes.map((route) => (
+                <Card 
+                  key={route.id} 
+                  className="overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => setSelectedRoute(route)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold truncate">{route.route_name}</h3>
+                          <Badge className={getStatusColor(route.status)}>
+                            {route.status}
                           </Badge>
                         </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {order.fuel_delivery_locations?.address ? 'Scheduled' : 'Any time'}
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {format(parseISO(route.route_date), 'EEE, MMM d')}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {route.total_stops || 0} stops
+                          </span>
+                        </div>
+                        {route.fuel_delivery_trucks && (
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                            <Truck className="h-3 w-3" />
+                            {route.fuel_delivery_trucks.truck_number}
                           </div>
+                        )}
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                    </div>
+                    
+                    {route.total_stops > 0 && (
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                          <span>Progress</span>
+                          <span>{route.completed_stops || 0} / {route.total_stops}</span>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-2 space-y-3">
-                      <div className="flex items-start gap-2 text-sm">
-                        <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                        <span>{order.fuel_delivery_locations?.address || 'Address not specified'}</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-sm">
-                        <Droplets className="h-4 w-4 text-blue-500" />
-                        <span className="font-medium">
-                          {order.quantity_ordered} gallons - {order.fuel_delivery_products?.product_name || 'Fuel'}
-                        </span>
-                      </div>
-
-                      {order.special_instructions && (
-                        <div className="flex items-start gap-2 text-sm bg-muted/50 p-2 rounded">
-                          <AlertCircle className="h-4 w-4 mt-0.5 text-yellow-500" />
-                          <span>{order.special_instructions}</span>
-                        </div>
-                      )}
-
-                      <div className="flex gap-2 pt-2">
-                        {order.status === 'pending' || order.status === 'confirmed' || order.status === 'scheduled' ? (
-                          <>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="flex-1"
-                              onClick={() => window.open(`https://maps.google.com/?q=${encodeURIComponent(order.fuel_delivery_locations?.address || '')}`, '_blank')}
-                            >
-                              <Navigation className="h-4 w-4 mr-1" />
-                              Navigate
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              className="flex-1"
-                              onClick={() => handleStartDelivery(order)}
-                            >
-                              <Truck className="h-4 w-4 mr-1" />
-                              Start
-                            </Button>
-                          </>
-                        ) : order.status === 'in_transit' ? (
-                          <Button 
-                            size="sm" 
-                            className="w-full bg-orange-500 hover:bg-orange-600"
-                            onClick={() => handleArrived(order)}
-                          >
-                            <MapPin className="h-4 w-4 mr-1" />
-                            I've Arrived
-                          </Button>
-                        ) : order.status === 'delivering' ? (
-                          <Button 
-                            size="sm" 
-                            className="w-full bg-green-500 hover:bg-green-600"
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setCompletionData({
-                                ...completionData,
-                                gallons_delivered: order.quantity_ordered?.toString() || ""
-                              });
-                              setCompletionDialog(true);
+                        <div className="w-full bg-muted rounded-full h-1.5">
+                          <div 
+                            className="bg-green-500 h-1.5 rounded-full transition-all"
+                            style={{ 
+                              width: `${route.total_stops ? ((route.completed_stops || 0) / route.total_stops) * 100 : 0}%` 
                             }}
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-1" />
-                            Complete Delivery
-                          </Button>
-                        ) : null}
+                          />
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="completed" className="mt-4">
-          <ScrollArea className="h-[calc(100vh-280px)]">
-            <div className="space-y-3">
-              {completedToday.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center text-muted-foreground">
-                    <Truck className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No completed deliveries yet</p>
+                    )}
                   </CardContent>
                 </Card>
-              ) : (
-                completedToday.map((order) => (
-                  <Card key={order.id} className="opacity-75">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">Order #{order.order_number}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {order.quantity_ordered} gallons delivered
-                          </div>
-                        </div>
-                        <CheckCircle2 className="h-6 w-6 text-green-500" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
-
-      {/* Completion Dialog */}
-      <Dialog open={completionDialog} onOpenChange={setCompletionDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Fuel className="h-5 w-5" />
-              Complete Delivery
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Gallons Delivered *</Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={completionData.gallons_delivered}
-                onChange={(e) => setCompletionData({ ...completionData, gallons_delivered: e.target.value })}
-                placeholder="Enter gallons"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Tank Level Before (%)</Label>
-                <Input
-                  type="number"
-                  value={completionData.tank_level_before}
-                  onChange={(e) => setCompletionData({ ...completionData, tank_level_before: e.target.value })}
-                  placeholder="0-100"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Tank Level After (%)</Label>
-                <Input
-                  type="number"
-                  value={completionData.tank_level_after}
-                  onChange={(e) => setCompletionData({ ...completionData, tank_level_after: e.target.value })}
-                  placeholder="0-100"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Delivery Notes</Label>
-              <Textarea
-                value={completionData.delivery_notes}
-                onChange={(e) => setCompletionData({ ...completionData, delivery_notes: e.target.value })}
-                placeholder="Any notes about the delivery..."
-                rows={3}
-              />
-            </div>
+              ))
+            )}
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCompletionDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCompleteDelivery}
-              disabled={createCompletion.isPending}
-              className="bg-green-500 hover:bg-green-600"
-            >
-              <CheckCircle2 className="h-4 w-4 mr-1" />
-              Complete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
