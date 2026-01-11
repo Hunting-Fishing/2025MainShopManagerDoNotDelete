@@ -125,6 +125,20 @@ export interface FuelDeliveryOrder {
   fuel_delivery_trucks?: FuelDeliveryTruck;
 }
 
+export interface TruckCompartmentData {
+  id: string;
+  compartment_number: number;
+  compartment_name: string | null;
+  capacity_gallons: number;
+  current_level_gallons: number;
+  product?: {
+    id: string;
+    product_name: string;
+    product_code: string;
+    fuel_type: string | null;
+  } | null;
+}
+
 export interface FuelDeliveryTruck {
   id: string;
   shop_id: string;
@@ -138,6 +152,7 @@ export interface FuelDeliveryTruck {
   current_fuel_load?: number;
   compartments?: number;
   compartment_capacities?: any;
+  compartment_data?: TruckCompartmentData[];
   meter_number?: string;
   last_calibration_date?: string;
   next_calibration_due?: string;
@@ -637,28 +652,55 @@ export function useFuelDeliveryTrucks() {
         .order('truck_number');
       if (trucksError) throw trucksError;
       
-      // Fetch all compartments to aggregate
+      // Fetch all compartments with product info
       const { data: compartments, error: compError } = await supabase
         .from('fuel_delivery_truck_compartments')
-        .select('truck_id, capacity_gallons, current_level_gallons');
+        .select(`
+          id,
+          truck_id, 
+          compartment_number,
+          compartment_name,
+          capacity_gallons, 
+          current_level_gallons,
+          product:fuel_delivery_products(id, product_name, product_code, fuel_type)
+        `)
+        .order('compartment_number');
       if (compError) throw compError;
       
-      // Aggregate compartment data per truck
-      const truckAggregates = new Map<string, { totalCapacity: number; currentLoad: number }>();
+      // Group compartments by truck and aggregate
+      const truckCompartments = new Map<string, { 
+        totalCapacity: number; 
+        currentLoad: number;
+        compartmentData: TruckCompartmentData[];
+      }>();
+      
       compartments?.forEach((c: any) => {
-        const existing = truckAggregates.get(c.truck_id) || { totalCapacity: 0, currentLoad: 0 };
+        const existing = truckCompartments.get(c.truck_id) || { 
+          totalCapacity: 0, 
+          currentLoad: 0,
+          compartmentData: []
+        };
         existing.totalCapacity += Number(c.capacity_gallons) || 0;
         existing.currentLoad += Number(c.current_level_gallons) || 0;
-        truckAggregates.set(c.truck_id, existing);
+        existing.compartmentData.push({
+          id: c.id,
+          compartment_number: c.compartment_number,
+          compartment_name: c.compartment_name,
+          capacity_gallons: Number(c.capacity_gallons) || 0,
+          current_level_gallons: Number(c.current_level_gallons) || 0,
+          product: c.product
+        });
+        truckCompartments.set(c.truck_id, existing);
       });
       
-      // Merge aggregates into trucks
+      // Merge compartment data into trucks
       return (trucks as FuelDeliveryTruck[]).map(truck => {
-        const agg = truckAggregates.get(truck.id);
+        const data = truckCompartments.get(truck.id);
         return {
           ...truck,
-          tank_capacity_gallons: agg?.totalCapacity ?? truck.tank_capacity_gallons,
-          current_fuel_load: agg?.currentLoad ?? truck.current_fuel_load ?? 0
+          tank_capacity_gallons: data?.totalCapacity ?? truck.tank_capacity_gallons,
+          current_fuel_load: data?.currentLoad ?? truck.current_fuel_load ?? 0,
+          compartment_data: data?.compartmentData ?? []
         };
       });
     }
