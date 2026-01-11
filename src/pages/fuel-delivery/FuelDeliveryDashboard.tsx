@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomerPortalQRCode } from '@/components/fuel-delivery/CustomerPortalQRCode';
+import { FuelMarketPrices } from '@/components/fuel-delivery/FuelMarketPrices';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
@@ -376,6 +377,9 @@ export default function FuelDeliveryDashboard() {
             businessName={moduleInfo?.displayName || 'Fuel Delivery Service'}
           />
         )}
+
+        {/* Market Fuel Prices */}
+        <FuelMarketPrices />
       </div>
     </div>
   );

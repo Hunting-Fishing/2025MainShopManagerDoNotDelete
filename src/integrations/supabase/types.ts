@@ -14550,6 +14550,42 @@ export type Database = {
           },
         ]
       }
+      fuel_market_prices: {
+        Row: {
+          city: string
+          created_at: string
+          fuel_type: string
+          id: string
+          price_cents_per_litre: number
+          price_month: string
+          province: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          fuel_type: string
+          id?: string
+          price_cents_per_litre: number
+          price_month: string
+          province: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          fuel_type?: string
+          id?: string
+          price_cents_per_litre?: number
+          price_month?: string
+          province?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fuel_stations: {
         Row: {
           accepted_card_types: string[] | null
@@ -33754,6 +33790,47 @@ export type Database = {
             foreignKeyName: "shop_enabled_modules_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_fuel_price_settings: {
+        Row: {
+          created_at: string
+          custom_location_label: string | null
+          id: string
+          reference_city: string
+          reference_province: string
+          shop_id: string
+          show_on_portal: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_location_label?: string | null
+          id?: string
+          reference_city?: string
+          reference_province?: string
+          shop_id: string
+          show_on_portal?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_location_label?: string | null
+          id?: string
+          reference_city?: string
+          reference_province?: string
+          shop_id?: string
+          show_on_portal?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_fuel_price_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
             referencedRelation: "shops"
             referencedColumns: ["id"]
           },

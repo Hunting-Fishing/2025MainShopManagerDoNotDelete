@@ -48,3 +48,6 @@ verify_jwt = false
 
 [functions.mapbox-geocode]
 verify_jwt = false
+
+[functions.get-fuel-prices]
+verify_jwt = false
