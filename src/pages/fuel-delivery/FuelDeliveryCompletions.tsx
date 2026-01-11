@@ -9,11 +9,13 @@ import { useFuelDeliveryCompletions } from '@/hooks/useFuelDelivery';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 export default function FuelDeliveryCompletions() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const { data: completions, isLoading } = useFuelDeliveryCompletions();
+  const { formatVolume, getVolumeLabel } = useFuelUnits();
 
   const filteredCompletions = completions?.filter(completion =>
     completion.fuel_delivery_orders?.order_number?.toLowerCase().includes(search.toLowerCase()) ||
@@ -74,7 +76,7 @@ export default function FuelDeliveryCompletions() {
                   <TableHead>Driver</TableHead>
                   <TableHead>Truck</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Gallons</TableHead>
+                  <TableHead>{getVolumeLabel(false)}</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Payment</TableHead>
                 </TableRow>
@@ -95,7 +97,7 @@ export default function FuelDeliveryCompletions() {
                     </TableCell>
                     <TableCell>{completion.fuel_delivery_trucks?.truck_number || '-'}</TableCell>
                     <TableCell>{format(new Date(completion.delivery_date), 'MMM d, yyyy h:mm a')}</TableCell>
-                    <TableCell className="font-medium">{completion.gallons_delivered?.toLocaleString()} gal</TableCell>
+                    <TableCell className="font-medium">{formatVolume(completion.gallons_delivered || 0)}</TableCell>
                     <TableCell className="font-medium">${completion.total_amount?.toLocaleString() || '0'}</TableCell>
                     <TableCell>
                       {completion.payment_received ? (

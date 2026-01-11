@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 import { TruckEditDialog } from '@/components/fuel-delivery/TruckEditDialog';
+import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 export default function FuelDeliveryTrucks() {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ export default function FuelDeliveryTrucks() {
   const createTruck = useCreateFuelDeliveryTruck();
   const { shopId } = useShopId();
   const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'fuel_delivery');
+  const { formatVolume, getVolumeLabel, convertFromGallons } = useFuelUnits();
 
   const [formData, setFormData] = useState({
     truck_number: '',
@@ -178,7 +180,7 @@ export default function FuelDeliveryTrucks() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Tank Capacity (gallons)</Label>
+                    <Label>Tank Capacity ({getVolumeLabel()})</Label>
                     <Input
                       type="number"
                       value={formData.tank_capacity_gallons}
@@ -300,8 +302,8 @@ export default function FuelDeliveryTrucks() {
                     <TableCell className="font-medium">{truck.truck_number}</TableCell>
                     <TableCell>{truck.make} {truck.model} {truck.year}</TableCell>
                     <TableCell>{truck.license_plate || '-'}</TableCell>
-                    <TableCell>{truck.tank_capacity_gallons?.toLocaleString() || '-'} gal</TableCell>
-                    <TableCell>{truck.current_fuel_load?.toLocaleString() || 0} gal</TableCell>
+                    <TableCell>{truck.tank_capacity_gallons ? formatVolume(truck.tank_capacity_gallons, 0) : '-'}</TableCell>
+                    <TableCell>{formatVolume(truck.current_fuel_load || 0, 0)}</TableCell>
                     <TableCell>{getStatusBadge(truck.status)}</TableCell>
                     <TableCell>
                       {truck.dot_inspection_due ? format(new Date(truck.dot_inspection_due), 'MMM d, yyyy') : '-'}

@@ -24,6 +24,7 @@ import { DeliveryTimeStats } from "@/components/fuel-delivery/DeliveryTimeStats"
 import { DeliveryCompletionDialog } from "@/components/fuel-delivery/DeliveryCompletionDialog";
 import { SkipStopDialog, SkipData, NavigationMapDialog } from "@/components/fuel-delivery";
 import { ElapsedTimer } from "@/components/fuel-delivery/ElapsedTimer";
+import { useFuelUnits } from "@/hooks/fuel-delivery/useFuelUnits";
 
 // Types
 interface RouteStop {
@@ -191,6 +192,7 @@ export default function FuelDeliveryDriverApp() {
   const updateRoute = useUpdateRoute();
   const updateRouteStop = useUpdateRouteStop();
   const createCompletion = useCreateFuelDeliveryCompletion();
+  const { formatVolume, getVolumeLabel } = useFuelUnits();
   
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
@@ -590,12 +592,12 @@ export default function FuelDeliveryDriverApp() {
                               </span>
                               {stop.fuel_delivery_orders?.fuel_delivery_locations?.tank_capacity_gallons && (
                                 <span className="text-muted-foreground">
-                                  Tank: {stop.fuel_delivery_orders.fuel_delivery_locations.tank_capacity_gallons} gal
+                                  Tank: {formatVolume(stop.fuel_delivery_orders.fuel_delivery_locations.tank_capacity_gallons, 0)}
                                 </span>
                               )}
                               {stop.fuel_delivery_orders?.quantity_ordered && (
                                 <span className="text-muted-foreground">
-                                  Order: {stop.fuel_delivery_orders.quantity_ordered} gal
+                                  Order: {formatVolume(stop.fuel_delivery_orders.quantity_ordered, 0)}
                                 </span>
                               )}
                             </div>
