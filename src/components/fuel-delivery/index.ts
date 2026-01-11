@@ -13,3 +13,4 @@ export { TruckCompartmentSelector } from './TruckCompartmentSelector';
 export { SignaturePad } from './SignaturePad';
 export { SkipStopDialog } from './SkipStopDialog';
 export type { SkipData } from './SkipStopDialog';
+export { NavigationMapDialog } from './NavigationMapDialog';
