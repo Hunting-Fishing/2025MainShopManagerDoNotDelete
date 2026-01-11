@@ -12314,6 +12314,7 @@ export type Database = {
           phone: string | null
           preferred_delivery_time: string | null
           preferred_fuel_type: string | null
+          preferred_time_window: string | null
           shop_id: string
           tax_exempt: boolean | null
           tax_exempt_number: string | null
@@ -12345,6 +12346,7 @@ export type Database = {
           phone?: string | null
           preferred_delivery_time?: string | null
           preferred_fuel_type?: string | null
+          preferred_time_window?: string | null
           shop_id: string
           tax_exempt?: boolean | null
           tax_exempt_number?: string | null
@@ -12376,6 +12378,7 @@ export type Database = {
           phone?: string | null
           preferred_delivery_time?: string | null
           preferred_fuel_type?: string | null
+          preferred_time_window?: string | null
           shop_id?: string
           tax_exempt?: boolean | null
           tax_exempt_number?: string | null
@@ -13005,6 +13008,7 @@ export type Database = {
           customer_id: string | null
           delivery_days: number[] | null
           delivery_frequency: string | null
+          estimated_service_minutes: number | null
           fuel_type: string
           id: string
           is_active: boolean | null
@@ -13013,6 +13017,7 @@ export type Database = {
           location_name: string
           longitude: number | null
           preferred_delivery_time: string | null
+          preferred_time_window: string | null
           requires_appointment: boolean | null
           shop_id: string
           special_equipment_needed: string | null
@@ -13033,6 +13038,7 @@ export type Database = {
           customer_id?: string | null
           delivery_days?: number[] | null
           delivery_frequency?: string | null
+          estimated_service_minutes?: number | null
           fuel_type: string
           id?: string
           is_active?: boolean | null
@@ -13041,6 +13047,7 @@ export type Database = {
           location_name: string
           longitude?: number | null
           preferred_delivery_time?: string | null
+          preferred_time_window?: string | null
           requires_appointment?: boolean | null
           shop_id: string
           special_equipment_needed?: string | null
@@ -13061,6 +13068,7 @@ export type Database = {
           customer_id?: string | null
           delivery_days?: number[] | null
           delivery_frequency?: string | null
+          estimated_service_minutes?: number | null
           fuel_type?: string
           id?: string
           is_active?: boolean | null
@@ -13069,6 +13077,7 @@ export type Database = {
           location_name?: string
           longitude?: number | null
           preferred_delivery_time?: string | null
+          preferred_time_window?: string | null
           requires_appointment?: boolean | null
           shop_id?: string
           special_equipment_needed?: string | null
@@ -13578,12 +13587,15 @@ export type Database = {
       fuel_delivery_route_stops: {
         Row: {
           actual_arrival: string | null
+          actual_departure: string | null
           created_at: string
           customer_id: string | null
           estimated_arrival: string | null
+          estimated_duration_minutes: number | null
           id: string
           notes: string | null
           order_id: string | null
+          preferred_time_window: string | null
           route_id: string | null
           skip_reason: string | null
           status: string | null
@@ -13591,12 +13603,15 @@ export type Database = {
         }
         Insert: {
           actual_arrival?: string | null
+          actual_departure?: string | null
           created_at?: string
           customer_id?: string | null
           estimated_arrival?: string | null
+          estimated_duration_minutes?: number | null
           id?: string
           notes?: string | null
           order_id?: string | null
+          preferred_time_window?: string | null
           route_id?: string | null
           skip_reason?: string | null
           status?: string | null
@@ -13604,12 +13619,15 @@ export type Database = {
         }
         Update: {
           actual_arrival?: string | null
+          actual_departure?: string | null
           created_at?: string
           customer_id?: string | null
           estimated_arrival?: string | null
+          estimated_duration_minutes?: number | null
           id?: string
           notes?: string | null
           order_id?: string | null
+          preferred_time_window?: string | null
           route_id?: string | null
           skip_reason?: string | null
           status?: string | null
