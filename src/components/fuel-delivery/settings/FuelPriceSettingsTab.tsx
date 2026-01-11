@@ -164,7 +164,7 @@ export function FuelPriceSettingsTab({ shopId }: FuelPriceSettingsTabProps) {
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span>OpenStreetMap + NRCAN</span>
+                <span>OpenStreetMap</span>
               </div>
               <span className="text-muted-foreground/60">•</span>
               <span>Updates every 6 hours</span>
