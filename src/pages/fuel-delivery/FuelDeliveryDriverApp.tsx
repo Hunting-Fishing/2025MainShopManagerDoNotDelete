@@ -22,6 +22,7 @@ import { useCreateFuelDeliveryCompletion } from "@/hooks/useFuelDelivery";
 import { LiveClock } from "@/components/fuel-delivery/LiveClock";
 import { DeliveryTimeStats } from "@/components/fuel-delivery/DeliveryTimeStats";
 import { DeliveryCompletionDialog } from "@/components/fuel-delivery/DeliveryCompletionDialog";
+import { SkipStopDialog, SkipData } from "@/components/fuel-delivery/SkipStopDialog";
 
 // Types
 interface RouteStop {
@@ -140,7 +141,18 @@ function useUpdateRouteStop() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; status?: string; actual_arrival?: string; actual_departure?: string; notes?: string; skip_reason?: string }) => {
+    mutationFn: async ({ id, ...updates }: { 
+      id: string; 
+      status?: string; 
+      actual_arrival?: string; 
+      actual_departure?: string; 
+      notes?: string; 
+      skip_reason?: string;
+      skip_action?: string;
+      reschedule_date?: string;
+      skip_notes?: string;
+      stop_sequence?: number;
+    }) => {
       const { error } = await (supabase as any)
         .from('fuel_delivery_route_stops')
         .update(updates)
@@ -183,6 +195,8 @@ export default function FuelDeliveryDriverApp() {
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
   const [selectedStop, setSelectedStop] = useState<RouteStop | null>(null);
   const [completionDialog, setCompletionDialog] = useState(false);
+  const [skipDialog, setSkipDialog] = useState(false);
+  const [skipLoading, setSkipLoading] = useState(false);
   const [completionData, setCompletionData] = useState({
     gallons_delivered: "",
     delivery_notes: "",
@@ -317,14 +331,67 @@ export default function FuelDeliveryDriverApp() {
     toast.success("Stop completed!");
   };
 
-  const handleSkipStop = async (stop: RouteStop, reason: string) => {
-    await updateRouteStop.mutateAsync({
-      id: stop.id,
-      status: 'skipped',
-      skip_reason: reason,
-      actual_departure: new Date().toISOString()
-    });
-    toast.info("Stop skipped");
+  const handleSkipStop = async (stop: RouteStop, skipData: SkipData) => {
+    setSkipLoading(true);
+    try {
+      const reasonText = skipData.reason === 'other' 
+        ? skipData.customReason || 'Other' 
+        : SKIP_REASON_LABELS[skipData.reason] || skipData.reason;
+
+      // Handle different skip actions
+      if (skipData.action === 'retry_later' && routeStops) {
+        // Move to end of route sequence
+        const maxSequence = Math.max(...routeStops.map(s => s.stop_sequence));
+        await updateRouteStop.mutateAsync({
+          id: stop.id,
+          status: 'pending',
+          skip_reason: reasonText,
+          skip_action: skipData.action,
+          skip_notes: skipData.notes,
+          stop_sequence: maxSequence + 1,
+          actual_departure: new Date().toISOString()
+        });
+        toast.info("Stop moved to end of route for retry");
+      } else {
+        // Standard skip (reschedule, cancel, or skip_only)
+        await updateRouteStop.mutateAsync({
+          id: stop.id,
+          status: skipData.action === 'cancel' ? 'cancelled' : 'skipped',
+          skip_reason: reasonText,
+          skip_action: skipData.action,
+          skip_notes: skipData.notes,
+          reschedule_date: skipData.rescheduleDate,
+          actual_departure: new Date().toISOString()
+        });
+
+        if (skipData.action === 'reschedule') {
+          toast.info(`Stop rescheduled to ${skipData.rescheduleDate}`);
+        } else if (skipData.action === 'cancel') {
+          toast.warning("Order cancelled");
+        } else {
+          toast.info("Stop skipped");
+        }
+      }
+
+      setSkipDialog(false);
+      setSelectedStop(null);
+    } catch (error) {
+      console.error('Error skipping stop:', error);
+      toast.error("Failed to skip stop");
+    } finally {
+      setSkipLoading(false);
+    }
+  };
+
+  // Labels for skip reasons
+  const SKIP_REASON_LABELS: Record<string, string> = {
+    customer_not_available: 'Customer not available',
+    no_access: 'No access to tank',
+    weather: 'Weather conditions',
+    customer_requested: 'Customer requested skip',
+    wrong_address: 'Wrong address / Cannot locate',
+    safety_concern: 'Safety concern',
+    truck_issue: 'Truck / Equipment issue',
   };
 
   // Helper to get ETA status for a stop
@@ -564,7 +631,10 @@ export default function FuelDeliveryDriverApp() {
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                onClick={() => handleSkipStop(stop, 'Customer not available')}
+                                onClick={() => {
+                                  setSelectedStop(stop);
+                                  setSkipDialog(true);
+                                }}
                               >
                                 Skip
                               </Button>
@@ -598,6 +668,15 @@ export default function FuelDeliveryDriverApp() {
           stop={selectedStop}
           route={selectedRoute}
           onComplete={handleCompleteStop}
+        />
+
+        {/* Skip Stop Dialog */}
+        <SkipStopDialog
+          open={skipDialog}
+          onOpenChange={setSkipDialog}
+          stop={selectedStop}
+          onSkip={(data) => selectedStop && handleSkipStop(selectedStop, data)}
+          isLoading={skipLoading}
         />
       </div>
     );
