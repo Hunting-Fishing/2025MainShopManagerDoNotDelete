@@ -12095,8 +12095,12 @@ export type Database = {
       fuel_delivery_completions: {
         Row: {
           arrival_time: string | null
+          compartment_id: string | null
           created_at: string
+          custom_product_name: string | null
+          custom_product_unit: string | null
           customer_present: boolean | null
+          customer_signature: string | null
           delivery_date: string
           delivery_fee: number | null
           delivery_photos: Json | null
@@ -12113,6 +12117,7 @@ export type Database = {
           order_id: string | null
           payment_method: string | null
           payment_received: boolean | null
+          product_id: string | null
           shop_id: string
           signature_url: string | null
           subtotal: number | null
@@ -12125,8 +12130,12 @@ export type Database = {
         }
         Insert: {
           arrival_time?: string | null
+          compartment_id?: string | null
           created_at?: string
+          custom_product_name?: string | null
+          custom_product_unit?: string | null
           customer_present?: boolean | null
+          customer_signature?: string | null
           delivery_date?: string
           delivery_fee?: number | null
           delivery_photos?: Json | null
@@ -12143,6 +12152,7 @@ export type Database = {
           order_id?: string | null
           payment_method?: string | null
           payment_received?: boolean | null
+          product_id?: string | null
           shop_id: string
           signature_url?: string | null
           subtotal?: number | null
@@ -12155,8 +12165,12 @@ export type Database = {
         }
         Update: {
           arrival_time?: string | null
+          compartment_id?: string | null
           created_at?: string
+          custom_product_name?: string | null
+          custom_product_unit?: string | null
           customer_present?: boolean | null
+          customer_signature?: string | null
           delivery_date?: string
           delivery_fee?: number | null
           delivery_photos?: Json | null
@@ -12173,6 +12187,7 @@ export type Database = {
           order_id?: string | null
           payment_method?: string | null
           payment_received?: boolean | null
+          product_id?: string | null
           shop_id?: string
           signature_url?: string | null
           subtotal?: number | null
@@ -12185,6 +12200,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fuel_delivery_completions_compartment_id_fkey"
+            columns: ["compartment_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_truck_compartments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fuel_delivery_completions_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
@@ -12196,6 +12218,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "fuel_delivery_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_completions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_products"
             referencedColumns: ["id"]
           },
           {
@@ -14226,6 +14255,70 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_delivery_truck_compartments: {
+        Row: {
+          capacity_gallons: number
+          compartment_name: string | null
+          compartment_number: number
+          created_at: string | null
+          current_level_gallons: number
+          id: string
+          material: string | null
+          product_id: string | null
+          shop_id: string
+          truck_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          capacity_gallons?: number
+          compartment_name?: string | null
+          compartment_number: number
+          created_at?: string | null
+          current_level_gallons?: number
+          id?: string
+          material?: string | null
+          product_id?: string | null
+          shop_id: string
+          truck_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          capacity_gallons?: number
+          compartment_name?: string | null
+          compartment_number?: number
+          created_at?: string | null
+          current_level_gallons?: number
+          id?: string
+          material?: string | null
+          product_id?: string | null
+          shop_id?: string
+          truck_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_truck_compartments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_truck_compartments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_truck_compartments_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_trucks"
             referencedColumns: ["id"]
           },
         ]

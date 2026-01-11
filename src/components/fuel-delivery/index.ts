@@ -8,3 +8,6 @@ export { CustomerVehicleForm } from './CustomerVehicleForm';
 export type { VehicleFormData } from './CustomerVehicleForm';
 export { LicenseClassSelect, getJurisdiction } from './LicenseClassSelect';
 export { CustomerMap } from './CustomerMap';
+export { DeliveryCompletionDialog } from './DeliveryCompletionDialog';
+export { TruckCompartmentSelector } from './TruckCompartmentSelector';
+export { SignaturePad } from './SignaturePad';
