@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Settings, Bell, MapPin, Fuel, DollarSign, Save, Loader2, Ruler, Building2, Clock, Percent } from 'lucide-react';
+import { ArrowLeft, Settings, Bell, MapPin, Fuel, DollarSign, Save, Loader2, Ruler, Building2, Clock, Percent, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AddressAutocomplete, type AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
 import { useFuelUnits, UnitSystem } from '@/hooks/fuel-delivery/useFuelUnits';
@@ -22,6 +22,7 @@ import { BusinessHoursTab } from '@/components/fuel-delivery/settings/BusinessHo
 import { DeliveryZonesTab } from '@/components/fuel-delivery/settings/DeliveryZonesTab';
 import { SpecialRatesTab } from '@/components/fuel-delivery/settings/SpecialRatesTab';
 import { LaborRatesTab } from '@/components/fuel-delivery/settings/LaborRatesTab';
+import { FuelPriceSettingsTab } from '@/components/fuel-delivery/settings/FuelPriceSettingsTab';
 
 interface FuelDeliverySettingsData {
   id?: string;
@@ -332,6 +333,7 @@ export default function FuelDeliverySettings() {
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="hours">Hours</TabsTrigger>
             <TabsTrigger value="zones">Zones</TabsTrigger>
+            <TabsTrigger value="market-prices">Market Prices</TabsTrigger>
             <TabsTrigger value="special-rates">Special Rates</TabsTrigger>
             <TabsTrigger value="labor">Labor Rates</TabsTrigger>
             <TabsTrigger value="units">Units</TabsTrigger>
@@ -440,6 +442,11 @@ export default function FuelDeliverySettings() {
         {/* Zones Tab */}
         <TabsContent value="zones" className="space-y-4">
           <DeliveryZonesTab shopId={shopId} />
+        </TabsContent>
+
+        {/* Market Prices Tab */}
+        <TabsContent value="market-prices" className="space-y-4">
+          <FuelPriceSettingsTab shopId={shopId} />
         </TabsContent>
 
         {/* Special Rates Tab */}
