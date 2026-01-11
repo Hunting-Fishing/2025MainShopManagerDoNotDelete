@@ -425,14 +425,14 @@ export function TruckEditDialog({ truck, open, onOpenChange }: TruckEditDialogPr
                           <div className="space-y-2">
                             <Label>Fuel Product</Label>
                             <Select 
-                              value={comp.product_id} 
-                              onValueChange={(v) => updateCompartment(index, 'product_id', v)}
+                              value={comp.product_id || 'none'} 
+                              onValueChange={(v) => updateCompartment(index, 'product_id', v === 'none' ? '' : v)}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select product" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">No product assigned</SelectItem>
+                                <SelectItem value="none">No product assigned</SelectItem>
                                 {products.map(p => (
                                   <SelectItem key={p.id} value={p.id}>
                                     {p.product_name} ({p.product_code})
