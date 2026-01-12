@@ -13421,14 +13421,17 @@ export type Database = {
       fuel_delivery_products: {
         Row: {
           base_price_per_unit: number | null
+          category: string | null
           cost_per_unit: number | null
           created_at: string
           description: string | null
           fuel_type: string
+          grade: string | null
           id: string
           is_active: boolean | null
           is_taxable: boolean | null
           minimum_order_quantity: number | null
+          octane_rating: number | null
           product_code: string | null
           product_name: string
           shop_id: string
@@ -13438,14 +13441,17 @@ export type Database = {
         }
         Insert: {
           base_price_per_unit?: number | null
+          category?: string | null
           cost_per_unit?: number | null
           created_at?: string
           description?: string | null
           fuel_type: string
+          grade?: string | null
           id?: string
           is_active?: boolean | null
           is_taxable?: boolean | null
           minimum_order_quantity?: number | null
+          octane_rating?: number | null
           product_code?: string | null
           product_name: string
           shop_id: string
@@ -13455,14 +13461,17 @@ export type Database = {
         }
         Update: {
           base_price_per_unit?: number | null
+          category?: string | null
           cost_per_unit?: number | null
           created_at?: string
           description?: string | null
           fuel_type?: string
+          grade?: string | null
           id?: string
           is_active?: boolean | null
           is_taxable?: boolean | null
           minimum_order_quantity?: number | null
+          octane_rating?: number | null
           product_code?: string | null
           product_name?: string
           shop_id?: string
