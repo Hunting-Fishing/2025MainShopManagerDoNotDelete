@@ -42233,6 +42233,7 @@ export type Database = {
           end_time: string | null
           id: string
           notes: string | null
+          priority: string | null
           route_date: string
           route_name: string
           shop_id: string
@@ -42255,6 +42256,7 @@ export type Database = {
           end_time?: string | null
           id?: string
           notes?: string | null
+          priority?: string | null
           route_date: string
           route_name: string
           shop_id: string
@@ -42277,6 +42279,7 @@ export type Database = {
           end_time?: string | null
           id?: string
           notes?: string | null
+          priority?: string | null
           route_date?: string
           route_name?: string
           shop_id?: string
