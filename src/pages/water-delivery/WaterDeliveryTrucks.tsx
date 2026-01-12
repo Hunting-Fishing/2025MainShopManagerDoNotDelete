@@ -107,7 +107,7 @@ export default function WaterDeliveryTrucks() {
                     <TableCell className="font-medium">{truck.truck_number}</TableCell>
                     <TableCell>{truck.make} {truck.model}</TableCell>
                     <TableCell>{truck.license_plate}</TableCell>
-                    <TableCell>{truck.total_capacity_gallons?.toLocaleString()}</TableCell>
+                    <TableCell>{truck.tank_capacity_gallons?.toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{truck.tank_material || 'Steel'}</Badge>
                     </TableCell>

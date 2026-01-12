@@ -108,7 +108,7 @@ export default function WaterDeliveryLocations() {
                     <TableCell>{location.address}</TableCell>
                     <TableCell>{location.city}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{location.delivery_zone || 'Default'}</Badge>
+                      <Badge variant="outline">{location.state || 'Default'}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={location.is_active ? 'default' : 'secondary'}>
