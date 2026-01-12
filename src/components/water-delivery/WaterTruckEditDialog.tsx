@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Loader2, Truck, Droplets, Shield, Gauge, Trash2 } from 'lucide-react';
+import { Loader2, Truck, Droplets, Shield, Gauge, Trash2, Container } from 'lucide-react';
+import { WaterTruckTanksSection } from './WaterTruckTanksSection';
 import { useUpdateWaterDeliveryTruck, useDeleteWaterDeliveryTruck, WaterDeliveryTruck } from '@/hooks/water-delivery/useWaterDeliveryTrucks';
 import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 import { useShopId } from '@/hooks/useShopId';
@@ -174,14 +175,18 @@ export function WaterTruckEditDialog({ truck, open, onOpenChange }: WaterTruckEd
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="vehicle" className="flex items-center gap-1 text-xs">
                 <Truck className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Vehicle</span>
               </TabsTrigger>
+              <TabsTrigger value="tanks" className="flex items-center gap-1 text-xs">
+                <Container className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Tanks</span>
+              </TabsTrigger>
               <TabsTrigger value="tank" className="flex items-center gap-1 text-xs">
                 <Droplets className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Tank</span>
+                <span className="hidden sm:inline">Legacy</span>
               </TabsTrigger>
               <TabsTrigger value="compliance" className="flex items-center gap-1 text-xs">
                 <Shield className="h-3.5 w-3.5" />
@@ -280,7 +285,12 @@ export function WaterTruckEditDialog({ truck, open, onOpenChange }: WaterTruckEd
               </div>
             </TabsContent>
 
-            {/* Tank Specifications Tab */}
+            {/* Tanks Management Tab */}
+            <TabsContent value="tanks" className="space-y-4 mt-4">
+              <WaterTruckTanksSection truckId={truck.id} />
+            </TabsContent>
+
+            {/* Tank Specifications Tab (Legacy - single tank) */}
             <TabsContent value="tank" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

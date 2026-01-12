@@ -42952,6 +42952,81 @@ export type Database = {
           },
         ]
       }
+      water_delivery_truck_tanks: {
+        Row: {
+          capacity_gallons: number
+          created_at: string
+          current_level_gallons: number
+          id: string
+          is_active: boolean | null
+          is_potable_certified: boolean | null
+          last_fill_date: string | null
+          last_fill_source: string | null
+          last_sanitized_date: string | null
+          material: string | null
+          next_sanitization_due: string | null
+          notes: string | null
+          shop_id: string
+          tank_name: string | null
+          tank_number: number
+          truck_id: string
+          updated_at: string
+        }
+        Insert: {
+          capacity_gallons?: number
+          created_at?: string
+          current_level_gallons?: number
+          id?: string
+          is_active?: boolean | null
+          is_potable_certified?: boolean | null
+          last_fill_date?: string | null
+          last_fill_source?: string | null
+          last_sanitized_date?: string | null
+          material?: string | null
+          next_sanitization_due?: string | null
+          notes?: string | null
+          shop_id: string
+          tank_name?: string | null
+          tank_number?: number
+          truck_id: string
+          updated_at?: string
+        }
+        Update: {
+          capacity_gallons?: number
+          created_at?: string
+          current_level_gallons?: number
+          id?: string
+          is_active?: boolean | null
+          is_potable_certified?: boolean | null
+          last_fill_date?: string | null
+          last_fill_source?: string | null
+          last_sanitized_date?: string | null
+          material?: string | null
+          next_sanitization_due?: string | null
+          notes?: string | null
+          shop_id?: string
+          tank_name?: string | null
+          tank_number?: number
+          truck_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_truck_tanks_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_truck_tanks_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       water_delivery_trucks: {
         Row: {
           compartment_capacities: Json | null
