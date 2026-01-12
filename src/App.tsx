@@ -296,6 +296,32 @@ import FuelDeliveryPortalOrders from '@/pages/fuel-delivery-portal/FuelDeliveryP
 import FuelDeliveryPortalLocations from '@/pages/fuel-delivery-portal/FuelDeliveryPortalLocations';
 import FuelDeliveryPortalAccount from '@/pages/fuel-delivery-portal/FuelDeliveryPortalAccount';
 
+// Water Delivery
+import WaterDeliveryDashboard from '@/pages/water-delivery/WaterDeliveryDashboard';
+import WaterDeliveryOrders from '@/pages/water-delivery/WaterDeliveryOrders';
+import WaterDeliveryOrderForm from '@/pages/water-delivery/WaterDeliveryOrderForm';
+import WaterDeliveryCustomers from '@/pages/water-delivery/WaterDeliveryCustomers';
+import WaterDeliveryLocations from '@/pages/water-delivery/WaterDeliveryLocations';
+import WaterDeliveryProducts from '@/pages/water-delivery/WaterDeliveryProducts';
+import WaterDeliveryTrucks from '@/pages/water-delivery/WaterDeliveryTrucks';
+import WaterDeliveryDrivers from '@/pages/water-delivery/WaterDeliveryDrivers';
+import WaterDeliveryRoutes from '@/pages/water-delivery/WaterDeliveryRoutes';
+import WaterDeliveryCompletions from '@/pages/water-delivery/WaterDeliveryCompletions';
+import WaterDeliveryInventory from '@/pages/water-delivery/WaterDeliveryInventory';
+import WaterDeliveryInvoices from '@/pages/water-delivery/WaterDeliveryInvoices';
+import WaterDeliveryDriverApp from '@/pages/water-delivery/WaterDeliveryDriverApp';
+import WaterDeliveryPricing from '@/pages/water-delivery/WaterDeliveryPricing';
+import WaterDeliveryTanks from '@/pages/water-delivery/WaterDeliveryTanks';
+import WaterDeliveryTidyTanks from '@/pages/water-delivery/WaterDeliveryTidyTanks';
+import WaterDeliveryTankFills from '@/pages/water-delivery/WaterDeliveryTankFills';
+import WaterDeliveryEquipment from '@/pages/water-delivery/WaterDeliveryEquipment';
+import WaterDeliveryEquipmentFilters from '@/pages/water-delivery/WaterDeliveryEquipmentFilters';
+import WaterDeliveryQuotes from '@/pages/water-delivery/WaterDeliveryQuotes';
+import WaterDeliveryProfile from '@/pages/water-delivery/WaterDeliveryProfile';
+import WaterDeliverySettings from '@/pages/water-delivery/WaterDeliverySettings';
+import WaterDeliveryPurchases from '@/pages/water-delivery/WaterDeliveryPurchases';
+import { WaterDeliveryLayout } from '@/components/water-delivery';
+
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1292,6 +1318,45 @@ function App() {
                   <Route path="/settings" element={<FuelDeliverySettings />} />
                 </Routes>
               </FuelDeliveryLayout>
+            </AuthGate>
+          }
+        />
+        
+        {/* Water Delivery Module - Separate Layout */}
+        <Route
+          path="/water-delivery/*"
+          element={
+            <AuthGate>
+              <WaterDeliveryLayout>
+                <Routes>
+                  <Route path="/" element={<WaterDeliveryDashboard />} />
+                  <Route path="/orders" element={<WaterDeliveryOrders />} />
+                  <Route path="/orders/new" element={<WaterDeliveryOrderForm />} />
+                  <Route path="/orders/:id" element={<WaterDeliveryOrders />} />
+                  <Route path="/customers" element={<WaterDeliveryCustomers />} />
+                  <Route path="/locations" element={<WaterDeliveryLocations />} />
+                  <Route path="/products" element={<WaterDeliveryProducts />} />
+                  <Route path="/trucks" element={<WaterDeliveryTrucks />} />
+                  <Route path="/drivers" element={<WaterDeliveryDrivers />} />
+                  <Route path="/routes" element={<WaterDeliveryRoutes />} />
+                  <Route path="/routes/new" element={<WaterDeliveryRoutes />} />
+                  <Route path="/deliveries" element={<WaterDeliveryCompletions />} />
+                  <Route path="/inventory" element={<WaterDeliveryInventory />} />
+                  <Route path="/purchases" element={<WaterDeliveryPurchases />} />
+                  <Route path="/invoices" element={<WaterDeliveryInvoices />} />
+                  <Route path="/invoices/new" element={<WaterDeliveryInvoices />} />
+                  <Route path="/driver-app" element={<WaterDeliveryDriverApp />} />
+                  <Route path="/pricing" element={<WaterDeliveryPricing />} />
+                  <Route path="/tanks" element={<WaterDeliveryTanks />} />
+                  <Route path="/tidy-tanks" element={<WaterDeliveryTidyTanks />} />
+                  <Route path="/tank-fills" element={<WaterDeliveryTankFills />} />
+                  <Route path="/equipment" element={<WaterDeliveryEquipment />} />
+                  <Route path="/equipment-filters" element={<WaterDeliveryEquipmentFilters />} />
+                  <Route path="/quotes" element={<WaterDeliveryQuotes />} />
+                  <Route path="/profile" element={<WaterDeliveryProfile />} />
+                  <Route path="/settings" element={<WaterDeliverySettings />} />
+                </Routes>
+              </WaterDeliveryLayout>
             </AuthGate>
           }
         />
