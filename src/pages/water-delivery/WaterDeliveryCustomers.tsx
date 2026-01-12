@@ -121,7 +121,7 @@ export default function WaterDeliveryCustomers() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{customer.customer_type || 'Standard'}</Badge>
+                      <Badge variant="outline">{customer.payment_terms || 'Standard'}</Badge>
                     </TableCell>
                   </TableRow>
                 ))}

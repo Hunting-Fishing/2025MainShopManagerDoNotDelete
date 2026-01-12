@@ -136,7 +136,7 @@ export default function WaterDeliveryRoutes() {
                         {route.total_stops || 0}
                       </div>
                     </TableCell>
-                    <TableCell>{route.total_distance_miles || '-'} mi</TableCell>
+                    <TableCell>{(route.end_odometer && route.start_odometer) ? (route.end_odometer - route.start_odometer) : '-'} mi</TableCell>
                     <TableCell>{getStatusBadge(route.status)}</TableCell>
                   </TableRow>
                 ))}
