@@ -81,9 +81,9 @@ export function LicenseClassSelect({
     
     // Default: show both systems for flexibility
     return [
-      { value: '', label: '— US CDL Classes —', disabled: true },
+      { value: 'header-us', label: '— USA CDL Classes —', disabled: true },
       ...US_CDL_CLASSES,
-      { value: '', label: '— Canadian Classes —', disabled: true },
+      { value: 'header-ca', label: '— Canadian License Classes —', disabled: true },
       ...CANADIAN_LICENSE_CLASSES,
     ];
   }, [stateProvince]);
@@ -107,7 +107,7 @@ export function LicenseClassSelect({
           </div>
         )}
         {licenseClasses.map((cls, idx) => (
-          cls.value === '' ? (
+          cls.value.startsWith('header-') || cls.value === '' ? (
             <div key={idx} className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
               {cls.label}
             </div>

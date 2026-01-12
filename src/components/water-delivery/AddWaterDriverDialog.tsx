@@ -235,9 +235,9 @@ export function AddWaterDriverDialog({ open, onOpenChange }: AddWaterDriverDialo
                   name="license_state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>License State</FormLabel>
+                      <FormLabel>State/Province</FormLabel>
                       <FormControl>
-                        <Input placeholder="CA" {...field} />
+                        <Input placeholder="CA, ON, BC..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
