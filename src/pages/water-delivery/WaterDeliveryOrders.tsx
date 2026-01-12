@@ -12,12 +12,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 export default function WaterDeliveryOrders() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { shopId } = useShopId();
+  const { formatVolume } = useWaterUnits();
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['water-delivery-orders', shopId],
@@ -151,7 +153,7 @@ export default function WaterDeliveryOrders() {
                     </TableCell>
                     <TableCell>{order.water_delivery_locations?.location_name}</TableCell>
                     <TableCell>{order.water_delivery_products?.product_name}</TableCell>
-                    <TableCell>{order.quantity_gallons?.toLocaleString()} gal</TableCell>
+                    <TableCell>{formatVolume(order.quantity_gallons || 0)}</TableCell>
                     <TableCell>
                       {order.requested_date ? format(new Date(order.requested_date), 'MMM d, yyyy') : '-'}
                     </TableCell>

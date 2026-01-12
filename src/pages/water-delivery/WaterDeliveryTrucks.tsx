@@ -11,11 +11,13 @@ import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 export default function WaterDeliveryTrucks() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const { shopId } = useShopId();
+  const { formatVolume, getVolumeLabel } = useWaterUnits();
 
   const { data: trucks, isLoading } = useQuery({
     queryKey: ['water-delivery-trucks', shopId],
@@ -94,7 +96,7 @@ export default function WaterDeliveryTrucks() {
                   <TableHead>Truck #</TableHead>
                   <TableHead>Make/Model</TableHead>
                   <TableHead>License Plate</TableHead>
-                  <TableHead>Capacity (gal)</TableHead>
+                  <TableHead>Capacity ({getVolumeLabel()})</TableHead>
                   <TableHead>Tank Material</TableHead>
                   <TableHead>Potable Certified</TableHead>
                   <TableHead>Last Sanitized</TableHead>
@@ -107,7 +109,7 @@ export default function WaterDeliveryTrucks() {
                     <TableCell className="font-medium">{truck.truck_number}</TableCell>
                     <TableCell>{truck.make} {truck.model}</TableCell>
                     <TableCell>{truck.license_plate}</TableCell>
-                    <TableCell>{truck.tank_capacity_gallons?.toLocaleString()}</TableCell>
+                    <TableCell>{formatVolume(truck.tank_capacity_gallons || 0, 0)}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{truck.tank_material || 'Steel'}</Badge>
                     </TableCell>

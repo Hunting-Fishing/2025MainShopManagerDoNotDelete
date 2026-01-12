@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 interface EquipmentFilter {
   id: string;
@@ -47,6 +48,7 @@ export default function WaterDeliveryEquipmentFilters() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { getVolumeLabel } = useWaterUnits();
   const [formData, setFormData] = useState({
     equipment_id: '',
     filter_type: '',
@@ -241,7 +243,7 @@ export default function WaterDeliveryEquipmentFilters() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Service Interval (Gallons)</Label>
+                    <Label>Service Interval ({getVolumeLabel()})</Label>
                     <Input
                       type="number"
                       value={formData.max_gallons}
