@@ -5,6 +5,8 @@ import {
   Anchor, 
   Fuel, 
   LucideIcon,
+  ShoppingCart,
+  User,
   Briefcase,
   Crosshair,
   Package,
@@ -1638,6 +1640,46 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Inventory', href: '/fuel-delivery/inventory', icon: BarChart3, description: 'Fuel inventory' },
       // Mobile
       { title: 'Driver App', href: '/fuel-delivery/driver-app', icon: Smartphone, description: 'Mobile driver app' },
+    ],
+  },
+  water_delivery: {
+    slug: 'water_delivery',
+    name: 'Water Delivery',
+    description: 'Water delivery, tank management, and route optimization',
+    icon: Droplet,
+    dashboardRoute: '/water-delivery',
+    color: 'hsl(var(--chart-1))',
+    gradientFrom: 'from-cyan-500',
+    gradientTo: 'to-blue-600',
+    sections: [
+      // Core Operations
+      { title: 'Dashboard', href: '/water-delivery', icon: Gauge, description: 'Module overview and KPIs' },
+      { title: 'Orders', href: '/water-delivery/orders', icon: ClipboardList, description: 'Delivery orders' },
+      { title: 'Customers', href: '/water-delivery/customers', icon: Users, description: 'Customer management' },
+      { title: 'Quotes', href: '/water-delivery/quotes', icon: FileText, description: 'Estimates and quotes' },
+      { title: 'Invoices', href: '/water-delivery/invoices', icon: Receipt, description: 'Billing and invoices' },
+      // Tank Management
+      { title: 'Tanks', href: '/water-delivery/tanks', icon: Container, description: 'Tank registry' },
+      { title: 'Tidy Tanks', href: '/water-delivery/tidy-tanks', icon: PackageCheck, description: 'Tank maintenance' },
+      { title: 'Tank Fills', href: '/water-delivery/tank-fills', icon: Droplet, description: 'Fill history' },
+      { title: 'Locations', href: '/water-delivery/locations', icon: MapPin, description: 'Delivery locations' },
+      // Fleet & Delivery
+      { title: 'Routes', href: '/water-delivery/routes', icon: Route, description: 'Route optimization' },
+      { title: 'Trucks', href: '/water-delivery/trucks', icon: Truck, description: 'Water trucks' },
+      { title: 'Drivers', href: '/water-delivery/drivers', icon: UserCheck, description: 'Driver management' },
+      { title: 'Equipment', href: '/water-delivery/equipment', icon: Wrench, description: 'Equipment tracking' },
+      { title: 'Equipment Filters', href: '/water-delivery/equipment-filters', icon: Filter, description: 'Filter maintenance' },
+      { title: 'Deliveries', href: '/water-delivery/deliveries', icon: FolderOpen, description: 'Completed deliveries' },
+      // Products & Pricing
+      { title: 'Products', href: '/water-delivery/products', icon: Droplet, description: 'Water products' },
+      { title: 'Pricing', href: '/water-delivery/pricing', icon: CircleDollarSign, description: 'Price management' },
+      { title: 'Inventory', href: '/water-delivery/inventory', icon: BarChart3, description: 'Water inventory' },
+      { title: 'Purchases', href: '/water-delivery/purchases', icon: ShoppingCart, description: 'Purchase orders' },
+      // Mobile
+      { title: 'Driver App', href: '/water-delivery/driver-app', icon: Smartphone, description: 'Mobile driver app' },
+      // Settings
+      { title: 'Profile', href: '/water-delivery/profile', icon: User, description: 'Module profile' },
+      { title: 'Settings', href: '/water-delivery/settings', icon: Settings, description: 'Module settings' },
     ],
   },
 };
