@@ -104,7 +104,11 @@ export default function WaterDeliveryDrivers() {
               </TableHeader>
               <TableBody>
                 {filteredDrivers.map((driver) => (
-                  <TableRow key={driver.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableRow 
+                    key={driver.id} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => navigate(`/water-delivery/drivers/${driver.id}`)}
+                  >
                     <TableCell className="font-medium">
                       {driver.first_name} {driver.last_name}
                     </TableCell>
