@@ -8,10 +8,12 @@ import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 export default function WaterDeliveryInventory() {
   const navigate = useNavigate();
   const { shopId } = useShopId();
+  const { formatVolume, getVolumeLabel } = useWaterUnits();
 
   const { data: inventory, isLoading } = useQuery({
     queryKey: ['water-delivery-inventory', shopId],
@@ -60,7 +62,7 @@ export default function WaterDeliveryInventory() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Capacity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCapacity.toLocaleString()} gal</div>
+            <div className="text-2xl font-bold">{formatVolume(totalCapacity, 0)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -68,7 +70,7 @@ export default function WaterDeliveryInventory() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Current Stock</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-cyan-600">{totalCurrent.toLocaleString()} gal</div>
+            <div className="text-2xl font-bold text-cyan-600">{formatVolume(totalCurrent, 0)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -85,7 +87,7 @@ export default function WaterDeliveryInventory() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {(totalCapacity - totalCurrent).toLocaleString()} gal
+              {formatVolume(totalCapacity - totalCurrent, 0)}
             </div>
           </CardContent>
         </Card>
@@ -122,11 +124,11 @@ export default function WaterDeliveryInventory() {
                         {itemUtil > 20 ? 'Good' : 'Low Stock'}
                       </Badge>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Stock Level</span>
-                        <span>{item.quantity_gallons?.toLocaleString()} / {item.max_capacity?.toLocaleString()} gal</span>
-                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Stock Level</span>
+                          <span>{formatVolume(item.quantity_gallons || 0, 0)} / {formatVolume(item.max_capacity || 0, 0)}</span>
+                        </div>
                       <div className="w-full bg-muted rounded-full h-2">
                         <div 
                           className={`h-2 rounded-full ${itemUtil > 50 ? 'bg-cyan-500' : itemUtil > 20 ? 'bg-amber-500' : 'bg-red-500'}`}

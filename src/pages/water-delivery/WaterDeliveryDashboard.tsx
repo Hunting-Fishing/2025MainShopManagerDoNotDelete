@@ -18,18 +18,77 @@ import {
   BarChart3,
   Container,
   Settings,
-  Filter
+  Filter,
+  Beaker,
+  ShieldCheck,
+  ThermometerSun
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function WaterDeliveryDashboard() {
   const navigate = useNavigate();
   const { shopId } = useShopId();
   const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'water_delivery');
   const { getVolumeLabel, formatVolume } = useWaterUnits();
+
+  // Fetch tanks with low levels
+  const { data: lowLevelTanks } = useQuery({
+    queryKey: ['water-delivery-low-tanks', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from('water_delivery_tanks')
+        .select('id, tank_number, current_level_percent')
+        .eq('shop_id', shopId)
+        .eq('is_active', true)
+        .lt('current_level_percent', 25);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
+
+  // Fetch filters due for replacement
+  const { data: filtersDue } = useQuery({
+    queryKey: ['water-delivery-filters-due', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      const { data, error } = await supabase
+        .from('water_delivery_equipment_filters')
+        .select('id, filter_name, next_replacement_date')
+        .eq('shop_id', shopId)
+        .lt('next_replacement_date', thirtyDaysFromNow.toISOString());
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
+
+  // Fetch tanks needing sanitization
+  const { data: sanitizationDue } = useQuery({
+    queryKey: ['water-delivery-sanitization-due', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const { data, error } = await supabase
+        .from('water_delivery_tanks')
+        .select('id, tank_number, last_sanitized_date')
+        .eq('shop_id', shopId)
+        .eq('is_active', true)
+        .or(`last_sanitized_date.is.null,last_sanitized_date.lt.${threeMonthsAgo.toISOString()}`);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
 
   const statCards = [
     {
@@ -172,18 +231,78 @@ export default function WaterDeliveryDashboard() {
         </Button>
       </div>
 
+      {/* Water Quality & Maintenance Alerts */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Low Level Tanks */}
+        <Card className="border-amber-500/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              Low Level Tanks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-amber-500">{lowLevelTanks?.length || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Below 25% capacity</p>
+            {(lowLevelTanks?.length || 0) > 0 && (
+              <Button variant="link" className="p-0 h-auto mt-2" onClick={() => navigate('/water-delivery/tanks')}>
+                View tanks →
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Filters Due */}
+        <Card className="border-purple-500/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Filter className="h-4 w-4 text-purple-500" />
+              Filters Due
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-purple-500">{filtersDue?.length || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Replacement in 30 days</p>
+            {(filtersDue?.length || 0) > 0 && (
+              <Button variant="link" className="p-0 h-auto mt-2" onClick={() => navigate('/water-delivery/equipment-filters')}>
+                View filters →
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Sanitization Due */}
+        <Card className="border-teal-500/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-teal-500" />
+              Sanitization Due
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-teal-500">{sanitizationDue?.length || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Last sanitized 90+ days ago</p>
+            {(sanitizationDue?.length || 0) > 0 && (
+              <Button variant="link" className="p-0 h-auto mt-2" onClick={() => navigate('/water-delivery/tidy-tanks')}>
+                View maintenance →
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Info Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Recent Orders</CardTitle>
+            <CardTitle className="text-lg font-semibold">Recent Water Orders</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8 text-muted-foreground">
               <Droplets className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No orders yet</p>
+              <p>No water orders yet</p>
               <Button variant="link" onClick={() => navigate('/water-delivery/orders/new')}>
-                Create your first order
+                Create your first water order
               </Button>
             </div>
           </CardContent>
@@ -191,16 +310,16 @@ export default function WaterDeliveryDashboard() {
 
         <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Fleet Status</CardTitle>
+            <CardTitle className="text-lg font-semibold">Water Fleet Status</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-green-500/10 rounded-lg">
+              <div className="p-4 bg-cyan-500/10 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <Truck className="h-5 w-5 text-green-500" />
-                  <span className="font-medium text-foreground">Available Trucks</span>
+                  <Truck className="h-5 w-5 text-cyan-500" />
+                  <span className="font-medium text-foreground">Water Trucks</span>
                 </div>
-                <p className="text-2xl font-bold text-green-500">0</p>
+                <p className="text-2xl font-bold text-cyan-500">0</p>
               </div>
               <div className="p-4 bg-blue-500/10 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
