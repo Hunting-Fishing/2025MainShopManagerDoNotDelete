@@ -283,6 +283,7 @@ import FuelDeliveryEquipmentFilters from '@/pages/fuel-delivery/FuelDeliveryEqui
 import FuelDeliveryQuotes from '@/pages/fuel-delivery/FuelDeliveryQuotes';
 import FuelDeliveryProfile from '@/pages/fuel-delivery/FuelDeliveryProfile';
 import FuelDeliverySettings from '@/pages/fuel-delivery/FuelDeliverySettings';
+import FuelDeliveryPurchases from '@/pages/fuel-delivery/FuelDeliveryPurchases';
 import { FuelDeliveryLayout } from '@/components/fuel-delivery';
 
 // Fuel Delivery Portal (Customer-facing)
@@ -1276,6 +1277,7 @@ function App() {
                   <Route path="/routes/new" element={<FuelDeliveryRoutes />} />
                   <Route path="/deliveries" element={<FuelDeliveryCompletions />} />
                   <Route path="/inventory" element={<FuelDeliveryInventory />} />
+                  <Route path="/purchases" element={<FuelDeliveryPurchases />} />
                   <Route path="/invoices" element={<FuelDeliveryInvoices />} />
                   <Route path="/invoices/new" element={<FuelDeliveryInvoices />} />
                   <Route path="/driver-app" element={<FuelDeliveryDriverApp />} />

@@ -13481,6 +13481,166 @@ export type Database = {
         }
         Relationships: []
       }
+      fuel_delivery_purchases: {
+        Row: {
+          actual_gallons_received: number | null
+          bol_document_url: string | null
+          bol_number: string
+          compartment_id: string | null
+          created_at: string
+          created_by: string | null
+          fees: number | null
+          id: string
+          invoice_document_url: string | null
+          meter_end_reading: number | null
+          meter_start_reading: number | null
+          notes: string | null
+          payment_date: string | null
+          payment_due_date: string | null
+          payment_reference: string | null
+          payment_status: string | null
+          po_number: string | null
+          price_per_gallon: number
+          product_id: string | null
+          purchase_date: string
+          quantity_gallons: number
+          rack_price: number | null
+          received_by: string | null
+          received_date: string | null
+          shop_id: string
+          status: string | null
+          subtotal: number | null
+          taxes: number | null
+          terminal_location: string | null
+          terminal_name: string | null
+          total_cost: number | null
+          truck_id: string | null
+          updated_at: string
+          variance_gallons: number | null
+          vendor_account_number: string | null
+          vendor_name: string
+        }
+        Insert: {
+          actual_gallons_received?: number | null
+          bol_document_url?: string | null
+          bol_number: string
+          compartment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fees?: number | null
+          id?: string
+          invoice_document_url?: string | null
+          meter_end_reading?: number | null
+          meter_start_reading?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          payment_due_date?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          po_number?: string | null
+          price_per_gallon: number
+          product_id?: string | null
+          purchase_date?: string
+          quantity_gallons: number
+          rack_price?: number | null
+          received_by?: string | null
+          received_date?: string | null
+          shop_id: string
+          status?: string | null
+          subtotal?: number | null
+          taxes?: number | null
+          terminal_location?: string | null
+          terminal_name?: string | null
+          total_cost?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          variance_gallons?: number | null
+          vendor_account_number?: string | null
+          vendor_name: string
+        }
+        Update: {
+          actual_gallons_received?: number | null
+          bol_document_url?: string | null
+          bol_number?: string
+          compartment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fees?: number | null
+          id?: string
+          invoice_document_url?: string | null
+          meter_end_reading?: number | null
+          meter_start_reading?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          payment_due_date?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          po_number?: string | null
+          price_per_gallon?: number
+          product_id?: string | null
+          purchase_date?: string
+          quantity_gallons?: number
+          rack_price?: number | null
+          received_by?: string | null
+          received_date?: string | null
+          shop_id?: string
+          status?: string | null
+          subtotal?: number | null
+          taxes?: number | null
+          terminal_location?: string | null
+          terminal_name?: string | null
+          total_cost?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          variance_gallons?: number | null
+          vendor_account_number?: string | null
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_delivery_purchases_compartment_id_fkey"
+            columns: ["compartment_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_truck_compartments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_purchases_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_purchases_received_by_fkey"
+            columns: ["received_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_purchases_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_delivery_purchases_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_delivery_quote_lines: {
         Row: {
           created_at: string

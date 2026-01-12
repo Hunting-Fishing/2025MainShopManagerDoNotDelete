@@ -84,9 +84,10 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Inventory & Products',
+    title: 'Inventory & Purchasing',
     items: [
       { title: 'Products', href: '/fuel-delivery/products', icon: Package, color: 'from-yellow-500 to-amber-500' },
+      { title: 'Purchases / BOL', href: '/fuel-delivery/purchases', icon: FileText, color: 'from-orange-500 to-red-500' },
       { title: 'Inventory', href: '/fuel-delivery/inventory', icon: BarChart3, color: 'from-teal-500 to-cyan-600' },
       { title: 'Pricing', href: '/fuel-delivery/pricing', icon: DollarSign, color: 'from-emerald-500 to-green-600' },
     ],
