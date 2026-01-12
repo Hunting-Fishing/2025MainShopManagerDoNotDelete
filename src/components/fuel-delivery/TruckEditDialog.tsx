@@ -39,7 +39,7 @@ export function TruckEditDialog({ truck, open, onOpenChange }: TruckEditDialogPr
   const updateTruck = useUpdateFuelDeliveryTruck();
   const { data: compartments = [], isLoading: loadingCompartments } = useTruckCompartments(truck?.id);
   const { data: products = [] } = useFuelProducts();
-  const { getVolumeLabel } = useFuelUnits();
+  const { getVolumeLabel, convertToGallons, convertFromGallons } = useFuelUnits();
   const queryClient = useQueryClient();
   
   const [saving, setSaving] = useState(false);
@@ -82,15 +82,16 @@ export function TruckEditDialog({ truck, open, onOpenChange }: TruckEditDialogPr
     }
   }, [truck]);
 
-  // Initialize compartments when loaded
+  // Initialize compartments when loaded - convert from gallons to display unit
   useEffect(() => {
     if (compartments.length > 0) {
       setCompartmentForms(compartments.map(c => ({
         id: c.id,
         compartment_number: c.compartment_number,
         compartment_name: c.compartment_name || '',
-        capacity_gallons: c.capacity_gallons.toString(),
-        current_level_gallons: c.current_level_gallons.toString(),
+        // Convert from gallons (DB) to display unit
+        capacity_gallons: convertFromGallons(c.capacity_gallons).toFixed(0),
+        current_level_gallons: convertFromGallons(c.current_level_gallons).toFixed(0),
         product_id: c.product_id || '',
         material: c.material || 'steel',
         isNew: false,
@@ -100,7 +101,7 @@ export function TruckEditDialog({ truck, open, onOpenChange }: TruckEditDialogPr
       // No compartments yet - start with empty
       setCompartmentForms([]);
     }
-  }, [compartments, truck, loadingCompartments]);
+  }, [compartments, truck, loadingCompartments, convertFromGallons]);
 
   const addCompartment = () => {
     const nextNumber = compartmentForms.filter(c => !c.isDeleted).length + 1;
@@ -171,11 +172,13 @@ export function TruckEditDialog({ truck, open, onOpenChange }: TruckEditDialogPr
       // Get original compartments for history tracking
       const originalCompartmentsMap = new Map(compartments.map(c => [c.id, c]));
 
-      // Update existing compartments
+      // Update existing compartments - convert display units to gallons for storage
       const toUpdate = compartmentForms.filter(c => !c.isNew && !c.isDeleted && c.id);
       for (const comp of toUpdate) {
         const originalComp = originalCompartmentsMap.get(comp.id!);
-        const newLevel = parseFloat(comp.current_level_gallons) || 0;
+        // Convert from display unit to gallons for storage
+        const newLevelInGallons = convertToGallons(parseFloat(comp.current_level_gallons) || 0);
+        const capacityInGallons = convertToGallons(parseFloat(comp.capacity_gallons) || 0);
         const previousLevel = originalComp?.current_level_gallons || 0;
         
         await supabase
@@ -183,23 +186,23 @@ export function TruckEditDialog({ truck, open, onOpenChange }: TruckEditDialogPr
           .update({
             compartment_number: comp.compartment_number,
             compartment_name: comp.compartment_name || null,
-            capacity_gallons: parseFloat(comp.capacity_gallons) || 0,
-            current_level_gallons: newLevel,
+            capacity_gallons: capacityInGallons,
+            current_level_gallons: newLevelInGallons,
             product_id: comp.product_id || null,
             material: comp.material || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', comp.id);
         
-        // Log history if level changed
-        if (newLevel !== previousLevel && comp.id) {
+        // Log history if level changed (comparing in gallons)
+        if (Math.abs(newLevelInGallons - previousLevel) > 0.1 && comp.id) {
           await supabase.from('fuel_delivery_compartment_history').insert({
             shop_id: shopId,
             compartment_id: comp.id,
             truck_id: truck.id,
             previous_level_gallons: previousLevel,
-            new_level_gallons: newLevel,
-            change_amount_gallons: newLevel - previousLevel,
+            new_level_gallons: newLevelInGallons,
+            change_amount_gallons: newLevelInGallons - previousLevel,
             change_type: 'manual',
             reference_type: 'manual_adjustment',
             notes: `Manual level adjustment via truck edit`
@@ -207,30 +210,32 @@ export function TruckEditDialog({ truck, open, onOpenChange }: TruckEditDialogPr
         }
       }
 
-      // Insert new compartments
+      // Insert new compartments - convert display units to gallons for storage
       const toInsert = compartmentForms.filter(c => c.isNew && !c.isDeleted);
       for (const comp of toInsert) {
+        const capacityInGallons = convertToGallons(parseFloat(comp.capacity_gallons) || 0);
+        const currentLevelInGallons = convertToGallons(parseFloat(comp.current_level_gallons) || 0);
+        
         const { data: insertedComp } = await supabase.from('fuel_delivery_truck_compartments').insert({
           shop_id: shopId,
           truck_id: truck.id,
           compartment_number: comp.compartment_number,
           compartment_name: comp.compartment_name || null,
-          capacity_gallons: parseFloat(comp.capacity_gallons) || 0,
-          current_level_gallons: parseFloat(comp.current_level_gallons) || 0,
+          capacity_gallons: capacityInGallons,
+          current_level_gallons: currentLevelInGallons,
           product_id: comp.product_id || null,
           material: comp.material || null
         }).select().single();
         
         // Log history for new compartment if it has initial level
-        const initialLevel = parseFloat(comp.current_level_gallons) || 0;
-        if (initialLevel > 0 && insertedComp) {
+        if (currentLevelInGallons > 0 && insertedComp) {
           await supabase.from('fuel_delivery_compartment_history').insert({
             shop_id: shopId,
             compartment_id: insertedComp.id,
             truck_id: truck.id,
             previous_level_gallons: 0,
-            new_level_gallons: initialLevel,
-            change_amount_gallons: initialLevel,
+            new_level_gallons: currentLevelInGallons,
+            change_amount_gallons: currentLevelInGallons,
             change_type: 'manual',
             reference_type: 'manual_adjustment',
             notes: `Initial level set when compartment created`
