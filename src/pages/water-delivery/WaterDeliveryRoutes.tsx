@@ -14,11 +14,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { WaterDeliveryRouteMap } from '@/components/water-delivery/WaterDeliveryRouteMap';
 import { Location } from '@/hooks/useMapbox';
+import { CreateRouteDialog } from '@/components/water-delivery/CreateRouteDialog';
 
 export default function WaterDeliveryRoutes() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { shopId } = useShopId();
 
   // Fetch routes
@@ -116,13 +118,16 @@ export default function WaterDeliveryRoutes() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button className="bg-cyan-600 hover:bg-cyan-700">
+            <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Route
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Create Route Dialog */}
+      <CreateRouteDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
 
       {/* Search */}
       <Card className="mb-6">
@@ -217,7 +222,9 @@ export default function WaterDeliveryRoutes() {
               <div className="text-center py-12 text-muted-foreground">
                 <Route className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No routes found</p>
-                <Button variant="link">Create your first route</Button>
+                <Button variant="link" onClick={() => setCreateDialogOpen(true)}>
+                  Create your first route
+                </Button>
               </div>
             )}
           </CardContent>
