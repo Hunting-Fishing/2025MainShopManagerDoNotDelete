@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, ArrowLeft, Route, MapPin, Calendar, Map, List } from 'lucide-react';
+import { Plus, Search, ArrowLeft, Route, MapPin, Calendar, Map, List, CalendarDays, CalendarRange } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useShopId } from '@/hooks/useShopId';
@@ -15,12 +15,17 @@ import { format } from 'date-fns';
 import { WaterDeliveryRouteMap } from '@/components/water-delivery/WaterDeliveryRouteMap';
 import { Location } from '@/hooks/useMapbox';
 import { CreateRouteDialog } from '@/components/water-delivery/CreateRouteDialog';
+import { WaterDeliveryRouteCalendar, CalendarViewMode } from '@/components/water-delivery/WaterDeliveryRouteCalendar';
+import { RouteCalendarEventData } from '@/components/water-delivery/RouteCalendarEvent';
+
+type ViewMode = 'list' | 'map' | 'day' | 'week' | 'month';
 
 export default function WaterDeliveryRoutes() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createDialogDate, setCreateDialogDate] = useState<Date | undefined>();
   const { shopId } = useShopId();
 
   // Fetch routes
@@ -87,6 +92,28 @@ export default function WaterDeliveryRoutes() {
     }
   };
 
+  const getPriorityBadge = (priority: string | null) => {
+    switch (priority) {
+      case 'emergency': return <Badge className="bg-red-500 animate-pulse">Emergency</Badge>;
+      case 'high': return <Badge className="bg-orange-500">High</Badge>;
+      case 'normal': return <Badge className="bg-cyan-500">Normal</Badge>;
+      case 'low': return <Badge className="bg-gray-400">Low</Badge>;
+      default: return <Badge className="bg-cyan-500">Normal</Badge>;
+    }
+  };
+
+  const handleCreateRoute = (date?: Date) => {
+    setCreateDialogDate(date);
+    setCreateDialogOpen(true);
+  };
+
+  const handleEventClick = (event: RouteCalendarEventData) => {
+    // TODO: Open route details dialog
+    console.log('Event clicked:', event);
+  };
+
+  const isCalendarView = viewMode === 'day' || viewMode === 'week' || viewMode === 'month';
+
   return (
     <div className="min-h-screen bg-background p-6">
       {/* Header */}
@@ -106,46 +133,76 @@ export default function WaterDeliveryRoutes() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'map')}>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
               <TabsList>
                 <TabsTrigger value="list" className="flex items-center gap-2">
                   <List className="h-4 w-4" />
-                  List
+                  <span className="hidden sm:inline">List</span>
                 </TabsTrigger>
                 <TabsTrigger value="map" className="flex items-center gap-2">
                   <Map className="h-4 w-4" />
-                  Map
+                  <span className="hidden sm:inline">Map</span>
+                </TabsTrigger>
+                <TabsTrigger value="day" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span className="hidden sm:inline">Day</span>
+                </TabsTrigger>
+                <TabsTrigger value="week" className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4" />
+                  <span className="hidden sm:inline">Week</span>
+                </TabsTrigger>
+                <TabsTrigger value="month" className="flex items-center gap-2">
+                  <CalendarRange className="h-4 w-4" />
+                  <span className="hidden sm:inline">Month</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Route
-            </Button>
+            {!isCalendarView && (
+              <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={() => handleCreateRoute()}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Route
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Create Route Dialog */}
-      <CreateRouteDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      <CreateRouteDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen}
+        defaultDate={createDialogDate}
+      />
 
-      {/* Search */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search routes..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Calendar Views */}
+      {isCalendarView && (
+        <WaterDeliveryRouteCalendar
+          viewMode={viewMode as CalendarViewMode}
+          onViewModeChange={(mode) => setViewMode(mode)}
+          onCreateRoute={handleCreateRoute}
+          onEventClick={handleEventClick}
+        />
+      )}
+
+      {/* Search - only for list view */}
+      {viewMode === 'list' && (
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search routes..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* View Content */}
-      {viewMode === 'map' ? (
+      {viewMode === 'map' && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -168,7 +225,9 @@ export default function WaterDeliveryRoutes() {
             )}
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {viewMode === 'list' && (
         <Card>
           <CardContent className="p-0">
             {isLoading ? (
@@ -183,6 +242,7 @@ export default function WaterDeliveryRoutes() {
                   <TableRow>
                     <TableHead>Route Name</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>Priority</TableHead>
                     <TableHead>Driver</TableHead>
                     <TableHead>Truck</TableHead>
                     <TableHead>Stops</TableHead>
@@ -201,6 +261,7 @@ export default function WaterDeliveryRoutes() {
                             : '-'}
                         </div>
                       </TableCell>
+                      <TableCell>{getPriorityBadge(route.priority)}</TableCell>
                       <TableCell>
                         {route.water_delivery_drivers 
                           ? `${route.water_delivery_drivers.first_name} ${route.water_delivery_drivers.last_name}`
@@ -222,7 +283,7 @@ export default function WaterDeliveryRoutes() {
               <div className="text-center py-12 text-muted-foreground">
                 <Route className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No routes found</p>
-                <Button variant="link" onClick={() => setCreateDialogOpen(true)}>
+                <Button variant="link" onClick={() => handleCreateRoute()}>
                   Create your first route
                 </Button>
               </div>
