@@ -34,8 +34,9 @@ import { cn } from '@/lib/utils';
 import { TruckCompartmentSelector } from './TruckCompartmentSelector';
 import { SignaturePad } from './SignaturePad';
 import { useTruckCompartments, TruckCompartment, useUpdateCompartmentLevel } from '@/hooks/useTruckCompartments';
-import { useFuelProducts, FuelProduct } from '@/hooks/useFuelProducts';
+import { useFuelProducts, FuelProduct, useProductsByTruck } from '@/hooks/useFuelProducts';
 import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
+import { AlertTriangle, CheckCircle2 as CheckIcon } from 'lucide-react';
 
 interface RouteStop {
   id: string;
@@ -107,8 +108,12 @@ export function DeliveryCompletionDialog({
   // Data hooks
   const { data: compartments = [], isLoading: loadingCompartments } = useTruckCompartments(route?.truck_id || undefined);
   const { data: products = [], isLoading: loadingProducts } = useFuelProducts();
+  const { data: truckProducts = [] } = useProductsByTruck(route?.truck_id || undefined);
   const updateCompartmentLevel = useUpdateCompartmentLevel();
   const { getUnitLabel, getPriceLabel, formatVolume, convertToGallons, convertFromGallons } = useFuelUnits();
+  
+  // Get set of product IDs that are on the truck
+  const truckProductIds = new Set(truckProducts.map(p => p.id));
   
   // Time tracking
   const arrivalTime = stop?.actual_arrival ? new Date(stop.actual_arrival) : new Date();
@@ -340,31 +345,97 @@ export function DeliveryCompletionDialog({
                         <Loader2 className="h-6 w-6 animate-spin" />
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-2">
-                        {products.map((product) => (
-                          <button
-                            key={product.id}
-                            type="button"
-                            onClick={() => setSelectedProductId(product.id)}
-                            className={cn(
-                              "p-3 rounded-lg border-2 text-left transition-all",
-                              selectedProductId === product.id
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-primary/50"
-                            )}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Fuel className="h-5 w-5 text-muted-foreground" />
-                              <div>
-                                <div className="font-medium text-sm">{product.product_name}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {product.product_code} {product.cost_per_unit ? `• Cost: $${product.cost_per_unit?.toFixed(2)}${getPriceLabel()}` : ''}
-                                </div>
-                              </div>
+                      <>
+                        {/* Products on truck section */}
+                        {truckProducts.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium text-green-600">
+                              <CheckIcon className="h-4 w-4" />
+                              <span>On Truck</span>
                             </div>
-                          </button>
-                        ))}
-                      </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {products
+                                .filter(p => truckProductIds.has(p.id))
+                                .map((product) => (
+                                  <button
+                                    key={product.id}
+                                    type="button"
+                                    onClick={() => setSelectedProductId(product.id)}
+                                    className={cn(
+                                      "p-3 rounded-lg border-2 text-left transition-all",
+                                      selectedProductId === product.id
+                                        ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                        : "border-green-500 bg-green-50 dark:bg-green-950/30 hover:border-green-600 hover:bg-green-100 dark:hover:bg-green-950/50"
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className="relative">
+                                        <Fuel className="h-5 w-5 text-green-600" />
+                                        <CheckIcon className="absolute -bottom-1 -right-1 h-3 w-3 text-green-600" />
+                                      </div>
+                                      <div>
+                                        <div className="font-medium text-sm">{product.product_name}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {product.product_code}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Products NOT on truck section */}
+                        {products.filter(p => !truckProductIds.has(p.id)).length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium text-red-500">
+                              <AlertTriangle className="h-4 w-4" />
+                              <span>Not On Truck</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {products
+                                .filter(p => !truckProductIds.has(p.id))
+                                .map((product) => (
+                                  <button
+                                    key={product.id}
+                                    type="button"
+                                    onClick={() => setSelectedProductId(product.id)}
+                                    className={cn(
+                                      "p-3 rounded-lg border-2 text-left transition-all",
+                                      selectedProductId === product.id
+                                        ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                        : "border-red-300 bg-red-50 dark:bg-red-950/30 hover:border-red-400 dark:hover:bg-red-950/50"
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className="relative">
+                                        <Fuel className="h-5 w-5 text-red-400" />
+                                        <AlertTriangle className="absolute -bottom-1 -right-1 h-3 w-3 text-red-500" />
+                                      </div>
+                                      <div>
+                                        <div className="font-medium text-sm">{product.product_name}</div>
+                                        <div className="text-xs text-red-500">
+                                          {product.product_code} • Not loaded
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Warning if no products on truck */}
+                        {truckProducts.length === 0 && (
+                          <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 text-sm">
+                              <AlertTriangle className="h-4 w-4" />
+                              <span>No products loaded on this truck. Load fuel before making deliveries.</span>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
