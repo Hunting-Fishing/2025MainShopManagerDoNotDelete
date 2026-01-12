@@ -12,6 +12,8 @@ export function useFuelProducts() {
         .from('fuel_delivery_products')
         .select('*')
         .eq('is_active', true)
+        .order('fuel_type')
+        .order('octane_rating')
         .order('product_name');
       
       if (error) throw error;

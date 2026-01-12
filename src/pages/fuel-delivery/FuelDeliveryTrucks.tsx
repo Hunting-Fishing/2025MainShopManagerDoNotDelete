@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Truck, ArrowLeft, Pencil, Info, ChevronDown, ChevronRight, Droplets, Fuel } from 'lucide-react';
+import { Plus, Search, Truck, ArrowLeft, Pencil, Info, ChevronDown, ChevronRight, Droplets, Fuel, Zap } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useFuelDeliveryTrucks, useCreateFuelDeliveryTruck, FuelDeliveryTruck, TruckCompartmentData } from '@/hooks/useFuelDelivery';
@@ -19,6 +19,7 @@ import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 import { TruckEditDialog } from '@/components/fuel-delivery/TruckEditDialog';
 import { AddFuelDialog } from '@/components/fuel-delivery/AddFuelDialog';
+import { QuickFillDialog } from '@/components/fuel-delivery/QuickFillDialog';
 import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 export default function FuelDeliveryTrucks() {
@@ -28,6 +29,7 @@ export default function FuelDeliveryTrucks() {
   const [editingTruck, setEditingTruck] = useState<FuelDeliveryTruck | null>(null);
   const [fuelDialogTruck, setFuelDialogTruck] = useState<FuelDeliveryTruck | null>(null);
   const [fuelDialogCompartmentId, setFuelDialogCompartmentId] = useState<string | undefined>(undefined);
+  const [quickFillTruck, setQuickFillTruck] = useState<FuelDeliveryTruck | null>(null);
   const [expandedTrucks, setExpandedTrucks] = useState<Set<string>>(new Set());
   const { data: trucks, isLoading } = useFuelDeliveryTrucks();
   const createTruck = useCreateFuelDeliveryTruck();
@@ -399,6 +401,21 @@ export default function FuelDeliveryTrucks() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    onClick={() => setQuickFillTruck(truck)}
+                                  >
+                                    <Zap className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Quick Fill</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
                                     className="text-primary hover:text-primary hover:bg-primary/10"
                                     onClick={() => {
                                       setFuelDialogTruck(truck);
@@ -408,7 +425,7 @@ export default function FuelDeliveryTrucks() {
                                     <Fuel className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Add Fuel</TooltipContent>
+                                <TooltipContent>Add Fuel (Detailed)</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                             <Button
@@ -529,6 +546,14 @@ export default function FuelDeliveryTrucks() {
         }}
         truck={fuelDialogTruck}
         preselectedCompartmentId={fuelDialogCompartmentId}
+        shopId={shopId || ''}
+      />
+
+      {/* Quick Fill Dialog */}
+      <QuickFillDialog
+        open={!!quickFillTruck}
+        onOpenChange={(open) => !open && setQuickFillTruck(null)}
+        truck={quickFillTruck}
         shopId={shopId || ''}
       />
     </div>
