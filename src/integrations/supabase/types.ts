@@ -42325,6 +42325,8 @@ export type Database = {
           business_address: string | null
           business_city: string | null
           business_email: string | null
+          business_latitude: number | null
+          business_longitude: number | null
           business_name: string | null
           business_phone: string | null
           business_state: string | null
@@ -42353,6 +42355,8 @@ export type Database = {
           business_address?: string | null
           business_city?: string | null
           business_email?: string | null
+          business_latitude?: number | null
+          business_longitude?: number | null
           business_name?: string | null
           business_phone?: string | null
           business_state?: string | null
@@ -42381,6 +42385,8 @@ export type Database = {
           business_address?: string | null
           business_city?: string | null
           business_email?: string | null
+          business_latitude?: number | null
+          business_longitude?: number | null
           business_name?: string | null
           business_phone?: string | null
           business_state?: string | null
