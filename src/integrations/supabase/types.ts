@@ -12099,14 +12099,19 @@ export type Database = {
           compartment_id: string
           created_at: string
           created_by: string | null
+          fill_date: string | null
           id: string
           new_level_gallons: number
           notes: string | null
           previous_level_gallons: number
+          price_per_unit: number | null
+          receipt_number: string | null
           reference_id: string | null
           reference_type: string | null
           shop_id: string
+          total_cost: number | null
           truck_id: string
+          vendor: string | null
         }
         Insert: {
           change_amount_gallons?: number
@@ -12114,14 +12119,19 @@ export type Database = {
           compartment_id: string
           created_at?: string
           created_by?: string | null
+          fill_date?: string | null
           id?: string
           new_level_gallons?: number
           notes?: string | null
           previous_level_gallons?: number
+          price_per_unit?: number | null
+          receipt_number?: string | null
           reference_id?: string | null
           reference_type?: string | null
           shop_id: string
+          total_cost?: number | null
           truck_id: string
+          vendor?: string | null
         }
         Update: {
           change_amount_gallons?: number
@@ -12129,14 +12139,19 @@ export type Database = {
           compartment_id?: string
           created_at?: string
           created_by?: string | null
+          fill_date?: string | null
           id?: string
           new_level_gallons?: number
           notes?: string | null
           previous_level_gallons?: number
+          price_per_unit?: number | null
+          receipt_number?: string | null
           reference_id?: string | null
           reference_type?: string | null
           shop_id?: string
+          total_cost?: number | null
           truck_id?: string
+          vendor?: string | null
         }
         Relationships: [
           {

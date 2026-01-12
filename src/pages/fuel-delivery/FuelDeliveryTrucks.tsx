@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Truck, ArrowLeft, Pencil, Info, ChevronDown, ChevronRight, Droplets } from 'lucide-react';
+import { Plus, Search, Truck, ArrowLeft, Pencil, Info, ChevronDown, ChevronRight, Droplets, Fuel } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useFuelDeliveryTrucks, useCreateFuelDeliveryTruck, FuelDeliveryTruck, TruckCompartmentData } from '@/hooks/useFuelDelivery';
@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
 import { TruckEditDialog } from '@/components/fuel-delivery/TruckEditDialog';
+import { AddFuelDialog } from '@/components/fuel-delivery/AddFuelDialog';
 import { useFuelUnits } from '@/hooks/fuel-delivery/useFuelUnits';
 
 export default function FuelDeliveryTrucks() {
@@ -25,6 +26,8 @@ export default function FuelDeliveryTrucks() {
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTruck, setEditingTruck] = useState<FuelDeliveryTruck | null>(null);
+  const [fuelDialogTruck, setFuelDialogTruck] = useState<FuelDeliveryTruck | null>(null);
+  const [fuelDialogCompartmentId, setFuelDialogCompartmentId] = useState<string | undefined>(undefined);
   const [expandedTrucks, setExpandedTrucks] = useState<Set<string>>(new Set());
   const { data: trucks, isLoading } = useFuelDeliveryTrucks();
   const createTruck = useCreateFuelDeliveryTruck();
@@ -389,13 +392,33 @@ export default function FuelDeliveryTrucks() {
                           {truck.dot_inspection_due ? format(new Date(truck.dot_inspection_due), 'MMM d, yyyy') : '-'}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingTruck(truck)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-primary hover:text-primary hover:bg-primary/10"
+                                    onClick={() => {
+                                      setFuelDialogTruck(truck);
+                                      setFuelDialogCompartmentId(undefined);
+                                    }}
+                                  >
+                                    <Fuel className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Add Fuel</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingTruck(truck)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                       {/* Expanded compartment details */}
@@ -450,6 +473,18 @@ export default function FuelDeliveryTrucks() {
                                             style={{ width: `${fillPercent}%` }}
                                           />
                                         </div>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="w-full mt-2 text-xs h-7"
+                                          onClick={() => {
+                                            setFuelDialogTruck(truck);
+                                            setFuelDialogCompartmentId(comp.id);
+                                          }}
+                                        >
+                                          <Fuel className="h-3 w-3 mr-1" />
+                                          Fill Tank
+                                        </Button>
                                       </div>
                                     </div>
                                   );
@@ -481,6 +516,20 @@ export default function FuelDeliveryTrucks() {
         truck={editingTruck}
         open={!!editingTruck}
         onOpenChange={(open) => !open && setEditingTruck(null)}
+      />
+
+      {/* Add Fuel Dialog */}
+      <AddFuelDialog
+        open={!!fuelDialogTruck}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFuelDialogTruck(null);
+            setFuelDialogCompartmentId(undefined);
+          }
+        }}
+        truck={fuelDialogTruck}
+        preselectedCompartmentId={fuelDialogCompartmentId}
+        shopId={shopId || ''}
       />
     </div>
   );
