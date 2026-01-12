@@ -11,6 +11,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Settings, Bell, MapPin, Droplets, DollarSign, Save, Loader2, Building2 } from 'lucide-react';
+import { BusinessLocationMap } from '@/components/water-delivery/BusinessLocationMap';
 import { supabase } from '@/integrations/supabase/client';
 import { useWaterUnits, UnitSystem } from '@/hooks/water-delivery/useWaterUnits';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -283,21 +284,18 @@ export default function WaterDeliverySettings() {
                 <MapPin className="h-5 w-5 text-cyan-500" />
                 <CardTitle>Business Location</CardTitle>
               </div>
-              <CardDescription>Set your main business location for route planning</CardDescription>
+              <CardDescription>Set your main business location for route planning. Search for an address or click on the map to set your location.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Business Address</Label>
-                <Input
-                  value={businessAddress}
-                  onChange={(e) => setBusinessAddress(e.target.value)}
-                  placeholder="Enter your business address"
-                />
-              </div>
-              <Button onClick={() => toast.success('Location saved')} className="bg-cyan-500 hover:bg-cyan-600">
-                <Save className="h-4 w-4 mr-2" />
-                Save Location
-              </Button>
+              <BusinessLocationMap
+                address={businessAddress}
+                onLocationChange={(location) => {
+                  setBusinessAddress(location.address);
+                  toast.success('Location updated');
+                }}
+                height="400px"
+                editable={true}
+              />
             </CardContent>
           </Card>
         </TabsContent>
