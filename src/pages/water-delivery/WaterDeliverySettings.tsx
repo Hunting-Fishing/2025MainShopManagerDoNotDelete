@@ -17,6 +17,7 @@ import { useWaterUnits, UnitSystem } from '@/hooks/water-delivery/useWaterUnits'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
+import { useWaterBusinessLocation } from '@/hooks/water-delivery/useWaterBusinessLocation';
 
 export default function WaterDeliverySettings() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export default function WaterDeliverySettings() {
   
   const { shopId } = useShopId();
   const { data: moduleInfo, refetch: refetchModuleInfo } = useModuleDisplayInfo(shopId, 'water_delivery');
+  const { settings: businessSettings, saveSettings, isSaving: isLocationSaving } = useWaterBusinessLocation(shopId);
   
   const [displayName, setDisplayName] = useState('');
   const [displayPhone, setDisplayPhone] = useState('');
@@ -34,6 +36,8 @@ export default function WaterDeliverySettings() {
   const { unitSystem, setUnitSystem } = useWaterUnits();
   
   const [businessAddress, setBusinessAddress] = useState('');
+  const [businessLatitude, setBusinessLatitude] = useState<number | undefined>();
+  const [businessLongitude, setBusinessLongitude] = useState<number | undefined>();
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
   const [lowLevelAlerts, setLowLevelAlerts] = useState(true);
@@ -49,6 +53,15 @@ export default function WaterDeliverySettings() {
   const [rushDeliveryFee, setRushDeliveryFee] = useState('');
   
   const [settingsId, setSettingsId] = useState<string | null>(null);
+
+  // Load business location from settings
+  useEffect(() => {
+    if (businessSettings) {
+      setBusinessAddress(businessSettings.business_address || '');
+      setBusinessLatitude(businessSettings.business_latitude);
+      setBusinessLongitude(businessSettings.business_longitude);
+    }
+  }, [businessSettings]);
   
   useEffect(() => {
     if (moduleInfo) {
@@ -289,13 +302,43 @@ export default function WaterDeliverySettings() {
             <CardContent className="space-y-4">
               <BusinessLocationMap
                 address={businessAddress}
+                latitude={businessLatitude}
+                longitude={businessLongitude}
                 onLocationChange={(location) => {
                   setBusinessAddress(location.address);
-                  toast.success('Location updated');
+                  setBusinessLatitude(location.latitude);
+                  setBusinessLongitude(location.longitude);
                 }}
                 height="400px"
                 editable={true}
               />
+              <Button 
+                onClick={() => {
+                  if (!businessAddress || !businessLatitude || !businessLongitude) {
+                    toast.error('Please select a location on the map first');
+                    return;
+                  }
+                  saveSettings({
+                    business_address: businessAddress,
+                    business_latitude: businessLatitude,
+                    business_longitude: businessLongitude,
+                  });
+                }}
+                disabled={isLocationSaving || !businessAddress}
+                className="w-full bg-cyan-600 hover:bg-cyan-700"
+              >
+                {isLocationSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Business Location
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

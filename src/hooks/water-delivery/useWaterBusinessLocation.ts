@@ -12,6 +12,8 @@ export interface WaterBusinessLocation {
   business_zip?: string;
   business_phone?: string;
   business_email?: string;
+  business_latitude?: number;
+  business_longitude?: number;
   logo_url?: string;
   default_tax_rate: number;
   default_payment_terms: string;
