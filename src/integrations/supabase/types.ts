@@ -40130,6 +40130,3133 @@ export type Database = {
         }
         Relationships: []
       }
+      water_delivery_compartment_history: {
+        Row: {
+          action_type: string
+          compartment_id: string
+          created_at: string
+          destination: string | null
+          gallons_after: number
+          gallons_before: number
+          gallons_change: number
+          id: string
+          notes: string | null
+          performed_by: string | null
+          product_id: string | null
+          shop_id: string
+          source: string | null
+        }
+        Insert: {
+          action_type: string
+          compartment_id: string
+          created_at?: string
+          destination?: string | null
+          gallons_after: number
+          gallons_before: number
+          gallons_change: number
+          id?: string
+          notes?: string | null
+          performed_by?: string | null
+          product_id?: string | null
+          shop_id: string
+          source?: string | null
+        }
+        Update: {
+          action_type?: string
+          compartment_id?: string
+          created_at?: string
+          destination?: string | null
+          gallons_after?: number
+          gallons_before?: number
+          gallons_change?: number
+          id?: string
+          notes?: string | null
+          performed_by?: string | null
+          product_id?: string | null
+          shop_id?: string
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_compartment_history_compartment_id_fkey"
+            columns: ["compartment_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_truck_compartments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_compartment_history_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_compartment_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_compartment_history_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_completions: {
+        Row: {
+          chlorine_level_reading: number | null
+          compartment_id: string | null
+          created_at: string
+          customer_id: string | null
+          delivery_date: string
+          delivery_fee: number | null
+          driver_id: string | null
+          gallons_delivered: number
+          id: string
+          location_id: string | null
+          meter_end: number | null
+          meter_start: number | null
+          notes: string | null
+          order_id: string | null
+          payment_method: string | null
+          payment_received: boolean | null
+          ph_level_reading: number | null
+          photo_urls: Json | null
+          price_per_gallon: number | null
+          product_id: string | null
+          route_stop_id: string | null
+          shop_id: string
+          signature_url: string | null
+          subtotal: number | null
+          tank_id: string | null
+          tank_level_after: number | null
+          tank_level_before: number | null
+          tax_amount: number | null
+          total_amount: number | null
+          truck_id: string | null
+        }
+        Insert: {
+          chlorine_level_reading?: number | null
+          compartment_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          delivery_date?: string
+          delivery_fee?: number | null
+          driver_id?: string | null
+          gallons_delivered: number
+          id?: string
+          location_id?: string | null
+          meter_end?: number | null
+          meter_start?: number | null
+          notes?: string | null
+          order_id?: string | null
+          payment_method?: string | null
+          payment_received?: boolean | null
+          ph_level_reading?: number | null
+          photo_urls?: Json | null
+          price_per_gallon?: number | null
+          product_id?: string | null
+          route_stop_id?: string | null
+          shop_id: string
+          signature_url?: string | null
+          subtotal?: number | null
+          tank_id?: string | null
+          tank_level_after?: number | null
+          tank_level_before?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          truck_id?: string | null
+        }
+        Update: {
+          chlorine_level_reading?: number | null
+          compartment_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          delivery_date?: string
+          delivery_fee?: number | null
+          driver_id?: string | null
+          gallons_delivered?: number
+          id?: string
+          location_id?: string | null
+          meter_end?: number | null
+          meter_start?: number | null
+          notes?: string | null
+          order_id?: string | null
+          payment_method?: string | null
+          payment_received?: boolean | null
+          ph_level_reading?: number | null
+          photo_urls?: Json | null
+          price_per_gallon?: number | null
+          product_id?: string | null
+          route_stop_id?: string | null
+          shop_id?: string
+          signature_url?: string | null
+          subtotal?: number | null
+          tank_id?: string | null
+          tank_level_after?: number | null
+          tank_level_before?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          truck_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_completions_compartment_id_fkey"
+            columns: ["compartment_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_truck_compartments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_completions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_completions_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_completions_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_completions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_completions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_completions_route_stop_id_fkey"
+            columns: ["route_stop_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_route_stops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_completions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_completions_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_completions_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_customer_vehicles: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          is_active: boolean | null
+          license_plate: string | null
+          notes: string | null
+          shop_id: string
+          tank_capacity_gallons: number | null
+          updated_at: string
+          vehicle_number: string | null
+          vehicle_type: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          is_active?: boolean | null
+          license_plate?: string | null
+          notes?: string | null
+          shop_id: string
+          tank_capacity_gallons?: number | null
+          updated_at?: string
+          vehicle_number?: string | null
+          vehicle_type: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          is_active?: boolean | null
+          license_plate?: string | null
+          notes?: string | null
+          shop_id?: string
+          tank_capacity_gallons?: number | null
+          updated_at?: string
+          vehicle_number?: string | null
+          vehicle_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_customer_vehicles_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_customer_vehicles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_customers: {
+        Row: {
+          account_number: string | null
+          billing_address: string | null
+          billing_city: string | null
+          billing_state: string | null
+          billing_zip: string | null
+          company_name: string | null
+          contact_name: string
+          created_at: string
+          credit_limit: number | null
+          customer_id: string | null
+          default_product_id: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          is_commercial: boolean | null
+          notes: string | null
+          payment_terms: string | null
+          phone: string | null
+          portal_access_enabled: boolean | null
+          portal_pin: string | null
+          requires_po: boolean | null
+          shop_id: string
+          tax_exempt: boolean | null
+          tax_exempt_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_state?: string | null
+          billing_zip?: string | null
+          company_name?: string | null
+          contact_name: string
+          created_at?: string
+          credit_limit?: number | null
+          customer_id?: string | null
+          default_product_id?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_commercial?: boolean | null
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          portal_access_enabled?: boolean | null
+          portal_pin?: string | null
+          requires_po?: boolean | null
+          shop_id: string
+          tax_exempt?: boolean | null
+          tax_exempt_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_state?: string | null
+          billing_zip?: string | null
+          company_name?: string | null
+          contact_name?: string
+          created_at?: string
+          credit_limit?: number | null
+          customer_id?: string | null
+          default_product_id?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_commercial?: boolean | null
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          portal_access_enabled?: boolean | null
+          portal_pin?: string | null
+          requires_po?: boolean | null
+          shop_id?: string
+          tax_exempt?: boolean | null
+          tax_exempt_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_customers_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_customers_default_product_id_fkey"
+            columns: ["default_product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_customers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_drivers: {
+        Row: {
+          assigned_truck_id: string | null
+          created_at: string
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          first_name: string
+          food_handler_cert_expiry: string | null
+          food_handler_certified: boolean | null
+          hire_date: string | null
+          hourly_rate: number | null
+          id: string
+          is_active: boolean | null
+          last_name: string
+          license_class: string | null
+          license_expiry: string | null
+          license_number: string | null
+          license_state: string | null
+          medical_card_expiry: string | null
+          notes: string | null
+          phone: string | null
+          photo_url: string | null
+          profile_id: string | null
+          shop_id: string
+          tanker_endorsement: boolean | null
+          tanker_endorsement_expiry: string | null
+          updated_at: string
+          water_quality_cert_expiry: string | null
+          water_quality_certified: boolean | null
+        }
+        Insert: {
+          assigned_truck_id?: string | null
+          created_at?: string
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name: string
+          food_handler_cert_expiry?: string | null
+          food_handler_certified?: boolean | null
+          hire_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_name: string
+          license_class?: string | null
+          license_expiry?: string | null
+          license_number?: string | null
+          license_state?: string | null
+          medical_card_expiry?: string | null
+          notes?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          profile_id?: string | null
+          shop_id: string
+          tanker_endorsement?: boolean | null
+          tanker_endorsement_expiry?: string | null
+          updated_at?: string
+          water_quality_cert_expiry?: string | null
+          water_quality_certified?: boolean | null
+        }
+        Update: {
+          assigned_truck_id?: string | null
+          created_at?: string
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name?: string
+          food_handler_cert_expiry?: string | null
+          food_handler_certified?: boolean | null
+          hire_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_name?: string
+          license_class?: string | null
+          license_expiry?: string | null
+          license_number?: string | null
+          license_state?: string | null
+          medical_card_expiry?: string | null
+          notes?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          profile_id?: string | null
+          shop_id?: string
+          tanker_endorsement?: boolean | null
+          tanker_endorsement_expiry?: string | null
+          updated_at?: string
+          water_quality_cert_expiry?: string | null
+          water_quality_certified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_drivers_assigned_truck_id_fkey"
+            columns: ["assigned_truck_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_drivers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_drivers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_equipment: {
+        Row: {
+          assigned_truck_id: string | null
+          created_at: string
+          current_value: number | null
+          equipment_name: string
+          equipment_type: string
+          flow_rate_gpm: number | null
+          id: string
+          is_active: boolean | null
+          is_potable_certified: boolean | null
+          last_sanitized_date: string | null
+          last_service_date: string | null
+          manufacturer: string | null
+          model: string | null
+          next_service_due: string | null
+          notes: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          serial_number: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_truck_id?: string | null
+          created_at?: string
+          current_value?: number | null
+          equipment_name: string
+          equipment_type: string
+          flow_rate_gpm?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_potable_certified?: boolean | null
+          last_sanitized_date?: string | null
+          last_service_date?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_truck_id?: string | null
+          created_at?: string
+          current_value?: number | null
+          equipment_name?: string
+          equipment_type?: string
+          flow_rate_gpm?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_potable_certified?: boolean | null
+          last_sanitized_date?: string | null
+          last_service_date?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_equipment_assigned_truck_id_fkey"
+            columns: ["assigned_truck_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_equipment_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_equipment_filters: {
+        Row: {
+          created_at: string
+          equipment_id: string | null
+          filter_model: string | null
+          filter_type: string
+          gallons_since_install: number | null
+          id: string
+          install_date: string
+          manufacturer: string | null
+          next_replacement_date: string | null
+          notes: string | null
+          replacement_interval_days: number | null
+          replacement_interval_gallons: number | null
+          shop_id: string
+          status: string | null
+          truck_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_id?: string | null
+          filter_model?: string | null
+          filter_type: string
+          gallons_since_install?: number | null
+          id?: string
+          install_date: string
+          manufacturer?: string | null
+          next_replacement_date?: string | null
+          notes?: string | null
+          replacement_interval_days?: number | null
+          replacement_interval_gallons?: number | null
+          shop_id: string
+          status?: string | null
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string | null
+          filter_model?: string | null
+          filter_type?: string
+          gallons_since_install?: number | null
+          id?: string
+          install_date?: string
+          manufacturer?: string | null
+          next_replacement_date?: string | null
+          notes?: string | null
+          replacement_interval_days?: number | null
+          replacement_interval_gallons?: number | null
+          shop_id?: string
+          status?: string | null
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_equipment_filters_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_equipment_filters_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_equipment_filters_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_equipment_usage: {
+        Row: {
+          created_at: string
+          driver_id: string | null
+          equipment_id: string
+          gallons_pumped: number | null
+          hours_used: number | null
+          id: string
+          notes: string | null
+          shop_id: string
+          truck_id: string | null
+          usage_date: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id?: string | null
+          equipment_id: string
+          gallons_pumped?: number | null
+          hours_used?: number | null
+          id?: string
+          notes?: string | null
+          shop_id: string
+          truck_id?: string | null
+          usage_date: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string | null
+          equipment_id?: string
+          gallons_pumped?: number | null
+          hours_used?: number | null
+          id?: string
+          notes?: string | null
+          shop_id?: string
+          truck_id?: string | null
+          usage_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_equipment_usage_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_equipment_usage_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_equipment_usage_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_equipment_usage_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_hours: {
+        Row: {
+          close_time: string | null
+          created_at: string
+          day_of_week: number
+          id: string
+          is_open: boolean | null
+          notes: string | null
+          open_time: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          close_time?: string | null
+          created_at?: string
+          day_of_week: number
+          id?: string
+          is_open?: boolean | null
+          notes?: string | null
+          open_time?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          close_time?: string | null
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          is_open?: boolean | null
+          notes?: string | null
+          open_time?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_hours_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_inventory: {
+        Row: {
+          created_at: string
+          id: string
+          last_updated: string | null
+          location_id: string | null
+          location_type: string
+          max_capacity: number | null
+          notes: string | null
+          product_id: string
+          quantity_gallons: number
+          reorder_point: number | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_updated?: string | null
+          location_id?: string | null
+          location_type: string
+          max_capacity?: number | null
+          notes?: string | null
+          product_id: string
+          quantity_gallons?: number
+          reorder_point?: number | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_updated?: string | null
+          location_id?: string | null
+          location_type?: string
+          max_capacity?: number | null
+          notes?: string | null
+          product_id?: string
+          quantity_gallons?: number
+          reorder_point?: number | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_inventory_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_invoice_lines: {
+        Row: {
+          completion_id: string | null
+          created_at: string
+          delivery_date: string | null
+          description: string
+          id: string
+          invoice_id: string
+          line_total: number
+          location_name: string | null
+          product_id: string | null
+          quantity: number
+          tax_amount: number | null
+          tax_rate: number | null
+          unit_price: number
+        }
+        Insert: {
+          completion_id?: string | null
+          created_at?: string
+          delivery_date?: string | null
+          description: string
+          id?: string
+          invoice_id: string
+          line_total: number
+          location_name?: string | null
+          product_id?: string | null
+          quantity: number
+          tax_amount?: number | null
+          tax_rate?: number | null
+          unit_price: number
+        }
+        Update: {
+          completion_id?: string | null
+          created_at?: string
+          delivery_date?: string | null
+          description?: string
+          id?: string
+          invoice_id?: string
+          line_total?: number
+          location_name?: string | null
+          product_id?: string | null
+          quantity?: number
+          tax_amount?: number | null
+          tax_rate?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_invoice_lines_completion_id_fkey"
+            columns: ["completion_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_completions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_invoice_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_invoices: {
+        Row: {
+          amount_paid: number | null
+          balance_due: number | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          delivery_fees: number | null
+          discount_amount: number | null
+          due_date: string | null
+          id: string
+          internal_notes: string | null
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          paid_at: string | null
+          payment_terms: string | null
+          sent_at: string | null
+          shop_id: string
+          status: string | null
+          subtotal: number
+          tax_amount: number | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          balance_due?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          delivery_fees?: number | null
+          discount_amount?: number | null
+          due_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          invoice_date?: string
+          invoice_number: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_terms?: string | null
+          sent_at?: string | null
+          shop_id: string
+          status?: string | null
+          subtotal?: number
+          tax_amount?: number | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number | null
+          balance_due?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          delivery_fees?: number | null
+          discount_amount?: number | null
+          due_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_terms?: string | null
+          sent_at?: string | null
+          shop_id?: string
+          status?: string | null
+          subtotal?: number
+          tax_amount?: number | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_invoices_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_labor_rates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          rate_amount: number
+          rate_name: string
+          rate_type: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          rate_amount: number
+          rate_name: string
+          rate_type: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          rate_amount?: number
+          rate_name?: string
+          rate_type?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_labor_rates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_locations: {
+        Row: {
+          access_instructions: string | null
+          address: string
+          city: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          customer_id: string
+          default_product_id: string | null
+          default_quantity: number | null
+          delivery_window_end: string | null
+          delivery_window_start: string | null
+          gate_code: string | null
+          id: string
+          is_active: boolean | null
+          is_primary: boolean | null
+          latitude: number | null
+          location_name: string
+          longitude: number | null
+          notes: string | null
+          shop_id: string
+          special_equipment_needed: string | null
+          state: string | null
+          tank_id: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          access_instructions?: string | null
+          address: string
+          city?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          customer_id: string
+          default_product_id?: string | null
+          default_quantity?: number | null
+          delivery_window_end?: string | null
+          delivery_window_start?: string | null
+          gate_code?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          latitude?: number | null
+          location_name: string
+          longitude?: number | null
+          notes?: string | null
+          shop_id: string
+          special_equipment_needed?: string | null
+          state?: string | null
+          tank_id?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          access_instructions?: string | null
+          address?: string
+          city?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          customer_id?: string
+          default_product_id?: string | null
+          default_quantity?: number | null
+          delivery_window_end?: string | null
+          delivery_window_start?: string | null
+          gate_code?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          latitude?: number | null
+          location_name?: string
+          longitude?: number | null
+          notes?: string | null
+          shop_id?: string
+          special_equipment_needed?: string | null
+          state?: string | null
+          tank_id?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_locations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_locations_default_product_id_fkey"
+            columns: ["default_product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_locations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_orders: {
+        Row: {
+          assigned_driver_id: string | null
+          assigned_truck_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          delivery_fee: number | null
+          id: string
+          location_id: string | null
+          notes: string | null
+          order_date: string
+          order_number: string
+          po_number: string | null
+          price_per_gallon: number | null
+          priority: string | null
+          product_id: string | null
+          quantity_gallons: number
+          requested_date: string | null
+          requested_time_window: string | null
+          route_id: string | null
+          shop_id: string
+          source: string | null
+          special_instructions: string | null
+          status: string | null
+          subtotal: number | null
+          tank_id: string | null
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_driver_id?: string | null
+          assigned_truck_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          delivery_fee?: number | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          order_date?: string
+          order_number: string
+          po_number?: string | null
+          price_per_gallon?: number | null
+          priority?: string | null
+          product_id?: string | null
+          quantity_gallons: number
+          requested_date?: string | null
+          requested_time_window?: string | null
+          route_id?: string | null
+          shop_id: string
+          source?: string | null
+          special_instructions?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tank_id?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_driver_id?: string | null
+          assigned_truck_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          delivery_fee?: number | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          order_date?: string
+          order_number?: string
+          po_number?: string | null
+          price_per_gallon?: number | null
+          priority?: string | null
+          product_id?: string | null
+          quantity_gallons?: number
+          requested_date?: string | null
+          requested_time_window?: string | null
+          route_id?: string | null
+          shop_id?: string
+          source?: string | null
+          special_instructions?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tank_id?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_orders_assigned_driver_id_fkey"
+            columns: ["assigned_driver_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_orders_assigned_truck_id_fkey"
+            columns: ["assigned_truck_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_orders_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_orders_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          recorded_by: string | null
+          reference_number: string | null
+          shop_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          recorded_by?: string | null
+          reference_number?: string | null
+          shop_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          recorded_by?: string | null
+          reference_number?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_payments_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_payments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_price_history: {
+        Row: {
+          change_date: string
+          changed_by: string | null
+          created_at: string
+          id: string
+          new_price: number
+          old_price: number | null
+          product_id: string
+          reason: string | null
+          shop_id: string
+        }
+        Insert: {
+          change_date?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_price: number
+          old_price?: number | null
+          product_id: string
+          reason?: string | null
+          shop_id: string
+        }
+        Update: {
+          change_date?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_price?: number
+          old_price?: number | null
+          product_id?: string
+          reason?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_price_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_price_history_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_products: {
+        Row: {
+          base_price_per_unit: number | null
+          category: string | null
+          certification: string | null
+          cost_per_unit: number | null
+          created_at: string
+          description: string | null
+          grade: string | null
+          id: string
+          is_active: boolean | null
+          is_taxable: boolean | null
+          minimum_order_quantity: number | null
+          ph_level: number | null
+          product_code: string | null
+          product_name: string
+          shop_id: string
+          source_location: string | null
+          tax_rate: number | null
+          tds_ppm: number | null
+          treatment_method: string | null
+          unit_of_measure: string | null
+          updated_at: string
+          water_type: string
+        }
+        Insert: {
+          base_price_per_unit?: number | null
+          category?: string | null
+          certification?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          description?: string | null
+          grade?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_taxable?: boolean | null
+          minimum_order_quantity?: number | null
+          ph_level?: number | null
+          product_code?: string | null
+          product_name: string
+          shop_id: string
+          source_location?: string | null
+          tax_rate?: number | null
+          tds_ppm?: number | null
+          treatment_method?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string
+          water_type: string
+        }
+        Update: {
+          base_price_per_unit?: number | null
+          category?: string | null
+          certification?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          description?: string | null
+          grade?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_taxable?: boolean | null
+          minimum_order_quantity?: number | null
+          ph_level?: number | null
+          product_code?: string | null
+          product_name?: string
+          shop_id?: string
+          source_location?: string | null
+          tax_rate?: number | null
+          tds_ppm?: number | null
+          treatment_method?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string
+          water_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_products_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_purchases: {
+        Row: {
+          actual_gallons_received: number | null
+          bol_document_url: string | null
+          bol_number: string
+          compartment_id: string | null
+          created_at: string
+          created_by: string | null
+          fees: number | null
+          id: string
+          invoice_document_url: string | null
+          meter_end_reading: number | null
+          meter_start_reading: number | null
+          notes: string | null
+          payment_date: string | null
+          payment_due_date: string | null
+          payment_reference: string | null
+          payment_status: string | null
+          po_number: string | null
+          price_per_gallon: number
+          product_id: string | null
+          purchase_date: string
+          quality_certificate_url: string | null
+          quantity_gallons: number
+          received_by: string | null
+          received_date: string | null
+          shop_id: string
+          source_chlorine_level: number | null
+          source_location: string | null
+          source_name: string | null
+          source_ph_level: number | null
+          source_tds_ppm: number | null
+          status: string | null
+          subtotal: number | null
+          taxes: number | null
+          total_cost: number | null
+          truck_id: string | null
+          updated_at: string
+          variance_gallons: number | null
+          vendor_account_number: string | null
+          vendor_name: string
+        }
+        Insert: {
+          actual_gallons_received?: number | null
+          bol_document_url?: string | null
+          bol_number: string
+          compartment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fees?: number | null
+          id?: string
+          invoice_document_url?: string | null
+          meter_end_reading?: number | null
+          meter_start_reading?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          payment_due_date?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          po_number?: string | null
+          price_per_gallon: number
+          product_id?: string | null
+          purchase_date?: string
+          quality_certificate_url?: string | null
+          quantity_gallons: number
+          received_by?: string | null
+          received_date?: string | null
+          shop_id: string
+          source_chlorine_level?: number | null
+          source_location?: string | null
+          source_name?: string | null
+          source_ph_level?: number | null
+          source_tds_ppm?: number | null
+          status?: string | null
+          subtotal?: number | null
+          taxes?: number | null
+          total_cost?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          variance_gallons?: number | null
+          vendor_account_number?: string | null
+          vendor_name: string
+        }
+        Update: {
+          actual_gallons_received?: number | null
+          bol_document_url?: string | null
+          bol_number?: string
+          compartment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fees?: number | null
+          id?: string
+          invoice_document_url?: string | null
+          meter_end_reading?: number | null
+          meter_start_reading?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          payment_due_date?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          po_number?: string | null
+          price_per_gallon?: number
+          product_id?: string | null
+          purchase_date?: string
+          quality_certificate_url?: string | null
+          quantity_gallons?: number
+          received_by?: string | null
+          received_date?: string | null
+          shop_id?: string
+          source_chlorine_level?: number | null
+          source_location?: string | null
+          source_name?: string | null
+          source_ph_level?: number | null
+          source_tds_ppm?: number | null
+          status?: string | null
+          subtotal?: number | null
+          taxes?: number | null
+          total_cost?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          variance_gallons?: number | null
+          vendor_account_number?: string | null
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_purchases_compartment_id_fkey"
+            columns: ["compartment_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_truck_compartments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_purchases_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_purchases_received_by_fkey"
+            columns: ["received_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_purchases_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_purchases_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_quote_lines: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          line_total: number
+          notes: string | null
+          product_id: string | null
+          quantity: number
+          quote_id: string
+          tax_rate: number | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          line_total: number
+          notes?: string | null
+          product_id?: string | null
+          quantity: number
+          quote_id: string
+          tax_rate?: number | null
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          line_total?: number
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          quote_id?: string
+          tax_rate?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_quote_lines_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_quotes: {
+        Row: {
+          converted_to_order_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          notes: string | null
+          quote_date: string
+          quote_number: string
+          shop_id: string
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          terms: string | null
+          total_amount: number | null
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          converted_to_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          notes?: string | null
+          quote_date?: string
+          quote_number: string
+          shop_id: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          converted_to_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          notes?: string | null
+          quote_date?: string
+          quote_number?: string
+          shop_id?: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_quotes_converted_to_order_id_fkey"
+            columns: ["converted_to_order_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_quotes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_requests: {
+        Row: {
+          converted_to_order_id: string | null
+          created_at: string
+          customer_id: string | null
+          customer_notes: string | null
+          id: string
+          internal_notes: string | null
+          location_id: string | null
+          product_id: string | null
+          requested_date: string | null
+          requested_gallons: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string
+          status: string | null
+          tank_id: string | null
+          updated_at: string
+          urgency: string | null
+        }
+        Insert: {
+          converted_to_order_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_notes?: string | null
+          id?: string
+          internal_notes?: string | null
+          location_id?: string | null
+          product_id?: string | null
+          requested_date?: string | null
+          requested_gallons?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id: string
+          status?: string | null
+          tank_id?: string | null
+          updated_at?: string
+          urgency?: string | null
+        }
+        Update: {
+          converted_to_order_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_notes?: string | null
+          id?: string
+          internal_notes?: string | null
+          location_id?: string | null
+          product_id?: string | null
+          requested_date?: string | null
+          requested_gallons?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string
+          status?: string | null
+          tank_id?: string | null
+          updated_at?: string
+          urgency?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_requests_converted_to_order_id_fkey"
+            columns: ["converted_to_order_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_requests_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_requests_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_requests_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_route_stops: {
+        Row: {
+          actual_gallons: number | null
+          arrival_time: string | null
+          created_at: string
+          customer_id: string | null
+          departure_time: string | null
+          id: string
+          location_id: string | null
+          notes: string | null
+          order_id: string | null
+          photo_urls: Json | null
+          planned_gallons: number | null
+          product_id: string | null
+          route_id: string
+          shop_id: string
+          signature_url: string | null
+          skip_reason: string | null
+          status: string | null
+          stop_number: number
+          tank_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_gallons?: number | null
+          arrival_time?: string | null
+          created_at?: string
+          customer_id?: string | null
+          departure_time?: string | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          order_id?: string | null
+          photo_urls?: Json | null
+          planned_gallons?: number | null
+          product_id?: string | null
+          route_id: string
+          shop_id: string
+          signature_url?: string | null
+          skip_reason?: string | null
+          status?: string | null
+          stop_number: number
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_gallons?: number | null
+          arrival_time?: string | null
+          created_at?: string
+          customer_id?: string | null
+          departure_time?: string | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          order_id?: string | null
+          photo_urls?: Json | null
+          planned_gallons?: number | null
+          product_id?: string | null
+          route_id?: string
+          shop_id?: string
+          signature_url?: string | null
+          skip_reason?: string | null
+          status?: string | null
+          stop_number?: number
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_route_stops_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_route_stops_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_route_stops_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_route_stops_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_route_stops_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_route_stops_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_routes: {
+        Row: {
+          completed_stops: number | null
+          created_at: string
+          created_by: string | null
+          delivered_gallons: number | null
+          driver_id: string | null
+          end_odometer: number | null
+          end_time: string | null
+          id: string
+          notes: string | null
+          route_date: string
+          route_name: string
+          shop_id: string
+          start_odometer: number | null
+          start_time: string | null
+          status: string | null
+          total_gallons: number | null
+          total_miles: number | null
+          total_stops: number | null
+          truck_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          completed_stops?: number | null
+          created_at?: string
+          created_by?: string | null
+          delivered_gallons?: number | null
+          driver_id?: string | null
+          end_odometer?: number | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          route_date: string
+          route_name: string
+          shop_id: string
+          start_odometer?: number | null
+          start_time?: string | null
+          status?: string | null
+          total_gallons?: number | null
+          total_miles?: number | null
+          total_stops?: number | null
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          completed_stops?: number | null
+          created_at?: string
+          created_by?: string | null
+          delivered_gallons?: number | null
+          driver_id?: string | null
+          end_odometer?: number | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          route_date?: string
+          route_name?: string
+          shop_id?: string
+          start_odometer?: number | null
+          start_time?: string | null
+          status?: string | null
+          total_gallons?: number | null
+          total_miles?: number | null
+          total_stops?: number | null
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_routes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_routes_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_routes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_routes_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_settings: {
+        Row: {
+          business_address: string | null
+          business_city: string | null
+          business_email: string | null
+          business_name: string | null
+          business_phone: string | null
+          business_state: string | null
+          business_zip: string | null
+          created_at: string
+          default_delivery_fee: number | null
+          default_payment_terms: string | null
+          default_sanitization_interval_days: number | null
+          default_tax_rate: number | null
+          enable_auto_invoicing: boolean | null
+          enable_customer_portal: boolean | null
+          enable_online_payments: boolean | null
+          enable_route_optimization: boolean | null
+          id: string
+          invoice_prefix: string | null
+          logo_url: string | null
+          minimum_order_gallons: number | null
+          order_prefix: string | null
+          potable_certification_required: boolean | null
+          quote_prefix: string | null
+          require_quality_readings: boolean | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          business_address?: string | null
+          business_city?: string | null
+          business_email?: string | null
+          business_name?: string | null
+          business_phone?: string | null
+          business_state?: string | null
+          business_zip?: string | null
+          created_at?: string
+          default_delivery_fee?: number | null
+          default_payment_terms?: string | null
+          default_sanitization_interval_days?: number | null
+          default_tax_rate?: number | null
+          enable_auto_invoicing?: boolean | null
+          enable_customer_portal?: boolean | null
+          enable_online_payments?: boolean | null
+          enable_route_optimization?: boolean | null
+          id?: string
+          invoice_prefix?: string | null
+          logo_url?: string | null
+          minimum_order_gallons?: number | null
+          order_prefix?: string | null
+          potable_certification_required?: boolean | null
+          quote_prefix?: string | null
+          require_quality_readings?: boolean | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          business_address?: string | null
+          business_city?: string | null
+          business_email?: string | null
+          business_name?: string | null
+          business_phone?: string | null
+          business_state?: string | null
+          business_zip?: string | null
+          created_at?: string
+          default_delivery_fee?: number | null
+          default_payment_terms?: string | null
+          default_sanitization_interval_days?: number | null
+          default_tax_rate?: number | null
+          enable_auto_invoicing?: boolean | null
+          enable_customer_portal?: boolean | null
+          enable_online_payments?: boolean | null
+          enable_route_optimization?: boolean | null
+          id?: string
+          invoice_prefix?: string | null
+          logo_url?: string | null
+          minimum_order_gallons?: number | null
+          order_prefix?: string | null
+          potable_certification_required?: boolean | null
+          quote_prefix?: string | null
+          require_quality_readings?: boolean | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_special_rates: {
+        Row: {
+          created_at: string
+          customer_id: string
+          effective_date: string | null
+          expiration_date: string | null
+          id: string
+          is_active: boolean | null
+          minimum_quantity: number | null
+          notes: string | null
+          product_id: string | null
+          rate_type: string
+          rate_value: number
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          effective_date?: string | null
+          expiration_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          minimum_quantity?: number | null
+          notes?: string | null
+          product_id?: string | null
+          rate_type: string
+          rate_value: number
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          effective_date?: string | null
+          expiration_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          minimum_quantity?: number | null
+          notes?: string | null
+          product_id?: string | null
+          rate_type?: string
+          rate_value?: number
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_special_rates_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_special_rates_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_special_rates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_tank_fills: {
+        Row: {
+          chlorine_level_reading: number | null
+          created_at: string
+          delivery_id: string | null
+          driver_id: string | null
+          fill_date: string
+          gallons_delivered: number
+          id: string
+          level_after_gallons: number | null
+          level_after_percent: number | null
+          level_before_gallons: number | null
+          level_before_percent: number | null
+          meter_end: number | null
+          meter_start: number | null
+          notes: string | null
+          ph_level_reading: number | null
+          photo_url: string | null
+          price_per_gallon: number | null
+          product_id: string | null
+          shop_id: string
+          signature_url: string | null
+          tank_id: string
+          total_amount: number | null
+        }
+        Insert: {
+          chlorine_level_reading?: number | null
+          created_at?: string
+          delivery_id?: string | null
+          driver_id?: string | null
+          fill_date?: string
+          gallons_delivered: number
+          id?: string
+          level_after_gallons?: number | null
+          level_after_percent?: number | null
+          level_before_gallons?: number | null
+          level_before_percent?: number | null
+          meter_end?: number | null
+          meter_start?: number | null
+          notes?: string | null
+          ph_level_reading?: number | null
+          photo_url?: string | null
+          price_per_gallon?: number | null
+          product_id?: string | null
+          shop_id: string
+          signature_url?: string | null
+          tank_id: string
+          total_amount?: number | null
+        }
+        Update: {
+          chlorine_level_reading?: number | null
+          created_at?: string
+          delivery_id?: string | null
+          driver_id?: string | null
+          fill_date?: string
+          gallons_delivered?: number
+          id?: string
+          level_after_gallons?: number | null
+          level_after_percent?: number | null
+          level_before_gallons?: number | null
+          level_before_percent?: number | null
+          meter_end?: number | null
+          meter_start?: number | null
+          notes?: string | null
+          ph_level_reading?: number | null
+          photo_url?: string | null
+          price_per_gallon?: number | null
+          product_id?: string | null
+          shop_id?: string
+          signature_url?: string | null
+          tank_id?: string
+          total_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_tank_fills_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tank_fills_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tank_fills_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tank_fills_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_tank_readings: {
+        Row: {
+          created_at: string
+          id: string
+          level_gallons: number
+          level_percent: number | null
+          notes: string | null
+          reading_date: string
+          reading_type: string | null
+          recorded_by: string | null
+          shop_id: string
+          tank_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level_gallons: number
+          level_percent?: number | null
+          notes?: string | null
+          reading_date?: string
+          reading_type?: string | null
+          recorded_by?: string | null
+          shop_id: string
+          tank_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level_gallons?: number
+          level_percent?: number | null
+          notes?: string | null
+          reading_date?: string
+          reading_type?: string | null
+          recorded_by?: string | null
+          shop_id?: string
+          tank_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_tank_readings_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tank_readings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tank_readings_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_tanks: {
+        Row: {
+          capacity_gallons: number
+          created_at: string
+          current_level_gallons: number | null
+          current_level_percent: number | null
+          customer_id: string | null
+          has_filtration: boolean | null
+          has_level_sensor: boolean | null
+          has_uv_treatment: boolean | null
+          id: string
+          install_date: string | null
+          is_active: boolean | null
+          is_potable_certified: boolean | null
+          last_inspection_date: string | null
+          last_sanitized_date: string | null
+          latitude: number | null
+          location_id: string | null
+          longitude: number | null
+          material: string | null
+          next_inspection_due: string | null
+          next_sanitization_due: string | null
+          notes: string | null
+          product_id: string | null
+          reorder_level_percent: number | null
+          shop_id: string
+          tank_name: string | null
+          tank_number: string
+          tank_type: string | null
+          telemetry_device_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          capacity_gallons: number
+          created_at?: string
+          current_level_gallons?: number | null
+          current_level_percent?: number | null
+          customer_id?: string | null
+          has_filtration?: boolean | null
+          has_level_sensor?: boolean | null
+          has_uv_treatment?: boolean | null
+          id?: string
+          install_date?: string | null
+          is_active?: boolean | null
+          is_potable_certified?: boolean | null
+          last_inspection_date?: string | null
+          last_sanitized_date?: string | null
+          latitude?: number | null
+          location_id?: string | null
+          longitude?: number | null
+          material?: string | null
+          next_inspection_due?: string | null
+          next_sanitization_due?: string | null
+          notes?: string | null
+          product_id?: string | null
+          reorder_level_percent?: number | null
+          shop_id: string
+          tank_name?: string | null
+          tank_number: string
+          tank_type?: string | null
+          telemetry_device_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capacity_gallons?: number
+          created_at?: string
+          current_level_gallons?: number | null
+          current_level_percent?: number | null
+          customer_id?: string | null
+          has_filtration?: boolean | null
+          has_level_sensor?: boolean | null
+          has_uv_treatment?: boolean | null
+          id?: string
+          install_date?: string | null
+          is_active?: boolean | null
+          is_potable_certified?: boolean | null
+          last_inspection_date?: string | null
+          last_sanitized_date?: string | null
+          latitude?: number | null
+          location_id?: string | null
+          longitude?: number | null
+          material?: string | null
+          next_inspection_due?: string | null
+          next_sanitization_due?: string | null
+          notes?: string | null
+          product_id?: string | null
+          reorder_level_percent?: number | null
+          shop_id?: string
+          tank_name?: string | null
+          tank_number?: string
+          tank_type?: string | null
+          telemetry_device_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_tanks_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tanks_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tanks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tanks_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_tidy_tanks: {
+        Row: {
+          capacity_gallons: number
+          created_at: string
+          current_customer_id: string | null
+          current_level_gallons: number | null
+          current_location_id: string | null
+          daily_rental_rate: number | null
+          deployed_date: string | null
+          expected_return_date: string | null
+          id: string
+          is_active: boolean | null
+          is_potable_certified: boolean | null
+          last_sanitized_date: string | null
+          material: string | null
+          notes: string | null
+          product_id: string | null
+          shop_id: string
+          status: string | null
+          tank_name: string | null
+          tank_number: string
+          updated_at: string
+        }
+        Insert: {
+          capacity_gallons: number
+          created_at?: string
+          current_customer_id?: string | null
+          current_level_gallons?: number | null
+          current_location_id?: string | null
+          daily_rental_rate?: number | null
+          deployed_date?: string | null
+          expected_return_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_potable_certified?: boolean | null
+          last_sanitized_date?: string | null
+          material?: string | null
+          notes?: string | null
+          product_id?: string | null
+          shop_id: string
+          status?: string | null
+          tank_name?: string | null
+          tank_number: string
+          updated_at?: string
+        }
+        Update: {
+          capacity_gallons?: number
+          created_at?: string
+          current_customer_id?: string | null
+          current_level_gallons?: number | null
+          current_location_id?: string | null
+          daily_rental_rate?: number | null
+          deployed_date?: string | null
+          expected_return_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_potable_certified?: boolean | null
+          last_sanitized_date?: string | null
+          material?: string | null
+          notes?: string | null
+          product_id?: string | null
+          shop_id?: string
+          status?: string | null
+          tank_name?: string | null
+          tank_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_tidy_tanks_current_customer_id_fkey"
+            columns: ["current_customer_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tidy_tanks_current_location_id_fkey"
+            columns: ["current_location_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tidy_tanks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_tidy_tanks_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_truck_compartments: {
+        Row: {
+          capacity_gallons: number
+          compartment_name: string | null
+          compartment_number: number
+          created_at: string | null
+          current_level_gallons: number
+          id: string
+          is_potable_certified: boolean | null
+          last_sanitized_date: string | null
+          material: string | null
+          product_id: string | null
+          shop_id: string
+          truck_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          capacity_gallons?: number
+          compartment_name?: string | null
+          compartment_number: number
+          created_at?: string | null
+          current_level_gallons?: number
+          id?: string
+          is_potable_certified?: boolean | null
+          last_sanitized_date?: string | null
+          material?: string | null
+          product_id?: string | null
+          shop_id: string
+          truck_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          capacity_gallons?: number
+          compartment_name?: string | null
+          compartment_number?: number
+          created_at?: string | null
+          current_level_gallons?: number
+          id?: string
+          is_potable_certified?: boolean | null
+          last_sanitized_date?: string | null
+          material?: string | null
+          product_id?: string | null
+          shop_id?: string
+          truck_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_truck_compartments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_truck_compartments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_truck_compartments_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_trucks: {
+        Row: {
+          compartment_capacities: Json | null
+          compartments: number | null
+          created_at: string
+          current_odometer: number | null
+          current_water_load: number | null
+          dot_inspection_due: string | null
+          id: string
+          insurance_expiry: string | null
+          is_active: boolean | null
+          is_potable_certified: boolean | null
+          last_calibration_date: string | null
+          last_sanitized_date: string | null
+          license_plate: string | null
+          make: string | null
+          meter_number: string | null
+          model: string | null
+          next_calibration_due: string | null
+          next_sanitization_due: string | null
+          nfs_certification_expiry: string | null
+          notes: string | null
+          registration_expiry: string | null
+          sanitization_certificate_url: string | null
+          shop_id: string
+          status: string | null
+          tank_capacity_gallons: number | null
+          tank_material: string | null
+          truck_number: string
+          updated_at: string
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          compartment_capacities?: Json | null
+          compartments?: number | null
+          created_at?: string
+          current_odometer?: number | null
+          current_water_load?: number | null
+          dot_inspection_due?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          is_active?: boolean | null
+          is_potable_certified?: boolean | null
+          last_calibration_date?: string | null
+          last_sanitized_date?: string | null
+          license_plate?: string | null
+          make?: string | null
+          meter_number?: string | null
+          model?: string | null
+          next_calibration_due?: string | null
+          next_sanitization_due?: string | null
+          nfs_certification_expiry?: string | null
+          notes?: string | null
+          registration_expiry?: string | null
+          sanitization_certificate_url?: string | null
+          shop_id: string
+          status?: string | null
+          tank_capacity_gallons?: number | null
+          tank_material?: string | null
+          truck_number: string
+          updated_at?: string
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          compartment_capacities?: Json | null
+          compartments?: number | null
+          created_at?: string
+          current_odometer?: number | null
+          current_water_load?: number | null
+          dot_inspection_due?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          is_active?: boolean | null
+          is_potable_certified?: boolean | null
+          last_calibration_date?: string | null
+          last_sanitized_date?: string | null
+          license_plate?: string | null
+          make?: string | null
+          meter_number?: string | null
+          model?: string | null
+          next_calibration_due?: string | null
+          next_sanitization_due?: string | null
+          nfs_certification_expiry?: string | null
+          notes?: string | null
+          registration_expiry?: string | null
+          sanitization_certificate_url?: string | null
+          shop_id?: string
+          status?: string | null
+          tank_capacity_gallons?: number | null
+          tank_material?: string | null
+          truck_number?: string
+          updated_at?: string
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_trucks_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_vehicles: {
+        Row: {
+          created_at: string
+          current_odometer: number | null
+          id: string
+          insurance_expiry: string | null
+          is_active: boolean | null
+          license_plate: string | null
+          make: string | null
+          model: string | null
+          notes: string | null
+          registration_expiry: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string
+          vehicle_number: string
+          vehicle_type: string
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          created_at?: string
+          current_odometer?: number | null
+          id?: string
+          insurance_expiry?: string | null
+          is_active?: boolean | null
+          license_plate?: string | null
+          make?: string | null
+          model?: string | null
+          notes?: string | null
+          registration_expiry?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string
+          vehicle_number: string
+          vehicle_type: string
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          created_at?: string
+          current_odometer?: number | null
+          id?: string
+          insurance_expiry?: string | null
+          is_active?: boolean | null
+          license_plate?: string | null
+          make?: string | null
+          model?: string | null
+          notes?: string | null
+          registration_expiry?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string
+          vehicle_number?: string
+          vehicle_type?: string
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_vehicles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_yards: {
+        Row: {
+          address: string | null
+          certifications: string[] | null
+          city: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          daily_capacity_gallons: number | null
+          id: string
+          is_active: boolean | null
+          is_primary: boolean | null
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          shop_id: string
+          state: string | null
+          storage_capacity_gallons: number | null
+          treatment_capabilities: string[] | null
+          updated_at: string
+          water_source_type: string | null
+          yard_name: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          certifications?: string[] | null
+          city?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          daily_capacity_gallons?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          shop_id: string
+          state?: string | null
+          storage_capacity_gallons?: number | null
+          treatment_capabilities?: string[] | null
+          updated_at?: string
+          water_source_type?: string | null
+          yard_name: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          certifications?: string[] | null
+          city?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          daily_capacity_gallons?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          shop_id?: string
+          state?: string | null
+          storage_capacity_gallons?: number | null
+          treatment_capabilities?: string[] | null
+          updated_at?: string
+          water_source_type?: string | null
+          yard_name?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_yards_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_zones: {
+        Row: {
+          cities: string[] | null
+          created_at: string
+          delivery_fee: number | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          minimum_order: number | null
+          notes: string | null
+          polygon_coordinates: Json | null
+          shop_id: string
+          updated_at: string
+          zip_codes: string[] | null
+          zone_code: string | null
+          zone_name: string
+        }
+        Insert: {
+          cities?: string[] | null
+          created_at?: string
+          delivery_fee?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          minimum_order?: number | null
+          notes?: string | null
+          polygon_coordinates?: Json | null
+          shop_id: string
+          updated_at?: string
+          zip_codes?: string[] | null
+          zone_code?: string | null
+          zone_name: string
+        }
+        Update: {
+          cities?: string[] | null
+          created_at?: string
+          delivery_fee?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          minimum_order?: number | null
+          notes?: string | null
+          polygon_coordinates?: Json | null
+          shop_id?: string
+          updated_at?: string
+          zip_codes?: string[] | null
+          zone_code?: string | null
+          zone_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_zones_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhook_deliveries: {
         Row: {
           created_at: string | null
