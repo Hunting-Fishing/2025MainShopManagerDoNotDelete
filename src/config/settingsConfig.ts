@@ -36,7 +36,8 @@ import {
   History,
   ShieldCheck,
   HardHat,
-  Puzzle
+  Puzzle,
+  Fuel
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -69,6 +70,7 @@ import { DashboardSettingsTab } from '@/components/settings/DashboardSettingsTab
 import { RolePermissionsSettingsTab } from '@/components/settings/RolePermissionsSettingsTab';
 import { UserPermissionsSettingsTab } from '@/components/settings/UserPermissionsSettingsTab';
 import { NavigationSettingsTab } from '@/components/settings/NavigationSettingsTab';
+import { FuelProductsTab } from '@/components/settings/FuelProductsTab';
 
 // Placeholder component for lazy-loaded pages
 const PlaceholderTab = () => null;
@@ -238,6 +240,14 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         component: PlaceholderTab,
         path: '/settings/inspection-templates',
         description: 'Create and manage pre-trip inspection form templates'
+      },
+      {
+        id: 'fuel-products',
+        label: 'Fuel Products',
+        icon: Fuel,
+        component: FuelProductsTab,
+        path: '/settings/fuel-products',
+        description: 'Manage fuel types, octane ratings, and pricing'
       }
     ]
   },
