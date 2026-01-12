@@ -5,12 +5,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, MapPin, AlertTriangle, Search, Building2 } from 'lucide-react';
+import { Loader2, MapPin, AlertTriangle, Building2 } from 'lucide-react';
 import { useMapboxPublicToken } from '@/hooks/useMapboxPublicToken';
 import { validateMapboxPublicToken } from '@/lib/mapbox/validateMapboxPublicToken';
 import { useGeocode } from '@/hooks/useMapbox';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { AddressAutocomplete, AddressResult } from '@/components/fuel-delivery/AddressAutocomplete';
 
 interface BusinessLocationMapProps {
   latitude?: number;
@@ -293,34 +294,24 @@ export function BusinessLocationMap({
         </Card>
       )}
 
-      {/* Search Bar */}
+      {/* Search Bar with Autocomplete */}
       {editable && token && !tokenError && (
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchAddress}
-              onChange={(e) => setSearchAddress(e.target.value)}
-              placeholder="Search for an address..."
-              className="pl-10"
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
-          </div>
-          <Button 
-            onClick={handleSearch} 
-            disabled={geocodeMutation.isPending}
-            className="bg-cyan-600 hover:bg-cyan-700"
-          >
-            {geocodeMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <MapPin className="h-4 w-4 mr-2" />
-                Find
-              </>
-            )}
-          </Button>
-        </div>
+        <AddressAutocomplete
+          value={searchAddress}
+          onChange={setSearchAddress}
+          onSelect={(result: AddressResult) => {
+            const newLocation = {
+              latitude: result.coordinates[1],
+              longitude: result.coordinates[0],
+              address: result.address,
+            };
+            setSelectedLocation(newLocation);
+            setSearchAddress(result.address);
+            onLocationChange?.(newLocation);
+            toast.success('Location found!');
+          }}
+          placeholder="Search for your business address..."
+        />
       )}
 
       {/* Map */}
