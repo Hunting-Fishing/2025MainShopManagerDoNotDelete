@@ -10,11 +10,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 export default function WaterDeliveryProducts() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const { shopId } = useShopId();
+  const { getPriceLabel } = useWaterUnits();
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['water-delivery-products', shopId],
@@ -106,7 +108,7 @@ export default function WaterDeliveryProducts() {
                   <TableHead>TDS (ppm)</TableHead>
                   <TableHead>Certification</TableHead>
                   <TableHead>Grade</TableHead>
-                  <TableHead className="text-right">Price/Gal</TableHead>
+                  <TableHead className="text-right">Price{getPriceLabel()}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

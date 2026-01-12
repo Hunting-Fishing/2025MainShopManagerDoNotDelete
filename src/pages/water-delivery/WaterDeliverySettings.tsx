@@ -33,7 +33,7 @@ export default function WaterDeliverySettings() {
   const [displayEmail, setDisplayEmail] = useState('');
   const [displayDescription, setDisplayDescription] = useState('');
   
-  const { unitSystem, setUnitSystem } = useWaterUnits();
+  const { unitSystem, setUnitSystem, getVolumeLabel, getPriceLabel } = useWaterUnits();
   
   const [businessAddress, setBusinessAddress] = useState('');
   const [businessLatitude, setBusinessLatitude] = useState<number | undefined>();
@@ -413,7 +413,7 @@ export default function WaterDeliverySettings() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Default Tank Capacity (gal)</Label>
+                  <Label>Default Tank Capacity ({getVolumeLabel()})</Label>
                   <Input
                     type="number"
                     value={defaultTankCapacity}
@@ -460,7 +460,7 @@ export default function WaterDeliverySettings() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Base Price per Gallon ($)</Label>
+                  <Label>Base Price {getPriceLabel(false)} ($)</Label>
                   <Input
                     type="number"
                     step="0.01"

@@ -13,6 +13,7 @@ import { Plus, Package, MapPin, Droplets, Edit2, User, ArrowLeft } from 'lucide-
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 interface TidyTank {
   id: string;
@@ -37,6 +38,7 @@ export default function WaterDeliveryTidyTanks() {
   const [editingTank, setEditingTank] = useState<TidyTank | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { formatVolume, getVolumeLabel } = useWaterUnits();
 
   const { data: tidyTanks = [], isLoading } = useQuery({
     queryKey: ['water-delivery-tidy-tanks'],
@@ -184,11 +186,11 @@ export default function WaterDeliveryTidyTanks() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Capacity (gal)</Label>
+                  <Label>Capacity ({getVolumeLabel()})</Label>
                   <Input name="capacity_gallons" type="number" defaultValue={editingTank?.capacity_gallons} required />
                 </div>
                 <div>
-                  <Label>Current Level (gal)</Label>
+                  <Label>Current Level ({getVolumeLabel()})</Label>
                   <Input name="current_level_gallons" type="number" defaultValue={editingTank?.current_level_gallons || 0} />
                 </div>
               </div>
@@ -317,9 +319,9 @@ export default function WaterDeliveryTidyTanks() {
                     <div className="flex justify-between text-sm mb-1">
                       <span className="flex items-center gap-1">
                         <Droplets className="w-4 h-4" />
-                        {tank.current_level_gallons?.toLocaleString() || 0} gal
+                        {formatVolume(tank.current_level_gallons || 0)}
                       </span>
-                      <span>{tank.capacity_gallons?.toLocaleString()} gal capacity</span>
+                      <span>{formatVolume(tank.capacity_gallons || 0)} capacity</span>
                     </div>
                     <Progress value={fillPercent} className="h-3" />
                     <p className="text-xs text-muted-foreground mt-1">{fillPercent}% full</p>

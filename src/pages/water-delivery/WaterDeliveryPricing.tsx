@@ -19,11 +19,13 @@ import {
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function WaterDeliveryPricing() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { getVolumeLabel, getPriceLabel } = useWaterUnits();
   
   const { data: products } = useQuery({
     queryKey: ['water-delivery-products'],
@@ -127,7 +129,7 @@ export default function WaterDeliveryPricing() {
                     <div className="text-3xl font-bold">
                       ${currentPrice.toFixed(4)}
                     </div>
-                    <div className="text-sm text-muted-foreground">per gallon</div>
+                    <div className="text-sm text-muted-foreground">{getPriceLabel(false)}</div>
                   </div>
                 </div>
                 <Button 
@@ -286,7 +288,7 @@ export default function WaterDeliveryPricing() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>New Price (per gallon)</Label>
+              <Label>New Price ({getPriceLabel(false)})</Label>
               <Input
                 type="number"
                 step="0.0001"

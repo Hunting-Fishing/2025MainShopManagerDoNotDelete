@@ -11,11 +11,13 @@ import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 export default function WaterDeliveryCompletions() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const { shopId } = useShopId();
+  const { formatVolume } = useWaterUnits();
 
   const { data: completions, isLoading } = useQuery({
     queryKey: ['water-delivery-completions', shopId],
@@ -117,7 +119,7 @@ export default function WaterDeliveryCompletions() {
                         : '-'}
                     </TableCell>
                     <TableCell>{completion.water_delivery_trucks?.truck_number || '-'}</TableCell>
-                    <TableCell>{completion.gallons_delivered?.toLocaleString()} gal</TableCell>
+                    <TableCell>{formatVolume(completion.gallons_delivered || 0)}</TableCell>
                     <TableCell>
                       {completion.ph_level_reading || '-'}
                     </TableCell>
