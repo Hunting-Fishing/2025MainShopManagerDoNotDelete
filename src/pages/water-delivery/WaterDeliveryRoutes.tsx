@@ -1,22 +1,27 @@
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, ArrowLeft, Route, MapPin, Calendar } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Search, ArrowLeft, Route, MapPin, Calendar, Map, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { WaterDeliveryRouteMap } from '@/components/water-delivery/WaterDeliveryRouteMap';
+import { Location } from '@/hooks/useMapbox';
 
 export default function WaterDeliveryRoutes() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const { shopId } = useShopId();
 
+  // Fetch routes
   const { data: routes, isLoading } = useQuery({
     queryKey: ['water-delivery-routes', shopId],
     queryFn: async () => {
@@ -36,9 +41,44 @@ export default function WaterDeliveryRoutes() {
     enabled: !!shopId,
   });
 
+  // Fetch delivery locations with coordinates for mapping
+  const { data: deliveryLocations } = useQuery({
+    queryKey: ['water-delivery-locations-with-coords', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from('water_delivery_locations')
+        .select('id, location_name, address, city, state, latitude, longitude, customer_id')
+        .eq('shop_id', shopId)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
+
   const filteredRoutes = routes?.filter(route => 
     route.route_name?.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Convert locations to map destinations
+  const mapDestinations: Location[] = useMemo(() => {
+    if (!deliveryLocations) return [];
+    
+    return deliveryLocations.map((loc, index) => ({
+      id: loc.id,
+      address: [loc.address, loc.city, loc.state].filter(Boolean).join(', '),
+      coordinates: [loc.longitude!, loc.latitude!] as [number, number],
+      name: loc.location_name || `Location ${index + 1}`,
+      priority: 'normal' as const,
+    }));
+  }, [deliveryLocations]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -58,20 +98,34 @@ export default function WaterDeliveryRoutes() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Button>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Route className="h-8 w-8 text-cyan-600" />
               Delivery Routes
             </h1>
             <p className="text-muted-foreground mt-1">
-              Plan and optimize delivery routes
+              Plan and optimize water delivery routes
             </p>
           </div>
-          <Button className="bg-cyan-600 hover:bg-cyan-700">
-            <Plus className="h-4 w-4 mr-2" />
-            New Route
-          </Button>
+          <div className="flex items-center gap-3">
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'map')}>
+              <TabsList>
+                <TabsTrigger value="list" className="flex items-center gap-2">
+                  <List className="h-4 w-4" />
+                  List
+                </TabsTrigger>
+                <TabsTrigger value="map" className="flex items-center gap-2">
+                  <Map className="h-4 w-4" />
+                  Map
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button className="bg-cyan-600 hover:bg-cyan-700">
+              <Plus className="h-4 w-4 mr-2" />
+              New Route
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -90,67 +144,90 @@ export default function WaterDeliveryRoutes() {
         </CardContent>
       </Card>
 
-      {/* Routes Table */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-6 space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : filteredRoutes && filteredRoutes.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Route Name</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Driver</TableHead>
-                  <TableHead>Truck</TableHead>
-                  <TableHead>Stops</TableHead>
-                  <TableHead>Est. Distance</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRoutes.map((route) => (
-                  <TableRow key={route.id} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell className="font-medium">{route.route_name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3 text-muted-foreground" />
-                        {route.route_date 
-                          ? format(new Date(route.route_date), 'MMM d, yyyy')
-                          : '-'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {route.water_delivery_drivers 
-                        ? `${route.water_delivery_drivers.first_name} ${route.water_delivery_drivers.last_name}`
-                        : '-'}
-                    </TableCell>
-                    <TableCell>{route.water_delivery_trucks?.truck_number || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3 text-muted-foreground" />
-                        {route.total_stops || 0}
-                      </div>
-                    </TableCell>
-                    <TableCell>{(route.end_odometer && route.start_odometer) ? (route.end_odometer - route.start_odometer) : '-'} mi</TableCell>
-                    <TableCell>{getStatusBadge(route.status)}</TableCell>
-                  </TableRow>
+      {/* View Content */}
+      {viewMode === 'map' ? (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Map className="h-5 w-5 text-cyan-600" />
+              Delivery Locations Map
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WaterDeliveryRouteMap
+              destinations={mapDestinations}
+              height="500px"
+              showOptimizeButton={mapDestinations.length > 1}
+            />
+            {mapDestinations.length === 0 && (
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground">
+                  No delivery locations with coordinates found. Add locations with addresses to see them on the map.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="p-6 space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
                 ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Route className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No routes found</p>
-              <Button variant="link">Create your first route</Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            ) : filteredRoutes && filteredRoutes.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Route Name</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Driver</TableHead>
+                    <TableHead>Truck</TableHead>
+                    <TableHead>Stops</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRoutes.map((route) => (
+                    <TableRow key={route.id} className="cursor-pointer hover:bg-muted/50">
+                      <TableCell className="font-medium">{route.route_name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                          {route.route_date 
+                            ? format(new Date(route.route_date), 'MMM d, yyyy')
+                            : '-'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {route.water_delivery_drivers 
+                          ? `${route.water_delivery_drivers.first_name} ${route.water_delivery_drivers.last_name}`
+                          : '-'}
+                      </TableCell>
+                      <TableCell>{route.water_delivery_trucks?.truck_number || '-'}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          {route.total_stops || 0}
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(route.status)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <Route className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No routes found</p>
+                <Button variant="link">Create your first route</Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
