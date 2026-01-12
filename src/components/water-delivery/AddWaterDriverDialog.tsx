@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { LicenseClassSelect } from '@/components/fuel-delivery/LicenseClassSelect';
+import { StateProvinceSelect } from '@/components/shared/StateProvinceSelect';
 
 const driverFormSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
@@ -237,7 +238,11 @@ export function AddWaterDriverDialog({ open, onOpenChange }: AddWaterDriverDialo
                     <FormItem>
                       <FormLabel>State/Province</FormLabel>
                       <FormControl>
-                        <Input placeholder="CA, ON, BC..." {...field} />
+                        <StateProvinceSelect
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="Select state/province"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
