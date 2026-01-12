@@ -11,10 +11,12 @@ import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { AddWaterDriverDialog } from '@/components/water-delivery/AddWaterDriverDialog';
 
 export default function WaterDeliveryDrivers() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { shopId } = useShopId();
 
   const { data: drivers, isLoading } = useQuery({
@@ -56,7 +58,7 @@ export default function WaterDeliveryDrivers() {
               Manage driver certifications and assignments
             </p>
           </div>
-          <Button className="bg-cyan-600 hover:bg-cyan-700">
+          <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Driver
           </Button>
@@ -155,11 +157,13 @@ export default function WaterDeliveryDrivers() {
             <div className="text-center py-12 text-muted-foreground">
               <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>No drivers found</p>
-              <Button variant="link">Add your first driver</Button>
+              <Button variant="link" onClick={() => setIsAddDialogOpen(true)}>Add your first driver</Button>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <AddWaterDriverDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
     </div>
   );
 }
