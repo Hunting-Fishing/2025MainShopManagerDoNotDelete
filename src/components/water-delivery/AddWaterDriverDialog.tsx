@@ -1,5 +1,5 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { LicenseClassSelect } from '@/components/fuel-delivery/LicenseClassSelect';
 
 const driverFormSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
@@ -75,6 +76,10 @@ export function AddWaterDriverDialog({ open, onOpenChange }: AddWaterDriverDialo
       notes: '',
     },
   });
+
+  // Watch license_state to update license_class options dynamically
+  const licenseState = useWatch({ control: form.control, name: 'license_state' });
+
 
   const createDriver = useMutation({
     mutationFn: async (data: DriverFormData) => {
@@ -212,7 +217,12 @@ export function AddWaterDriverDialog({ open, onOpenChange }: AddWaterDriverDialo
                     <FormItem>
                       <FormLabel>License Class</FormLabel>
                       <FormControl>
-                        <Input placeholder="Class A" {...field} />
+                        <LicenseClassSelect
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          stateProvince={licenseState || ''}
+                          placeholder="Select license class"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
