@@ -57,11 +57,6 @@ export default function WaterDeliveryRoutes() {
     },
     enabled: !!shopId,
   });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!shopId,
-  });
 
   const filteredRoutes = routes?.filter(route => 
     route.route_name?.toLowerCase().includes(search.toLowerCase())
