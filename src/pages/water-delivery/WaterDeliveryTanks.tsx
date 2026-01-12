@@ -11,11 +11,13 @@ import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 export default function WaterDeliveryTanks() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const { shopId } = useShopId();
+  const { formatVolume, getVolumeLabel } = useWaterUnits();
 
   const { data: tanks, isLoading } = useQuery({
     queryKey: ['water-delivery-tanks', shopId],
@@ -97,7 +99,7 @@ export default function WaterDeliveryTanks() {
                   <TableHead>Tank #</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Location</TableHead>
-                  <TableHead>Capacity (gal)</TableHead>
+                  <TableHead>Capacity ({getVolumeLabel()})</TableHead>
                   <TableHead>Current Level</TableHead>
                   <TableHead>Potable Cert</TableHead>
                   <TableHead>Last Sanitized</TableHead>
@@ -112,7 +114,7 @@ export default function WaterDeliveryTanks() {
                       <TableCell className="font-medium">{tank.tank_number}</TableCell>
                       <TableCell>{tank.water_delivery_customers?.company_name || '-'}</TableCell>
                       <TableCell>{tank.water_delivery_locations?.location_name || '-'}</TableCell>
-                      <TableCell>{tank.capacity_gallons?.toLocaleString()}</TableCell>
+                      <TableCell>{formatVolume(tank.capacity_gallons || 0, 0)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="w-16 bg-muted rounded-full h-2">
