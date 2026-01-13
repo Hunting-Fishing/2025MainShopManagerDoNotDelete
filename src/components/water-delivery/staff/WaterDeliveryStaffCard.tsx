@@ -36,10 +36,10 @@ const roleColors: Record<string, string> = {
   owner: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
   admin: 'bg-red-500/10 text-red-500 border-red-500/20',
   manager: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  technician: 'bg-green-500/10 text-green-500 border-green-500/20',
-  reception: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  service_advisor: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
-  parts_manager: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+  dispatch: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
+  truck_driver: 'bg-green-500/10 text-green-500 border-green-500/20',
+  operations_manager: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  yard_manager: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
   other_staff: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
 };
 

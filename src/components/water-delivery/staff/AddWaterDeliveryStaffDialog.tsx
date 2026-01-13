@@ -105,10 +105,8 @@ export function AddWaterDeliveryStaffDialog({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Filter roles suitable for water delivery staff
-  const waterDeliveryRoles = roles.filter(role => 
-    ['owner', 'admin', 'manager', 'technician', 'reception', 'service_advisor', 'parts_manager', 'other_staff'].includes(role.name)
-  );
+  // Roles are already filtered by useAvailableRoles hook for water delivery module
+  const waterDeliveryRoles = roles;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
