@@ -42497,6 +42497,131 @@ export type Database = {
           },
         ]
       }
+      water_delivery_staff: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department: string | null
+          email: string
+          first_name: string
+          hire_date: string | null
+          id: string
+          is_active: boolean
+          job_title: string | null
+          last_name: string
+          middle_name: string | null
+          notes: string | null
+          phone: string | null
+          profile_id: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          email: string
+          first_name: string
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean
+          job_title?: string | null
+          last_name: string
+          middle_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          email?: string
+          first_name?: string
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean
+          job_title?: string | null
+          last_name?: string
+          middle_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_staff_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_staff_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_staff_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_staff_roles: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          role_id: string
+          staff_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role_id: string
+          staff_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role_id?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_staff_roles_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_staff_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_staff_roles_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       water_delivery_tank_fills: {
         Row: {
           chlorine_level_reading: number | null

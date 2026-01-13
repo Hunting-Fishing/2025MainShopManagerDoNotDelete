@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
 import { toast } from 'sonner';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface WaterDeliveryStaffMember {
   id: string;
@@ -14,8 +13,10 @@ export interface WaterDeliveryStaffMember {
   job_title?: string;
   department?: string;
   roles: Array<{ id: string; name: string }>;
-  has_auth_account: boolean;
-  invitation_sent_at?: string;
+  profile_id?: string; // Link to auth profile if they have login
+  is_active: boolean;
+  hire_date?: string;
+  notes?: string;
   created_at: string;
 }
 
@@ -41,6 +42,7 @@ export interface UpdateStaffInput {
   phone?: string;
   job_title?: string;
   department?: string;
+  is_active?: boolean;
 }
 
 // Water Delivery specific roles - includes universal roles (owner, admin, manager) 
@@ -59,66 +61,43 @@ export function useWaterDeliveryStaff() {
     queryFn: async (): Promise<WaterDeliveryStaffMember[]> => {
       if (!shopId) return [];
 
-      // Fetch profiles with their roles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          middle_name,
-          email,
-          phone,
-          job_title,
-          department,
-          has_auth_account,
-          invitation_sent_at,
-          created_at
-        `)
+      // Fetch staff from dedicated water_delivery_staff table
+      const { data: staffData, error: staffError } = await supabase
+        .from('water_delivery_staff')
+        .select('*')
         .eq('shop_id', shopId)
         .order('first_name', { ascending: true });
 
-      if (profilesError) {
-        console.error('Error fetching staff profiles:', profilesError);
-        throw profilesError;
+      if (staffError) {
+        console.error('Error fetching water delivery staff:', staffError);
+        throw staffError;
       }
 
-      // Fetch roles for each profile and filter by Water Delivery roles
+      // Fetch roles for each staff member
       const staffWithRoles = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          const { data: userRoles } = await supabase
-            .from('user_roles')
+        (staffData || []).map(async (staff) => {
+          const { data: staffRoles } = await supabase
+            .from('water_delivery_staff_roles')
             .select(`
               roles (
                 id,
-                name,
-                module_slug
+                name
               )
             `)
-            .eq('user_id', profile.id);
+            .eq('staff_id', staff.id);
 
-          const roles = (userRoles || [])
-            .map((ur: any) => ur.roles)
+          const roles = (staffRoles || [])
+            .map((sr: any) => sr.roles)
             .filter(Boolean);
 
           return {
-            ...profile,
+            ...staff,
             roles,
           } as WaterDeliveryStaffMember;
         })
       );
 
-      // Filter to only show staff with Water Delivery roles or universal roles
-      const waterDeliveryStaff = staffWithRoles.filter(staff => {
-        if (staff.roles.length === 0) return false; // Hide staff with no roles
-        return staff.roles.some(role => 
-          (WATER_DELIVERY_ROLE_NAMES as readonly string[]).includes(role.name) || 
-          (role as any).module_slug === 'water-delivery' ||
-          (role as any).module_slug === null // Universal roles
-        );
-      });
-
-      return waterDeliveryStaff;
+      return staffWithRoles;
     },
     enabled: !!shopId,
   });
@@ -127,67 +106,57 @@ export function useWaterDeliveryStaff() {
     mutationFn: async (input: CreateStaffInput) => {
       if (!shopId) throw new Error('Shop ID is required');
 
-      // Create the profile first - id is required for profiles table
-      const profileId = uuidv4();
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
+      // Get current user ID for created_by
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Create staff in water_delivery_staff table
+      const { data: staff, error: staffError } = await supabase
+        .from('water_delivery_staff')
         .insert({
-          id: profileId,
           first_name: input.first_name,
           last_name: input.last_name,
-          middle_name: input.middle_name,
+          middle_name: input.middle_name || null,
           email: input.email,
-          phone: input.phone,
-          job_title: input.job_title,
-          department: input.department,
+          phone: input.phone || null,
+          job_title: input.job_title || null,
+          department: input.department || null,
           shop_id: shopId,
-          has_auth_account: false,
+          is_active: true,
+          created_by: user?.id || null,
         })
         .select()
         .single();
 
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
-        throw profileError;
+      if (staffError) {
+        console.error('Error creating staff:', staffError);
+        throw staffError;
       }
 
       // Assign role if provided
-      if (input.role_id && profile) {
+      if (input.role_id && staff) {
         const { error: roleError } = await supabase
-          .from('user_roles')
+          .from('water_delivery_staff_roles')
           .insert({
-            user_id: profile.id,
+            staff_id: staff.id,
             role_id: input.role_id,
+            assigned_by: user?.id || null,
           });
 
         if (roleError) {
           console.error('Error assigning role:', roleError);
-          // Don't throw - profile was created successfully
+          // Don't throw - staff was created successfully
+          toast.warning('Staff created but role assignment failed');
         }
       }
 
-      // Send invitation if requested
-      if (input.send_invitation && profile) {
-        const { error: inviteError } = await supabase.functions.invoke('invite-team-member', {
-          body: {
-            email: input.email,
-            firstName: input.first_name,
-            lastName: input.last_name,
-            profileId: profile.id,
-            roleId: input.role_id || '',
-            shopId: shopId,
-            password: input.password,
-          },
-        });
-
-        if (inviteError) {
-          console.error('Error sending invitation:', inviteError);
-          // Don't throw - profile was created
-          toast.warning('Staff created but invitation failed to send');
-        }
+      // If send_invitation is true, we would need to create an auth user
+      // and link them to this staff record via profile_id
+      // For now, we skip this as staff can exist without auth accounts
+      if (input.send_invitation) {
+        toast.info('Staff created. Invitation system coming soon.');
       }
 
-      return profile;
+      return staff;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['water-delivery-staff', shopId] });
@@ -195,7 +164,11 @@ export function useWaterDeliveryStaff() {
     },
     onError: (error: any) => {
       console.error('Error creating staff:', error);
-      toast.error(error.message || 'Failed to create staff member');
+      if (error.code === '23505') {
+        toast.error('A staff member with this email already exists');
+      } else {
+        toast.error(error.message || 'Failed to create staff member');
+      }
     },
   });
 
@@ -204,7 +177,7 @@ export function useWaterDeliveryStaff() {
       const { id, ...updates } = input;
 
       const { data, error } = await supabase
-        .from('profiles')
+        .from('water_delivery_staff')
         .update(updates)
         .eq('id', id)
         .select()
@@ -228,18 +201,21 @@ export function useWaterDeliveryStaff() {
 
   const assignRoleMutation = useMutation({
     mutationFn: async ({ staffId, roleId }: { staffId: string; roleId: string }) => {
-      // First remove existing roles
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // First remove existing roles for this staff member
       await supabase
-        .from('user_roles')
+        .from('water_delivery_staff_roles')
         .delete()
-        .eq('user_id', staffId);
+        .eq('staff_id', staffId);
 
       // Then assign new role
       const { error } = await supabase
-        .from('user_roles')
+        .from('water_delivery_staff_roles')
         .insert({
-          user_id: staffId,
+          staff_id: staffId,
           role_id: roleId,
+          assigned_by: user?.id || null,
         });
 
       if (error) throw error;
@@ -255,41 +231,23 @@ export function useWaterDeliveryStaff() {
 
   const resendInvitationMutation = useMutation({
     mutationFn: async (staff: WaterDeliveryStaffMember) => {
-      if (!shopId) throw new Error('Shop ID is required');
-
-      const roleId = staff.roles[0]?.id || '';
-
-      const { error } = await supabase.functions.invoke('invite-team-member', {
-        body: {
-          email: staff.email,
-          firstName: staff.first_name,
-          lastName: staff.last_name,
-          profileId: staff.id,
-          roleId: roleId,
-          shopId: shopId,
-        },
-      });
-
-      if (error) throw error;
+      // Future implementation - would send invitation email
+      toast.info('Invitation system coming soon');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['water-delivery-staff', shopId] });
-      toast.success('Invitation sent successfully');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to send invitation');
     },
   });
 
-  // Note: Deactivation would require adding is_active column to profiles table
-  // For now, we'll just delete the user_roles to effectively deactivate
   const deactivateStaffMutation = useMutation({
     mutationFn: async (staffId: string) => {
-      // Remove all roles to deactivate
       const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', staffId);
+        .from('water_delivery_staff')
+        .update({ is_active: false })
+        .eq('id', staffId);
 
       if (error) throw error;
     },
@@ -304,11 +262,16 @@ export function useWaterDeliveryStaff() {
 
   const reactivateStaffMutation = useMutation({
     mutationFn: async (staffId: string) => {
-      // This would need a role to reactivate - for now just notify
-      toast.info('Please assign a role to reactivate this staff member');
+      const { error } = await supabase
+        .from('water_delivery_staff')
+        .update({ is_active: true })
+        .eq('id', staffId);
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['water-delivery-staff', shopId] });
+      toast.success('Staff member reactivated');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to reactivate staff member');
