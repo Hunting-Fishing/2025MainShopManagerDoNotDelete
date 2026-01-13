@@ -18,7 +18,8 @@ export interface WaterSpecialRate {
   updated_at: string;
   water_delivery_customers?: {
     company_name?: string;
-    contact_name: string;
+    first_name: string;
+    last_name?: string;
   };
   water_delivery_products?: {
     product_name: string;
@@ -39,7 +40,8 @@ export function useWaterSpecialRates(shopId: string | null) {
           *,
           water_delivery_customers (
             company_name,
-            contact_name
+            first_name,
+            last_name
           ),
           water_delivery_products (
             product_name

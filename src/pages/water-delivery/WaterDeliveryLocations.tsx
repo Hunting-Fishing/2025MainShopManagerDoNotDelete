@@ -24,7 +24,7 @@ export default function WaterDeliveryLocations() {
         .from('water_delivery_locations')
         .select(`
           *,
-          water_delivery_customers (company_name, contact_name)
+          water_delivery_customers (company_name, first_name, last_name)
         `)
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });

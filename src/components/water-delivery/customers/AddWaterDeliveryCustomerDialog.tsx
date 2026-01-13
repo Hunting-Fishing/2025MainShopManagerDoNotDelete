@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Building2 } from 'lucide-react';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 
 interface AddWaterDeliveryCustomerDialogProps {
@@ -36,8 +36,8 @@ export function AddWaterDeliveryCustomerDialog({
   const { shopId } = useShopId();
 
   const [formData, setFormData] = useState({
-    company_name: '',
-    contact_name: '',
+    first_name: '',
+    last_name: '',
     email: '',
     phone: '',
     billing_address: '',
@@ -45,6 +45,14 @@ export function AddWaterDeliveryCustomerDialog({
     billing_state: '',
     billing_zip: '',
     is_commercial: false,
+    // Commercial fields
+    company_name: '',
+    business_type: '',
+    tax_id: '',
+    billing_contact_name: '',
+    billing_contact_email: '',
+    billing_contact_phone: '',
+    // Account fields
     payment_terms: 'COD',
     credit_limit: 0,
     requires_po: false,
@@ -63,8 +71,8 @@ export function AddWaterDeliveryCustomerDialog({
         .from('water_delivery_customers')
         .insert({
           shop_id: shopId,
-          company_name: data.company_name || null,
-          contact_name: data.contact_name,
+          first_name: data.first_name,
+          last_name: data.last_name || null,
           email: data.email || null,
           phone: data.phone || null,
           billing_address: data.billing_address || null,
@@ -72,6 +80,12 @@ export function AddWaterDeliveryCustomerDialog({
           billing_state: data.billing_state || null,
           billing_zip: data.billing_zip || null,
           is_commercial: data.is_commercial,
+          company_name: data.is_commercial ? (data.company_name || null) : null,
+          business_type: data.is_commercial ? (data.business_type || null) : null,
+          tax_id: data.is_commercial ? (data.tax_id || null) : null,
+          billing_contact_name: data.is_commercial ? (data.billing_contact_name || null) : null,
+          billing_contact_email: data.is_commercial ? (data.billing_contact_email || null) : null,
+          billing_contact_phone: data.is_commercial ? (data.billing_contact_phone || null) : null,
           payment_terms: data.payment_terms,
           credit_limit: data.credit_limit,
           requires_po: data.requires_po,
@@ -106,8 +120,8 @@ export function AddWaterDeliveryCustomerDialog({
 
   const resetForm = () => {
     setFormData({
-      company_name: '',
-      contact_name: '',
+      first_name: '',
+      last_name: '',
       email: '',
       phone: '',
       billing_address: '',
@@ -115,6 +129,12 @@ export function AddWaterDeliveryCustomerDialog({
       billing_state: '',
       billing_zip: '',
       is_commercial: false,
+      company_name: '',
+      business_type: '',
+      tax_id: '',
+      billing_contact_name: '',
+      billing_contact_email: '',
+      billing_contact_phone: '',
       payment_terms: 'COD',
       credit_limit: 0,
       requires_po: false,
@@ -128,8 +148,8 @@ export function AddWaterDeliveryCustomerDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.contact_name.trim()) {
-      toast({ title: 'Contact name is required', variant: 'destructive' });
+    if (!formData.first_name.trim()) {
+      toast({ title: 'First name is required', variant: 'destructive' });
       return;
     }
     createMutation.mutate(formData);
@@ -159,22 +179,22 @@ export function AddWaterDeliveryCustomerDialog({
             <TabsContent value="basic" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="contact_name">Contact Name *</Label>
+                  <Label htmlFor="first_name">First Name *</Label>
                   <Input
-                    id="contact_name"
-                    value={formData.contact_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
-                    placeholder="John Smith"
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                    placeholder="John"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="company_name">Company Name</Label>
+                  <Label htmlFor="last_name">Last Name</Label>
                   <Input
-                    id="company_name"
-                    value={formData.company_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
-                    placeholder="ABC Company"
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                    placeholder="Smith"
                   />
                 </div>
               </div>
@@ -209,6 +229,95 @@ export function AddWaterDeliveryCustomerDialog({
                 />
                 <Label htmlFor="is_commercial">Commercial Account</Label>
               </div>
+
+              {/* Commercial Account Section */}
+              {formData.is_commercial && (
+                <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Building2 className="h-4 w-4" />
+                    Commercial Account Details
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="company_name">Company Name *</Label>
+                      <Input
+                        id="company_name"
+                        value={formData.company_name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                        placeholder="ABC Company"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="business_type">Business Type</Label>
+                      <Select
+                        value={formData.business_type}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, business_type: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="retail">Retail</SelectItem>
+                          <SelectItem value="restaurant">Restaurant</SelectItem>
+                          <SelectItem value="office">Office</SelectItem>
+                          <SelectItem value="industrial">Industrial</SelectItem>
+                          <SelectItem value="healthcare">Healthcare</SelectItem>
+                          <SelectItem value="education">Education</SelectItem>
+                          <SelectItem value="government">Government</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tax_id">Tax ID / EIN</Label>
+                    <Input
+                      id="tax_id"
+                      value={formData.tax_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tax_id: e.target.value }))}
+                      placeholder="XX-XXXXXXX"
+                    />
+                  </div>
+
+                  <div className="border-t pt-4 mt-4">
+                    <p className="text-sm font-medium mb-3">Billing Contact (if different)</p>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="billing_contact_name">Contact Name</Label>
+                        <Input
+                          id="billing_contact_name"
+                          value={formData.billing_contact_name}
+                          onChange={(e) => setFormData(prev => ({ ...prev, billing_contact_name: e.target.value }))}
+                          placeholder="Jane Doe"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="billing_contact_email">Email</Label>
+                          <Input
+                            id="billing_contact_email"
+                            type="email"
+                            value={formData.billing_contact_email}
+                            onChange={(e) => setFormData(prev => ({ ...prev, billing_contact_email: e.target.value }))}
+                            placeholder="billing@company.com"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="billing_contact_phone">Phone</Label>
+                          <Input
+                            id="billing_contact_phone"
+                            value={formData.billing_contact_phone}
+                            onChange={(e) => setFormData(prev => ({ ...prev, billing_contact_phone: e.target.value }))}
+                            placeholder="(555) 123-4567"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes</Label>

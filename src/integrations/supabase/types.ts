@@ -40442,18 +40442,23 @@ export type Database = {
           account_number: string | null
           billing_address: string | null
           billing_city: string | null
+          billing_contact_email: string | null
+          billing_contact_name: string | null
+          billing_contact_phone: string | null
           billing_state: string | null
           billing_zip: string | null
+          business_type: string | null
           company_name: string | null
-          contact_name: string
           created_at: string
           credit_limit: number | null
           customer_id: string | null
           default_product_id: string | null
           email: string | null
+          first_name: string
           id: string
           is_active: boolean | null
           is_commercial: boolean | null
+          last_name: string | null
           notes: string | null
           payment_terms: string | null
           phone: string | null
@@ -40463,24 +40468,30 @@ export type Database = {
           shop_id: string
           tax_exempt: boolean | null
           tax_exempt_number: string | null
+          tax_id: string | null
           updated_at: string
         }
         Insert: {
           account_number?: string | null
           billing_address?: string | null
           billing_city?: string | null
+          billing_contact_email?: string | null
+          billing_contact_name?: string | null
+          billing_contact_phone?: string | null
           billing_state?: string | null
           billing_zip?: string | null
+          business_type?: string | null
           company_name?: string | null
-          contact_name: string
           created_at?: string
           credit_limit?: number | null
           customer_id?: string | null
           default_product_id?: string | null
           email?: string | null
+          first_name: string
           id?: string
           is_active?: boolean | null
           is_commercial?: boolean | null
+          last_name?: string | null
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
@@ -40490,24 +40501,30 @@ export type Database = {
           shop_id: string
           tax_exempt?: boolean | null
           tax_exempt_number?: string | null
+          tax_id?: string | null
           updated_at?: string
         }
         Update: {
           account_number?: string | null
           billing_address?: string | null
           billing_city?: string | null
+          billing_contact_email?: string | null
+          billing_contact_name?: string | null
+          billing_contact_phone?: string | null
           billing_state?: string | null
           billing_zip?: string | null
+          business_type?: string | null
           company_name?: string | null
-          contact_name?: string
           created_at?: string
           credit_limit?: number | null
           customer_id?: string | null
           default_product_id?: string | null
           email?: string | null
+          first_name?: string
           id?: string
           is_active?: boolean | null
           is_commercial?: boolean | null
+          last_name?: string | null
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
@@ -40517,6 +40534,7 @@ export type Database = {
           shop_id?: string
           tax_exempt?: boolean | null
           tax_exempt_number?: string | null
+          tax_id?: string | null
           updated_at?: string
         }
         Relationships: [

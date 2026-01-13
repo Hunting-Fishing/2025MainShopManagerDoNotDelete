@@ -25,7 +25,7 @@ export default function WaterDeliveryInvoices() {
         .from('water_delivery_invoices')
         .select(`
           *,
-          water_delivery_customers (company_name, contact_name)
+          water_delivery_customers (company_name, first_name, last_name)
         `)
         .eq('shop_id', shopId)
         .order('invoice_date', { ascending: false });
@@ -37,7 +37,8 @@ export default function WaterDeliveryInvoices() {
 
   const filteredInvoices = invoices?.filter(invoice => 
     invoice.invoice_number?.toLowerCase().includes(search.toLowerCase()) ||
-    invoice.water_delivery_customers?.company_name?.toLowerCase().includes(search.toLowerCase())
+    invoice.water_delivery_customers?.company_name?.toLowerCase().includes(search.toLowerCase()) ||
+    invoice.water_delivery_customers?.first_name?.toLowerCase().includes(search.toLowerCase())
   );
 
   const getStatusBadge = (status: string) => {
@@ -118,7 +119,7 @@ export default function WaterDeliveryInvoices() {
                   <TableRow key={invoice.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
                     <TableCell>
-                      {invoice.water_delivery_customers?.company_name || invoice.water_delivery_customers?.contact_name}
+                      {invoice.water_delivery_customers?.company_name || `${invoice.water_delivery_customers?.first_name || ''} ${invoice.water_delivery_customers?.last_name || ''}`.trim()}
                     </TableCell>
                     <TableCell>
                       {invoice.invoice_date 
