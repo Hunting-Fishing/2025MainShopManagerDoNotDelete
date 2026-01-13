@@ -18,6 +18,8 @@ export interface ShopData {
   onboarding_completed?: boolean;
   setup_step?: number;
   onboarding_data?: Record<string, any>;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface CompanyInfo {

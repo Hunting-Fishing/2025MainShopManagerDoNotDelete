@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Navigation, Clock, Route, MapPin, AlertTriangle, Droplets } from 'lucide-react';
+import { Loader2, Navigation, Clock, Route, MapPin, AlertTriangle, Droplets, LocateFixed, Building2, Globe } from 'lucide-react';
 import { useRouteOptimization, Location, RouteOptimizationResult } from '@/hooks/useMapbox';
 import { cn } from '@/lib/utils';
 import { useMapboxPublicToken } from '@/hooks/useMapboxPublicToken';
 import { validateMapboxPublicToken } from '@/lib/mapbox/validateMapboxPublicToken';
 import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
+import { useMapDefaultCenter } from '@/hooks/useMapDefaultCenter';
 
 interface WaterDeliveryRouteMapProps {
   origin?: [number, number];
@@ -21,6 +22,7 @@ interface WaterDeliveryRouteMapProps {
   showOptimizeButton?: boolean;
   autoOptimize?: boolean;
   height?: string;
+  shopId?: string;
 }
 
 export function WaterDeliveryRouteMap({
@@ -31,11 +33,22 @@ export function WaterDeliveryRouteMap({
   showOptimizeButton = true,
   autoOptimize = false,
   height = '400px',
+  shopId,
 }: WaterDeliveryRouteMapProps) {
   const { token, setToken, isLoading: tokenLoading } = useMapboxPublicToken();
   const [tokenInput, setTokenInput] = useState(token);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const { formatDistance } = useWaterUnits();
+  
+  // Smart map centering - prioritizes driver location, then shop, then US center
+  const { 
+    center: smartCenter, 
+    source: centerSource, 
+    requestDriverLocation,
+    usingDriverLocation,
+    sourceLabel,
+    isLoading: centerLoading,
+  } = useMapDefaultCenter({ shopId, enableDriverLocation: true });
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -45,8 +58,8 @@ export function WaterDeliveryRouteMap({
 
   const routeOptimization = useRouteOptimization();
 
-  // Default origin (can be set to shop location)
-  const defaultOrigin: [number, number] = origin || [-98.5795, 39.8283]; // Center of US
+  // Use provided origin, or fall back to smart center
+  const defaultOrigin: [number, number] = origin || smartCenter;
 
   useEffect(() => {
     setTokenInput(token);
@@ -314,6 +327,43 @@ export function WaterDeliveryRouteMap({
       <Card className="overflow-hidden">
         <div className="relative w-full" style={{ height }}>
           <div ref={mapContainer} className="absolute inset-0" />
+          
+          {/* Location Source Indicator */}
+          {token && !tokenError && mapLoaded && (
+            <div className="absolute top-3 left-3 z-10">
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium shadow-md",
+                  centerSource === 'driver' && "bg-blue-100 text-blue-700 border-blue-200",
+                  centerSource === 'shop' && "bg-cyan-100 text-cyan-700 border-cyan-200",
+                  centerSource === 'fallback' && "bg-slate-100 text-slate-600 border-slate-200"
+                )}
+              >
+                {centerSource === 'driver' && <LocateFixed className="h-3 w-3" />}
+                {centerSource === 'shop' && <Building2 className="h-3 w-3" />}
+                {centerSource === 'fallback' && <Globe className="h-3 w-3" />}
+                {sourceLabel}
+              </Badge>
+            </div>
+          )}
+          
+          {/* My Location Button */}
+          {token && !tokenError && mapLoaded && !usingDriverLocation && (
+            <div className="absolute bottom-3 left-3 z-10">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={requestDriverLocation}
+                disabled={centerLoading}
+                className="shadow-md bg-white/90 hover:bg-white"
+              >
+                <LocateFixed className="h-4 w-4 mr-1.5" />
+                My Location
+              </Button>
+            </div>
+          )}
+          
           {!token && (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground p-6 text-center bg-muted/50">
               <div className="text-center">
