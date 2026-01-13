@@ -124,6 +124,20 @@ export function RouteMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // Update map center when smartCenter changes (e.g., when business location loads)
+  useEffect(() => {
+    if (!map.current || !mapLoaded || centerLoading) return;
+    
+    // Only recenter if we have a shop location and no destinations/origin to show
+    if (centerSource === 'shop' && !origin && destinations.length === 0) {
+      map.current.flyTo({
+        center: smartCenter,
+        zoom: 10,
+        duration: 1500,
+      });
+    }
+  }, [smartCenter, centerSource, mapLoaded, centerLoading, origin, destinations.length]);
+
   // Update markers when destinations change
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
