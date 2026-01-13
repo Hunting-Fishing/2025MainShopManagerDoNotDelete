@@ -19,7 +19,7 @@ export function CustomerLocationsTab({ customerId }: CustomerLocationsTabProps) 
         .from('water_delivery_locations')
         .select('*')
         .eq('customer_id', customerId)
-        .order('name');
+        .order('location_name');
       if (error) throw error;
       return data || [];
     },
@@ -45,7 +45,7 @@ export function CustomerLocationsTab({ customerId }: CustomerLocationsTabProps) 
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-cyan-600 mt-1" />
                     <div>
-                      <p className="font-medium">{loc.name}</p>
+                      <p className="font-medium">{loc.location_name}</p>
                       <p className="text-sm text-muted-foreground">
                         {[loc.address, loc.city, loc.state, loc.zip].filter(Boolean).join(', ')}
                       </p>

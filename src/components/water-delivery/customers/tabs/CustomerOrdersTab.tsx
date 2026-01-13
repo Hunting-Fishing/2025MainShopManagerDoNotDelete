@@ -52,7 +52,7 @@ export function CustomerOrdersTab({ customerId }: CustomerOrdersTabProps) {
                 {orders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">{order.order_number}</TableCell>
-                    <TableCell>{order.delivery_date ? format(new Date(order.delivery_date), 'MMM d, yyyy') : '-'}</TableCell>
+                    <TableCell>{order.order_date ? format(new Date(order.order_date), 'MMM d, yyyy') : '-'}</TableCell>
                     <TableCell>{order.quantity_gallons?.toLocaleString()}</TableCell>
                     <TableCell>{formatCurrency(order.total_amount || 0)}</TableCell>
                     <TableCell><Badge variant="outline">{order.status}</Badge></TableCell>

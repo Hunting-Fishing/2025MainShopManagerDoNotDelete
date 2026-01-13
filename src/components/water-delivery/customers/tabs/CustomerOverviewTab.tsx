@@ -26,7 +26,7 @@ export function CustomerOverviewTab({ customerId }: CustomerOverviewTabProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('water_delivery_orders')
-        .select('id, order_number, status, delivery_date, total_amount, quantity_gallons')
+        .select('id, order_number, status, order_date, total_amount, quantity_gallons')
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false })
         .limit(5);
@@ -153,7 +153,7 @@ export function CustomerOverviewTab({ customerId }: CustomerOverviewTabProps) {
                     <div>
                       <p className="font-medium">{order.order_number}</p>
                       <p className="text-sm text-muted-foreground">
-                        {order.delivery_date ? format(new Date(order.delivery_date), 'MMM d, yyyy') : '-'}
+                        {order.order_date ? format(new Date(order.order_date), 'MMM d, yyyy') : '-'}
                       </p>
                     </div>
                     {getStatusBadge(order.status)}
