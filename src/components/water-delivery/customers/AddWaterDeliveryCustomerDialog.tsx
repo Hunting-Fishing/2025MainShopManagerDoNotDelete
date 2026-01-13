@@ -18,6 +18,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
 import { Loader2 } from 'lucide-react';
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 
 interface AddWaterDeliveryCustomerDialogProps {
   open: boolean;
@@ -225,11 +226,20 @@ export function AddWaterDeliveryCustomerDialog({
             <TabsContent value="billing" className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="billing_address">Street Address</Label>
-                <Input
+                <AddressAutocomplete
                   id="billing_address"
                   value={formData.billing_address}
-                  onChange={(e) => setFormData(prev => ({ ...prev, billing_address: e.target.value }))}
-                  placeholder="123 Main St"
+                  onChange={(value) => setFormData(prev => ({ ...prev, billing_address: value }))}
+                  onAddressSelect={(addr) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      billing_address: addr.street,
+                      billing_city: addr.city,
+                      billing_state: addr.state,
+                      billing_zip: addr.zip,
+                    }));
+                  }}
+                  placeholder="Start typing an address..."
                 />
               </div>
 
