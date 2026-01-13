@@ -45682,6 +45682,10 @@ export type Database = {
         }
         Returns: Json
       }
+      check_user_is_admin_or_owner: {
+        Args: { check_user_id: string }
+        Returns: boolean
+      }
       check_user_role_secure: {
         Args: { check_user_id: string; required_role: string }
         Returns: boolean
