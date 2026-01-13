@@ -9,9 +9,10 @@ interface StaffManagementGuardProps {
 }
 
 export function StaffManagementGuard({ children, fallback }: StaffManagementGuardProps) {
-  const { isOwner, isManager, isAdmin, isLoading, userRoles } = useAuthUser();
+  const { isOwner, isManager, isAdmin, isLoading, isRolesLoading, userRoles } = useAuthUser();
 
-  if (isLoading) {
+  // Show loading if auth OR roles are still loading
+  if (isLoading || isRolesLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
@@ -56,10 +57,10 @@ export function StaffManagementGuard({ children, fallback }: StaffManagementGuar
 
 // Hook to check if user can manage staff
 export function useCanManageStaff() {
-  const { isOwner, isManager, isAdmin, isLoading } = useAuthUser();
+  const { isOwner, isManager, isAdmin, isLoading, isRolesLoading } = useAuthUser();
   return {
     canManage: isOwner || isManager || isAdmin,
     canDeactivate: isOwner, // Only owners can deactivate
-    isLoading,
+    isLoading: isLoading || isRolesLoading,
   };
 }

@@ -21,14 +21,15 @@ export function RoleGuard({
   requireAdmin = false,
   fallback 
 }: RoleGuardProps) {
-  const { isLoading, isAuthenticated, isOwner, isAdmin, isManager, userRoles, error } = useAuthUser();
+  const { isLoading, isRolesLoading, isAuthenticated, isOwner, isAdmin, isManager, userRoles, error } = useAuthUser();
 
-  if (isLoading) {
+  // Show loading if auth OR roles are still loading
+  if (isLoading || isRolesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-500">Checking permissions...</p>
+          <p className="text-muted-foreground">Checking permissions...</p>
         </div>
       </div>
     );

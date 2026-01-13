@@ -8,6 +8,7 @@ export function useAuthUser() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRolesLoading, setIsRolesLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
@@ -19,29 +20,115 @@ export function useAuthUser() {
   
   const { attemptSessionRecovery, isRecoveryInProgress } = useSessionRecovery();
 
+  // Function to fetch user roles from database with recovery support
+  const fetchUserRoles = useCallback(async (authUserId: string, retryWithRecovery = true): Promise<void> => {
+    setIsRolesLoading(true);
+    try {
+      console.log('🔍 Fetching user roles for auth.uid():', authUserId);
+      
+      // First try direct auth.uid() lookup (newer pattern)
+      const { data: directRoles, error: directError } = await supabase
+        .from('user_roles')
+        .select(`roles (name)`)
+        .eq('user_id', authUserId);
+
+      if (!directError && directRoles && directRoles.length > 0) {
+        const roleNames = directRoles.map(item => (item.roles as any)?.name).filter(Boolean) as string[];
+        console.log('✅ User roles fetched via auth.uid():', roleNames);
+        
+        setUserRoles(roleNames);
+        setIsAdmin(roleNames.includes('admin'));
+        setIsOwner(roleNames.includes('owner'));
+        setIsManager(roleNames.includes('manager') || roleNames.includes('yard_manager'));
+        setError(null);
+        return;
+      }
+
+      // If no roles found directly, try via profile.id (older pattern)
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id')
+        .or(`user_id.eq.${authUserId},id.eq.${authUserId}`)
+        .maybeSingle();
+
+      const profileId = profileData?.id;
+      
+      if (profileId && profileId !== authUserId) {
+        console.log('🔍 Trying profile.id lookup:', profileId);
+        
+        const { data: profileRoles, error: profileError } = await supabase
+          .from('user_roles')
+          .select(`roles (name)`)
+          .eq('user_id', profileId);
+
+        if (!profileError && profileRoles && profileRoles.length > 0) {
+          const roleNames = profileRoles.map(item => (item.roles as any)?.name).filter(Boolean) as string[];
+          console.log('✅ User roles fetched via profile.id:', roleNames);
+          
+          setUserRoles(roleNames);
+          setIsAdmin(roleNames.includes('admin'));
+          setIsOwner(roleNames.includes('owner'));
+          setIsManager(roleNames.includes('manager') || roleNames.includes('yard_manager'));
+          setError(null);
+          return;
+        }
+
+        if (profileError) {
+          if (retryWithRecovery && profileError.message?.toLowerCase().includes('jwt') && !isRecoveryInProgress()) {
+            console.log('🔄 JWT error detected, attempting session recovery...');
+            const recoveryResult = await attemptSessionRecovery({ maxRetries: 2 });
+            
+            if (recoveryResult.success) {
+              console.log('✅ Session recovered, retrying role fetch...');
+              return fetchUserRoles(authUserId, false);
+            }
+          }
+        }
+      }
+
+      // No roles found via either pattern
+      console.warn('⚠️ No roles found for user:', authUserId);
+      setUserRoles([]);
+      setIsAdmin(false);
+      setIsOwner(false);
+      setIsManager(false);
+      
+    } catch (err) {
+      console.error('❌ Error in fetchUserRoles:', err);
+      setUserRoles([]);
+      setIsAdmin(false);
+      setIsOwner(false);
+      setIsManager(false);
+      setError('Failed to load user permissions');
+    } finally {
+      setIsRolesLoading(false);
+    }
+  }, [attemptSessionRecovery, isRecoveryInProgress]);
+
   // Memoized auth state handler to prevent unnecessary re-renders
-  const handleAuthStateChange = useCallback((event: string, session: Session | null) => {
-    console.log('useAuthUser: Auth state change:', event, session?.user?.id);
+  const handleAuthStateChange = useCallback((event: string, currentSession: Session | null) => {
+    console.log('useAuthUser: Auth state change:', event, currentSession?.user?.id);
     
     try {
       setError(null);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsAuthenticated(!!session);
-      setUserId(session?.user?.id ?? null);
-      setUserName(session?.user?.email ?? session?.user?.user_metadata?.full_name ?? null);
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setIsAuthenticated(!!currentSession);
+      setUserId(currentSession?.user?.id ?? null);
+      setUserName(currentSession?.user?.email ?? currentSession?.user?.user_metadata?.full_name ?? null);
       
       // Fetch real user roles from database
-      if (session?.user?.id) {
-        // Use setTimeout to prevent potential deadlocks with auth state changes
-        setTimeout(() => {
-          fetchUserRoles(session.user.id);
-        }, 0);
+      if (currentSession?.user?.id) {
+        // Fetch roles - isLoading stays true until roles are fetched
+        fetchUserRoles(currentSession.user.id).finally(() => {
+          setIsLoading(false);
+        });
       } else {
         setIsAdmin(false);
         setIsOwner(false);
         setIsManager(false);
         setUserRoles([]);
+        setIsLoading(false);
       }
       
     } catch (err) {
@@ -52,11 +139,9 @@ export function useAuthUser() {
       setSession(null);
       setUserId(null);
       setUserName(null);
-    } finally {
-      // Always set loading to false after handling auth state change
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchUserRoles]);
 
   useEffect(() => {
     console.log('useAuthUser: Setting up auth state listener...');
@@ -121,94 +206,6 @@ export function useAuthUser() {
     };
   }, [handleAuthStateChange]);
 
-  // Function to fetch user roles from database with recovery support
-  // Handles both patterns: user_roles.user_id = auth.uid() OR user_roles.user_id = profile.id
-  const fetchUserRoles = useCallback(async (authUserId: string, retryWithRecovery = true) => {
-    try {
-      console.log('🔍 Fetching user roles for auth.uid():', authUserId);
-      
-      // Try both patterns in parallel for efficiency
-      // Pattern 1: user_roles.user_id = auth.uid() (newer pattern)
-      // Pattern 2: user_roles.user_id = profile.id (older pattern)
-      
-      // First try direct auth.uid() lookup (newer pattern)
-      const { data: directRoles, error: directError } = await supabase
-        .from('user_roles')
-        .select(`roles (name)`)
-        .eq('user_id', authUserId);
-
-      if (!directError && directRoles && directRoles.length > 0) {
-        const roleNames = directRoles.map(item => (item.roles as any)?.name).filter(Boolean) as string[];
-        console.log('✅ User roles fetched via auth.uid():', roleNames);
-        
-        setUserRoles(roleNames);
-        setIsAdmin(roleNames.includes('admin'));
-        setIsOwner(roleNames.includes('owner'));
-        setIsManager(roleNames.includes('manager') || roleNames.includes('yard_manager'));
-        setError(null);
-        return;
-      }
-
-      // If no roles found directly, try via profile.id (older pattern)
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id')
-        .or(`user_id.eq.${authUserId},id.eq.${authUserId}`)
-        .maybeSingle();
-
-      const profileId = profileData?.id;
-      
-      if (profileId && profileId !== authUserId) {
-        console.log('🔍 Trying profile.id lookup:', profileId);
-        
-        const { data: profileRoles, error: profileError } = await supabase
-          .from('user_roles')
-          .select(`roles (name)`)
-          .eq('user_id', profileId);
-
-        if (!profileError && profileRoles && profileRoles.length > 0) {
-          const roleNames = profileRoles.map(item => (item.roles as any)?.name).filter(Boolean) as string[];
-          console.log('✅ User roles fetched via profile.id:', roleNames);
-          
-          setUserRoles(roleNames);
-          setIsAdmin(roleNames.includes('admin'));
-          setIsOwner(roleNames.includes('owner'));
-          setIsManager(roleNames.includes('manager') || roleNames.includes('yard_manager'));
-          setError(null);
-          return;
-        }
-
-        if (profileError) {
-          // Handle auth errors with recovery
-          if (retryWithRecovery && profileError.message?.toLowerCase().includes('jwt') && !isRecoveryInProgress()) {
-            console.log('🔄 JWT error detected, attempting session recovery...');
-            const recoveryResult = await attemptSessionRecovery({ maxRetries: 2 });
-            
-            if (recoveryResult.success) {
-              console.log('✅ Session recovered, retrying role fetch...');
-              return fetchUserRoles(authUserId, false);
-            }
-          }
-        }
-      }
-
-      // No roles found via either pattern
-      console.warn('⚠️ No roles found for user:', authUserId);
-      setUserRoles([]);
-      setIsAdmin(false);
-      setIsOwner(false);
-      setIsManager(false);
-      
-    } catch (err) {
-      console.error('❌ Error in fetchUserRoles:', err);
-      setUserRoles([]);
-      setIsAdmin(false);
-      setIsOwner(false);
-      setIsManager(false);
-      setError('Failed to load user permissions');
-    }
-  }, [attemptSessionRecovery, isRecoveryInProgress]);
-
   const refetchRoles = useCallback(() => {
     if (userId) {
       return fetchUserRoles(userId);
@@ -220,6 +217,7 @@ export function useAuthUser() {
     user,
     session,
     isLoading,
+    isRolesLoading,
     isAuthenticated,
     isAdmin,
     isOwner,
