@@ -7,7 +7,8 @@ import {
   ClipboardList, 
   FileText, 
   Receipt, 
-  StickyNote 
+  StickyNote,
+  History 
 } from 'lucide-react';
 import { CustomerOverviewTab } from './tabs/CustomerOverviewTab';
 import { CustomerLocationsTab } from './tabs/CustomerLocationsTab';
@@ -16,6 +17,7 @@ import { CustomerOrdersTab } from './tabs/CustomerOrdersTab';
 import { CustomerQuotesTab } from './tabs/CustomerQuotesTab';
 import { CustomerInvoicesTab } from './tabs/CustomerInvoicesTab';
 import { CustomerNotesTab } from './tabs/CustomerNotesTab';
+import { CustomerHistoryTab } from './tabs/CustomerHistoryTab';
 
 interface WaterDeliveryCustomerTabsProps {
   customerId: string;
@@ -53,6 +55,10 @@ export function WaterDeliveryCustomerTabs({ customerId }: WaterDeliveryCustomerT
           <StickyNote className="h-4 w-4" />
           <span className="hidden sm:inline">Notes</span>
         </TabsTrigger>
+        <TabsTrigger value="history" className="flex items-center gap-2">
+          <History className="h-4 w-4" />
+          <span className="hidden sm:inline">History</span>
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview" className="mt-6">
@@ -81,6 +87,10 @@ export function WaterDeliveryCustomerTabs({ customerId }: WaterDeliveryCustomerT
 
       <TabsContent value="notes" className="mt-6">
         <CustomerNotesTab customerId={customerId} />
+      </TabsContent>
+
+      <TabsContent value="history" className="mt-6">
+        <CustomerHistoryTab customerId={customerId} />
       </TabsContent>
     </Tabs>
   );

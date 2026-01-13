@@ -103,7 +103,11 @@ export default function WaterDeliveryCustomers() {
               </TableHeader>
               <TableBody>
                 {filteredCustomers.map((customer) => (
-                  <TableRow key={customer.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableRow 
+                    key={customer.id} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => navigate(`/water-delivery/customers/${customer.id}`)}
+                  >
                     <TableCell className="font-medium">{customer.company_name || '-'}</TableCell>
                     <TableCell>{customer.first_name} {customer.last_name}</TableCell>
                     <TableCell>
