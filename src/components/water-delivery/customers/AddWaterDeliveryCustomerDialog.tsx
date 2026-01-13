@@ -48,6 +48,7 @@ export function AddWaterDeliveryCustomerDialog({
     // Commercial fields
     company_name: '',
     business_type: '',
+    other_business_type: '',
     tax_id: '',
     billing_contact_name: '',
     billing_contact_email: '',
@@ -81,7 +82,9 @@ export function AddWaterDeliveryCustomerDialog({
           billing_zip: data.billing_zip || null,
           is_commercial: data.is_commercial,
           company_name: data.is_commercial ? (data.company_name || null) : null,
-          business_type: data.is_commercial ? (data.business_type || null) : null,
+          business_type: data.is_commercial 
+            ? (data.business_type === 'other' ? data.other_business_type : data.business_type) || null 
+            : null,
           tax_id: data.is_commercial ? (data.tax_id || null) : null,
           billing_contact_name: data.is_commercial ? (data.billing_contact_name || null) : null,
           billing_contact_email: data.is_commercial ? (data.billing_contact_email || null) : null,
@@ -131,6 +134,7 @@ export function AddWaterDeliveryCustomerDialog({
       is_commercial: false,
       company_name: '',
       business_type: '',
+      other_business_type: '',
       tax_id: '',
       billing_contact_name: '',
       billing_contact_email: '',
@@ -270,6 +274,18 @@ export function AddWaterDeliveryCustomerDialog({
                       </Select>
                     </div>
                   </div>
+
+                  {formData.business_type === 'other' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="other_business_type">Specify Business Type *</Label>
+                      <Input
+                        id="other_business_type"
+                        value={formData.other_business_type}
+                        onChange={(e) => setFormData(prev => ({ ...prev, other_business_type: e.target.value }))}
+                        placeholder="Enter business type..."
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="tax_id">Tax ID / EIN</Label>
