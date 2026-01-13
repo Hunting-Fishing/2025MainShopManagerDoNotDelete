@@ -41,6 +41,7 @@ export function WaterDeliveryRouteMap({
   const { formatDistance } = useWaterUnits();
   
   // Smart map centering - prioritizes driver location, then shop, then US center
+  // Use 'water' moduleType to fetch from water_delivery_settings table
   const { 
     center: smartCenter, 
     source: centerSource, 
@@ -48,7 +49,7 @@ export function WaterDeliveryRouteMap({
     usingDriverLocation,
     sourceLabel,
     isLoading: centerLoading,
-  } = useMapDefaultCenter({ shopId, enableDriverLocation: true });
+  } = useMapDefaultCenter({ shopId, enableDriverLocation: true, moduleType: 'water' });
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);

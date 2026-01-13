@@ -39,6 +39,7 @@ export function RouteMap({
   const { formatDistance, getDistanceLabel } = useFuelUnits();
   
   // Smart map centering - prioritizes driver location, then shop, then US center
+  // Use 'fuel' moduleType to fetch from fuel_delivery_settings table
   const { 
     center: smartCenter, 
     source: centerSource, 
@@ -46,7 +47,7 @@ export function RouteMap({
     usingDriverLocation,
     sourceLabel,
     isLoading: centerLoading,
-  } = useMapDefaultCenter({ shopId, enableDriverLocation: true });
+  } = useMapDefaultCenter({ shopId, enableDriverLocation: true, moduleType: 'fuel' });
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
