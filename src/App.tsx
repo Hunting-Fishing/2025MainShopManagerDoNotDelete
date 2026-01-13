@@ -1355,6 +1355,7 @@ function App() {
                   <Route path="/equipment" element={<WaterDeliveryEquipment />} />
                   <Route path="/equipment-filters" element={<WaterDeliveryEquipmentFilters />} />
                   <Route path="/quotes" element={<WaterDeliveryQuotes />} />
+                  <Route path="/staff" element={<WaterDeliveryStaff />} />
                   <Route path="/profile" element={<WaterDeliveryProfile />} />
                   <Route path="/settings" element={<WaterDeliverySettings />} />
                 </Routes>
