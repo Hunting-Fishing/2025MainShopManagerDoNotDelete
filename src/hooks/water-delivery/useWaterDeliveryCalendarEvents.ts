@@ -180,7 +180,7 @@ export function useWaterDeliveryCalendarEvents({
             priority,
             quantity_gallons,
             notes,
-            driver_id,
+            assigned_driver_id,
             customer_id,
             location_id
           `)
@@ -191,9 +191,9 @@ export function useWaterDeliveryCalendarEvents({
         if (ordersError) throw ordersError;
 
         // Fetch related data
-        const customerIds = [...new Set((ordersData || []).map(o => o.customer_id).filter(Boolean))];
-        const locationIds = [...new Set((ordersData || []).map(o => o.location_id).filter(Boolean))];
-        const driverIds = [...new Set((ordersData || []).map(o => o.driver_id).filter(Boolean))];
+        const customerIds = [...new Set((ordersData || []).map(o => o.customer_id).filter(Boolean))] as string[];
+        const locationIds = [...new Set((ordersData || []).map(o => o.location_id).filter(Boolean))] as string[];
+        const driverIds = [...new Set((ordersData || []).map(o => o.assigned_driver_id).filter(Boolean))] as string[];
 
         const [customersRes, locationsRes, driversRes] = await Promise.all([
           customerIds.length > 0 ? supabase.from('water_delivery_customers').select('id, name').in('id', customerIds) : { data: [] },
@@ -207,9 +207,9 @@ export function useWaterDeliveryCalendarEvents({
 
         (ordersData || []).forEach(order => {
           // Apply driver filter
-          if (driverFilter.length > 0 && order.driver_id && !driverFilter.includes(order.driver_id)) return;
+          if (driverFilter.length > 0 && order.assigned_driver_id && !driverFilter.includes(order.assigned_driver_id)) return;
 
-          const driver = order.driver_id ? driversMap.get(order.driver_id) : null;
+          const driver = order.assigned_driver_id ? driversMap.get(order.assigned_driver_id) : null;
           const customer = order.customer_id ? customersMap.get(order.customer_id) : null;
           const location = order.location_id ? locationsMap.get(order.location_id) : null;
           const priority = (order.priority as EventPriority) || 'normal';
@@ -237,7 +237,7 @@ export function useWaterDeliveryCalendarEvents({
             type: 'order',
             priority,
             status,
-            driverId: order.driver_id || undefined,
+            driverId: order.assigned_driver_id || undefined,
             driverName: driver ? `${driver.first_name} ${driver.last_name}` : undefined,
             customerId: customer?.id,
             customerName: customer?.name,

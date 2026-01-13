@@ -79,10 +79,10 @@ export default function WaterDeliveryCalendar() {
       if (!shopId) return [];
       const { data } = await supabase
         .from('water_delivery_trucks')
-        .select('id, truck_number, truck_name')
+        .select('id, truck_number')
         .eq('shop_id', shopId)
         .eq('is_active', true);
-      return (data || []).map(t => ({ id: t.id, label: t.truck_name || t.truck_number }));
+      return (data || []).map(t => ({ id: t.id, label: t.truck_number }));
     },
     enabled: !!shopId,
   });
