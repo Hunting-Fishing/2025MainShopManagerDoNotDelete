@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Package, AlertTriangle, ArrowUpDown, Filter } from 'lucide-react';
+import { Plus, Search, Package, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,20 +11,10 @@ import {
   useLowStockParts,
   WaterDeliveryPart 
 } from '@/hooks/water-delivery/useWaterDeliveryParts';
+import { useCategoryOptions } from '@/hooks/water-delivery/useWaterDeliveryInventoryCategories';
 import { AddWaterDeliveryPartDialog } from '@/components/water-delivery/AddWaterDeliveryPartDialog';
 import { WaterDeliveryPartTransactionDialog } from '@/components/water-delivery/WaterDeliveryPartTransactionDialog';
-
-const CATEGORIES = [
-  { value: 'all', label: 'All Parts' },
-  { value: 'filter', label: 'Filters' },
-  { value: 'pipe_fitting', label: 'Pipe & Fittings' },
-  { value: 'hose', label: 'Hoses' },
-  { value: 'chemical', label: 'Chemicals' },
-  { value: 'seal', label: 'Seals' },
-  { value: 'tool', label: 'Tools' },
-  { value: 'ppe', label: 'PPE' },
-  { value: 'other', label: 'Other' },
-];
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function WaterDeliveryPartsInventory() {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -34,8 +24,15 @@ export default function WaterDeliveryPartsInventory() {
   const [selectedPart, setSelectedPart] = useState<WaterDeliveryPart | null>(null);
   const [transactionType, setTransactionType] = useState<'received' | 'used'>('received');
 
+  const { categories, isLoading: loadingCategories } = useCategoryOptions();
   const { data: parts = [], isLoading } = useWaterDeliveryParts(selectedCategory);
   const { data: lowStockParts = [] } = useLowStockParts();
+
+  // Build tab categories: "All" + dynamic categories
+  const tabCategories = [
+    { value: 'all', label: 'All Items' },
+    ...categories,
+  ];
 
   const filteredParts = parts.filter(part =>
     part.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -59,7 +56,7 @@ export default function WaterDeliveryPartsInventory() {
   };
 
   const getCategoryLabel = (value: string) => {
-    return CATEGORIES.find(c => c.value === value)?.label || value;
+    return categories.find(c => c.value === value)?.label || value;
   };
 
   const getStockStatus = (part: WaterDeliveryPart) => {
@@ -92,7 +89,7 @@ export default function WaterDeliveryPartsInventory() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Parts
+              Total Items
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -176,34 +173,42 @@ export default function WaterDeliveryPartsInventory() {
 
       {/* Category Tabs */}
       <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-        <TabsList className="flex-wrap h-auto gap-1">
-          {CATEGORIES.map((category) => (
-            <TabsTrigger key={category.value} value={category.value}>
-              {category.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        {loadingCategories ? (
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map(i => (
+              <Skeleton key={i} className="h-9 w-24" />
+            ))}
+          </div>
+        ) : (
+          <TabsList className="flex-wrap h-auto gap-1">
+            {tabCategories.map((category) => (
+              <TabsTrigger key={category.value} value={category.value}>
+                {category.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        )}
 
         <TabsContent value={selectedCategory} className="mt-4">
           <Card>
             <CardContent className="p-0">
               {isLoading ? (
                 <div className="p-8 text-center text-muted-foreground">
-                  Loading parts...
+                  Loading items...
                 </div>
               ) : filteredParts.length === 0 ? (
                 <div className="p-8 text-center">
                   <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="font-medium">No parts found</h3>
+                  <h3 className="font-medium">No items found</h3>
                   <p className="text-sm text-muted-foreground mt-1">
                     {searchQuery 
                       ? 'Try adjusting your search terms' 
-                      : 'Add your first part to get started'}
+                      : 'Add your first item to get started'}
                   </p>
                   {!searchQuery && (
                     <Button className="mt-4" onClick={() => setAddDialogOpen(true)}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Part
+                      Add Item
                     </Button>
                   )}
                 </div>
@@ -211,7 +216,7 @@ export default function WaterDeliveryPartsInventory() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Part</TableHead>
+                      <TableHead>Item</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead className="text-center">Quantity</TableHead>
                       <TableHead className="text-right">Cost</TableHead>
@@ -233,7 +238,12 @@ export default function WaterDeliveryPartsInventory() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{getCategoryLabel(part.category)}</Badge>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="outline">{getCategoryLabel(part.category)}</Badge>
+                              {part.subcategory && (
+                                <span className="text-xs text-muted-foreground">{part.subcategory}</span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-2">
