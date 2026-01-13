@@ -11,10 +11,12 @@ import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
+import { AddWaterProductDialog } from '@/components/water-delivery/AddWaterProductDialog';
 
 export default function WaterDeliveryProducts() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const { shopId } = useShopId();
   const { getPriceLabel } = useWaterUnits();
 
@@ -67,7 +69,10 @@ export default function WaterDeliveryProducts() {
               Manage water types and products
             </p>
           </div>
-          <Button className="bg-cyan-600 hover:bg-cyan-700">
+          <Button 
+            className="bg-cyan-600 hover:bg-cyan-700"
+            onClick={() => setAddDialogOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Product
           </Button>
@@ -133,11 +138,18 @@ export default function WaterDeliveryProducts() {
             <div className="text-center py-12 text-muted-foreground">
               <Droplets className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>No products found</p>
-              <Button variant="link">Add your first water product</Button>
+              <Button variant="link" onClick={() => setAddDialogOpen(true)}>
+                Add your first water product
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <AddWaterProductDialog 
+        open={addDialogOpen} 
+        onOpenChange={setAddDialogOpen} 
+      />
     </div>
   );
 }
