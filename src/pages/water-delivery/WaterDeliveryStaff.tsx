@@ -52,13 +52,13 @@ export default function WaterDeliveryStaff() {
   const [selectedStaff, setSelectedStaff] = useState<WaterDeliveryStaffMember | null>(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState<WaterDeliveryStaffMember | null>(null);
 
-  // Stats - use roles and has_auth_account to determine status
+  // Stats - use roles and is_active to determine status
   const stats = useMemo(() => {
     const total = staff.length;
-    const active = staff.filter(s => s.has_auth_account && s.roles.length > 0).length;
-    const pending = staff.filter(s => !!s.invitation_sent_at && !s.has_auth_account).length;
-    const noRole = staff.filter(s => s.roles.length === 0).length;
-    return { total, active, pending, noRole };
+    const active = staff.filter(s => s.is_active && s.roles.length > 0).length;
+    const inactive = staff.filter(s => !s.is_active).length;
+    const noRole = staff.filter(s => s.is_active && s.roles.length === 0).length;
+    return { total, active, inactive, noRole };
   }, [staff]);
 
   // Filtered staff
@@ -79,13 +79,11 @@ export default function WaterDeliveryStaff() {
       // Status filter
       let matchesStatus = true;
       if (statusFilter === 'active') {
-        matchesStatus = member.has_auth_account && member.roles.length > 0;
-      } else if (statusFilter === 'pending') {
-        matchesStatus = !!member.invitation_sent_at && !member.has_auth_account;
+        matchesStatus = member.is_active && member.roles.length > 0;
+      } else if (statusFilter === 'inactive') {
+        matchesStatus = !member.is_active;
       } else if (statusFilter === 'no_role') {
-        matchesStatus = member.roles.length === 0;
-      } else if (statusFilter === 'no_login') {
-        matchesStatus = !member.has_auth_account && !member.invitation_sent_at;
+        matchesStatus = member.is_active && member.roles.length === 0;
       }
 
       return matchesSearch && matchesRole && matchesStatus;
@@ -192,8 +190,8 @@ export default function WaterDeliveryStaff() {
                 <Clock className="h-5 w-5 text-amber-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.pending}</p>
-                <p className="text-xs text-muted-foreground">Pending</p>
+                <p className="text-2xl font-bold">{stats.inactive}</p>
+                <p className="text-xs text-muted-foreground">Inactive</p>
               </div>
             </div>
           </CardContent>
@@ -252,8 +250,7 @@ export default function WaterDeliveryStaff() {
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="no_login">No Login</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
                   <SelectItem value="no_role">No Role</SelectItem>
                 </SelectContent>
               </Select>

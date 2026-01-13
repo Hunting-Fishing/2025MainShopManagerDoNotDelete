@@ -65,10 +65,17 @@ export function WaterDeliveryStaffCard({
   const fullName = `${staff.first_name} ${staff.last_name}`;
   const initials = getInitials(staff.first_name, staff.last_name);
 
-  // Determine status based on has_auth_account and invitation_sent_at
+  // Determine status based on is_active and roles
   const hasNoRoles = staff.roles.length === 0;
 
   const getStatusBadge = () => {
+    if (!staff.is_active) {
+      return (
+        <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">
+          Inactive
+        </Badge>
+      );
+    }
     if (hasNoRoles) {
       return (
         <Badge variant="outline" className="bg-slate-500/10 text-slate-500 border-slate-500/20">
@@ -76,23 +83,9 @@ export function WaterDeliveryStaffCard({
         </Badge>
       );
     }
-    if (staff.has_auth_account) {
-      return (
-        <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
-          Active
-        </Badge>
-      );
-    }
-    if (staff.invitation_sent_at) {
-      return (
-        <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
-          Pending
-        </Badge>
-      );
-    }
     return (
-      <Badge variant="outline" className="bg-slate-500/10 text-slate-500 border-slate-500/20">
-        No Login
+      <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
+        Active
       </Badge>
     );
   };
@@ -141,10 +134,10 @@ export function WaterDeliveryStaffCard({
                       <Shield className="h-4 w-4 mr-2" />
                       Assign Role
                     </DropdownMenuItem>
-                    {!staff.has_auth_account && (
+                    {!staff.profile_id && (
                       <DropdownMenuItem onClick={() => onResendInvite(staff)}>
                         <Send className="h-4 w-4 mr-2" />
-                        {staff.invitation_sent_at ? 'Resend Invite' : 'Send Invite'}
+                        Send Invite
                       </DropdownMenuItem>
                     )}
                     {canDeactivate && staff.roles.length > 0 && (
