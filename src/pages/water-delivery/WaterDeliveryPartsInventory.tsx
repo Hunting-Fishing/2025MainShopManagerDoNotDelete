@@ -76,14 +76,14 @@ export default function WaterDeliveryPartsInventory() {
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Parts & Supplies Inventory</h1>
+          <h1 className="text-2xl font-bold">Inventory</h1>
           <p className="text-muted-foreground">
-            Manage filters, pipes, chemicals, and other water delivery supplies
+            Manage warehouse parts, supplies, and equipment
           </p>
         </div>
         <Button onClick={() => setAddDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Part
+          Add Item
         </Button>
       </div>
 

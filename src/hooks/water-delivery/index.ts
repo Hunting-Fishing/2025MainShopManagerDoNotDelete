@@ -10,4 +10,3 @@ export * from './useWaterDeliveryVehicles';
 export * from './useWaterBusinessLocation';
 export * from './useWaterDeliveryStaff';
 export * from './useWaterDeliveryParts';
-export * from './useWaterInventory';

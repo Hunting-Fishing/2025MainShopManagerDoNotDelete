@@ -226,7 +226,7 @@ export default function WaterDeliveryDashboard() {
           <span className="text-xs">Invoices</span>
         </Button>
         <Button variant="outline" className="h-24 flex flex-col gap-2 border-cyan-500/30 hover:bg-cyan-500/5" onClick={() => navigate('/water-delivery/inventory')}>
-          <BarChart3 className="h-6 w-6 text-cyan-500" />
+          <Package className="h-6 w-6 text-cyan-500" />
           <span className="text-xs">Inventory</span>
         </Button>
       </div>
