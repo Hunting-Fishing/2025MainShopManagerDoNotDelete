@@ -1,54 +1,135 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  DollarSign, TrendingUp, History, 
-  Settings, Zap, Bell, ArrowUpRight, ArrowDownRight,
+  DollarSign, History, 
+  Settings, Zap, Bell,
   Droplets, ArrowLeft
 } from "lucide-react";
-import { format, subDays } from "date-fns";
+import { format, subDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
+import { useShopId } from '@/hooks/useShopId';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function WaterDeliveryPricing() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { getVolumeLabel, getPriceLabel } = useWaterUnits();
+  const { getPriceLabel } = useWaterUnits();
+  const { shopId } = useShopId();
   
   const { data: products } = useQuery({
-    queryKey: ['water-delivery-products'],
+    queryKey: ['water-delivery-products', shopId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      if (!shopId) return [];
+      const { data, error } = await supabase
         .from('water_delivery_products')
         .select('*')
+        .eq('shop_id', shopId)
         .order('product_name');
       if (error) throw error;
-      return data;
-    }
+      return data || [];
+    },
+    enabled: !!shopId
   });
 
-  const updateProduct = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; base_price_per_unit?: number }) => {
-      const { error } = await (supabase as any)
-        .from('water_delivery_products')
-        .update(updates)
-        .eq('id', id);
+  // Fetch real price history from database
+  const { data: priceHistory } = useQuery({
+    queryKey: ['water-price-history', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+      const { data, error } = await supabase
+        .from('water_delivery_price_history')
+        .select('*, water_delivery_products(product_name)')
+        .eq('shop_id', shopId)
+        .gte('changed_at', thirtyDaysAgo)
+        .order('changed_at', { ascending: true });
       if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId
+  });
+
+  // Transform price history into chart data
+  const chartData = useMemo(() => {
+    if (!priceHistory || priceHistory.length === 0) {
+      // Return empty chart data when no history exists
+      return [];
+    }
+
+    // Group by date and product
+    const dateMap = new Map<string, Record<string, number>>();
+    
+    priceHistory.forEach((record: any) => {
+      const dateKey = format(parseISO(record.changed_at), 'MMM d');
+      const productName = record.water_delivery_products?.product_name || 'Unknown';
+      
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, {});
+      }
+      dateMap.get(dateKey)![productName] = record.new_price;
+    });
+
+    return Array.from(dateMap.entries()).map(([date, prices]) => ({
+      date,
+      ...prices
+    }));
+  }, [priceHistory]);
+
+  // Get unique product names for chart lines
+  const productNames = useMemo(() => {
+    if (!priceHistory) return [];
+    const names = new Set<string>();
+    priceHistory.forEach((record: any) => {
+      if (record.water_delivery_products?.product_name) {
+        names.add(record.water_delivery_products.product_name);
+      }
+    });
+    return Array.from(names);
+  }, [priceHistory]);
+
+  const updateProduct = useMutation({
+    mutationFn: async ({ id, oldPrice, newPrice, reason }: { 
+      id: string; 
+      oldPrice: number;
+      newPrice: number;
+      reason?: string;
+    }) => {
+      // Update the product price
+      const { error: updateError } = await supabase
+        .from('water_delivery_products')
+        .update({ base_price_per_unit: newPrice })
+        .eq('id', id);
+      if (updateError) throw updateError;
+
+      // Log price change to history
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: historyError } = await supabase
+        .from('water_delivery_price_history')
+        .insert({
+          shop_id: shopId,
+          product_id: id,
+          old_price: oldPrice,
+          new_price: newPrice,
+          reason: reason || null,
+          changed_by: user?.id || null,
+          changed_at: new Date().toISOString()
+        });
+      if (historyError) console.error('Failed to log price history:', historyError);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['water-delivery-products'] });
+      queryClient.invalidateQueries({ queryKey: ['water-price-history'] });
       toast.success('Price updated');
     }
   });
@@ -71,10 +152,13 @@ export default function WaterDeliveryPricing() {
     }
 
     const priceNum = parseFloat(newPrice);
+    const oldPrice = selectedProduct.base_price_per_unit || 0;
 
     await updateProduct.mutateAsync({
       id: selectedProduct.id,
-      base_price_per_unit: priceNum
+      oldPrice,
+      newPrice: priceNum,
+      reason: priceChangeReason || undefined
     });
 
     toast.success("Price updated successfully");
@@ -84,13 +168,7 @@ export default function WaterDeliveryPricing() {
     setPriceChangeReason("");
   };
 
-  const chartData = Array.from({ length: 30 }, (_, i) => ({
-    date: format(subDays(new Date(), 29 - i), 'MMM d'),
-    'Potable Water': 0.02 + Math.random() * 0.005,
-    'Non-Potable': 0.015 + Math.random() * 0.003,
-  }));
-
-  const colors = ['#06b6d4', '#3b82f6', '#10b981'];
+  const colors = ['#06b6d4', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -173,26 +251,44 @@ export default function WaterDeliveryPricing() {
               <CardDescription>Track price changes over time</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="date" tick={{ fontSize: 12 }} tickLine={false} />
-                    <YAxis tick={{ fontSize: 12 }} tickLine={false} tickFormatter={(value) => `$${value}`} />
-                    <Tooltip 
-                      formatter={(value: any) => [`$${value?.toFixed(4)}`, '']}
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="Potable Water" stroke={colors[0]} strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="Non-Potable" stroke={colors[1]} strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {chartData.length > 0 ? (
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="date" tick={{ fontSize: 12 }} tickLine={false} />
+                      <YAxis tick={{ fontSize: 12 }} tickLine={false} tickFormatter={(value) => `$${value}`} />
+                      <Tooltip 
+                        formatter={(value: any) => [`$${value?.toFixed(4)}`, '']}
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Legend />
+                      {productNames.map((name, index) => (
+                        <Line 
+                          key={name}
+                          type="monotone" 
+                          dataKey={name} 
+                          stroke={colors[index % colors.length]} 
+                          strokeWidth={2} 
+                          dot={false} 
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <History className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No price history yet</p>
+                    <p className="text-sm">Update a product price to start tracking history</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
