@@ -69,6 +69,7 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Trucks', href: '/water-delivery/trucks', icon: Truck, color: 'from-slate-500 to-zinc-600' },
       { title: 'Drivers', href: '/water-delivery/drivers', icon: UserCheck, color: 'from-green-500 to-emerald-600' },
+      { title: 'Staff', href: '/water-delivery/staff', icon: Users, color: 'from-amber-500 to-orange-600' },
       { title: 'Driver App', href: '/water-delivery/driver-app', icon: Droplets, color: 'from-cyan-500 to-blue-600' },
     ],
   },
