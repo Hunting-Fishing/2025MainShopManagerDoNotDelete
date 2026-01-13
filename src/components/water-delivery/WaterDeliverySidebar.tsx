@@ -85,12 +85,12 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Inventory & Purchasing',
+    title: 'Inventory & Stock',
     items: [
-      { title: 'Products', href: '/water-delivery/products', icon: Package, color: 'from-cyan-500 to-blue-500' },
-      { title: 'Purchases / BOL', href: '/water-delivery/purchases', icon: FileText, color: 'from-blue-500 to-indigo-500' },
-      { title: 'Inventory', href: '/water-delivery/inventory', icon: BarChart3, color: 'from-teal-500 to-cyan-600' },
+      { title: 'Water Stock', href: '/water-delivery/inventory', icon: Droplets, color: 'from-cyan-500 to-blue-500' },
       { title: 'Parts & Supplies', href: '/water-delivery/parts-inventory', icon: Wrench, color: 'from-orange-500 to-amber-600' },
+      { title: 'Products', href: '/water-delivery/products', icon: Package, color: 'from-teal-500 to-cyan-600' },
+      { title: 'Purchases / BOL', href: '/water-delivery/purchases', icon: FileText, color: 'from-blue-500 to-indigo-500' },
       { title: 'Pricing', href: '/water-delivery/pricing', icon: DollarSign, color: 'from-emerald-500 to-green-600' },
     ],
   },

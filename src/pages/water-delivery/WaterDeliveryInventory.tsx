@@ -130,11 +130,11 @@ export default function WaterDeliveryInventory() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <BarChart3 className="h-8 w-8 text-cyan-600" />
-              Water Inventory
+              <Droplets className="h-8 w-8 text-cyan-600" />
+              Water Stock
             </h1>
             <p className="text-muted-foreground mt-1">
-              Track water stock levels and storage
+              Track water volumes across storage tanks, tankers, and customer sites
             </p>
           </div>
           <Button 
