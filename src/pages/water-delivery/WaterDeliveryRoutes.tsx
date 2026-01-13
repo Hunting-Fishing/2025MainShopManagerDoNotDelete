@@ -215,6 +215,7 @@ export default function WaterDeliveryRoutes() {
               destinations={mapDestinations}
               height="500px"
               showOptimizeButton={mapDestinations.length > 1}
+              shopId={shopId}
             />
             {mapDestinations.length === 0 && (
               <div className="mt-4 p-4 bg-muted/50 rounded-lg text-center">
