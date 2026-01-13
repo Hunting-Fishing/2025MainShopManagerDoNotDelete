@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -52,13 +52,13 @@ export default function WaterDeliveryStaff() {
   const [selectedStaff, setSelectedStaff] = useState<WaterDeliveryStaffMember | null>(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState<WaterDeliveryStaffMember | null>(null);
 
-  // Stats
+  // Stats - use roles and has_auth_account to determine status
   const stats = useMemo(() => {
     const total = staff.length;
-    const active = staff.filter(s => s.is_active && s.has_auth_account).length;
-    const pending = staff.filter(s => s.is_active && s.invitation_sent_at && !s.has_auth_account).length;
-    const inactive = staff.filter(s => !s.is_active).length;
-    return { total, active, pending, inactive };
+    const active = staff.filter(s => s.has_auth_account && s.roles.length > 0).length;
+    const pending = staff.filter(s => !!s.invitation_sent_at && !s.has_auth_account).length;
+    const noRole = staff.filter(s => s.roles.length === 0).length;
+    return { total, active, pending, noRole };
   }, [staff]);
 
   // Filtered staff
@@ -79,13 +79,13 @@ export default function WaterDeliveryStaff() {
       // Status filter
       let matchesStatus = true;
       if (statusFilter === 'active') {
-        matchesStatus = member.is_active && member.has_auth_account;
+        matchesStatus = member.has_auth_account && member.roles.length > 0;
       } else if (statusFilter === 'pending') {
-        matchesStatus = member.is_active && !!member.invitation_sent_at && !member.has_auth_account;
-      } else if (statusFilter === 'inactive') {
-        matchesStatus = !member.is_active;
+        matchesStatus = !!member.invitation_sent_at && !member.has_auth_account;
+      } else if (statusFilter === 'no_role') {
+        matchesStatus = member.roles.length === 0;
       } else if (statusFilter === 'no_login') {
-        matchesStatus = member.is_active && !member.has_auth_account && !member.invitation_sent_at;
+        matchesStatus = !member.has_auth_account && !member.invitation_sent_at;
       }
 
       return matchesSearch && matchesRole && matchesStatus;
@@ -206,8 +206,8 @@ export default function WaterDeliveryStaff() {
                 <UserX className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.inactive}</p>
-                <p className="text-xs text-muted-foreground">Inactive</p>
+                <p className="text-2xl font-bold">{stats.noRole}</p>
+                <p className="text-xs text-muted-foreground">No Role</p>
               </div>
             </div>
           </CardContent>
@@ -254,7 +254,7 @@ export default function WaterDeliveryStaff() {
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="no_login">No Login</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="no_role">No Role</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -328,10 +328,10 @@ export default function WaterDeliveryStaff() {
       <AlertDialog open={!!confirmDeactivate} onOpenChange={() => setConfirmDeactivate(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate Staff Member?</AlertDialogTitle>
+            <AlertDialogTitle>Remove Roles?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to deactivate {confirmDeactivate?.first_name} {confirmDeactivate?.last_name}? 
-              They will no longer be able to access the system.
+              Are you sure you want to remove all roles from {confirmDeactivate?.first_name} {confirmDeactivate?.last_name}? 
+              They will no longer have access to restricted features.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -340,7 +340,7 @@ export default function WaterDeliveryStaff() {
               onClick={confirmDeactivation}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Deactivate
+              Remove Roles
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

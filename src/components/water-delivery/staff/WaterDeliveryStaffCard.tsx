@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,10 +15,8 @@ import {
   Mail, 
   Phone, 
   Edit, 
-  UserCog, 
   Send, 
   UserX,
-  UserCheck,
   Shield
 } from 'lucide-react';
 import { WaterDeliveryStaffMember } from '@/hooks/water-delivery/useWaterDeliveryStaff';
@@ -62,17 +60,19 @@ export function WaterDeliveryStaffCard({
   onAssignRole,
   onResendInvite,
   onDeactivate,
-  onReactivate,
 }: WaterDeliveryStaffCardProps) {
   const { canManage, canDeactivate } = useCanManageStaff();
   const fullName = `${staff.first_name} ${staff.last_name}`;
   const initials = getInitials(staff.first_name, staff.last_name);
 
+  // Determine status based on has_auth_account and invitation_sent_at
+  const hasNoRoles = staff.roles.length === 0;
+
   const getStatusBadge = () => {
-    if (!staff.is_active) {
+    if (hasNoRoles) {
       return (
-        <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">
-          Inactive
+        <Badge variant="outline" className="bg-slate-500/10 text-slate-500 border-slate-500/20">
+          No Role
         </Badge>
       );
     }
@@ -100,13 +100,12 @@ export function WaterDeliveryStaffCard({
   return (
     <Card className={cn(
       'group hover:shadow-lg transition-all duration-200 border-border/50',
-      !staff.is_active && 'opacity-60'
+      hasNoRoles && 'opacity-60'
     )}>
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <Avatar className="h-12 w-12 ring-2 ring-background shadow-md">
-            <AvatarImage src={staff.avatar_url} alt={fullName} />
             <AvatarFallback className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-semibold">
               {initials}
             </AvatarFallback>
@@ -148,23 +147,16 @@ export function WaterDeliveryStaffCard({
                         {staff.invitation_sent_at ? 'Resend Invite' : 'Send Invite'}
                       </DropdownMenuItem>
                     )}
-                    {canDeactivate && (
+                    {canDeactivate && staff.roles.length > 0 && (
                       <>
                         <DropdownMenuSeparator />
-                        {staff.is_active ? (
-                          <DropdownMenuItem 
-                            onClick={() => onDeactivate(staff)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <UserX className="h-4 w-4 mr-2" />
-                            Deactivate
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem onClick={() => onReactivate(staff)}>
-                            <UserCheck className="h-4 w-4 mr-2" />
-                            Reactivate
-                          </DropdownMenuItem>
-                        )}
+                        <DropdownMenuItem 
+                          onClick={() => onDeactivate(staff)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <UserX className="h-4 w-4 mr-2" />
+                          Remove Roles
+                        </DropdownMenuItem>
                       </>
                     )}
                   </DropdownMenuContent>
