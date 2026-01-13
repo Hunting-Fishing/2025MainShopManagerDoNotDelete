@@ -308,7 +308,7 @@ import WaterDeliveryDrivers from '@/pages/water-delivery/WaterDeliveryDrivers';
 import WaterDeliveryDriverDetail from '@/pages/water-delivery/WaterDeliveryDriverDetail';
 import WaterDeliveryRoutes from '@/pages/water-delivery/WaterDeliveryRoutes';
 import WaterDeliveryCompletions from '@/pages/water-delivery/WaterDeliveryCompletions';
-import WaterDeliveryInventory from '@/pages/water-delivery/WaterDeliveryInventory';
+import WaterDeliveryInventory from '@/pages/water-delivery/WaterDeliveryPartsInventory';
 import WaterDeliveryInvoices from '@/pages/water-delivery/WaterDeliveryInvoices';
 import WaterDeliveryDriverApp from '@/pages/water-delivery/WaterDeliveryDriverApp';
 import WaterDeliveryPricing from '@/pages/water-delivery/WaterDeliveryPricing';
