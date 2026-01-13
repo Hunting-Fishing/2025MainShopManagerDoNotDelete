@@ -322,6 +322,7 @@ import WaterDeliveryProfile from '@/pages/water-delivery/WaterDeliveryProfile';
 import WaterDeliverySettings from '@/pages/water-delivery/WaterDeliverySettings';
 import WaterDeliveryPurchases from '@/pages/water-delivery/WaterDeliveryPurchases';
 import WaterDeliveryStaff from '@/pages/water-delivery/WaterDeliveryStaff';
+import WaterDeliveryPartsInventory from '@/pages/water-delivery/WaterDeliveryPartsInventory';
 import { WaterDeliveryLayout } from '@/components/water-delivery';
 
 function App() {
@@ -1345,6 +1346,7 @@ function App() {
                   <Route path="/routes/new" element={<WaterDeliveryRoutes />} />
                   <Route path="/deliveries" element={<WaterDeliveryCompletions />} />
                   <Route path="/inventory" element={<WaterDeliveryInventory />} />
+                  <Route path="/parts-inventory" element={<WaterDeliveryPartsInventory />} />
                   <Route path="/purchases" element={<WaterDeliveryPurchases />} />
                   <Route path="/invoices" element={<WaterDeliveryInvoices />} />
                   <Route path="/invoices/new" element={<WaterDeliveryInvoices />} />
