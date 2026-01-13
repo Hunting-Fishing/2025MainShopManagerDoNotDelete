@@ -4,18 +4,26 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, ArrowLeft, Users, Mail, Phone } from 'lucide-react';
+import { Plus, Search, ArrowLeft, Users, Mail, Phone, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AddWaterDeliveryCustomerDialog } from '@/components/water-delivery/customers/AddWaterDeliveryCustomerDialog';
+import { EditWaterDeliveryCustomerDialog } from '@/components/water-delivery/customers/EditWaterDeliveryCustomerDialog';
 
 export default function WaterDeliveryCustomers() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+
+  const getCustomerDisplayName = (customer: any) => {
+    const name = [customer.first_name, customer.last_name].filter(Boolean).join(' ');
+    return name || customer.company_name || customer.email || 'Unknown';
+  };
   const { shopId } = useShopId();
 
   const { data: customers, isLoading } = useQuery({
@@ -99,6 +107,7 @@ export default function WaterDeliveryCustomers() {
                   <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Account Type</TableHead>
+                  <TableHead className="w-12">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -108,8 +117,8 @@ export default function WaterDeliveryCustomers() {
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => navigate(`/water-delivery/customers/${customer.id}`)}
                   >
-                    <TableCell className="font-medium">{customer.company_name || '-'}</TableCell>
-                    <TableCell>{customer.first_name} {customer.last_name}</TableCell>
+                    <TableCell className="font-medium">{customer.company_name || getCustomerDisplayName(customer)}</TableCell>
+                    <TableCell>{getCustomerDisplayName(customer)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Mail className="h-3 w-3 text-muted-foreground" />
@@ -130,6 +139,19 @@ export default function WaterDeliveryCustomers() {
                     <TableCell>
                       <Badge variant="outline">{customer.payment_terms || 'Standard'}</Badge>
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCustomer(customer);
+                          setEditDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -148,6 +170,14 @@ export default function WaterDeliveryCustomers() {
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
       />
+
+      {selectedCustomer && (
+        <EditWaterDeliveryCustomerDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          customer={selectedCustomer}
+        />
+      )}
     </div>
   );
 }
