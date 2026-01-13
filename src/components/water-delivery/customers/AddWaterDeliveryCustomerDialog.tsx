@@ -65,7 +65,6 @@ export function AddWaterDeliveryCustomerDialog({
           shop_id: shopId,
           company_name: data.company_name || null,
           contact_name: data.contact_name,
-          name: data.contact_name,
           email: data.email || null,
           phone: data.phone || null,
           billing_address: data.billing_address || null,
