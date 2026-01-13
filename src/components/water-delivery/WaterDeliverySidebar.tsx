@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Cog,
+  Wrench,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -89,6 +90,7 @@ const navSections: NavSection[] = [
       { title: 'Products', href: '/water-delivery/products', icon: Package, color: 'from-cyan-500 to-blue-500' },
       { title: 'Purchases / BOL', href: '/water-delivery/purchases', icon: FileText, color: 'from-blue-500 to-indigo-500' },
       { title: 'Inventory', href: '/water-delivery/inventory', icon: BarChart3, color: 'from-teal-500 to-cyan-600' },
+      { title: 'Parts & Supplies', href: '/water-delivery/parts-inventory', icon: Wrench, color: 'from-orange-500 to-amber-600' },
       { title: 'Pricing', href: '/water-delivery/pricing', icon: DollarSign, color: 'from-emerald-500 to-green-600' },
     ],
   },

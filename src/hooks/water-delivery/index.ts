@@ -9,3 +9,4 @@ export * from './useWaterSpecialRates';
 export * from './useWaterDeliveryVehicles';
 export * from './useWaterBusinessLocation';
 export * from './useWaterDeliveryStaff';
+export * from './useWaterDeliveryParts';

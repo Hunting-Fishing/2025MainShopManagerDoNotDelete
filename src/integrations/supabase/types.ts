@@ -41466,6 +41466,163 @@ export type Database = {
           },
         ]
       }
+      water_delivery_parts_inventory: {
+        Row: {
+          bin_number: string | null
+          category: string
+          cost_price: number | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          last_restock_date: string | null
+          lead_time_days: number | null
+          max_quantity: number | null
+          min_quantity: number | null
+          name: string
+          notes: string | null
+          part_number: string | null
+          quantity: number
+          retail_price: number | null
+          shop_id: string
+          storage_location: string | null
+          subcategory: string | null
+          supplier_id: string | null
+          supplier_part_number: string | null
+          unit_of_measure: string | null
+          updated_at: string
+        }
+        Insert: {
+          bin_number?: string | null
+          category: string
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_restock_date?: string | null
+          lead_time_days?: number | null
+          max_quantity?: number | null
+          min_quantity?: number | null
+          name: string
+          notes?: string | null
+          part_number?: string | null
+          quantity?: number
+          retail_price?: number | null
+          shop_id: string
+          storage_location?: string | null
+          subcategory?: string | null
+          supplier_id?: string | null
+          supplier_part_number?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bin_number?: string | null
+          category?: string
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_restock_date?: string | null
+          lead_time_days?: number | null
+          max_quantity?: number | null
+          min_quantity?: number | null
+          name?: string
+          notes?: string | null
+          part_number?: string | null
+          quantity?: number
+          retail_price?: number | null
+          shop_id?: string
+          storage_location?: string | null
+          subcategory?: string | null
+          supplier_id?: string | null
+          supplier_part_number?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_parts_inventory_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_parts_inventory_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_delivery_parts_transactions: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          part_id: string
+          performed_by: string | null
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          shop_id: string
+          transaction_type: string
+          unit_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          part_id: string
+          performed_by?: string | null
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          shop_id: string
+          transaction_type: string
+          unit_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          part_id?: string
+          performed_by?: string | null
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          shop_id?: string
+          transaction_type?: string
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_parts_transactions_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "water_delivery_parts_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_parts_transactions_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_delivery_parts_transactions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       water_delivery_payments: {
         Row: {
           amount: number
