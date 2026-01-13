@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 
 interface EditWaterDeliveryCustomerDialogProps {
   open: boolean;
@@ -73,7 +74,7 @@ export function EditWaterDeliveryCustomerDialog({
         requires_po: customer.requires_po || false,
         tax_exempt: customer.tax_exempt || false,
         tax_exempt_number: customer.tax_exempt_number || '',
-        portal_enabled: customer.portal_enabled || false,
+        portal_enabled: customer.portal_access_enabled || false,
         portal_pin: customer.portal_pin || '',
         notes: customer.notes || '',
       });
@@ -87,7 +88,6 @@ export function EditWaterDeliveryCustomerDialog({
         .update({
           company_name: data.company_name || null,
           contact_name: data.contact_name,
-          name: data.contact_name,
           email: data.email || null,
           phone: data.phone || null,
           billing_address: data.billing_address || null,
@@ -101,7 +101,7 @@ export function EditWaterDeliveryCustomerDialog({
           requires_po: data.requires_po,
           tax_exempt: data.tax_exempt,
           tax_exempt_number: data.tax_exempt_number || null,
-          portal_enabled: data.portal_enabled,
+          portal_access_enabled: data.portal_enabled,
           portal_pin: data.portal_pin || null,
           notes: data.notes || null,
         })
@@ -232,10 +232,19 @@ export function EditWaterDeliveryCustomerDialog({
             <TabsContent value="billing" className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_billing_address">Street Address</Label>
-                <Input
+                <AddressAutocomplete
                   id="edit_billing_address"
                   value={formData.billing_address}
-                  onChange={(e) => setFormData(prev => ({ ...prev, billing_address: e.target.value }))}
+                  onChange={(value) => setFormData(prev => ({ ...prev, billing_address: value }))}
+                  onAddressSelect={(addr) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      billing_address: addr.street,
+                      billing_city: addr.city,
+                      billing_state: addr.state,
+                      billing_zip: addr.zip,
+                    }));
+                  }}
                 />
               </div>
 
