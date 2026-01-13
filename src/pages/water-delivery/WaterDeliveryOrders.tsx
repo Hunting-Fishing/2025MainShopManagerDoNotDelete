@@ -29,7 +29,7 @@ export default function WaterDeliveryOrders() {
         .from('water_delivery_orders')
         .select(`
           *,
-          water_delivery_customers (company_name, contact_name),
+          water_delivery_customers (company_name, first_name, last_name),
           water_delivery_locations (location_name),
           water_delivery_products (product_name)
         `)
@@ -45,7 +45,8 @@ export default function WaterDeliveryOrders() {
     const matchesSearch = 
       order.order_number?.toLowerCase().includes(search.toLowerCase()) ||
       order.water_delivery_customers?.company_name?.toLowerCase().includes(search.toLowerCase()) ||
-      order.water_delivery_customers?.contact_name?.toLowerCase().includes(search.toLowerCase());
+      order.water_delivery_customers?.first_name?.toLowerCase().includes(search.toLowerCase()) ||
+      order.water_delivery_customers?.last_name?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -149,7 +150,7 @@ export default function WaterDeliveryOrders() {
                   >
                     <TableCell className="font-medium">{order.order_number}</TableCell>
                     <TableCell>
-                      {order.water_delivery_customers?.company_name || order.water_delivery_customers?.contact_name}
+                      {order.water_delivery_customers?.company_name || `${order.water_delivery_customers?.first_name || ''} ${order.water_delivery_customers?.last_name || ''}`.trim()}
                     </TableCell>
                     <TableCell>{order.water_delivery_locations?.location_name}</TableCell>
                     <TableCell>{order.water_delivery_products?.product_name}</TableCell>

@@ -35,7 +35,8 @@ export default function WaterDeliveryCustomers() {
 
   const filteredCustomers = customers?.filter(customer => 
     customer.company_name?.toLowerCase().includes(search.toLowerCase()) ||
-    customer.contact_name?.toLowerCase().includes(search.toLowerCase()) ||
+    customer.first_name?.toLowerCase().includes(search.toLowerCase()) ||
+    customer.last_name?.toLowerCase().includes(search.toLowerCase()) ||
     customer.email?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -104,7 +105,7 @@ export default function WaterDeliveryCustomers() {
                 {filteredCustomers.map((customer) => (
                   <TableRow key={customer.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell className="font-medium">{customer.company_name || '-'}</TableCell>
-                    <TableCell>{customer.contact_name}</TableCell>
+                    <TableCell>{customer.first_name} {customer.last_name}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Mail className="h-3 w-3 text-muted-foreground" />

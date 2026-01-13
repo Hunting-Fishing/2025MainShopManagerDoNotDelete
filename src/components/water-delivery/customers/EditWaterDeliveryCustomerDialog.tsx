@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Building2 } from 'lucide-react';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 
 interface EditWaterDeliveryCustomerDialogProps {
@@ -36,8 +36,8 @@ export function EditWaterDeliveryCustomerDialog({
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
-    company_name: '',
-    contact_name: '',
+    first_name: '',
+    last_name: '',
     email: '',
     phone: '',
     billing_address: '',
@@ -46,6 +46,14 @@ export function EditWaterDeliveryCustomerDialog({
     billing_zip: '',
     is_commercial: false,
     is_active: true,
+    // Commercial fields
+    company_name: '',
+    business_type: '',
+    tax_id: '',
+    billing_contact_name: '',
+    billing_contact_email: '',
+    billing_contact_phone: '',
+    // Account fields
     payment_terms: 'COD',
     credit_limit: 0,
     requires_po: false,
@@ -59,8 +67,8 @@ export function EditWaterDeliveryCustomerDialog({
   useEffect(() => {
     if (customer) {
       setFormData({
-        company_name: customer.company_name || '',
-        contact_name: customer.contact_name || '',
+        first_name: customer.first_name || '',
+        last_name: customer.last_name || '',
         email: customer.email || '',
         phone: customer.phone || '',
         billing_address: customer.billing_address || '',
@@ -69,6 +77,12 @@ export function EditWaterDeliveryCustomerDialog({
         billing_zip: customer.billing_zip || '',
         is_commercial: customer.is_commercial || false,
         is_active: customer.is_active ?? true,
+        company_name: customer.company_name || '',
+        business_type: customer.business_type || '',
+        tax_id: customer.tax_id || '',
+        billing_contact_name: customer.billing_contact_name || '',
+        billing_contact_email: customer.billing_contact_email || '',
+        billing_contact_phone: customer.billing_contact_phone || '',
         payment_terms: customer.payment_terms || 'COD',
         credit_limit: customer.credit_limit || 0,
         requires_po: customer.requires_po || false,
@@ -86,8 +100,8 @@ export function EditWaterDeliveryCustomerDialog({
       const { data: updated, error } = await supabase
         .from('water_delivery_customers')
         .update({
-          company_name: data.company_name || null,
-          contact_name: data.contact_name,
+          first_name: data.first_name,
+          last_name: data.last_name || null,
           email: data.email || null,
           phone: data.phone || null,
           billing_address: data.billing_address || null,
@@ -96,6 +110,12 @@ export function EditWaterDeliveryCustomerDialog({
           billing_zip: data.billing_zip || null,
           is_commercial: data.is_commercial,
           is_active: data.is_active,
+          company_name: data.is_commercial ? (data.company_name || null) : null,
+          business_type: data.is_commercial ? (data.business_type || null) : null,
+          tax_id: data.is_commercial ? (data.tax_id || null) : null,
+          billing_contact_name: data.is_commercial ? (data.billing_contact_name || null) : null,
+          billing_contact_email: data.is_commercial ? (data.billing_contact_email || null) : null,
+          billing_contact_phone: data.is_commercial ? (data.billing_contact_phone || null) : null,
           payment_terms: data.payment_terms,
           credit_limit: data.credit_limit,
           requires_po: data.requires_po,
@@ -130,8 +150,8 @@ export function EditWaterDeliveryCustomerDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.contact_name.trim()) {
-      toast({ title: 'Contact name is required', variant: 'destructive' });
+    if (!formData.first_name.trim()) {
+      toast({ title: 'First name is required', variant: 'destructive' });
       return;
     }
     updateMutation.mutate(formData);
@@ -161,20 +181,20 @@ export function EditWaterDeliveryCustomerDialog({
             <TabsContent value="basic" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit_contact_name">Contact Name *</Label>
+                  <Label htmlFor="edit_first_name">First Name *</Label>
                   <Input
-                    id="edit_contact_name"
-                    value={formData.contact_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
+                    id="edit_first_name"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit_company_name">Company Name</Label>
+                  <Label htmlFor="edit_last_name">Last Name</Label>
                   <Input
-                    id="edit_company_name"
-                    value={formData.company_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                    id="edit_last_name"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
                   />
                 </div>
               </div>
@@ -217,6 +237,90 @@ export function EditWaterDeliveryCustomerDialog({
                   <Label htmlFor="edit_is_active">Active</Label>
                 </div>
               </div>
+
+              {/* Commercial Account Section */}
+              {formData.is_commercial && (
+                <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Building2 className="h-4 w-4" />
+                    Commercial Account Details
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit_company_name">Company Name *</Label>
+                      <Input
+                        id="edit_company_name"
+                        value={formData.company_name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit_business_type">Business Type</Label>
+                      <Select
+                        value={formData.business_type}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, business_type: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="retail">Retail</SelectItem>
+                          <SelectItem value="restaurant">Restaurant</SelectItem>
+                          <SelectItem value="office">Office</SelectItem>
+                          <SelectItem value="industrial">Industrial</SelectItem>
+                          <SelectItem value="healthcare">Healthcare</SelectItem>
+                          <SelectItem value="education">Education</SelectItem>
+                          <SelectItem value="government">Government</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_tax_id">Tax ID / EIN</Label>
+                    <Input
+                      id="edit_tax_id"
+                      value={formData.tax_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tax_id: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="border-t pt-4 mt-4">
+                    <p className="text-sm font-medium mb-3">Billing Contact (if different)</p>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_billing_contact_name">Contact Name</Label>
+                        <Input
+                          id="edit_billing_contact_name"
+                          value={formData.billing_contact_name}
+                          onChange={(e) => setFormData(prev => ({ ...prev, billing_contact_name: e.target.value }))}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_billing_contact_email">Email</Label>
+                          <Input
+                            id="edit_billing_contact_email"
+                            type="email"
+                            value={formData.billing_contact_email}
+                            onChange={(e) => setFormData(prev => ({ ...prev, billing_contact_email: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_billing_contact_phone">Phone</Label>
+                          <Input
+                            id="edit_billing_contact_phone"
+                            value={formData.billing_contact_phone}
+                            onChange={(e) => setFormData(prev => ({ ...prev, billing_contact_phone: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="edit_notes">Notes</Label>
