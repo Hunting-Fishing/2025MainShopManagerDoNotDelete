@@ -321,6 +321,7 @@ import WaterDeliveryQuotes from '@/pages/water-delivery/WaterDeliveryQuotes';
 import WaterDeliveryProfile from '@/pages/water-delivery/WaterDeliveryProfile';
 import WaterDeliverySettings from '@/pages/water-delivery/WaterDeliverySettings';
 import WaterDeliveryPurchases from '@/pages/water-delivery/WaterDeliveryPurchases';
+import WaterDeliveryStaff from '@/pages/water-delivery/WaterDeliveryStaff';
 import { WaterDeliveryLayout } from '@/components/water-delivery';
 
 function App() {

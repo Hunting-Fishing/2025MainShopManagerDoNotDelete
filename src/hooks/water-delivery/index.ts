@@ -8,3 +8,4 @@ export * from './useWaterLaborRates';
 export * from './useWaterSpecialRates';
 export * from './useWaterDeliveryVehicles';
 export * from './useWaterBusinessLocation';
+export * from './useWaterDeliveryStaff';

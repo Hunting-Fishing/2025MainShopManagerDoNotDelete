@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface WaterDeliveryStaffMember {
   id: string;
@@ -16,7 +17,6 @@ export interface WaterDeliveryStaffMember {
   has_auth_account: boolean;
   invitation_sent_at?: string;
   created_at: string;
-  avatar_url?: string;
 }
 
 export interface CreateStaffInput {
@@ -41,7 +41,6 @@ export interface UpdateStaffInput {
   phone?: string;
   job_title?: string;
   department?: string;
-  is_active?: boolean;
 }
 
 export function useWaterDeliveryStaff() {
@@ -67,8 +66,7 @@ export function useWaterDeliveryStaff() {
           department,
           has_auth_account,
           invitation_sent_at,
-          created_at,
-          avatar_url
+          created_at
         `)
         .eq('shop_id', shopId)
         .order('first_name', { ascending: true });
@@ -111,10 +109,12 @@ export function useWaterDeliveryStaff() {
     mutationFn: async (input: CreateStaffInput) => {
       if (!shopId) throw new Error('Shop ID is required');
 
-      // Create the profile first
+      // Create the profile first - id is required for profiles table
+      const profileId = uuidv4();
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .insert({
+          id: profileId,
           first_name: input.first_name,
           last_name: input.last_name,
           middle_name: input.middle_name,
