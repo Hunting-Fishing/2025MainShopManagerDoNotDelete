@@ -58,7 +58,7 @@ export function useWaterDeliveryCustomerDetails(customerId: string) {
       const [ordersRes, locationsRes, tanksRes, quotesRes, invoicesRes] = await Promise.all([
         supabase
           .from('water_delivery_orders')
-          .select('id, total_amount, quantity_gallons, status, delivery_date')
+          .select('id, total_amount, quantity_gallons, status, order_date')
           .eq('customer_id', customerId),
         supabase
           .from('water_delivery_locations')
@@ -92,11 +92,11 @@ export function useWaterDeliveryCustomerDetails(customerId: string) {
       // Find last and next delivery
       const now = new Date();
       const pastOrders = orders
-        .filter(o => o.delivery_date && new Date(o.delivery_date) < now && (o.status === 'completed' || o.status === 'delivered'))
-        .sort((a, b) => new Date(b.delivery_date || 0).getTime() - new Date(a.delivery_date || 0).getTime());
+        .filter(o => o.order_date && new Date(o.order_date) < now && (o.status === 'completed' || o.status === 'delivered'))
+        .sort((a, b) => new Date(b.order_date || 0).getTime() - new Date(a.order_date || 0).getTime());
       const futureOrders = orders
-        .filter(o => o.delivery_date && new Date(o.delivery_date) >= now && o.status !== 'cancelled')
-        .sort((a, b) => new Date(a.delivery_date || 0).getTime() - new Date(b.delivery_date || 0).getTime());
+        .filter(o => o.order_date && new Date(o.order_date) >= now && o.status !== 'cancelled')
+        .sort((a, b) => new Date(a.order_date || 0).getTime() - new Date(b.order_date || 0).getTime());
 
       // Calculate aging
       const today = new Date();
@@ -122,8 +122,8 @@ export function useWaterDeliveryCustomerDetails(customerId: string) {
         totalRevenue,
         balanceDue,
         totalGallons,
-        lastDelivery: pastOrders[0]?.delivery_date || null,
-        nextDelivery: futureOrders[0]?.delivery_date || null,
+        lastDelivery: pastOrders[0]?.order_date || null,
+        nextDelivery: futureOrders[0]?.order_date || null,
         locationsCount: locations.length,
         tanksCount: tanks.length,
         quotesCount: quotes.length,
