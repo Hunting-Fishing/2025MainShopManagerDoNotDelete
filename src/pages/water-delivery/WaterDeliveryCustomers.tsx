@@ -117,7 +117,7 @@ export default function WaterDeliveryCustomers() {
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => navigate(`/water-delivery/customers/${customer.id}`)}
                   >
-                    <TableCell className="font-medium">{customer.company_name || getCustomerDisplayName(customer)}</TableCell>
+                    <TableCell className="font-medium">{customer.company_name || '-'}</TableCell>
                     <TableCell>{getCustomerDisplayName(customer)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
