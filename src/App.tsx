@@ -301,6 +301,7 @@ import WaterDeliveryDashboard from '@/pages/water-delivery/WaterDeliveryDashboar
 import WaterDeliveryOrders from '@/pages/water-delivery/WaterDeliveryOrders';
 import WaterDeliveryOrderForm from '@/pages/water-delivery/WaterDeliveryOrderForm';
 import WaterDeliveryCustomers from '@/pages/water-delivery/WaterDeliveryCustomers';
+import WaterDeliveryCustomerDetails from '@/pages/water-delivery/WaterDeliveryCustomerDetails';
 import WaterDeliveryLocations from '@/pages/water-delivery/WaterDeliveryLocations';
 import WaterDeliveryProducts from '@/pages/water-delivery/WaterDeliveryProducts';
 import WaterDeliveryTrucks from '@/pages/water-delivery/WaterDeliveryTrucks';
@@ -1337,6 +1338,7 @@ function App() {
                   <Route path="/orders/new" element={<WaterDeliveryOrderForm />} />
                   <Route path="/orders/:id" element={<WaterDeliveryOrders />} />
                   <Route path="/customers" element={<WaterDeliveryCustomers />} />
+                  <Route path="/customers/:customerId" element={<WaterDeliveryCustomerDetails />} />
                   <Route path="/locations" element={<WaterDeliveryLocations />} />
                   <Route path="/products" element={<WaterDeliveryProducts />} />
                   <Route path="/trucks" element={<WaterDeliveryTrucks />} />
