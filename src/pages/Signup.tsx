@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AuthService } from '@/lib/services/AuthService';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Eye, EyeOff, Wrench, ArrowRight } from 'lucide-react';
+import { getPostLoginDestination } from '@/lib/auth/getPostLoginDestination';
+import { UserPlus, Eye, EyeOff, Wrench, ArrowRight, LogOut, Sparkles } from 'lucide-react';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 
 export default function Signup() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthUser();
+  const { isAuthenticated, isLoading, user } = useAuthUser();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -23,13 +24,34 @@ export default function Signup() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+  // Handle "Continue" for already authenticated users
+  const handleContinue = async () => {
+    if (!user) return;
+    setIsNavigating(true);
+    try {
+      const destination = await getPostLoginDestination(user.id);
+      navigate(destination);
+    } catch (error) {
+      console.error('Error navigating:', error);
+      navigate('/module-hub');
+    } finally {
+      setIsNavigating(false);
     }
-  }, [navigate, isAuthenticated]);
+  };
+
+  // Handle sign out for already authenticated users
+  const handleSignOut = async () => {
+    setIsNavigating(true);
+    try {
+      await AuthService.signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+      setIsNavigating(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -110,6 +132,77 @@ export default function Signup() {
       setIsSubmitting(false);
     }
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full bg-primary/20 animate-pulse" />
+            <Sparkles className="h-8 w-8 animate-pulse text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <p className="text-muted-foreground text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Already authenticated - show "Already Signed In" UI instead of auto-redirecting
+  if (isAuthenticated && user) {
+    return (
+      <PublicLayout activeLink="signup">
+        <div className="flex-1 flex items-center justify-center p-4 relative">
+          <div className="relative w-full max-w-md">
+            <Card className="modern-card-elevated backdrop-blur-sm bg-card/95 border-border/50 shadow-glow">
+              <CardHeader className="text-center pb-8">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center mb-6 shadow-lg">
+                  <Wrench className="w-8 h-8 text-primary-foreground" />
+                </div>
+                
+                <CardTitle className="text-3xl font-heading gradient-text mb-2">
+                  Already Signed In
+                </CardTitle>
+                <p className="text-muted-foreground font-body">
+                  You're logged in as <span className="font-medium text-foreground">{user.email}</span>
+                </p>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                <Button 
+                  onClick={handleContinue}
+                  disabled={isNavigating}
+                  className="w-full h-12 rounded-xl btn-gradient-primary font-semibold text-base group"
+                >
+                  {isNavigating ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      Continue to App
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={handleSignOut}
+                  disabled={isNavigating}
+                  className="w-full h-12 rounded-xl font-semibold text-base gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out / Switch Account
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </PublicLayout>
+    );
+  }
 
   return (
     <PublicLayout activeLink="signup">

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Users, Wrench, ArrowRight } from 'lucide-react';
+import { Users, Wrench, ArrowRight, LogIn } from 'lucide-react';
 import { SearchInput } from '@/components/settings/SearchInput';
 import { ModuleCard } from '@/components/landing/ModuleCard';
 import { ComingSoonCard } from '@/components/landing/ComingSoonCard';
@@ -12,6 +12,7 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { WelcomeSection } from '@/components/landing/WelcomeSection';
 import { CategoryBanner } from '@/components/landing/CategoryBanner';
 import { LANDING_COMING_SOON_CATEGORIES, LANDING_MODULES } from '@/config/landingModules';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 // Category images
 import categoryAutomotive from '@/assets/category-automotive.jpg';
@@ -41,6 +42,7 @@ const categoryImages: Record<string, string> = {
 
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { isAuthenticated, isLoading } = useAuthUser();
 
   // Keyword associations for smart search (includes compound words)
   const keywordAssociations: Record<string, string[]> = {
@@ -224,12 +226,26 @@ export default function Index() {
                   <span className="hidden sm:inline">Customer</span> Portal
                 </Button>
               </Link>
-              <Link to="/staff-login">
-                <Button className="gap-2">
-                  <Wrench className="h-4 w-4" />
-                  Login / Signup
+              {/* Show different button based on auth state */}
+              {isLoading ? (
+                <Button className="gap-2" disabled>
+                  <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                 </Button>
-              </Link>
+              ) : isAuthenticated ? (
+                <Link to="/module-hub">
+                  <Button className="gap-2">
+                    <Wrench className="h-4 w-4" />
+                    Open App
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/login">
+                  <Button className="gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Login / Signup
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -351,12 +367,21 @@ export default function Index() {
             Join thousands of service professionals who trust All Business 365 to run their operations.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/staff-login" className="w-full sm:w-auto">
-              <Button size="lg" variant="secondary" className="gap-2 text-base md:text-lg px-6 md:px-8 w-full sm:w-auto">
-                Get Started Free
-                <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/module-hub" className="w-full sm:w-auto">
+                <Button size="lg" variant="secondary" className="gap-2 text-base md:text-lg px-6 md:px-8 w-full sm:w-auto">
+                  Open App
+                  <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/signup" className="w-full sm:w-auto">
+                <Button size="lg" variant="secondary" className="gap-2 text-base md:text-lg px-6 md:px-8 w-full sm:w-auto">
+                  Get Started Free
+                  <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+                </Button>
+              </Link>
+            )}
             <Link to="/customer-portal" className="w-full sm:w-auto">
               <Button size="lg" variant="outline" className="text-base md:text-lg px-6 md:px-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto">
                 Customer Portal
@@ -381,7 +406,7 @@ export default function Index() {
               <h4 className="font-semibold mb-3">Quick Links</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#modules" className="hover:text-foreground transition-colors">Modules</a></li>
-                <li><Link to="/staff-login" className="hover:text-foreground transition-colors">Staff Portal</Link></li>
+                <li><Link to="/login" className="hover:text-foreground transition-colors">Staff Portal</Link></li>
                 <li><Link to="/customer-portal" className="hover:text-foreground transition-colors">Customer Portal</Link></li>
               </ul>
             </div>
@@ -391,7 +416,6 @@ export default function Index() {
                 <li><a href="#" className="hover:text-foreground transition-colors">Documentation</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Contact Us</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
-                <li><Link to="/affiliate-verify" className="hover:text-foreground transition-colors">Affiliate Verification</Link></li>
               </ul>
             </div>
           </div>
