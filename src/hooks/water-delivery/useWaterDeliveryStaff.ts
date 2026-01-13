@@ -43,6 +43,13 @@ export interface UpdateStaffInput {
   department?: string;
 }
 
+// Water Delivery specific roles - includes universal roles (owner, admin, manager) 
+// and module-specific roles tagged with 'water-delivery' module_slug
+const WATER_DELIVERY_ROLE_NAMES = [
+  'owner', 'admin', 'manager', // Universal roles
+  'dispatch', 'truck_driver', 'operations_manager', 'yard_manager', // Water delivery specific
+] as const;
+
 export function useWaterDeliveryStaff() {
   const { shopId } = useShopId();
   const queryClient = useQueryClient();
@@ -76,7 +83,7 @@ export function useWaterDeliveryStaff() {
         throw profilesError;
       }
 
-      // Fetch roles for each profile
+      // Fetch roles for each profile and filter by Water Delivery roles
       const staffWithRoles = await Promise.all(
         (profiles || []).map(async (profile) => {
           const { data: userRoles } = await supabase
@@ -84,7 +91,8 @@ export function useWaterDeliveryStaff() {
             .select(`
               roles (
                 id,
-                name
+                name,
+                module_slug
               )
             `)
             .eq('user_id', profile.id);
@@ -100,7 +108,17 @@ export function useWaterDeliveryStaff() {
         })
       );
 
-      return staffWithRoles;
+      // Filter to only show staff with Water Delivery roles or universal roles
+      const waterDeliveryStaff = staffWithRoles.filter(staff => {
+        if (staff.roles.length === 0) return false; // Hide staff with no roles
+        return staff.roles.some(role => 
+          (WATER_DELIVERY_ROLE_NAMES as readonly string[]).includes(role.name) || 
+          (role as any).module_slug === 'water-delivery' ||
+          (role as any).module_slug === null // Universal roles
+        );
+      });
+
+      return waterDeliveryStaff;
     },
     enabled: !!shopId,
   });
@@ -315,14 +333,16 @@ export function useWaterDeliveryStaff() {
   };
 }
 
-// Hook to fetch available roles
+// Hook to fetch available roles for Water Delivery module
 export function useAvailableRoles() {
   return useQuery({
-    queryKey: ['available-roles'],
+    queryKey: ['available-roles', 'water-delivery'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('roles')
-        .select('id, name, description, display_order')
+        .select('id, name, description, display_order, module_slug')
+        .or('module_slug.eq.water-delivery,module_slug.is.null') // Water delivery specific or universal
+        .in('name', WATER_DELIVERY_ROLE_NAMES)
         .order('display_order', { ascending: true });
 
       if (error) throw error;

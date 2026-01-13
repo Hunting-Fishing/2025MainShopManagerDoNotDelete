@@ -31837,6 +31837,7 @@ export type Database = {
           id: string
           is_custom: boolean | null
           is_default: boolean | null
+          module_slug: string | null
           name: Database["public"]["Enums"]["app_role"]
           permissions: Json | null
           priority: number | null
@@ -31849,6 +31850,7 @@ export type Database = {
           id?: string
           is_custom?: boolean | null
           is_default?: boolean | null
+          module_slug?: string | null
           name: Database["public"]["Enums"]["app_role"]
           permissions?: Json | null
           priority?: number | null
@@ -31861,6 +31863,7 @@ export type Database = {
           id?: string
           is_custom?: boolean | null
           is_default?: boolean | null
+          module_slug?: string | null
           name?: Database["public"]["Enums"]["app_role"]
           permissions?: Json | null
           priority?: number | null
