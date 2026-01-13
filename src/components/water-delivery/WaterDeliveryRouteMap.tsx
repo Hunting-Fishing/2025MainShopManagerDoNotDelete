@@ -148,21 +148,35 @@ export function WaterDeliveryRouteMap({
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    // Add origin marker (business location)
-    if (origin) {
+    // Determine which location to use for business marker
+    // Use origin if provided, otherwise use smartCenter when it's from shop location
+    const businessLocation = origin || (centerSource === 'shop' ? smartCenter : null);
+
+    // Add business location marker
+    if (businessLocation) {
       const originEl = document.createElement('div');
       originEl.innerHTML = `
-        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 border-2 border-white">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
-            <circle cx="12" cy="10" r="3"/>
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/40 border-3 border-white ring-4 ring-cyan-200/50">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+            <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+            <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+            <path d="M10 6h4"/>
+            <path d="M10 10h4"/>
+            <path d="M10 14h4"/>
+            <path d="M10 18h4"/>
           </svg>
         </div>
       `;
 
       const originMarker = new mapboxgl.Marker(originEl)
-        .setLngLat(origin)
-        .setPopup(new mapboxgl.Popup().setHTML('<strong class="text-cyan-600">🏢 Business Location</strong>'))
+        .setLngLat(businessLocation)
+        .setPopup(new mapboxgl.Popup().setHTML(`
+          <div class="p-2">
+            <strong class="text-cyan-600">🏢 Business Location</strong>
+            <p class="text-xs text-gray-500 mt-1">Your delivery hub</p>
+          </div>
+        `))
         .addTo(map.current);
 
       markersRef.current.push(originMarker);
@@ -216,7 +230,7 @@ export function WaterDeliveryRouteMap({
         maxZoom: 14,
       });
     }
-  }, [destinations, mapLoaded, optimizedResult, origin]);
+  }, [destinations, mapLoaded, optimizedResult, origin, smartCenter, centerSource]);
 
   // Draw route line
   useEffect(() => {

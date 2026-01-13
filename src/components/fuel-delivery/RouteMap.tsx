@@ -146,22 +146,36 @@ export function RouteMap({
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    // Add origin marker
-    if (origin) {
+    // Determine which location to use for business marker
+    // Use origin if provided, otherwise use smartCenter when it's from shop location
+    const businessLocation = origin || (centerSource === 'shop' ? smartCenter : null);
+
+    // Add business location marker
+    if (businessLocation) {
       const originEl = document.createElement('div');
       originEl.className = 'origin-marker';
       originEl.innerHTML = `
-        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 border-2 border-white">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <circle cx="12" cy="12" r="3"/>
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/40 border-3 border-white ring-4 ring-emerald-200/50">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+            <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+            <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+            <path d="M10 6h4"/>
+            <path d="M10 10h4"/>
+            <path d="M10 14h4"/>
+            <path d="M10 18h4"/>
           </svg>
         </div>
       `;
 
       const originMarker = new mapboxgl.Marker(originEl)
-        .setLngLat(origin)
-        .setPopup(new mapboxgl.Popup().setHTML('<strong>Start Location</strong>'))
+        .setLngLat(businessLocation)
+        .setPopup(new mapboxgl.Popup().setHTML(`
+          <div class="p-2">
+            <strong class="text-emerald-600">🏢 Business Location</strong>
+            <p class="text-xs text-gray-500 mt-1">Your delivery hub</p>
+          </div>
+        `))
         .addTo(map.current);
 
       markersRef.current.push(originMarker);
@@ -205,9 +219,9 @@ export function RouteMap({
     });
 
     // Fit bounds to show all markers
-    if (destinations.length > 0) {
+    if (destinations.length > 0 || businessLocation) {
       const bounds = new mapboxgl.LngLatBounds();
-      if (origin) bounds.extend(origin);
+      if (businessLocation) bounds.extend(businessLocation);
       destinations.forEach((dest) => bounds.extend(dest.coordinates));
 
       map.current.fitBounds(bounds, {
@@ -215,7 +229,7 @@ export function RouteMap({
         maxZoom: 14,
       });
     }
-  }, [destinations, mapLoaded, optimizedResult, origin]);
+  }, [destinations, mapLoaded, optimizedResult, origin, smartCenter, centerSource]);
 
   // Draw route line
   useEffect(() => {
