@@ -7,6 +7,7 @@ import { useGeolocation } from './useGeolocation';
 const US_CENTER: [number, number] = [-98.5795, 39.8283];
 
 export type MapCenterSource = 'driver' | 'shop' | 'fallback';
+export type ModuleType = 'water' | 'fuel' | 'general';
 
 export interface MapCenterResult {
   center: [number, number];
@@ -24,12 +25,14 @@ interface UseMapDefaultCenterOptions {
   shopId?: string;
   enableDriverLocation?: boolean;
   autoRequestDriverLocation?: boolean;
+  moduleType?: ModuleType;
 }
 
 export function useMapDefaultCenter({
   shopId,
   enableDriverLocation = true,
   autoRequestDriverLocation = false,
+  moduleType = 'general',
 }: UseMapDefaultCenterOptions = {}): MapCenterResult {
   const [driverLocation, setDriverLocation] = useState<[number, number] | null>(null);
   const [usingDriverLocation, setUsingDriverLocation] = useState(false);
@@ -37,12 +40,40 @@ export function useMapDefaultCenter({
   
   const { getCurrentLocation, isLoading: geoLoading, error: geoError } = useGeolocation();
 
-  // Fetch shop location
-  const { data: shopData, isLoading: shopLoading } = useQuery({
-    queryKey: ['shop-location', shopId],
+  // Fetch business location from the appropriate module settings table
+  const { data: moduleSettings, isLoading: moduleLoading } = useQuery({
+    queryKey: ['module-business-location', shopId, moduleType],
     queryFn: async () => {
       if (!shopId) return null;
       
+      // Choose table based on module type
+      if (moduleType === 'water') {
+        const { data, error } = await supabase
+          .from('water_delivery_settings')
+          .select('business_latitude, business_longitude, business_address')
+          .eq('shop_id', shopId)
+          .maybeSingle();
+        
+        if (error) {
+          console.warn('Failed to fetch water delivery settings:', error);
+          return null;
+        }
+        return data;
+      } else if (moduleType === 'fuel') {
+        const { data, error } = await supabase
+          .from('fuel_delivery_settings')
+          .select('business_latitude, business_longitude, business_address')
+          .eq('shop_id', shopId)
+          .maybeSingle();
+        
+        if (error) {
+          console.warn('Failed to fetch fuel delivery settings:', error);
+          return null;
+        }
+        return data;
+      }
+      
+      // Fallback to general shops table
       const { data, error } = await supabase
         .from('shops')
         .select('latitude, longitude, address, city, state')
@@ -54,7 +85,11 @@ export function useMapDefaultCenter({
         return null;
       }
       
-      return data;
+      return {
+        business_latitude: data?.latitude,
+        business_longitude: data?.longitude,
+        business_address: [data?.address, data?.city, data?.state].filter(Boolean).join(', '),
+      };
     },
     enabled: !!shopId,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
@@ -62,8 +97,8 @@ export function useMapDefaultCenter({
 
   // Derive shop location coordinates
   const shopLocation: [number, number] | null = 
-    shopData?.longitude && shopData?.latitude
-      ? [shopData.longitude, shopData.latitude]
+    moduleSettings?.business_longitude && moduleSettings?.business_latitude
+      ? [moduleSettings.business_longitude, moduleSettings.business_latitude]
       : null;
 
   // Request driver location
@@ -127,7 +162,7 @@ export function useMapDefaultCenter({
   return {
     center,
     source,
-    isLoading: shopLoading || geoLoading,
+    isLoading: moduleLoading || geoLoading,
     error: locationError || geoError,
     shopLocation,
     driverLocation,
