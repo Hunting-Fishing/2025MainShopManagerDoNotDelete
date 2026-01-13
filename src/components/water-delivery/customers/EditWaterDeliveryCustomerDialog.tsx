@@ -19,6 +19,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Building2 } from 'lucide-react';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 
+const KNOWN_BUSINESS_TYPES = ['retail', 'restaurant', 'office', 'industrial', 'healthcare', 'education', 'government'];
+const isKnownBusinessType = (type: string | null | undefined): boolean => {
+  return KNOWN_BUSINESS_TYPES.includes(type || '');
+};
+
 interface EditWaterDeliveryCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -49,6 +54,7 @@ export function EditWaterDeliveryCustomerDialog({
     // Commercial fields
     company_name: '',
     business_type: '',
+    other_business_type: '',
     tax_id: '',
     billing_contact_name: '',
     billing_contact_email: '',
@@ -78,7 +84,8 @@ export function EditWaterDeliveryCustomerDialog({
         is_commercial: customer.is_commercial || false,
         is_active: customer.is_active ?? true,
         company_name: customer.company_name || '',
-        business_type: customer.business_type || '',
+        business_type: isKnownBusinessType(customer.business_type) ? customer.business_type : (customer.business_type ? 'other' : ''),
+        other_business_type: !isKnownBusinessType(customer.business_type) ? (customer.business_type || '') : '',
         tax_id: customer.tax_id || '',
         billing_contact_name: customer.billing_contact_name || '',
         billing_contact_email: customer.billing_contact_email || '',
@@ -111,7 +118,9 @@ export function EditWaterDeliveryCustomerDialog({
           is_commercial: data.is_commercial,
           is_active: data.is_active,
           company_name: data.is_commercial ? (data.company_name || null) : null,
-          business_type: data.is_commercial ? (data.business_type || null) : null,
+          business_type: data.is_commercial 
+            ? (data.business_type === 'other' ? data.other_business_type : data.business_type) || null 
+            : null,
           tax_id: data.is_commercial ? (data.tax_id || null) : null,
           billing_contact_name: data.is_commercial ? (data.billing_contact_name || null) : null,
           billing_contact_email: data.is_commercial ? (data.billing_contact_email || null) : null,
@@ -277,6 +286,18 @@ export function EditWaterDeliveryCustomerDialog({
                       </Select>
                     </div>
                   </div>
+
+                  {formData.business_type === 'other' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit_other_business_type">Specify Business Type *</Label>
+                      <Input
+                        id="edit_other_business_type"
+                        value={formData.other_business_type}
+                        onChange={(e) => setFormData(prev => ({ ...prev, other_business_type: e.target.value }))}
+                        placeholder="Enter business type..."
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="edit_tax_id">Tax ID / EIN</Label>
