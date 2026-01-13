@@ -4,16 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Droplets, ArrowLeft, Users, Mail, Phone, MapPin } from 'lucide-react';
+import { Plus, Search, ArrowLeft, Users, Mail, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { AddWaterDeliveryCustomerDialog } from '@/components/water-delivery/customers/AddWaterDeliveryCustomerDialog';
 
 export default function WaterDeliveryCustomers() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const { shopId } = useShopId();
 
   const { data: customers, isLoading } = useQuery({
@@ -55,7 +57,7 @@ export default function WaterDeliveryCustomers() {
               Manage customer accounts and information
             </p>
           </div>
-          <Button className="bg-cyan-600 hover:bg-cyan-700">
+          <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={() => setAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Customer
           </Button>
@@ -136,6 +138,11 @@ export default function WaterDeliveryCustomers() {
           )}
         </CardContent>
       </Card>
+
+      <AddWaterDeliveryCustomerDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+      />
     </div>
   );
 }
