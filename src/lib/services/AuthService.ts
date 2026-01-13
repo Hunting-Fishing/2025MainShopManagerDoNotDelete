@@ -45,11 +45,7 @@ export class AuthService {
       }
 
       // If we get here, login was successful
-      // Force page reload for clean state
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 100);
-
+      // Return success - let the caller handle navigation
       return { error: null, data: { success: true } };
     } catch (error) {
       console.error('Sign in error:', error);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,98 +14,51 @@ import {
   Zap, 
   Users,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  LogOut,
+  ArrowRight
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { AuthService } from '@/lib/services/AuthService';
+import { getPostLoginDestination } from '@/lib/auth/getPostLoginDestination';
 import staffLoginBg from '@/assets/staff-login-bg.jpg';
 
 export default function StaffLogin() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuthUser();
+  const { isAuthenticated, isLoading, user } = useAuthUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [checkingModules, setCheckingModules] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
-  // Function to determine redirect destination based on user's enabled modules
-  const getRedirectDestination = async (userId: string): Promise<string> => {
+  // Handle "Continue" for already authenticated users
+  const handleContinue = async () => {
+    if (!user) return;
+    setIsNavigating(true);
     try {
-      // Get user's profile to find their shop_id
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .or(`id.eq.${userId},user_id.eq.${userId}`)
-        .maybeSingle();
-
-      if (!profile?.shop_id) {
-        // No shop - go to onboarding
-        return '/onboarding';
-      }
-
-      // Get enabled modules for this shop
-      const { data: enabledModules } = await supabase
-        .from('shop_enabled_modules')
-        .select('module_id, business_modules(slug)')
-        .eq('shop_id', profile.shop_id);
-
-      if (!enabledModules || enabledModules.length === 0) {
-        // No modules enabled - go to module hub to select
-        return '/module-hub';
-      }
-
-      if (enabledModules.length === 1) {
-        // Only one module - redirect directly to that module's dashboard
-        const moduleSlug = (enabledModules[0] as any).business_modules?.slug;
-        if (moduleSlug) {
-          // Map module slug to dashboard route
-          const moduleRoutes: Record<string, string> = {
-            'automotive': '/dashboard',
-            'water-delivery': '/water-delivery/dashboard',
-            'marine': '/marine/dashboard',
-            'gunsmith': '/gunsmith-dashboard',
-            'lash-studio': '/lash-studio/dashboard',
-            'lawn-care': '/lawn-care/dashboard',
-            // Add more module routes as needed
-          };
-          return moduleRoutes[moduleSlug] || '/module-hub';
-        }
-      }
-
-      // Multiple modules - go to module hub to select
-      return '/module-hub';
+      const destination = await getPostLoginDestination(user.id);
+      navigate(destination);
     } catch (error) {
-      console.error('Error determining redirect:', error);
-      return '/module-hub';
+      console.error('Error navigating:', error);
+      navigate('/module-hub');
+    } finally {
+      setIsNavigating(false);
     }
   };
 
-  // Redirect if already authenticated - go to module hub or specific module
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('logout') === 'true') {
-      window.history.replaceState({}, '', '/staff-login');
-      return;
+  // Handle sign out for already authenticated users
+  const handleSignOut = async () => {
+    setIsNavigating(true);
+    try {
+      await AuthService.signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+      setIsNavigating(false);
     }
-
-    const handleAuthenticatedUser = async () => {
-      if (!isLoading && isAuthenticated) {
-        setCheckingModules(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const destination = await getRedirectDestination(user.id);
-          navigate(destination);
-        } else {
-          navigate('/module-hub');
-        }
-        setCheckingModules(false);
-      }
-    };
-
-    handleAuthenticatedUser();
-  }, [isAuthenticated, isLoading, navigate]);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +85,7 @@ export default function StaffLogin() {
         }
 
         // Determine the correct destination based on user's modules
-        const destination = await getRedirectDestination(data.user.id);
+        const destination = await getPostLoginDestination(data.user.id);
         navigate(destination);
       }
     } catch (error: any) {
@@ -143,7 +96,7 @@ export default function StaffLogin() {
     }
   };
 
-  if (isLoading || checkingModules) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -151,9 +104,75 @@ export default function StaffLogin() {
             <div className="w-16 h-16 rounded-full bg-primary/20 animate-pulse" />
             <Sparkles className="h-8 w-8 animate-pulse text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
           </div>
-          <p className="text-muted-foreground text-sm">
-            {checkingModules ? 'Checking your modules...' : 'Loading...'}
-          </p>
+          <p className="text-muted-foreground text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Already authenticated - show "Already Signed In" UI instead of auto-redirecting
+  if (isAuthenticated && user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card className="border-border/50 shadow-lg">
+            <CardContent className="pt-8 pb-8 space-y-6">
+              {/* Header */}
+              <div className="text-center space-y-4">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Wrench className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Already Signed In</h2>
+                  <p className="text-muted-foreground mt-1">
+                    You're logged in as <span className="font-medium text-foreground">{user.email}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3">
+                <Button 
+                  onClick={handleContinue}
+                  disabled={isNavigating}
+                  className="w-full h-12 text-base font-semibold gap-2"
+                >
+                  {isNavigating ? (
+                    <>
+                      <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      Continue to App
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={handleSignOut}
+                  disabled={isNavigating}
+                  className="w-full h-12 text-base font-semibold gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out / Switch Account
+                </Button>
+              </div>
+
+              {/* Back to Home */}
+              <div className="text-center">
+                <Link 
+                  to="/" 
+                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Home
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
