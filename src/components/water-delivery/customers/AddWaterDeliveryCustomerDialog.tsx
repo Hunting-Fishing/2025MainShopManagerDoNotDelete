@@ -77,7 +77,7 @@ export function AddWaterDeliveryCustomerDialog({
           requires_po: data.requires_po,
           tax_exempt: data.tax_exempt,
           tax_exempt_number: data.tax_exempt_number || null,
-          portal_enabled: data.portal_enabled,
+          portal_access_enabled: data.portal_enabled,
           portal_pin: data.portal_pin || null,
           notes: data.notes || null,
           is_active: true,
