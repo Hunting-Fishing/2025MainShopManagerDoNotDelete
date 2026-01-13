@@ -19,6 +19,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import staffLoginBg from '@/assets/staff-login-bg.jpg';
+
 export default function StaffLogin() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading } = useAuthUser();
@@ -27,8 +28,61 @@ export default function StaffLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [checkingModules, setCheckingModules] = useState(false);
 
-  // Redirect if already authenticated
+  // Function to determine redirect destination based on user's enabled modules
+  const getRedirectDestination = async (userId: string): Promise<string> => {
+    try {
+      // Get user's profile to find their shop_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .or(`id.eq.${userId},user_id.eq.${userId}`)
+        .maybeSingle();
+
+      if (!profile?.shop_id) {
+        // No shop - go to onboarding
+        return '/onboarding';
+      }
+
+      // Get enabled modules for this shop
+      const { data: enabledModules } = await supabase
+        .from('shop_enabled_modules')
+        .select('module_id, business_modules(slug)')
+        .eq('shop_id', profile.shop_id);
+
+      if (!enabledModules || enabledModules.length === 0) {
+        // No modules enabled - go to module hub to select
+        return '/module-hub';
+      }
+
+      if (enabledModules.length === 1) {
+        // Only one module - redirect directly to that module's dashboard
+        const moduleSlug = (enabledModules[0] as any).business_modules?.slug;
+        if (moduleSlug) {
+          // Map module slug to dashboard route
+          const moduleRoutes: Record<string, string> = {
+            'automotive': '/dashboard',
+            'water-delivery': '/water-delivery/dashboard',
+            'marine': '/marine/dashboard',
+            'gunsmith': '/gunsmith-dashboard',
+            'lash-studio': '/lash-studio/dashboard',
+            'lawn-care': '/lawn-care/dashboard',
+            // Add more module routes as needed
+          };
+          return moduleRoutes[moduleSlug] || '/module-hub';
+        }
+      }
+
+      // Multiple modules - go to module hub to select
+      return '/module-hub';
+    } catch (error) {
+      console.error('Error determining redirect:', error);
+      return '/module-hub';
+    }
+  };
+
+  // Redirect if already authenticated - go to module hub or specific module
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('logout') === 'true') {
@@ -36,9 +90,21 @@ export default function StaffLogin() {
       return;
     }
 
-    if (!isLoading && isAuthenticated) {
-      navigate('/dashboard');
-    }
+    const handleAuthenticatedUser = async () => {
+      if (!isLoading && isAuthenticated) {
+        setCheckingModules(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const destination = await getRedirectDestination(user.id);
+          navigate(destination);
+        } else {
+          navigate('/module-hub');
+        }
+        setCheckingModules(false);
+      }
+    };
+
+    handleAuthenticatedUser();
   }, [isAuthenticated, isLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -65,7 +131,9 @@ export default function StaffLogin() {
           console.warn('No profile found for user, allowing login');
         }
 
-        navigate('/dashboard');
+        // Determine the correct destination based on user's modules
+        const destination = await getRedirectDestination(data.user.id);
+        navigate(destination);
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -75,7 +143,7 @@ export default function StaffLogin() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || checkingModules) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -83,7 +151,9 @@ export default function StaffLogin() {
             <div className="w-16 h-16 rounded-full bg-primary/20 animate-pulse" />
             <Sparkles className="h-8 w-8 animate-pulse text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
           </div>
-          <p className="text-muted-foreground text-sm">Loading...</p>
+          <p className="text-muted-foreground text-sm">
+            {checkingModules ? 'Checking your modules...' : 'Loading...'}
+          </p>
         </div>
       </div>
     );
