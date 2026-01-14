@@ -28605,6 +28605,7 @@ export type Database = {
       product_submissions: {
         Row: {
           id: string
+          module_id: string | null
           notes: string | null
           product_name: string
           product_url: string
@@ -28615,6 +28616,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          module_id?: string | null
           notes?: string | null
           product_name: string
           product_url: string
@@ -28625,6 +28627,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          module_id?: string | null
           notes?: string | null
           product_name?: string
           product_url?: string
