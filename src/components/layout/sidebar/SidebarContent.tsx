@@ -112,20 +112,20 @@ export function SidebarContent() {
             All Modules
           </Link>
           
-          {/* Developer Portal - Admin/Owner only */}
+          {/* System Admin - Admin/Owner only */}
           {(userRoles.includes('admin') || userRoles.includes('owner')) && (
             <Link
-              to="/developer"
-              onClick={() => handleLinkClick('/developer')}
+              to="/system-admin"
+              onClick={() => handleLinkClick('/system-admin')}
               className={cn(
                 'flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-150',
                 'hover:bg-orange-100',
                 'text-orange-600 hover:text-orange-700',
-                location.pathname.startsWith('/developer') && 'bg-orange-100 text-orange-700'
+                location.pathname.startsWith('/system-admin') && 'bg-orange-100 text-orange-700'
               )}
             >
               <Code className="mr-3 h-4 w-4" />
-              Developer Portal
+              System Admin
             </Link>
           )}
         </div>
