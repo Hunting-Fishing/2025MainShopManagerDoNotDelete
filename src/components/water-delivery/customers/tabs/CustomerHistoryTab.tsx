@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, differenceInDays, parseISO } from 'date-fns';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { EditDeliveryDialog } from '../EditDeliveryDialog';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 interface CustomerHistoryTabProps {
   customerId: string;
@@ -50,6 +51,7 @@ interface AuditLogEntry {
 export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
   const [editingDelivery, setEditingDelivery] = useState<DeliveryCompletion | null>(null);
   const [expandedDeliveryId, setExpandedDeliveryId] = useState<string | null>(null);
+  const { formatVolume, getVolumeLabel, getPriceLabel, convertFromGallons } = useWaterUnits();
 
   // Fetch delivery completions for this customer
   const { data: completions, isLoading } = useQuery({
@@ -201,9 +203,9 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
 
     return Object.entries(months).map(([month, gallons]) => ({
       month,
-      gallons: Math.round(gallons),
+      volume: Math.round(convertFromGallons(gallons)),
     }));
-  }, [completions]);
+  }, [completions, convertFromGallons]);
 
   const getDriverName = (driver: DeliveryCompletion['water_delivery_drivers']) => {
     if (!driver) return '-';
@@ -269,7 +271,7 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Avg Delivery Size</p>
-                <p className="text-2xl font-bold">{Math.round(stats.avgGallons).toLocaleString()} gal</p>
+                <p className="text-2xl font-bold">{formatVolume(stats.avgGallons, 0)}</p>
               </div>
               <Droplet className="h-8 w-8 text-cyan-600 opacity-50" />
             </div>
@@ -348,11 +350,11 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px',
                     }}
-                    formatter={(value: number) => [`${value.toLocaleString()} gallons`, 'Delivered']}
+                    formatter={(value: number) => [`${value.toLocaleString()} ${getVolumeLabel(false).toLowerCase()}`, 'Delivered']}
                   />
                   <Area
                     type="monotone"
-                    dataKey="gallons"
+                    dataKey="volume"
                     stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -384,7 +386,7 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Order #</TableHead>
-                  <TableHead>Gallons</TableHead>
+                  <TableHead>{getVolumeLabel(false)}</TableHead>
                   <TableHead>Driver</TableHead>
                   <TableHead>Tank Level</TableHead>
                   <TableHead>Amount</TableHead>
@@ -409,7 +411,7 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
                           </Badge>
                         </TableCell>
                         <TableCell className="font-medium">
-                          {completion.gallons_delivered?.toLocaleString() || '-'} gal
+                          {completion.gallons_delivered ? formatVolume(completion.gallons_delivered, 0) : '-'}
                         </TableCell>
                         <TableCell>{getDriverName(completion.water_delivery_drivers)}</TableCell>
                         <TableCell>
