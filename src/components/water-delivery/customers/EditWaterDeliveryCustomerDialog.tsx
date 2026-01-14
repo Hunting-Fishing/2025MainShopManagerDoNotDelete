@@ -16,9 +16,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Building2 } from 'lucide-react';
+import { Loader2, Building2, MapPin } from 'lucide-react';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { CustomerHistoryTab } from './tabs/CustomerHistoryTab';
+import { CustomerLocationsTab } from './tabs/CustomerLocationsTab';
 
 const KNOWN_BUSINESS_TYPES = ['retail', 'restaurant', 'office', 'industrial', 'healthcare', 'education', 'government'];
 const isKnownBusinessType = (type: string | null | undefined): boolean => {
@@ -181,9 +182,13 @@ export function EditWaterDeliveryCustomerDialog({
 
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="billing">Billing</TabsTrigger>
+              <TabsTrigger value="locations" className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                <span className="hidden sm:inline">Locations</span>
+              </TabsTrigger>
               <TabsTrigger value="account">Account</TabsTrigger>
               <TabsTrigger value="portal">Portal</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
@@ -401,6 +406,10 @@ export function EditWaterDeliveryCustomerDialog({
                   />
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="locations" className="mt-4">
+              <CustomerLocationsTab customerId={customer.id} />
             </TabsContent>
 
             <TabsContent value="account" className="space-y-4 mt-4">

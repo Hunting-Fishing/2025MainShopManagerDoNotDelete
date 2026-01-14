@@ -55,7 +55,7 @@ export function WaterDeliveryCustomerHeader({ customer, stats, onRefresh }: Wate
                   <div>
                     <div className="flex items-center gap-2">
                       <h1 className="text-2xl font-bold text-foreground">
-                        {customer.company_name || customer.contact_name}
+                        {customer.company_name || `${customer.first_name} ${customer.last_name}`.trim()}
                       </h1>
                       <Badge variant={customer.is_active ? 'default' : 'secondary'}>
                         {customer.is_active ? 'Active' : 'Inactive'}
@@ -67,7 +67,7 @@ export function WaterDeliveryCustomerHeader({ customer, stats, onRefresh }: Wate
                       )}
                     </div>
                     {customer.company_name && (
-                      <p className="text-muted-foreground">{customer.contact_name}</p>
+                      <p className="text-muted-foreground">{customer.first_name} {customer.last_name}</p>
                     )}
                   </div>
                 </div>
@@ -229,7 +229,7 @@ export function WaterDeliveryCustomerHeader({ customer, stats, onRefresh }: Wate
         open={showPaymentDialog}
         onOpenChange={setShowPaymentDialog}
         customerId={customer.id}
-        customerName={customer.company_name || customer.contact_name}
+        customerName={customer.company_name || `${customer.first_name} ${customer.last_name}`.trim()}
         onSuccess={onRefresh}
       />
     </>
