@@ -86,6 +86,13 @@ export const navigation: NavigationSection[] = [
         description: 'Main dashboard overview',
         // No permission module - dashboard is accessible to all authenticated users
       },
+      {
+        title: 'Affiliate Store',
+        href: '/store',
+        icon: ShoppingBag,
+        description: 'Shop recommended tools & equipment',
+        // No permission - public access
+      },
     ],
   },
   {
