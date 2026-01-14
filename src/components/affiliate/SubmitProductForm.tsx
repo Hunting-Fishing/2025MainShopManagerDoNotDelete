@@ -14,19 +14,22 @@ interface ProductSubmission {
   product_url: string;
   suggested_category: string;
   notes?: string;
+  module_id?: string;
 }
 
 interface SubmitProductFormProps {
   onSuccess?: () => void;
   showCard?: boolean;
+  moduleId?: string;
 }
 
-export function SubmitProductForm({ onSuccess, showCard = false }: SubmitProductFormProps) {
+export function SubmitProductForm({ onSuccess, showCard = false, moduleId }: SubmitProductFormProps) {
   const [formData, setFormData] = useState<ProductSubmission>({
     product_name: '',
     product_url: '',
     suggested_category: '',
-    notes: ''
+    notes: '',
+    module_id: moduleId || ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -50,6 +53,7 @@ export function SubmitProductForm({ onSuccess, showCard = false }: SubmitProduct
           notes: formData.notes || null,
           suggested_by: user?.id || null,
           status: 'pending',
+          module_id: moduleId || null,
         });
 
       if (error) throw error;
@@ -66,7 +70,8 @@ export function SubmitProductForm({ onSuccess, showCard = false }: SubmitProduct
           product_name: '',
           product_url: '',
           suggested_category: '',
-          notes: ''
+          notes: '',
+          module_id: moduleId || ''
         });
         setIsSubmitted(false);
         onSuccess?.();
