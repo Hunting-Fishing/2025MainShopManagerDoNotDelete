@@ -84,7 +84,12 @@ import FeedbackFormsPage from '@/pages/feedback/FeedbackFormsPage';
 import FeedbackFormEditorPage from '@/pages/feedback/FeedbackFormEditorPage';
 import FeedbackAnalyticsPage from '@/pages/feedback/FeedbackAnalyticsPage';
 import SystemAdmin from '@/pages/SystemAdmin';
-import { DeveloperPortalDashboard, ProductSubmissions, AffiliateProducts, StoreAnalytics } from '@/pages/developer-portal';
+import WaterDeliveryDeveloper from '@/pages/water-delivery/WaterDeliveryDeveloper';
+import AutomotiveDeveloper from '@/pages/automotive/AutomotiveDeveloper';
+import GunsmithDeveloper from '@/pages/gunsmith/GunsmithDeveloper';
+import MarineDeveloper from '@/pages/marine/MarineDeveloper';
+import FuelDeliveryDeveloper from '@/pages/fuel-delivery/FuelDeliveryDeveloper';
+import PowerWashingDeveloper from '@/pages/power-washing/PowerWashingDeveloper';
 import SmsManagement from '@/pages/SmsManagement';
 import SmsTemplates from '@/pages/SmsTemplates';
 import Timesheet from '@/pages/Timesheet';
@@ -1012,11 +1017,13 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Developer Portal Module */}
-                  <Route path="/developer-portal" element={<DeveloperPortalDashboard />} />
-                  <Route path="/developer-portal/submissions" element={<ProductSubmissions />} />
-                  <Route path="/developer-portal/products" element={<AffiliateProducts />} />
-                  <Route path="/developer-portal/analytics" element={<StoreAnalytics />} />
+                  {/* Module Developer Pages */}
+                  <Route path="/water-delivery/developer" element={<WaterDeliveryDeveloper />} />
+                  <Route path="/automotive/developer" element={<AutomotiveDeveloper />} />
+                  <Route path="/gunsmith/developer" element={<GunsmithDeveloper />} />
+                  <Route path="/marine-services/developer" element={<MarineDeveloper />} />
+                  <Route path="/fuel-delivery/developer" element={<FuelDeliveryDeveloper />} />
+                  <Route path="/power-washing/developer" element={<PowerWashingDeveloper />} />
                   
                   {/* Advanced Analytics */}
                   <Route path="/advanced-analytics" element={
