@@ -12,7 +12,7 @@ import { ModuleIndicator } from './ModuleIndicator';
 import { ModuleSections } from './ModuleSections';
 import { navigation, NavigationItem } from './navigation';
 import { useSidebarVisibility } from '@/hooks/useSidebarVisibility';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Code } from 'lucide-react';
 
 export function SidebarContent() {
   const location = useLocation();
@@ -97,7 +97,7 @@ export function SidebarContent() {
       {/* Navigation */}
       <nav className="flex-1 space-y-2 p-2 overflow-y-auto">
         {/* Module Hub Link */}
-        <div className="mb-3">
+        <div className="mb-3 space-y-1">
           <Link
             to="/module-hub"
             onClick={() => handleLinkClick('/module-hub')}
@@ -111,6 +111,23 @@ export function SidebarContent() {
             <LayoutGrid className="mr-3 h-4 w-4" />
             All Modules
           </Link>
+          
+          {/* Developer Portal - Admin/Owner only */}
+          {(userRoles.includes('admin') || userRoles.includes('owner')) && (
+            <Link
+              to="/developer"
+              onClick={() => handleLinkClick('/developer')}
+              className={cn(
+                'flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-150',
+                'hover:bg-orange-100',
+                'text-orange-600 hover:text-orange-700',
+                location.pathname.startsWith('/developer') && 'bg-orange-100 text-orange-700'
+              )}
+            >
+              <Code className="mr-3 h-4 w-4" />
+              Developer Portal
+            </Link>
+          )}
         </div>
 
         {/* Active Module Sections */}
