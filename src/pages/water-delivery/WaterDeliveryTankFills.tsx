@@ -79,7 +79,7 @@ export default function WaterDeliveryTankFills() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('water_delivery_customers')
-        .select('id, company_name, contact_name')
+        .select('id, company_name, first_name, last_name')
         .order('company_name');
       if (error) throw error;
       return data;
@@ -196,7 +196,7 @@ export default function WaterDeliveryTankFills() {
                   <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
                   <SelectContent>
                     {customers.map((c: any) => (
-                      <SelectItem key={c.id} value={c.id}>{c.company_name || c.contact_name}</SelectItem>
+                      <SelectItem key={c.id} value={c.id}>{c.company_name || `${c.first_name} ${c.last_name}`.trim()}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

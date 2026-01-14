@@ -192,7 +192,7 @@ export default function WaterDeliveryOrderForm() {
                     <SelectContent>
                       {customers?.map((customer: any) => (
                         <SelectItem key={customer.id} value={customer.id}>
-                          {customer.company_name || customer.contact_name}
+                          {customer.company_name || `${customer.first_name} ${customer.last_name}`.trim()}
                         </SelectItem>
                       ))}
                     </SelectContent>
