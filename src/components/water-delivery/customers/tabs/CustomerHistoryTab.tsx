@@ -377,9 +377,9 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
             Delivery History
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           {completions && completions.length > 0 ? (
-            <Table>
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>

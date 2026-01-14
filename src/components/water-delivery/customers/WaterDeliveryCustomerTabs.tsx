@@ -18,6 +18,7 @@ import { CustomerQuotesTab } from './tabs/CustomerQuotesTab';
 import { CustomerInvoicesTab } from './tabs/CustomerInvoicesTab';
 import { CustomerNotesTab } from './tabs/CustomerNotesTab';
 import { CustomerHistoryTab } from './tabs/CustomerHistoryTab';
+import { InfoTooltip } from './InfoTooltip';
 
 interface WaterDeliveryCustomerTabsProps {
   customerId: string;
@@ -27,35 +28,35 @@ export function WaterDeliveryCustomerTabs({ customerId }: WaterDeliveryCustomerT
   return (
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
-        <TabsTrigger value="overview" className="flex items-center gap-2">
+        <TabsTrigger value="overview" className="flex items-center gap-1.5 min-h-[40px] px-2 sm:px-3">
           <LayoutDashboard className="h-4 w-4" />
           <span className="hidden sm:inline">Overview</span>
         </TabsTrigger>
-        <TabsTrigger value="locations" className="flex items-center gap-2">
+        <TabsTrigger value="locations" className="flex items-center gap-1.5 min-h-[40px] px-2 sm:px-3">
           <MapPin className="h-4 w-4" />
           <span className="hidden sm:inline">Locations</span>
         </TabsTrigger>
-        <TabsTrigger value="tanks" className="flex items-center gap-2">
+        <TabsTrigger value="tanks" className="flex items-center gap-1.5 min-h-[40px] px-2 sm:px-3">
           <Container className="h-4 w-4" />
           <span className="hidden sm:inline">Tanks</span>
         </TabsTrigger>
-        <TabsTrigger value="orders" className="flex items-center gap-2">
+        <TabsTrigger value="orders" className="flex items-center gap-1.5 min-h-[40px] px-2 sm:px-3">
           <ClipboardList className="h-4 w-4" />
           <span className="hidden sm:inline">Orders</span>
         </TabsTrigger>
-        <TabsTrigger value="quotes" className="flex items-center gap-2">
+        <TabsTrigger value="quotes" className="flex items-center gap-1.5 min-h-[40px] px-2 sm:px-3">
           <FileText className="h-4 w-4" />
           <span className="hidden sm:inline">Quotes</span>
         </TabsTrigger>
-        <TabsTrigger value="invoices" className="flex items-center gap-2">
+        <TabsTrigger value="invoices" className="flex items-center gap-1.5 min-h-[40px] px-2 sm:px-3">
           <Receipt className="h-4 w-4" />
           <span className="hidden sm:inline">Invoices</span>
         </TabsTrigger>
-        <TabsTrigger value="notes" className="flex items-center gap-2">
+        <TabsTrigger value="notes" className="flex items-center gap-1.5 min-h-[40px] px-2 sm:px-3">
           <StickyNote className="h-4 w-4" />
           <span className="hidden sm:inline">Notes</span>
         </TabsTrigger>
-        <TabsTrigger value="history" className="flex items-center gap-2">
+        <TabsTrigger value="history" className="flex items-center gap-1.5 min-h-[40px] px-2 sm:px-3">
           <History className="h-4 w-4" />
           <span className="hidden sm:inline">History</span>
         </TabsTrigger>
