@@ -47,7 +47,7 @@ const navSections: NavSection[] = [
     title: 'Overview',
     items: [
       { title: 'Dashboard', href: '/water-delivery', icon: LayoutDashboard, color: 'from-cyan-500 to-blue-600' },
-      { title: 'Affiliate Store', href: '/store', icon: ShoppingBag, color: 'from-amber-500 to-orange-600' },
+      { title: 'Recommended Gear', href: '/water-delivery/store', icon: ShoppingBag, color: 'from-amber-500 to-orange-600' },
     ],
   },
   {
