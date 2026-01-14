@@ -6,12 +6,15 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 interface CustomerOrdersTabProps {
   customerId: string;
 }
 
 export function CustomerOrdersTab({ customerId }: CustomerOrdersTabProps) {
+  const { formatVolume, getVolumeLabel } = useWaterUnits();
+  
   const { data: orders, isLoading } = useQuery({
     queryKey: ['water-delivery-customer-orders', customerId],
     queryFn: async () => {
@@ -43,7 +46,7 @@ export function CustomerOrdersTab({ customerId }: CustomerOrdersTabProps) {
                 <TableRow>
                   <TableHead>Order #</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Gallons</TableHead>
+                  <TableHead>{getVolumeLabel(false)}</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
@@ -53,7 +56,7 @@ export function CustomerOrdersTab({ customerId }: CustomerOrdersTabProps) {
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">{order.order_number}</TableCell>
                     <TableCell>{order.order_date ? format(new Date(order.order_date), 'MMM d, yyyy') : '-'}</TableCell>
-                    <TableCell>{order.quantity_gallons?.toLocaleString()}</TableCell>
+                    <TableCell>{formatVolume(order.quantity_gallons || 0, 0)}</TableCell>
                     <TableCell>{formatCurrency(order.total_amount || 0)}</TableCell>
                     <TableCell><Badge variant="outline">{order.status}</Badge></TableCell>
                   </TableRow>

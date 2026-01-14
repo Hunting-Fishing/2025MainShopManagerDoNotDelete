@@ -9,6 +9,7 @@ import { Container, Plus, Pencil, MapPin, Droplets, Shield, Zap } from 'lucide-r
 import { InfoTooltip } from '../InfoTooltip';
 import { AddTankDialog } from '../AddTankDialog';
 import { EditTankDialog } from '../EditTankDialog';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 interface CustomerTanksTabProps {
   customerId: string;
@@ -35,6 +36,7 @@ interface Tank {
 export function CustomerTanksTab({ customerId }: CustomerTanksTabProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingTank, setEditingTank] = useState<Tank | null>(null);
+  const { formatVolume } = useWaterUnits();
 
   const { data: tanks, isLoading } = useQuery({
     queryKey: ['water-delivery-customer-tanks', customerId],
@@ -85,7 +87,7 @@ export function CustomerTanksTab({ customerId }: CustomerTanksTabProps) {
                       
                       <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                         <Droplets className="h-3 w-3" />
-                        <span>{tank.capacity_gallons?.toLocaleString() || '-'} gal capacity</span>
+                        <span>{tank.capacity_gallons ? formatVolume(tank.capacity_gallons, 0) : '-'} capacity</span>
                       </div>
 
                       {tank.water_delivery_locations && (

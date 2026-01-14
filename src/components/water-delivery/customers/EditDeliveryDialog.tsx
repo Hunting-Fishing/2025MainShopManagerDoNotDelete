@@ -16,6 +16,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 interface DeliveryCompletion {
   id: string;
@@ -45,6 +46,7 @@ export function EditDeliveryDialog({
 }: EditDeliveryDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { getVolumeLabel, getPriceLabel, convertToGallons, convertFromGallons } = useWaterUnits();
 
   const [formData, setFormData] = useState({
     delivery_date: '',
@@ -78,7 +80,7 @@ export function EditDeliveryDialog({
     if (delivery) {
       setFormData({
         delivery_date: delivery.delivery_date ? format(parseISO(delivery.delivery_date), 'yyyy-MM-dd') : '',
-        gallons_delivered: delivery.gallons_delivered || 0,
+        gallons_delivered: convertFromGallons(delivery.gallons_delivered || 0),
         tank_level_before: delivery.tank_level_before || 0,
         tank_level_after: delivery.tank_level_after || 0,
         price_per_gallon: delivery.price_per_gallon || 0,
@@ -87,11 +89,14 @@ export function EditDeliveryDialog({
         change_note: '',
       });
     }
-  }, [delivery]);
+  }, [delivery, convertFromGallons]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       if (!delivery || !currentUser?.shop_id) throw new Error('Missing required data');
+
+      // Convert back to gallons for storage
+      const gallonsDelivered = convertToGallons(data.gallons_delivered);
 
       // Get original values for audit log
       const previousValues = {
@@ -106,7 +111,7 @@ export function EditDeliveryDialog({
 
       const newValues = {
         delivery_date: data.delivery_date,
-        gallons_delivered: data.gallons_delivered,
+        gallons_delivered: gallonsDelivered,
         tank_level_before: data.tank_level_before,
         tank_level_after: data.tank_level_after,
         price_per_gallon: data.price_per_gallon,
@@ -114,15 +119,15 @@ export function EditDeliveryDialog({
         notes: data.notes,
       };
 
-      // Calculate new total amount
-      const total_amount = data.gallons_delivered * data.price_per_gallon;
+      // Calculate new total amount (price is always per gallon in database)
+      const total_amount = gallonsDelivered * data.price_per_gallon;
 
       // Update the delivery completion
       const { error: updateError } = await supabase
         .from('water_delivery_completions')
         .update({
           delivery_date: data.delivery_date,
-          gallons_delivered: data.gallons_delivered,
+          gallons_delivered: gallonsDelivered,
           tank_level_before: data.tank_level_before,
           tank_level_after: data.tank_level_after,
           price_per_gallon: data.price_per_gallon,
@@ -210,7 +215,7 @@ export function EditDeliveryDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="gallons_delivered">Gallons Delivered</Label>
+              <Label htmlFor="gallons_delivered">{getVolumeLabel(false)} Delivered</Label>
               <Input
                 id="gallons_delivered"
                 type="number"
@@ -221,7 +226,7 @@ export function EditDeliveryDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price_per_gallon">Price Per Gallon ($)</Label>
+              <Label htmlFor="price_per_gallon">Price {getPriceLabel(true)} ($)</Label>
               <Input
                 id="price_per_gallon"
                 type="number"

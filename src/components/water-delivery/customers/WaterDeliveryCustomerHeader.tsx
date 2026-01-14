@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { EditWaterDeliveryCustomerDialog } from './EditWaterDeliveryCustomerDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
 import { WaterDeliveryCustomerStats } from '@/hooks/water-delivery/useWaterDeliveryCustomerDetails';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 interface WaterDeliveryCustomerHeaderProps {
   customer: any;
@@ -32,13 +33,10 @@ export function WaterDeliveryCustomerHeader({ customer, stats, onRefresh }: Wate
   const navigate = useNavigate();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const { formatVolume, getVolumeLabel } = useWaterUnits();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  };
-
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('en-US').format(num);
   };
 
   return (
@@ -188,9 +186,9 @@ export function WaterDeliveryCustomerHeader({ customer, stats, onRefresh }: Wate
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Droplets className="h-4 w-4" />
-                <span className="text-xs">Total Gallons</span>
+                <span className="text-xs">Total {getVolumeLabel(false)}</span>
               </div>
-              <p className="text-2xl font-bold">{formatNumber(stats.totalGallons)}</p>
+              <p className="text-2xl font-bold">{formatVolume(stats.totalGallons, 0)}</p>
             </CardContent>
           </Card>
 

@@ -10,6 +10,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 interface Tank {
   id: string;
@@ -36,6 +37,7 @@ interface EditTankDialogProps {
 
 export function EditTankDialog({ open, onOpenChange, tank }: EditTankDialogProps) {
   const queryClient = useQueryClient();
+  const { getVolumeLabel, convertToGallons, convertFromGallons } = useWaterUnits();
   const [formData, setFormData] = useState({
     tank_name: '',
     tank_number: '',
@@ -70,10 +72,12 @@ export function EditTankDialog({ open, onOpenChange, tank }: EditTankDialogProps
 
   useEffect(() => {
     if (tank) {
+      // Convert capacity from gallons to display unit
+      const displayCapacity = tank.capacity_gallons ? convertFromGallons(tank.capacity_gallons) : 0;
       setFormData({
         tank_name: tank.tank_name || '',
         tank_number: tank.tank_number || '',
-        capacity_gallons: tank.capacity_gallons?.toString() || '',
+        capacity_gallons: displayCapacity.toString(),
         tank_type: tank.tank_type || 'standard',
         material: tank.material || '',
         location_id: tank.location_id || '',
@@ -85,18 +89,21 @@ export function EditTankDialog({ open, onOpenChange, tank }: EditTankDialogProps
         notes: tank.notes || '',
       });
     }
-  }, [tank]);
+  }, [tank, convertFromGallons]);
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!tank) return;
+
+      // Convert capacity back to gallons for storage
+      const capacityGallons = formData.capacity_gallons ? convertToGallons(parseFloat(formData.capacity_gallons)) : null;
 
       const { error } = await supabase
         .from('water_delivery_tanks')
         .update({
           tank_name: formData.tank_name || null,
           tank_number: formData.tank_number || null,
-          capacity_gallons: formData.capacity_gallons ? parseFloat(formData.capacity_gallons) : null,
+          capacity_gallons: capacityGallons,
           tank_type: formData.tank_type,
           material: formData.material || null,
           location_id: formData.location_id || null,
@@ -164,7 +171,7 @@ export function EditTankDialog({ open, onOpenChange, tank }: EditTankDialogProps
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="capacity_gallons">Capacity (Gallons) *</Label>
+              <Label htmlFor="capacity_gallons">Capacity ({getVolumeLabel(false)}) *</Label>
               <Input
                 id="capacity_gallons"
                 type="number"

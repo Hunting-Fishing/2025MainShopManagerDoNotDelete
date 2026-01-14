@@ -14,12 +14,14 @@ import {
   Calendar,
   DollarSign
 } from 'lucide-react';
+import { useWaterUnits } from '@/hooks/water-delivery/useWaterUnits';
 
 interface CustomerOverviewTabProps {
   customerId: string;
 }
 
 export function CustomerOverviewTab({ customerId }: CustomerOverviewTabProps) {
+  const { formatVolume } = useWaterUnits();
   // Fetch recent orders
   const { data: recentOrders, isLoading: ordersLoading } = useQuery({
     queryKey: ['water-delivery-customer-recent-orders', customerId],
@@ -188,7 +190,7 @@ export function CustomerOverviewTab({ customerId }: CustomerOverviewTabProps) {
                   <div>
                     <p className="font-medium">{order.order_number}</p>
                     <p className="text-sm text-muted-foreground">
-                      {order.quantity_gallons?.toLocaleString()} gal • {formatCurrency(order.total_amount || 0)}
+                      {formatVolume(order.quantity_gallons || 0, 0)} • {formatCurrency(order.total_amount || 0)}
                     </p>
                   </div>
                   {getStatusBadge(order.status)}
