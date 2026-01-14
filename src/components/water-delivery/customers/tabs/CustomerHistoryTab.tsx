@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { History, TrendingUp, Droplet, Calendar, Truck, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { History, TrendingUp, Droplet, Calendar, Truck, ArrowUpRight, ArrowDownRight, Pencil, ChevronDown, User, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, differenceInDays, parseISO } from 'date-fns';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { EditDeliveryDialog } from '../EditDeliveryDialog';
 
 interface CustomerHistoryTabProps {
   customerId: string;
@@ -22,6 +25,9 @@ interface DeliveryCompletion {
   tank_level_after: number | null;
   notes: string | null;
   total_amount: number | null;
+  price_per_gallon: number | null;
+  payment_method: string | null;
+  customer_id: string | null;
   water_delivery_orders: {
     order_number: string;
   } | null;
@@ -31,7 +37,20 @@ interface DeliveryCompletion {
   } | null;
 }
 
+interface AuditLogEntry {
+  id: string;
+  action: string;
+  changed_by_name: string | null;
+  previous_values: Record<string, unknown> | null;
+  new_values: Record<string, unknown> | null;
+  notes: string | null;
+  created_at: string;
+}
+
 export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
+  const [editingDelivery, setEditingDelivery] = useState<DeliveryCompletion | null>(null);
+  const [expandedDeliveryId, setExpandedDeliveryId] = useState<string | null>(null);
+
   // Fetch delivery completions for this customer
   const { data: completions, isLoading } = useQuery({
     queryKey: ['water-delivery-history', customerId],
@@ -46,6 +65,9 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
           tank_level_after,
           notes,
           total_amount,
+          price_per_gallon,
+          payment_method,
+          customer_id,
           water_delivery_orders (
             order_number
           ),
@@ -61,6 +83,35 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
       return (data || []) as DeliveryCompletion[];
     },
     enabled: !!customerId,
+  });
+
+  // Fetch audit logs for delivery completions
+  const { data: auditLogs } = useQuery({
+    queryKey: ['water-delivery-audit-log', customerId],
+    queryFn: async () => {
+      if (!completions || completions.length === 0) return {};
+
+      const deliveryIds = completions.map(c => c.id);
+      const { data, error } = await supabase
+        .from('water_delivery_audit_log')
+        .select('*')
+        .eq('entity_type', 'delivery_completion')
+        .in('entity_id', deliveryIds)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Group by entity_id
+      const grouped: Record<string, AuditLogEntry[]> = {};
+      (data || []).forEach(log => {
+        const entityId = log.entity_id;
+        if (!grouped[entityId]) grouped[entityId] = [];
+        grouped[entityId].push(log as AuditLogEntry);
+      });
+      
+      return grouped;
+    },
+    enabled: !!completions && completions.length > 0,
   });
 
   // Calculate statistics
@@ -157,6 +208,30 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
   const getDriverName = (driver: DeliveryCompletion['water_delivery_drivers']) => {
     if (!driver) return '-';
     return `${driver.first_name} ${driver.last_name}`;
+  };
+
+  const getChangedFields = (prev: Record<string, unknown> | null, next: Record<string, unknown> | null) => {
+    if (!prev || !next) return [];
+    const changes: string[] = [];
+    
+    const fieldLabels: Record<string, string> = {
+      delivery_date: 'Delivery Date',
+      gallons_delivered: 'Gallons',
+      tank_level_before: 'Tank Before',
+      tank_level_after: 'Tank After',
+      price_per_gallon: 'Price/Gallon',
+      payment_method: 'Payment Method',
+      notes: 'Notes',
+    };
+
+    Object.keys(next).forEach(key => {
+      if (prev[key] !== next[key]) {
+        const label = fieldLabels[key] || key;
+        changes.push(`${label}: ${prev[key] ?? '-'} → ${next[key] ?? '-'}`);
+      }
+    });
+
+    return changes;
   };
 
   if (isLoading) {
@@ -313,35 +388,118 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
                   <TableHead>Driver</TableHead>
                   <TableHead>Tank Level</TableHead>
                   <TableHead>Amount</TableHead>
+                  <TableHead>Notes</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {completions.map((completion) => (
-                  <TableRow key={completion.id}>
-                    <TableCell>
-                      {format(parseISO(completion.delivery_date), 'MMM d, yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {completion.water_delivery_orders?.order_number || '-'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {completion.gallons_delivered?.toLocaleString() || '-'} gal
-                    </TableCell>
-                    <TableCell>{getDriverName(completion.water_delivery_drivers)}</TableCell>
-                    <TableCell>
-                      {completion.tank_level_before != null && completion.tank_level_after != null ? (
-                        <span className="text-sm">
-                          {completion.tank_level_before}% → {completion.tank_level_after}%
-                        </span>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      ${completion.total_amount?.toFixed(2) || '0.00'}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {completions.map((completion) => {
+                  const deliveryAuditLogs = auditLogs?.[completion.id] || [];
+                  const hasAuditLogs = deliveryAuditLogs.length > 0;
+                  
+                  return (
+                    <React.Fragment key={completion.id}>
+                      <TableRow>
+                        <TableCell>
+                          {format(parseISO(completion.delivery_date), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {completion.water_delivery_orders?.order_number || '-'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {completion.gallons_delivered?.toLocaleString() || '-'} gal
+                        </TableCell>
+                        <TableCell>{getDriverName(completion.water_delivery_drivers)}</TableCell>
+                        <TableCell>
+                          {completion.tank_level_before != null && completion.tank_level_after != null ? (
+                            <span className="text-sm">
+                              {completion.tank_level_before}% → {completion.tank_level_after}%
+                            </span>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          ${completion.total_amount?.toFixed(2) || '0.00'}
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate" title={completion.notes || ''}>
+                          {completion.notes || '-'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingDelivery(completion)}
+                              title="Edit delivery"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            {hasAuditLogs && (
+                              <Collapsible>
+                                <CollapsibleTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setExpandedDeliveryId(
+                                      expandedDeliveryId === completion.id ? null : completion.id
+                                    )}
+                                    title="View change history"
+                                  >
+                                    <ChevronDown className={`h-4 w-4 transition-transform ${
+                                      expandedDeliveryId === completion.id ? 'rotate-180' : ''
+                                    }`} />
+                                  </Button>
+                                </CollapsibleTrigger>
+                              </Collapsible>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      {hasAuditLogs && expandedDeliveryId === completion.id && (
+                        <TableRow>
+                          <TableCell colSpan={8} className="bg-muted/30 p-4">
+                            <div className="space-y-3">
+                              <p className="text-sm font-medium text-muted-foreground">Change History</p>
+                              {deliveryAuditLogs.map((log) => (
+                                <div key={log.id} className="border rounded-lg p-3 bg-background">
+                                  <div className="flex items-center gap-3 text-sm">
+                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                      <User className="h-3 w-3" />
+                                      <span className="font-medium">{log.changed_by_name || 'Unknown'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                      <Clock className="h-3 w-3" />
+                                      <span>{format(parseISO(log.created_at), 'MMM d, yyyy h:mm a')}</span>
+                                    </div>
+                                    <Badge variant="outline" className="capitalize">
+                                      {log.action}
+                                    </Badge>
+                                  </div>
+                                  {log.notes && (
+                                    <p className="mt-2 text-sm text-orange-600 bg-orange-50 dark:bg-orange-950/20 p-2 rounded">
+                                      <strong>Reason:</strong> {log.notes}
+                                    </p>
+                                  )}
+                                  {log.previous_values && log.new_values && (
+                                    <div className="mt-2 text-xs text-muted-foreground">
+                                      {getChangedFields(
+                                        log.previous_values as Record<string, unknown>,
+                                        log.new_values as Record<string, unknown>
+                                      ).map((change, i) => (
+                                        <div key={i} className="py-0.5">{change}</div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </TableBody>
             </Table>
           ) : (
@@ -353,6 +511,13 @@ export function CustomerHistoryTab({ customerId }: CustomerHistoryTabProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Delivery Dialog */}
+      <EditDeliveryDialog
+        open={!!editingDelivery}
+        onOpenChange={(open) => !open && setEditingDelivery(null)}
+        delivery={editingDelivery}
+      />
     </div>
   );
 }
