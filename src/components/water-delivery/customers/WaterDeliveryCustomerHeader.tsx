@@ -151,7 +151,7 @@ export function WaterDeliveryCustomerHeader({ customer, stats, onRefresh }: Wate
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
