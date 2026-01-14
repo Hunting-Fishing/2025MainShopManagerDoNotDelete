@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Cog,
+  ShoppingBag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -46,6 +47,7 @@ const navSections: NavSection[] = [
     title: 'Overview',
     items: [
       { title: 'Dashboard', href: '/water-delivery', icon: LayoutDashboard, color: 'from-cyan-500 to-blue-600' },
+      { title: 'Affiliate Store', href: '/store', icon: ShoppingBag, color: 'from-amber-500 to-orange-600' },
     ],
   },
   {
