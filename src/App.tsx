@@ -83,7 +83,8 @@ import Feedback from '@/pages/Feedback';
 import FeedbackFormsPage from '@/pages/feedback/FeedbackFormsPage';
 import FeedbackFormEditorPage from '@/pages/feedback/FeedbackFormEditorPage';
 import FeedbackAnalyticsPage from '@/pages/feedback/FeedbackAnalyticsPage';
-import DeveloperPortal from '@/pages/DeveloperPortal';
+import SystemAdmin from '@/pages/SystemAdmin';
+import { DeveloperPortalDashboard, ProductSubmissions, AffiliateProducts, StoreAnalytics } from '@/pages/developer-portal';
 import SmsManagement from '@/pages/SmsManagement';
 import SmsTemplates from '@/pages/SmsTemplates';
 import Timesheet from '@/pages/Timesheet';
@@ -1004,12 +1005,18 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Developer Portal */}
-                  <Route path="/developer/*" element={
+                  {/* System Admin (formerly Developer Portal) */}
+                  <Route path="/system-admin/*" element={
                     <ProtectedRoute requireAdmin={true}>
-                      <DeveloperPortal />
+                      <SystemAdmin />
                     </ProtectedRoute>
                   } />
+                  
+                  {/* Developer Portal Module */}
+                  <Route path="/developer-portal" element={<DeveloperPortalDashboard />} />
+                  <Route path="/developer-portal/submissions" element={<ProductSubmissions />} />
+                  <Route path="/developer-portal/products" element={<AffiliateProducts />} />
+                  <Route path="/developer-portal/analytics" element={<StoreAnalytics />} />
                   
                   {/* Advanced Analytics */}
                   <Route path="/advanced-analytics" element={

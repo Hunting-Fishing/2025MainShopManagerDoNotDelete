@@ -19,14 +19,14 @@ export default function DeveloperPortal() {
   return (
     <>
       <Helmet>
-        <title>Developer Portal | All Business 365</title>
+        <title>System Administration | All Business 365</title>
       </Helmet>
       
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Developer Portal</h1>
+          <h1 className="text-3xl font-bold tracking-tight">System Administration</h1>
           <p className="text-muted-foreground">
-            Advanced tools and system management
+            Platform administration and system tools
           </p>
         </div>
         

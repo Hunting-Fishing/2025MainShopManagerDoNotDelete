@@ -1682,6 +1682,24 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Settings', href: '/water-delivery/settings', icon: Settings, description: 'Module settings' },
     ],
   },
+  developer: {
+    slug: 'developer',
+    name: 'Developer Portal',
+    description: 'Platform development tools and store management',
+    icon: Code,
+    dashboardRoute: '/developer-portal',
+    color: 'hsl(25, 95%, 53%)',
+    gradientFrom: 'from-orange-500',
+    gradientTo: 'to-amber-600',
+    sections: [
+      { title: 'Dashboard', href: '/developer-portal', icon: Gauge, description: 'Module overview', group: 'Dashboard' },
+      { title: 'Product Submissions', href: '/developer-portal/submissions', icon: Package, description: 'Review user suggestions', group: 'Store Management' },
+      { title: 'Affiliate Products', href: '/developer-portal/products', icon: ShoppingBag, description: 'Manage affiliate products', group: 'Store Management' },
+      { title: 'Store Analytics', href: '/developer-portal/analytics', icon: BarChart3, description: 'Performance metrics', group: 'Store Management' },
+      { title: 'API Documentation', href: '/developer-portal/api-docs', icon: FileText, description: 'API reference', group: 'Developer Tools' },
+      { title: 'API Testing', href: '/developer-portal/api-tools', icon: Code, description: 'Test endpoints', group: 'Developer Tools' },
+    ],
+  },
 };
 
 export const getModuleRoute = (slug: string): ModuleRouteConfig | undefined => {
