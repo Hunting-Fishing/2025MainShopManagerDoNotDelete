@@ -137,6 +137,7 @@ import Payroll from '@/pages/Payroll';
 import AdvancedAnalytics from '@/pages/AdvancedAnalytics';
 import AffiliateTool from '@/pages/AffiliateTool';
 import AffiliateVerification from '@/pages/AffiliateVerification';
+import Store from '@/pages/Store';
 import BoatInspection from '@/pages/BoatInspection';
 import Checkout from '@/pages/Checkout';
 import ClientBooking from '@/pages/ClientBooking';
@@ -388,6 +389,7 @@ function App() {
                   <Route path="/marine-services" element={<MarineDashboard />} />
                   
                   {/* Store */}
+                  <Route path="/store" element={<Store />} />
                   <Route path="/shopping" element={<Shopping />} />
                   <Route path="/shopping/:id" element={<ProductDetail />} />
                   <Route path="/customer-portal" element={<CustomerPortal />} />

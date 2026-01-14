@@ -557,6 +557,12 @@ export const navigation: NavigationSection[] = [
     title: 'Store',
     items: [
       {
+        title: 'Affiliate Store',
+        href: '/store',
+        icon: ShoppingBag,
+        description: 'Shop recommended tools & equipment',
+      },
+      {
         title: 'Shopping',
         href: '/shopping',
         icon: Store,
