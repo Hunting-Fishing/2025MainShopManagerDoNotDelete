@@ -28756,6 +28756,7 @@ export type Database = {
           is_bestseller: boolean | null
           is_featured: boolean | null
           low_stock_threshold: number | null
+          module_id: string | null
           name: string
           price: number | null
           product_type: Database["public"]["Enums"]["product_type"]
@@ -28788,6 +28789,7 @@ export type Database = {
           is_bestseller?: boolean | null
           is_featured?: boolean | null
           low_stock_threshold?: number | null
+          module_id?: string | null
           name: string
           price?: number | null
           product_type?: Database["public"]["Enums"]["product_type"]
@@ -28820,6 +28822,7 @@ export type Database = {
           is_bestseller?: boolean | null
           is_featured?: boolean | null
           low_stock_threshold?: number | null
+          module_id?: string | null
           name?: string
           price?: number | null
           product_type?: Database["public"]["Enums"]["product_type"]
