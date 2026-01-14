@@ -1381,6 +1381,7 @@ function App() {
                   <Route path="/profile" element={<WaterDeliveryProfile />} />
                   <Route path="/settings" element={<WaterDeliverySettings />} />
                   <Route path="/store" element={<WaterDeliveryStore />} />
+                  <Route path="/developer" element={<WaterDeliveryDeveloper />} />
                 </Routes>
               </WaterDeliveryLayout>
             </AuthGate>
