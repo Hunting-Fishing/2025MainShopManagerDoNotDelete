@@ -66,8 +66,9 @@ export function AddressAutocomplete({
 
     setIsLoading(true);
     try {
+      // Search in USA and Canada
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=${encodeURIComponent(query)}`,
+        `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=us,ca&q=${encodeURIComponent(query)}`,
         {
           headers: {
             'Accept-Language': 'en',
