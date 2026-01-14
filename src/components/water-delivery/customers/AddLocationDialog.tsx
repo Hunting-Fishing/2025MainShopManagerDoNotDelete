@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MapPin, ChevronDown, Home, Container, Droplets } from 'lucide-react';
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
+import { LocationMapPicker } from './LocationMapPicker';
 
 interface AddLocationDialogProps {
   open: boolean;
@@ -17,19 +20,34 @@ interface AddLocationDialogProps {
 }
 
 const LOCATION_TYPES = [
-  { value: 'residence', label: 'Residence' },
-  { value: 'cistern', label: 'Cistern' },
-  { value: 'well', label: 'Well' },
+  { value: 'residence', label: 'Residence', icon: Home },
+  { value: 'cistern', label: 'Cistern', icon: Container },
+  { value: 'well', label: 'Well', icon: Droplets },
 ];
 
 export function AddLocationDialog({ open, onOpenChange, customerId }: AddLocationDialogProps) {
   const queryClient = useQueryClient();
+  const [showMap, setShowMap] = useState(false);
   const [formData, setFormData] = useState({
-    location_type: '',
+    location_type: '' as 'residence' | 'cistern' | 'well' | '',
     location_name: '',
     address: '',
     notes: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
+
+  const handleLocationChange = useCallback((lat: number, lng: number) => {
+    setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+  }, []);
+
+  const handleAddressSelect = useCallback((addressData: { street: string; city: string; state: string; zip: string }) => {
+    // Just update the address - coordinates will be set via map
+    const fullAddress = [addressData.street, addressData.city, addressData.state, addressData.zip]
+      .filter(Boolean)
+      .join(', ');
+    setFormData(prev => ({ ...prev, address: fullAddress }));
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -51,6 +69,8 @@ export function AddLocationDialog({ open, onOpenChange, customerId }: AddLocatio
         location_name: locationName,
         address: formData.address || null,
         notes: formData.notes || null,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         is_active: true,
       });
 
@@ -73,7 +93,10 @@ export function AddLocationDialog({ open, onOpenChange, customerId }: AddLocatio
       location_name: '',
       address: '',
       notes: '',
+      latitude: null,
+      longitude: null,
     });
+    setShowMap(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -85,9 +108,11 @@ export function AddLocationDialog({ open, onOpenChange, customerId }: AddLocatio
     createMutation.mutate();
   };
 
+  const selectedType = LOCATION_TYPES.find(t => t.value === formData.location_type);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Location</DialogTitle>
         </DialogHeader>
@@ -96,17 +121,25 @@ export function AddLocationDialog({ open, onOpenChange, customerId }: AddLocatio
             <Label htmlFor="location_type">Location Type *</Label>
             <Select
               value={formData.location_type}
-              onValueChange={(value) => setFormData({ ...formData, location_type: value })}
+              onValueChange={(value: 'residence' | 'cistern' | 'well') => 
+                setFormData({ ...formData, location_type: value })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select type..." />
               </SelectTrigger>
               <SelectContent>
-                {LOCATION_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
+                {LOCATION_TYPES.map((type) => {
+                  const Icon = type.icon;
+                  return (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        {type.label}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -117,19 +150,46 @@ export function AddLocationDialog({ open, onOpenChange, customerId }: AddLocatio
               id="location_name"
               value={formData.location_name}
               onChange={(e) => setFormData({ ...formData, location_name: e.target.value })}
-              placeholder="e.g., Main House, Back Cistern"
+              placeholder={selectedType ? `e.g., Main ${selectedType.label}` : 'e.g., Main House'}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="address">Address</Label>
-            <Input
+            <AddressAutocomplete
               id="address"
               value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Street address (if different from customer)"
+              onChange={(value) => setFormData({ ...formData, address: value })}
+              onAddressSelect={handleAddressSelect}
+              placeholder="Start typing address..."
             />
           </div>
+
+          {/* Collapsible Map Section */}
+          <Collapsible open={showMap} onOpenChange={setShowMap}>
+            <CollapsibleTrigger asChild>
+              <Button type="button" variant="outline" className="w-full justify-between">
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {showMap ? 'Hide Map' : 'Show on Map'}
+                  {formData.latitude && formData.longitude && (
+                    <span className="text-xs text-muted-foreground">
+                      (Location marked)
+                    </span>
+                  )}
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showMap ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3">
+              <LocationMapPicker
+                latitude={formData.latitude}
+                longitude={formData.longitude}
+                onLocationChange={handleLocationChange}
+                locationType={formData.location_type}
+              />
+            </CollapsibleContent>
+          </Collapsible>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
