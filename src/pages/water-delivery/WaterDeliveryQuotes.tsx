@@ -38,7 +38,7 @@ export default function WaterDeliveryQuotes() {
         .from('water_delivery_quotes')
         .select(`
           *,
-          water_delivery_customers(company_name, contact_name)
+          water_delivery_customers(company_name, first_name, last_name)
         `)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -51,7 +51,7 @@ export default function WaterDeliveryQuotes() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('water_delivery_customers')
-        .select('id, company_name, contact_name')
+        .select('id, company_name, first_name, last_name')
         .order('company_name');
       if (error) throw error;
       return data;
@@ -203,7 +203,7 @@ export default function WaterDeliveryQuotes() {
                       <SelectContent>
                         {customers?.map((c: any) => (
                           <SelectItem key={c.id} value={c.id}>
-                            {c.company_name || c.contact_name}
+                            {c.company_name || `${c.first_name} ${c.last_name}`.trim()}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -361,7 +361,7 @@ export default function WaterDeliveryQuotes() {
                   <TableRow key={quote.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell className="font-medium">{quote.quote_number}</TableCell>
                     <TableCell>
-                      {quote.water_delivery_customers?.company_name || quote.water_delivery_customers?.contact_name || '-'}
+                      {quote.water_delivery_customers?.company_name || `${quote.water_delivery_customers?.first_name || ''} ${quote.water_delivery_customers?.last_name || ''}`.trim() || '-'}
                     </TableCell>
                     <TableCell>{format(new Date(quote.quote_date), 'MMM d, yyyy')}</TableCell>
                     <TableCell>
