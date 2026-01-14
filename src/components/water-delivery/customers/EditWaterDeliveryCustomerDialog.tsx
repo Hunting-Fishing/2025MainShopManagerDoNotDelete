@@ -18,6 +18,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Building2 } from 'lucide-react';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
+import { CustomerHistoryTab } from './tabs/CustomerHistoryTab';
 
 const KNOWN_BUSINESS_TYPES = ['retail', 'restaurant', 'office', 'industrial', 'healthcare', 'education', 'government'];
 const isKnownBusinessType = (type: string | null | undefined): boolean => {
@@ -180,11 +181,12 @@ export function EditWaterDeliveryCustomerDialog({
 
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="billing">Billing</TabsTrigger>
               <TabsTrigger value="account">Account</TabsTrigger>
               <TabsTrigger value="portal">Portal</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
             </TabsList>
 
             <TabsContent value="basic" className="space-y-4 mt-4">
@@ -491,6 +493,10 @@ export function EditWaterDeliveryCustomerDialog({
                   </div>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="history" className="mt-4">
+              <CustomerHistoryTab customerId={customer.id} />
             </TabsContent>
           </Tabs>
 

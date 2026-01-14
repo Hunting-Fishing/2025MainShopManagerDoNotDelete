@@ -40133,6 +40133,56 @@ export type Database = {
         }
         Relationships: []
       }
+      water_delivery_audit_log: {
+        Row: {
+          action: string
+          changed_by: string | null
+          changed_by_name: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          new_values: Json | null
+          notes: string | null
+          previous_values: Json | null
+          shop_id: string
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          new_values?: Json | null
+          notes?: string | null
+          previous_values?: Json | null
+          shop_id: string
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          new_values?: Json | null
+          notes?: string | null
+          previous_values?: Json | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_delivery_audit_log_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       water_delivery_compartment_history: {
         Row: {
           action_type: string
