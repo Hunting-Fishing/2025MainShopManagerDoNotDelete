@@ -183,7 +183,7 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({
         <ImageWithFallback 
           src={product.imageUrl} 
           alt={product.name} 
-          className="h-full w-full object-cover transition-all group-hover:scale-105"
+          className="h-full w-full object-contain bg-white p-2 transition-all group-hover:scale-105"
           showPlaceholder={true}
         />
         
