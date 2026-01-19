@@ -24,6 +24,11 @@ export const MODULE_STRIPE_PRICING = {
     pro: { productId: 'prod_Tp1Z5s0tfED2sE', priceId: 'price_1SrNWUGapOfsltWtjuv7BGr2', price: 15 },
     business: { productId: 'prod_Tp1erY3CGoa4c8', priceId: 'price_1SrNbUGapOfsltWtb0H4JOGx', price: 25 },
   },
+  'fuel-delivery': {
+    starter: { productId: 'prod_Tp1qFFafyqiR0A', priceId: 'price_1SrNmjGapOfsltWt3fqBNwi7', price: 9 },
+    pro: { productId: 'prod_Tp1rcYd07x0rG3', priceId: 'price_1SrNnNGapOfsltWteieDKKaq', price: 15 },
+    business: { productId: 'prod_Tp1sjesmCwG75A', priceId: 'price_1SrNoYGapOfsltWtOOLw0ca7', price: 25 },
+  },
 } as const;
 
 export type ModuleId = keyof typeof MODULE_STRIPE_PRICING;

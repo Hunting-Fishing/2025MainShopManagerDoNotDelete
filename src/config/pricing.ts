@@ -45,7 +45,8 @@ export const MODULES = [
   { id: 'power-washing', name: 'Power Washing', icon: 'Droplets', description: 'Pressure washing services' },
   { id: 'gunsmith', name: 'Gunsmith', icon: 'Target', description: 'Firearms repair & services' },
   { id: 'marine', name: 'Marine', icon: 'Anchor', description: 'Boat & marine services' },
-  { id: 'water-delivery', name: 'Water Delivery', icon: 'Droplets', description: 'Water delivery services' }
+  { id: 'water-delivery', name: 'Water Delivery', icon: 'Droplets', description: 'Water delivery services' },
+  { id: 'fuel-delivery', name: 'Fuel Delivery', icon: 'Fuel', description: 'Fuel delivery services' }
 ] as const;
 
 export type TierKey = keyof typeof PRICING_TIERS;
