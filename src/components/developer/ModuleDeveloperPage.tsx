@@ -21,14 +21,15 @@ import {
   DollarSign,
   Globe,
   Trash2,
-  Edit,
   Eye,
   ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { SubmissionReviewDialog } from './SubmissionReviewDialog';
+import { toast } from 'sonner';
 
 interface ModuleDeveloperPageProps {
   moduleSlug: string;
@@ -185,6 +186,7 @@ export function ModuleDeveloperPage({
           {activeSection === 'submissions' && (
             <SubmissionsSection 
               moduleName={moduleName}
+              moduleSlug={moduleSlug}
               submissions={submissions}
               isLoading={submissionsLoading}
             />
@@ -525,13 +527,51 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
 // Submissions Section Component
 function SubmissionsSection({ 
   moduleName, 
+  moduleSlug,
   submissions, 
   isLoading 
 }: { 
   moduleName: string;
+  moduleSlug: string;
   submissions: any[];
   isLoading: boolean;
 }) {
+  const queryClient = useQueryClient();
+  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this submission?')) return;
+    
+    setDeletingId(id);
+    try {
+      const { error } = await supabase
+        .from('product_submissions')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast.success('Submission deleted');
+      queryClient.invalidateQueries({ queryKey: ['product-submissions', moduleSlug] });
+    } catch (error: any) {
+      console.error('Error deleting submission:', error);
+      toast.error(`Failed to delete: ${error.message}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleOpenReview = (submission: any) => {
+    setSelectedSubmission(submission);
+    setReviewDialogOpen(true);
+  };
+
+  const pendingCount = submissions.filter(s => s.status === 'pending').length;
+  const approvedCount = submissions.filter(s => s.status === 'approved').length;
+  const rejectedCount = submissions.filter(s => s.status === 'rejected').length;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -540,6 +580,11 @@ function SubmissionsSection({
           <p className="text-muted-foreground">
             Review and manage user-submitted product suggestions for {moduleName}
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">{pendingCount} Pending</Badge>
+          <Badge variant="default">{approvedCount} Approved</Badge>
+          <Badge variant="destructive">{rejectedCount} Rejected</Badge>
         </div>
       </div>
 
@@ -562,24 +607,26 @@ function SubmissionsSection({
               {submissions.map((submission) => (
                 <div 
                   key={submission.id} 
-                  className="flex items-center justify-between p-4 hover:bg-muted/50"
+                  className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
                 >
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium">{submission.product_name}</p>
                       <Badge variant="outline" className="text-xs">
                         {submission.suggested_category || 'Uncategorized'}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-1">
-                      {submission.notes || 'No additional notes'}
+                      {submission.notes?.startsWith('[REJECTED]') 
+                        ? submission.notes.substring(0, 80) + '...'
+                        : submission.notes || 'No additional notes'}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Submitted {new Date(submission.submitted_at).toLocaleDateString()} at{' '}
                       {new Date(submission.submitted_at).toLocaleTimeString()}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 shrink-0">
                     <Badge 
                       variant={
                         submission.status === 'pending' ? 'secondary' :
@@ -589,13 +636,23 @@ function SubmissionsSection({
                       {submission.status}
                     </Badge>
                     <div className="flex items-center gap-1">
-                      <Button size="icon" variant="ghost" className="h-8 w-8">
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-8 w-8"
+                        onClick={() => handleOpenReview(submission)}
+                        title="Review submission"
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive">
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(submission.id)}
+                        disabled={deletingId === submission.id}
+                        title="Delete submission"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -606,6 +663,13 @@ function SubmissionsSection({
           )}
         </CardContent>
       </Card>
+
+      <SubmissionReviewDialog
+        submission={selectedSubmission}
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        moduleSlug={moduleSlug}
+      />
     </div>
   );
 }
