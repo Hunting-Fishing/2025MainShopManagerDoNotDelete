@@ -155,7 +155,7 @@ export default function ProductDetail() {
                 <img 
                   src={product.image_url} 
                   alt={product.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain bg-white p-2"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

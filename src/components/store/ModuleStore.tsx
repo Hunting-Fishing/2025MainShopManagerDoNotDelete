@@ -89,7 +89,7 @@ function StoreProductCard({ product }: { product: Product }) {
           <img 
             src={product.image_url} 
             alt={displayName} 
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            className="h-full w-full object-contain bg-white p-2 transition-transform group-hover:scale-105"
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center">
