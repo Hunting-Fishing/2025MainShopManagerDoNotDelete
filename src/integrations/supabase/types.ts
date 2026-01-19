@@ -28750,7 +28750,7 @@ export type Database = {
         Row: {
           affiliate_link: string | null
           average_rating: number | null
-          category_id: string
+          category_id: string | null
           created_at: string
           description: string | null
           dimensions: Json | null
@@ -28783,7 +28783,7 @@ export type Database = {
         Insert: {
           affiliate_link?: string | null
           average_rating?: number | null
-          category_id: string
+          category_id?: string | null
           created_at?: string
           description?: string | null
           dimensions?: Json | null
@@ -28816,7 +28816,7 @@ export type Database = {
         Update: {
           affiliate_link?: string | null
           average_rating?: number | null
-          category_id?: string
+          category_id?: string | null
           created_at?: string
           description?: string | null
           dimensions?: Json | null
