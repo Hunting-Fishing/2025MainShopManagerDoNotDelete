@@ -177,16 +177,25 @@ export function ModuleStore({
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
 
-  // Fetch products filtered by module_id
+  // Build a category ID lookup from the passed categories prop
+  const categorySlugToId = React.useMemo(() => {
+    const lookup: Record<string, string> = {};
+    categories.forEach(cat => {
+      lookup[cat.id] = cat.id; // The id IS the slug in our case (e.g., 'machines', 'chemicals')
+    });
+    return lookup;
+  }, [categories]);
+
+  // Fetch products filtered by module_id and category
   const { data: products, isLoading } = useQuery({
     queryKey: ['store-products', moduleId, searchQuery, selectedCategory],
     queryFn: async () => {
       let query = supabase
         .from('products')
-        .select('*')
+        .select('*, category:product_categories(id, name, slug)')
         .eq('is_approved', true)
         .eq('is_available', true)
-        .eq('module_id', moduleId) // Filter by module
+        .eq('module_id', moduleId)
         .not('affiliate_link', 'is', null)
         .order('is_featured', { ascending: false })
         .order('is_bestseller', { ascending: false })
@@ -198,13 +207,25 @@ export function ModuleStore({
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Product[];
+      return data as (Product & { category?: { id: string; name: string; slug: string } })[];
     },
   });
 
-  const featuredProducts = products?.filter(p => p.is_featured).slice(0, 4) || [];
-  const bestSellers = products?.filter(p => p.is_bestseller && !p.is_featured).slice(0, 4) || [];
-  const allProducts = products || [];
+  // Client-side filter by category (since category slugs are defined in UI, not in DB category_id)
+  const filteredByCategory = React.useMemo(() => {
+    if (!products) return [];
+    if (selectedCategory === 'all') return products;
+    
+    // Match by category slug from product_categories table
+    return products.filter(product => {
+      if (!product.category) return false;
+      return product.category.slug === selectedCategory || product.category.id === selectedCategory;
+    });
+  }, [products, selectedCategory]);
+
+  const featuredProducts = filteredByCategory.filter(p => p.is_featured).slice(0, 4);
+  const bestSellers = filteredByCategory.filter(p => p.is_bestseller && !p.is_featured).slice(0, 4);
+  const allProducts = filteredByCategory;
 
   // Generate gradient class based on accent color
   const getGradientClass = () => {
@@ -336,9 +357,12 @@ export function ModuleStore({
               <Package className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-xl font-semibold">All Products</h2>
             </div>
-            {products && (
+            {allProducts.length > 0 && (
               <span className="text-sm text-muted-foreground">
-                {products.length} products
+                {allProducts.length} product{allProducts.length !== 1 ? 's' : ''}
+                {selectedCategory !== 'all' && products && allProducts.length !== products.length && (
+                  <span className="text-muted-foreground/70"> (of {products.length} total)</span>
+                )}
               </span>
             )}
           </div>
