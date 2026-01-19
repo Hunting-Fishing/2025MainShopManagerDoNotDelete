@@ -1,7 +1,7 @@
 export const PRICING_TIERS = {
   starter: {
     name: 'Starter',
-    price: 9,
+    price: 3,
     description: '50 work orders/mo, basic features',
     features: [
       '50 work orders per month',
@@ -13,7 +13,7 @@ export const PRICING_TIERS = {
   },
   pro: {
     name: 'Pro',
-    price: 29,
+    price: 6,
     description: 'Unlimited work orders, advanced features',
     popular: true,
     features: [
@@ -27,7 +27,7 @@ export const PRICING_TIERS = {
   },
   business: {
     name: 'Business',
-    price: 49,
+    price: 9,
     description: 'Unlimited everything, priority support',
     features: [
       'Everything in Pro',
