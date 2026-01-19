@@ -311,6 +311,37 @@ function OverviewSection({
 // Shopping Section Component - Full Featured
 function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; moduleSlug: string }) {
   const [activeTab, setActiveTab] = useState<'products' | 'links' | 'affiliates' | 'categories'>('products');
+  const queryClient = useQueryClient();
+
+  // Fetch products for this module
+  const { data: products = [], isLoading: productsLoading } = useQuery({
+    queryKey: ['module-products', moduleSlug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, category:product_categories(name)')
+        .eq('module_id', moduleSlug)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+      
+      if (error) throw error;
+      toast.success('Product deleted');
+      queryClient.invalidateQueries({ queryKey: ['module-products', moduleSlug] });
+    } catch (error: any) {
+      toast.error(`Failed to delete: ${error.message}`);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -348,28 +379,102 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
       {activeTab === 'products' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Store Products</h3>
+            <h3 className="text-lg font-medium">Store Products ({products.length})</h3>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Add Product
             </Button>
           </div>
           
-          <Card>
-            <CardContent className="p-6">
-              <div className="py-12 text-center">
-                <Store className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Products Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Add products to your {moduleName} store to start selling
-                </p>
-                <Button variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Product
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {productsLoading ? (
+            <Card>
+              <CardContent className="p-6">
+                <div className="py-12 text-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+                  <p className="text-muted-foreground mt-4">Loading products...</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : products.length === 0 ? (
+            <Card>
+              <CardContent className="p-6">
+                <div className="py-12 text-center">
+                  <Store className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Products Yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Add products to your {moduleName} store to start selling
+                  </p>
+                  <Button variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Your First Product
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {products.map((product: any) => (
+                <Card key={product.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      {product.image_url && (
+                        <img 
+                          src={product.image_url} 
+                          alt={product.title} 
+                          className="w-16 h-16 object-cover rounded-lg border"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h4 className="font-medium">{product.title || product.name}</h4>
+                            <p className="text-sm text-muted-foreground line-clamp-1">
+                              {product.description || 'No description'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {product.price != null && (
+                              <Badge variant="secondary" className="flex items-center gap-1">
+                                <DollarSign className="h-3 w-3" />
+                                {product.price.toFixed(2)}
+                              </Badge>
+                            )}
+                            <Badge variant="outline">
+                              {product.category?.name || 'Uncategorized'}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                          {product.affiliate_link && (
+                            <a 
+                              href={product.affiliate_link} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 hover:text-primary"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              View Link
+                            </a>
+                          )}
+                          <span>
+                            {product.is_approved ? '✓ Approved' : 'Pending'}
+                          </span>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="shrink-0 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
