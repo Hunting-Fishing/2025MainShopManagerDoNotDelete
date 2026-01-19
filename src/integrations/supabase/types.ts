@@ -28613,6 +28613,7 @@ export type Database = {
           submitted_at: string
           suggested_by: string | null
           suggested_category: string
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -28624,6 +28625,7 @@ export type Database = {
           submitted_at?: string
           suggested_by?: string | null
           suggested_category: string
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -28635,6 +28637,7 @@ export type Database = {
           submitted_at?: string
           suggested_by?: string | null
           suggested_category?: string
+          updated_at?: string
         }
         Relationships: []
       }
