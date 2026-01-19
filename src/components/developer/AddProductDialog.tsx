@@ -250,14 +250,14 @@ export function AddProductDialog({
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
               <Select
-                value={formData.categoryId}
-                onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+                value={formData.categoryId || 'uncategorized'}
+                onValueChange={(value) => setFormData({ ...formData, categoryId: value === 'uncategorized' ? '' : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Uncategorized</SelectItem>
+                  <SelectItem value="uncategorized">Uncategorized</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
