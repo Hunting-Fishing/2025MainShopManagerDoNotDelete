@@ -5,7 +5,7 @@ import { Droplet } from 'lucide-react';
 export default function WaterDeliveryDeveloper() {
   return (
     <ModuleDeveloperPage
-      moduleSlug="water_delivery"
+      moduleSlug="water-delivery"
       moduleName="Water Delivery"
       moduleIcon={<Droplet className="h-8 w-8 text-cyan-500" />}
       backRoute="/water-delivery"
