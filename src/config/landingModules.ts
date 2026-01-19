@@ -207,7 +207,7 @@ export const LANDING_MODULES: LandingModule[] = [
     description: 'Complete automotive service management with work orders, parts, and more',
     icon: Car,
     color: 'bg-blue-500',
-    price: '$49/mo',
+    price: 'From $9/mo',
     available: true,
     tagline: 'Run your shop like a well-oiled machine',
     longDescription: `Transform your automotive repair business with a complete management system designed specifically for independent shops, multi-bay service centers, and mobile mechanics. From the moment a customer walks in to the final invoice, every step is streamlined and professional.
@@ -496,7 +496,7 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
     description: 'Manage residential and commercial pressure washing jobs',
     icon: Droplets,
     color: 'bg-cyan-500',
-    price: '$39/mo',
+    price: 'From $9/mo',
     available: true,
     coreFeatures: [
       'Job estimates and dispatch',
@@ -516,7 +516,7 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
     description: 'Firearm repair, maintenance tracking, and FFL compliance',
     icon: Target,
     color: 'bg-amber-500',
-    price: '$49/mo',
+    price: 'From $9/mo',
     available: true,
     coreFeatures: [
       'Firearm intake and work orders',
@@ -536,7 +536,7 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
     description: 'Boat repair, maintenance, and marina service management',
     icon: Anchor,
     color: 'bg-teal-500',
-    price: '$49/mo',
+    price: 'From $9/mo',
     available: true,
     coreFeatures: [
       'Vessel profiles and history',
@@ -556,7 +556,7 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
     description: 'Appointment booking, client portfolios, and consent management',
     icon: Palette,
     color: 'bg-purple-500',
-    price: '$39/mo',
+    price: 'From $9/mo',
     available: true,
     coreFeatures: [
       'Appointment scheduling and deposits',
