@@ -1,7 +1,7 @@
 export const PRICING_TIERS = {
   starter: {
     name: 'Starter',
-    price: 3,
+    price: 9,
     description: '50 work orders/mo, basic features',
     features: [
       '50 work orders per month',
@@ -13,7 +13,7 @@ export const PRICING_TIERS = {
   },
   pro: {
     name: 'Pro',
-    price: 6,
+    price: 15,
     description: 'Unlimited work orders, advanced features',
     popular: true,
     features: [
@@ -27,7 +27,7 @@ export const PRICING_TIERS = {
   },
   business: {
     name: 'Business',
-    price: 9,
+    price: 25,
     description: 'Unlimited everything, priority support',
     features: [
       'Everything in Pro',
@@ -44,7 +44,8 @@ export const MODULES = [
   { id: 'repair-shop', name: 'Repair Shop', icon: 'Wrench', description: 'Auto repair & maintenance' },
   { id: 'power-washing', name: 'Power Washing', icon: 'Droplets', description: 'Pressure washing services' },
   { id: 'gunsmith', name: 'Gunsmith', icon: 'Target', description: 'Firearms repair & services' },
-  { id: 'marine', name: 'Marine', icon: 'Anchor', description: 'Boat & marine services' }
+  { id: 'marine', name: 'Marine', icon: 'Anchor', description: 'Boat & marine services' },
+  { id: 'water-delivery', name: 'Water Delivery', icon: 'Droplets', description: 'Water delivery services' }
 ] as const;
 
 export type TierKey = keyof typeof PRICING_TIERS;
