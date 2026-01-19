@@ -45,39 +45,36 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         url: formattedUrl,
-        formats: [
-          'markdown',
-          { 
-            type: 'json', 
-            schema: {
-              type: 'object',
-              properties: {
-                price: { 
-                  type: 'number',
-                  description: 'The current price of the product in USD (just the number, no currency symbol)'
-                },
-                originalPrice: {
-                  type: 'number',
-                  description: 'The original/list price if there is a sale, otherwise null'
-                },
-                title: { 
-                  type: 'string',
-                  description: 'The product title/name'
-                },
-                availability: { 
-                  type: 'string',
-                  description: 'Product availability status (in stock, out of stock, etc.)'
-                },
-                imageUrl: {
-                  type: 'string',
-                  description: 'The main product image URL'
-                }
+        formats: ['extract'],
+        extract: {
+          schema: {
+            type: 'object',
+            properties: {
+              price: { 
+                type: 'number',
+                description: 'The current price of the product in USD (just the number, no currency symbol)'
               },
-              required: ['price', 'title']
+              originalPrice: {
+                type: 'number',
+                description: 'The original/list price if there is a sale, otherwise null'
+              },
+              title: { 
+                type: 'string',
+                description: 'The product title/name'
+              },
+              availability: { 
+                type: 'string',
+                description: 'Product availability status (in stock, out of stock, etc.)'
+              },
+              imageUrl: {
+                type: 'string',
+                description: 'The main product image URL'
+              }
             },
-            prompt: 'Extract the product price (as a number without currency symbol), title, availability status, original price if on sale, and main image URL from this product page.'
-          }
-        ],
+            required: ['price', 'title']
+          },
+          prompt: 'Extract the product price (as a number without currency symbol), title, availability status, original price if on sale, and main image URL from this product page.'
+        },
         onlyMainContent: true,
         waitFor: 2000,
       }),
@@ -93,8 +90,8 @@ serve(async (req) => {
       );
     }
 
-    // Extract the JSON data from response
-    const extractedData = data.data?.json || data.json;
+    // Extract the data from response - for 'extract' format, data is in data.extract
+    const extractedData = data.data?.extract || data.extract || data.data?.json || data.json;
     const metadata = data.data?.metadata || data.metadata;
 
     console.log('Extracted product data:', extractedData);
