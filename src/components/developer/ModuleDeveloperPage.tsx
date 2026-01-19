@@ -11,24 +11,22 @@ import {
   Package, 
   ShoppingBag, 
   Settings, 
-  Link as LinkIcon, 
   BarChart3,
   Plus,
   ExternalLink,
   Store,
-  Tag,
-  Percent,
   DollarSign,
-  Globe,
   Trash2,
   Eye,
-  ChevronRight
+  ChevronRight,
+  Pencil
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { SubmissionReviewDialog } from './SubmissionReviewDialog';
+import { AddProductDialog } from './AddProductDialog';
 import { toast } from 'sonner';
 
 interface ModuleDeveloperPageProps {
@@ -64,6 +62,20 @@ export function ModuleDeveloperPage({
     },
   });
 
+  // Fetch product count for this module
+  const { data: productCount = 0 } = useQuery({
+    queryKey: ['module-product-count', moduleSlug],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('module_id', moduleSlug);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
   const pendingSubmissions = submissions.filter(s => s.status === 'pending').length;
   const approvedSubmissions = submissions.filter(s => s.status === 'approved').length;
 
@@ -78,8 +90,8 @@ export function ModuleDeveloperPage({
       id: 'shopping' as const, 
       label: 'Shopping', 
       icon: ShoppingBag, 
-      description: 'Products, links & affiliate settings',
-      badge: 'Full Control'
+      description: 'Manage store products',
+      badge: productCount > 0 ? `${productCount} products` : undefined
     },
     { 
       id: 'submissions' as const, 
@@ -175,6 +187,7 @@ export function ModuleDeveloperPage({
           {activeSection === 'overview' && (
             <OverviewSection 
               moduleName={moduleName}
+              moduleSlug={moduleSlug}
               submissions={submissions}
               pendingSubmissions={pendingSubmissions}
               approvedSubmissions={approvedSubmissions}
@@ -202,16 +215,32 @@ export function ModuleDeveloperPage({
 
 // Overview Section Component
 function OverviewSection({ 
-  moduleName, 
+  moduleName,
+  moduleSlug,
   submissions, 
   pendingSubmissions, 
   approvedSubmissions 
 }: { 
   moduleName: string;
+  moduleSlug: string;
   submissions: any[];
   pendingSubmissions: number;
   approvedSubmissions: number;
 }) {
+  // Fetch real product count
+  const { data: productCount = 0 } = useQuery({
+    queryKey: ['module-product-count', moduleSlug],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('module_id', moduleSlug);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -243,11 +272,11 @@ function OverviewSection({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Affiliate Products</CardTitle>
+            <CardTitle className="text-sm font-medium">Store Products</CardTitle>
             <ShoppingBag className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{productCount}</div>
             <p className="text-xs text-muted-foreground">Active in store</p>
           </CardContent>
         </Card>
@@ -308,10 +337,11 @@ function OverviewSection({
   );
 }
 
-// Shopping Section Component - Full Featured
+// Shopping Section Component - Simplified with only Products tab
 function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; moduleSlug: string }) {
-  const [activeTab, setActiveTab] = useState<'products' | 'links' | 'affiliates' | 'categories'>('products');
   const queryClient = useQueryClient();
+  const [addProductOpen, setAddProductOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
 
   // Fetch products for this module
   const { data: products = [], isLoading: productsLoading } = useQuery({
@@ -329,6 +359,8 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
   });
 
   const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    
     try {
       const { error } = await supabase
         .from('products')
@@ -338,8 +370,21 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
       if (error) throw error;
       toast.success('Product deleted');
       queryClient.invalidateQueries({ queryKey: ['module-products', moduleSlug] });
+      queryClient.invalidateQueries({ queryKey: ['module-product-count', moduleSlug] });
     } catch (error: any) {
       toast.error(`Failed to delete: ${error.message}`);
+    }
+  };
+
+  const handleEditProduct = (product: any) => {
+    setEditingProduct(product);
+    setAddProductOpen(true);
+  };
+
+  const handleCloseDialog = (open: boolean) => {
+    setAddProductOpen(open);
+    if (!open) {
+      setEditingProduct(null);
     }
   };
 
@@ -347,284 +392,127 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Shopping Management</h2>
+          <h2 className="text-xl font-semibold">Store Products</h2>
           <p className="text-muted-foreground">
-            Complete control over {moduleName} store products, links, and affiliate settings
+            Manage products for the {moduleName} store ({products.length} total)
           </p>
         </div>
+        <Button onClick={() => setAddProductOpen(true)} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add Product
+        </Button>
       </div>
-
-      {/* Shopping Sub-Navigation */}
-      <div className="flex gap-2 border-b pb-2">
-        {[
-          { id: 'products', label: 'Products', icon: Store },
-          { id: 'links', label: 'Shopping Links', icon: LinkIcon },
-          { id: 'affiliates', label: 'Affiliate Settings', icon: Percent },
-          { id: 'categories', label: 'Categories', icon: Tag },
-        ].map((tab) => (
-          <Button
-            key={tab.id}
-            variant={activeTab === tab.id ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className="flex items-center gap-2"
-          >
-            <tab.icon className="h-4 w-4" />
-            {tab.label}
-          </Button>
-        ))}
-      </div>
-
-      {/* Products Tab */}
-      {activeTab === 'products' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Store Products ({products.length})</h3>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Product
-            </Button>
-          </div>
-          
-          {productsLoading ? (
-            <Card>
-              <CardContent className="p-6">
-                <div className="py-12 text-center">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-                  <p className="text-muted-foreground mt-4">Loading products...</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : products.length === 0 ? (
-            <Card>
-              <CardContent className="p-6">
-                <div className="py-12 text-center">
-                  <Store className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No Products Yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Add products to your {moduleName} store to start selling
-                  </p>
-                  <Button variant="outline">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Your First Product
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {products.map((product: any) => (
-                <Card key={product.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      {product.image_url && (
-                        <img 
-                          src={product.image_url} 
-                          alt={product.title} 
-                          className="w-16 h-16 object-cover rounded-lg border"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h4 className="font-medium">{product.title || product.name}</h4>
-                            <p className="text-sm text-muted-foreground line-clamp-1">
-                              {product.description || 'No description'}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            {product.price != null && (
-                              <Badge variant="secondary" className="flex items-center gap-1">
-                                <DollarSign className="h-3 w-3" />
-                                {product.price.toFixed(2)}
-                              </Badge>
-                            )}
-                            <Badge variant="outline">
-                              {product.category?.name || 'Uncategorized'}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          {product.affiliate_link && (
-                            <a 
-                              href={product.affiliate_link} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 hover:text-primary"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                              View Link
-                            </a>
-                          )}
-                          <span>
-                            {product.is_approved ? '✓ Approved' : 'Pending'}
-                          </span>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="shrink-0 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+      
+      {productsLoading ? (
+        <Card>
+          <CardContent className="p-6">
+            <div className="py-12 text-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+              <p className="text-muted-foreground mt-4">Loading products...</p>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Shopping Links Tab */}
-      {activeTab === 'links' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Shopping Links</h3>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Link
-            </Button>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Amazon Affiliate
-                </CardTitle>
-                <CardDescription>Connect Amazon affiliate links</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amazon-tag">Amazon Associate Tag</Label>
-                  <Input id="amazon-tag" placeholder="your-tag-20" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="amazon-store">Store ID</Label>
-                  <Input id="amazon-store" placeholder="your-store-id" />
-                </div>
-                <Button variant="outline" className="w-full">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Connect Amazon
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <LinkIcon className="h-4 w-4" />
-                  Custom Affiliate Links
-                </CardTitle>
-                <CardDescription>Add custom shopping links</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="link-name">Link Name</Label>
-                  <Input id="link-name" placeholder="Partner Store" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="link-url">Affiliate URL</Label>
-                  <Input id="link-url" placeholder="https://partner.com?ref=you" />
-                </div>
-                <Button variant="outline" className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Custom Link
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Existing Links Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Configured Links</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="py-8 text-center text-muted-foreground">
-                No shopping links configured yet
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Affiliate Settings Tab */}
-      {activeTab === 'affiliates' && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Affiliate Settings</h3>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Percent className="h-4 w-4" />
-                  Commission Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="default-commission">Default Commission Rate (%)</Label>
-                  <Input id="default-commission" type="number" placeholder="10" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Enable Tiered Commissions</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Higher rates for top performers
-                    </p>
+          </CardContent>
+        </Card>
+      ) : products.length === 0 ? (
+        <Card>
+          <CardContent className="p-6">
+            <div className="py-12 text-center">
+              <Store className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Products Yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Add products to your {moduleName} store to start selling
+              </p>
+              <Button onClick={() => setAddProductOpen(true)} variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Product
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {products.map((product: any) => (
+            <Card key={product.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-4">
+                  {product.image_url ? (
+                    <img 
+                      src={product.image_url} 
+                      alt={product.title || product.name} 
+                      className="w-16 h-16 object-cover rounded-lg border"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-muted rounded-lg border flex items-center justify-center">
+                      <Store className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="font-medium">{product.title || product.name}</h4>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {product.description || 'No description'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {product.price != null && (
+                          <Badge variant="secondary" className="flex items-center gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            {product.price.toFixed(2)}
+                          </Badge>
+                        )}
+                        <Badge variant="outline">
+                          {product.category?.name || 'Uncategorized'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                      {product.affiliate_link && (
+                        <a 
+                          href={product.affiliate_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 hover:text-primary"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          View Link
+                        </a>
+                      )}
+                      <span>
+                        {product.is_approved ? '✓ Approved' : 'Pending'}
+                      </span>
+                    </div>
                   </div>
-                  <Switch />
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleEditProduct(product)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleDeleteProduct(product.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Payout Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="min-payout">Minimum Payout ($)</Label>
-                  <Input id="min-payout" type="number" placeholder="50" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="payout-frequency">Payout Frequency</Label>
-                  <Input id="payout-frequency" placeholder="Monthly" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Categories Tab */}
-      {activeTab === 'categories' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Product Categories</h3>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Category
-            </Button>
-          </div>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="py-8 text-center text-muted-foreground">
-                No categories created yet. Categories help organize products in your store.
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <AddProductDialog
+        open={addProductOpen}
+        onOpenChange={handleCloseDialog}
+        moduleSlug={moduleSlug}
+        editProduct={editingProduct}
+      />
     </div>
   );
 }
