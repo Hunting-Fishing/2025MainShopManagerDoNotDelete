@@ -19,7 +19,8 @@ import {
   Eye,
   ChevronRight,
   Pencil,
-  AlertTriangle
+  AlertTriangle,
+  History
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -27,6 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { SubmissionReviewDialog } from './SubmissionReviewDialog';
 import { AddProductDialog } from './AddProductDialog';
+import { PriceHistoryDialog } from './PriceHistoryDialog';
 import { toast } from 'sonner';
 
 interface ModuleDeveloperPageProps {
@@ -343,6 +345,7 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
   const [addProductOpen, setAddProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [priceHistoryProduct, setPriceHistoryProduct] = useState<{ id: string; name: string } | null>(null);
 
   // Fetch products for this module with category data
   const { data: products = [], isLoading: productsLoading } = useQuery({
@@ -528,6 +531,18 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
                     variant="secondary" 
                     size="icon"
                     className="h-8 w-8 shadow-md"
+                    onClick={() => setPriceHistoryProduct({ 
+                      id: product.id, 
+                      name: product.title || product.name 
+                    })}
+                    title="View price history"
+                  >
+                    <History className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button 
+                    variant="secondary" 
+                    size="icon"
+                    className="h-8 w-8 shadow-md"
                     onClick={() => handleEditProduct(product)}
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -594,6 +609,13 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
         onOpenChange={handleCloseDialog}
         moduleSlug={moduleSlug}
         editProduct={editingProduct}
+      />
+
+      <PriceHistoryDialog
+        open={!!priceHistoryProduct}
+        onOpenChange={(open) => !open && setPriceHistoryProduct(null)}
+        productId={priceHistoryProduct?.id || ''}
+        productName={priceHistoryProduct?.name || ''}
       />
     </div>
   );

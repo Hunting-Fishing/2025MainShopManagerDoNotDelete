@@ -19,10 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AlertTriangle, Plus, Save, Loader2 } from 'lucide-react';
+import { AlertTriangle, Plus, Save, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { firecrawlApi } from '@/lib/api/firecrawl';
+import { productPriceHistoryService } from '@/services/productPriceHistoryService';
 
 interface Product {
   id: string;
@@ -56,7 +58,9 @@ export function AddProductDialog({
 }: AddProductDialogProps) {
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingPrice, setIsFetchingPrice] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [originalPrice, setOriginalPrice] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -95,6 +99,7 @@ export function AddProductDialog({
           affiliateLink: editProduct.affiliate_link || '',
           categoryId: editProduct.category_id || '',
         });
+        setOriginalPrice(editProduct.price || null);
       } else {
         setFormData({
           name: '',
@@ -104,6 +109,7 @@ export function AddProductDialog({
           affiliateLink: '',
           categoryId: '',
         });
+        setOriginalPrice(null);
       }
       setDuplicateWarning(null);
     }
@@ -135,6 +141,48 @@ export function AddProductDialog({
     const debounce = setTimeout(checkDuplicate, 300);
     return () => clearTimeout(debounce);
   }, [formData.affiliateLink, isEditing, editProduct?.id]);
+
+  const handleRefreshPrice = async () => {
+    if (!formData.affiliateLink?.trim()) {
+      toast.error('Please enter an affiliate link first');
+      return;
+    }
+
+    setIsFetchingPrice(true);
+
+    try {
+      const result = await firecrawlApi.fetchProductPrice(formData.affiliateLink.trim());
+
+      if (result.success && result.data) {
+        const newPrice = result.data.price;
+        
+        if (newPrice !== undefined && newPrice !== null) {
+          setFormData(prev => ({
+            ...prev,
+            price: newPrice.toString(),
+            // Optionally update other fields if empty
+            name: prev.name || result.data?.title || prev.name,
+            imageUrl: prev.imageUrl || result.data?.imageUrl || prev.imageUrl,
+          }));
+          
+          toast.success(`Price updated: $${newPrice.toFixed(2)}`);
+          
+          if (result.data.availability) {
+            toast.info(`Availability: ${result.data.availability}`);
+          }
+        } else {
+          toast.warning('Could not extract price from the page');
+        }
+      } else {
+        toast.error(result.error || 'Failed to fetch price');
+      }
+    } catch (error) {
+      console.error('Error fetching price:', error);
+      toast.error('Failed to fetch price from link');
+    } finally {
+      setIsFetchingPrice(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,18 +221,51 @@ export function AddProductDialog({
           .eq('id', editProduct.id);
 
         if (error) throw error;
+
+        // Track price change if price was modified
+        if (originalPrice !== null && priceValue !== null && originalPrice !== priceValue) {
+          try {
+            await productPriceHistoryService.trackPriceChange(
+              editProduct.id,
+              originalPrice,
+              priceValue
+            );
+          } catch (historyError) {
+            console.error('Failed to track price history:', historyError);
+            // Don't fail the save if history tracking fails
+          }
+        }
+
         toast.success('Product updated successfully');
       } else {
-        const { error } = await supabase
+        const { data: newProduct, error } = await supabase
           .from('products')
-          .insert([productData]);
+          .insert([productData])
+          .select('id')
+          .single();
 
         if (error) throw error;
+
+        // Record initial price if set
+        if (priceValue !== null && newProduct) {
+          try {
+            await productPriceHistoryService.addPriceEntry(
+              newProduct.id,
+              priceValue,
+              undefined,
+              'Initial price set'
+            );
+          } catch (historyError) {
+            console.error('Failed to record initial price:', historyError);
+          }
+        }
+
         toast.success('Product added successfully');
       }
 
       queryClient.invalidateQueries({ queryKey: ['module-products', moduleSlug] });
       queryClient.invalidateQueries({ queryKey: ['module-product-count', moduleSlug] });
+      queryClient.invalidateQueries({ queryKey: ['price-history'] });
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error saving product:', error);
@@ -233,6 +314,34 @@ export function AddProductDialog({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="affiliateLink">Affiliate Link</Label>
+            <div className="flex gap-2">
+              <Input
+                id="affiliateLink"
+                type="url"
+                value={formData.affiliateLink}
+                onChange={(e) => setFormData({ ...formData, affiliateLink: e.target.value })}
+                placeholder="https://amazon.com/dp/..."
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleRefreshPrice}
+                disabled={isFetchingPrice || !formData.affiliateLink?.trim()}
+                title="Fetch live price from link"
+              >
+                {isFetchingPrice ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="price">Price ($)</Label>
@@ -276,17 +385,6 @@ export function AddProductDialog({
               value={formData.imageUrl}
               onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
               placeholder="https://example.com/image.jpg"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="affiliateLink">Affiliate Link</Label>
-            <Input
-              id="affiliateLink"
-              type="url"
-              value={formData.affiliateLink}
-              onChange={(e) => setFormData({ ...formData, affiliateLink: e.target.value })}
-              placeholder="https://amazon.com/dp/..."
             />
           </div>
 
