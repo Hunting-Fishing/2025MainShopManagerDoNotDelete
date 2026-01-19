@@ -12,10 +12,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Plus, Save } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { AlertTriangle, Plus, Save, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface Product {
   id: string;
@@ -26,6 +33,12 @@ interface Product {
   image_url?: string;
   affiliate_link?: string;
   category_id?: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 interface AddProductDialogProps {
@@ -51,10 +64,24 @@ export function AddProductDialog({
     price: '',
     imageUrl: '',
     affiliateLink: '',
-    category: '',
+    categoryId: '',
   });
 
   const isEditing = !!editProduct;
+
+  // Fetch categories from database
+  const { data: categories = [] } = useQuery({
+    queryKey: ['product-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('id, name, slug')
+        .order('name');
+      
+      if (error) throw error;
+      return data as Category[];
+    },
+  });
 
   // Reset form when dialog opens/closes or editProduct changes
   useEffect(() => {
@@ -66,7 +93,7 @@ export function AddProductDialog({
           price: editProduct.price?.toString() || '',
           imageUrl: editProduct.image_url || '',
           affiliateLink: editProduct.affiliate_link || '',
-          category: editProduct.category_id || '',
+          categoryId: editProduct.category_id || '',
         });
       } else {
         setFormData({
@@ -75,7 +102,7 @@ export function AddProductDialog({
           price: '',
           imageUrl: '',
           affiliateLink: '',
-          category: '',
+          categoryId: '',
         });
       }
       setDuplicateWarning(null);
@@ -136,7 +163,7 @@ export function AddProductDialog({
         affiliate_link: formData.affiliateLink.trim() || null,
         module_id: moduleSlug,
         is_approved: true,
-        category_id: null, // Optional - can be set if category functionality is added
+        category_id: formData.categoryId || null,
       };
 
       if (isEditing && editProduct) {
@@ -222,12 +249,22 @@ export function AddProductDialog({
 
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="Equipment"
-              />
+              <Select
+                value={formData.categoryId}
+                onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Uncategorized</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -270,6 +307,7 @@ export function AddProductDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || !!duplicateWarning}>
+              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Product'}
             </Button>
           </DialogFooter>

@@ -15,11 +15,11 @@ import {
   Plus,
   ExternalLink,
   Store,
-  DollarSign,
   Trash2,
   Eye,
   ChevronRight,
-  Pencil
+  Pencil,
+  AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -337,19 +337,20 @@ function OverviewSection({
   );
 }
 
-// Shopping Section Component - Simplified with only Products tab
+// Shopping Section Component - Enhanced with category filter and improved styling
 function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; moduleSlug: string }) {
   const queryClient = useQueryClient();
   const [addProductOpen, setAddProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Fetch products for this module
+  // Fetch products for this module with category data
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ['module-products', moduleSlug],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('*, category:product_categories(name)')
+        .select('*, category:product_categories(id, name, slug)')
         .eq('module_id', moduleSlug)
         .order('created_at', { ascending: false });
       
@@ -357,6 +358,31 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
       return data || [];
     },
   });
+
+  // Get unique categories from products
+  const categories = React.useMemo(() => {
+    const categoryMap = new Map<string, { id: string; name: string; count: number }>();
+    products.forEach((product: any) => {
+      const catId = product.category?.id || 'uncategorized';
+      const catName = product.category?.name || 'Uncategorized';
+      const existing = categoryMap.get(catId);
+      if (existing) {
+        existing.count++;
+      } else {
+        categoryMap.set(catId, { id: catId, name: catName, count: 1 });
+      }
+    });
+    return Array.from(categoryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [products]);
+
+  // Filter products by selected category
+  const filteredProducts = React.useMemo(() => {
+    if (selectedCategory === 'all') return products;
+    if (selectedCategory === 'uncategorized') {
+      return products.filter((p: any) => !p.category_id);
+    }
+    return products.filter((p: any) => p.category?.id === selectedCategory);
+  }, [products, selectedCategory]);
 
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
@@ -390,6 +416,7 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Store Products</h2>
@@ -397,11 +424,45 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
             Manage products for the {moduleName} store ({products.length} total)
           </p>
         </div>
-        <Button onClick={() => setAddProductOpen(true)} className="flex items-center gap-2">
+        <Button onClick={() => setAddProductOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           Add Product
         </Button>
       </div>
+
+      {/* Category Filter Tabs */}
+      {categories.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant={selectedCategory === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedCategory('all')}
+            className="gap-1.5"
+          >
+            All
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+              {products.length}
+            </Badge>
+          </Button>
+          {categories.map((cat) => (
+            <Button
+              key={cat.id}
+              variant={selectedCategory === cat.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory(cat.id)}
+              className="gap-1.5"
+            >
+              {cat.name}
+              <Badge 
+                variant={selectedCategory === cat.id ? 'secondary' : 'outline'} 
+                className="ml-1 h-5 px-1.5 text-xs"
+              >
+                {cat.count}
+              </Badge>
+            </Button>
+          ))}
+        </div>
+      )}
       
       {productsLoading ? (
         <Card>
@@ -412,14 +473,18 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
             </div>
           </CardContent>
         </Card>
-      ) : products.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <Card>
           <CardContent className="p-6">
             <div className="py-12 text-center">
               <Store className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-medium mb-2">No Products Yet</h3>
+              <h3 className="text-lg font-medium mb-2">
+                {selectedCategory === 'all' ? 'No Products Yet' : 'No Products in Category'}
+              </h3>
               <p className="text-muted-foreground mb-4">
-                Add products to your {moduleName} store to start selling
+                {selectedCategory === 'all' 
+                  ? `Add products to your ${moduleName} store to start selling`
+                  : 'Try selecting a different category or add new products'}
               </p>
               <Button onClick={() => setAddProductOpen(true)} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
@@ -429,78 +494,95 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {products.map((product: any) => (
-            <Card key={product.id}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.title || product.name} 
-                      className="w-16 h-16 object-cover rounded-lg border"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-muted rounded-lg border flex items-center justify-center">
-                      <Store className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h4 className="font-medium">{product.title || product.name}</h4>
-                        <p className="text-sm text-muted-foreground line-clamp-1">
-                          {product.description || 'No description'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {product.price != null && (
-                          <Badge variant="secondary" className="flex items-center gap-1">
-                            <DollarSign className="h-3 w-3" />
-                            {product.price.toFixed(2)}
-                          </Badge>
-                        )}
-                        <Badge variant="outline">
-                          {product.category?.name || 'Uncategorized'}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                      {product.affiliate_link && (
-                        <a 
-                          href={product.affiliate_link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 hover:text-primary"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          View Link
-                        </a>
-                      )}
-                      <span>
-                        {product.is_approved ? '✓ Approved' : 'Pending'}
-                      </span>
-                    </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredProducts.map((product: any) => (
+            <Card 
+              key={product.id} 
+              className="group overflow-hidden transition-all hover:shadow-lg hover:border-primary/50"
+            >
+              {/* Product Image */}
+              <div className="relative aspect-video bg-muted overflow-hidden">
+                {product.image_url ? (
+                  <img 
+                    src={product.image_url} 
+                    alt={product.title || product.name} 
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Store className="h-12 w-12 text-muted-foreground/30" />
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleEditProduct(product)}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleDeleteProduct(product.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                )}
+                {/* Status Badge */}
+                <div className="absolute top-2 left-2">
+                  <Badge 
+                    variant={product.is_approved ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {product.is_approved ? 'Approved' : 'Pending'}
+                  </Badge>
                 </div>
+                {/* Quick Actions on Hover */}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  <Button 
+                    variant="secondary" 
+                    size="icon"
+                    className="h-8 w-8 shadow-md"
+                    onClick={() => handleEditProduct(product)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="icon"
+                    className="h-8 w-8 shadow-md"
+                    onClick={() => handleDeleteProduct(product.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              <CardContent className="p-4">
+                {/* Title & Description */}
+                <h4 className="font-semibold text-base line-clamp-1 mb-1">
+                  {product.title || product.name}
+                </h4>
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-3 min-h-[2.5rem]">
+                  {product.description || 'No description provided'}
+                </p>
+
+                {/* Price & Category Row */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  {product.price != null ? (
+                    <span className="text-lg font-bold text-primary">
+                      ${product.price.toFixed(2)}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground italic">No price set</span>
+                  )}
+                  <Badge variant="outline" className="text-xs">
+                    {product.category?.name || 'Uncategorized'}
+                  </Badge>
+                </div>
+
+                {/* Affiliate Link */}
+                {product.affiliate_link ? (
+                  <a 
+                    href={product.affiliate_link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    View affiliate link
+                  </a>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-xs text-destructive">
+                    <AlertTriangle className="h-3 w-3" />
+                    No affiliate link set
+                  </span>
+                )}
               </CardContent>
             </Card>
           ))}
