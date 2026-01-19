@@ -45,22 +45,48 @@ export function SubmissionReviewDialog({
   const queryClient = useQueryClient();
   const [productDescription, setProductDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [productPrice, setProductPrice] = useState('');
   const [isApproving, setIsApproving] = useState(false);
   const [showDenyReason, setShowDenyReason] = useState(false);
   const [denyReason, setDenyReason] = useState('');
   const [isDenying, setIsDenying] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   const resetForm = () => {
     setProductDescription('');
     setImageUrl('');
+    setProductPrice('');
     setShowDenyReason(false);
     setDenyReason('');
+    setDuplicateWarning(null);
   };
 
   const handleClose = () => {
     resetForm();
     onOpenChange(false);
   };
+
+  // Check for duplicate links when dialog opens
+  React.useEffect(() => {
+    const checkDuplicate = async () => {
+      if (!submission?.product_url) return;
+      
+      const { data: existingProducts } = await supabase
+        .from('products')
+        .select('id, title, affiliate_link')
+        .eq('affiliate_link', submission.product_url);
+      
+      if (existingProducts && existingProducts.length > 0) {
+        setDuplicateWarning(`This link already exists as "${existingProducts[0].title}"`);
+      } else {
+        setDuplicateWarning(null);
+      }
+    };
+    
+    if (open && submission) {
+      checkDuplicate();
+    }
+  }, [open, submission]);
 
   const handleApprove = async () => {
     if (!submission) return;
@@ -72,6 +98,17 @@ export function SubmissionReviewDialog({
     
     if (!imageUrl.trim()) {
       toast.error('Please enter an image URL');
+      return;
+    }
+
+    // Check for duplicate before approval
+    const { data: existingProducts } = await supabase
+      .from('products')
+      .select('id')
+      .eq('affiliate_link', submission.product_url);
+    
+    if (existingProducts && existingProducts.length > 0) {
+      toast.error('This product link already exists in the store');
       return;
     }
 
@@ -105,7 +142,9 @@ export function SubmissionReviewDialog({
         categoryId = newCategory.id;
       }
 
-      // Create product
+      // Create product with price
+      const priceValue = productPrice ? parseFloat(productPrice) : null;
+      
       const { error: productError } = await supabase
         .from('products')
         .insert({
@@ -121,6 +160,7 @@ export function SubmissionReviewDialog({
           is_available: true,
           suggested_by: submission.suggested_by,
           suggestion_reason: submission.notes,
+          price: priceValue,
         });
 
       if (productError) throw productError;
@@ -135,6 +175,7 @@ export function SubmissionReviewDialog({
 
       toast.success('Product approved and added to store!');
       queryClient.invalidateQueries({ queryKey: ['product-submissions', moduleSlug] });
+      queryClient.invalidateQueries({ queryKey: ['module-products', moduleSlug] });
       handleClose();
     } catch (error: any) {
       console.error('Error approving submission:', error);
@@ -226,6 +267,12 @@ export function SubmissionReviewDialog({
             <p className="text-xs text-muted-foreground">
               Open this link to copy the product image and write a description
             </p>
+            {duplicateWarning && (
+              <div className="mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded-md">
+                <p className="text-sm text-destructive font-medium">⚠️ Duplicate Link Detected</p>
+                <p className="text-xs text-destructive/80">{duplicateWarning}</p>
+              </div>
+            )}
           </div>
 
           {submission.notes && (
@@ -279,6 +326,26 @@ export function SubmissionReviewDialog({
                       />
                     </div>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="price">Product Price (optional)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={productPrice}
+                      onChange={(e) => setProductPrice(e.target.value)}
+                      className="pl-7"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter the product price to display in the store
+                  </p>
                 </div>
               </div>
 
