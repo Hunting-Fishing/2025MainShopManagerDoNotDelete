@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Check, Sparkles, Wrench, Droplets, Target, Anchor, Star } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Check, Sparkles, Wrench, Droplets, Target, Anchor, Star, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { PRICING_TIERS, MODULES, TierKey } from '@/config/pricing';
+import { MODULE_STRIPE_PRICING, ModuleId } from '@/config/stripePricing';
 import { cn } from '@/lib/utils';
-
-type ModuleId = typeof MODULES[number]['id'];
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const iconMap = {
   Wrench,
@@ -16,7 +18,46 @@ const iconMap = {
 };
 
 export function PricingSection() {
-  const [selectedModule, setSelectedModule] = useState<ModuleId>(MODULES[0].id);
+  const [selectedModule, setSelectedModule] = useState<ModuleId>('repair-shop');
+  const [checkingOut, setCheckingOut] = useState<TierKey | null>(null);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const modulePricing = MODULE_STRIPE_PRICING[selectedModule];
+
+  const handleStartTrial = async (tierKey: TierKey) => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      navigate('/staff-login');
+      return;
+    }
+
+    setCheckingOut(tierKey);
+    
+    try {
+      const priceId = modulePricing[tierKey].priceId;
+      
+      const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
+        body: { priceId },
+      });
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to start checkout. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCheckingOut(null);
+    }
+  };
 
   return (
     <section className="py-20">
@@ -34,11 +75,11 @@ export function PricingSection() {
         {/* Module Selector Tabs */}
         <div className="flex flex-wrap justify-center gap-2 mb-10">
           {MODULES.map((module) => {
-            const Icon = iconMap[module.icon as keyof typeof iconMap];
+            const Icon = iconMap[module.icon as keyof typeof iconMap] || Droplets;
             return (
               <button
                 key={module.id}
-                onClick={() => setSelectedModule(module.id)}
+                onClick={() => setSelectedModule(module.id as ModuleId)}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all",
                   selectedModule === module.id
@@ -62,7 +103,9 @@ export function PricingSection() {
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {(Object.keys(PRICING_TIERS) as TierKey[]).map((tierKey) => {
             const tier = PRICING_TIERS[tierKey];
+            const stripeTier = modulePricing[tierKey];
             const isPopular = 'popular' in tier && tier.popular;
+            const isCheckingOut = checkingOut === tierKey;
 
             return (
               <Card
@@ -91,7 +134,7 @@ export function PricingSection() {
                   <h3 className="text-xl font-bold">{tier.name}</h3>
                   <p className="text-sm text-muted-foreground">{tier.description}</p>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold">${tier.price}</span>
+                    <span className="text-4xl font-bold">${stripeTier.price}</span>
                     <span className="text-muted-foreground">/month</span>
                   </div>
                 </CardHeader>
@@ -106,15 +149,22 @@ export function PricingSection() {
                     ))}
                   </ul>
 
-                  <Link to="/staff-login" className="block">
-                    <Button
-                      size="lg"
-                      className="w-full"
-                      variant={isPopular ? "default" : "outline"}
-                    >
-                      Start Free Trial
-                    </Button>
-                  </Link>
+                  <Button
+                    size="lg"
+                    className="w-full"
+                    variant={isPopular ? "default" : "outline"}
+                    onClick={() => handleStartTrial(tierKey)}
+                    disabled={isCheckingOut}
+                  >
+                    {isCheckingOut ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Start Free Trial'
+                    )}
+                  </Button>
                   <p className="text-xs text-muted-foreground text-center mt-2">
                     No credit card required
                   </p>

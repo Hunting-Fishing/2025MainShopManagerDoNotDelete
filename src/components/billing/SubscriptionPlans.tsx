@@ -2,75 +2,76 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, Crown, Building2, Zap } from 'lucide-react';
+import { Check, Loader2, Crown, Building2, Zap, Rocket } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { MODULE_STRIPE_PRICING, ModuleId } from '@/config/stripePricing';
+import { PRICING_TIERS } from '@/config/pricing';
 
-// Define your subscription plans here
-// You'll need to create these products/prices in Stripe and update the price IDs
-const plans = [
-  {
-    id: 'free',
-    name: 'Free',
-    description: 'For individuals and small teams getting started',
-    price: '$0',
-    priceId: null, // No price ID for free
-    icon: Zap,
-    features: [
-      'Up to 5 work orders/month',
-      'Basic inventory tracking',
-      'Single user',
-      'Email support',
-      'Basic reports',
-    ],
-    highlighted: false,
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    description: 'For growing businesses with more demands',
-    price: '$29',
-    priceId: 'price_1SfFklGapOfsltWt0rAg5XgB',
-    productId: 'prod_TcUkAmDPfO5bOp',
-    icon: Crown,
-    features: [
-      'Unlimited work orders',
-      'Advanced inventory management',
-      'Up to 10 team members',
-      'Priority support',
-      'Advanced analytics',
-      'Custom forms',
-      'API access',
-    ],
-    highlighted: true,
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    description: 'For large organizations with custom needs',
-    price: '$99',
-    priceId: 'price_1SfFl6GapOfsltWtRLbO0OVQ',
-    productId: 'prod_TcUkrI1FhW4IlG',
-    icon: Building2,
-    features: [
-      'Everything in Pro',
-      'Unlimited team members',
-      'Dedicated support',
-      'Custom integrations',
-      'SLA guarantee',
-      'Advanced security',
-      'Custom training',
-      'Multi-location support',
-    ],
-    highlighted: false,
-  },
-];
+interface SubscriptionPlansProps {
+  moduleId?: ModuleId;
+}
 
-export function SubscriptionPlans() {
+export function SubscriptionPlans({ moduleId = 'repair-shop' }: SubscriptionPlansProps) {
   const { plan: currentPlan, subscribed, createCheckout, loading } = useSubscription();
   const [subscribingTo, setSubscribingTo] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const modulePricing = MODULE_STRIPE_PRICING[moduleId] || MODULE_STRIPE_PRICING['repair-shop'];
+
+  const plans = [
+    {
+      id: 'free',
+      name: 'Free',
+      description: 'For individuals and small teams getting started',
+      price: '$0',
+      priceId: null,
+      productId: null,
+      icon: Zap,
+      features: [
+        'Up to 5 work orders/month',
+        'Basic inventory tracking',
+        'Single user',
+        'Email support',
+        'Basic reports',
+      ],
+      highlighted: false,
+    },
+    {
+      id: 'starter',
+      name: PRICING_TIERS.starter.name,
+      description: PRICING_TIERS.starter.description,
+      price: `$${modulePricing.starter.price}`,
+      priceId: modulePricing.starter.priceId,
+      productId: modulePricing.starter.productId,
+      icon: Rocket,
+      features: PRICING_TIERS.starter.features,
+      highlighted: false,
+    },
+    {
+      id: 'pro',
+      name: PRICING_TIERS.pro.name,
+      description: PRICING_TIERS.pro.description,
+      price: `$${modulePricing.pro.price}`,
+      priceId: modulePricing.pro.priceId,
+      productId: modulePricing.pro.productId,
+      icon: Crown,
+      features: PRICING_TIERS.pro.features,
+      highlighted: true,
+    },
+    {
+      id: 'business',
+      name: PRICING_TIERS.business.name,
+      description: PRICING_TIERS.business.description,
+      price: `$${modulePricing.business.price}`,
+      priceId: modulePricing.business.priceId,
+      productId: modulePricing.business.productId,
+      icon: Building2,
+      features: PRICING_TIERS.business.features,
+      highlighted: false,
+    },
+  ];
 
   const handleSubscribe = async (planId: string, priceId: string | null) => {
     if (!priceId) return;
@@ -104,7 +105,7 @@ export function SubscriptionPlans() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       {plans.map((plan) => {
         const Icon = plan.icon;
         const isCurrent = isCurrentPlan(plan.id);

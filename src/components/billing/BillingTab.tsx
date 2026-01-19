@@ -79,9 +79,11 @@ export function BillingTab() {
 
   const getPlanBadgeVariant = () => {
     switch (plan) {
-      case 'enterprise':
+      case 'business':
         return 'default';
       case 'pro':
+        return 'secondary';
+      case 'starter':
         return 'secondary';
       default:
         return 'outline';
