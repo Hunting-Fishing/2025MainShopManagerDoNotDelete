@@ -1540,6 +1540,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Reports', href: '/power-washing/reports', icon: BarChart3, description: 'Analytics and reports' },
       { title: 'Field View', href: '/power-washing/field-view', icon: Smartphone, description: 'Mobile field app' },
       { title: 'Customer Portal', href: '/power-washing/portal', icon: Globe, description: 'Customer self-service' },
+      { title: 'Recommended Gear', href: '/power-washing/store', icon: ShoppingBag, description: 'Shop recommended equipment' },
     ],
   },
   gunsmith: {

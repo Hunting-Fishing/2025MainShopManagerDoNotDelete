@@ -218,6 +218,7 @@ import PowerWashingPayments from '@/pages/power-washing/PowerWashingPayments';
 import PowerWashingSchedule from '@/pages/power-washing/PowerWashingSchedule';
 import PowerWashingLeads from '@/pages/power-washing/PowerWashingLeads';
 import PowerWashingFleet from '@/pages/power-washing/PowerWashingFleet';
+import PowerWashingStore from '@/pages/power-washing/PowerWashingStore';
 
 // Gunsmith
 import GunsmithDashboard from '@/pages/gunsmith/GunsmithDashboard';
@@ -1256,6 +1257,7 @@ function App() {
                   <Route path="/power-washing/schedule" element={<PowerWashingSchedule />} />
                   <Route path="/power-washing/leads" element={<PowerWashingLeads />} />
                   <Route path="/power-washing/fleet" element={<PowerWashingFleet />} />
+                  <Route path="/power-washing/store" element={<PowerWashingStore />} />
                   
                   {/* Gunsmith Routes */}
                   <Route path="/gunsmith" element={<GunsmithDashboard />} />
