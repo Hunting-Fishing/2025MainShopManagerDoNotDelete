@@ -506,7 +506,7 @@ function ShoppingSection({ moduleName, moduleSlug }: { moduleName: string; modul
                   <img 
                     src={product.image_url} 
                     alt={product.title || product.name} 
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    className="w-full h-full object-contain bg-white p-2 transition-transform group-hover:scale-105"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
