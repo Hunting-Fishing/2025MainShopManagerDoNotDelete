@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EstimateTemplatesTab } from '@/components/power-washing/EstimateTemplatesTab';
+import { WeatherLocationAutocomplete, LocationResult } from '@/components/power-washing/WeatherLocationAutocomplete';
 import { 
   Settings, 
   MapPin, 
@@ -18,46 +19,53 @@ import {
   Bell,
   Save,
   Building,
-  Clock,
   Droplets,
   Cloud,
-  Loader2
+  Loader2,
+  RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
 import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
 import { usePowerWashingWeather } from '@/hooks/power-washing/usePowerWashingWeather';
-import { useGeocode } from '@/hooks/useMapbox';
+import { Badge } from '@/components/ui/badge';
 
 export default function PowerWashingSettings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('general');
-  const { location, updateLocation, isUpdatingLocation } = usePowerWashingWeather();
-  const [weatherAddress, setWeatherAddress] = useState(location?.address || '');
-  const geocodeMutation = useGeocode();
+  const { 
+    location, 
+    companyLocation,
+    updateLocation, 
+    isUpdatingLocation,
+    useCompanyLocation,
+    isResettingToCompany,
+    hasCustomLocation,
+  } = usePowerWashingWeather();
+  
+  const [weatherAddress, setWeatherAddress] = useState('');
 
-  const handleUpdateWeatherLocation = async () => {
-    if (!weatherAddress.trim()) {
-      toast.error('Please enter an address');
-      return;
+  // Initialize with current location address
+  useEffect(() => {
+    if (location?.address) {
+      setWeatherAddress(location.address);
     }
+  }, [location?.address]);
 
-    try {
-      const results = await geocodeMutation.mutateAsync({ address: weatherAddress });
-      if (results && results.length > 0) {
-        const result = results[0];
-        updateLocation({
-          latitude: result.coordinates[1],
-          longitude: result.coordinates[0],
-          address: result.placeName || weatherAddress,
-        });
-        setWeatherAddress(result.placeName || weatherAddress);
-      } else {
-        toast.error('Could not find that location. Please try a different address.');
-      }
-    } catch (error) {
-      console.error('Geocoding error:', error);
-      toast.error('Failed to look up address');
+  const handleLocationSelect = (result: LocationResult) => {
+    updateLocation({
+      latitude: result.coordinates[1],
+      longitude: result.coordinates[0],
+      address: result.placeName,
+    });
+  };
+
+  const handleUseCompanyAddress = () => {
+    if (companyLocation) {
+      useCompanyLocation();
+      setWeatherAddress(companyLocation.address || '');
+    } else {
+      toast.error('No company address configured');
     }
   };
 
@@ -179,33 +187,70 @@ export default function PowerWashingSettings() {
                 <Cloud className="h-5 w-5" />
                 Weather Location
               </CardTitle>
-              <CardDescription>Set the location for weather forecasts</CardDescription>
+              <CardDescription>
+                Set the location for weather forecasts. Drivers can set their own location if working away from office.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="weather-address">Forecast Location</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    id="weather-address" 
-                    placeholder="Enter city or address"
-                    value={weatherAddress}
-                    onChange={(e) => setWeatherAddress(e.target.value)}
-                  />
-                  <Button 
-                    onClick={handleUpdateWeatherLocation}
-                    disabled={geocodeMutation.isPending || isUpdatingLocation}
-                  >
-                    {(geocodeMutation.isPending || isUpdatingLocation) ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      'Update'
-                    )}
-                  </Button>
+                <div className="flex items-center justify-between">
+                  <Label>Search Location</Label>
+                  {location?.source && (
+                    <Badge variant={location.source === 'user' ? 'default' : location.source === 'company' ? 'secondary' : 'outline'}>
+                      {location.source === 'user' ? 'Personal' : location.source === 'company' ? 'Company' : 'Default'}
+                    </Badge>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Current: {location?.address || `${location?.latitude?.toFixed(4)}, ${location?.longitude?.toFixed(4)}`}
-                </p>
+                <WeatherLocationAutocomplete
+                  value={weatherAddress}
+                  onChange={setWeatherAddress}
+                  onSelect={handleLocationSelect}
+                  placeholder="Type a city name (e.g., Campbell River)..."
+                  disabled={isUpdatingLocation}
+                />
+                {(isUpdatingLocation || isResettingToCompany) && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Updating location...
+                  </div>
+                )}
               </div>
+
+              {/* Current location display */}
+              <div className="rounded-lg bg-muted/50 p-3">
+                <div className="flex items-start gap-2">
+                  <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">Current Location</p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {location?.address || `${location?.latitude?.toFixed(4)}, ${location?.longitude?.toFixed(4)}`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Use Company Address button */}
+              {(hasCustomLocation || !companyLocation) && companyLocation && (
+                <Button
+                  variant="outline"
+                  onClick={handleUseCompanyAddress}
+                  disabled={isResettingToCompany || !companyLocation}
+                  className="w-full"
+                >
+                  {isResettingToCompany ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                  )}
+                  Use Company Address
+                </Button>
+              )}
+
+              {companyLocation && (
+                <p className="text-xs text-muted-foreground">
+                  Company address: {companyLocation.address}
+                </p>
+              )}
             </CardContent>
           </Card>
 
