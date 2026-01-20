@@ -103,16 +103,14 @@ export default function PowerWashingSettings() {
 
         {/* General Settings */}
         <TabsContent value="general" className="mt-4 space-y-4">
-          {/* Business Location with Map */}
-          <BusinessLocationCard shopId={shopId} />
-
+          {/* Business Details first */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building className="h-5 w-5" />
                 Business Details
               </CardTitle>
-              <CardDescription>Additional business information</CardDescription>
+              <CardDescription>Basic business information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
@@ -131,6 +129,9 @@ export default function PowerWashingSettings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Business Location with Map - now under Business Details */}
+          <BusinessLocationCard shopId={shopId} />
 
           <Card>
             <CardHeader>
