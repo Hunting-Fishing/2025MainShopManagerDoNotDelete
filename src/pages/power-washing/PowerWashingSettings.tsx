@@ -19,15 +19,47 @@ import {
   Save,
   Building,
   Clock,
-  Droplets
+  Droplets,
+  Cloud,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
 import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
+import { usePowerWashingWeather } from '@/hooks/power-washing/usePowerWashingWeather';
+import { useGeocode } from '@/hooks/useMapbox';
 
 export default function PowerWashingSettings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('general');
+  const { location, updateLocation, isUpdatingLocation } = usePowerWashingWeather();
+  const [weatherAddress, setWeatherAddress] = useState(location?.address || '');
+  const geocodeMutation = useGeocode();
+
+  const handleUpdateWeatherLocation = async () => {
+    if (!weatherAddress.trim()) {
+      toast.error('Please enter an address');
+      return;
+    }
+
+    try {
+      const results = await geocodeMutation.mutateAsync({ address: weatherAddress });
+      if (results && results.length > 0) {
+        const result = results[0];
+        updateLocation({
+          latitude: result.coordinates[1],
+          longitude: result.coordinates[0],
+          address: result.placeName || weatherAddress,
+        });
+        setWeatherAddress(result.placeName || weatherAddress);
+      } else {
+        toast.error('Could not find that location. Please try a different address.');
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      toast.error('Failed to look up address');
+    }
+  };
 
   const handleSave = () => {
     toast.success('Settings saved successfully');
@@ -140,6 +172,43 @@ export default function PowerWashingSettings() {
 
         {/* Service Areas */}
         <TabsContent value="service-areas" className="mt-4 space-y-4">
+          {/* Weather Location Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Cloud className="h-5 w-5" />
+                Weather Location
+              </CardTitle>
+              <CardDescription>Set the location for weather forecasts</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="weather-address">Forecast Location</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="weather-address" 
+                    placeholder="Enter city or address"
+                    value={weatherAddress}
+                    onChange={(e) => setWeatherAddress(e.target.value)}
+                  />
+                  <Button 
+                    onClick={handleUpdateWeatherLocation}
+                    disabled={geocodeMutation.isPending || isUpdatingLocation}
+                  >
+                    {(geocodeMutation.isPending || isUpdatingLocation) ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Update'
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Current: {location?.address || `${location?.latitude?.toFixed(4)}, ${location?.longitude?.toFixed(4)}`}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
