@@ -25521,6 +25521,50 @@ export type Database = {
           },
         ]
       }
+      power_washing_certificate_types: {
+        Row: {
+          created_at: string | null
+          default_validity_months: number | null
+          description: string | null
+          id: string
+          is_required: boolean | null
+          name: string
+          requires_renewal: boolean | null
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_validity_months?: number | null
+          description?: string | null
+          id?: string
+          is_required?: boolean | null
+          name: string
+          requires_renewal?: boolean | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_validity_months?: number | null
+          description?: string | null
+          id?: string
+          is_required?: boolean | null
+          name?: string
+          requires_renewal?: boolean | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_certificate_types_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_chemicals: {
         Row: {
           brand: string | null
@@ -27162,6 +27206,50 @@ export type Database = {
           },
         ]
       }
+      power_washing_roles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_system: boolean | null
+          name: string
+          permissions: Json | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_system?: boolean | null
+          name: string
+          permissions?: Json | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_system?: boolean | null
+          name?: string
+          permissions?: Json | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_roles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_route_stops: {
         Row: {
           actual_arrival: string | null
@@ -27490,6 +27578,154 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "power_washing_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_team_certificates: {
+        Row: {
+          certificate_number: string | null
+          certificate_type_id: string
+          created_at: string | null
+          document_url: string | null
+          expiry_date: string | null
+          id: string
+          issued_date: string
+          notes: string | null
+          team_member_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          certificate_number?: string | null
+          certificate_type_id: string
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issued_date: string
+          notes?: string | null
+          team_member_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          certificate_number?: string | null
+          certificate_type_id?: string
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issued_date?: string
+          notes?: string | null
+          team_member_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_team_certificates_certificate_type_id_fkey"
+            columns: ["certificate_type_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_certificate_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_team_certificates_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_team_member_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role_id: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role_id: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role_id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_team_member_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_team_member_roles_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_team_members: {
+        Row: {
+          created_at: string | null
+          hire_date: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          profile_id: string
+          role_id: string | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          profile_id: string
+          role_id?: string | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          profile_id?: string
+          role_id?: string | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_team_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_team_members_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_team_members_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -47022,6 +47258,10 @@ export type Database = {
           title: string
           updated_at: string
         }[]
+      }
+      seed_power_washing_roles_for_shop: {
+        Args: { p_shop_id: string }
+        Returns: undefined
       }
       set_report_template: {
         Args: { p_key: string; p_shop_id: string; p_template_data: Json }
