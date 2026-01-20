@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,20 +64,21 @@ export default function PowerWashingCustomerDetail() {
     enabled: !!customerId
   });
 
-  // Fetch customer's quotes
+  // Fetch customer's quotes (power_washing_quotes uses customer_email, not customer_id)
   const { data: quotes, isLoading: quotesLoading } = useQuery({
-    queryKey: ['power-washing-customer-quotes', customerId],
+    queryKey: ['power-washing-customer-quotes', customerId, customer?.email],
     queryFn: async () => {
+      if (!customer?.email) return [];
       const { data, error } = await supabase
         .from('power_washing_quotes')
         .select('id, quote_number, property_type, status, created_at, quoted_price')
-        .eq('customer_id', customerId)
+        .eq('customer_email', customer.email)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data;
     },
-    enabled: !!customerId
+    enabled: !!customer?.email
   });
 
   // Fetch customer's invoices
@@ -355,19 +356,6 @@ export default function PowerWashingCustomerDetail() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Edit Customer Dialog */}
-      {editDialogOpen && (
-        <EditCustomerDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          customer={customer}
-          onSuccess={() => {
-            refetchCustomer();
-            setEditDialogOpen(false);
-          }}
-        />
-      )}
     </MobilePageContainer>
   );
 }
