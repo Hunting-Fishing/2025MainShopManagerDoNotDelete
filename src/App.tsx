@@ -195,6 +195,7 @@ import PowerWashingEquipmentCreate from '@/pages/power-washing/PowerWashingEquip
 import PowerWashingEquipmentDetail from '@/pages/power-washing/PowerWashingEquipmentDetail';
 import PowerWashingChemicals from '@/pages/power-washing/PowerWashingChemicals';
 import PowerWashingChemicalCreate from '@/pages/power-washing/PowerWashingChemicalCreate';
+import PowerWashingInventory from '@/pages/power-washing/PowerWashingInventory';
 import PowerWashingQuoteForm from '@/pages/power-washing/PowerWashingQuoteForm';
 import PowerWashingQuotesList from '@/pages/power-washing/PowerWashingQuotesList';
 import PowerWashingFormulas from '@/pages/power-washing/PowerWashingFormulas';
@@ -1247,6 +1248,7 @@ function App() {
                   <Route path="/power-washing/equipment/:id" element={<PowerWashingEquipmentDetail />} />
                   <Route path="/power-washing/chemicals" element={<PowerWashingChemicals />} />
                   <Route path="/power-washing/chemicals/new" element={<PowerWashingChemicalCreate />} />
+                  <Route path="/power-washing/inventory" element={<PowerWashingInventory />} />
                   <Route path="/power-washing/formulas" element={<PowerWashingFormulas />} />
                   <Route path="/power-washing/bleach-calculator" element={<BleachCalculator />} />
                   <Route path="/power-washing/surface-calculator" element={<SurfaceMixCalculator />} />
