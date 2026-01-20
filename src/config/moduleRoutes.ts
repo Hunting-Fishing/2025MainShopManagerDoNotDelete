@@ -1516,31 +1516,40 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
     gradientFrom: 'from-cyan-500',
     gradientTo: 'to-cyan-600',
     sections: [
-      // Core Operations
-      { title: 'Dashboard', href: '/power-washing', icon: Gauge, description: 'Module overview and KPIs' },
-      { title: 'All Jobs', href: '/power-washing/jobs', icon: Briefcase, description: 'Job management' },
-      { title: 'Customers', href: '/power-washing/customers', icon: Users, description: 'Customer management' },
-      { title: 'Quotes', href: '/power-washing/quotes', icon: FileText, description: 'Estimates and quotes' },
-      { title: 'Invoices', href: '/power-washing/invoices', icon: Receipt, description: 'Billing and invoices' },
-      { title: 'Payments', href: '/power-washing/payments', icon: CreditCard, description: 'Payment processing' },
-      { title: 'Schedule', href: '/power-washing/schedule', icon: Calendar, description: 'Job scheduling' },
-      // Power Washing-Specific Features
-      { title: 'Chemicals', href: '/power-washing/chemicals', icon: Beaker, description: 'Chemical inventory and SDS' },
-      { title: 'Formulas', href: '/power-washing/formulas', icon: Calculator, description: 'Mix ratios and formulas' },
-      { title: 'Price Book', href: '/power-washing/price-book', icon: DollarSign, description: 'Service pricing' },
-      { title: 'Routes', href: '/power-washing/routes', icon: Route, description: 'Route optimization' },
-      { title: 'Weather', href: '/power-washing/weather', icon: CloudSun, description: 'Weather forecasts' },
-      { title: 'Equipment', href: '/power-washing/equipment', icon: Wrench, description: 'Equipment management' },
-      { title: 'Fleet', href: '/power-washing/fleet', icon: Truck, description: 'Vehicle fleet' },
-      { title: 'Photos', href: '/power-washing/photos', icon: Camera, description: 'Before/after photos' },
-      { title: 'Reviews', href: '/power-washing/reviews', icon: Star, description: 'Customer reviews' },
-      { title: 'Leads', href: '/power-washing/leads', icon: UserPlus, description: 'Lead management' },
-      { title: 'Recurring', href: '/power-washing/recurring', icon: Repeat, description: 'Recurring schedules' },
-      { title: 'Subscriptions', href: '/power-washing/subscriptions', icon: CreditCard, description: 'Subscription plans' },
-      { title: 'Reports', href: '/power-washing/reports', icon: BarChart3, description: 'Analytics and reports' },
-      { title: 'Field View', href: '/power-washing/field-view', icon: Smartphone, description: 'Mobile field app' },
-      { title: 'Customer Portal', href: '/power-washing/portal', icon: Globe, description: 'Customer self-service' },
-      { title: 'Recommended Gear', href: '/power-washing/store', icon: ShoppingBag, description: 'Shop recommended equipment' },
+      // Dashboard
+      { title: 'Dashboard', href: '/power-washing', icon: Gauge, description: 'Module overview and KPIs', group: 'Dashboard' },
+      // Services
+      { title: 'All Jobs', href: '/power-washing/jobs', icon: Briefcase, description: 'Job management', group: 'Services' },
+      { title: 'Quotes', href: '/power-washing/quotes', icon: FileText, description: 'Estimates and quotes', group: 'Services' },
+      { title: 'Schedule', href: '/power-washing/schedule', icon: Calendar, description: 'Job scheduling', group: 'Services' },
+      { title: 'Routes', href: '/power-washing/routes', icon: Route, description: 'Route optimization', group: 'Services' },
+      { title: 'Recurring', href: '/power-washing/recurring', icon: Repeat, description: 'Recurring schedules', group: 'Services' },
+      // Customers
+      { title: 'Customers', href: '/power-washing/customers', icon: Users, description: 'Customer management', group: 'Customers' },
+      { title: 'Leads', href: '/power-washing/leads', icon: UserPlus, description: 'Lead management', group: 'Customers' },
+      { title: 'Reviews', href: '/power-washing/reviews', icon: Star, description: 'Customer reviews', group: 'Customers' },
+      { title: 'Subscriptions', href: '/power-washing/subscriptions', icon: CreditCard, description: 'Subscription plans', group: 'Customers' },
+      // Billing
+      { title: 'Invoices', href: '/power-washing/invoices', icon: Receipt, description: 'Billing and invoices', group: 'Billing' },
+      { title: 'Payments', href: '/power-washing/payments', icon: CreditCard, description: 'Payment processing', group: 'Billing' },
+      { title: 'Price Book', href: '/power-washing/price-book', icon: DollarSign, description: 'Service pricing', group: 'Billing' },
+      // Operations
+      { title: 'Equipment', href: '/power-washing/equipment', icon: Wrench, description: 'Equipment management', group: 'Operations' },
+      { title: 'Fleet', href: '/power-washing/fleet', icon: Truck, description: 'Vehicle fleet', group: 'Operations' },
+      { title: 'Chemicals', href: '/power-washing/chemicals', icon: Beaker, description: 'Chemical inventory and SDS', group: 'Operations' },
+      { title: 'Formulas', href: '/power-washing/formulas', icon: Calculator, description: 'Mix ratios and formulas', group: 'Operations' },
+      // Tools
+      { title: 'Weather', href: '/power-washing/weather', icon: CloudSun, description: 'Weather forecasts', group: 'Tools' },
+      { title: 'Photos', href: '/power-washing/photos', icon: Camera, description: 'Before/after photos', group: 'Tools' },
+      { title: 'Reports', href: '/power-washing/reports', icon: BarChart3, description: 'Analytics and reports', group: 'Tools' },
+      { title: 'Field View', href: '/power-washing/field-view', icon: Smartphone, description: 'Mobile field app', group: 'Tools' },
+      // Resources
+      { title: 'Recommended Gear', href: '/power-washing/store', icon: ShoppingBag, description: 'Shop recommended equipment', group: 'Resources' },
+      { title: 'Customer Portal', href: '/power-washing/portal', icon: Globe, description: 'Customer self-service', group: 'Resources' },
+      // Settings
+      { title: 'Settings', href: '/power-washing/settings', icon: Settings, description: 'Module configuration', group: 'Settings' },
+      { title: 'Team', href: '/power-washing/team', icon: Users, description: 'Team management', group: 'Settings' },
+      { title: 'Roles', href: '/power-washing/roles', icon: Shield, description: 'Role permissions', group: 'Settings' },
     ],
   },
   gunsmith: {

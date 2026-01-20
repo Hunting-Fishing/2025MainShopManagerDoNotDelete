@@ -219,6 +219,13 @@ import PowerWashingSchedule from '@/pages/power-washing/PowerWashingSchedule';
 import PowerWashingLeads from '@/pages/power-washing/PowerWashingLeads';
 import PowerWashingFleet from '@/pages/power-washing/PowerWashingFleet';
 import PowerWashingStore from '@/pages/power-washing/PowerWashingStore';
+import PowerWashingCustomers from '@/pages/power-washing/PowerWashingCustomers';
+import PowerWashingCustomerCreate from '@/pages/power-washing/PowerWashingCustomerCreate';
+import PowerWashingCustomerDetail from '@/pages/power-washing/PowerWashingCustomerDetail';
+import PowerWashingTeam from '@/pages/power-washing/PowerWashingTeam';
+import PowerWashingRoles from '@/pages/power-washing/PowerWashingRoles';
+import PowerWashingQuoteDetail from '@/pages/power-washing/PowerWashingQuoteDetail';
+import PowerWashingSettings from '@/pages/power-washing/PowerWashingSettings';
 
 // Gunsmith
 import GunsmithDashboard from '@/pages/gunsmith/GunsmithDashboard';
@@ -1231,6 +1238,10 @@ function App() {
                   <Route path="/power-washing/jobs/:id/edit" element={<PowerWashingJobEdit />} />
                   <Route path="/power-washing/quotes" element={<PowerWashingQuotesList />} />
                   <Route path="/power-washing/quotes/new" element={<PowerWashingQuoteForm />} />
+                  <Route path="/power-washing/quotes/:id" element={<PowerWashingQuoteDetail />} />
+                  <Route path="/power-washing/customers" element={<PowerWashingCustomers />} />
+                  <Route path="/power-washing/customers/new" element={<PowerWashingCustomerCreate />} />
+                  <Route path="/power-washing/customers/:customerId" element={<PowerWashingCustomerDetail />} />
                   <Route path="/power-washing/equipment" element={<PowerWashingEquipment />} />
                   <Route path="/power-washing/equipment/new" element={<PowerWashingEquipmentCreate />} />
                   <Route path="/power-washing/equipment/:id" element={<PowerWashingEquipmentDetail />} />
@@ -1247,6 +1258,7 @@ function App() {
                   <Route path="/power-washing/reviews" element={<PowerWashingReviews />} />
                   <Route path="/power-washing/notifications" element={<PowerWashingNotifications />} />
                   <Route path="/power-washing/field" element={<PowerWashingFieldView />} />
+                  <Route path="/power-washing/field-view" element={<PowerWashingFieldView />} />
                   <Route path="/power-washing/price-book" element={<PowerWashingPriceBook />} />
                   <Route path="/power-washing/analytics" element={<PowerWashingAnalytics />} />
                   <Route path="/power-washing/weather" element={<PowerWashingWeather />} />
@@ -1258,6 +1270,9 @@ function App() {
                   <Route path="/power-washing/leads" element={<PowerWashingLeads />} />
                   <Route path="/power-washing/fleet" element={<PowerWashingFleet />} />
                   <Route path="/power-washing/store" element={<PowerWashingStore />} />
+                  <Route path="/power-washing/team" element={<PowerWashingTeam />} />
+                  <Route path="/power-washing/roles" element={<PowerWashingRoles />} />
+                  <Route path="/power-washing/settings" element={<PowerWashingSettings />} />
                   
                   {/* Gunsmith Routes */}
                   <Route path="/gunsmith" element={<GunsmithDashboard />} />
