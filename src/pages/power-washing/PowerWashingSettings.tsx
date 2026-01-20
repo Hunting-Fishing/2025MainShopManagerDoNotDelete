@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EstimateTemplatesTab } from '@/components/power-washing/EstimateTemplatesTab';
 import { WeatherLocationAutocomplete, LocationResult } from '@/components/power-washing/WeatherLocationAutocomplete';
+import { BusinessLocationCard } from '@/components/power-washing/BusinessLocationCard';
 import { 
   Settings, 
   MapPin, 
@@ -24,6 +24,7 @@ import {
   Loader2,
   RotateCcw
 } from 'lucide-react';
+import { useShopId } from '@/hooks/useShopId';
 import { toast } from 'sonner';
 import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
 import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
@@ -32,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 
 export default function PowerWashingSettings() {
   const navigate = useNavigate();
+  const { shopId } = useShopId();
   const [activeTab, setActiveTab] = useState('general');
   const { 
     location, 
@@ -101,13 +103,16 @@ export default function PowerWashingSettings() {
 
         {/* General Settings */}
         <TabsContent value="general" className="mt-4 space-y-4">
+          {/* Business Location with Map */}
+          <BusinessLocationCard shopId={shopId} />
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building className="h-5 w-5" />
-                Business Information
+                Business Details
               </CardTitle>
-              <CardDescription>Basic settings for your power washing business</CardDescription>
+              <CardDescription>Additional business information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
@@ -119,10 +124,6 @@ export default function PowerWashingSettings() {
                   <Label htmlFor="business-phone">Business Phone</Label>
                   <Input id="business-phone" placeholder="(555) 123-4567" />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="business-address">Business Address</Label>
-                <Textarea id="business-address" placeholder="123 Main St, City, State ZIP" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="license-number">License Number</Label>
