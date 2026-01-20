@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EstimateTemplatesTab } from '@/components/power-washing/EstimateTemplatesTab';
 import { 
   Settings, 
   MapPin, 
@@ -48,12 +49,13 @@ export default function PowerWashingSettings() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 gap-1 h-auto p-1">
+        <TabsList className="grid grid-cols-4 md:grid-cols-7 gap-1 h-auto p-1">
           <TabsTrigger value="general" className="text-xs md:text-sm">General</TabsTrigger>
           <TabsTrigger value="service-areas" className="text-xs md:text-sm">Areas</TabsTrigger>
           <TabsTrigger value="scheduling" className="text-xs md:text-sm">Schedule</TabsTrigger>
           <TabsTrigger value="billing" className="text-xs md:text-sm">Billing</TabsTrigger>
           <TabsTrigger value="chemicals" className="text-xs md:text-sm">Chemicals</TabsTrigger>
+          <TabsTrigger value="templates" className="text-xs md:text-sm">Templates</TabsTrigger>
           <TabsTrigger value="notifications" className="text-xs md:text-sm">Alerts</TabsTrigger>
         </TabsList>
 
@@ -323,6 +325,11 @@ export default function PowerWashingSettings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Templates */}
+        <TabsContent value="templates" className="mt-4">
+          <EstimateTemplatesTab />
         </TabsContent>
 
         {/* Notifications */}
