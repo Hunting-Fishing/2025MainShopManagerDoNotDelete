@@ -13,8 +13,10 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
+import { generateInvoicePDF } from '@/utils/power-washing/generateInvoicePDF';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -273,6 +275,17 @@ export default function PowerWashingInvoices() {
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            generateInvoicePDF(invoice);
+                          }}
+                          title="Download PDF"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
                         <div className="text-right">
                           <p className="font-bold">${(invoice.total || 0).toLocaleString()}</p>
                           {invoice.balance_due > 0 && invoice.status !== 'paid' && (

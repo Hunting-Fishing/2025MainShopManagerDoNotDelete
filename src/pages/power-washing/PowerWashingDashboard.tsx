@@ -33,6 +33,7 @@ import {
   Car
 } from 'lucide-react';
 import { usePowerWashingStats, usePowerWashingJobs, usePowerWashingQuotes } from '@/hooks/usePowerWashing';
+import { LowStockWidget } from '@/components/power-washing/LowStockWidget';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -347,6 +348,11 @@ export default function PowerWashingDashboard() {
           <Car className="h-6 w-6 text-slate-500" />
           <span className="text-xs">Fleet</span>
         </Button>
+      </div>
+
+      {/* Low Stock Alert */}
+      <div className="mb-6">
+        <LowStockWidget />
       </div>
 
       {/* Main Content Grid */}

@@ -12,9 +12,9 @@ interface InvoiceData {
   invoice_number: string;
   status: string;
   issue_date: string;
-  due_date?: string;
-  subtotal: number;
-  tax: number;
+  due_date?: string | null;
+  subtotal?: number;
+  tax?: number;
   total: number;
   balance_due: number;
   customer_name?: string;
@@ -136,8 +136,11 @@ export function generateInvoicePDF(invoice: InvoiceData, businessInfo?: Business
   doc.setFont('helvetica', 'normal');
   
   // Line Items
+  const subtotal = invoice.subtotal ?? invoice.total;
+  const tax = invoice.tax ?? 0;
+  
   const lineItems = invoice.line_items || [
-    { description: 'Power Washing Service', quantity: 1, unit_price: invoice.subtotal, total: invoice.subtotal }
+    { description: 'Power Washing Service', quantity: 1, unit_price: subtotal, total: subtotal }
   ];
   
   lineItems.forEach((item) => {
@@ -155,11 +158,11 @@ export function generateInvoicePDF(invoice: InvoiceData, businessInfo?: Business
   yPos += 8;
   
   doc.text('Subtotal:', 130, yPos);
-  doc.text(`$${invoice.subtotal.toFixed(2)}`, pageWidth - 25, yPos, { align: 'right' });
+  doc.text(`$${subtotal.toFixed(2)}`, pageWidth - 25, yPos, { align: 'right' });
   yPos += 6;
   
   doc.text('Tax:', 130, yPos);
-  doc.text(`$${invoice.tax.toFixed(2)}`, pageWidth - 25, yPos, { align: 'right' });
+  doc.text(`$${tax.toFixed(2)}`, pageWidth - 25, yPos, { align: 'right' });
   yPos += 8;
   
   doc.setFont('helvetica', 'bold');
