@@ -2,82 +2,42 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { 
   Cloud,
   Sun,
   CloudRain,
   Wind,
   Droplets,
-  Thermometer,
   ArrowLeft,
   RefreshCw,
   AlertTriangle,
   CheckCircle,
-  Calendar
+  Calendar,
+  MapPin,
+  Loader2,
+  CloudSnow,
+  CloudFog
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, addDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface WeatherDay {
-  id?: string;
-  forecast_date: string;
-  temperature_high: number | null;
-  temperature_low: number | null;
-  precipitation_chance: number | null;
-  wind_speed: number | null;
-  humidity: number | null;
-  conditions: string | null;
-  is_suitable_for_work: boolean | null;
-}
-
-// Mock weather data for demo (would be replaced with actual API)
-const generateMockWeather = (): WeatherDay[] => {
-  const conditions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Light Rain', 'Rain', 'Thunderstorms'];
-  return Array.from({ length: 7 }, (_, i) => {
-    const precipChance = Math.floor(Math.random() * 100);
-    const windSpeed = Math.floor(Math.random() * 25);
-    return {
-      forecast_date: format(addDays(new Date(), i), 'yyyy-MM-dd'),
-      temperature_high: Math.floor(Math.random() * 20) + 70,
-      temperature_low: Math.floor(Math.random() * 15) + 55,
-      precipitation_chance: precipChance,
-      wind_speed: windSpeed,
-      humidity: Math.floor(Math.random() * 40) + 40,
-      conditions: conditions[Math.floor(Math.random() * conditions.length)],
-      is_suitable_for_work: precipChance < 40 && windSpeed < 20,
-    };
-  });
-};
+import { usePowerWashingWeather } from '@/hooks/power-washing/usePowerWashingWeather';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function PowerWashingWeather() {
   const navigate = useNavigate();
-  const [location, setLocation] = useState('');
-
-  const { data: weatherData, isLoading, refetch } = useQuery({
-    queryKey: ['power-washing-weather'],
-    queryFn: async () => {
-      // First try to get from database
-      const { data, error } = await supabase
-        .from('power_washing_weather_data')
-        .select('*')
-        .gte('forecast_date', format(new Date(), 'yyyy-MM-dd'))
-        .order('forecast_date', { ascending: true })
-        .limit(7);
-      
-      if (error) throw error;
-      
-      // If no data, return mock data for demo
-      if (!data || data.length === 0) {
-        return generateMockWeather();
-      }
-      
-      return data as WeatherDay[];
-    },
-  });
+  const { 
+    weatherData, 
+    location, 
+    lastUpdated, 
+    isLoading, 
+    isError, 
+    error,
+    refreshWeather 
+  } = usePowerWashingWeather();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { data: scheduledJobs } = useQuery({
     queryKey: ['power-washing-scheduled-jobs-weather'],
@@ -97,12 +57,54 @@ export default function PowerWashingWeather() {
     },
   });
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshWeather();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const getWeatherIcon = (conditions: string | null) => {
     if (!conditions) return <Cloud className="h-8 w-8" />;
     const lower = conditions.toLowerCase();
-    if (lower.includes('sun') || lower.includes('clear')) return <Sun className="h-8 w-8 text-yellow-500" />;
-    if (lower.includes('rain') || lower.includes('thunder')) return <CloudRain className="h-8 w-8 text-blue-500" />;
+    if (lower.includes('clear') || lower.includes('sunny')) return <Sun className="h-8 w-8 text-yellow-500" />;
+    if (lower.includes('rain') || lower.includes('shower') || lower.includes('drizzle')) return <CloudRain className="h-8 w-8 text-blue-500" />;
+    if (lower.includes('thunder')) return <CloudRain className="h-8 w-8 text-purple-500" />;
+    if (lower.includes('snow')) return <CloudSnow className="h-8 w-8 text-blue-300" />;
+    if (lower.includes('fog')) return <CloudFog className="h-8 w-8 text-gray-400" />;
+    if (lower.includes('cloud') || lower.includes('overcast')) return <Cloud className="h-8 w-8 text-gray-400" />;
     return <Cloud className="h-8 w-8 text-gray-400" />;
+  };
+
+  const getSuitabilityBadge = (day: typeof weatherData[0]) => {
+    const precipChance = day.precipitation_chance ?? 0;
+    const windSpeed = day.wind_speed ?? 0;
+    
+    // Determine suitability based on conditions
+    if (precipChance > 60 || windSpeed > 25) {
+      return (
+        <Badge variant="outline" className="text-red-500 border-red-500/30 text-xs">
+          <AlertTriangle className="h-3 w-3 mr-1" />
+          Poor
+        </Badge>
+      );
+    } else if (precipChance >= 40 || windSpeed >= 15) {
+      return (
+        <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-xs">
+          <AlertTriangle className="h-3 w-3 mr-1" />
+          Marginal
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge variant="outline" className="text-green-500 border-green-500/30 text-xs">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Good
+        </Badge>
+      );
+    }
   };
 
   const getJobsForDate = (date: string) => {
@@ -120,7 +122,7 @@ export default function PowerWashingWeather() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Button>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Cloud className="h-8 w-8 text-blue-400" />
@@ -130,12 +132,51 @@ export default function PowerWashingWeather() {
               Plan your jobs around the weather
             </p>
           </div>
-          <Button variant="outline" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
+            {location && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span>{location.address || `${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`}</span>
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="h-auto p-0 text-primary"
+                  onClick={() => navigate('/power-washing/settings')}
+                >
+                  Change
+                </Button>
+              </div>
+            )}
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh}
+              disabled={isRefreshing || isLoading}
+            >
+              {isRefreshing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Refresh
+            </Button>
+          </div>
         </div>
+        {lastUpdated && (
+          <p className="text-xs text-muted-foreground mt-2">
+            Last updated: {format(new Date(lastUpdated), 'MMM d, h:mm a')}
+          </p>
+        )}
       </div>
+
+      {/* Error State */}
+      {isError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Failed to load weather data. Please try again.'}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Weather Alert */}
       {affectedJobs.length > 0 && (
@@ -164,22 +205,23 @@ export default function PowerWashingWeather() {
 
       {/* 7-Day Forecast */}
       {isLoading ? (
-        <div className="grid grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
           {[1, 2, 3, 4, 5, 6, 7].map((i) => (
             <Skeleton key={i} className="h-64" />
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
-          {weatherData?.map((day, index) => {
+          {weatherData?.map((day) => {
             const jobs = getJobsForDate(day.forecast_date);
             const isToday = day.forecast_date === format(new Date(), 'yyyy-MM-dd');
+            const isPoorWeather = !day.is_suitable_for_work;
             
             return (
               <Card 
                 key={day.forecast_date} 
                 className={`border-border ${isToday ? 'ring-2 ring-primary' : ''} ${
-                  !day.is_suitable_for_work ? 'bg-red-500/5 border-red-500/30' : ''
+                  isPoorWeather ? 'bg-red-500/5 border-red-500/30' : ''
                 }`}
               >
                 <CardContent className="p-4 text-center">
@@ -213,17 +255,7 @@ export default function PowerWashingWeather() {
                   </div>
                   
                   <div className="mt-3 pt-3 border-t border-border">
-                    {day.is_suitable_for_work ? (
-                      <Badge variant="outline" className="text-green-500 border-green-500/30 text-xs">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Good
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-red-500 border-red-500/30 text-xs">
-                        <AlertTriangle className="h-3 w-3 mr-1" />
-                        Poor
-                      </Badge>
-                    )}
+                    {getSuitabilityBadge(day)}
                   </div>
                   
                   {jobs.length > 0 && (
@@ -253,7 +285,7 @@ export default function PowerWashingWeather() {
               <div>
                 <p className="font-medium text-green-500">Good Conditions</p>
                 <p className="text-sm text-muted-foreground">
-                  Rain chance &lt;40%, Wind &lt;20 mph
+                  Rain chance &lt;40%, Wind &lt;15 mph
                 </p>
               </div>
             </div>
