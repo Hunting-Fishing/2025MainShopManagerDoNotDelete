@@ -1536,7 +1536,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       // Operations
       { title: 'Equipment', href: '/power-washing/equipment', icon: Wrench, description: 'Equipment management', group: 'Operations' },
       { title: 'Fleet', href: '/power-washing/fleet', icon: Truck, description: 'Vehicle fleet', group: 'Operations' },
-      { title: 'Chemicals', href: '/power-washing/chemicals', icon: Beaker, description: 'Chemical inventory and SDS', group: 'Operations' },
+      { title: 'Inventory', href: '/power-washing/inventory', icon: Package, description: 'Supplies, parts & chemicals', group: 'Operations' },
       { title: 'Formulas', href: '/power-washing/formulas', icon: Calculator, description: 'Mix ratios and formulas', group: 'Operations' },
       // Tools
       { title: 'Weather', href: '/power-washing/weather', icon: CloudSun, description: 'Weather forecasts', group: 'Tools' },

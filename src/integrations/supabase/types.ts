@@ -25927,6 +25927,203 @@ export type Database = {
         }
         Relationships: []
       }
+      power_washing_inventory: {
+        Row: {
+          category: string
+          compatible_equipment: string[] | null
+          created_at: string
+          description: string | null
+          dilution_ratio: string | null
+          expiration_date: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          location: string | null
+          name: string
+          notes: string | null
+          quantity: number
+          reorder_point: number | null
+          reorder_quantity: number | null
+          sds_url: string | null
+          shop_id: string
+          sku: string | null
+          subcategory: string | null
+          unit_cost: number | null
+          unit_of_measure: string
+          updated_at: string
+          vendor_id: string | null
+          vendor_sku: string | null
+        }
+        Insert: {
+          category: string
+          compatible_equipment?: string[] | null
+          created_at?: string
+          description?: string | null
+          dilution_ratio?: string | null
+          expiration_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          name: string
+          notes?: string | null
+          quantity?: number
+          reorder_point?: number | null
+          reorder_quantity?: number | null
+          sds_url?: string | null
+          shop_id: string
+          sku?: string | null
+          subcategory?: string | null
+          unit_cost?: number | null
+          unit_of_measure?: string
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_sku?: string | null
+        }
+        Update: {
+          category?: string
+          compatible_equipment?: string[] | null
+          created_at?: string
+          description?: string | null
+          dilution_ratio?: string | null
+          expiration_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          name?: string
+          notes?: string | null
+          quantity?: number
+          reorder_point?: number | null
+          reorder_quantity?: number | null
+          sds_url?: string | null
+          shop_id?: string
+          sku?: string | null
+          subcategory?: string | null
+          unit_cost?: number | null
+          unit_of_measure?: string
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_sku?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_inventory_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_inventory_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_inventory_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_inventory_transactions: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_item_id: string
+          job_id: string | null
+          notes: string | null
+          performed_by: string | null
+          quantity_change: number
+          transaction_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_item_id: string
+          job_id?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          quantity_change: number
+          transaction_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string
+          job_id?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          quantity_change?: number
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_inventory_transactions_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_inventory_transactions_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_inventory_vendors: {
+        Row: {
+          account_number: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_preferred: boolean | null
+          name: string
+          notes: string | null
+          phone: string | null
+          shop_id: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          account_number?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_preferred?: boolean | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          shop_id: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          account_number?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_preferred?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          shop_id?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_inventory_vendors_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_invoice_lines: {
         Row: {
           created_at: string | null
