@@ -25876,6 +25876,56 @@ export type Database = {
           },
         ]
       }
+      power_washing_estimate_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          default_notes: string | null
+          default_services: string[] | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          pricing_rules: Json | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          default_notes?: string | null
+          default_services?: string[] | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          pricing_rules?: Json | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          default_notes?: string | null
+          default_services?: string[] | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          pricing_rules?: Json | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_estimate_templates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_formulas: {
         Row: {
           application: string | null
@@ -26365,6 +26415,70 @@ export type Database = {
           },
           {
             foreignKeyName: "power_washing_job_equipment_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      power_washing_job_materials: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          inventory_item_id: string | null
+          item_name: string
+          job_id: string
+          notes: string | null
+          quantity_used: number
+          shop_id: string
+          total_cost: number | null
+          unit_cost_at_use: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          item_name: string
+          job_id: string
+          notes?: string | null
+          quantity_used?: number
+          shop_id: string
+          total_cost?: number | null
+          unit_cost_at_use?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          item_name?: string
+          job_id?: string
+          notes?: string | null
+          quantity_used?: number
+          shop_id?: string
+          total_cost?: number | null
+          unit_cost_at_use?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_job_materials_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_job_materials_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_job_materials_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
