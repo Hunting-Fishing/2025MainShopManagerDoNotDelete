@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Check, X, Loader2 } from 'lucide-react';
+import { ExternalLink, Check, X, Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -36,6 +36,11 @@ interface SubmissionReviewDialogProps {
   moduleSlug: string;
 }
 
+interface FieldErrors {
+  description?: string;
+  imageUrl?: string;
+}
+
 export function SubmissionReviewDialog({
   submission,
   open,
@@ -51,6 +56,8 @@ export function SubmissionReviewDialog({
   const [denyReason, setDenyReason] = useState('');
   const [isDenying, setIsDenying] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const resetForm = () => {
     setProductDescription('');
@@ -59,6 +66,8 @@ export function SubmissionReviewDialog({
     setShowDenyReason(false);
     setDenyReason('');
     setDuplicateWarning(null);
+    setApprovalError(null);
+    setFieldErrors({});
   };
 
   const handleClose = () => {
@@ -91,13 +100,22 @@ export function SubmissionReviewDialog({
   const handleApprove = async () => {
     if (!submission) return;
     
+    // Reset errors
+    setApprovalError(null);
+    setFieldErrors({});
+    
+    // Validate required fields
+    const newFieldErrors: FieldErrors = {};
     if (!productDescription.trim()) {
-      toast.error('Please enter a product description');
-      return;
+      newFieldErrors.description = 'Product description is required';
+    }
+    if (!imageUrl.trim()) {
+      newFieldErrors.imageUrl = 'Product image URL is required';
     }
     
-    if (!imageUrl.trim()) {
-      toast.error('Please enter an image URL');
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      setApprovalError('Please fill in all required fields');
       return;
     }
 
@@ -108,19 +126,22 @@ export function SubmissionReviewDialog({
       .eq('affiliate_link', submission.product_url);
     
     if (existingProducts && existingProducts.length > 0) {
-      toast.error('This product link already exists in the store');
+      setApprovalError('This product link already exists in the store');
       return;
     }
 
     setIsApproving(true);
     try {
-      // First, we need a category_id - let's check if one exists or create default
-      let categoryId: string;
+      // First, we need a category_id - use case-insensitive lookup
+      let categoryId: string | null = null;
+      const categoryName = submission.suggested_category || 'General';
+      const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
       
+      // Try case-insensitive name match first
       const { data: existingCategories, error: catError } = await supabase
         .from('product_categories')
         .select('id')
-        .eq('name', submission.suggested_category || 'General')
+        .ilike('name', categoryName)
         .limit(1);
       
       if (catError) throw catError;
@@ -128,18 +149,49 @@ export function SubmissionReviewDialog({
       if (existingCategories && existingCategories.length > 0) {
         categoryId = existingCategories[0].id;
       } else {
-        // Create a new category
-        const { data: newCategory, error: newCatError } = await supabase
+        // Try slug lookup as fallback
+        const { data: bySlug, error: slugError } = await supabase
           .from('product_categories')
-          .insert({
-            name: submission.suggested_category || 'General',
-            slug: (submission.suggested_category || 'general').toLowerCase().replace(/\s+/g, '-'),
-          })
           .select('id')
-          .single();
+          .eq('slug', categorySlug)
+          .limit(1);
         
-        if (newCatError) throw newCatError;
-        categoryId = newCategory.id;
+        if (slugError) throw slugError;
+        
+        if (bySlug && bySlug.length > 0) {
+          categoryId = bySlug[0].id;
+        } else {
+          // Create a new category only if it truly doesn't exist
+          const { data: newCategory, error: newCatError } = await supabase
+            .from('product_categories')
+            .insert({
+              name: categoryName,
+              slug: categorySlug,
+            })
+            .select('id')
+            .single();
+          
+          if (newCatError) {
+            // If unique constraint error, try fetching the existing one
+            if (newCatError.code === '23505') {
+              const { data: refetchCat } = await supabase
+                .from('product_categories')
+                .select('id')
+                .eq('slug', categorySlug)
+                .single();
+              
+              if (refetchCat) {
+                categoryId = refetchCat.id;
+              } else {
+                throw new Error('Failed to resolve category');
+              }
+            } else {
+              throw newCatError;
+            }
+          } else {
+            categoryId = newCategory.id;
+          }
+        }
       }
 
       // Create product with price
@@ -179,7 +231,19 @@ export function SubmissionReviewDialog({
       handleClose();
     } catch (error: any) {
       console.error('Error approving submission:', error);
-      toast.error(`Failed to approve: ${error.message}`);
+      
+      // Set persistent error message in dialog
+      let errorMessage = error.message || 'An unexpected error occurred';
+      if (error.code === '23505') {
+        if (error.message?.includes('product_categories')) {
+          errorMessage = 'Category conflict - please try again or contact support';
+        } else if (error.message?.includes('affiliate_link')) {
+          errorMessage = 'This product link already exists in the store';
+        }
+      }
+      
+      setApprovalError(errorMessage);
+      toast.error(`Failed to approve: ${errorMessage}`);
     } finally {
       setIsApproving(false);
     }
@@ -292,29 +356,62 @@ export function SubmissionReviewDialog({
 
           {submission.status === 'pending' && (
             <>
+              {/* Error Alert */}
+              {approvalError && (
+                <div className="p-4 bg-destructive/10 border-2 border-destructive rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-destructive">Approval Failed</p>
+                      <p className="text-sm text-destructive/90">{approvalError}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="border-t pt-4 space-y-4">
                 <h4 className="font-medium">Product Details (Required for Approval)</h4>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Product Description *</Label>
+                  <Label htmlFor="description" className={fieldErrors.description ? 'text-destructive' : ''}>
+                    Product Description *
+                  </Label>
                   <Textarea
                     id="description"
                     placeholder="Enter a compelling description for this product..."
                     value={productDescription}
-                    onChange={(e) => setProductDescription(e.target.value)}
+                    onChange={(e) => {
+                      setProductDescription(e.target.value);
+                      setApprovalError(null);
+                      setFieldErrors(prev => ({ ...prev, description: undefined }));
+                    }}
                     rows={3}
+                    className={fieldErrors.description ? 'border-destructive focus-visible:ring-destructive' : ''}
                   />
+                  {fieldErrors.description && (
+                    <p className="text-sm text-destructive">{fieldErrors.description}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="imageUrl">Product Image URL *</Label>
+                  <Label htmlFor="imageUrl" className={fieldErrors.imageUrl ? 'text-destructive' : ''}>
+                    Product Image URL *
+                  </Label>
                   <Input
                     id="imageUrl"
                     placeholder="https://example.com/product-image.jpg"
                     value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
+                    onChange={(e) => {
+                      setImageUrl(e.target.value);
+                      setApprovalError(null);
+                      setFieldErrors(prev => ({ ...prev, imageUrl: undefined }));
+                    }}
+                    className={fieldErrors.imageUrl ? 'border-destructive focus-visible:ring-destructive' : ''}
                   />
-                  {imageUrl && (
+                  {fieldErrors.imageUrl && (
+                    <p className="text-sm text-destructive">{fieldErrors.imageUrl}</p>
+                  )}
+                  {imageUrl && !fieldErrors.imageUrl && (
                     <div className="mt-2">
                       <img 
                         src={imageUrl} 
