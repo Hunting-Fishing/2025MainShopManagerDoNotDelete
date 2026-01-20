@@ -376,23 +376,23 @@ export default function FuelDeliveryRoutes() {
 
     // Create route stops if route was created and stops were selected
     if (newRoute?.id && selectedStops.length > 0) {
-      const { supabase } = await import('@/integrations/supabase/client');
       for (let i = 0; i < selectedStops.length; i++) {
         const stopId = selectedStops[i];
         const stop = availableStops.find(s => s.id === stopId);
         if (!stop) continue;
 
-        // For location-based stops, use the location_id directly
-        // For customer-based stops, we need to handle differently
+        // For location-based stops, use the customer_id from the location
+        // For customer-based stops, extract the customer ID
         const isCustomerStop = stopId.startsWith('customer-');
-        const locationId = isCustomerStop ? null : stopId;
+        const customerId = isCustomerStop 
+          ? stopId.replace('customer-', '') 
+          : stop.customerId;
 
-        await (supabase as any).from('fuel_delivery_route_stops').insert({
+        await supabase.from('fuel_delivery_route_stops').insert({
           route_id: newRoute.id,
-          location_id: locationId,
-          stop_order: i + 1,
+          customer_id: customerId,
+          stop_sequence: i + 1,
           status: 'pending',
-          planned_gallons: 0, // User can update later
         });
       }
     }
