@@ -24,6 +24,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { generateQuotePDF } from '@/utils/power-washing/generateQuotePDF';
 import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
 import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
 
@@ -135,9 +136,13 @@ export default function PowerWashingQuoteDetail() {
         onBack={() => navigate('/power-washing/quotes')}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => generateQuotePDF(quote)}
+            >
               <Printer className="h-4 w-4 mr-1" />
-              Print
+              Export PDF
             </Button>
             <Button variant="outline" size="sm">
               <Edit className="h-4 w-4 mr-1" />
