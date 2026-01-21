@@ -71,15 +71,7 @@ export function BusinessLocationCard({ shopId }: BusinessLocationCardProps) {
           </div>
         ) : !hasLocation || isEditing ? (
           <div className="space-y-4">
-            <LocationPickerMap
-              latitude={pendingLocation?.latitude || location?.business_latitude}
-              longitude={pendingLocation?.longitude || location?.business_longitude}
-              address={pendingLocation?.address || location?.business_address}
-              onLocationChange={handleLocationChange}
-              height="280px"
-              placeholder="Search for your business address..."
-            />
-            
+            {/* Address display above map */}
             {pendingLocation && (
               <div className="flex items-start gap-2 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
                 <MapPin className="h-4 w-4 mt-0.5 text-orange-500 flex-shrink-0" />
@@ -89,6 +81,15 @@ export function BusinessLocationCard({ shopId }: BusinessLocationCardProps) {
                 </div>
               </div>
             )}
+            
+            <LocationPickerMap
+              latitude={pendingLocation?.latitude || location?.business_latitude}
+              longitude={pendingLocation?.longitude || location?.business_longitude}
+              address={pendingLocation?.address || location?.business_address}
+              onLocationChange={handleLocationChange}
+              height="280px"
+              placeholder="Search for your business address..."
+            />
 
             <div className="flex gap-2">
               {isEditing && (
