@@ -11,6 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Spotlight } from '@/components/ui/spotlight';
+import { StaticBeams } from '@/components/ui/background-beams';
+import { Card3D } from '@/components/ui/card-3d';
 import { 
   LayoutGrid, Sparkles, Search, X, ChevronDown, ChevronRight, 
   Home, HardHat, Car, Scissors, Dog, UtensilsCrossed, Monitor, 
@@ -169,7 +172,7 @@ export default function ModuleHub() {
   const totalUpcoming = Object.values(displayUpcomingByCategory).reduce((acc, arr) => acc + arr.length, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <Spotlight className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20" size={600}>
       <div className="max-w-7xl mx-auto p-6 md:p-8">
         <ModuleHubHeader 
           userName={user?.user_metadata?.first_name || user?.email?.split('@')[0]}
@@ -233,12 +236,13 @@ export default function ModuleHub() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayAccessible.map(module => (
-                <ModuleCard
-                  key={module.slug}
-                  module={module}
-                  hasAccess={true}
-                  isSubscribed={subscriptions.some(s => s.module_slug === module.slug)}
-                />
+                <Card3D key={module.slug} rotationIntensity={8} glareOpacity={0.15} scale={1.02}>
+                  <ModuleCard
+                    module={module}
+                    hasAccess={true}
+                    isSubscribed={subscriptions.some(s => s.module_slug === module.slug)}
+                  />
+                </Card3D>
               ))}
             </div>
           </section>
@@ -255,13 +259,14 @@ export default function ModuleHub() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayLocked.map(module => (
-                <ModuleCard
-                  key={module.slug}
-                  module={module}
-                  hasAccess={false}
-                  isSubscribed={false}
-                  onViewPlans={() => navigate(`/modules/${module.slug}`)}
-                />
+                <Card3D key={module.slug} rotationIntensity={6} glareOpacity={0.1} scale={1.01}>
+                  <ModuleCard
+                    module={module}
+                    hasAccess={false}
+                    isSubscribed={false}
+                    onViewPlans={() => navigate(`/modules/${module.slug}`)}
+                  />
+                </Card3D>
               ))}
             </div>
           </section>
@@ -271,16 +276,11 @@ export default function ModuleHub() {
         {displayUpcomingCategories.length > 0 && (
           <section className="mb-10">
             {/* Hero Header for Upcoming - Premium Glass Design */}
-            <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 mb-6">
+            <StaticBeams className="relative overflow-hidden rounded-3xl p-6 md:p-8 mb-6">
               {/* Mesh gradient background */}
               <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-500 to-fuchsia-500" />
               <div className="absolute inset-0 bg-gradient-to-tr from-amber-400/40 via-transparent to-cyan-400/30" />
               <div className="absolute inset-0 bg-gradient-to-bl from-rose-500/30 via-transparent to-indigo-600/40" />
-              
-              {/* Animated orbs */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-              <div className="absolute top-1/2 left-1/3 w-32 h-32 bg-yellow-300/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
               
               {/* Glass overlay */}
               <div className="absolute inset-0 backdrop-blur-[1px] bg-white/5" />
@@ -330,7 +330,7 @@ export default function ModuleHub() {
                   )}
                 </div>
               </div>
-            </div>
+            </StaticBeams>
 
             <div className="grid gap-4">
               {displayUpcomingCategories.map((category, idx) => {
@@ -455,6 +455,6 @@ export default function ModuleHub() {
           </div>
         )}
       </div>
-    </div>
+    </Spotlight>
   );
 }
