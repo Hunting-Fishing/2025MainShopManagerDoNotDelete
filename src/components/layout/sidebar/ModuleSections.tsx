@@ -5,7 +5,7 @@ import { useEnabledModules } from '@/hooks/useEnabledModules';
 import { MODULE_ROUTES, ModuleSectionItem } from '@/config/moduleRoutes';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ExternalLink } from 'lucide-react';
 import { 
   AnimatedCollapsible, 
   CollapsibleTrigger, 
@@ -90,7 +90,8 @@ export function ModuleSections() {
     'Resources',
     'Settings',
     'Automotive',
-    'General'
+    'General',
+    'Quick Links'
   ];
 
   const sortedGroups = Object.keys(groupedSections).sort((a, b) => {
@@ -182,10 +183,36 @@ interface SectionLinkProps {
 }
 
 function SectionLink({ item, currentPath, dashboardRoute, onClick }: SectionLinkProps) {
-  const isActive = currentPath === item.href || 
-    (item.href !== dashboardRoute && currentPath.startsWith(item.href));
+  const isExternal = item.isExternal || item.href.startsWith('http');
+  const isActive = !isExternal && (
+    currentPath === item.href || 
+    (item.href !== dashboardRoute && currentPath.startsWith(item.href))
+  );
   
   const ItemIcon = item.icon;
+  
+  // External link rendering
+  if (isExternal) {
+    return (
+      <motion.div
+        whileHover={{ x: 2 }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      >
+        <a
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onClick}
+          className="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-150 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+          title={item.description || item.title}
+        >
+          <ItemIcon className="mr-3 h-4 w-4 flex-shrink-0 text-amber-500" />
+          {item.title}
+          <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
+        </a>
+      </motion.div>
+    );
+  }
   
   return (
     <motion.div

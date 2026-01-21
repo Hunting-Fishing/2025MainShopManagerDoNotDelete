@@ -16,7 +16,8 @@ import {
   Heart,
   ExternalLink,
   Plus,
-  LucideIcon
+  LucideIcon,
+  ShoppingBag
 } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { FadeIn, SlideIn } from '@/components/layout/AnimatedPage';
@@ -379,6 +380,45 @@ export function ModuleStore({
           </div>
         </div>
       </FadeIn>
+
+      {/* Amazon Affiliate Banner */}
+      <motion.a
+        href="https://amzn.to/4b7nheJ"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block max-w-6xl mx-auto px-4 mb-6"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        whileHover={{ scale: 1.01 }}
+      >
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 p-4 shadow-lg">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
+                <ShoppingBag className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm md:text-base">
+                  Shop on Amazon
+                </p>
+                <p className="text-white/80 text-xs md:text-sm">
+                  Find more professional equipment and supplies
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-white/20 rounded-full px-4 py-2">
+              <span className="text-white text-sm font-medium hidden sm:inline">
+                Browse Now
+              </span>
+              <ExternalLink className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          {/* Decorative elements */}
+          <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10" />
+          <div className="absolute -right-8 -bottom-8 h-32 w-32 rounded-full bg-white/5" />
+        </div>
+      </motion.a>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Category Filter */}
