@@ -39,6 +39,7 @@ import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NumberTicker, CurrencyTicker } from '@/components/ui/number-ticker';
 import { AnimatedList } from '@/components/ui/animated-list';
+import { AnimatedGlowBorder } from '@/components/ui/animated-border';
 import { FadeIn, SlideIn } from '@/components/layout/AnimatedPage';
 import { motion } from 'framer-motion';
 
@@ -158,38 +159,39 @@ export default function PowerWashingDashboard() {
             whileHover={{ y: -4, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
           >
-            <Card className="border-border hover:shadow-lg transition-shadow duration-300 group overflow-hidden">
-              <div className={`h-1 ${stat.bgColor} group-hover:h-1.5 transition-all duration-300`} />
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{stat.title}</p>
-                    {statsLoading ? (
-                      <Skeleton className="h-8 w-20 mt-1" />
-                    ) : (
-                      <p className="text-2xl font-bold text-foreground mt-1">
-                        {typeof stat.value === 'number' ? (
-                          stat.title.includes('Revenue') ? (
-                            <CurrencyTicker value={stat.value} delay={index * 0.1} />
-                          ) : (
-                            <NumberTicker value={stat.value} delay={index * 0.1} />
-                          )
+            <AnimatedGlowBorder 
+              className="p-6" 
+              borderRadius="0.75rem"
+              duration={4}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.title}</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-20 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground mt-1">
+                      {typeof stat.value === 'number' ? (
+                        stat.title.includes('Revenue') ? (
+                          <CurrencyTicker value={stat.value} delay={index * 0.1} />
                         ) : (
-                          stat.value
-                        )}
-                      </p>
-                    )}
-                  </div>
-                  <motion.div 
-                    className={`p-3 rounded-full ${stat.bgColor}`}
-                    whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                  </motion.div>
+                          <NumberTicker value={stat.value} delay={index * 0.1} />
+                        )
+                      ) : (
+                        stat.value
+                      )}
+                    </p>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+                <motion.div 
+                  className={`p-3 rounded-full ${stat.bgColor}`}
+                  whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                </motion.div>
+              </div>
+            </AnimatedGlowBorder>
           </motion.div>
         ))}
       </AnimatedList>
