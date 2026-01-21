@@ -13,6 +13,7 @@ import { useShopId } from '@/hooks/useShopId';
 import { toast } from 'sonner';
 import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
 import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
+import { AddressAutocomplete, AddressResult } from '@/components/shared/AddressAutocomplete';
 
 export default function PowerWashingCustomerCreate() {
   const navigate = useNavigate();
@@ -29,6 +30,8 @@ export default function PowerWashingCustomerCreate() {
     city: '',
     state: '',
     zip: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     preferred_contact: 'phone',
     property_type: 'residential',
     notes: ''
@@ -53,6 +56,11 @@ export default function PowerWashingCustomerCreate() {
           email: formData.email || null,
           phone: formData.phone || null,
           address: fullAddress || null,
+          city: formData.city || null,
+          state: formData.state || null,
+          postal_code: formData.zip || null,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           notes: formData.notes || null,
           customer_type: formData.property_type
         })
@@ -87,6 +95,18 @@ export default function PowerWashingCustomerCreate() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddressSelect = (result: AddressResult) => {
+    setFormData(prev => ({
+      ...prev,
+      address: result.streetAddress,
+      city: result.city,
+      state: result.state,
+      zip: result.postalCode,
+      latitude: result.latitude,
+      longitude: result.longitude,
+    }));
   };
 
   // Success state - customer created
@@ -248,13 +268,14 @@ export default function PowerWashingCustomerCreate() {
                 </div>
               </div>
 
-              {/* Address */}
+              {/* Address with Autocomplete */}
               <div className="space-y-3 md:space-y-4">
                 <Label className="text-sm">Service Address</Label>
-                <Input
+                <AddressAutocomplete
                   value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="Street Address"
+                  onChange={(value) => handleInputChange('address', value)}
+                  onSelect={handleAddressSelect}
+                  placeholder="Start typing an address..."
                   className="border-cyan-500/20 focus:border-cyan-500"
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-4">
@@ -279,6 +300,11 @@ export default function PowerWashingCustomerCreate() {
                     className="border-cyan-500/20 focus:border-cyan-500"
                   />
                 </div>
+                {formData.latitude && formData.longitude && (
+                  <p className="text-xs text-muted-foreground">
+                    📍 Location captured: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                  </p>
+                )}
               </div>
 
               {/* Notes */}
