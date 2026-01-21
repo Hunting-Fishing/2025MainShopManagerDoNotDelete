@@ -5,8 +5,13 @@ import { useEnabledModules } from '@/hooks/useEnabledModules';
 import { MODULE_ROUTES, ModuleSectionItem } from '@/config/moduleRoutes';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
+import { 
+  AnimatedCollapsible, 
+  CollapsibleTrigger, 
+  CollapsibleContent 
+} from '@/components/ui/animated-collapsible';
+import { motion } from 'framer-motion';
 
 export function ModuleSections() {
   const location = useLocation();
@@ -139,20 +144,18 @@ export function ModuleSections() {
           }
 
           return (
-            <Collapsible
+            <AnimatedCollapsible
               key={groupName}
               open={isExpanded}
               onOpenChange={() => toggleGroup(groupName)}
             >
-              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <CollapsibleTrigger 
+                showChevron={true}
+                className="flex items-center justify-between w-full px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-md transition-colors"
+              >
                 <span className="uppercase tracking-wider">{groupName}</span>
-                {isExpanded ? (
-                  <ChevronDown className="h-3 w-3" />
-                ) : (
-                  <ChevronRight className="h-3 w-3" />
-                )}
               </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-0.5">
+              <CollapsibleContent staggerChildren staggerDelay={0.03} className="space-y-0.5">
                 {items.map((item) => (
                   <SectionLink 
                     key={item.href}
@@ -163,7 +166,7 @@ export function ModuleSections() {
                   />
                 ))}
               </CollapsibleContent>
-            </Collapsible>
+            </AnimatedCollapsible>
           );
         })}
       </div>
@@ -185,26 +188,31 @@ function SectionLink({ item, currentPath, dashboardRoute, onClick }: SectionLink
   const ItemIcon = item.icon;
   
   return (
-    <Link
-      to={item.href}
-      onClick={onClick}
-      className={cn(
-        'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-150',
-        isActive
-          ? 'bg-primary/10 text-primary font-semibold'
-          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-      )}
-      title={item.description || item.title}
+    <motion.div
+      whileHover={{ x: 2 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
     >
-      <ItemIcon
+      <Link
+        to={item.href}
+        onClick={onClick}
         className={cn(
-          'mr-3 h-4 w-4 flex-shrink-0 transition-colors',
-          isActive 
-            ? 'text-primary'
-            : 'text-muted-foreground/70 group-hover:text-foreground'
+          'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-150',
+          isActive
+            ? 'bg-primary/10 text-primary font-semibold'
+            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
         )}
-      />
-      {item.title}
-    </Link>
+        title={item.description || item.title}
+      >
+        <ItemIcon
+          className={cn(
+            'mr-3 h-4 w-4 flex-shrink-0 transition-colors',
+            isActive 
+              ? 'text-primary'
+              : 'text-muted-foreground/70 group-hover:text-foreground'
+          )}
+        />
+        {item.title}
+      </Link>
+    </motion.div>
   );
 }
