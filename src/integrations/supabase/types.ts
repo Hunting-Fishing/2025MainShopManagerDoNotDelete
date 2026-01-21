@@ -5768,6 +5768,8 @@ export type Database = {
           is_fleet: boolean | null
           labor_tax_exempt: boolean | null
           last_name: string
+          latitude: number | null
+          longitude: number | null
           notes: string | null
           other_business_industry: string | null
           other_referral_details: string | null
@@ -5814,6 +5816,8 @@ export type Database = {
           is_fleet?: boolean | null
           labor_tax_exempt?: boolean | null
           last_name: string
+          latitude?: number | null
+          longitude?: number | null
           notes?: string | null
           other_business_industry?: string | null
           other_referral_details?: string | null
@@ -5860,6 +5864,8 @@ export type Database = {
           is_fleet?: boolean | null
           labor_tax_exempt?: boolean | null
           last_name?: string
+          latitude?: number | null
+          longitude?: number | null
           notes?: string | null
           other_business_industry?: string | null
           other_referral_details?: string | null
@@ -26543,6 +26549,8 @@ export type Database = {
           priority: string | null
           property_address: string | null
           property_city: string | null
+          property_latitude: number | null
+          property_longitude: number | null
           property_state: string | null
           property_type: string | null
           property_zip: string | null
@@ -26577,6 +26585,8 @@ export type Database = {
           priority?: string | null
           property_address?: string | null
           property_city?: string | null
+          property_latitude?: number | null
+          property_longitude?: number | null
           property_state?: string | null
           property_type?: string | null
           property_zip?: string | null
@@ -26611,6 +26621,8 @@ export type Database = {
           priority?: string | null
           property_address?: string | null
           property_city?: string | null
+          property_latitude?: number | null
+          property_longitude?: number | null
           property_state?: string | null
           property_type?: string | null
           property_zip?: string | null

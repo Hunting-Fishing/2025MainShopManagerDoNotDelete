@@ -74,6 +74,8 @@ export interface PowerWashingJob {
   property_city: string | null;
   property_state: string | null;
   property_zip: string | null;
+  property_latitude: number | null;
+  property_longitude: number | null;
   square_footage: number | null;
   scheduled_date: string | null;
   scheduled_time_start: string | null;

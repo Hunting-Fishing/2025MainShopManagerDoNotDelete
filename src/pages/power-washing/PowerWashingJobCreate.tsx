@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { 
   ArrowLeft, 
   CalendarIcon, 
-  MapPin, 
   User, 
   Search,
   Plus,
@@ -29,6 +28,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { CrewAssignmentPicker } from '@/components/power-washing/CrewAssignmentPicker';
+import { AddressAutocomplete, AddressResult } from '@/components/shared/AddressAutocomplete';
 
 const PROPERTY_TYPES = [
   { value: 'residential_home', label: 'Residential Home' },
@@ -85,6 +85,8 @@ export default function PowerWashingJobCreate() {
     propertyCity: '',
     propertyState: '',
     propertyZip: '',
+    propertyLatitude: null as number | null,
+    propertyLongitude: null as number | null,
     squareFootage: '',
     // Job Details
     serviceId: '',
@@ -103,6 +105,18 @@ export default function PowerWashingJobCreate() {
     // Crew
     assignedCrew: [] as string[],
   });
+
+  const handleAddressSelect = (result: AddressResult) => {
+    setFormData(prev => ({
+      ...prev,
+      propertyAddress: result.streetAddress,
+      propertyCity: result.city,
+      propertyState: result.state,
+      propertyZip: result.postalCode,
+      propertyLatitude: result.latitude,
+      propertyLongitude: result.longitude,
+    }));
+  };
 
   const selectedService = services?.find(s => s.id === formData.serviceId);
 
@@ -137,6 +151,8 @@ export default function PowerWashingJobCreate() {
         property_city: formData.propertyCity || null,
         property_state: formData.propertyState || null,
         property_zip: formData.propertyZip || null,
+        property_latitude: formData.propertyLatitude,
+        property_longitude: formData.propertyLongitude,
         square_footage: formData.squareFootage ? parseFloat(formData.squareFootage) : null,
         priority: formData.priority,
         scheduled_date: formData.scheduledDate ? format(formData.scheduledDate, 'yyyy-MM-dd') : null,
@@ -247,16 +263,17 @@ export default function PowerWashingJobCreate() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="propertyAddress">Street Address</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="propertyAddress"
-                    className="pl-10"
-                    placeholder="123 Main St"
-                    value={formData.propertyAddress}
-                    onChange={(e) => updateField('propertyAddress', e.target.value)}
-                  />
-                </div>
+                <AddressAutocomplete
+                  value={formData.propertyAddress}
+                  onChange={(value) => updateField('propertyAddress', value)}
+                  onSelect={handleAddressSelect}
+                  placeholder="Start typing an address..."
+                />
+                {formData.propertyLatitude && formData.propertyLongitude && (
+                  <p className="text-xs text-muted-foreground">
+                    📍 Location captured: {formData.propertyLatitude.toFixed(4)}, {formData.propertyLongitude.toFixed(4)}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-2">
