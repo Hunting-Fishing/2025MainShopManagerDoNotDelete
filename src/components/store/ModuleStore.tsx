@@ -19,6 +19,9 @@ import {
   LucideIcon
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { FadeIn, SlideIn } from '@/components/layout/AnimatedPage';
+import { AnimatedGrid } from '@/components/ui/animated-list';
+import { motion } from 'framer-motion';
 
 interface Product {
   id: string;
@@ -80,89 +83,94 @@ function StoreProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg group">
-      <div 
-        className="relative aspect-square cursor-pointer overflow-hidden bg-muted"
-        onClick={handleClick}
-      >
-        {product.image_url ? (
-          <img 
-            src={product.image_url} 
-            alt={displayName} 
-            className="h-full w-full object-contain bg-white p-2 transition-transform group-hover:scale-105"
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center">
-            <Package className="h-12 w-12 text-muted-foreground" />
-          </div>
-        )}
-        {hasDiscount && (
-          <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
-            Sale
-          </Badge>
-        )}
-        {product.is_featured && (
-          <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
-            Featured
-          </Badge>
-        )}
-        {product.is_bestseller && !product.is_featured && (
-          <Badge className="absolute top-2 left-2 bg-amber-500 text-white">
-            Best Seller
-          </Badge>
-        )}
-      </div>
-      
-      <CardContent className="flex-grow p-4">
-        <h3 
-          className="font-medium text-base line-clamp-2 cursor-pointer hover:text-primary transition-colors mb-2"
+    <motion.div
+      whileHover={{ y: -4, scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    >
+      <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg group">
+        <div 
+          className="relative aspect-square cursor-pointer overflow-hidden bg-muted"
           onClick={handleClick}
         >
-          {displayName}
-        </h3>
-        
-        {product.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-            {product.description}
-          </p>
-        )}
-        
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-bold text-lg text-primary">
-            {formatCurrency(displayPrice)}
-          </span>
+          {product.image_url ? (
+            <img 
+              src={product.image_url} 
+              alt={displayName} 
+              className="h-full w-full object-contain bg-white p-2 transition-transform group-hover:scale-105"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center">
+              <Package className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
           {hasDiscount && (
-            <span className="text-sm text-muted-foreground line-through">
-              {formatCurrency(product.price)}
-            </span>
+            <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
+              Sale
+            </Badge>
+          )}
+          {product.is_featured && (
+            <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
+              Featured
+            </Badge>
+          )}
+          {product.is_bestseller && !product.is_featured && (
+            <Badge className="absolute top-2 left-2 bg-amber-500 text-white">
+              Best Seller
+            </Badge>
           )}
         </div>
         
-        {product.average_rating && (
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span>{product.average_rating.toFixed(1)}</span>
-            {product.review_count && (
-              <span>({product.review_count} reviews)</span>
+        <CardContent className="flex-grow p-4">
+          <h3 
+            className="font-medium text-base line-clamp-2 cursor-pointer hover:text-primary transition-colors mb-2"
+            onClick={handleClick}
+          >
+            {displayName}
+          </h3>
+          
+          {product.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+              {product.description}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-bold text-lg text-primary">
+              {formatCurrency(displayPrice)}
+            </span>
+            {hasDiscount && (
+              <span className="text-sm text-muted-foreground line-through">
+                {formatCurrency(product.price)}
+              </span>
             )}
           </div>
-        )}
-      </CardContent>
-      
-      <CardFooter className="p-4 pt-0 flex gap-2">
-        <Button 
-          className="flex-1 gap-2"
-          onClick={handleClick}
-          disabled={!product.affiliate_link}
-        >
-          <ExternalLink className="h-4 w-4" />
-          View Product
-        </Button>
-        <Button variant="outline" size="icon">
-          <Heart className="h-4 w-4" />
-        </Button>
-      </CardFooter>
-    </Card>
+          
+          {product.average_rating && (
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+              <span>{product.average_rating.toFixed(1)}</span>
+              {product.review_count && (
+                <span>({product.review_count} reviews)</span>
+              )}
+            </div>
+          )}
+        </CardContent>
+        
+        <CardFooter className="p-4 pt-0 flex gap-2">
+          <Button 
+            className="flex-1 gap-2"
+            onClick={handleClick}
+            disabled={!product.affiliate_link}
+          >
+            <ExternalLink className="h-4 w-4" />
+            View Product
+          </Button>
+          <Button variant="outline" size="icon">
+            <Heart className="h-4 w-4" />
+          </Button>
+        </CardFooter>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -255,117 +263,147 @@ export function ModuleStore({
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className={`bg-gradient-to-br ${getGradientClass()} to-background py-12 px-4`}>
-        <div className="max-w-6xl mx-auto text-center">
-          <div className={`inline-flex items-center gap-2 ${getAccentTextClass()} px-4 py-2 rounded-full mb-4`}>
-            <ModuleIcon className="h-4 w-4" />
-            <span className="text-sm font-medium">Pro Shop</span>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">
-            {moduleName} Equipment & Gear
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-            Professional equipment trusted by {moduleName.toLowerCase()} experts. 
-            Shop our curated selection of top-rated products for your business.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-xl mx-auto">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Dialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Suggest a Product
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Suggest a Product</DialogTitle>
-                </DialogHeader>
-                <SubmitProductForm 
-                  moduleId={moduleId}
-                  onSuccess={() => setSubmitDialogOpen(false)} 
+      <FadeIn>
+        <div className={`bg-gradient-to-br ${getGradientClass()} to-background py-12 px-4`}>
+          <div className="max-w-6xl mx-auto text-center">
+            <motion.div 
+              className={`inline-flex items-center gap-2 ${getAccentTextClass()} px-4 py-2 rounded-full mb-4`}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              <ModuleIcon className="h-4 w-4" />
+              <span className="text-sm font-medium">Pro Shop</span>
+            </motion.div>
+            <motion.h1 
+              className="text-3xl md:text-4xl font-bold mb-3"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              {moduleName} Equipment & Gear
+            </motion.h1>
+            <motion.p 
+              className="text-muted-foreground max-w-2xl mx-auto mb-8"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              Professional equipment trusted by {moduleName.toLowerCase()} experts. 
+              Shop our curated selection of top-rated products for your business.
+            </motion.p>
+            
+            <SlideIn direction="up" delay={0.4} className="flex flex-col sm:flex-row gap-3 justify-center max-w-xl mx-auto">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
                 />
-              </DialogContent>
-            </Dialog>
+              </div>
+              <Dialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
+                <DialogTrigger asChild>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Suggest a Product
+                    </Button>
+                  </motion.div>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Suggest a Product</DialogTitle>
+                  </DialogHeader>
+                  <SubmitProductForm 
+                    moduleId={moduleId}
+                    onSuccess={() => setSubmitDialogOpen(false)} 
+                  />
+                </DialogContent>
+              </Dialog>
+            </SlideIn>
           </div>
         </div>
-      </div>
+      </FadeIn>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Category Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
-          {categories.map((category) => {
+        <SlideIn direction="right" delay={0.2} className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
+          {categories.map((category, index) => {
             const Icon = category.icon;
             return (
-              <Button
+              <motion.div
                 key={category.id}
-                variant={selectedCategory === category.id ? 'default' : 'outline'}
-                size="sm"
-                className="gap-2 whitespace-nowrap"
-                onClick={() => setSelectedCategory(category.id)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Icon className="h-4 w-4" />
-                {category.name}
-              </Button>
+                <Button
+                  variant={selectedCategory === category.id ? 'default' : 'outline'}
+                  size="sm"
+                  className="gap-2 whitespace-nowrap"
+                  onClick={() => setSelectedCategory(category.id)}
+                >
+                  <Icon className="h-4 w-4" />
+                  {category.name}
+                </Button>
+              </motion.div>
             );
           })}
-        </div>
+        </SlideIn>
 
         {/* Featured Products */}
         {featuredProducts.length > 0 && (
           <section className="mb-12">
-            <div className="flex items-center gap-2 mb-6">
-              <Star className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">Featured Products</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <FadeIn delay={0.3}>
+              <div className="flex items-center gap-2 mb-6">
+                <Star className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">Featured Products</h2>
+              </div>
+            </FadeIn>
+            <AnimatedGrid columns={4} staggerDelay={0.08} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredProducts.map((product) => (
                 <StoreProductCard key={product.id} product={product} />
               ))}
-            </div>
+            </AnimatedGrid>
           </section>
         )}
 
         {/* Best Sellers */}
         {bestSellers.length > 0 && (
           <section className="mb-12">
-            <div className="flex items-center gap-2 mb-6">
-              <TrendingUp className="h-5 w-5 text-amber-500" />
-              <h2 className="text-xl font-semibold">Best Sellers</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <FadeIn delay={0.4}>
+              <div className="flex items-center gap-2 mb-6">
+                <TrendingUp className="h-5 w-5 text-amber-500" />
+                <h2 className="text-xl font-semibold">Best Sellers</h2>
+              </div>
+            </FadeIn>
+            <AnimatedGrid columns={4} staggerDelay={0.08} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {bestSellers.map((product) => (
                 <StoreProductCard key={product.id} product={product} />
               ))}
-            </div>
+            </AnimatedGrid>
           </section>
         )}
 
         {/* All Products */}
         <section>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">All Products</h2>
+          <FadeIn delay={0.5}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-xl font-semibold">All Products</h2>
+              </div>
+              {allProducts.length > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {allProducts.length} product{allProducts.length !== 1 ? 's' : ''}
+                  {selectedCategory !== 'all' && products && allProducts.length !== products.length && (
+                    <span className="text-muted-foreground/70"> (of {products.length} total)</span>
+                  )}
+                </span>
+              )}
             </div>
-            {allProducts.length > 0 && (
-              <span className="text-sm text-muted-foreground">
-                {allProducts.length} product{allProducts.length !== 1 ? 's' : ''}
-                {selectedCategory !== 'all' && products && allProducts.length !== products.length && (
-                  <span className="text-muted-foreground/70"> (of {products.length} total)</span>
-                )}
-              </span>
-            )}
-          </div>
+          </FadeIn>
           
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -374,24 +412,26 @@ export function ModuleStore({
               ))}
             </div>
           ) : allProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <AnimatedGrid columns={4} staggerDelay={0.05} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {allProducts.map((product) => (
                 <StoreProductCard key={product.id} product={product} />
               ))}
-            </div>
+            </AnimatedGrid>
           ) : (
-            <Card className="p-12 text-center">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No products found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery 
-                  ? 'Try adjusting your search query'
-                  : 'Check back soon for new products!'}
-              </p>
-              <Button variant="outline" onClick={() => setSubmitDialogOpen(true)}>
-                Suggest a Product
-              </Button>
-            </Card>
+            <FadeIn delay={0.3}>
+              <Card className="p-12 text-center">
+                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No products found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchQuery 
+                    ? 'Try adjusting your search query'
+                    : 'Check back soon for new products!'}
+                </p>
+                <Button variant="outline" onClick={() => setSubmitDialogOpen(true)}>
+                  Suggest a Product
+                </Button>
+              </Card>
+            </FadeIn>
           )}
         </section>
       </div>
