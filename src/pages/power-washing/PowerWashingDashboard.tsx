@@ -38,7 +38,7 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NumberTicker, CurrencyTicker } from '@/components/ui/number-ticker';
-import { AnimatedList } from '@/components/ui/animated-list';
+import { AnimatedList, AnimatedGrid } from '@/components/ui/animated-list';
 import { AnimatedGlowBorder } from '@/components/ui/animated-border';
 import { FadeIn, SlideIn } from '@/components/layout/AnimatedPage';
 import { motion } from 'framer-motion';
@@ -197,192 +197,51 @@ export default function PowerWashingDashboard() {
       </AnimatedList>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-13 gap-4 mb-8">
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2"
-          onClick={() => navigate('/power-washing/jobs')}
-        >
-          <ClipboardList className="h-6 w-6" />
-          <span className="text-xs">All Jobs</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2"
-          onClick={() => navigate('/power-washing/quotes')}
-        >
-          <FileText className="h-6 w-6" />
-          <span className="text-xs">Quotes</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2"
-          onClick={() => navigate('/power-washing/equipment')}
-        >
-          <Truck className="h-6 w-6" />
-          <span className="text-xs">Equipment</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2"
-          onClick={() => navigate('/power-washing/chemicals')}
-        >
-          <FlaskConical className="h-6 w-6" />
-          <span className="text-xs">Chemicals</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-primary/30 hover:bg-primary/5"
-          onClick={() => navigate('/power-washing/formulas')}
-        >
-          <Beaker className="h-6 w-6 text-primary" />
-          <span className="text-xs">Formulas</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-green-500/30 hover:bg-green-500/5"
-          onClick={() => navigate('/power-washing/surface-calculator')}
-        >
-          <Calculator className="h-6 w-6 text-green-600" />
-          <span className="text-xs">Calculator</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-purple-500/30 hover:bg-purple-500/5"
-          onClick={() => navigate('/power-washing/recurring')}
-        >
-          <RefreshCw className="h-6 w-6 text-purple-500" />
-          <span className="text-xs">Recurring</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-amber-500/30 hover:bg-amber-500/5"
-          onClick={() => navigate('/power-washing/invoices')}
-        >
-          <Receipt className="h-6 w-6 text-amber-500" />
-          <span className="text-xs">Invoices</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-blue-500/30 hover:bg-blue-500/5"
-          onClick={() => navigate('/power-washing/reports')}
-        >
-          <BarChart3 className="h-6 w-6 text-blue-500" />
-          <span className="text-xs">Reports</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-indigo-500/30 hover:bg-indigo-500/5"
-          onClick={() => navigate('/power-washing/routes')}
-        >
-          <Navigation className="h-6 w-6 text-indigo-500" />
-          <span className="text-xs">Routes</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-yellow-500/30 hover:bg-yellow-500/5"
-          onClick={() => navigate('/power-washing/reviews')}
-        >
-          <Star className="h-6 w-6 text-yellow-500" />
-          <span className="text-xs">Reviews</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-pink-500/30 hover:bg-pink-500/5"
-          onClick={() => navigate('/power-washing/notifications')}
-        >
-          <Bell className="h-6 w-6 text-pink-500" />
-          <span className="text-xs">Alerts</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-teal-500/30 hover:bg-teal-500/5"
-          onClick={() => navigate('/power-washing/field')}
-        >
-          <Smartphone className="h-6 w-6 text-teal-500" />
-          <span className="text-xs">Field View</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-emerald-500/30 hover:bg-emerald-500/5"
-          onClick={() => navigate('/power-washing/price-book')}
-        >
-          <BookOpen className="h-6 w-6 text-emerald-500" />
-          <span className="text-xs">Price Book</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-violet-500/30 hover:bg-violet-500/5"
-          onClick={() => navigate('/power-washing/analytics')}
-        >
-          <PieChart className="h-6 w-6 text-violet-500" />
-          <span className="text-xs">Analytics</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-sky-500/30 hover:bg-sky-500/5"
-          onClick={() => navigate('/power-washing/weather')}
-        >
-          <Cloud className="h-6 w-6 text-sky-500" />
-          <span className="text-xs">Weather</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-rose-500/30 hover:bg-rose-500/5"
-          onClick={() => navigate('/power-washing/photos')}
-        >
-          <Camera className="h-6 w-6 text-rose-500" />
-          <span className="text-xs">Photos</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-cyan-500/30 hover:bg-cyan-500/5"
-          onClick={() => navigate('/power-washing/subscriptions')}
-        >
-          <Repeat className="h-6 w-6 text-cyan-500" />
-          <span className="text-xs">Subscriptions</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-lime-500/30 hover:bg-lime-500/5"
-          onClick={() => navigate('/power-washing/portal')}
-        >
-          <Users className="h-6 w-6 text-lime-500" />
-          <span className="text-xs">Portal</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-green-600/30 hover:bg-green-600/5"
-          onClick={() => navigate('/power-washing/payments')}
-        >
-          <CreditCard className="h-6 w-6 text-green-600" />
-          <span className="text-xs">Payments</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-blue-600/30 hover:bg-blue-600/5"
-          onClick={() => navigate('/power-washing/schedule')}
-        >
-          <CalendarDays className="h-6 w-6 text-blue-600" />
-          <span className="text-xs">Schedule</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-orange-500/30 hover:bg-orange-500/5"
-          onClick={() => navigate('/power-washing/leads')}
-        >
-          <UserPlus className="h-6 w-6 text-orange-500" />
-          <span className="text-xs">Leads</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="h-24 flex flex-col gap-2 border-slate-500/30 hover:bg-slate-500/5"
-          onClick={() => navigate('/power-washing/fleet')}
-        >
-          <Car className="h-6 w-6 text-slate-500" />
-          <span className="text-xs">Fleet</span>
-        </Button>
-      </div>
+      <FadeIn delay={0.2} className="mb-8">
+        <AnimatedGrid columns={6} staggerDelay={0.03} className="grid-cols-3 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-4">
+          {[
+            { icon: ClipboardList, label: 'All Jobs', path: '/power-washing/jobs' },
+            { icon: FileText, label: 'Quotes', path: '/power-washing/quotes' },
+            { icon: Truck, label: 'Equipment', path: '/power-washing/equipment' },
+            { icon: FlaskConical, label: 'Chemicals', path: '/power-washing/chemicals' },
+            { icon: Beaker, label: 'Formulas', path: '/power-washing/formulas', color: 'text-primary', border: 'border-primary/30', hover: 'hover:bg-primary/5' },
+            { icon: Calculator, label: 'Calculator', path: '/power-washing/surface-calculator', color: 'text-green-600', border: 'border-green-500/30', hover: 'hover:bg-green-500/5' },
+            { icon: RefreshCw, label: 'Recurring', path: '/power-washing/recurring', color: 'text-purple-500', border: 'border-purple-500/30', hover: 'hover:bg-purple-500/5' },
+            { icon: Receipt, label: 'Invoices', path: '/power-washing/invoices', color: 'text-amber-500', border: 'border-amber-500/30', hover: 'hover:bg-amber-500/5' },
+            { icon: BarChart3, label: 'Reports', path: '/power-washing/reports', color: 'text-blue-500', border: 'border-blue-500/30', hover: 'hover:bg-blue-500/5' },
+            { icon: Navigation, label: 'Routes', path: '/power-washing/routes', color: 'text-indigo-500', border: 'border-indigo-500/30', hover: 'hover:bg-indigo-500/5' },
+            { icon: Star, label: 'Reviews', path: '/power-washing/reviews', color: 'text-yellow-500', border: 'border-yellow-500/30', hover: 'hover:bg-yellow-500/5' },
+            { icon: Bell, label: 'Alerts', path: '/power-washing/notifications', color: 'text-pink-500', border: 'border-pink-500/30', hover: 'hover:bg-pink-500/5' },
+            { icon: Smartphone, label: 'Field View', path: '/power-washing/field', color: 'text-teal-500', border: 'border-teal-500/30', hover: 'hover:bg-teal-500/5' },
+            { icon: BookOpen, label: 'Price Book', path: '/power-washing/price-book', color: 'text-emerald-500', border: 'border-emerald-500/30', hover: 'hover:bg-emerald-500/5' },
+            { icon: PieChart, label: 'Analytics', path: '/power-washing/analytics', color: 'text-violet-500', border: 'border-violet-500/30', hover: 'hover:bg-violet-500/5' },
+            { icon: Cloud, label: 'Weather', path: '/power-washing/weather', color: 'text-sky-500', border: 'border-sky-500/30', hover: 'hover:bg-sky-500/5' },
+            { icon: Camera, label: 'Photos', path: '/power-washing/photos', color: 'text-rose-500', border: 'border-rose-500/30', hover: 'hover:bg-rose-500/5' },
+            { icon: Repeat, label: 'Subscriptions', path: '/power-washing/subscriptions', color: 'text-cyan-500', border: 'border-cyan-500/30', hover: 'hover:bg-cyan-500/5' },
+            { icon: Users, label: 'Portal', path: '/power-washing/portal', color: 'text-lime-500', border: 'border-lime-500/30', hover: 'hover:bg-lime-500/5' },
+            { icon: CreditCard, label: 'Payments', path: '/power-washing/payments', color: 'text-green-600', border: 'border-green-600/30', hover: 'hover:bg-green-600/5' },
+            { icon: CalendarDays, label: 'Schedule', path: '/power-washing/schedule', color: 'text-blue-600', border: 'border-blue-600/30', hover: 'hover:bg-blue-600/5' },
+            { icon: UserPlus, label: 'Leads', path: '/power-washing/leads', color: 'text-orange-500', border: 'border-orange-500/30', hover: 'hover:bg-orange-500/5' },
+            { icon: Car, label: 'Fleet', path: '/power-washing/fleet', color: 'text-slate-500', border: 'border-slate-500/30', hover: 'hover:bg-slate-500/5' },
+          ].map((action) => (
+            <motion.div
+              key={action.path}
+              whileHover={{ y: -4, scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            >
+              <Button
+                variant="outline"
+                className={`h-24 w-full flex flex-col gap-2 ${action.border || ''} ${action.hover || ''}`}
+                onClick={() => navigate(action.path)}
+              >
+                <action.icon className={`h-6 w-6 ${action.color || ''}`} />
+                <span className="text-xs">{action.label}</span>
+              </Button>
+            </motion.div>
+          ))}
+        </AnimatedGrid>
+      </FadeIn>
 
       {/* Low Stock Alert */}
       <div className="mb-6">
