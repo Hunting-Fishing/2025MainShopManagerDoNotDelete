@@ -79,9 +79,11 @@ export function ModuleSections() {
     'Operations',
     'Equipment & Tools',
     'Fleet',
+    'Tools',
     'Safety & Compliance',
     'Company',
     'Resources',
+    'Settings',
     'Automotive',
     'General'
   ];
