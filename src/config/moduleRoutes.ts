@@ -268,6 +268,7 @@ export interface ModuleSectionItem {
   icon: LucideIcon;
   description?: string;
   group?: string;
+  isExternal?: boolean;
 }
 
 export interface ModuleRouteConfig {
@@ -1504,6 +1505,8 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Diagnostics', href: '/automotive/diagnostics', icon: Activity, description: 'Diagnostic tools', group: 'Automotive' },
       { title: 'Labor Rates', href: '/automotive/labor-rates', icon: DollarSign, description: 'Rate management', group: 'Automotive' },
       { title: 'TSB & Recalls', href: '/automotive/recalls', icon: FileSearch, description: 'Technical bulletins', group: 'Automotive' },
+      // Quick Links
+      { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
   },
   power_washing: {
@@ -1550,6 +1553,8 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Settings', href: '/power-washing/settings', icon: Settings, description: 'Module configuration', group: 'Settings' },
       { title: 'Team', href: '/power-washing/team', icon: Users, description: 'Team management', group: 'Settings' },
       { title: 'Roles', href: '/power-washing/roles', icon: Shield, description: 'Role permissions', group: 'Settings' },
+      // Quick Links
+      { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
   },
   gunsmith: {
@@ -1589,6 +1594,8 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Settings', href: '/gunsmith/settings', icon: Settings, group: 'Settings' },
       { title: 'Team', href: '/gunsmith/team', icon: Users, group: 'Settings' },
       { title: 'Roles', href: '/gunsmith/roles', icon: Shield, group: 'Settings' },
+      // Quick Links
+      { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
   },
   marine: {
@@ -1615,6 +1622,8 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Haul-Outs', href: '/marine-services/haul-outs', icon: Anchor, description: 'Haul-out scheduling' },
       { title: 'Winterization', href: '/marine-services/winterization', icon: Snowflake, description: 'Winterization tracking' },
       { title: 'Compliance', href: '/marine-services/compliance', icon: Shield, description: 'Coast Guard compliance' },
+      // Quick Links
+      { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
   },
   fuel_delivery: {
@@ -1650,6 +1659,8 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Inventory', href: '/fuel-delivery/inventory', icon: BarChart3, description: 'Fuel inventory' },
       // Mobile
       { title: 'Driver App', href: '/fuel-delivery/driver-app', icon: Smartphone, description: 'Mobile driver app' },
+      // Quick Links
+      { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
   },
   water_delivery: {
@@ -1690,6 +1701,8 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       // Settings
       { title: 'Profile', href: '/water-delivery/profile', icon: User, description: 'Module profile' },
       { title: 'Settings', href: '/water-delivery/settings', icon: Settings, description: 'Module settings' },
+      // Quick Links
+      { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
   },
 };
