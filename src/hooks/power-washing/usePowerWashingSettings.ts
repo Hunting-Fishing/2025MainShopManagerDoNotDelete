@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
 import { toast } from 'sonner';
-import { Json } from '@/integrations/supabase/types';
 
 export interface PowerWashingSettingsData {
   // General
@@ -58,10 +57,13 @@ export interface PowerWashingSettingsData {
 interface SettingsRow {
   id: string;
   shop_id: string;
-  settings: Json;
+  settings: PowerWashingSettingsData;
   created_at: string;
   updated_at: string;
 }
+
+const SUPABASE_URL = 'https://oudkbrnvommbvtuispla.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91ZGticm52b21tYnZ0dWlzcGxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MTgzODgsImV4cCI6MjA1ODQ5NDM4OH0.Hyo-lkI96GBLt-zp5zZLvCL1bSEWTomIIrzvKRO4LF4';
 
 const defaultSettings: PowerWashingSettingsData = {
   // General
@@ -114,33 +116,49 @@ const defaultSettings: PowerWashingSettingsData = {
   low_chemical_alerts: true,
 };
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  
+  return {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': token ? `Bearer ${token}` : `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+  };
+}
+
 export function usePowerWashingSettings() {
   const { shopId } = useShopId();
   const queryClient = useQueryClient();
 
   const { data: settings, isLoading, error } = useQuery({
     queryKey: ['power-washing-settings', shopId],
-    queryFn: async () => {
+    queryFn: async (): Promise<PowerWashingSettingsData> => {
       if (!shopId) return defaultSettings;
       
-      const { data, error } = await supabase
-        .from('power_washing_settings')
-        .select('*')
-        .eq('shop_id', shopId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching power washing settings:', error);
-        throw error;
-      }
-      
-      if (!data) {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/power_washing_settings?shop_id=eq.${shopId}&select=*`,
+          { headers }
+        );
+        
+        if (!response.ok) {
+          console.warn('Power washing settings table may not exist yet');
+          return defaultSettings;
+        }
+        
+        const rows = await response.json() as SettingsRow[];
+        if (!rows || rows.length === 0) {
+          return defaultSettings;
+        }
+        
+        const storedSettings = rows[0].settings;
+        return { ...defaultSettings, ...storedSettings };
+      } catch (err) {
+        console.warn('Error fetching power washing settings:', err);
         return defaultSettings;
       }
-      
-      // Merge with defaults to ensure all fields exist
-      const storedSettings = (data as SettingsRow).settings as PowerWashingSettingsData;
-      return { ...defaultSettings, ...storedSettings };
     },
     enabled: !!shopId,
   });
@@ -149,34 +167,57 @@ export function usePowerWashingSettings() {
     mutationFn: async (newSettings: PowerWashingSettingsData) => {
       if (!shopId) throw new Error('No shop ID');
       
-      // Check if settings exist
-      const { data: existing } = await supabase
-        .from('power_washing_settings')
-        .select('id')
-        .eq('shop_id', shopId)
-        .maybeSingle();
+      const headers = await getAuthHeaders();
       
-      if (existing) {
+      // Check if settings exist
+      const checkResponse = await fetch(
+        `${SUPABASE_URL}/rest/v1/power_washing_settings?shop_id=eq.${shopId}&select=id`,
+        { headers }
+      );
+      
+      const existingRows = await checkResponse.json() as { id: string }[];
+      const exists = existingRows && existingRows.length > 0;
+      
+      if (exists) {
         // Update existing
-        const { error } = await supabase
-          .from('power_washing_settings')
-          .update({ 
-            settings: newSettings as unknown as Json,
-            updated_at: new Date().toISOString()
-          })
-          .eq('shop_id', shopId);
+        const updateResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/power_washing_settings?shop_id=eq.${shopId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              ...headers,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({ 
+              settings: newSettings,
+              updated_at: new Date().toISOString()
+            }),
+          }
+        );
         
-        if (error) throw error;
+        if (!updateResponse.ok) {
+          throw new Error('Failed to update settings');
+        }
       } else {
         // Insert new
-        const { error } = await supabase
-          .from('power_washing_settings')
-          .insert({ 
-            shop_id: shopId,
-            settings: newSettings as unknown as Json 
-          });
+        const insertResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/power_washing_settings`,
+          {
+            method: 'POST',
+            headers: {
+              ...headers,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({ 
+              shop_id: shopId,
+              settings: newSettings 
+            }),
+          }
+        );
         
-        if (error) throw error;
+        if (!insertResponse.ok) {
+          throw new Error('Failed to insert settings');
+        }
       }
       
       return newSettings;
@@ -185,8 +226,8 @@ export function usePowerWashingSettings() {
       queryClient.invalidateQueries({ queryKey: ['power-washing-settings', shopId] });
       toast.success('Settings saved successfully');
     },
-    onError: (error) => {
-      console.error('Error saving settings:', error);
+    onError: (err) => {
+      console.error('Error saving settings:', err);
       toast.error('Failed to save settings');
     },
   });
