@@ -21,7 +21,6 @@ import {
   CheckCircle,
   Plus,
   Trash2,
-  GripVertical,
   ArrowUpDown,
 } from 'lucide-react';
 import {
@@ -38,9 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 
 interface RouteStop {
   id: string;
@@ -54,11 +51,10 @@ interface RouteStop {
   job?: {
     id: string;
     job_number: string;
-    service_type: string;
-    address: string;
-    customer_name: string;
-    status: string;
-  };
+    property_type: string | null;
+    property_address: string | null;
+    status: string | null;
+  } | null;
 }
 
 interface Route {
@@ -109,9 +105,8 @@ export default function PowerWashingRouteDetail() {
           job:power_washing_jobs(
             id,
             job_number,
-            service_type,
-            address,
-            customer_name,
+            property_type,
+            property_address,
             status
           )
         `)
@@ -119,7 +114,7 @@ export default function PowerWashingRouteDetail() {
         .order('stop_order', { ascending: true });
       
       if (error) throw error;
-      return data as RouteStop[];
+      return data as unknown as RouteStop[];
     },
     enabled: !!id,
   });
@@ -132,7 +127,7 @@ export default function PowerWashingRouteDetail() {
       
       const { data, error } = await supabase
         .from('power_washing_jobs')
-        .select('id, job_number, service_type, address, customer_name')
+        .select('id, job_number, property_type, property_address')
         .eq('scheduled_date', route.route_date)
         .in('status', ['pending', 'scheduled', 'in_progress']);
       
@@ -232,7 +227,7 @@ export default function PowerWashingRouteDetail() {
   // Update stop status
   const updateStopStatusMutation = useMutation({
     mutationFn: async ({ stopId, status }: { stopId: string; status: string }) => {
-      const updates: any = { status };
+      const updates: Record<string, unknown> = { status };
       if (status === 'arrived') {
         updates.actual_arrival = new Date().toISOString();
       }
@@ -264,7 +259,7 @@ export default function PowerWashingRouteDetail() {
     }
   };
 
-  const getStopStatusOptions = (currentStatus: string) => {
+  const getStopStatusOptions = () => {
     const options = [
       { value: 'pending', label: 'Pending' },
       { value: 'arrived', label: 'Arrived' },
@@ -435,7 +430,7 @@ export default function PowerWashingRouteDetail() {
                       <SelectContent>
                         {availableJobs?.map((job) => (
                           <SelectItem key={job.id} value={job.id}>
-                            {job.job_number} - {job.customer_name} ({job.service_type})
+                            {job.job_number} - {job.property_address || 'No address'} ({job.property_type || 'Unknown'})
                           </SelectItem>
                         ))}
                         {(!availableJobs || availableJobs.length === 0) && (
@@ -471,7 +466,7 @@ export default function PowerWashingRouteDetail() {
             </div>
           ) : stops && stops.length > 0 ? (
             <div className="space-y-3">
-              {stops.map((stop, index) => (
+              {stops.map((stop) => (
                 <div 
                   key={stop.id}
                   className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
@@ -482,17 +477,14 @@ export default function PowerWashingRouteDetail() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <p className="font-medium truncate">
-                        {stop.job?.customer_name || 'Unknown Customer'}
+                        {stop.job?.property_address || 'No Address'}
                       </p>
                       <Badge variant="outline" className="text-xs">
-                        {stop.job?.job_number}
+                        {stop.job?.job_number || 'N/A'}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
-                      {stop.job?.address || 'No address'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {stop.job?.service_type}
+                      {stop.job?.property_type || 'Unknown Property Type'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -505,7 +497,7 @@ export default function PowerWashingRouteDetail() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {getStopStatusOptions(stop.status).map((opt) => (
+                        {getStopStatusOptions().map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
                           </SelectItem>

@@ -27809,6 +27809,38 @@ export type Database = {
           },
         ]
       }
+      power_washing_settings: {
+        Row: {
+          created_at: string
+          id: string
+          settings: Json
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          settings?: Json
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          settings?: Json
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_subscriptions: {
         Row: {
           auto_renew: boolean | null
