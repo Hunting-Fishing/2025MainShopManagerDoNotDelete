@@ -37,6 +37,10 @@ import { LowStockWidget } from '@/components/power-washing/LowStockWidget';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { NumberTicker, CurrencyTicker } from '@/components/ui/number-ticker';
+import { AnimatedList } from '@/components/ui/animated-list';
+import { FadeIn, SlideIn } from '@/components/layout/AnimatedPage';
+import { motion } from 'framer-motion';
 
 export default function PowerWashingDashboard() {
   const navigate = useNavigate();
@@ -94,11 +98,16 @@ export default function PowerWashingDashboard() {
   return (
     <div className="min-h-screen bg-background p-6">
       {/* Header */}
-      <div className="mb-8">
+      <FadeIn className="mb-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <Droplets className="h-8 w-8 text-blue-500" />
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Droplets className="h-8 w-8 text-blue-500" />
+              </motion.div>
               Power Washing
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -110,13 +119,15 @@ export default function PowerWashingDashboard() {
               <FileText className="h-4 w-4 mr-2" />
               New Quote
             </Button>
-            <Button onClick={() => navigate('/power-washing/jobs/new')}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Job
-            </Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button onClick={() => navigate('/power-washing/jobs/new')}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Job
+              </Button>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </FadeIn>
 
       {/* Alerts */}
       {alerts.length > 0 && (
@@ -140,27 +151,48 @@ export default function PowerWashingDashboard() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {statCards.map((stat) => (
-          <Card key={stat.title} className="border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-20 mt-1" />
-                  ) : (
-                    <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
-                  )}
+      <AnimatedList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" variant="scale" staggerDelay={0.1}>
+        {statCards.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            whileHover={{ y: -4, scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          >
+            <Card className="border-border hover:shadow-lg transition-shadow duration-300 group overflow-hidden">
+              <div className={`h-1 ${stat.bgColor} group-hover:h-1.5 transition-all duration-300`} />
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{stat.title}</p>
+                    {statsLoading ? (
+                      <Skeleton className="h-8 w-20 mt-1" />
+                    ) : (
+                      <p className="text-2xl font-bold text-foreground mt-1">
+                        {typeof stat.value === 'number' ? (
+                          stat.title.includes('Revenue') ? (
+                            <CurrencyTicker value={stat.value} delay={index * 0.1} />
+                          ) : (
+                            <NumberTicker value={stat.value} delay={index * 0.1} />
+                          )
+                        ) : (
+                          stat.value
+                        )}
+                      </p>
+                    )}
+                  </div>
+                  <motion.div 
+                    className={`p-3 rounded-full ${stat.bgColor}`}
+                    whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                  </motion.div>
                 </div>
-                <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
-      </div>
+      </AnimatedList>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-13 gap-4 mb-8">
