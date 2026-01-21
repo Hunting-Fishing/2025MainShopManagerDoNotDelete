@@ -9,7 +9,8 @@ import {
   Settings, 
   Shield,
   BarChart3,
-  ShoppingBag
+  ShoppingBag,
+  TrendingUp
 } from 'lucide-react';
 
 const navigationItems = [
@@ -60,6 +61,12 @@ const navigationItems = [
     label: 'Shopping Controls',
     icon: ShoppingBag,
     description: 'E-commerce configuration'
+  },
+  {
+    href: '/developer/affiliate-analytics',
+    label: 'Affiliate Analytics',
+    icon: TrendingUp,
+    description: 'Track Amazon affiliate link performance'
   }
 ];
 

@@ -12,6 +12,7 @@ import {
   CollapsibleContent 
 } from '@/components/ui/animated-collapsible';
 import { motion } from 'framer-motion';
+import { trackAffiliateClick } from '@/services/affiliateTrackingService';
 
 export function ModuleSections() {
   const location = useLocation();
@@ -138,6 +139,7 @@ export function ModuleSections() {
                     currentPath={currentPath}
                     dashboardRoute={moduleConfig.dashboardRoute}
                     onClick={handleLinkClick}
+                    moduleId={activeModuleSlug}
                   />
                 ))}
               </div>
@@ -164,6 +166,7 @@ export function ModuleSections() {
                     currentPath={currentPath}
                     dashboardRoute={moduleConfig.dashboardRoute}
                     onClick={handleLinkClick}
+                    moduleId={activeModuleSlug}
                   />
                 ))}
               </CollapsibleContent>
@@ -180,9 +183,10 @@ interface SectionLinkProps {
   currentPath: string;
   dashboardRoute: string;
   onClick: () => void;
+  moduleId?: string;
 }
 
-function SectionLink({ item, currentPath, dashboardRoute, onClick }: SectionLinkProps) {
+function SectionLink({ item, currentPath, dashboardRoute, onClick, moduleId }: SectionLinkProps) {
   const isExternal = item.isExternal || item.href.startsWith('http');
   const isActive = !isExternal && (
     currentPath === item.href || 
@@ -190,6 +194,20 @@ function SectionLink({ item, currentPath, dashboardRoute, onClick }: SectionLink
   );
   
   const ItemIcon = item.icon;
+
+  const handleExternalClick = () => {
+    // Track affiliate clicks for Amazon links
+    if (item.href.includes('amzn.to')) {
+      trackAffiliateClick({
+        linkUrl: item.href,
+        linkType: 'sidebar',
+        moduleId: moduleId,
+        referrerPath: currentPath,
+        metadata: { linkTitle: item.title }
+      });
+    }
+    onClick();
+  };
   
   // External link rendering
   if (isExternal) {
@@ -202,7 +220,7 @@ function SectionLink({ item, currentPath, dashboardRoute, onClick }: SectionLink
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={onClick}
+          onClick={handleExternalClick}
           className="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-150 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
           title={item.description || item.title}
         >
