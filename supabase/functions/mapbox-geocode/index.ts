@@ -31,10 +31,10 @@ serve(async (req) => {
       url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&limit=1`;
       console.log(`Reverse geocoding: [${lng}, ${lat}]`);
     } else if (address) {
-      // Forward geocode: address to coordinates
+      // Forward geocode: address to coordinates with autocomplete support
       const encodedAddress = encodeURIComponent(address);
-      url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${MAPBOX_TOKEN}&limit=5&country=US`;
-      console.log(`Forward geocoding: ${address}`);
+      url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${MAPBOX_TOKEN}&limit=5&country=US&autocomplete=true&types=address,place,poi`;
+      console.log(`Forward geocoding (autocomplete): ${address}`);
     } else {
       return new Response(
         JSON.stringify({ error: 'Address or coordinates required' }),
