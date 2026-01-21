@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
 import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
 import { AddressAutocomplete, AddressResult } from '@/components/shared/AddressAutocomplete';
+import { MiniMapPreview } from '@/components/shared/MiniMapPreview';
 
 export default function PowerWashingCustomerCreate() {
   const navigate = useNavigate();
@@ -301,9 +302,19 @@ export default function PowerWashingCustomerCreate() {
                   />
                 </div>
                 {formData.latitude && formData.longitude && (
-                  <p className="text-xs text-muted-foreground">
-                    📍 Location captured: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      📍 Location captured: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                    </p>
+                    <MiniMapPreview
+                      latitude={formData.latitude}
+                      longitude={formData.longitude}
+                      onLocationChange={(lat, lng) => {
+                        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+                      }}
+                      className="h-48 border border-cyan-500/20"
+                    />
+                  </div>
                 )}
               </div>
 
