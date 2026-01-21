@@ -266,6 +266,7 @@ import GunsmithChangeLog from '@/pages/gunsmith/GunsmithChangeLog';
 import GunsmithSettings from '@/pages/gunsmith/GunsmithSettings';
 import GunsmithTeam from '@/pages/gunsmith/GunsmithTeam';
 import GunsmithRoles from '@/pages/gunsmith/GunsmithRoles';
+import GunsmithStore from '@/pages/gunsmith/GunsmithStore';
 
 // Automotive
 import AutomotiveDashboard from '@/pages/automotive/AutomotiveDashboard';
@@ -273,9 +274,11 @@ import AutomotiveVehicleHistory from '@/pages/automotive/AutomotiveVehicleHistor
 import AutomotiveDiagnostics from '@/pages/automotive/AutomotiveDiagnostics';
 import AutomotiveLaborRates from '@/pages/automotive/AutomotiveLaborRates';
 import AutomotiveRecalls from '@/pages/automotive/AutomotiveRecalls';
+import AutomotiveStore from '@/pages/automotive/AutomotiveStore';
 
 // Marine
 import MarineDashboard from '@/pages/marine/MarineDashboard';
+import MarineStore from '@/pages/marine/MarineStore';
 
 // Fuel Delivery
 import FuelDeliveryDashboard from '@/pages/fuel-delivery/FuelDeliveryDashboard';
@@ -301,6 +304,7 @@ import FuelDeliveryQuotes from '@/pages/fuel-delivery/FuelDeliveryQuotes';
 import FuelDeliveryProfile from '@/pages/fuel-delivery/FuelDeliveryProfile';
 import FuelDeliverySettings from '@/pages/fuel-delivery/FuelDeliverySettings';
 import FuelDeliveryPurchases from '@/pages/fuel-delivery/FuelDeliveryPurchases';
+import FuelDeliveryStore from '@/pages/fuel-delivery/FuelDeliveryStore';
 import { FuelDeliveryLayout } from '@/components/fuel-delivery';
 
 // Fuel Delivery Portal (Customer-facing)
@@ -401,9 +405,11 @@ function App() {
                   <Route path="/automotive/diagnostics" element={<AutomotiveDiagnostics />} />
                   <Route path="/automotive/labor-rates" element={<AutomotiveLaborRates />} />
                   <Route path="/automotive/recalls" element={<AutomotiveRecalls />} />
+                  <Route path="/automotive/store" element={<AutomotiveStore />} />
                   
                   {/* Marine Module */}
                   <Route path="/marine-services" element={<MarineDashboard />} />
+                  <Route path="/marine-services/store" element={<MarineStore />} />
                   
                   {/* Store */}
                   <Route path="/store" element={<Store />} />
@@ -1316,6 +1322,7 @@ function App() {
                   <Route path="/gunsmith/settings" element={<GunsmithSettings />} />
                   <Route path="/gunsmith/team" element={<GunsmithTeam />} />
                   <Route path="/gunsmith/roles" element={<GunsmithRoles />} />
+                  <Route path="/gunsmith/store" element={<GunsmithStore />} />
                   
                   {/* Not Found - Catch all */}
                   <Route path="*" element={<NotFound />} />
@@ -1358,6 +1365,7 @@ function App() {
                   <Route path="/quotes" element={<FuelDeliveryQuotes />} />
                   <Route path="/profile" element={<FuelDeliveryProfile />} />
                   <Route path="/settings" element={<FuelDeliverySettings />} />
+                  <Route path="/store" element={<FuelDeliveryStore />} />
                 </Routes>
               </FuelDeliveryLayout>
             </AuthGate>

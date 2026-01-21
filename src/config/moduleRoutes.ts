@@ -1505,6 +1505,8 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Diagnostics', href: '/automotive/diagnostics', icon: Activity, description: 'Diagnostic tools', group: 'Automotive' },
       { title: 'Labor Rates', href: '/automotive/labor-rates', icon: DollarSign, description: 'Rate management', group: 'Automotive' },
       { title: 'TSB & Recalls', href: '/automotive/recalls', icon: FileSearch, description: 'Technical bulletins', group: 'Automotive' },
+      // Resources
+      { title: 'Recommended Gear', href: '/automotive/store', icon: ShoppingBag, description: 'Shop recommended equipment', group: 'Resources' },
       // Quick Links
       { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
@@ -1590,6 +1592,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       // Resources
       { title: 'Resources', href: '/gunsmith/resources', icon: Link, group: 'Resources' },
       { title: 'Feedback Log', href: '/gunsmith/change-log', icon: ClipboardList, group: 'Resources' },
+      { title: 'Recommended Gear', href: '/gunsmith/store', icon: ShoppingBag, description: 'Shop recommended equipment', group: 'Resources' },
       // Settings
       { title: 'Settings', href: '/gunsmith/settings', icon: Settings, group: 'Settings' },
       { title: 'Team', href: '/gunsmith/team', icon: Users, group: 'Settings' },
@@ -1622,6 +1625,8 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Haul-Outs', href: '/marine-services/haul-outs', icon: Anchor, description: 'Haul-out scheduling' },
       { title: 'Winterization', href: '/marine-services/winterization', icon: Snowflake, description: 'Winterization tracking' },
       { title: 'Compliance', href: '/marine-services/compliance', icon: Shield, description: 'Coast Guard compliance' },
+      // Resources
+      { title: 'Recommended Gear', href: '/marine-services/store', icon: ShoppingBag, description: 'Shop recommended equipment', group: 'Resources' },
       // Quick Links
       { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
@@ -1659,6 +1664,8 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Inventory', href: '/fuel-delivery/inventory', icon: BarChart3, description: 'Fuel inventory' },
       // Mobile
       { title: 'Driver App', href: '/fuel-delivery/driver-app', icon: Smartphone, description: 'Mobile driver app' },
+      // Resources
+      { title: 'Recommended Gear', href: '/fuel-delivery/store', icon: ShoppingBag, description: 'Shop recommended equipment', group: 'Resources' },
       // Quick Links
       { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
@@ -1701,6 +1708,8 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       // Settings
       { title: 'Profile', href: '/water-delivery/profile', icon: User, description: 'Module profile' },
       { title: 'Settings', href: '/water-delivery/settings', icon: Settings, description: 'Module settings' },
+      // Resources
+      { title: 'Recommended Gear', href: '/water-delivery/store', icon: ShoppingBag, description: 'Shop recommended equipment', group: 'Resources' },
       // Quick Links
       { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
