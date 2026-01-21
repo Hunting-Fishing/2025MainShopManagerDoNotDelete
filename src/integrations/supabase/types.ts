@@ -284,6 +284,42 @@ export type Database = {
           },
         ]
       }
+      affiliate_link_clicks: {
+        Row: {
+          created_at: string | null
+          id: string
+          link_type: string
+          link_url: string
+          metadata: Json | null
+          module_id: string | null
+          referrer_path: string | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          link_type: string
+          link_url: string
+          metadata?: Json | null
+          module_id?: string | null
+          referrer_path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          link_type?: string
+          link_url?: string
+          metadata?: Json | null
+          module_id?: string | null
+          referrer_path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_analytics: {
         Row: {
           confidence: number | null

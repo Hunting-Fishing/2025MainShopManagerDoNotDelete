@@ -24,6 +24,7 @@ import { FadeIn, SlideIn } from '@/components/layout/AnimatedPage';
 import { AnimatedGrid } from '@/components/ui/animated-list';
 import { motion } from 'framer-motion';
 import { useWishlist } from '@/hooks/shopping/useWishlist';
+import { useAffiliateTracking } from '@/hooks/useAffiliateTracking';
 interface Product {
   id: string;
   title: string;
@@ -218,6 +219,13 @@ export function ModuleStore({
   const { items: wishlistItems, loading: wishlistLoading, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const wishlistProductIds = React.useMemo(() => wishlistItems.map(item => item.productId), [wishlistItems]);
 
+  // Affiliate tracking
+  const { trackClick } = useAffiliateTracking(moduleId);
+
+  const handleBannerClick = () => {
+    trackClick('banner', 'https://amzn.to/4b7nheJ');
+  };
+
   // Add Favorites to categories
   const allCategories: StoreCategory[] = React.useMemo(() => [
     ...categories,
@@ -386,6 +394,7 @@ export function ModuleStore({
         href="https://amzn.to/4b7nheJ"
         target="_blank"
         rel="noopener noreferrer"
+        onClick={handleBannerClick}
         className="block max-w-6xl mx-auto px-4 mb-6"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
