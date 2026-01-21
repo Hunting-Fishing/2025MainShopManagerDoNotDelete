@@ -18,11 +18,11 @@ import {
   Plus,
   LucideIcon
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { FadeIn, SlideIn } from '@/components/layout/AnimatedPage';
 import { AnimatedGrid } from '@/components/ui/animated-list';
 import { motion } from 'framer-motion';
-
+import { useWishlist } from '@/hooks/shopping/useWishlist';
 interface Product {
   id: string;
   title: string;
@@ -71,7 +71,14 @@ function ProductCardSkeleton() {
   );
 }
 
-function StoreProductCard({ product }: { product: Product }) {
+interface StoreProductCardProps {
+  product: Product;
+  isInWishlist: boolean;
+  onToggleWishlist: () => void;
+  wishlistLoading: boolean;
+}
+
+function StoreProductCard({ product, isInWishlist, onToggleWishlist, wishlistLoading }: StoreProductCardProps) {
   const displayName = product.name || product.title;
   const displayPrice = product.sale_price || product.price;
   const hasDiscount = product.sale_price && product.sale_price < product.price;
@@ -165,9 +172,30 @@ function StoreProductCard({ product }: { product: Product }) {
             <ExternalLink className="h-4 w-4" />
             View Product
           </Button>
-          <Button variant="outline" size="icon">
-            <Heart className="h-4 w-4" />
-          </Button>
+          <motion.div
+            whileTap={{ scale: 0.85 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={onToggleWishlist}
+              disabled={wishlistLoading}
+              className="relative"
+            >
+              <motion.div
+                animate={isInWishlist ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Heart 
+                  className={cn(
+                    "h-4 w-4 transition-colors",
+                    isInWishlist && "fill-red-500 text-red-500"
+                  )}
+                />
+              </motion.div>
+            </Button>
+          </motion.div>
         </CardFooter>
       </Card>
     </motion.div>
@@ -184,15 +212,16 @@ export function ModuleStore({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  
+  // Wishlist integration
+  const { items: wishlistItems, loading: wishlistLoading, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const wishlistProductIds = React.useMemo(() => wishlistItems.map(item => item.productId), [wishlistItems]);
 
-  // Build a category ID lookup from the passed categories prop
-  const categorySlugToId = React.useMemo(() => {
-    const lookup: Record<string, string> = {};
-    categories.forEach(cat => {
-      lookup[cat.id] = cat.id; // The id IS the slug in our case (e.g., 'machines', 'chemicals')
-    });
-    return lookup;
-  }, [categories]);
+  // Add Favorites to categories
+  const allCategories: StoreCategory[] = React.useMemo(() => [
+    ...categories,
+    { id: 'favorites', name: 'Favorites', icon: Heart }
+  ], [categories]);
 
   // Fetch products filtered by module_id and category
   const { data: products, isLoading } = useQuery({
@@ -219,9 +248,15 @@ export function ModuleStore({
     },
   });
 
-  // Client-side filter by category (since category slugs are defined in UI, not in DB category_id)
+  // Client-side filter by category (including favorites)
   const filteredByCategory = React.useMemo(() => {
     if (!products) return [];
+    
+    // Handle Favorites tab
+    if (selectedCategory === 'favorites') {
+      return products.filter(product => wishlistProductIds.includes(product.id));
+    }
+    
     if (selectedCategory === 'all') return products;
     
     // Match by category slug from product_categories table
@@ -229,11 +264,29 @@ export function ModuleStore({
       if (!product.category) return false;
       return product.category.slug === selectedCategory || product.category.id === selectedCategory;
     });
-  }, [products, selectedCategory]);
+  }, [products, selectedCategory, wishlistProductIds]);
 
-  const featuredProducts = filteredByCategory.filter(p => p.is_featured).slice(0, 4);
-  const bestSellers = filteredByCategory.filter(p => p.is_bestseller && !p.is_featured).slice(0, 4);
+  const featuredProducts = selectedCategory === 'favorites' ? [] : filteredByCategory.filter(p => p.is_featured).slice(0, 4);
+  const bestSellers = selectedCategory === 'favorites' ? [] : filteredByCategory.filter(p => p.is_bestseller && !p.is_featured).slice(0, 4);
   const allProducts = filteredByCategory;
+
+  // Handle wishlist toggle
+  const handleToggleWishlist = async (product: Product) => {
+    const productData = {
+      productId: product.id,
+      name: product.name || product.title,
+      price: product.sale_price || product.price,
+      imageUrl: product.image_url || '',
+      category: 'Store',
+      manufacturer: 'Various'
+    };
+    
+    if (isInWishlist(product.id)) {
+      await removeFromWishlist(product.id);
+    } else {
+      await addToWishlist(productData);
+    }
+  };
 
   // Generate gradient class based on accent color
   const getGradientClass = () => {
@@ -330,8 +383,11 @@ export function ModuleStore({
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Category Filter */}
         <SlideIn direction="right" delay={0.2} className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
-          {categories.map((category, index) => {
+          {allCategories.map((category) => {
             const Icon = category.icon;
+            const isFavorites = category.id === 'favorites';
+            const favoritesCount = isFavorites ? wishlistProductIds.length : 0;
+            
             return (
               <motion.div
                 key={category.id}
@@ -341,11 +397,19 @@ export function ModuleStore({
                 <Button
                   variant={selectedCategory === category.id ? 'default' : 'outline'}
                   size="sm"
-                  className="gap-2 whitespace-nowrap"
+                  className={cn(
+                    "gap-2 whitespace-nowrap",
+                    isFavorites && selectedCategory === 'favorites' && "bg-red-500 hover:bg-red-600 text-white border-red-500"
+                  )}
                   onClick={() => setSelectedCategory(category.id)}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className={cn("h-4 w-4", isFavorites && wishlistProductIds.length > 0 && "fill-current")} />
                   {category.name}
+                  {isFavorites && favoritesCount > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                      {favoritesCount}
+                    </Badge>
+                  )}
                 </Button>
               </motion.div>
             );
@@ -363,7 +427,13 @@ export function ModuleStore({
             </FadeIn>
             <AnimatedGrid columns={4} staggerDelay={0.08} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredProducts.map((product) => (
-                <StoreProductCard key={product.id} product={product} />
+                <StoreProductCard 
+                  key={product.id} 
+                  product={product}
+                  isInWishlist={isInWishlist(product.id)}
+                  onToggleWishlist={() => handleToggleWishlist(product)}
+                  wishlistLoading={wishlistLoading}
+                />
               ))}
             </AnimatedGrid>
           </section>
@@ -380,24 +450,36 @@ export function ModuleStore({
             </FadeIn>
             <AnimatedGrid columns={4} staggerDelay={0.08} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {bestSellers.map((product) => (
-                <StoreProductCard key={product.id} product={product} />
+                <StoreProductCard 
+                  key={product.id} 
+                  product={product}
+                  isInWishlist={isInWishlist(product.id)}
+                  onToggleWishlist={() => handleToggleWishlist(product)}
+                  wishlistLoading={wishlistLoading}
+                />
               ))}
             </AnimatedGrid>
           </section>
         )}
 
-        {/* All Products */}
+        {/* All Products / Favorites */}
         <section>
           <FadeIn delay={0.5}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-xl font-semibold">All Products</h2>
+                {selectedCategory === 'favorites' ? (
+                  <Heart className="h-5 w-5 text-red-500 fill-red-500" />
+                ) : (
+                  <Package className="h-5 w-5 text-muted-foreground" />
+                )}
+                <h2 className="text-xl font-semibold">
+                  {selectedCategory === 'favorites' ? 'Your Favorites' : 'All Products'}
+                </h2>
               </div>
               {allProducts.length > 0 && (
                 <span className="text-sm text-muted-foreground">
                   {allProducts.length} product{allProducts.length !== 1 ? 's' : ''}
-                  {selectedCategory !== 'all' && products && allProducts.length !== products.length && (
+                  {selectedCategory !== 'all' && selectedCategory !== 'favorites' && products && allProducts.length !== products.length && (
                     <span className="text-muted-foreground/70"> (of {products.length} total)</span>
                   )}
                 </span>
@@ -414,22 +496,43 @@ export function ModuleStore({
           ) : allProducts.length > 0 ? (
             <AnimatedGrid columns={4} staggerDelay={0.05} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {allProducts.map((product) => (
-                <StoreProductCard key={product.id} product={product} />
+                <StoreProductCard 
+                  key={product.id} 
+                  product={product}
+                  isInWishlist={isInWishlist(product.id)}
+                  onToggleWishlist={() => handleToggleWishlist(product)}
+                  wishlistLoading={wishlistLoading}
+                />
               ))}
             </AnimatedGrid>
           ) : (
             <FadeIn delay={0.3}>
               <Card className="p-12 text-center">
-                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No products found</h3>
-                <p className="text-muted-foreground mb-4">
-                  {searchQuery 
-                    ? 'Try adjusting your search query'
-                    : 'Check back soon for new products!'}
-                </p>
-                <Button variant="outline" onClick={() => setSubmitDialogOpen(true)}>
+                {selectedCategory === 'favorites' ? (
+                  <>
+                    <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No favorites yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Click the heart icon on products to save them to your favorites
+                    </p>
+                    <Button variant="outline" onClick={() => setSelectedCategory('all')}>
+                      Browse Products
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No products found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {searchQuery 
+                        ? 'Try adjusting your search query'
+                        : 'Check back soon for new products!'}
+                    </p>
+                    <Button variant="outline" onClick={() => setSubmitDialogOpen(true)}>
                   Suggest a Product
-                </Button>
+                    </Button>
+                  </>
+                )}
               </Card>
             </FadeIn>
           )}
