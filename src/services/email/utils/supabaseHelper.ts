@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase';
 
 /**
  * Generic response interface for service methods
@@ -15,10 +16,9 @@ export interface GenericResponse<T> {
  */
 export const customTableQuery = async <T>(
   tableName: string,
-  queryCallback: (supabase: any) => any
+  queryCallback: (supabaseClient: typeof supabase) => any
 ): Promise<GenericResponse<T>> => {
   try {
-    const { supabase } = await import('@/lib/supabase');
     const query = queryCallback(supabase);
     const { data, error } = await query;
     
