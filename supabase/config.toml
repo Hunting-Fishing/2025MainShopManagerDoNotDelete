@@ -54,3 +54,6 @@ verify_jwt = false
 
 [functions.get-weather-forecast]
 verify_jwt = false
+
+[functions.send-invoice-email]
+verify_jwt = false
