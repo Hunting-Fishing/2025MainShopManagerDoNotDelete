@@ -25968,6 +25968,69 @@ export type Database = {
           },
         ]
       }
+      power_washing_formula_chemicals: {
+        Row: {
+          chemical_name: string
+          concentration_heavy: number
+          concentration_light: number
+          concentration_medium: number
+          coverage_sqft_per_gallon: number
+          created_at: string
+          display_order: number | null
+          formula_id: string
+          id: string
+          inventory_item_id: string | null
+          is_primary: boolean
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          chemical_name: string
+          concentration_heavy?: number
+          concentration_light?: number
+          concentration_medium?: number
+          coverage_sqft_per_gallon?: number
+          created_at?: string
+          display_order?: number | null
+          formula_id: string
+          id?: string
+          inventory_item_id?: string | null
+          is_primary?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chemical_name?: string
+          concentration_heavy?: number
+          concentration_light?: number
+          concentration_medium?: number
+          coverage_sqft_per_gallon?: number
+          created_at?: string
+          display_order?: number | null
+          formula_id?: string
+          id?: string
+          inventory_item_id?: string | null
+          is_primary?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_formula_chemicals_formula_id_fkey"
+            columns: ["formula_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_pricing_formulas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_washing_formula_chemicals_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "power_washing_inventory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_formulas: {
         Row: {
           application: string | null
@@ -26037,6 +26100,7 @@ export type Database = {
           reorder_point: number | null
           reorder_quantity: number | null
           sds_url: string | null
+          sh_percentage: number | null
           shop_id: string
           sku: string | null
           subcategory: string | null
@@ -26063,6 +26127,7 @@ export type Database = {
           reorder_point?: number | null
           reorder_quantity?: number | null
           sds_url?: string | null
+          sh_percentage?: number | null
           shop_id: string
           sku?: string | null
           subcategory?: string | null
@@ -26089,6 +26154,7 @@ export type Database = {
           reorder_point?: number | null
           reorder_quantity?: number | null
           sds_url?: string | null
+          sh_percentage?: number | null
           shop_id?: string
           sku?: string | null
           subcategory?: string | null

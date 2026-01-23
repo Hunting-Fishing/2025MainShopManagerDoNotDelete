@@ -24,6 +24,7 @@ export interface InventoryItem {
   expiration_date: string | null;
   sds_url: string | null;
   dilution_ratio: string | null;
+  sh_percentage: number | null;
   compatible_equipment: string[] | null;
   notes: string | null;
   image_url: string | null;

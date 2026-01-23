@@ -7,15 +7,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SURFACE_TYPES, APPLICATIONS, CATEGORIES, LABOR_RATE_TYPES, SH_CONCENTRATIONS, SH_SOURCE_CONCENTRATION } from '@/types/pricing-formula';
+import { SURFACE_TYPES, APPLICATIONS, CATEGORIES, LABOR_RATE_TYPES } from '@/types/pricing-formula';
 import type { PricingFormula } from '@/types/pricing-formula';
+import { FormulaChemicalSelector, type FormulaChemical } from './FormulaChemicalSelector';
 
 interface PricingFormulaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formula?: PricingFormula | null;
-  onSave: (data: Partial<PricingFormula>) => void;
+  onSave: (data: Partial<PricingFormula>, chemicals: FormulaChemical[]) => void;
   isLoading?: boolean;
+  initialChemicals?: FormulaChemical[];
 }
 
 const defaultFormula: Partial<PricingFormula> = {
@@ -43,9 +45,11 @@ export function PricingFormulaDialog({
   onOpenChange, 
   formula, 
   onSave,
-  isLoading 
+  isLoading,
+  initialChemicals = [],
 }: PricingFormulaDialogProps) {
   const [formData, setFormData] = useState<Partial<PricingFormula>>(defaultFormula);
+  const [chemicals, setChemicals] = useState<FormulaChemical[]>(initialChemicals);
 
   useEffect(() => {
     if (formula) {
@@ -53,11 +57,12 @@ export function PricingFormulaDialog({
     } else {
       setFormData(defaultFormula);
     }
-  }, [formula, open]);
+    setChemicals(initialChemicals);
+  }, [formula, open, initialChemicals]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave(formData, chemicals);
   };
 
   const updateField = <K extends keyof PricingFormula>(field: K, value: PricingFormula[K]) => {
@@ -249,69 +254,12 @@ export function PricingFormulaDialog({
               </div>
             </TabsContent>
 
-            <TabsContent value="labor" className="space-y-4 mt-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">SH Concentration</h4>
-                  <span className="text-xs text-muted-foreground">Diluted from {SH_SOURCE_CONCENTRATION}% stock</span>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-green-600">Light Condition</Label>
-                    <Select
-                      value={String(formData.sh_concentration_light)}
-                      onValueChange={(v) => updateField('sh_concentration_light', parseFloat(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SH_CONCENTRATIONS.map((conc) => (
-                          <SelectItem key={conc.value} value={String(conc.value)}>
-                            {conc.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-yellow-600">Medium Condition</Label>
-                    <Select
-                      value={String(formData.sh_concentration_medium)}
-                      onValueChange={(v) => updateField('sh_concentration_medium', parseFloat(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SH_CONCENTRATIONS.map((conc) => (
-                          <SelectItem key={conc.value} value={String(conc.value)}>
-                            {conc.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-red-600">Heavy Condition</Label>
-                    <Select
-                      value={String(formData.sh_concentration_heavy)}
-                      onValueChange={(v) => updateField('sh_concentration_heavy', parseFloat(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SH_CONCENTRATIONS.map((conc) => (
-                          <SelectItem key={conc.value} value={String(conc.value)}>
-                            {conc.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
+            <TabsContent value="labor" className="space-y-6 mt-4">
+              {/* Multi-Chemical Selector */}
+              <FormulaChemicalSelector
+                chemicals={chemicals}
+                onChange={setChemicals}
+              />
 
               <div className="space-y-2">
                 <Label>Mix Coverage (sqft per gallon)</Label>
@@ -324,7 +272,7 @@ export function PricingFormulaDialog({
                   className="max-w-xs"
                 />
                 <p className="text-xs text-muted-foreground">
-                  How many square feet one gallon of mixed solution covers
+                  Default coverage - can be overridden per chemical
                 </p>
               </div>
 

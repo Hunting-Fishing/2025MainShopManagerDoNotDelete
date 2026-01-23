@@ -4,6 +4,19 @@ import { useShopId } from '@/hooks/useShopId';
 import { toast } from 'sonner';
 import type { PricingFormula, ConditionLevel, QuoteCalculation } from '@/types/pricing-formula';
 
+export interface FormulaChemical {
+  id?: string;
+  inventory_item_id: string | null;
+  chemical_name: string;
+  concentration_light: number;
+  concentration_medium: number;
+  concentration_heavy: number;
+  coverage_sqft_per_gallon: number;
+  is_primary: boolean;
+  display_order: number;
+  notes?: string;
+}
+
 export function usePricingFormulas() {
   const { shopId } = useShopId();
   const queryClient = useQueryClient();
@@ -25,8 +38,28 @@ export function usePricingFormulas() {
     enabled: !!shopId,
   });
 
+  // Fetch chemicals for a specific formula
+  const useFormulaChemicals = (formulaId: string | null) => {
+    return useQuery({
+      queryKey: ['formula-chemicals', formulaId],
+      queryFn: async () => {
+        if (!formulaId) return [];
+        
+        const { data, error } = await supabase
+          .from('power_washing_formula_chemicals')
+          .select('*')
+          .eq('formula_id', formulaId)
+          .order('display_order', { ascending: true });
+        
+        if (error) throw error;
+        return data as (FormulaChemical & { id: string; formula_id: string })[];
+      },
+      enabled: !!formulaId,
+    });
+  };
+
   const createFormula = useMutation({
-    mutationFn: async (formula: Partial<PricingFormula>) => {
+    mutationFn: async ({ formula, chemicals }: { formula: Partial<PricingFormula>; chemicals?: FormulaChemical[] }) => {
       if (!shopId) throw new Error('No shop ID');
       
       const insertData = {
@@ -39,8 +72,8 @@ export function usePricingFormulas() {
         price_per_sqft_heavy: formula.price_per_sqft_heavy || 0.28,
         minimum_charge: formula.minimum_charge || 100,
         sh_concentration_light: formula.sh_concentration_light || 1.0,
-        sh_concentration_medium: formula.sh_concentration_medium || 2.0,
-        sh_concentration_heavy: formula.sh_concentration_heavy || 3.0,
+        sh_concentration_medium: formula.sh_concentration_medium || 3.0,
+        sh_concentration_heavy: formula.sh_concentration_heavy || 5.0,
         mix_coverage_sqft: formula.mix_coverage_sqft || 150,
         minutes_per_100sqft: formula.minutes_per_100sqft || 3,
         setup_minutes: formula.setup_minutes || 20,
@@ -51,17 +84,41 @@ export function usePricingFormulas() {
         shop_id: shopId,
       };
       
-      const { data, error } = await supabase
+      const { data: formulaData, error: formulaError } = await supabase
         .from('power_washing_pricing_formulas')
         .insert(insertData)
         .select()
         .single();
       
-      if (error) throw error;
-      return data;
+      if (formulaError) throw formulaError;
+
+      // Insert chemicals if provided
+      if (chemicals && chemicals.length > 0) {
+        const chemicalsToInsert = chemicals.map((chem, index) => ({
+          formula_id: formulaData.id,
+          inventory_item_id: chem.inventory_item_id,
+          chemical_name: chem.chemical_name,
+          concentration_light: chem.concentration_light,
+          concentration_medium: chem.concentration_medium,
+          concentration_heavy: chem.concentration_heavy,
+          coverage_sqft_per_gallon: chem.coverage_sqft_per_gallon,
+          is_primary: chem.is_primary,
+          display_order: index,
+          notes: chem.notes || null,
+        }));
+
+        const { error: chemError } = await supabase
+          .from('power_washing_formula_chemicals')
+          .insert(chemicalsToInsert);
+
+        if (chemError) throw chemError;
+      }
+      
+      return formulaData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricing-formulas', shopId] });
+      queryClient.invalidateQueries({ queryKey: ['formula-chemicals'] });
       toast.success('Pricing formula created');
     },
     onError: (error) => {
@@ -70,7 +127,7 @@ export function usePricingFormulas() {
   });
 
   const updateFormula = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<PricingFormula> & { id: string }) => {
+    mutationFn: async ({ id, chemicals, ...updates }: Partial<PricingFormula> & { id: string; chemicals?: FormulaChemical[] }) => {
       const { data, error } = await supabase
         .from('power_washing_pricing_formulas')
         .update(updates)
@@ -79,10 +136,43 @@ export function usePricingFormulas() {
         .single();
       
       if (error) throw error;
+
+      // Update chemicals if provided
+      if (chemicals !== undefined) {
+        // Delete existing chemicals
+        await supabase
+          .from('power_washing_formula_chemicals')
+          .delete()
+          .eq('formula_id', id);
+
+        // Insert new chemicals
+        if (chemicals.length > 0) {
+          const chemicalsToInsert = chemicals.map((chem, index) => ({
+            formula_id: id,
+            inventory_item_id: chem.inventory_item_id,
+            chemical_name: chem.chemical_name,
+            concentration_light: chem.concentration_light,
+            concentration_medium: chem.concentration_medium,
+            concentration_heavy: chem.concentration_heavy,
+            coverage_sqft_per_gallon: chem.coverage_sqft_per_gallon,
+            is_primary: chem.is_primary,
+            display_order: index,
+            notes: chem.notes || null,
+          }));
+
+          const { error: chemError } = await supabase
+            .from('power_washing_formula_chemicals')
+            .insert(chemicalsToInsert);
+
+          if (chemError) throw chemError;
+        }
+      }
+      
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricing-formulas', shopId] });
+      queryClient.invalidateQueries({ queryKey: ['formula-chemicals'] });
       toast.success('Pricing formula updated');
     },
     onError: (error) => {
@@ -92,6 +182,7 @@ export function usePricingFormulas() {
 
   const deleteFormula = useMutation({
     mutationFn: async (id: string) => {
+      // Chemicals are deleted automatically via CASCADE
       const { error } = await supabase
         .from('power_washing_pricing_formulas')
         .delete()
@@ -101,12 +192,24 @@ export function usePricingFormulas() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricing-formulas', shopId] });
+      queryClient.invalidateQueries({ queryKey: ['formula-chemicals'] });
       toast.success('Pricing formula deleted');
     },
     onError: (error) => {
       toast.error('Failed to delete formula: ' + error.message);
     },
   });
+
+  const fetchFormulaChemicals = async (formulaId: string): Promise<FormulaChemical[]> => {
+    const { data, error } = await supabase
+      .from('power_washing_formula_chemicals')
+      .select('*')
+      .eq('formula_id', formulaId)
+      .order('display_order', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  };
 
   const calculateQuote = (
     formula: PricingFormula,
@@ -162,5 +265,7 @@ export function usePricingFormulas() {
     updateFormula,
     deleteFormula,
     calculateQuote,
+    useFormulaChemicals,
+    fetchFormulaChemicals,
   };
 }
