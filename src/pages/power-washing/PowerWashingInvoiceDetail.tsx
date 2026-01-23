@@ -13,6 +13,7 @@ import {
   Send,
   CheckCircle,
   FileText,
+  Mail,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PaymentMethodSelect } from '@/components/shared/PaymentMethodSelect';
 import { RecordPaymentModal, PaymentData } from '@/components/shared/RecordPaymentModal';
 import { InvoicePaymentHistory, PaymentRecord } from '@/components/shared/InvoicePaymentHistory';
+import { SendInvoiceEmailModal } from '@/components/shared/SendInvoiceEmailModal';
 
 interface InvoiceLine {
   id: string;
@@ -51,17 +53,26 @@ interface Invoice {
   customer_id?: string;
 }
 
+interface Customer {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+}
+
 export default function PowerWashingInvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
   const [lines, setLines] = useState<InvoiceLine[]>([]);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -73,12 +84,20 @@ export default function PowerWashingInvoiceDetail() {
   const fetchInvoice = async () => {
     try {
       const [invoiceRes, linesRes] = await Promise.all([
-        supabase.from('power_washing_invoices').select('*').eq('id', id).single(),
+        supabase.from('power_washing_invoices').select('*, customers(id, first_name, last_name, email)').eq('id', id).single(),
         supabase.from('power_washing_invoice_lines').select('*').eq('invoice_id', id).order('sort_order'),
       ]);
 
       if (invoiceRes.error) throw invoiceRes.error;
-      setInvoice(invoiceRes.data);
+      
+      const invoiceData = invoiceRes.data;
+      const customerData = invoiceData.customers as Customer | null;
+      
+      // Remove the nested customers object from invoice
+      const { customers, ...invoiceWithoutCustomer } = invoiceData;
+      
+      setInvoice(invoiceWithoutCustomer as Invoice);
+      setCustomer(customerData);
       setLines(linesRes.data || []);
     } catch (error) {
       console.error('Failed to fetch invoice:', error);
@@ -360,6 +379,10 @@ export default function PowerWashingInvoiceDetail() {
             </Badge>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowEmailModal(true)} disabled={isSaving}>
+              <Mail className="h-4 w-4 mr-2" />
+              Email Invoice
+            </Button>
             {invoice.status === 'draft' && (
               <Button onClick={() => handleStatusChange('sent')} disabled={isSaving}>
                 <Send className="h-4 w-4 mr-2" />
@@ -557,6 +580,25 @@ export default function PowerWashingInvoiceDetail() {
         invoiceTotal={invoice.total}
         balanceDue={invoice.balance_due}
         isLoading={isSaving}
+      />
+
+      {/* Email Invoice Modal */}
+      <SendInvoiceEmailModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        invoice={{
+          id: invoice.id,
+          invoice_number: invoice.invoice_number,
+          total: invoice.total,
+          due_date: invoice.due_date || undefined,
+        }}
+        customer={{
+          name: customer ? `${customer.first_name} ${customer.last_name}` : 'Customer',
+          email: customer?.email || '',
+        }}
+        invoiceType="power_washing"
+        companyName="Power Washing Services"
+        onSuccess={fetchInvoice}
       />
     </div>
   );

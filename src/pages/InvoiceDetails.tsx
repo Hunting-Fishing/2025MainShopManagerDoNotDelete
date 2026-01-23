@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Download, Mail, CreditCard, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { getInvoiceDetails, addPayment, type InvoiceDetails } from '@/services/invoice/invoiceDetailsService';
+import { SendInvoiceEmailModal } from '@/components/shared/SendInvoiceEmailModal';
 
 export default function InvoiceDetails() {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +16,7 @@ export default function InvoiceDetails() {
   const [invoice, setInvoice] = useState<InvoiceDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
@@ -148,7 +150,7 @@ export default function InvoiceDetails() {
             <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setShowEmailModal(true)}>
             <Mail className="h-4 w-4 mr-2" />
             Send Email
           </Button>
@@ -378,6 +380,25 @@ export default function InvoiceDetails() {
           </Card>
         </div>
       </div>
+
+      {/* Email Invoice Modal */}
+      <SendInvoiceEmailModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        invoice={{
+          id: invoice.id,
+          invoice_number: invoice.invoice_number || invoice.number || '',
+          total: invoice.total_amount || invoice.total || 0,
+          due_date: invoice.due_date,
+        }}
+        customer={{
+          name: invoice.customer.name,
+          email: invoice.customer.email,
+        }}
+        invoiceType="standard"
+        companyName="Our Company"
+        onSuccess={loadInvoiceDetails}
+      />
     </div>
   );
 }
