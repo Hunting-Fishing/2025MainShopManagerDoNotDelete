@@ -1,11 +1,13 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { WorkOrder } from '@/types/workOrder';
 import { ConvertToInvoiceButton } from '../ConvertToInvoiceButton';
-import { Printer, Share, RotateCcw } from 'lucide-react';
+import { Printer, Share, RotateCcw, Zap, Loader2 } from 'lucide-react';
 import { useWorkOrderReopen } from '@/hooks/useWorkOrderReopen';
 import { printElement } from '@/utils/printUtils';
+import { convertWorkOrderToInvoice } from '@/services/quote/quoteService';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 interface WorkOrderDetailsActionsProps {
   workOrder: WorkOrder;
@@ -19,41 +21,63 @@ export function WorkOrderDetailsActions({
   onWorkOrderUpdated 
 }: WorkOrderDetailsActionsProps) {
   const { reopenWorkOrder, isReopening } = useWorkOrderReopen();
+  const [isCreatingQuickInvoice, setIsCreatingQuickInvoice] = useState(false);
+  const navigate = useNavigate();
   
   const handleReopenWorkOrder = async () => {
-    console.log('🔄 REOPEN DEBUG: Button clicked!');
-    console.log('🔄 REOPEN DEBUG: Work Order ID:', workOrder.id);
-    console.log('🔄 REOPEN DEBUG: Current Status:', workOrder.status);
-    console.log('🔄 REOPEN DEBUG: Is Reopening:', isReopening);
-    
     try {
       const result = await reopenWorkOrder(workOrder.id, 'in-progress');
-      console.log('🔄 REOPEN DEBUG: Service result:', result);
-      
       if (result.success && onWorkOrderUpdated) {
-        console.log('🔄 REOPEN DEBUG: Calling onWorkOrderUpdated callback');
         onWorkOrderUpdated();
-      } else {
-        console.log('🔄 REOPEN DEBUG: Not calling callback - success:', result.success, 'callback exists:', !!onWorkOrderUpdated);
       }
     } catch (error) {
-      console.error('🔄 REOPEN DEBUG: Error in handleReopenWorkOrder:', error);
+      console.error('Error reopening work order:', error);
+    }
+  };
+
+  const handleQuickInvoice = async () => {
+    if (workOrder.status !== 'completed') {
+      toast({
+        title: "Cannot Create Invoice",
+        description: "Work order must be completed before creating an invoice.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCreatingQuickInvoice(true);
+    try {
+      const invoiceId = await convertWorkOrderToInvoice(
+        workOrder.id, 
+        'Quick invoice created from work order'
+      );
+      
+      toast({
+        title: "Invoice Created",
+        description: "Invoice has been created with all work order items.",
+      });
+      
+      if (onInvoiceCreated) {
+        onInvoiceCreated(invoiceId);
+      }
+      
+      navigate(`/invoices/${invoiceId}`);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create invoice",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingQuickInvoice(false);
     }
   };
 
   const handlePrint = () => {
-    // Use browser's native print which will show our professional print layout
     window.print();
   };
 
   const isCompleted = workOrder.status === 'completed';
-  
-  // Debug logging to understand button state
-  console.log('🔍 BUTTON DEBUG: Work Order Status:', workOrder.status);
-  console.log('🔍 BUTTON DEBUG: Is Completed:', isCompleted);
-  console.log('🔍 BUTTON DEBUG: Is Reopening:', isReopening);
-  console.log('🔍 BUTTON DEBUG: Button should be visible:', isCompleted);
-  console.log('🔍 BUTTON DEBUG: Button should be disabled:', isReopening);
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -77,6 +101,27 @@ export function WorkOrderDetailsActions({
         >
           <RotateCcw className="h-4 w-4 mr-2" />
           {isReopening ? 'Reopening...' : 'Reopen Work Order'}
+        </Button>
+      )}
+
+      {isCompleted && (
+        <Button 
+          size="sm"
+          onClick={handleQuickInvoice}
+          disabled={isCreatingQuickInvoice}
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {isCreatingQuickInvoice ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            <>
+              <Zap className="h-4 w-4 mr-2" />
+              Quick Invoice
+            </>
+          )}
         </Button>
       )}
 
