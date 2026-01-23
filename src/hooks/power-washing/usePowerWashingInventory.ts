@@ -172,12 +172,16 @@ export function useCreateInventoryItem() {
 
   return useMutation({
     mutationFn: async (input: CreateInventoryItemInput) => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not authenticated');
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('shop_id')
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
-      if (!profile?.shop_id) throw new Error('No shop found');
+      if (!profile?.shop_id) throw new Error('No shop found for user');
 
       const { data, error } = await supabase
         .from('power_washing_inventory')
@@ -308,12 +312,16 @@ export function useCreateVendor() {
 
   return useMutation({
     mutationFn: async (input: Omit<InventoryVendor, 'id' | 'shop_id' | 'created_at' | 'updated_at'>) => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not authenticated');
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('shop_id')
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
-      if (!profile?.shop_id) throw new Error('No shop found');
+      if (!profile?.shop_id) throw new Error('No shop found for user');
 
       const { data, error } = await supabase
         .from('power_washing_inventory_vendors')
