@@ -216,7 +216,9 @@ export function usePricingFormulas() {
     sqft: number,
     condition: ConditionLevel,
     shCostPerGallon: number = 3.50,
-    laborRatePerHour: number = 75
+    laborRatePerHour: number = 75,
+    surfactantCostPerOz: number = 0.50,
+    surfactantOzPerGallon: number = 1.0
   ): QuoteCalculation => {
     // Get condition-specific values
     const pricePerSqft = formula[`price_per_sqft_${condition}`];
@@ -233,7 +235,14 @@ export function usePricingFormulas() {
     // SH concentration is the % of SH in the final mix
     // Standard SH is 12.5%, so we calculate how much SH is needed
     const shGallonsNeeded = (mixGallonsNeeded * shConcentration) / 12.5;
-    const chemicalCost = shGallonsNeeded * shCostPerGallon;
+    const shCost = shGallonsNeeded * shCostPerGallon;
+    
+    // Calculate surfactant usage (oz per gallon of mix)
+    const surfactantOzNeeded = mixGallonsNeeded * surfactantOzPerGallon;
+    const surfactantCost = surfactantOzNeeded * surfactantCostPerOz;
+    
+    // Total chemical cost
+    const chemicalCost = shCost + surfactantCost;
     
     // Calculate labor
     const laborMinutes = ((sqft / 100) * formula.minutes_per_100sqft) + formula.setup_minutes;
@@ -247,6 +256,9 @@ export function usePricingFormulas() {
     return {
       price,
       chemicalCost,
+      shCost,
+      surfactantCost,
+      surfactantOzNeeded,
       laborMinutes,
       laborCost,
       totalCost,

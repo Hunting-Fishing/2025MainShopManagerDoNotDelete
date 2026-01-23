@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calculator, Droplets, Clock, DollarSign, TrendingUp, Copy, Plus } from 'lucide-react';
+import { Calculator, Droplets, Clock, DollarSign, TrendingUp, Copy, Plus, Beaker } from 'lucide-react';
 import { usePricingFormulas } from '@/hooks/power-washing/usePricingFormulas';
 import { SH_SOURCE_CONCENTRATION, type ConditionLevel } from '@/types/pricing-formula';
 
@@ -34,6 +34,8 @@ export function FastQuoteCalculator({ onCreateQuote, onAddToQuote }: FastQuoteCa
   const [condition, setCondition] = useState<ConditionLevel>('medium');
   const [shCostPerGallon, setShCostPerGallon] = useState<number>(3.50);
   const [laborRatePerHour, setLaborRatePerHour] = useState<number>(75);
+  const [surfactantCostPerOz, setSurfactantCostPerOz] = useState<number>(0.50);
+  const [surfactantOzPerGallon, setSurfactantOzPerGallon] = useState<number>(1.0);
 
   const selectedFormula = useMemo(() => 
     formulas.find(f => f.id === selectedFormulaId),
@@ -42,8 +44,16 @@ export function FastQuoteCalculator({ onCreateQuote, onAddToQuote }: FastQuoteCa
 
   const calculation = useMemo(() => {
     if (!selectedFormula || sqft <= 0) return null;
-    return calculateQuote(selectedFormula, sqft, condition, shCostPerGallon, laborRatePerHour);
-  }, [selectedFormula, sqft, condition, shCostPerGallon, laborRatePerHour, calculateQuote]);
+    return calculateQuote(
+      selectedFormula, 
+      sqft, 
+      condition, 
+      shCostPerGallon, 
+      laborRatePerHour,
+      surfactantCostPerOz,
+      surfactantOzPerGallon
+    );
+  }, [selectedFormula, sqft, condition, shCostPerGallon, laborRatePerHour, surfactantCostPerOz, surfactantOzPerGallon, calculateQuote]);
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -63,7 +73,9 @@ export function FastQuoteCalculator({ onCreateQuote, onAddToQuote }: FastQuoteCa
 ${selectedFormula.name} - ${condition.charAt(0).toUpperCase() + condition.slice(1)} Condition
 Square Footage: ${sqft.toLocaleString()} sqft
 Service Price: ${formatCurrency(calculation.price)}
-SH Needed: ${calculation.shGallonsNeeded.toFixed(2)} gal @ ${formatCurrency(shCostPerGallon)}/gal = ${formatCurrency(calculation.chemicalCost)}
+SH Needed: ${calculation.shGallonsNeeded.toFixed(2)} gal @ ${formatCurrency(shCostPerGallon)}/gal = ${formatCurrency(calculation.shCost)}
+Surfactant: ${calculation.surfactantOzNeeded.toFixed(1)} oz @ ${formatCurrency(surfactantCostPerOz)}/oz = ${formatCurrency(calculation.surfactantCost)}
+Total Chemical Cost: ${formatCurrency(calculation.chemicalCost)}
 Labor Time: ${formatMinutes(calculation.laborMinutes)} @ ${formatCurrency(laborRatePerHour)}/hr = ${formatCurrency(calculation.laborCost)}
 Total Cost: ${formatCurrency(calculation.totalCost)}
 Profit: ${formatCurrency(calculation.profit)} (${calculation.margin.toFixed(1)}% margin)
@@ -191,6 +203,30 @@ Profit: ${formatCurrency(calculation.profit)} (${calculation.margin.toFixed(1)}%
           </div>
         </div>
 
+        {/* Surfactant Settings */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground">Surfactant $/oz</Label>
+            <Input
+              type="number"
+              value={surfactantCostPerOz}
+              onChange={(e) => setSurfactantCostPerOz(parseFloat(e.target.value) || 0)}
+              step={0.10}
+              min={0}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground">Surfactant oz/gal mix</Label>
+            <Input
+              type="number"
+              value={surfactantOzPerGallon}
+              onChange={(e) => setSurfactantOzPerGallon(parseFloat(e.target.value) || 0)}
+              step={0.25}
+              min={0}
+            />
+          </div>
+        </div>
+
         <Separator />
 
         {/* Results Section */}
@@ -215,17 +251,40 @@ Profit: ${formatCurrency(calculation.profit)} (${calculation.margin.toFixed(1)}%
               </div>
             </div>
 
-            {/* Chemical Cost */}
-            <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-              <Droplets className="h-5 w-5 text-blue-500 mt-0.5" />
-              <div className="flex-1">
-                <div className="flex justify-between">
-                  <span className="font-medium">Chemical Cost</span>
-                  <span className="font-semibold">{formatCurrency(calculation.chemicalCost)}</span>
+            {/* Chemical Costs */}
+            <div className="space-y-2">
+              {/* SH Cost */}
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                <Droplets className="h-5 w-5 text-blue-500 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex justify-between">
+                    <span className="font-medium">SH (Sodium Hypochlorite)</span>
+                    <span className="font-semibold">{formatCurrency(calculation.shCost)}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {calculation.shGallonsNeeded.toFixed(2)} gal @ {selectedFormula[`sh_concentration_${condition}`]}% (from {SH_SOURCE_CONCENTRATION}% stock)
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  SH @ {selectedFormula[`sh_concentration_${condition}`]}% (from {SH_SOURCE_CONCENTRATION}% stock): {calculation.shGallonsNeeded.toFixed(2)} gal needed
+              </div>
+
+              {/* Surfactant Cost */}
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                <Beaker className="h-5 w-5 text-purple-500 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Surfactant</span>
+                    <span className="font-semibold">{formatCurrency(calculation.surfactantCost)}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {calculation.surfactantOzNeeded.toFixed(1)} oz @ {formatCurrency(surfactantCostPerOz)}/oz ({surfactantOzPerGallon} oz/gal mix)
+                  </div>
                 </div>
+              </div>
+
+              {/* Total Chemical */}
+              <div className="flex justify-between text-sm px-3 py-1">
+                <span className="text-muted-foreground">Total Chemical Cost</span>
+                <span className="font-medium">{formatCurrency(calculation.chemicalCost)}</span>
               </div>
             </div>
 
