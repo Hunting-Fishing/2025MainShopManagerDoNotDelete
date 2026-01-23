@@ -9,6 +9,7 @@ import { useEmployeeAvailability } from '@/hooks/useEmployeeAvailability';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/integrations/supabase/client';
 import type { EmployeeAvailability } from '@/types/employee-availability';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -36,9 +37,14 @@ export function EmployeeAvailabilityManager({ employeeId }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let currentEmployeeId = employeeId;
+      if (!currentEmployeeId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        currentEmployeeId = user?.id;
+      }
       const data = {
         ...formData,
-        employee_id: employeeId || (await import('@/lib/supabase').then(m => m.supabase.auth.getUser())).data.user?.id,
+        employee_id: currentEmployeeId,
         effective_until: formData.effective_until || null
       };
 
