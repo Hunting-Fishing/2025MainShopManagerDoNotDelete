@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,6 @@ import {
   Send,
   CheckCircle,
   FileText,
-  DollarSign,
-  Loader2,
-  Save
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,7 +21,7 @@ import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaymentMethodSelect } from '@/components/shared/PaymentMethodSelect';
 import { RecordPaymentModal, PaymentData } from '@/components/shared/RecordPaymentModal';
-import { formatPaymentMethodForDisplay } from '@/constants/paymentMethods';
+import { InvoicePaymentHistory, PaymentRecord } from '@/components/shared/InvoicePaymentHistory';
 
 interface InvoiceLine {
   id: string;
@@ -50,6 +47,8 @@ interface Invoice {
   notes: string | null;
   terms: string | null;
   payment_method: string | null;
+  shop_id?: string;
+  customer_id?: string;
 }
 
 export default function PowerWashingInvoiceDetail() {
@@ -58,12 +57,17 @@ export default function PowerWashingInvoiceDetail() {
   const { user } = useAuth();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [lines, setLines] = useState<InvoiceLine[]>([]);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
-    if (id) fetchInvoice();
+    if (id) {
+      fetchInvoice();
+      fetchPayments();
+    }
   }, [id]);
 
   const fetchInvoice = async () => {
@@ -81,6 +85,25 @@ export default function PowerWashingInvoiceDetail() {
       toast.error('Failed to load invoice');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchPayments = async () => {
+    if (!id) return;
+    setIsLoadingPayments(true);
+    try {
+      const { data, error } = await supabase
+        .from('power_washing_payments')
+        .select('*')
+        .eq('invoice_id', id)
+        .order('transaction_date', { ascending: true });
+
+      if (error) throw error;
+      setPayments(data || []);
+    } catch (error) {
+      console.error('Failed to fetch payments:', error);
+    } finally {
+      setIsLoadingPayments(false);
     }
   };
 
@@ -213,10 +236,32 @@ export default function PowerWashingInvoiceDetail() {
 
     setIsSaving(true);
     try {
+      // 1. Insert payment record into power_washing_payments table
+      const { data: newPayment, error: paymentError } = await supabase
+        .from('power_washing_payments')
+        .insert({
+          invoice_id: invoice.id,
+          shop_id: invoice.shop_id,
+          customer_id: invoice.customer_id,
+          amount: paymentData.amount,
+          payment_method: paymentData.paymentMethod,
+          reference_number: paymentData.reference || null,
+          notes: paymentData.notes || null,
+          status: 'completed',
+          transaction_date: new Date().toISOString(),
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+
+      if (paymentError) throw paymentError;
+
+      // 2. Calculate new totals
       const newAmountPaid = (invoice.amount_paid || 0) + paymentData.amount;
       const newBalanceDue = invoice.total - newAmountPaid;
       const newStatus = newBalanceDue <= 0 ? 'paid' : 'partial';
 
+      // 3. Update invoice
       const updates: Record<string, any> = {
         status: newStatus,
         payment_method: paymentData.paymentMethod,
@@ -228,16 +273,20 @@ export default function PowerWashingInvoiceDetail() {
         updates.paid_date = format(new Date(), 'yyyy-MM-dd');
       }
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('power_washing_invoices')
         .update(updates)
         .eq('id', invoice.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // 4. Update local state
       setInvoice({ ...invoice, ...updates });
+      setPayments([...payments, newPayment]);
       setShowPaymentModal(false);
       toast.success(newStatus === 'paid' ? 'Invoice marked as paid' : 'Partial payment recorded');
     } catch (error) {
+      console.error('Failed to record payment:', error);
       toast.error('Failed to record payment');
     } finally {
       setIsSaving(false);
@@ -317,10 +366,10 @@ export default function PowerWashingInvoiceDetail() {
                 Send Invoice
               </Button>
             )}
-            {['sent', 'overdue'].includes(invoice.status) && (
-              <Button onClick={() => handleStatusChange('paid')} disabled={isSaving}>
+            {['sent', 'overdue', 'partial'].includes(invoice.status) && (
+              <Button onClick={() => setShowPaymentModal(true)} disabled={isSaving}>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Mark as Paid
+                {invoice.status === 'partial' ? 'Record Payment' : 'Mark as Paid'}
               </Button>
             )}
           </div>
@@ -396,6 +445,15 @@ export default function PowerWashingInvoiceDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Payment History - Below Line Items on larger screens */}
+        <InvoicePaymentHistory
+          payments={payments}
+          invoiceTotal={invoice.total}
+          isLoading={isLoadingPayments}
+          onAddPayment={() => setShowPaymentModal(true)}
+          showAddButton={invoice.balance_due > 0 && invoice.status !== 'paid'}
+        />
 
         {/* Invoice Summary */}
         <div className="space-y-6">
