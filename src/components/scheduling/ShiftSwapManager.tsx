@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeftRight, Check, X, Clock } from 'lucide-react';
 import { useShiftSwaps } from '@/hooks/useShiftSwaps';
 import { useScheduling } from '@/hooks/useScheduling';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 export function ShiftSwapManager() {
@@ -28,7 +29,7 @@ export function ShiftSwapManager() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { data: { user } } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
+      const { data: { user } } = await supabase.auth.getUser();
       await createSwapRequest({
         ...formData,
         requesting_employee_id: user?.id,
