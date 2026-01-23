@@ -27140,6 +27140,89 @@ export type Database = {
           },
         ]
       }
+      power_washing_pricing_formulas: {
+        Row: {
+          application: string
+          category: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          labor_rate_type: string | null
+          minimum_charge: number
+          minutes_per_100sqft: number
+          mix_coverage_sqft: number
+          name: string
+          notes: string | null
+          price_per_sqft_heavy: number
+          price_per_sqft_light: number
+          price_per_sqft_medium: number
+          setup_minutes: number
+          sh_concentration_heavy: number
+          sh_concentration_light: number
+          sh_concentration_medium: number
+          shop_id: string
+          surface_type: string
+          updated_at: string
+        }
+        Insert: {
+          application: string
+          category?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          labor_rate_type?: string | null
+          minimum_charge?: number
+          minutes_per_100sqft?: number
+          mix_coverage_sqft?: number
+          name: string
+          notes?: string | null
+          price_per_sqft_heavy?: number
+          price_per_sqft_light?: number
+          price_per_sqft_medium?: number
+          setup_minutes?: number
+          sh_concentration_heavy?: number
+          sh_concentration_light?: number
+          sh_concentration_medium?: number
+          shop_id: string
+          surface_type: string
+          updated_at?: string
+        }
+        Update: {
+          application?: string
+          category?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          labor_rate_type?: string | null
+          minimum_charge?: number
+          minutes_per_100sqft?: number
+          mix_coverage_sqft?: number
+          name?: string
+          notes?: string | null
+          price_per_sqft_heavy?: number
+          price_per_sqft_light?: number
+          price_per_sqft_medium?: number
+          setup_minutes?: number
+          sh_concentration_heavy?: number
+          sh_concentration_light?: number
+          sh_concentration_medium?: number
+          shop_id?: string
+          surface_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "power_washing_pricing_formulas_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       power_washing_properties: {
         Row: {
           address: string

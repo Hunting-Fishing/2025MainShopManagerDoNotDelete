@@ -228,6 +228,7 @@ import PowerWashingTeam from '@/pages/power-washing/PowerWashingTeam';
 import PowerWashingRoles from '@/pages/power-washing/PowerWashingRoles';
 import PowerWashingQuoteDetail from '@/pages/power-washing/PowerWashingQuoteDetail';
 import PowerWashingSettings from '@/pages/power-washing/PowerWashingSettings';
+import PowerWashingPricingFormulas from '@/pages/power-washing/PowerWashingPricingFormulas';
 
 // Gunsmith
 import GunsmithDashboard from '@/pages/gunsmith/GunsmithDashboard';
@@ -1257,6 +1258,7 @@ function App() {
                   <Route path="/power-washing/chemicals/new" element={<PowerWashingChemicalCreate />} />
                   <Route path="/power-washing/inventory" element={<PowerWashingInventory />} />
                   <Route path="/power-washing/formulas" element={<PowerWashingFormulas />} />
+                  <Route path="/power-washing/pricing-formulas" element={<PowerWashingPricingFormulas />} />
                   <Route path="/power-washing/bleach-calculator" element={<BleachCalculator />} />
                   <Route path="/power-washing/surface-calculator" element={<SurfaceMixCalculator />} />
                   <Route path="/power-washing/recurring" element={<PowerWashingRecurringSchedules />} />
