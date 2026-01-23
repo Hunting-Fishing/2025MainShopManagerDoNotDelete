@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Calculator, AlertCircle } from 'lucide-react';
-import { usePricingFormulas } from '@/hooks/power-washing/usePricingFormulas';
+import { usePricingFormulas, FormulaChemical } from '@/hooks/power-washing/usePricingFormulas';
 import { PricingFormulaCard } from '@/components/power-washing/PricingFormulaCard';
 import { PricingFormulaDialog } from '@/components/power-washing/PricingFormulaDialog';
 import { FastQuoteCalculator } from '@/components/power-washing/FastQuoteCalculator';
+import { FormulaTemplates } from '@/components/power-washing/FormulaTemplates';
 import { SURFACE_TYPES, APPLICATIONS } from '@/types/pricing-formula';
 import type { PricingFormula } from '@/types/pricing-formula';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -27,6 +28,7 @@ export default function PowerWashingPricingFormulas() {
   const [selectedFormula, setSelectedFormula] = useState<PricingFormula | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formulaToDelete, setFormulaToDelete] = useState<string | null>(null);
+  const [templateChemicals, setTemplateChemicals] = useState<FormulaChemical[]>([]);
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -80,6 +82,13 @@ export default function PowerWashingPricingFormulas() {
 
   const handleNewFormula = () => {
     setSelectedFormula(null);
+    setTemplateChemicals([]);
+    setDialogOpen(true);
+  };
+
+  const handleSelectTemplate = (formula: Partial<PricingFormula>, chemicals: FormulaChemical[]) => {
+    setSelectedFormula(formula as PricingFormula);
+    setTemplateChemicals(chemicals);
     setDialogOpen(true);
   };
 
@@ -96,7 +105,8 @@ export default function PowerWashingPricingFormulas() {
                 Fast quote pricing based on surface type and condition
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              <FormulaTemplates onSelectTemplate={handleSelectTemplate} />
               <Button
                 variant={showCalculator ? 'default' : 'outline'}
                 onClick={() => setShowCalculator(!showCalculator)}
@@ -198,10 +208,16 @@ export default function PowerWashingPricingFormulas() {
       {/* Dialogs */}
       <PricingFormulaDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            setTemplateChemicals([]);
+          }
+        }}
         formula={selectedFormula}
         onSave={handleSave}
         isLoading={createFormula.isPending || updateFormula.isPending}
+        initialChemicals={templateChemicals}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
