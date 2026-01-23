@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,16 +49,21 @@ export function PricingFormulaDialog({
   initialChemicals = [],
 }: PricingFormulaDialogProps) {
   const [formData, setFormData] = useState<Partial<PricingFormula>>(defaultFormula);
-  const [chemicals, setChemicals] = useState<FormulaChemical[]>(initialChemicals);
+  const [chemicals, setChemicals] = useState<FormulaChemical[]>([]);
+  const prevOpenRef = useRef(open);
 
   useEffect(() => {
-    if (formula) {
-      setFormData(formula);
-    } else {
-      setFormData(defaultFormula);
+    // Only reset when dialog opens (transition from closed to open)
+    if (open && !prevOpenRef.current) {
+      if (formula) {
+        setFormData(formula);
+      } else {
+        setFormData(defaultFormula);
+      }
+      setChemicals(initialChemicals);
     }
-    setChemicals(initialChemicals);
-  }, [formula, open, initialChemicals]);
+    prevOpenRef.current = open;
+  }, [open, formula, initialChemicals]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
