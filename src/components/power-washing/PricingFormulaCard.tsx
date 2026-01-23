@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreVertical, Pencil, Copy, Trash2, DollarSign, Clock, Droplets } from 'lucide-react';
 import type { PricingFormula } from '@/types/pricing-formula';
-import { SURFACE_TYPES, APPLICATIONS } from '@/types/pricing-formula';
+import { SURFACE_TYPES, APPLICATIONS, SH_SOURCE_CONCENTRATION } from '@/types/pricing-formula';
 
 interface PricingFormulaCardProps {
   formula: PricingFormula;
@@ -107,17 +107,22 @@ export function PricingFormulaCard({ formula, onEdit, onDuplicate, onDelete }: P
         </div>
 
         {/* Chemical Section */}
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Droplets className="h-4 w-4" />
-            SH %
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Droplets className="h-4 w-4" />
+              SH Concentration
+            </div>
+            <div className="flex gap-2">
+              <span className="text-green-600">{formula.sh_concentration_light}%</span>
+              <span className="text-muted-foreground">/</span>
+              <span className="text-yellow-600">{formula.sh_concentration_medium}%</span>
+              <span className="text-muted-foreground">/</span>
+              <span className="text-red-600">{formula.sh_concentration_heavy}%</span>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <span className="text-green-600">{formula.sh_concentration_light}%</span>
-            <span className="text-muted-foreground">/</span>
-            <span className="text-yellow-600">{formula.sh_concentration_medium}%</span>
-            <span className="text-muted-foreground">/</span>
-            <span className="text-red-600">{formula.sh_concentration_heavy}%</span>
+          <div className="text-xs text-muted-foreground text-right">
+            from {SH_SOURCE_CONCENTRATION}% stock
           </div>
         </div>
 

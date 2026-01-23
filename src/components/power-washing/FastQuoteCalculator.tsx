@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calculator, Droplets, Clock, DollarSign, TrendingUp, Copy, Plus } from 'lucide-react';
 import { usePricingFormulas } from '@/hooks/power-washing/usePricingFormulas';
-import type { ConditionLevel } from '@/types/pricing-formula';
+import { SH_SOURCE_CONCENTRATION, type ConditionLevel } from '@/types/pricing-formula';
 
 interface FastQuoteCalculatorProps {
   onCreateQuote?: (data: {
@@ -224,7 +224,7 @@ Profit: ${formatCurrency(calculation.profit)} (${calculation.margin.toFixed(1)}%
                   <span className="font-semibold">{formatCurrency(calculation.chemicalCost)}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  SH @ {selectedFormula[`sh_concentration_${condition}`]}%: {calculation.shGallonsNeeded.toFixed(2)} gal needed
+                  SH @ {selectedFormula[`sh_concentration_${condition}`]}% (from {SH_SOURCE_CONCENTRATION}% stock): {calculation.shGallonsNeeded.toFixed(2)} gal needed
                 </div>
               </div>
             </div>

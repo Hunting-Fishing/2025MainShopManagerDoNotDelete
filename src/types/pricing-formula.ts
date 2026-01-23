@@ -72,3 +72,15 @@ export const LABOR_RATE_TYPES = [
   { value: 'heavy_equipment', label: 'Heavy Equipment' },
   { value: 'roof', label: 'Roof Work' },
 ] as const;
+
+// SH (Sodium Hypochlorite) concentration options - diluted from 12.5% stock
+export const SH_SOURCE_CONCENTRATION = 12.5;
+
+export const SH_CONCENTRATIONS = [
+  { value: 1.0, label: '1%' },
+  { value: 3.0, label: '3%' },
+  { value: 5.0, label: '5%' },
+  { value: 8.0, label: '8%' },
+  { value: 10.0, label: '10%' },
+  { value: 12.5, label: '12.5% (Full Strength)' },
+] as const;
