@@ -28,6 +28,9 @@ export type ConditionLevel = 'light' | 'medium' | 'heavy';
 export interface QuoteCalculation {
   price: number;
   chemicalCost: number;
+  shCost: number;
+  surfactantCost: number;
+  surfactantOzNeeded: number;
   laborMinutes: number;
   laborCost: number;
   totalCost: number;
