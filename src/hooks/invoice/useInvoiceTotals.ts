@@ -21,10 +21,40 @@ export function useInvoiceTotals(itemsOrProps: InvoiceItem[] | UseInvoiceTotalsP
   const { taxSettings, loading: taxSettingsLoading } = useTaxSettings();
 
   const calculations = useMemo(() => {
-    // Calculate subtotal from invoice items
-    const calculatedSubtotal = items.reduce((sum, item) => {
-      return sum + (item.price || 0) * (item.quantity || 0);
-    }, 0);
+    // Calculate totals by category from invoice items
+    let laborAmount = 0;
+    let partsAmount = 0;
+    let uncategorizedAmount = 0;
+
+    items.forEach(item => {
+      const itemTotal = (item.price || 0) * (item.quantity || 0);
+      const category = (item.category || '').toLowerCase();
+      
+      // Categorize items based on category field or hours flag
+      if (category === 'labor' || category === 'service' || item.hours) {
+        laborAmount += itemTotal;
+      } else if (category === 'parts' || category === 'part' || category === 'product' || category === 'inventory') {
+        partsAmount += itemTotal;
+      } else {
+        // For uncategorized items, check name patterns as fallback
+        const name = (item.name || '').toLowerCase();
+        if (name.includes('labor') || name.includes('service') || name.includes('diagnostic') || name.includes('hour')) {
+          laborAmount += itemTotal;
+        } else if (name.includes('part') || name.includes('fluid') || name.includes('filter') || name.includes('oil')) {
+          partsAmount += itemTotal;
+        } else {
+          uncategorizedAmount += itemTotal;
+        }
+      }
+    });
+
+    // Split uncategorized items 50/50 between labor and parts as fallback
+    if (uncategorizedAmount > 0) {
+      laborAmount += uncategorizedAmount * 0.5;
+      partsAmount += uncategorizedAmount * 0.5;
+    }
+
+    const calculatedSubtotal = laborAmount + partsAmount;
 
     if (!taxSettings || taxSettingsLoading) {
       return {
@@ -36,6 +66,8 @@ export function useInvoiceTotals(itemsOrProps: InvoiceItem[] | UseInvoiceTotalsP
         laborTax: 0,
         partsTax: 0,
         totalTax: 0,
+        laborSubtotal: laborAmount,
+        partsSubtotal: partsAmount,
         taxBreakdown: {
           laborTaxRate: 0,
           partsTaxRate: 0,
@@ -44,25 +76,22 @@ export function useInvoiceTotals(itemsOrProps: InvoiceItem[] | UseInvoiceTotalsP
       };
     }
 
-    // For invoice items, we assume they are mixed labor/parts
-    // In a real implementation, you'd want to categorize invoice items
-    const laborAmount = calculatedSubtotal * 0.6; // Assume 60% labor
-    const partsAmount = calculatedSubtotal * 0.4; // Assume 40% parts
-
-    // Determine if customer is tax exempt
-    const isCustomerTaxExempt = customer?.labor_tax_exempt || customer?.parts_tax_exempt || false;
+    // Determine if customer is tax exempt (check specific exemptions)
+    const isLaborTaxExempt = customer?.labor_tax_exempt || false;
+    const isPartsTaxExempt = customer?.parts_tax_exempt || false;
+    const isCustomerTaxExempt = isLaborTaxExempt && isPartsTaxExempt;
     const customerTaxExemptionId = customer?.tax_exempt_certificate_number;
 
-    // Calculate taxes using the tax calculation utility
+    // Calculate taxes using the tax calculation utility with actual category amounts
     const taxCalculation = calculateTax({
-      laborAmount,
-      partsAmount,
+      laborAmount: isLaborTaxExempt ? 0 : laborAmount,
+      partsAmount: isPartsTaxExempt ? 0 : partsAmount,
       taxSettings,
       isCustomerTaxExempt,
       customerTaxExemptionId
     });
 
-    // Legacy compatibility
+    // Legacy compatibility - calculate effective average tax rate
     const averageTaxRate = calculatedSubtotal > 0 
       ? (taxCalculation.totalTax / calculatedSubtotal) * 100 
       : 0;
@@ -71,13 +100,17 @@ export function useInvoiceTotals(itemsOrProps: InvoiceItem[] | UseInvoiceTotalsP
       subtotal: calculatedSubtotal,
       tax: taxCalculation.totalTax,
       taxRate: averageTaxRate,
-      total: taxCalculation.grandTotal,
+      total: calculatedSubtotal + taxCalculation.totalTax,
       isLoading: false,
       laborTax: taxCalculation.laborTax,
       partsTax: taxCalculation.partsTax,
       totalTax: taxCalculation.totalTax,
+      laborSubtotal: laborAmount,
+      partsSubtotal: partsAmount,
       taxBreakdown: taxCalculation.taxBreakdown,
       isCustomerTaxExempt,
+      isLaborTaxExempt,
+      isPartsTaxExempt,
       customerTaxExemptionId
     };
   }, [items, customer, taxSettings, taxSettingsLoading]);
