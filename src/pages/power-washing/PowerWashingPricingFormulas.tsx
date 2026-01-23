@@ -68,11 +68,11 @@ export default function PowerWashingPricingFormulas() {
     setDeleteDialogOpen(false);
   };
 
-  const handleSave = (data: Partial<PricingFormula>) => {
+  const handleSave = (data: Partial<PricingFormula>, chemicals: any[]) => {
     if (selectedFormula?.id) {
-      updateFormula.mutate({ id: selectedFormula.id, ...data });
+      updateFormula.mutate({ id: selectedFormula.id, ...data, chemicals });
     } else {
-      createFormula.mutate(data);
+      createFormula.mutate({ formula: data, chemicals });
     }
     setDialogOpen(false);
     setSelectedFormula(null);
