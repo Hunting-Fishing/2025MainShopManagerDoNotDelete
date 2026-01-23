@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Invoice } from '@/types/invoice';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { formatPaymentMethodForDisplay } from '@/constants/paymentMethods';
 
 /**
  * Generate invoice PDF
@@ -40,7 +41,7 @@ export const generateInvoicePdf = (invoice: Invoice & {
   doc.text('Invoice Details', 140, 45);
   doc.text(`Issue Date: ${formatDate(invoice.date)}`, 140, 50);
   doc.text(`Due Date: ${formatDate(invoice.due_date)}`, 140, 55);
-  doc.text(`Payment Method: ${invoice.payment_method || 'Not specified'}`, 140, 60);
+  doc.text(`Payment Method: ${formatPaymentMethodForDisplay(invoice.payment_method)}`, 140, 60);
   
   if (invoice.work_order_id) {
     doc.text('Work Order Reference:', 140, 65);

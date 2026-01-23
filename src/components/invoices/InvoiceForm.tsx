@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Invoice } from "@/types/invoice";
+import { PaymentMethodSelect } from "@/components/shared/PaymentMethodSelect";
 
 const invoiceFormSchema = z.object({
   customer: z.string().min(1, { message: "Customer is required" }),
@@ -177,14 +178,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 <FormItem>
                   <FormLabel>Payment Method</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Credit Card, Cash, etc." 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
+                    <PaymentMethodSelect
+                      value={field.value || ''}
+                      onChange={(value) => {
+                        field.onChange(value);
                         onUpdate({
                           ...invoice,
-                          payment_method: e.target.value
+                          payment_method: value
                         });
                       }}
                     />

@@ -22,6 +22,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PaymentMethodSelect } from '@/components/shared/PaymentMethodSelect';
+import { RecordPaymentModal, PaymentData } from '@/components/shared/RecordPaymentModal';
+import { formatPaymentMethodForDisplay } from '@/constants/paymentMethods';
 
 interface InvoiceLine {
   id: string;
@@ -46,6 +49,7 @@ interface Invoice {
   balance_due: number;
   notes: string | null;
   terms: string | null;
+  payment_method: string | null;
 }
 
 export default function PowerWashingInvoiceDetail() {
@@ -56,6 +60,7 @@ export default function PowerWashingInvoiceDetail() {
   const [lines, setLines] = useState<InvoiceLine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     if (id) fetchInvoice();
@@ -178,14 +183,15 @@ export default function PowerWashingInvoiceDetail() {
   const handleStatusChange = async (newStatus: string) => {
     if (!invoice) return;
 
+    // For marking as paid, show the payment modal instead
+    if (newStatus === 'paid') {
+      setShowPaymentModal(true);
+      return;
+    }
+
     setIsSaving(true);
     try {
       const updates: Record<string, any> = { status: newStatus };
-      if (newStatus === 'paid') {
-        updates.paid_date = format(new Date(), 'yyyy-MM-dd');
-        updates.amount_paid = invoice.total;
-        updates.balance_due = 0;
-      }
 
       const { error } = await supabase
         .from('power_washing_invoices')
@@ -197,6 +203,42 @@ export default function PowerWashingInvoiceDetail() {
       toast.success(`Invoice marked as ${newStatus}`);
     } catch (error) {
       toast.error('Failed to update status');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRecordPayment = async (paymentData: PaymentData) => {
+    if (!invoice) return;
+
+    setIsSaving(true);
+    try {
+      const newAmountPaid = (invoice.amount_paid || 0) + paymentData.amount;
+      const newBalanceDue = invoice.total - newAmountPaid;
+      const newStatus = newBalanceDue <= 0 ? 'paid' : 'partial';
+
+      const updates: Record<string, any> = {
+        status: newStatus,
+        payment_method: paymentData.paymentMethod,
+        amount_paid: newAmountPaid,
+        balance_due: Math.max(0, newBalanceDue),
+      };
+
+      if (newStatus === 'paid') {
+        updates.paid_date = format(new Date(), 'yyyy-MM-dd');
+      }
+
+      const { error } = await supabase
+        .from('power_washing_invoices')
+        .update(updates)
+        .eq('id', invoice.id);
+
+      if (error) throw error;
+      setInvoice({ ...invoice, ...updates });
+      setShowPaymentModal(false);
+      toast.success(newStatus === 'paid' ? 'Invoice marked as paid' : 'Partial payment recorded');
+    } catch (error) {
+      toast.error('Failed to record payment');
     } finally {
       setIsSaving(false);
     }
@@ -412,6 +454,13 @@ export default function PowerWashingInvoiceDetail() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
+                <Label>Payment Method</Label>
+                <PaymentMethodSelect
+                  value={invoice.payment_method || ''}
+                  onChange={(value) => handleUpdateInvoice('payment_method', value)}
+                />
+              </div>
+              <div>
                 <Label>Due Date</Label>
                 <Input
                   type="date"
@@ -441,6 +490,16 @@ export default function PowerWashingInvoiceDetail() {
           </Card>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <RecordPaymentModal
+        open={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSubmit={handleRecordPayment}
+        invoiceTotal={invoice.total}
+        balanceDue={invoice.balance_due}
+        isLoading={isSaving}
+      />
     </div>
   );
 }

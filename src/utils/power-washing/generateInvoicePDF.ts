@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
+import { formatPaymentMethodForDisplay } from '@/constants/paymentMethods';
 
 interface InvoiceLineItem {
   description: string;
@@ -23,6 +24,7 @@ interface InvoiceData {
   property_address?: string;
   line_items?: InvoiceLineItem[];
   notes?: string;
+  payment_method?: string | null;
 }
 
 interface BusinessInfo {
@@ -204,9 +206,13 @@ export function generateInvoicePDF(invoice: InvoiceData, businessInfo?: Business
   }
   
   // Payment Terms
-  yPos = doc.internal.pageSize.getHeight() - 50;
+  yPos = doc.internal.pageSize.getHeight() - 60;
   doc.setFontSize(9);
   doc.setTextColor(100);
+  doc.text('PAYMENT INFORMATION', 20, yPos);
+  yPos += 5;
+  doc.text(`Payment Method: ${formatPaymentMethodForDisplay(invoice.payment_method)}`, 20, yPos);
+  yPos += 6;
   doc.text('PAYMENT TERMS', 20, yPos);
   yPos += 5;
   doc.text('• Payment is due upon receipt unless otherwise specified.', 20, yPos);

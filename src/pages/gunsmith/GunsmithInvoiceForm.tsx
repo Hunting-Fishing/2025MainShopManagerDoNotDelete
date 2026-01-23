@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { PaymentMethodSelect } from '@/components/shared/PaymentMethodSelect';
 
 interface LineItem {
   description: string;
@@ -30,7 +31,8 @@ export default function GunsmithInvoiceForm() {
     job_id: jobId || '',
     due_date: '',
     tax_rate: '0',
-    notes: ''
+    notes: '',
+    payment_method: ''
   });
 
   const [lineItems, setLineItems] = useState<LineItem[]>([
@@ -142,6 +144,7 @@ export default function GunsmithInvoiceForm() {
       status: 'draft',
       due_date: formData.due_date || null,
       notes: formData.notes || null,
+      payment_method: formData.payment_method || null,
       line_items: lineItems.filter(item => item.description)
     });
   };
@@ -223,6 +226,15 @@ export default function GunsmithInvoiceForm() {
                     onChange={(e) => setFormData({ ...formData, tax_rate: e.target.value })}
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label>Payment Method</Label>
+                <PaymentMethodSelect
+                  value={formData.payment_method}
+                  onChange={(v) => setFormData({ ...formData, payment_method: v })}
+                  placeholder="Select preferred payment method"
+                />
               </div>
             </CardContent>
           </Card>
