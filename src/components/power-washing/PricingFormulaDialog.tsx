@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SURFACE_TYPES, APPLICATIONS, CATEGORIES, LABOR_RATE_TYPES } from '@/types/pricing-formula';
+import { SURFACE_TYPES, APPLICATIONS, CATEGORIES, LABOR_RATE_TYPES, SH_CONCENTRATIONS, SH_SOURCE_CONCENTRATION } from '@/types/pricing-formula';
 import type { PricingFormula } from '@/types/pricing-formula';
 
 interface PricingFormulaDialogProps {
@@ -28,8 +28,8 @@ const defaultFormula: Partial<PricingFormula> = {
   price_per_sqft_heavy: 0.28,
   minimum_charge: 125,
   sh_concentration_light: 1.0,
-  sh_concentration_medium: 2.0,
-  sh_concentration_heavy: 3.0,
+  sh_concentration_medium: 3.0,
+  sh_concentration_heavy: 5.0,
   mix_coverage_sqft: 150,
   minutes_per_100sqft: 3,
   setup_minutes: 20,
@@ -251,49 +251,64 @@ export function PricingFormulaDialog({
 
             <TabsContent value="labor" className="space-y-4 mt-4">
               <div className="space-y-4">
-                <h4 className="font-medium">SH Concentration (%)</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">SH Concentration</h4>
+                  <span className="text-xs text-muted-foreground">Diluted from {SH_SOURCE_CONCENTRATION}% stock</span>
+                </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label className="text-green-600">Light Condition</Label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="12.5"
-                        value={formData.sh_concentration_light || ''}
-                        onChange={(e) => updateField('sh_concentration_light', parseFloat(e.target.value) || 0)}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-                    </div>
+                    <Select
+                      value={String(formData.sh_concentration_light)}
+                      onValueChange={(v) => updateField('sh_concentration_light', parseFloat(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SH_CONCENTRATIONS.map((conc) => (
+                          <SelectItem key={conc.value} value={String(conc.value)}>
+                            {conc.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-yellow-600">Medium Condition</Label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="12.5"
-                        value={formData.sh_concentration_medium || ''}
-                        onChange={(e) => updateField('sh_concentration_medium', parseFloat(e.target.value) || 0)}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-                    </div>
+                    <Select
+                      value={String(formData.sh_concentration_medium)}
+                      onValueChange={(v) => updateField('sh_concentration_medium', parseFloat(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SH_CONCENTRATIONS.map((conc) => (
+                          <SelectItem key={conc.value} value={String(conc.value)}>
+                            {conc.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-red-600">Heavy Condition</Label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="12.5"
-                        value={formData.sh_concentration_heavy || ''}
-                        onChange={(e) => updateField('sh_concentration_heavy', parseFloat(e.target.value) || 0)}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-                    </div>
+                    <Select
+                      value={String(formData.sh_concentration_heavy)}
+                      onValueChange={(v) => updateField('sh_concentration_heavy', parseFloat(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SH_CONCENTRATIONS.map((conc) => (
+                          <SelectItem key={conc.value} value={String(conc.value)}>
+                            {conc.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
