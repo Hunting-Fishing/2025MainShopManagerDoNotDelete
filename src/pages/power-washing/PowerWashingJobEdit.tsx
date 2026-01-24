@@ -44,17 +44,18 @@ export default function PowerWashingJobEdit() {
   // Form state
   const [formData, setFormData] = useState<Partial<PowerWashingJob>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [formInitialized, setFormInitialized] = useState(false);
 
   useEffect(() => {
     if (job) {
       setFormData({
-        property_type: job.property_type,
+        property_type: job.property_type || 'residential',
         property_address: job.property_address,
         property_city: job.property_city,
         property_state: job.property_state,
         property_zip: job.property_zip,
         square_footage: job.square_footage,
-        priority: job.priority,
+        priority: job.priority || 'normal',
         scheduled_date: job.scheduled_date,
         scheduled_time_start: job.scheduled_time_start,
         scheduled_time_end: job.scheduled_time_end,
@@ -65,6 +66,7 @@ export default function PowerWashingJobEdit() {
         special_instructions: job.special_instructions,
         assigned_crew: job.assigned_crew,
       });
+      setFormInitialized(true);
     }
   }, [job]);
 
@@ -87,7 +89,8 @@ export default function PowerWashingJobEdit() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  if (jobsLoading) {
+  // Block rendering until data is loaded AND form is initialized to prevent Select infinite loop
+  if (jobsLoading || (job && !formInitialized)) {
     return (
       <div className="min-h-screen bg-background p-6">
         <Skeleton className="h-8 w-48 mb-6" />
@@ -132,7 +135,7 @@ export default function PowerWashingJobEdit() {
             <div>
               <Label>Property Type</Label>
               <Select 
-                value={formData.property_type || ''} 
+                value={formData.property_type || 'residential'} 
                 onValueChange={(v) => updateField('property_type', v)}
               >
                 <SelectTrigger>
