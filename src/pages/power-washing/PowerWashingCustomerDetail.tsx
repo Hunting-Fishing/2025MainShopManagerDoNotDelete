@@ -663,26 +663,26 @@ export default function PowerWashingCustomerDetail() {
         <TabsList className="flex w-full overflow-x-auto gap-1 pb-1 scrollbar-hide h-auto p-1">
           <TabsTrigger value="jobs" className="flex-shrink-0 gap-1 px-2 md:px-3 text-xs md:text-sm">
             <Briefcase className="h-3 w-3 md:h-4 md:w-4" />
-            <span className="hidden sm:inline">Jobs</span>
+            Jobs
             <span>({jobs?.length || 0})</span>
           </TabsTrigger>
           <TabsTrigger value="property" className="flex-shrink-0 gap-1 px-2 md:px-3 text-xs md:text-sm">
             <Ruler className="h-3 w-3 md:h-4 md:w-4" />
-            <span className="hidden sm:inline">Property</span>
+            Property
           </TabsTrigger>
           <TabsTrigger value="quotes" className="flex-shrink-0 gap-1 px-2 md:px-3 text-xs md:text-sm">
             <FileText className="h-3 w-3 md:h-4 md:w-4" />
-            <span className="hidden sm:inline">Quotes</span>
+            Quotes
             <span>({quotes?.length || 0})</span>
           </TabsTrigger>
           <TabsTrigger value="invoices" className="flex-shrink-0 gap-1 px-2 md:px-3 text-xs md:text-sm">
             <Receipt className="h-3 w-3 md:h-4 md:w-4" />
-            <span className="hidden sm:inline">Invoices</span>
+            Invoices
             <span>({invoices?.length || 0})</span>
           </TabsTrigger>
           <TabsTrigger value="history" className="flex-shrink-0 gap-1 px-2 md:px-3 text-xs md:text-sm">
             <History className="h-3 w-3 md:h-4 md:w-4" />
-            <span className="hidden sm:inline">History</span>
+            History
             <span>({history?.length || 0})</span>
           </TabsTrigger>
         </TabsList>
