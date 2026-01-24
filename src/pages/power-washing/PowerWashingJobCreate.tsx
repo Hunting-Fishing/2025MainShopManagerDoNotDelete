@@ -147,14 +147,17 @@ export default function PowerWashingJobCreate() {
 
   const selectedService = services?.find(s => s.id === formData.serviceId);
 
-  // Auto-calculate price based on sqft
-  const calculateEstimatedPrice = () => {
-    if (selectedService?.base_price_per_sqft && formData.squareFootage) {
+  // Auto-calculate price based on sqft - returns null if no sqft entered
+  const calculateEstimatedPrice = (): number | null => {
+    if (!selectedService) return null;
+    
+    if (formData.squareFootage) {
       const sqft = parseFloat(formData.squareFootage);
       const basePrice = selectedService.base_price_per_sqft * sqft;
       return Math.max(basePrice, selectedService.minimum_price || 0);
     }
-    return selectedService?.minimum_price || 0;
+    
+    return null; // No estimate without sqft
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -425,7 +428,12 @@ export default function PowerWashingJobCreate() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="squareFootage">Square Footage</Label>
+                <Label htmlFor="squareFootage" className="flex items-center gap-2">
+                  Square Footage
+                  {selectedService && !formData.squareFootage && (
+                    <span className="text-destructive text-xs font-normal">← Required for pricing</span>
+                  )}
+                </Label>
                 <Input
                   id="squareFootage"
                   type="number"
@@ -562,17 +570,35 @@ export default function PowerWashingJobCreate() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {calculateEstimatedPrice() > 0 && (
-                <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
-                  <p className="text-sm text-muted-foreground">Estimated Price</p>
-                  <p className="text-2xl font-bold text-primary">
-                    ${calculateEstimatedPrice().toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Based on {formData.squareFootage} sqft × ${selectedService?.base_price_per_sqft}/sqft
-                  </p>
-                </div>
-              )}
+              <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <p className="text-sm text-muted-foreground mb-1">Estimated Price</p>
+                {selectedService ? (
+                  formData.squareFootage ? (
+                    <>
+                      <p className="text-2xl font-bold text-primary">
+                        ${calculateEstimatedPrice()?.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {parseFloat(formData.squareFootage).toLocaleString()} sqft × ${selectedService.base_price_per_sqft}/sqft
+                        {calculateEstimatedPrice() === selectedService.minimum_price && (
+                          <span className="ml-1 text-amber-600">(minimum applied)</span>
+                        )}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground text-sm font-medium">
+                        Enter square footage to calculate
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Rate: ${selectedService.base_price_per_sqft}/sqft • Minimum: ${selectedService.minimum_price}
+                      </p>
+                    </div>
+                  )
+                ) : (
+                  <p className="text-sm text-muted-foreground">Select a service first</p>
+                )}
+              </div>
               
               <div className="space-y-2">
                 <Label htmlFor="quotedPrice">Quoted Price</Label>
