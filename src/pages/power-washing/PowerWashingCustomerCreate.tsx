@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Save, Loader2, CheckCircle, Droplets, FileText } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Users, Save, Loader2, CheckCircle, Droplets, FileText, Home, Building2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
@@ -21,6 +22,7 @@ export default function PowerWashingCustomerCreate() {
   const queryClient = useQueryClient();
   const { shopId, loading: shopIdLoading } = useShopId();
   const [createdCustomerId, setCreatedCustomerId] = useState<string | null>(null);
+  const [customerMode, setCustomerMode] = useState<'residential' | 'business'>('residential');
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -35,7 +37,14 @@ export default function PowerWashingCustomerCreate() {
     longitude: null as number | null,
     preferred_contact: 'phone',
     property_type: 'residential',
-    notes: ''
+    notes: '',
+    // Business fields
+    company: '',
+    business_email: '',
+    business_phone: '',
+    business_type: '',
+    business_industry: '',
+    tax_id: ''
   });
 
   const createMutation = useMutation({
@@ -48,14 +57,16 @@ export default function PowerWashingCustomerCreate() {
         .filter(Boolean)
         .join(', ');
       
+      const isBusiness = customerMode === 'business';
+      
       const { data: customer, error } = await supabase
         .from('customers')
         .insert({
           shop_id: shopId,
           first_name: formData.first_name,
           last_name: formData.last_name,
-          email: formData.email || null,
-          phone: formData.phone || null,
+          email: isBusiness ? (formData.business_email || formData.email || null) : (formData.email || null),
+          phone: isBusiness ? (formData.business_phone || formData.phone || null) : (formData.phone || null),
           address: fullAddress || null,
           city: formData.city || null,
           state: formData.state || null,
@@ -63,8 +74,14 @@ export default function PowerWashingCustomerCreate() {
           latitude: formData.latitude,
           longitude: formData.longitude,
           notes: formData.notes || null,
-          business_type: formData.property_type,
-          communication_preference: formData.preferred_contact
+          business_type: isBusiness ? formData.business_type : formData.property_type,
+          communication_preference: formData.preferred_contact,
+          company: isBusiness ? formData.company : null,
+          business_email: isBusiness ? formData.business_email : null,
+          business_phone: isBusiness ? formData.business_phone : null,
+          business_industry: isBusiness ? formData.business_industry : null,
+          tax_id: isBusiness ? formData.tax_id : null,
+          is_fleet: formData.property_type === 'fleet'
         })
         .select()
         .single();
@@ -87,7 +104,12 @@ export default function PowerWashingCustomerCreate() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.first_name.trim() || !formData.last_name.trim()) {
+    if (customerMode === 'business' && !formData.company.trim()) {
+      toast.error('Company name is required for business customers');
+      return;
+    }
+    
+    if (customerMode === 'residential' && (!formData.first_name.trim() || !formData.last_name.trim())) {
       toast.error('First name and last name are required');
       return;
     }
@@ -173,65 +195,207 @@ export default function PowerWashingCustomerCreate() {
           onBack={() => navigate('/power-washing/customers')}
         />
 
+        {/* Customer Type Toggle */}
+        <div className="flex justify-center mb-4">
+          <ToggleGroup 
+            type="single" 
+            value={customerMode} 
+            onValueChange={(v) => v && setCustomerMode(v as 'residential' | 'business')}
+            className="bg-muted p-1 rounded-lg"
+          >
+            <ToggleGroupItem 
+              value="residential" 
+              className="data-[state=on]:bg-cyan-600 data-[state=on]:text-white px-4 py-2 rounded-md"
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Residential
+            </ToggleGroupItem>
+            <ToggleGroupItem 
+              value="business" 
+              className="data-[state=on]:bg-cyan-600 data-[state=on]:text-white px-4 py-2 rounded-md"
+            >
+              <Building2 className="h-4 w-4 mr-2" />
+              Business Customer
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+
         {/* Form */}
         <form onSubmit={handleSubmit}>
           <Card className="border-cyan-500/20">
             <CardHeader className="p-3 md:p-6">
-              <CardTitle className="text-base md:text-lg">Customer Information</CardTitle>
-              <CardDescription className="text-xs md:text-sm">Enter the customer's contact and property information</CardDescription>
+              <CardTitle className="text-base md:text-lg">
+                {customerMode === 'business' ? 'Business Customer Information' : 'Customer Information'}
+              </CardTitle>
+              <CardDescription className="text-xs md:text-sm">
+                {customerMode === 'business' 
+                  ? 'Enter the business and contact information' 
+                  : "Enter the customer's contact and property information"}
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-3 pt-0 md:p-6 md:pt-0 space-y-4 md:space-y-6">
-              {/* Name Row */}
+              {/* Business Details Section */}
+              {customerMode === 'business' && (
+                <div className="space-y-4 border-l-4 border-cyan-500 pl-4 bg-cyan-500/5 rounded-r-lg p-4">
+                  <h3 className="font-semibold text-cyan-700 dark:text-cyan-400 flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Business Details
+                  </h3>
+                  
+                  {/* Company Name */}
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor="company" className="text-sm">Company Name *</Label>
+                    <Input
+                      id="company"
+                      value={formData.company}
+                      onChange={(e) => handleInputChange('company', e.target.value)}
+                      placeholder="ABC Power Washing Co."
+                      required
+                      className="border-cyan-500/20 focus:border-cyan-500"
+                    />
+                  </div>
+
+                  {/* Business Type & Industry */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="business_type" className="text-sm">Business Type</Label>
+                      <Select 
+                        value={formData.business_type} 
+                        onValueChange={(value) => handleInputChange('business_type', value)}
+                      >
+                        <SelectTrigger className="border-cyan-500/20 focus:border-cyan-500">
+                          <SelectValue placeholder="Select business type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="corporation">Corporation</SelectItem>
+                          <SelectItem value="llc">LLC</SelectItem>
+                          <SelectItem value="sole_proprietorship">Sole Proprietorship</SelectItem>
+                          <SelectItem value="partnership">Partnership</SelectItem>
+                          <SelectItem value="nonprofit">Non-Profit</SelectItem>
+                          <SelectItem value="government">Government</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="business_industry" className="text-sm">Industry</Label>
+                      <Select 
+                        value={formData.business_industry} 
+                        onValueChange={(value) => handleInputChange('business_industry', value)}
+                      >
+                        <SelectTrigger className="border-cyan-500/20 focus:border-cyan-500">
+                          <SelectValue placeholder="Select industry" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="construction">Construction</SelectItem>
+                          <SelectItem value="real_estate">Real Estate</SelectItem>
+                          <SelectItem value="hospitality">Hospitality</SelectItem>
+                          <SelectItem value="retail">Retail</SelectItem>
+                          <SelectItem value="healthcare">Healthcare</SelectItem>
+                          <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                          <SelectItem value="transportation">Transportation</SelectItem>
+                          <SelectItem value="property_management">Property Management</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Tax ID */}
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor="tax_id" className="text-sm">Tax ID / EIN (Optional)</Label>
+                    <Input
+                      id="tax_id"
+                      value={formData.tax_id}
+                      onChange={(e) => handleInputChange('tax_id', e.target.value)}
+                      placeholder="XX-XXXXXXX"
+                      className="border-cyan-500/20 focus:border-cyan-500"
+                    />
+                  </div>
+
+                  {/* Business Contact */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="business_phone" className="text-sm">Business Phone</Label>
+                      <Input
+                        id="business_phone"
+                        type="tel"
+                        value={formData.business_phone}
+                        onChange={(e) => handleInputChange('business_phone', e.target.value)}
+                        placeholder="(555) 123-4567"
+                        className="border-cyan-500/20 focus:border-cyan-500"
+                      />
+                    </div>
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="business_email" className="text-sm">Business Email</Label>
+                      <Input
+                        id="business_email"
+                        type="email"
+                        value={formData.business_email}
+                        onChange={(e) => handleInputChange('business_email', e.target.value)}
+                        placeholder="info@company.com"
+                        className="border-cyan-500/20 focus:border-cyan-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Contact Person / Name Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="first_name" className="text-sm">First Name *</Label>
+                  <Label htmlFor="first_name" className="text-sm">
+                    {customerMode === 'business' ? 'Contact First Name' : 'First Name *'}
+                  </Label>
                   <Input
                     id="first_name"
                     value={formData.first_name}
                     onChange={(e) => handleInputChange('first_name', e.target.value)}
                     placeholder="John"
-                    required
+                    required={customerMode === 'residential'}
                     className="border-cyan-500/20 focus:border-cyan-500"
                   />
                 </div>
                 <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="last_name" className="text-sm">Last Name *</Label>
+                  <Label htmlFor="last_name" className="text-sm">
+                    {customerMode === 'business' ? 'Contact Last Name' : 'Last Name *'}
+                  </Label>
                   <Input
                     id="last_name"
                     value={formData.last_name}
                     onChange={(e) => handleInputChange('last_name', e.target.value)}
                     placeholder="Smith"
-                    required
+                    required={customerMode === 'residential'}
                     className="border-cyan-500/20 focus:border-cyan-500"
                   />
                 </div>
               </div>
 
-              {/* Contact Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="phone" className="text-sm">Phone</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="(555) 123-4567"
-                    className="border-cyan-500/20 focus:border-cyan-500"
-                  />
+              {/* Contact Row - Only show for residential or as secondary contact for business */}
+              {customerMode === 'residential' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor="phone" className="text-sm">Phone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      placeholder="(555) 123-4567"
+                      className="border-cyan-500/20 focus:border-cyan-500"
+                    />
+                  </div>
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor="email" className="text-sm">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      placeholder="john@example.com"
+                      className="border-cyan-500/20 focus:border-cyan-500"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="email" className="text-sm">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="john@example.com"
-                    className="border-cyan-500/20 focus:border-cyan-500"
-                  />
-                </div>
-              </div>
+              )}
 
               {/* Property Type & Preferred Contact */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
@@ -245,10 +409,20 @@ export default function PowerWashingCustomerCreate() {
                       <SelectValue placeholder="Select property type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="residential">Residential</SelectItem>
-                      <SelectItem value="commercial">Commercial</SelectItem>
-                      <SelectItem value="industrial">Industrial</SelectItem>
-                      <SelectItem value="fleet">Fleet</SelectItem>
+                      {customerMode === 'residential' ? (
+                        <>
+                          <SelectItem value="residential">Residential</SelectItem>
+                          <SelectItem value="hoa">HOA</SelectItem>
+                          <SelectItem value="multi_family">Multi-Family</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="commercial">Commercial</SelectItem>
+                          <SelectItem value="industrial">Industrial</SelectItem>
+                          <SelectItem value="fleet">Fleet</SelectItem>
+                          <SelectItem value="multi_location">Multi-Location</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
