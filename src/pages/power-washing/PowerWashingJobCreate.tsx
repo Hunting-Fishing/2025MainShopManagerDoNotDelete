@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { usePowerWashingServices, useCreatePowerWashingJob } from '@/hooks/usePowerWashing';
 import { useAuth } from '@/hooks/useAuth';
+import { useShopId } from '@/hooks/useShopId';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -75,23 +76,9 @@ export default function PowerWashingJobCreate() {
   const { data: services } = usePowerWashingServices();
   const createJob = useCreatePowerWashingJob();
   
-  const [shopId, setShopId] = useState<string | null>(null);
+  const { shopId, loading: shopLoading } = useShopId();
   const [customerMode, setCustomerMode] = useState<'existing' | 'new'>('existing');
   const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer | null>(null);
-  
-  // Fetch user's shop_id from profile
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .eq('user_id', user.id)
-        .single();
-      if (data?.shop_id) setShopId(data.shop_id);
-    };
-    fetchProfile();
-  }, [user]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -303,13 +290,21 @@ export default function PowerWashingJobCreate() {
                 </TabsList>
 
                 <TabsContent value="existing" className="mt-4">
-                  {shopId && (
+                  {shopLoading ? (
+                    <div className="flex items-center justify-center py-8 text-muted-foreground">
+                      <span className="animate-pulse">Loading customers...</span>
+                    </div>
+                  ) : shopId ? (
                     <CustomerSearchPicker
                       shopId={shopId}
                       selectedCustomer={selectedCustomer}
                       onSelectCustomer={handleCustomerSelect}
                       onCreateNewCustomer={() => setCustomerMode('new')}
                     />
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Unable to load customers. Please try refreshing.</p>
+                    </div>
                   )}
                 </TabsContent>
 
