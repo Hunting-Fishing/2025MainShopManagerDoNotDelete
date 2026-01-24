@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,7 @@ import {
   MapPin,
   UserPlus
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePowerWashingServices, useCreatePowerWashingJob } from '@/hooks/usePowerWashing';
 import { useAuth } from '@/hooks/useAuth';
 import { useShopId } from '@/hooks/useShopId';
@@ -72,6 +72,9 @@ interface SelectedCustomer {
 
 export default function PowerWashingJobCreate() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedCustomerId = searchParams.get('customer');
+  
   const { user } = useAuth();
   const { data: services } = usePowerWashingServices();
   const createJob = useCreatePowerWashingJob();
@@ -79,6 +82,7 @@ export default function PowerWashingJobCreate() {
   const { shopId, loading: shopLoading } = useShopId();
   const [customerMode, setCustomerMode] = useState<'existing' | 'new'>('existing');
   const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer | null>(null);
+  const [isLoadingPreselected, setIsLoadingPreselected] = useState(!!preselectedCustomerId);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -114,6 +118,47 @@ export default function PowerWashingJobCreate() {
     // Crew
     assignedCrew: [] as string[],
   });
+
+  // Fetch preselected customer from URL parameter
+  useEffect(() => {
+    const fetchPreselectedCustomer = async () => {
+      if (!preselectedCustomerId) {
+        setIsLoadingPreselected(false);
+        return;
+      }
+      if (!shopId) return; // Wait for shopId
+
+      setIsLoadingPreselected(true);
+
+      const { data: customer, error } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name, email, phone, company, address, city, state, postal_code, latitude, longitude')
+        .eq('id', preselectedCustomerId)
+        .eq('shop_id', shopId)
+        .maybeSingle();
+
+      if (customer && !error) {
+        setSelectedCustomer(customer);
+        // Auto-populate the property address fields
+        if (customer.address) {
+          setFormData(prev => ({
+            ...prev,
+            propertyAddress: customer.address || '',
+            propertyCity: customer.city || '',
+            propertyState: customer.state || '',
+            propertyZip: customer.postal_code || '',
+            propertyLatitude: customer.latitude,
+            propertyLongitude: customer.longitude,
+          }));
+        }
+      } else if (error) {
+        console.error('Failed to fetch preselected customer:', error);
+      }
+      setIsLoadingPreselected(false);
+    };
+
+    fetchPreselectedCustomer();
+  }, [preselectedCustomerId, shopId]);
 
   // Handle customer selection - auto-populate property address
   const handleCustomerSelect = (customer: SelectedCustomer | null) => {
@@ -293,9 +338,9 @@ export default function PowerWashingJobCreate() {
                 </TabsList>
 
                 <TabsContent value="existing" className="mt-4">
-                  {shopLoading ? (
+                  {shopLoading || isLoadingPreselected ? (
                     <div className="flex items-center justify-center py-8 text-muted-foreground">
-                      <span className="animate-pulse">Loading customers...</span>
+                      <span className="animate-pulse">Loading customer...</span>
                     </div>
                   ) : shopId ? (
                     <CustomerSearchPicker
