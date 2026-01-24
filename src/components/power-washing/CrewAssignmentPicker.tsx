@@ -135,29 +135,36 @@ export function CrewAssignmentPicker({
           return (
             <div
               key={employee.id}
-              className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-colors ${
+              className={`flex items-center gap-3 p-2 rounded-lg border transition-colors ${
                 isSelected 
                   ? 'border-primary bg-primary/5' 
                   : isDisabled 
                     ? 'opacity-50 cursor-not-allowed' 
                     : 'hover:bg-muted/50'
               }`}
-              onClick={() => !isDisabled && handleToggle(employee.id)}
             >
               <Checkbox 
                 checked={isSelected} 
-                disabled={isDisabled}
-                className="pointer-events-none"
+                disabled={!!isDisabled}
+                onCheckedChange={() => !isDisabled && handleToggle(employee.id)}
               />
-              <Avatar className="h-8 w-8">
-                <AvatarFallback>{getInitials(employee)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{getName(employee)}</p>
-                {employee.job_title && (
-                  <p className="text-xs text-muted-foreground capitalize">{employee.job_title}</p>
-                )}
-              </div>
+              <label 
+                className="flex-1 flex items-center gap-3 cursor-pointer min-w-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (!isDisabled) handleToggle(employee.id);
+                }}
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>{getInitials(employee)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{getName(employee)}</p>
+                  {employee.job_title && (
+                    <p className="text-xs text-muted-foreground capitalize">{employee.job_title}</p>
+                  )}
+                </div>
+              </label>
             </div>
           );
         })}

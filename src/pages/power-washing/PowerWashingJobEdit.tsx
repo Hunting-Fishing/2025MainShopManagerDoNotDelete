@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,7 +64,7 @@ export default function PowerWashingJobEdit() {
         customer_notes: job.customer_notes,
         internal_notes: job.internal_notes,
         special_instructions: job.special_instructions,
-        assigned_crew: job.assigned_crew,
+        assigned_crew: job.assigned_crew || [],
       });
       setFormInitialized(true);
     }
@@ -88,6 +88,12 @@ export default function PowerWashingJobEdit() {
   const updateField = (field: keyof PowerWashingJob, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Memoize crew array to prevent reference instability causing Checkbox infinite loops
+  const selectedCrewStable = useMemo(() => 
+    formData.assigned_crew || [], 
+    [formData.assigned_crew]
+  );
 
   // Block rendering until data is loaded AND form is initialized to prevent Select infinite loop
   if (jobsLoading || (job && !formInitialized)) {
@@ -252,7 +258,7 @@ export default function PowerWashingJobEdit() {
             <CardContent>
               <CrewAssignmentPicker
                 shopId={shopId}
-                selectedCrew={formData.assigned_crew || []}
+                selectedCrew={selectedCrewStable}
                 onCrewChange={(crew) => updateField('assigned_crew', crew)}
               />
             </CardContent>
