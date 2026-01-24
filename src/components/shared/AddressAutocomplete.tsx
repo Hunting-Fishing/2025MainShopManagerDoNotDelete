@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { MapPin, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface AddressResult {
   fullAddress: string;
@@ -24,16 +23,25 @@ interface AddressAutocompleteProps {
   disabled?: boolean;
 }
 
-interface MapboxFeature {
-  place_name: string;
-  text: string;
-  address?: string;
-  center: [number, number];
-  context?: Array<{
-    id: string;
-    text: string;
-    short_code?: string;
-  }>;
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  address: {
+    house_number?: string;
+    road?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+    state?: string;
+    province?: string;
+    postcode?: string;
+    country?: string;
+    country_code?: string;
+  };
 }
 
 export function AddressAutocomplete({
@@ -44,45 +52,37 @@ export function AddressAutocomplete({
   className,
   disabled = false,
 }: AddressAutocompleteProps) {
-  const [suggestions, setSuggestions] = useState<MapboxFeature[]>([]);
+  const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [noResults, setNoResults] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
 
-  const parseAddressContext = (feature: MapboxFeature): AddressResult => {
-    let city = '';
-    let state = '';
-    let postalCode = '';
-    let country = '';
-
-    feature.context?.forEach((ctx) => {
-      if (ctx.id.startsWith('place')) city = ctx.text;
-      if (ctx.id.startsWith('region')) {
-        state = ctx.short_code?.replace('US-', '') || ctx.text;
-      }
-      if (ctx.id.startsWith('postcode')) postalCode = ctx.text;
-      if (ctx.id.startsWith('country')) country = ctx.text;
-    });
-
-    // Build street address from text and address number
-    const streetAddress = feature.address 
-      ? `${feature.address} ${feature.text}` 
-      : feature.text;
-
+  const parseNominatimResult = (result: NominatimResult): AddressResult => {
+    const addr = result.address;
+    
+    // Build street address
+    const streetParts = [addr.house_number, addr.road].filter(Boolean);
+    const streetAddress = streetParts.join(' ') || result.display_name.split(',')[0];
+    
+    // Get city (Nominatim uses different fields depending on location)
+    const city = addr.city || addr.town || addr.village || addr.municipality || '';
+    
+    // Get state/province
+    const state = addr.state || addr.province || '';
+    
     return {
-      fullAddress: feature.place_name,
+      fullAddress: result.display_name,
       streetAddress,
       city,
       state,
-      postalCode,
-      country,
-      longitude: feature.center[0],
-      latitude: feature.center[1],
+      postalCode: addr.postcode || '',
+      country: addr.country || '',
+      latitude: parseFloat(result.lat),
+      longitude: parseFloat(result.lon),
     };
   };
 
@@ -90,50 +90,31 @@ export function AddressAutocomplete({
     if (query.length < 3) {
       setSuggestions([]);
       setNoResults(false);
-      setErrorMessage(null);
       return;
     }
 
     setIsLoading(true);
-    setErrorMessage(null);
     setNoResults(false);
     
     try {
-      const { data, error } = await supabase.functions.invoke('mapbox-geocode', {
-        body: { address: query },
-      });
+      // Nominatim API - free, no token required
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=us,ca`,
+        {
+          headers: {
+            'Accept-Language': 'en',
+          },
+        }
+      );
 
-      if (error) {
-        console.error('Geocoding error:', error);
-        setErrorMessage('Unable to search addresses. Please try again.');
-        setSuggestions([]);
-        setShowSuggestions(true);
-        return;
+      if (!response.ok) {
+        throw new Error('Address search failed');
       }
 
-      // Check for Mapbox API errors passed through from edge function
-      if (data?.error && data.error !== 'No results found') {
-        console.error('Mapbox API error:', data.error);
-        setErrorMessage(data.error);
-        setSuggestions([]);
-        setShowSuggestions(true);
-        return;
-      }
-
-      if (data?.results && data.results.length > 0) {
-        // Transform the results to match MapboxFeature structure
-        const features = data.results.map((result: any) => ({
-          place_name: result.placeName,
-          text: result.placeName.split(',')[0],
-          center: result.coordinates,
-          context: result.context ? [
-            result.context.city && { id: 'place.1', text: result.context.city },
-            result.context.state && { id: 'region.1', text: result.context.state, short_code: `US-${result.context.state}` },
-            result.context.postcode && { id: 'postcode.1', text: result.context.postcode },
-            result.context.country && { id: 'country.1', text: result.context.country },
-          ].filter(Boolean) : [],
-        }));
-        setSuggestions(features);
+      const results: NominatimResult[] = await response.json();
+      
+      if (results.length > 0) {
+        setSuggestions(results);
         setShowSuggestions(true);
         setNoResults(false);
       } else {
@@ -143,8 +124,8 @@ export function AddressAutocomplete({
       }
     } catch (error) {
       console.error('Geocoding error:', error);
-      setErrorMessage('Network error. Please check your connection.');
       setSuggestions([]);
+      setNoResults(true);
       setShowSuggestions(true);
     } finally {
       setIsLoading(false);
@@ -162,13 +143,13 @@ export function AddressAutocomplete({
     }
     debounceRef.current = setTimeout(() => {
       fetchSuggestions(newValue);
-    }, 300);
+    }, 400); // Slightly longer debounce for Nominatim rate limits
   };
 
-  const handleSelectSuggestion = (feature: MapboxFeature) => {
-    const result = parseAddressContext(feature);
-    onSelect(result);
-    onChange(result.streetAddress);
+  const handleSelectSuggestion = (result: NominatimResult) => {
+    const parsed = parseNominatimResult(result);
+    onSelect(parsed);
+    onChange(parsed.streetAddress);
     setShowSuggestions(false);
     setSuggestions([]);
   };
@@ -179,7 +160,10 @@ export function AddressAutocomplete({
       return;
     }
     
-    if (!showSuggestions || suggestions.length === 0) return;
+    if (!showSuggestions || suggestions.length === 0) {
+      // If Enter pressed with no suggestions showing, do nothing special
+      return;
+    }
 
     switch (e.key) {
       case 'ArrowDown':
@@ -237,6 +221,14 @@ export function AddressAutocomplete({
     };
   }, []);
 
+  // Format display text for suggestion
+  const formatSuggestionDisplay = (result: NominatimResult) => {
+    const parts = result.display_name.split(',');
+    const main = parts[0];
+    const secondary = parts.slice(1, 3).join(',').trim();
+    return { main, secondary };
+  };
+
   return (
     <div className="relative">
       <div className="relative">
@@ -268,39 +260,40 @@ export function AddressAutocomplete({
       {showSuggestions && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg"
+          className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg max-h-60 overflow-auto"
         >
-          {/* Error message */}
-          {errorMessage && (
-            <div className="px-4 py-3 text-sm text-destructive">
-              ⚠️ {errorMessage}
-            </div>
-          )}
-          
           {/* No results message */}
-          {noResults && !errorMessage && (
+          {noResults && suggestions.length === 0 && (
             <div className="px-4 py-3 text-sm text-muted-foreground">
               No address matches found. Try a more specific address.
             </div>
           )}
           
           {/* Suggestions list */}
-          {suggestions.map((feature, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => handleSelectSuggestion(feature)}
-              className={cn(
-                'w-full px-4 py-3 text-left text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md',
-                index === selectedIndex && 'bg-accent'
-              )}
-            >
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                <span className="line-clamp-2">{feature.place_name}</span>
-              </div>
-            </button>
-          ))}
+          {suggestions.map((result, index) => {
+            const { main, secondary } = formatSuggestionDisplay(result);
+            return (
+              <button
+                key={result.place_id}
+                type="button"
+                onClick={() => handleSelectSuggestion(result)}
+                className={cn(
+                  'w-full px-4 py-3 text-left text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md',
+                  index === selectedIndex && 'bg-accent'
+                )}
+              >
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-medium">{main}</div>
+                    {secondary && (
+                      <div className="text-xs text-muted-foreground">{secondary}</div>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
