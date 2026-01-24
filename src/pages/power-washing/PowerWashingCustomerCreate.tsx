@@ -22,7 +22,20 @@ export default function PowerWashingCustomerCreate() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { shopId, loading: shopIdLoading } = useShopId();
-  const { businessIndustries, addCustomIndustry } = useBusinessConstants();
+const { businessIndustries, addCustomIndustry } = useBusinessConstants();
+  
+  // Filter industries to show only Power Washing-relevant categories
+  const powerWashingRelevantIndustries = [
+    'strata_hoa', 'apartments', 'property_management', 'golf_course',
+    'sports_recreation', 'restaurant', 'hotel_motel', 'hospitality',
+    'shopping_center', 'gas_station', 'warehouse', 'office_building',
+    'school', 'church', 'government', 'medical', 'retail', 
+    'construction', 'car_wash', 'parking'
+  ];
+  
+  const filteredIndustries = businessIndustries.filter(
+    industry => powerWashingRelevantIndustries.includes(industry.value)
+  );
   const [createdCustomerId, setCreatedCustomerId] = useState<string | null>(null);
   const [customerMode, setCustomerMode] = useState<'residential' | 'business'>('residential');
   const [customIndustry, setCustomIndustry] = useState('');
@@ -309,7 +322,7 @@ export default function PowerWashingCustomerCreate() {
                           <SelectValue placeholder="Select industry" />
                         </SelectTrigger>
                         <SelectContent>
-                          {businessIndustries.map((industry) => (
+                          {filteredIndustries.map((industry) => (
                             <SelectItem key={industry.value} value={industry.value}>
                               {industry.label}
                             </SelectItem>
