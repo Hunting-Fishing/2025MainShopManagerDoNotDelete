@@ -9,9 +9,17 @@ import { PropertyAreaCard } from './PropertyAreaCard';
 import { AddPropertyAreaDialog } from './AddPropertyAreaDialog';
 import { toast } from 'sonner';
 
+interface CustomerAddress {
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+}
+
 interface PropertyAreasTabProps {
   customerId: string;
   shopId: string;
+  customerAddress?: CustomerAddress;
 }
 
 export interface PropertyArea {
@@ -51,7 +59,7 @@ export const AREA_TYPES = [
   { value: 'other', label: 'Other', icon: '📐' },
 ];
 
-export function PropertyAreasTab({ customerId, shopId }: PropertyAreasTabProps) {
+export function PropertyAreasTab({ customerId, shopId, customerAddress }: PropertyAreasTabProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingArea, setEditingArea] = useState<PropertyArea | null>(null);
   const queryClient = useQueryClient();
@@ -106,13 +114,28 @@ export function PropertyAreasTab({ customerId, shopId }: PropertyAreasTabProps) 
     setEditingArea(null);
   };
 
+  // Build formatted address string
+  const formattedAddress = customerAddress ? [
+    customerAddress.address,
+    customerAddress.city,
+    customerAddress.state,
+    customerAddress.postal_code
+  ].filter(Boolean).join(', ') : null;
+
   return (
     <Card>
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 md:p-6">
-        <CardTitle className="text-base md:text-lg flex items-center gap-2">
-          <Ruler className="h-5 w-5 text-cyan-600" />
-          Property Areas
-        </CardTitle>
+        <div>
+          <CardTitle className="text-base md:text-lg flex items-center gap-2">
+            <Ruler className="h-5 w-5 text-cyan-600" />
+            Property Areas
+          </CardTitle>
+          {formattedAddress && (
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              📍 {formattedAddress}
+            </p>
+          )}
+        </div>
         <Button 
           size="sm" 
           onClick={() => setIsDialogOpen(true)}
@@ -155,6 +178,7 @@ export function PropertyAreasTab({ customerId, shopId }: PropertyAreasTabProps) 
         customerId={customerId}
         shopId={shopId}
         editingArea={editingArea}
+        customerAddress={customerAddress}
       />
     </Card>
   );

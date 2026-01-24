@@ -18,12 +18,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PropertyArea, AREA_TYPES } from './PropertyAreasTab';
 
+interface CustomerAddress {
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+}
+
 interface AddPropertyAreaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customerId: string;
   shopId: string;
   editingArea?: PropertyArea | null;
+  customerAddress?: CustomerAddress;
 }
 
 export function AddPropertyAreaDialog({
@@ -31,7 +39,8 @@ export function AddPropertyAreaDialog({
   onOpenChange,
   customerId,
   shopId,
-  editingArea
+  editingArea,
+  customerAddress
 }: AddPropertyAreaDialogProps) {
   const queryClient = useQueryClient();
   const [showDimensions, setShowDimensions] = useState(false);
@@ -131,6 +140,14 @@ export function AddPropertyAreaDialog({
     createMutation.mutate(formData);
   };
 
+  // Build formatted address string
+  const formattedAddress = customerAddress ? [
+    customerAddress.address,
+    customerAddress.city,
+    customerAddress.state,
+    customerAddress.postal_code
+  ].filter(Boolean).join(', ') : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -139,6 +156,11 @@ export function AddPropertyAreaDialog({
             <Ruler className="h-5 w-5 text-cyan-600" />
             {editingArea ? 'Edit Property Area' : 'Add Property Area'}
           </DialogTitle>
+          {formattedAddress && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              📍 {formattedAddress}
+            </p>
+          )}
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
