@@ -11,6 +11,7 @@ import { Users, Save, Loader2, CheckCircle, Droplets, FileText, Home, Building2 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
+import { useBusinessConstants } from '@/hooks/useBusinessConstants';
 import { toast } from 'sonner';
 import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
 import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
@@ -21,8 +22,10 @@ export default function PowerWashingCustomerCreate() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { shopId, loading: shopIdLoading } = useShopId();
+  const { businessIndustries, addCustomIndustry } = useBusinessConstants();
   const [createdCustomerId, setCreatedCustomerId] = useState<string | null>(null);
   const [customerMode, setCustomerMode] = useState<'residential' | 'business'>('residential');
+  const [customIndustry, setCustomIndustry] = useState('');
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -59,6 +62,18 @@ export default function PowerWashingCustomerCreate() {
       
       const isBusiness = customerMode === 'business';
       
+      // Handle custom industry if "other" is selected
+      let finalIndustry = formData.business_industry;
+      if (isBusiness && formData.business_industry === 'other' && customIndustry.trim()) {
+        try {
+          finalIndustry = await addCustomIndustry(customIndustry.trim());
+        } catch (err) {
+          console.error('Failed to add custom industry:', err);
+          // Use custom name as key if saving fails
+          finalIndustry = customIndustry.trim().toLowerCase().replace(/\s+/g, '_');
+        }
+      }
+      
       const { data: customer, error } = await supabase
         .from('customers')
         .insert({
@@ -79,7 +94,7 @@ export default function PowerWashingCustomerCreate() {
           company: isBusiness ? formData.company : null,
           business_email: isBusiness ? formData.business_email : null,
           business_phone: isBusiness ? formData.business_phone : null,
-          business_industry: isBusiness ? formData.business_industry : null,
+          business_industry: isBusiness ? finalIndustry : null,
           tax_id: isBusiness ? formData.tax_id : null,
           is_fleet: formData.property_type === 'fleet'
         })
@@ -111,6 +126,11 @@ export default function PowerWashingCustomerCreate() {
     
     if (customerMode === 'residential' && (!formData.first_name.trim() || !formData.last_name.trim())) {
       toast.error('First name and last name are required');
+      return;
+    }
+    
+    if (customerMode === 'business' && formData.business_industry === 'other' && !customIndustry.trim()) {
+      toast.error('Please enter a custom industry name');
       return;
     }
     
@@ -280,23 +300,38 @@ export default function PowerWashingCustomerCreate() {
                       <Label htmlFor="business_industry" className="text-sm">Industry</Label>
                       <Select 
                         value={formData.business_industry} 
-                        onValueChange={(value) => handleInputChange('business_industry', value)}
+                        onValueChange={(value) => {
+                          handleInputChange('business_industry', value);
+                          if (value !== 'other') setCustomIndustry('');
+                        }}
                       >
                         <SelectTrigger className="border-cyan-500/20 focus:border-cyan-500">
                           <SelectValue placeholder="Select industry" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="construction">Construction</SelectItem>
-                          <SelectItem value="real_estate">Real Estate</SelectItem>
-                          <SelectItem value="hospitality">Hospitality</SelectItem>
-                          <SelectItem value="retail">Retail</SelectItem>
-                          <SelectItem value="healthcare">Healthcare</SelectItem>
-                          <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                          <SelectItem value="transportation">Transportation</SelectItem>
-                          <SelectItem value="property_management">Property Management</SelectItem>
+                          {businessIndustries.map((industry) => (
+                            <SelectItem key={industry.value} value={industry.value}>
+                              {industry.label}
+                            </SelectItem>
+                          ))}
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
+                      
+                      {/* Custom Industry Input - shown when "Other" is selected */}
+                      {formData.business_industry === 'other' && (
+                        <div className="mt-2">
+                          <Input
+                            value={customIndustry}
+                            onChange={(e) => setCustomIndustry(e.target.value)}
+                            placeholder="Enter new industry name"
+                            className="border-cyan-500/20 focus:border-cyan-500"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            This will be added to the industry list for future use
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
