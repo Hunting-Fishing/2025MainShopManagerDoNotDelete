@@ -63,7 +63,8 @@ export default function PowerWashingCustomerCreate() {
           latitude: formData.latitude,
           longitude: formData.longitude,
           notes: formData.notes || null,
-          customer_type: formData.property_type
+          business_type: formData.property_type,
+          communication_preference: formData.preferred_contact
         })
         .select()
         .single();
