@@ -15,7 +15,9 @@ import {
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { usePowerWashingJobs, useUpdatePowerWashingJob, PowerWashingJob } from '@/hooks/usePowerWashing';
 import { CrewAssignmentPicker } from '@/components/power-washing/CrewAssignmentPicker';
+import { PropertyAreaPicker } from '@/components/power-washing/PropertyAreaPicker';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 const PROPERTY_TYPES = [
   { value: 'residential', label: 'Residential' },
@@ -138,6 +140,22 @@ export default function PowerWashingJobEdit() {
             <CardTitle>Property Information</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Property Area Picker - use saved customer areas */}
+            {job.customer_id && (
+              <div className="md:col-span-2">
+                <PropertyAreaPicker
+                  customerId={job.customer_id}
+                  onSelectArea={(area) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      square_footage: area.square_footage,
+                      property_type: area.area_type || prev.property_type,
+                    }));
+                    toast.success(`Applied ${area.label || 'saved area'}: ${area.square_footage.toLocaleString()} sqft`);
+                  }}
+                />
+              </div>
+            )}
             <div>
               <Label>Property Type</Label>
               <Select 
