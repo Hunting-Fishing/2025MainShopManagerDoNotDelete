@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,31 +6,69 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   User, 
   Phone, 
   Mail, 
   MapPin, 
-  Droplets, 
   FileText, 
-  Calendar,
-  CreditCard,
   Edit,
   AlertTriangle,
   Plus,
   Briefcase,
-  Receipt
+  Receipt,
+  Save,
+  X,
+  History,
+  Clock,
+  Loader2,
+  Building,
+  MessageSquare
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
 import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
-// Edit dialog will use inline editing or navigation to edit page
+import { toast } from 'sonner';
+
+interface EditData {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  notes: string;
+  business_type: string;
+  communication_preference: string;
+}
 
 export default function PowerWashingCustomerDetail() {
   const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState<EditData>({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    notes: '',
+    business_type: '',
+    communication_preference: ''
+  });
 
   // Fetch customer details
   const { data: customer, isLoading: customerLoading, refetch: refetchCustomer } = useQuery({
@@ -46,6 +84,84 @@ export default function PowerWashingCustomerDetail() {
       return data;
     },
     enabled: !!customerId
+  });
+
+  // Sync edit data when customer loads
+  useEffect(() => {
+    if (customer) {
+      setEditData({
+        first_name: customer.first_name || '',
+        last_name: customer.last_name || '',
+        phone: customer.phone || '',
+        email: customer.email || '',
+        address: customer.address || '',
+        city: customer.city || '',
+        state: customer.state || '',
+        postal_code: customer.postal_code || '',
+        notes: customer.notes || '',
+        business_type: customer.business_type || '',
+        communication_preference: customer.communication_preference || ''
+      });
+    }
+  }, [customer]);
+
+  // Update customer mutation
+  const updateMutation = useMutation({
+    mutationFn: async (data: EditData) => {
+      // Get old values for audit trail
+      const oldValues = {
+        first_name: customer?.first_name,
+        last_name: customer?.last_name,
+        phone: customer?.phone,
+        email: customer?.email,
+        address: customer?.address,
+        city: customer?.city,
+        state: customer?.state,
+        postal_code: customer?.postal_code,
+        notes: customer?.notes,
+        business_type: customer?.business_type,
+        communication_preference: customer?.communication_preference
+      };
+
+      const { error } = await supabase
+        .from('customers')
+        .update({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          phone: data.phone || null,
+          email: data.email || null,
+          address: data.address || null,
+          city: data.city || null,
+          state: data.state || null,
+          postal_code: data.postal_code || null,
+          notes: data.notes || null,
+          business_type: data.business_type || null,
+          communication_preference: data.communication_preference || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customerId);
+
+      if (error) throw error;
+
+      // Log to audit trail
+      await supabase.from('audit_trail').insert([{
+        resource_type: 'customers',
+        resource_id: customerId,
+        action: 'UPDATE',
+        old_values: JSON.parse(JSON.stringify(oldValues)),
+        new_values: JSON.parse(JSON.stringify(data))
+      }]);
+    },
+    onSuccess: () => {
+      toast.success('Customer updated successfully');
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['power-washing-customer', customerId] });
+      queryClient.invalidateQueries({ queryKey: ['customer-history', customerId] });
+    },
+    onError: (error) => {
+      console.error('Failed to update customer:', error);
+      toast.error('Failed to update customer');
+    }
   });
 
   // Fetch customer's power washing jobs
@@ -64,7 +180,7 @@ export default function PowerWashingCustomerDetail() {
     enabled: !!customerId
   });
 
-  // Fetch customer's quotes (power_washing_quotes uses customer_email, not customer_id)
+  // Fetch customer's quotes
   const { data: quotes, isLoading: quotesLoading } = useQuery({
     queryKey: ['power-washing-customer-quotes', customerId, customer?.email],
     queryFn: async () => {
@@ -96,6 +212,50 @@ export default function PowerWashingCustomerDetail() {
     },
     enabled: !!customerId
   });
+
+  // Fetch customer edit history
+  const { data: history, isLoading: historyLoading } = useQuery({
+    queryKey: ['customer-history', customerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('audit_trail')
+        .select('*')
+        .eq('resource_type', 'customers')
+        .eq('resource_id', customerId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!customerId
+  });
+
+  const handleSave = () => {
+    if (!editData.first_name || !editData.last_name) {
+      toast.error('First name and last name are required');
+      return;
+    }
+    updateMutation.mutate(editData);
+  };
+
+  const handleCancel = () => {
+    if (customer) {
+      setEditData({
+        first_name: customer.first_name || '',
+        last_name: customer.last_name || '',
+        phone: customer.phone || '',
+        email: customer.email || '',
+        address: customer.address || '',
+        city: customer.city || '',
+        state: customer.state || '',
+        postal_code: customer.postal_code || '',
+        notes: customer.notes || '',
+        business_type: customer.business_type || '',
+        communication_preference: customer.communication_preference || ''
+      });
+    }
+    setIsEditing(false);
+  };
 
   if (!customerId) {
     return (
@@ -143,6 +303,29 @@ export default function PowerWashingCustomerDetail() {
     }
   };
 
+  const formatFieldName = (field: string) => {
+    return field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const getChangedFields = (oldValues: Record<string, unknown>, newValues: Record<string, unknown>) => {
+    const changes: { field: string; old: string; new: string }[] = [];
+    const allKeys = new Set([...Object.keys(oldValues || {}), ...Object.keys(newValues || {})]);
+    
+    allKeys.forEach(key => {
+      const oldVal = oldValues?.[key];
+      const newVal = newValues?.[key];
+      if (oldVal !== newVal) {
+        changes.push({
+          field: formatFieldName(key),
+          old: String(oldVal || 'Empty'),
+          new: String(newVal || 'Empty')
+        });
+      }
+    });
+    
+    return changes;
+  };
+
   return (
     <MobilePageContainer>
       <MobilePageHeader
@@ -150,46 +333,233 @@ export default function PowerWashingCustomerDetail() {
         subtitle="Customer Details"
         icon={<User className="h-6 w-6 md:h-8 md:w-8 text-cyan-600 shrink-0" />}
         onBack={() => navigate('/power-washing/customers')}
-        actions={
-          <Button onClick={() => navigate(`/customers/${customerId}/edit`)} className="bg-cyan-600 hover:bg-cyan-700" size="sm">
-            <Edit className="h-4 w-4 mr-1 md:mr-2" />
-            <span className="hidden sm:inline">Edit </span>Customer
-          </Button>
-        }
       />
 
-      {/* Customer Info Card */}
+      {/* Customer Info Card with Inline Editing */}
       <Card className="mb-4 md:mb-6">
-        <CardHeader className="p-3 md:p-6">
+        <CardHeader className="p-3 md:p-6 flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base md:text-lg">
             <User className="h-4 w-4 md:h-5 md:w-5 text-cyan-600" />
             Contact Information
           </CardTitle>
+          {!isEditing ? (
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCancel}
+                disabled={updateMutation.isPending}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Cancel
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={handleSave}
+                disabled={updateMutation.isPending}
+                className="bg-cyan-600 hover:bg-cyan-700"
+              >
+                {updateMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-1" />
+                )}
+                Save
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-            {customer.phone && (
-              <div className="flex items-center gap-2 min-w-0">
-                <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm md:text-base truncate">{customer.phone}</span>
+          {isEditing ? (
+            <div className="space-y-4">
+              {/* Name Fields */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="first_name">First Name *</Label>
+                  <Input
+                    id="first_name"
+                    value={editData.first_name}
+                    onChange={(e) => setEditData(prev => ({ ...prev, first_name: e.target.value }))}
+                    placeholder="First name"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="last_name">Last Name *</Label>
+                  <Input
+                    id="last_name"
+                    value={editData.last_name}
+                    onChange={(e) => setEditData(prev => ({ ...prev, last_name: e.target.value }))}
+                    placeholder="Last name"
+                  />
+                </div>
               </div>
-            )}
-            {customer.email && (
-              <div className="flex items-center gap-2 min-w-0">
-                <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm md:text-base truncate">{customer.email}</span>
+
+              {/* Contact Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    value={editData.phone}
+                    onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={editData.email}
+                    onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="email@example.com"
+                  />
+                </div>
               </div>
-            )}
-            {customer.address && (
-              <div className="flex items-start gap-2 sm:col-span-2 lg:col-span-1 min-w-0">
-                <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                <span className="text-sm md:text-base break-words">{customer.address}</span>
+
+              {/* Address Fields */}
+              <div className="space-y-1.5">
+                <Label htmlFor="address">Street Address</Label>
+                <Input
+                  id="address"
+                  value={editData.address}
+                  onChange={(e) => setEditData(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="123 Main St"
+                />
               </div>
-            )}
-          </div>
-          {customer.notes && (
-            <div className="mt-3 md:mt-4 p-2 md:p-3 bg-muted/50 rounded-lg">
-              <p className="text-xs md:text-sm text-muted-foreground">{customer.notes}</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={editData.city}
+                    onChange={(e) => setEditData(prev => ({ ...prev, city: e.target.value }))}
+                    placeholder="City"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    value={editData.state}
+                    onChange={(e) => setEditData(prev => ({ ...prev, state: e.target.value }))}
+                    placeholder="TX"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="postal_code">ZIP</Label>
+                  <Input
+                    id="postal_code"
+                    value={editData.postal_code}
+                    onChange={(e) => setEditData(prev => ({ ...prev, postal_code: e.target.value }))}
+                    placeholder="12345"
+                  />
+                </div>
+              </div>
+
+              {/* Property Type and Contact Preference */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="business_type">Property Type</Label>
+                  <Select
+                    value={editData.business_type}
+                    onValueChange={(value) => setEditData(prev => ({ ...prev, business_type: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="residential">Residential</SelectItem>
+                      <SelectItem value="commercial">Commercial</SelectItem>
+                      <SelectItem value="industrial">Industrial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="communication_preference">Preferred Contact</Label>
+                  <Select
+                    value={editData.communication_preference}
+                    onValueChange={(value) => setEditData(prev => ({ ...prev, communication_preference: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="phone">Phone</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="text">Text</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1.5">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={editData.notes}
+                  onChange={(e) => setEditData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Additional notes about the customer..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Display Mode - Always show fields with placeholders */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className={`text-sm md:text-base truncate ${!customer.phone ? 'text-muted-foreground italic' : ''}`}>
+                    {customer.phone || 'No phone number'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className={`text-sm md:text-base truncate ${!customer.email ? 'text-muted-foreground italic' : ''}`}>
+                    {customer.email || 'No email address'}
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 sm:col-span-2 lg:col-span-1 min-w-0">
+                  <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <span className={`text-sm md:text-base break-words ${!customer.address ? 'text-muted-foreground italic' : ''}`}>
+                    {customer.address 
+                      ? `${customer.address}${customer.city ? `, ${customer.city}` : ''}${customer.state ? `, ${customer.state}` : ''} ${customer.postal_code || ''}`
+                      : 'No address'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Property Type and Preferred Contact */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Building className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-muted-foreground">Property:</span>
+                  <span className={`text-sm md:text-base capitalize ${!customer.business_type ? 'text-muted-foreground italic' : ''}`}>
+                    {customer.business_type || 'Not specified'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 min-w-0">
+                  <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-muted-foreground">Contact:</span>
+                  <span className={`text-sm md:text-base capitalize ${!customer.communication_preference ? 'text-muted-foreground italic' : ''}`}>
+                    {customer.communication_preference || 'Not specified'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="mt-3 md:mt-4 p-2 md:p-3 bg-muted/50 rounded-lg">
+                <p className={`text-xs md:text-sm ${!customer.notes ? 'text-muted-foreground italic' : 'text-muted-foreground'}`}>
+                  {customer.notes || 'No notes added'}
+                </p>
+              </div>
             </div>
           )}
         </CardContent>
@@ -212,6 +582,11 @@ export default function PowerWashingCustomerDetail() {
             <Receipt className="h-3 w-3 md:h-4 md:w-4" />
             <span className="hidden sm:inline">Invoices</span>
             <span>({invoices?.length || 0})</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex-shrink-0 gap-1 px-2 md:px-3 text-xs md:text-sm">
+            <History className="h-3 w-3 md:h-4 md:w-4" />
+            <span className="hidden sm:inline">History</span>
+            <span>({history?.length || 0})</span>
           </TabsTrigger>
         </TabsList>
 
@@ -350,6 +725,70 @@ export default function PowerWashingCustomerDetail() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* History Tab */}
+        <TabsContent value="history">
+          <Card>
+            <CardHeader className="p-3 md:p-6">
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <History className="h-4 w-4 md:h-5 md:w-5 text-cyan-600" />
+                Edit History
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              {historyLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full" />)}
+                </div>
+              ) : history?.length === 0 ? (
+                <p className="text-muted-foreground text-center py-6 md:py-8 text-sm md:text-base">
+                  No edit history found
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {history?.map((entry) => {
+                    const changes = getChangedFields(
+                      entry.old_values as Record<string, unknown> || {}, 
+                      entry.new_values as Record<string, unknown> || {}
+                    );
+                    
+                    return (
+                      <div 
+                        key={entry.id}
+                        className="p-3 md:p-4 bg-muted/50 rounded-lg border-l-4 border-cyan-500"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            {entry.action}
+                          </Badge>
+                        </div>
+                        
+                        {changes.length > 0 ? (
+                          <div className="space-y-1 mt-2">
+                            {changes.map((change, idx) => (
+                              <div key={idx} className="text-xs md:text-sm">
+                                <span className="font-medium">{change.field}:</span>{' '}
+                                <span className="text-red-500 line-through">{change.old}</span>{' '}
+                                <span className="text-muted-foreground">→</span>{' '}
+                                <span className="text-green-600">{change.new}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Record created</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
