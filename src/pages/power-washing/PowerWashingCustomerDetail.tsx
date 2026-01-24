@@ -27,8 +27,10 @@ import {
   Clock,
   Loader2,
   Building,
-  MessageSquare
+  MessageSquare,
+  ExternalLink
 } from 'lucide-react';
+import { MiniMapPreview } from '@/components/shared/MiniMapPreview';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -559,6 +561,41 @@ export default function PowerWashingCustomerDetail() {
                 <p className={`text-xs md:text-sm ${!customer.notes ? 'text-muted-foreground italic' : 'text-muted-foreground'}`}>
                   {customer.notes || 'No notes added'}
                 </p>
+              </div>
+
+              {/* Location Map */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-cyan-600" />
+                    Location
+                  </h4>
+                  {(customer.latitude && customer.longitude) && (
+                    <a
+                      href={`https://www.google.com/maps?q=${customer.latitude},${customer.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-cyan-600 hover:text-cyan-700 flex items-center gap-1"
+                    >
+                      Open in Maps
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+                {customer.latitude && customer.longitude ? (
+                  <MiniMapPreview
+                    latitude={customer.latitude}
+                    longitude={customer.longitude}
+                    draggable={false}
+                    className="h-[200px]"
+                  />
+                ) : (
+                  <div className="h-[120px] bg-muted/50 rounded-lg flex flex-col items-center justify-center gap-2">
+                    <MapPin className="h-6 w-6 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground italic">No location captured</p>
+                    <p className="text-xs text-muted-foreground">Edit address to capture location</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
