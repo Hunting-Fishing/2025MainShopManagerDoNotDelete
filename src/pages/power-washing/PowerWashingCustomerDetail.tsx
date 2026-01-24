@@ -31,6 +31,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { MiniMapPreview } from '@/components/shared/MiniMapPreview';
+import { AddressAutocomplete, AddressResult } from '@/components/shared/AddressAutocomplete';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -50,6 +51,8 @@ interface EditData {
   notes: string;
   business_type: string;
   communication_preference: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export default function PowerWashingCustomerDetail() {
@@ -69,7 +72,9 @@ export default function PowerWashingCustomerDetail() {
     postal_code: '',
     notes: '',
     business_type: '',
-    communication_preference: ''
+    communication_preference: '',
+    latitude: null,
+    longitude: null
   });
 
   // Fetch customer details
@@ -102,10 +107,25 @@ export default function PowerWashingCustomerDetail() {
         postal_code: customer.postal_code || '',
         notes: customer.notes || '',
         business_type: customer.business_type || '',
-        communication_preference: customer.communication_preference || ''
+        communication_preference: customer.communication_preference || '',
+        latitude: customer.latitude || null,
+        longitude: customer.longitude || null
       });
     }
   }, [customer]);
+
+  // Handle address selection from autocomplete
+  const handleAddressSelect = (result: AddressResult) => {
+    setEditData(prev => ({
+      ...prev,
+      address: result.streetAddress,
+      city: result.city,
+      state: result.state,
+      postal_code: result.postalCode,
+      latitude: result.latitude,
+      longitude: result.longitude,
+    }));
+  };
 
   // Update customer mutation
   const updateMutation = useMutation({
@@ -122,7 +142,9 @@ export default function PowerWashingCustomerDetail() {
         postal_code: customer?.postal_code,
         notes: customer?.notes,
         business_type: customer?.business_type,
-        communication_preference: customer?.communication_preference
+        communication_preference: customer?.communication_preference,
+        latitude: customer?.latitude,
+        longitude: customer?.longitude
       };
 
       const { error } = await supabase
@@ -139,6 +161,8 @@ export default function PowerWashingCustomerDetail() {
           notes: data.notes || null,
           business_type: data.business_type || null,
           communication_preference: data.communication_preference || null,
+          latitude: data.latitude,
+          longitude: data.longitude,
           updated_at: new Date().toISOString()
         })
         .eq('id', customerId);
@@ -253,7 +277,9 @@ export default function PowerWashingCustomerDetail() {
         postal_code: customer.postal_code || '',
         notes: customer.notes || '',
         business_type: customer.business_type || '',
-        communication_preference: customer.communication_preference || ''
+        communication_preference: customer.communication_preference || '',
+        latitude: customer.latitude || null,
+        longitude: customer.longitude || null
       });
     }
     setIsEditing(false);
@@ -430,14 +456,15 @@ export default function PowerWashingCustomerDetail() {
                 </div>
               </div>
 
-              {/* Address Fields */}
+              {/* Address Fields with Autocomplete */}
               <div className="space-y-1.5">
                 <Label htmlFor="address">Street Address</Label>
-                <Input
-                  id="address"
+                <AddressAutocomplete
                   value={editData.address}
-                  onChange={(e) => setEditData(prev => ({ ...prev, address: e.target.value }))}
-                  placeholder="123 Main St"
+                  onChange={(value) => setEditData(prev => ({ ...prev, address: value }))}
+                  onSelect={handleAddressSelect}
+                  placeholder="Start typing an address..."
+                  className="border-cyan-500/20 focus:border-cyan-500"
                 />
               </div>
               <div className="grid grid-cols-3 gap-3">
@@ -469,6 +496,25 @@ export default function PowerWashingCustomerDetail() {
                   />
                 </div>
               </div>
+
+              {/* Map Preview in Edit Mode */}
+              {editData.latitude && editData.longitude && (
+                <div className="space-y-2">
+                  <Label>Location Preview</Label>
+                  <MiniMapPreview
+                    latitude={editData.latitude}
+                    longitude={editData.longitude}
+                    draggable={true}
+                    onLocationChange={(lat, lng) => setEditData(prev => ({
+                      ...prev,
+                      latitude: lat,
+                      longitude: lng
+                    }))}
+                    className="h-[180px]"
+                  />
+                  <p className="text-xs text-muted-foreground">Drag the pin to adjust the exact location</p>
+                </div>
+              )}
 
               {/* Property Type and Contact Preference */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
