@@ -22,6 +22,8 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Prevent duplicate React instances and reduce memory usage
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "xlsx"],
   },
   // Force rebuild dependencies to clear theme context cache
   optimizeDeps: {
