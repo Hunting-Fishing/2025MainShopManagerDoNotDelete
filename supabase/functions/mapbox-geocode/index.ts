@@ -45,7 +45,21 @@ serve(async (req) => {
     const response = await fetch(url);
     const data = await response.json();
     
+    // Check for Mapbox API errors (invalid token, missing scopes, restrictions)
+    if (!response.ok || data.message) {
+      console.error(`Mapbox API error (${response.status}):`, data.message || 'Unknown error');
+      return new Response(
+        JSON.stringify({ 
+          error: data.message || `Mapbox API error: ${response.status}`, 
+          results: [],
+          status: response.status 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     if (!data.features || data.features.length === 0) {
+      console.log('Mapbox returned 0 features for query');
       return new Response(
         JSON.stringify({ error: 'No results found', results: [] }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

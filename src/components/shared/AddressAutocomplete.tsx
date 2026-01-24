@@ -48,6 +48,8 @@ export function AddressAutocomplete({
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [noResults, setNoResults] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
@@ -87,10 +89,15 @@ export function AddressAutocomplete({
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.length < 3) {
       setSuggestions([]);
+      setNoResults(false);
+      setErrorMessage(null);
       return;
     }
 
     setIsLoading(true);
+    setErrorMessage(null);
+    setNoResults(false);
+    
     try {
       const { data, error } = await supabase.functions.invoke('mapbox-geocode', {
         body: { address: query },
@@ -98,11 +105,22 @@ export function AddressAutocomplete({
 
       if (error) {
         console.error('Geocoding error:', error);
+        setErrorMessage('Unable to search addresses. Please try again.');
         setSuggestions([]);
+        setShowSuggestions(true);
         return;
       }
 
-      if (data?.results) {
+      // Check for Mapbox API errors passed through from edge function
+      if (data?.error && data.error !== 'No results found') {
+        console.error('Mapbox API error:', data.error);
+        setErrorMessage(data.error);
+        setSuggestions([]);
+        setShowSuggestions(true);
+        return;
+      }
+
+      if (data?.results && data.results.length > 0) {
         // Transform the results to match MapboxFeature structure
         const features = data.results.map((result: any) => ({
           place_name: result.placeName,
@@ -116,11 +134,18 @@ export function AddressAutocomplete({
           ].filter(Boolean) : [],
         }));
         setSuggestions(features);
-        setShowSuggestions(features.length > 0);
+        setShowSuggestions(true);
+        setNoResults(false);
+      } else {
+        setSuggestions([]);
+        setNoResults(true);
+        setShowSuggestions(true);
       }
     } catch (error) {
       console.error('Geocoding error:', error);
+      setErrorMessage('Network error. Please check your connection.');
       setSuggestions([]);
+      setShowSuggestions(true);
     } finally {
       setIsLoading(false);
     }
@@ -149,6 +174,11 @@ export function AddressAutocomplete({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      return;
+    }
+    
     if (!showSuggestions || suggestions.length === 0) return;
 
     switch (e.key) {
@@ -164,12 +194,12 @@ export function AddressAutocomplete({
         break;
       case 'Enter':
         e.preventDefault();
+        // Select the highlighted item, or the first suggestion if none selected
         if (selectedIndex >= 0) {
           handleSelectSuggestion(suggestions[selectedIndex]);
+        } else if (suggestions.length > 0) {
+          handleSelectSuggestion(suggestions[0]);
         }
-        break;
-      case 'Escape':
-        setShowSuggestions(false);
         break;
     }
   };
@@ -235,11 +265,26 @@ export function AddressAutocomplete({
         )}
       </div>
 
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && (
         <div
           ref={suggestionsRef}
           className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg"
         >
+          {/* Error message */}
+          {errorMessage && (
+            <div className="px-4 py-3 text-sm text-destructive">
+              ⚠️ {errorMessage}
+            </div>
+          )}
+          
+          {/* No results message */}
+          {noResults && !errorMessage && (
+            <div className="px-4 py-3 text-sm text-muted-foreground">
+              No address matches found. Try a more specific address.
+            </div>
+          )}
+          
+          {/* Suggestions list */}
           {suggestions.map((feature, index) => (
             <button
               key={index}
