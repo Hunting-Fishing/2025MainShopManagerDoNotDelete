@@ -33,14 +33,21 @@ export interface PropertyArea {
 
 export const AREA_TYPES = [
   { value: 'driveway', label: 'Driveway', icon: '🚗' },
+  { value: 'parking_lot', label: 'Parking Lot', icon: '🅿️' },
   { value: 'roof', label: 'Roof', icon: '🏠' },
+  { value: 'house', label: 'House/Building', icon: '🏡' },
+  { value: 'commercial_building', label: 'Commercial Building', icon: '🏢' },
   { value: 'deck', label: 'Deck/Patio', icon: '🪵' },
   { value: 'fence', label: 'Fence', icon: '🪴' },
-  { value: 'exterior', label: 'Exterior Walls', icon: '🏢' },
+  { value: 'exterior', label: 'Exterior Walls', icon: '🧱' },
   { value: 'sidewalk', label: 'Sidewalk', icon: '🚶' },
   { value: 'shop', label: 'Shop/Warehouse', icon: '🏭' },
   { value: 'garage', label: 'Garage', icon: '🚙' },
   { value: 'pool_deck', label: 'Pool Deck', icon: '🏊' },
+  { value: 'concrete_pad', label: 'Concrete Pad', icon: '⬜' },
+  { value: 'porch', label: 'Porch/Entry', icon: '🚪' },
+  { value: 'awning', label: 'Awning/Canopy', icon: '☂️' },
+  { value: 'gutter', label: 'Gutters', icon: '🌧️' },
   { value: 'other', label: 'Other', icon: '📐' },
 ];
 
