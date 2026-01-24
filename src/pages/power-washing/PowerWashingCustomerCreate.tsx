@@ -19,7 +19,7 @@ import { MiniMapPreview } from '@/components/shared/MiniMapPreview';
 export default function PowerWashingCustomerCreate() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { shopId } = useShopId();
+  const { shopId, loading: shopIdLoading } = useShopId();
   const [createdCustomerId, setCreatedCustomerId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
@@ -347,9 +347,14 @@ export default function PowerWashingCustomerCreate() {
             <Button 
               type="submit" 
               className="bg-cyan-600 hover:bg-cyan-700 w-full sm:w-auto"
-              disabled={createMutation.isPending}
+              disabled={createMutation.isPending || shopIdLoading || !shopId}
             >
-              {createMutation.isPending ? (
+              {shopIdLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : createMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Creating...

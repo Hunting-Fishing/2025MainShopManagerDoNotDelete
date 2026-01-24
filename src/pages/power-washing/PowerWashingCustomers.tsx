@@ -23,15 +23,19 @@ import { FadeIn, SlideIn } from '@/components/layout/AnimatedPage';
 import { AnimatedList } from '@/components/ui/animated-list';
 import { NumberTicker } from '@/components/ui/number-ticker';
 import { motion } from 'framer-motion';
+import { useShopId } from '@/hooks/useShopId';
 
 export default function PowerWashingCustomers() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const { shopId } = useShopId();
 
   // Fetch customers with their power washing jobs count
   const { data: customers, isLoading } = useQuery({
-    queryKey: ['power-washing-customers'],
+    queryKey: ['power-washing-customers', shopId],
     queryFn: async () => {
+      if (!shopId) return [];
+      
       const { data, error } = await supabase
         .from('customers')
         .select(`
@@ -44,11 +48,13 @@ export default function PowerWashingCustomers() {
           created_at,
           power_washing_jobs(count)
         `)
+        .eq('shop_id', shopId)
         .order('first_name');
       
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: !!shopId
   });
 
   const filteredCustomers = customers?.filter(c => {
