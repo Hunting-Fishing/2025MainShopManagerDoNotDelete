@@ -33,7 +33,7 @@ serve(async (req) => {
     } else if (address) {
       // Forward geocode: address to coordinates with autocomplete support
       const encodedAddress = encodeURIComponent(address);
-      url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${MAPBOX_TOKEN}&limit=5&country=US&autocomplete=true&types=address,place,poi`;
+      url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${MAPBOX_TOKEN}&limit=5&country=US,CA&autocomplete=true&types=address,place,poi`;
       console.log(`Forward geocoding (autocomplete): ${address}`);
     } else {
       return new Response(
