@@ -1,4 +1,4 @@
-
+import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import type { MappedServiceData, ImportResult, ProcessedServiceData } from '@/types/service';
 
@@ -7,7 +7,6 @@ export async function processExcelFile(file: File, sectorName: string): Promise<
     console.log(`Processing Excel file: ${file.name} for sector: ${sectorName}`);
     
     // Read the Excel file
-    const XLSX = await import('xlsx');
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
     
@@ -60,7 +59,6 @@ export async function processExcelFileFromStorage(filePath: string, sectorName: 
     }
     
     // Read the Excel file
-    const XLSX = await import('xlsx');
     const buffer = await fileData.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
     
