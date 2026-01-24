@@ -741,7 +741,16 @@ export default function PowerWashingCustomerDetail() {
         {/* Property Areas Tab */}
         <TabsContent value="property">
           {customerId && shopId && (
-            <PropertyAreasTab customerId={customerId} shopId={shopId} />
+            <PropertyAreasTab 
+              customerId={customerId} 
+              shopId={shopId}
+              customerAddress={{
+                address: customer?.address,
+                city: customer?.city,
+                state: customer?.state,
+                postal_code: customer?.postal_code
+              }}
+            />
           )}
         </TabsContent>
 
