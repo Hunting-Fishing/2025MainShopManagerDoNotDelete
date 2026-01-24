@@ -328,11 +328,17 @@ export default function PowerWashingCustomerDetail() {
     return changes;
   };
 
+  // Get display name - prioritize company for business accounts
+  const displayName = customer.company || `${customer.first_name} ${customer.last_name}`;
+  const contactName = customer.company && (customer.first_name || customer.last_name) 
+    ? `Contact: ${customer.first_name} ${customer.last_name}` 
+    : "Customer Details";
+
   return (
     <MobilePageContainer>
       <MobilePageHeader
-        title={`${customer.first_name} ${customer.last_name}`}
-        subtitle="Customer Details"
+        title={displayName}
+        subtitle={contactName}
         icon={<User className="h-6 w-6 md:h-8 md:w-8 text-cyan-600 shrink-0" />}
         onBack={() => navigate('/power-washing/customers')}
       />

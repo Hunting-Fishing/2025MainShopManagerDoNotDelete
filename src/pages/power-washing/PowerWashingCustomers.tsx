@@ -11,7 +11,8 @@ import {
   Mail,
   MapPin,
   Eye,
-  Droplets
+  Droplets,
+  Building
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,6 +46,9 @@ export default function PowerWashingCustomers() {
           email,
           phone,
           address,
+          company,
+          is_fleet,
+          business_type,
           created_at,
           power_washing_jobs(count)
         `)
@@ -57,11 +61,20 @@ export default function PowerWashingCustomers() {
     enabled: !!shopId
   });
 
+  // Helper to get display name - prioritize company for business accounts
+  const getDisplayName = (customer: { company?: string | null; first_name?: string | null; last_name?: string | null }) => {
+    if (customer.company) {
+      return customer.company;
+    }
+    return `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+  };
+
   const filteredCustomers = customers?.filter(c => {
     const searchLower = searchTerm.toLowerCase();
     return (
       c.first_name?.toLowerCase().includes(searchLower) ||
       c.last_name?.toLowerCase().includes(searchLower) ||
+      c.company?.toLowerCase().includes(searchLower) ||
       c.email?.toLowerCase().includes(searchLower) ||
       c.phone?.includes(searchTerm) ||
       c.address?.toLowerCase().includes(searchLower)
@@ -149,8 +162,14 @@ export default function PowerWashingCustomers() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <span className="font-medium text-base md:text-lg truncate">
-                              {customer.first_name} {customer.last_name}
+                              {getDisplayName(customer)}
                             </span>
+                            {customer.company && (
+                              <Badge variant="outline" className="text-xs shrink-0">
+                                <Building className="h-3 w-3 mr-1" />
+                                Business
+                              </Badge>
+                            )}
                             {jobsCount > 0 && (
                               <Badge className="bg-cyan-500/20 text-cyan-700 border-cyan-500/30 text-xs shrink-0">
                                 <Droplets className="h-3 w-3 mr-1" />
@@ -158,6 +177,11 @@ export default function PowerWashingCustomers() {
                               </Badge>
                             )}
                           </div>
+                          {customer.company && (customer.first_name || customer.last_name) && (
+                            <p className="text-sm text-muted-foreground mb-1">
+                              Contact: {customer.first_name} {customer.last_name}
+                            </p>
+                          )}
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:text-sm text-muted-foreground">
                             {customer.phone && (
                               <span className="flex items-center gap-1">
