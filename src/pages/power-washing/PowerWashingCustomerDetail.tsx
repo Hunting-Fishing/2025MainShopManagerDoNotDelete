@@ -28,7 +28,8 @@ import {
   Loader2,
   Building,
   MessageSquare,
-  ExternalLink
+  ExternalLink,
+  Ruler
 } from 'lucide-react';
 import { MiniMapPreview } from '@/components/shared/MiniMapPreview';
 import { AddressAutocomplete, AddressResult } from '@/components/shared/AddressAutocomplete';
@@ -38,6 +39,8 @@ import { format } from 'date-fns';
 import { MobilePageContainer } from '@/components/mobile/MobilePageContainer';
 import { MobilePageHeader } from '@/components/mobile/MobilePageHeader';
 import { toast } from 'sonner';
+import { PropertyAreasTab } from '@/components/power-washing/PropertyAreasTab';
+import { useShopId } from '@/hooks/useShopId';
 
 interface EditData {
   first_name: string;
@@ -59,6 +62,7 @@ export default function PowerWashingCustomerDetail() {
   const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { shopId } = useShopId();
   
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<EditData>({
@@ -662,6 +666,10 @@ export default function PowerWashingCustomerDetail() {
             <span className="hidden sm:inline">Jobs</span>
             <span>({jobs?.length || 0})</span>
           </TabsTrigger>
+          <TabsTrigger value="property" className="flex-shrink-0 gap-1 px-2 md:px-3 text-xs md:text-sm">
+            <Ruler className="h-3 w-3 md:h-4 md:w-4" />
+            <span className="hidden sm:inline">Property</span>
+          </TabsTrigger>
           <TabsTrigger value="quotes" className="flex-shrink-0 gap-1 px-2 md:px-3 text-xs md:text-sm">
             <FileText className="h-3 w-3 md:h-4 md:w-4" />
             <span className="hidden sm:inline">Quotes</span>
@@ -728,6 +736,13 @@ export default function PowerWashingCustomerDetail() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Property Areas Tab */}
+        <TabsContent value="property">
+          {customerId && shopId && (
+            <PropertyAreasTab customerId={customerId} shopId={shopId} />
+          )}
         </TabsContent>
 
         {/* Quotes Tab */}

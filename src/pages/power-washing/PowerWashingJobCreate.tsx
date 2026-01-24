@@ -33,6 +33,7 @@ import { CrewAssignmentPicker } from '@/components/power-washing/CrewAssignmentP
 import { CustomerSearchPicker } from '@/components/power-washing/CustomerSearchPicker';
 import { RouteAssignmentPicker } from '@/components/power-washing/RouteAssignmentPicker';
 import { AddressAutocomplete, AddressResult } from '@/components/shared/AddressAutocomplete';
+import { PropertyAreaPicker } from '@/components/power-washing/PropertyAreaPicker';
 
 const PROPERTY_TYPES = [
   { value: 'residential_home', label: 'Residential Home' },
@@ -472,6 +473,21 @@ export default function PowerWashingJobCreate() {
                   />
                 </div>
               </div>
+              {/* Saved Property Areas Picker */}
+              {selectedCustomer && (
+                <PropertyAreaPicker
+                  customerId={selectedCustomer.id}
+                  onSelectArea={(area) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      squareFootage: area.square_footage.toString(),
+                      propertyType: area.area_type || prev.propertyType,
+                    }));
+                    toast.success(`Applied ${area.label || 'saved area'}: ${area.square_footage.toLocaleString()} sqft`);
+                  }}
+                />
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="squareFootage" className="flex items-center gap-2">
                   Square Footage

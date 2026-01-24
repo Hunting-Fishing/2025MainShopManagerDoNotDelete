@@ -5382,6 +5382,72 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_property_areas: {
+        Row: {
+          area_type: string
+          created_at: string
+          customer_id: string
+          height_ft: number | null
+          id: string
+          label: string | null
+          last_serviced_at: string | null
+          length_ft: number | null
+          notes: string | null
+          service_count: number | null
+          shop_id: string
+          square_footage: number
+          updated_at: string
+          width_ft: number | null
+        }
+        Insert: {
+          area_type: string
+          created_at?: string
+          customer_id: string
+          height_ft?: number | null
+          id?: string
+          label?: string | null
+          last_serviced_at?: string | null
+          length_ft?: number | null
+          notes?: string | null
+          service_count?: number | null
+          shop_id: string
+          square_footage: number
+          updated_at?: string
+          width_ft?: number | null
+        }
+        Update: {
+          area_type?: string
+          created_at?: string
+          customer_id?: string
+          height_ft?: number | null
+          id?: string
+          label?: string | null
+          last_serviced_at?: string | null
+          length_ft?: number | null
+          notes?: string | null
+          service_count?: number | null
+          shop_id?: string
+          square_footage?: number
+          updated_at?: string
+          width_ft?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_property_areas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_property_areas_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_provided_forms: {
         Row: {
           customer_id: string
