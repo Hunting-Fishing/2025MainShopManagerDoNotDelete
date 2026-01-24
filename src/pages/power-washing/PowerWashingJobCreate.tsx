@@ -9,16 +9,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ArrowLeft, 
   CalendarIcon, 
   User, 
-  Search,
-  Plus,
   Building2,
   DollarSign,
   Clock,
-  Users
+  Users,
+  MapPin,
+  UserPlus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usePowerWashingServices, useCreatePowerWashingJob } from '@/hooks/usePowerWashing';
@@ -28,6 +29,8 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { CrewAssignmentPicker } from '@/components/power-washing/CrewAssignmentPicker';
+import { CustomerSearchPicker } from '@/components/power-washing/CustomerSearchPicker';
+import { RouteAssignmentPicker } from '@/components/power-washing/RouteAssignmentPicker';
 import { AddressAutocomplete, AddressResult } from '@/components/shared/AddressAutocomplete';
 
 const PROPERTY_TYPES = [
@@ -51,6 +54,21 @@ const PRIORITY_OPTIONS = [
   { value: 'urgent', label: 'Urgent', color: 'bg-red-500/10 text-red-600' },
 ];
 
+interface SelectedCustomer {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+  company: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 export default function PowerWashingJobCreate() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -58,6 +76,8 @@ export default function PowerWashingJobCreate() {
   const createJob = useCreatePowerWashingJob();
   
   const [shopId, setShopId] = useState<string | null>(null);
+  const [customerMode, setCustomerMode] = useState<'existing' | 'new'>('existing');
+  const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer | null>(null);
   
   // Fetch user's shop_id from profile
   useEffect(() => {
@@ -75,7 +95,7 @@ export default function PowerWashingJobCreate() {
 
   // Form state
   const [formData, setFormData] = useState({
-    // Customer Info
+    // Customer Info (for new customer mode)
     customerName: '',
     customerEmail: '',
     customerPhone: '',
@@ -94,6 +114,8 @@ export default function PowerWashingJobCreate() {
     scheduledDate: null as Date | null,
     scheduledTimeStart: '',
     scheduledTimeEnd: '',
+    // Route
+    routeId: null as string | null,
     // Pricing
     quotedPrice: '',
     depositAmount: '',
@@ -105,6 +127,24 @@ export default function PowerWashingJobCreate() {
     // Crew
     assignedCrew: [] as string[],
   });
+
+  // Handle customer selection - auto-populate property address
+  const handleCustomerSelect = (customer: SelectedCustomer | null) => {
+    setSelectedCustomer(customer);
+    
+    if (customer && customer.address) {
+      // Prompt user to use customer's address
+      setFormData(prev => ({
+        ...prev,
+        propertyAddress: customer.address || '',
+        propertyCity: customer.city || '',
+        propertyState: customer.state || '',
+        propertyZip: customer.postal_code || '',
+        propertyLatitude: customer.latitude,
+        propertyLongitude: customer.longitude,
+      }));
+    }
+  };
 
   const handleAddressSelect = (result: AddressResult) => {
     setFormData(prev => ({
@@ -138,13 +178,20 @@ export default function PowerWashingJobCreate() {
       return;
     }
 
+    // Validate customer selection
+    if (customerMode === 'existing' && !selectedCustomer) {
+      toast.error('Please select a customer');
+      return;
+    }
+
     // Generate job number
     const jobNumber = `PW-${Date.now().toString(36).toUpperCase()}`;
 
     try {
-      await createJob.mutateAsync({
+      const jobData = {
         shop_id: shopId,
         job_number: jobNumber,
+        customer_id: customerMode === 'existing' ? selectedCustomer?.id : null,
         service_id: formData.serviceId || null,
         property_type: formData.propertyType || null,
         property_address: formData.propertyAddress || null,
@@ -167,7 +214,44 @@ export default function PowerWashingJobCreate() {
         assigned_crew: formData.assignedCrew.length > 0 ? formData.assignedCrew : null,
         status: formData.scheduledDate ? 'scheduled' : 'pending',
         created_by: user?.id || null,
-      });
+      };
+
+      const createdJob = await createJob.mutateAsync(jobData);
+
+      // If route is selected, add job to route stops
+      if (formData.routeId && createdJob?.id) {
+        // Get current max stop order for this route
+        const { data: existingStops } = await supabase
+          .from('power_washing_route_stops')
+          .select('stop_order')
+          .eq('route_id', formData.routeId)
+          .order('stop_order', { ascending: false })
+          .limit(1);
+
+        const nextStopOrder = (existingStops?.[0]?.stop_order || 0) + 1;
+
+        // Insert route stop
+        await supabase
+          .from('power_washing_route_stops')
+          .insert({
+            route_id: formData.routeId,
+            job_id: createdJob.id,
+            stop_order: nextStopOrder,
+            status: 'pending',
+          });
+
+        // Update route total_jobs manually
+        const { data: currentRoute } = await supabase
+          .from('power_washing_routes')
+          .select('total_jobs')
+          .eq('id', formData.routeId)
+          .single();
+        
+        await supabase
+          .from('power_washing_routes')
+          .update({ total_jobs: (currentRoute?.total_jobs || 0) + 1 })
+          .eq('id', formData.routeId);
+      }
 
       navigate('/power-washing/jobs');
     } catch (error) {
@@ -206,36 +290,65 @@ export default function PowerWashingJobCreate() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="customerName">Customer Name</Label>
-                <Input
-                  id="customerName"
-                  placeholder="John Smith"
-                  value={formData.customerName}
-                  onChange={(e) => updateField('customerName', e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="customerEmail">Email</Label>
-                  <Input
-                    id="customerEmail"
-                    type="email"
-                    placeholder="john@example.com"
-                    value={formData.customerEmail}
-                    onChange={(e) => updateField('customerEmail', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="customerPhone">Phone</Label>
-                  <Input
-                    id="customerPhone"
-                    placeholder="(555) 123-4567"
-                    value={formData.customerPhone}
-                    onChange={(e) => updateField('customerPhone', e.target.value)}
-                  />
-                </div>
-              </div>
+              <Tabs value={customerMode} onValueChange={(v) => setCustomerMode(v as 'existing' | 'new')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="existing" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Existing Customer
+                  </TabsTrigger>
+                  <TabsTrigger value="new" className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    New Customer
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="existing" className="mt-4">
+                  {shopId && (
+                    <CustomerSearchPicker
+                      shopId={shopId}
+                      selectedCustomer={selectedCustomer}
+                      onSelectCustomer={handleCustomerSelect}
+                      onCreateNewCustomer={() => setCustomerMode('new')}
+                    />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="new" className="mt-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerName">Customer Name</Label>
+                    <Input
+                      id="customerName"
+                      placeholder="John Smith"
+                      value={formData.customerName}
+                      onChange={(e) => updateField('customerName', e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="customerEmail">Email</Label>
+                      <Input
+                        id="customerEmail"
+                        type="email"
+                        placeholder="john@example.com"
+                        value={formData.customerEmail}
+                        onChange={(e) => updateField('customerEmail', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="customerPhone">Phone</Label>
+                      <Input
+                        id="customerPhone"
+                        placeholder="(555) 123-4567"
+                        value={formData.customerPhone}
+                        onChange={(e) => updateField('customerPhone', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Note: A new customer record will be created when you submit this job.
+                  </p>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
 
@@ -248,6 +361,18 @@ export default function PowerWashingJobCreate() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {selectedCustomer?.address && (
+                <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 mb-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Using customer's address</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedCustomer.address}, {selectedCustomer.city}, {selectedCustomer.state} {selectedCustomer.postal_code}
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="propertyType">Property Type</Label>
                 <Select value={formData.propertyType} onValueChange={(v) => updateField('propertyType', v)}>
@@ -418,6 +543,18 @@ export default function PowerWashingJobCreate() {
                   />
                 </div>
               </div>
+
+              {/* Route Assignment */}
+              {shopId && (
+                <div className="pt-4 border-t">
+                  <RouteAssignmentPicker
+                    shopId={shopId}
+                    scheduledDate={formData.scheduledDate}
+                    selectedRouteId={formData.routeId}
+                    onSelectRoute={(id) => setFormData(prev => ({ ...prev, routeId: id }))}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 
