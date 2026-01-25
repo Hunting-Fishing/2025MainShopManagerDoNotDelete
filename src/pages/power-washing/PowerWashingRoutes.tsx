@@ -59,7 +59,7 @@ interface RouteStop {
       id: string;
       first_name: string | null;
       last_name: string | null;
-      company_name: string | null;
+      company: string | null;
     } | null;
   } | null;
 }
@@ -78,7 +78,7 @@ interface UnassignedJob {
     id: string;
     first_name: string | null;
     last_name: string | null;
-    company_name: string | null;
+    company: string | null;
   } | null;
 }
 
@@ -175,7 +175,7 @@ export default function PowerWashingRoutes() {
           status, drive_time_minutes, distance_from_previous_miles,
           job:power_washing_jobs(
             id, job_number, status, property_address, property_latitude, property_longitude,
-            customer:customers(id, first_name, last_name, company_name)
+            customer:customers(id, first_name, last_name, company)
           )
         `)
         .eq('route_id', selectedRoute.id)
@@ -197,7 +197,7 @@ export default function PowerWashingRoutes() {
         .select(`
           id, job_number, property_address, scheduled_date, scheduled_time_start, 
           status, assigned_crew, property_latitude, property_longitude,
-          customer:customers(id, first_name, last_name, company_name)
+          customer:customers(id, first_name, last_name, company)
         `)
         .gte('scheduled_date', format(weekStart, 'yyyy-MM-dd'))
         .lte('scheduled_date', format(weekEnd, 'yyyy-MM-dd'))
