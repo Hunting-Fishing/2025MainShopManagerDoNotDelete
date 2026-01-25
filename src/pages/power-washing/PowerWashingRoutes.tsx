@@ -102,9 +102,9 @@ export default function PowerWashingRoutes() {
 
   const routeOptimization = useRouteOptimization();
 
-  // Fetch shop data
+  // Fetch shop data - using or() to handle both profile patterns and maybeSingle to prevent errors
   const { data: shopData } = useQuery({
-    queryKey: ['current-shop'],
+    queryKey: ['current-shop-routes'],
     queryFn: async () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return null;
@@ -112,8 +112,18 @@ export default function PowerWashingRoutes() {
       const { data } = await supabase
         .from('profiles')
         .select('shop_id, shops(id, name, address, latitude, longitude)')
-        .eq('user_id', user.user.id)
-        .single();
+        .or(`id.eq.${user.user.id},user_id.eq.${user.user.id}`)
+        .maybeSingle();
+      
+      if (!data?.shops) {
+        // Fallback: try to get shop_id directly
+        const { data: directShop } = await supabase
+          .from('shops')
+          .select('id, name, address, latitude, longitude')
+          .limit(1)
+          .maybeSingle();
+        return directShop;
+      }
       
       return data?.shops as { id: string; name: string; address: string | null; latitude: number | null; longitude: number | null } | null;
     },
@@ -232,16 +242,14 @@ export default function PowerWashingRoutes() {
   // Create route mutation
   const createRouteMutation = useMutation({
     mutationFn: async (date: string) => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
+      if (!shopData?.id) {
+        throw new Error('Shop data not available');
+      }
 
       const { data, error } = await supabase
         .from('power_washing_routes')
         .insert({
-          shop_id: profile?.shop_id,
+          shop_id: shopData.id,
           route_date: date,
           route_name: `Route ${format(new Date(date), 'MMM d')}`,
           status: 'planned',
@@ -283,6 +291,10 @@ export default function PowerWashingRoutes() {
   // Add job to route mutation
   const addJobToRoute = useMutation({
     mutationFn: async (jobId: string) => {
+      if (!shopData?.id) {
+        throw new Error('Shop data not available. Please refresh the page.');
+      }
+
       let routeId = selectedRoute?.id;
       
       if (!routeId) {
@@ -323,8 +335,8 @@ export default function PowerWashingRoutes() {
       queryClient.invalidateQueries({ queryKey: ['power-washing-routes'] });
       toast.success('Job added to route');
     },
-    onError: (error) => {
-      toast.error('Failed to add job to route');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to add job to route');
       console.error(error);
     },
   });
@@ -671,6 +683,7 @@ export default function PowerWashingRoutes() {
           selectedDate={selectedDate}
           onAddToRoute={(jobId) => addJobToRoute.mutate(jobId)}
           isLoading={jobsLoading}
+          isAddingToRoute={addJobToRoute.isPending || createRouteMutation.isPending || !shopData?.id}
         />
       </div>
     </div>

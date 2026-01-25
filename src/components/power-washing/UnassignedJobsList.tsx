@@ -33,13 +33,15 @@ interface UnassignedJobsListProps {
   onAddToRoute: (jobId: string) => void;
   selectedDate: string;
   isLoading?: boolean;
+  isAddingToRoute?: boolean;
 }
 
 export function UnassignedJobsList({ 
   jobs, 
   onAddToRoute, 
   selectedDate,
-  isLoading 
+  isLoading,
+  isAddingToRoute 
 }: UnassignedJobsListProps) {
   // Filter jobs for selected date
   const jobsForDate = jobs.filter(job => job.scheduled_date === selectedDate);
@@ -121,9 +123,10 @@ export function UnassignedJobsList({
         variant="outline"
         className="ml-3 shrink-0"
         onClick={() => onAddToRoute(job.id)}
+        disabled={isAddingToRoute}
       >
         <Plus className="h-4 w-4 mr-1" />
-        Add to Route
+        {isAddingToRoute ? 'Adding...' : 'Add to Route'}
       </Button>
     </div>
   );
