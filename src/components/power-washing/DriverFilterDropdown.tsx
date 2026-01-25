@@ -37,19 +37,27 @@ export function DriverFilterDropdown({
 
   return (
     <Select value={selectedDriver} onValueChange={onDriverChange}>
-      <SelectTrigger className="w-[200px] bg-background">
+      <SelectTrigger className="w-[200px] bg-background border-border">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-muted-foreground" />
           <SelectValue placeholder="Filter by driver" />
         </div>
       </SelectTrigger>
-      <SelectContent className="bg-popover border-border z-50">
-        <SelectItem value="all">All Employees</SelectItem>
+      <SelectContent className="bg-popover border-border shadow-lg z-50">
+        <SelectItem value="all" className="cursor-pointer">All Employees</SelectItem>
         {isLoading ? (
           <SelectItem value="loading" disabled>Loading...</SelectItem>
+        ) : teamMembers.length === 0 ? (
+          <SelectItem value="none" disabled className="text-muted-foreground">
+            No team members found
+          </SelectItem>
         ) : (
           teamMembers.map((member) => (
-            <SelectItem key={member.id} value={member.id}>
+            <SelectItem 
+              key={member.id} 
+              value={member.id}
+              className="cursor-pointer"
+            >
               {getDriverName(member)}
             </SelectItem>
           ))

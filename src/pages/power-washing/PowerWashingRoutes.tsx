@@ -537,79 +537,78 @@ export default function PowerWashingRoutes() {
         })}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Left Column: Routes & Unassigned Jobs */}
-        <div className="space-y-6">
-          {/* Unassigned Jobs Section */}
-          <UnassignedJobsList
-            jobs={transformedUnassignedJobs}
-            selectedDate={selectedDate}
-            onAddToRoute={(jobId) => addJobToRoute.mutate(jobId)}
-            isLoading={jobsLoading}
-          />
-
-          {/* Routes for Date */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+      {/* Professional Split-View Layout */}
+      <div className="grid gap-6 lg:grid-cols-12">
+        {/* Left Column: Driver Route Cards */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
               <Route className="h-5 w-5 text-primary" />
-              Routes for {format(new Date(selectedDate), 'EEEE, MMM d')}
+              Driver Routes
             </h3>
-
-            {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-48" />
-                ))}
-              </div>
-            ) : routesForDate.length > 0 ? (
-              <div className="space-y-4">
-                {routesForDate.map((route) => (
-                  <div 
-                    key={route.id}
-                    onClick={() => setSelectedRoute(route)}
-                    className={`cursor-pointer transition-all ${
-                      selectedRoute?.id === route.id ? 'ring-2 ring-primary rounded-lg' : ''
-                    }`}
-                  >
-                    <DriverRouteCard
-                      driverName={getDriverName(route)}
-                      driverInitials={getDriverInitials(route)}
-                      route={route}
-                      stops={selectedRoute?.id === route.id ? transformedStops : []}
-                      shopLocation={shopData?.address || 'Shop'}
-                      onStartRoute={() => updateRouteStatus.mutate({ id: route.id, status: 'in_progress' })}
-                      onOptimizeRoute={selectedRoute?.id === route.id ? handleOptimizeRoute : undefined}
-                      onStopClick={(stop) => {
-                        if (stop.job_id) {
-                          navigate(`/power-washing/jobs/${stop.job_id}`);
-                        }
-                      }}
-                      isOptimizing={routeOptimization.isPending}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <Card className="border-dashed border-2 border-muted-foreground/30">
-                <CardContent className="p-8 text-center">
-                  <Navigation className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                  <h4 className="font-semibold mb-1">No Routes for This Day</h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Create a route to organize your jobs
-                  </p>
-                  <Button onClick={() => createRouteMutation.mutate(selectedDate)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Route
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => createRouteMutation.mutate(selectedDate)}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New Route
+            </Button>
           </div>
+
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2].map((i) => (
+                <Skeleton key={i} className="h-48" />
+              ))}
+            </div>
+          ) : routesForDate.length > 0 ? (
+            <div className="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+              {routesForDate.map((route) => (
+                <div 
+                  key={route.id}
+                  onClick={() => setSelectedRoute(route)}
+                  className={`cursor-pointer transition-all ${
+                    selectedRoute?.id === route.id ? 'ring-2 ring-primary rounded-lg' : ''
+                  }`}
+                >
+                  <DriverRouteCard
+                    driverName={getDriverName(route)}
+                    driverInitials={getDriverInitials(route)}
+                    route={route}
+                    stops={selectedRoute?.id === route.id ? transformedStops : []}
+                    shopLocation={shopData?.address || 'Shop'}
+                    onStartRoute={() => updateRouteStatus.mutate({ id: route.id, status: 'in_progress' })}
+                    onOptimizeRoute={selectedRoute?.id === route.id ? handleOptimizeRoute : undefined}
+                    onStopClick={(stop) => {
+                      if (stop.job_id) {
+                        navigate(`/power-washing/jobs/${stop.job_id}`);
+                      }
+                    }}
+                    isOptimizing={routeOptimization.isPending}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-dashed border-2 border-muted-foreground/30">
+              <CardContent className="p-8 text-center">
+                <Navigation className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                <h4 className="font-semibold mb-1">No Routes for {format(new Date(selectedDate), 'MMM d')}</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Create a route to organize your jobs
+                </p>
+                <Button onClick={() => createRouteMutation.mutate(selectedDate)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Route
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
-        {/* Right Column: Map View */}
-        <div className="lg:sticky lg:top-6 h-fit">
+        {/* Right Column: Map View & Route Summary */}
+        <div className="lg:col-span-7 space-y-4">
           <RouteMapView
             stops={transformedStops}
             shopLocation={shopLocation}
@@ -622,16 +621,14 @@ export default function PowerWashingRoutes() {
               }
             }}
             isOptimizing={routeOptimization.isPending}
+            className="lg:sticky lg:top-6"
           />
 
-          {/* Quick Stats */}
-          {selectedRoute && transformedStops.length > 0 && (
-            <Card className="mt-4 border-border">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Route Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4 text-center">
+          {/* Route Summary Stats */}
+          {selectedRoute && (
+            <Card className="border-border bg-gradient-to-r from-primary/5 to-transparent">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-4 gap-4 text-center">
                   <div>
                     <p className="text-2xl font-bold text-primary">{transformedStops.length}</p>
                     <p className="text-xs text-muted-foreground">Stops</p>
@@ -645,16 +642,36 @@ export default function PowerWashingRoutes() {
                   <div>
                     <p className="text-2xl font-bold text-primary">
                       {selectedRoute.estimated_duration_minutes 
-                        ? `${Math.floor(selectedRoute.estimated_duration_minutes / 60)}h`
+                        ? `${Math.floor(selectedRoute.estimated_duration_minutes / 60)}h ${selectedRoute.estimated_duration_minutes % 60}m`
                         : '—'}
                     </p>
                     <p className="text-xs text-muted-foreground">Est. Time</p>
+                  </div>
+                  <div>
+                    <Badge className={
+                      selectedRoute.status === 'completed' ? 'bg-green-500/10 text-green-500' :
+                      selectedRoute.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500' :
+                      'bg-blue-500/10 text-blue-500'
+                    }>
+                      {selectedRoute.status.replace('_', ' ')}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">Status</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           )}
         </div>
+      </div>
+
+      {/* Unassigned Jobs Section - Full Width at Bottom */}
+      <div className="mt-6">
+        <UnassignedJobsList
+          jobs={transformedUnassignedJobs}
+          selectedDate={selectedDate}
+          onAddToRoute={(jobId) => addJobToRoute.mutate(jobId)}
+          isLoading={jobsLoading}
+        />
       </div>
     </div>
   );
