@@ -16,6 +16,7 @@ import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { usePowerWashingJobs, useUpdatePowerWashingJob, PowerWashingJob } from '@/hooks/usePowerWashing';
 import { CrewAssignmentPicker } from '@/components/power-washing/CrewAssignmentPicker';
 import { PropertyAreaPicker } from '@/components/power-washing/PropertyAreaPicker';
+import { JobPricingCalculator } from '@/components/power-washing/JobPricingCalculator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
@@ -288,26 +289,38 @@ export default function PowerWashingJobEdit() {
           <CardHeader>
             <CardTitle>Pricing</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Quoted Price</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.quoted_price || ''}
-                onChange={(e) => updateField('quoted_price', parseFloat(e.target.value) || null)}
-                placeholder="0.00"
-              />
-            </div>
-            <div>
-              <Label>Deposit Amount</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.deposit_amount || ''}
-                onChange={(e) => updateField('deposit_amount', parseFloat(e.target.value) || null)}
-                placeholder="0.00"
-              />
+          <CardContent className="space-y-4">
+            {/* Dynamic Price Calculator */}
+            <JobPricingCalculator
+              squareFootage={formData.square_footage || null}
+              onPriceCalculated={(price) => {
+                updateField('quoted_price', price);
+                toast.success(`Quoted price set to ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price)}`);
+              }}
+            />
+
+            {/* Manual Price Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Quoted Price</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.quoted_price || ''}
+                  onChange={(e) => updateField('quoted_price', parseFloat(e.target.value) || null)}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <Label>Deposit Amount</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.deposit_amount || ''}
+                  onChange={(e) => updateField('deposit_amount', parseFloat(e.target.value) || null)}
+                  placeholder="0.00"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
