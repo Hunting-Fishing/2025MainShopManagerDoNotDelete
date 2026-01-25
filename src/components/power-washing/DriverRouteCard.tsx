@@ -39,7 +39,7 @@ interface RouteStop {
     customer?: {
       first_name: string | null;
       last_name: string | null;
-      company_name: string | null;
+      company: string | null;
     } | null;
   } | null;
 }
@@ -104,8 +104,8 @@ export function DriverRouteCard({
 
   const getCustomerName = (stop: RouteStop) => {
     if (!stop.job?.customer) return 'Unknown';
-    const { company_name, first_name, last_name } = stop.job.customer;
-    if (company_name) return company_name;
+    const { company, first_name, last_name } = stop.job.customer;
+    if (company) return company;
     return `${first_name || ''} ${last_name || ''}`.trim() || 'Unknown';
   };
 

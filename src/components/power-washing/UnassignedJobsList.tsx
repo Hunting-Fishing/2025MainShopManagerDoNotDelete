@@ -24,7 +24,7 @@ interface UnassignedJob {
     id: string;
     first_name: string | null;
     last_name: string | null;
-    company_name: string | null;
+    company: string | null;
   } | null;
 }
 
@@ -64,7 +64,7 @@ export function UnassignedJobsList({
 
   const getCustomerDisplay = (job: UnassignedJob) => {
     if (!job.customer) return 'Unknown Customer';
-    if (job.customer.company_name) return job.customer.company_name;
+    if (job.customer.company) return job.customer.company;
     return `${job.customer.first_name || ''} ${job.customer.last_name || ''}`.trim() || 'Unknown';
   };
 
