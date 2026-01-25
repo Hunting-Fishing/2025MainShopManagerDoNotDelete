@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,13 +7,11 @@ import {
   MapPin, 
   Calendar, 
   Clock, 
-  Users, 
   Plus,
   Play,
-  CheckCircle,
   Navigation,
-  Truck,
-  ArrowLeft
+  ArrowLeft,
+  Route
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,8 +19,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UnassignedJobsList } from '@/components/power-washing/UnassignedJobsList';
+import { DriverFilterDropdown } from '@/components/power-washing/DriverFilterDropdown';
+import { DriverRouteCard } from '@/components/power-washing/DriverRouteCard';
+import { RouteMapView } from '@/components/power-washing/RouteMapView';
+import { useRouteOptimization, Location } from '@/hooks/useMapbox';
 
-interface Route {
+interface RouteData {
   id: string;
   route_date: string;
   route_name: string | null;
@@ -35,17 +38,115 @@ interface Route {
   end_location: string | null;
 }
 
+interface RouteStop {
+  id: string;
+  route_id: string;
+  stop_order: number;
+  job_id: string;
+  estimated_arrival: string | null;
+  actual_arrival: string | null;
+  status: string;
+  drive_time_minutes?: number | null;
+  distance_from_previous_miles?: number | null;
+  job?: {
+    id: string;
+    job_number: string;
+    status: string | null;
+    property_address: string | null;
+    property_latitude: number | null;
+    property_longitude: number | null;
+    customer?: {
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+      company_name: string | null;
+    } | null;
+  } | null;
+}
+
+interface UnassignedJob {
+  id: string;
+  job_number: string;
+  property_address: string | null;
+  scheduled_date: string | null;
+  scheduled_time_start: string | null;
+  status: string | null;
+  assigned_crew: string[] | null;
+  property_latitude: number | null;
+  property_longitude: number | null;
+  customer?: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    company_name: string | null;
+  } | null;
+}
+
+interface TeamMember {
+  id: string;
+  profile_id: string;
+  is_active: boolean;
+  profile?: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
+}
+
 export default function PowerWashingRoutes() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedDriver, setSelectedDriver] = useState('all');
+  const [selectedRoute, setSelectedRoute] = useState<RouteData | null>(null);
 
-  const { data: routes, isLoading } = useQuery({
+  const routeOptimization = useRouteOptimization();
+
+  // Fetch shop data
+  const { data: shopData } = useQuery({
+    queryKey: ['current-shop'],
+    queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return null;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('shop_id, shops(id, name, address, latitude, longitude)')
+        .eq('user_id', user.user.id)
+        .single();
+      
+      return data?.shops as { id: string; name: string; address: string | null; latitude: number | null; longitude: number | null } | null;
+    },
+  });
+
+  // Fetch team members for driver filter
+  const { data: teamMembers = [], isLoading: teamLoading } = useQuery({
+    queryKey: ['power-washing-team-drivers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('power_washing_team_members')
+        .select(`
+          id,
+          profile_id,
+          is_active,
+          profile:profiles(id, first_name, last_name)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      return (data || []) as TeamMember[];
+    },
+  });
+
+  // Calculate week range
+  const weekStart = useMemo(() => startOfWeek(new Date(selectedDate)), [selectedDate]);
+  const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart]);
+
+  // Fetch routes for the week
+  const { data: routes = [], isLoading: routesLoading } = useQuery({
     queryKey: ['power-washing-routes', selectedDate],
     queryFn: async () => {
-      const weekStart = startOfWeek(new Date(selectedDate));
-      const weekEnd = addDays(weekStart, 6);
-      
       const { data, error } = await supabase
         .from('power_washing_routes')
         .select('*')
@@ -54,13 +155,84 @@ export default function PowerWashingRoutes() {
         .order('route_date', { ascending: true });
       
       if (error) throw error;
-      return data as Route[];
+      return (data || []).map(r => ({
+        ...r,
+        assigned_crew: Array.isArray(r.assigned_crew) ? r.assigned_crew : []
+      })) as RouteData[];
     },
   });
 
+  // Fetch route stops for selected route
+  const { data: routeStops = [] } = useQuery({
+    queryKey: ['power-washing-route-stops', selectedRoute?.id],
+    queryFn: async () => {
+      if (!selectedRoute) return [];
+      
+      const { data, error } = await supabase
+        .from('power_washing_route_stops')
+        .select(`
+          id, route_id, stop_order, job_id, estimated_arrival, actual_arrival, 
+          status, drive_time_minutes, distance_from_previous_miles,
+          job:power_washing_jobs(
+            id, job_number, status, property_address, property_latitude, property_longitude,
+            customer:customers(id, first_name, last_name, company_name)
+          )
+        `)
+        .eq('route_id', selectedRoute.id)
+        .order('stop_order', { ascending: true });
+      
+      if (error) throw error;
+      return (data || []) as RouteStop[];
+    },
+    enabled: !!selectedRoute,
+  });
+
+  // Fetch unassigned jobs for the week
+  const { data: unassignedJobs = [], isLoading: jobsLoading } = useQuery({
+    queryKey: ['power-washing-unassigned-jobs', selectedDate],
+    queryFn: async () => {
+      // Get jobs for the week
+      const { data: jobs, error: jobsError } = await supabase
+        .from('power_washing_jobs')
+        .select(`
+          id, job_number, property_address, scheduled_date, scheduled_time_start, 
+          status, assigned_crew, property_latitude, property_longitude,
+          customer:customers(id, first_name, last_name, company_name)
+        `)
+        .gte('scheduled_date', format(weekStart, 'yyyy-MM-dd'))
+        .lte('scheduled_date', format(weekEnd, 'yyyy-MM-dd'))
+        .in('status', ['pending', 'scheduled', 'in_progress']);
+      
+      if (jobsError) throw jobsError;
+
+      // Get jobs already assigned to route stops
+      const { data: stops, error: stopsError } = await supabase
+        .from('power_washing_route_stops')
+        .select('job_id');
+      
+      if (stopsError) throw stopsError;
+
+      const assignedJobIds = new Set(stops?.map(s => s.job_id).filter(Boolean) || []);
+      
+      // Filter to unassigned jobs
+      return (jobs || []).filter(j => !assignedJobIds.has(j.id)) as UnassignedJob[];
+    },
+  });
+
+  // Fetch Mapbox token
+  const { data: mapboxToken } = useQuery({
+    queryKey: ['mapbox-token'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+      if (error) return null;
+      return data?.token || null;
+    },
+  });
+
+  // Create route mutation
   const createRouteMutation = useMutation({
     mutationFn: async (date: string) => {
-      const { data: shopData } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('shop_id')
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
@@ -69,20 +241,22 @@ export default function PowerWashingRoutes() {
       const { data, error } = await supabase
         .from('power_washing_routes')
         .insert({
-          shop_id: shopData?.shop_id,
+          shop_id: profile?.shop_id,
           route_date: date,
           route_name: `Route ${format(new Date(date), 'MMM d')}`,
           status: 'planned',
+          start_location: shopData?.address || null,
         })
         .select()
         .single();
       
       if (error) throw error;
-      return data;
+      return { ...data, assigned_crew: [] } as RouteData;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['power-washing-routes'] });
       toast.success('Route created successfully');
+      setSelectedRoute(data);
     },
     onError: (error) => {
       toast.error('Failed to create route');
@@ -90,6 +264,7 @@ export default function PowerWashingRoutes() {
     },
   });
 
+  // Update route status mutation
   const updateRouteStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase
@@ -105,18 +280,119 @@ export default function PowerWashingRoutes() {
     },
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'planned': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'in_progress': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-      case 'completed': return 'bg-green-500/10 text-green-500 border-green-500/20';
-      case 'cancelled': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      default: return 'bg-muted text-muted-foreground';
+  // Add job to route mutation
+  const addJobToRoute = useMutation({
+    mutationFn: async (jobId: string) => {
+      let routeId = selectedRoute?.id;
+      
+      if (!routeId) {
+        // Create a new route first
+        const newRoute = await createRouteMutation.mutateAsync(selectedDate);
+        routeId = newRoute.id;
+      }
+
+      // Get current stop count
+      const { data: existingStops } = await supabase
+        .from('power_washing_route_stops')
+        .select('id')
+        .eq('route_id', routeId);
+
+      const nextOrder = (existingStops?.length || 0) + 1;
+
+      // Add stop
+      const { error } = await supabase
+        .from('power_washing_route_stops')
+        .insert({
+          route_id: routeId,
+          job_id: jobId,
+          stop_order: nextOrder,
+          status: 'pending',
+        });
+      
+      if (error) throw error;
+
+      // Update route job count
+      await supabase
+        .from('power_washing_routes')
+        .update({ total_jobs: nextOrder })
+        .eq('id', routeId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['power-washing-unassigned-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['power-washing-route-stops'] });
+      queryClient.invalidateQueries({ queryKey: ['power-washing-routes'] });
+      toast.success('Job added to route');
+    },
+    onError: (error) => {
+      toast.error('Failed to add job to route');
+      console.error(error);
+    },
+  });
+
+  // Optimize route handler
+  const handleOptimizeRoute = async () => {
+    if (!selectedRoute || routeStops.length < 2) {
+      toast.error('Need at least 2 stops to optimize');
+      return;
+    }
+
+    const origin: [number, number] = shopData?.longitude && shopData?.latitude 
+      ? [shopData.longitude, shopData.latitude] 
+      : routeStops[0].job?.property_longitude && routeStops[0].job?.property_latitude
+        ? [routeStops[0].job.property_longitude, routeStops[0].job.property_latitude]
+        : [-124.9, 49.7];
+
+    const destinations: Location[] = routeStops
+      .filter(s => s.job?.property_latitude && s.job?.property_longitude)
+      .map(s => ({
+        id: s.id,
+        address: s.job?.property_address || '',
+        coordinates: [s.job!.property_longitude!, s.job!.property_latitude!] as [number, number],
+        name: s.job?.job_number || `Stop ${s.stop_order}`,
+      }));
+
+    try {
+      const result = await routeOptimization.mutateAsync({
+        origin,
+        destinations,
+        returnToOrigin: true,
+      });
+
+      // Update route with optimized data
+      await supabase
+        .from('power_washing_routes')
+        .update({
+          total_distance_miles: result.optimizedRoute.distanceMiles,
+          estimated_duration_minutes: result.optimizedRoute.durationMinutes,
+        })
+        .eq('id', selectedRoute.id);
+
+      // Update stop orders based on optimization
+      for (let i = 0; i < result.optimizedOrder.length; i++) {
+        const stop = result.optimizedOrder[i];
+        const leg = result.legs[i];
+        
+        await supabase
+          .from('power_washing_route_stops')
+          .update({ 
+            stop_order: i + 1,
+            drive_time_minutes: leg?.durationMinutes,
+            distance_from_previous_miles: leg?.distanceMiles,
+          })
+          .eq('id', stop.id);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['power-washing-route-stops'] });
+      queryClient.invalidateQueries({ queryKey: ['power-washing-routes'] });
+      toast.success(`Route optimized! ${result.optimizedRoute.distanceMiles} miles, ${result.optimizedRoute.durationMinutes} min`);
+    } catch (error) {
+      console.error('Optimization failed:', error);
+      toast.error('Failed to optimize route');
     }
   };
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const date = addDays(startOfWeek(new Date(selectedDate)), i);
+    const date = addDays(weekStart, i);
     return {
       date: format(date, 'yyyy-MM-dd'),
       dayName: format(date, 'EEE'),
@@ -124,6 +400,75 @@ export default function PowerWashingRoutes() {
       isToday: format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'),
     };
   });
+
+  // Filter routes by selected driver
+  const filteredRoutes = useMemo(() => {
+    if (selectedDriver === 'all') return routes;
+    return routes.filter(route => {
+      const crew = route.assigned_crew || [];
+      return crew.some((member: any) => 
+        member.id === selectedDriver || member.profile_id === selectedDriver
+      );
+    });
+  }, [routes, selectedDriver]);
+
+  // Routes for selected date
+  const routesForDate = filteredRoutes.filter(r => r.route_date === selectedDate);
+
+  // Get driver display name
+  const getDriverName = (route: RouteData) => {
+    const crew = route.assigned_crew || [];
+    if (crew.length === 0) return 'Unassigned';
+    const first = crew[0];
+    return first.name || `${first.first_name || ''} ${first.last_name || ''}`.trim() || 'Crew';
+  };
+
+  const getDriverInitials = (route: RouteData) => {
+    const name = getDriverName(route);
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'CR';
+  };
+
+  // Shop location for map
+  const shopLocation = shopData?.latitude && shopData?.longitude ? {
+    lat: shopData.latitude,
+    lng: shopData.longitude,
+    address: shopData.address || 'Shop'
+  } : undefined;
+
+  // Transform route stops for map/card display
+  const transformedStops = routeStops.map(s => ({
+    id: s.id,
+    stop_order: s.stop_order,
+    job_id: s.job_id,
+    location_address: s.job?.property_address || '',
+    latitude: s.job?.property_latitude ?? undefined,
+    longitude: s.job?.property_longitude ?? undefined,
+    estimated_arrival: s.estimated_arrival,
+    actual_arrival: s.actual_arrival,
+    status: s.status,
+    travel_time_minutes: s.drive_time_minutes ?? undefined,
+    travel_distance_miles: s.distance_from_previous_miles ?? undefined,
+    job: s.job ? {
+      id: s.job.id,
+      job_number: s.job.job_number,
+      status: s.job.status || 'pending',
+      customer: s.job.customer,
+    } : null,
+  }));
+
+  // Transform unassigned jobs for list display
+  const transformedUnassignedJobs = unassignedJobs.map(j => ({
+    id: j.id,
+    job_number: j.job_number,
+    property_address: j.property_address,
+    scheduled_date: j.scheduled_date || '',
+    scheduled_time: j.scheduled_time_start,
+    status: j.status || 'pending',
+    assigned_crew: j.assigned_crew,
+    customer: j.customer,
+  }));
+
+  const isLoading = routesLoading || jobsLoading;
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -133,7 +478,7 @@ export default function PowerWashingRoutes() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Button>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Navigation className="h-8 w-8 text-indigo-500" />
@@ -143,141 +488,174 @@ export default function PowerWashingRoutes() {
               Optimize your daily job routes for maximum efficiency
             </p>
           </div>
-          <Input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-48"
-          />
+          <div className="flex items-center gap-3">
+            <DriverFilterDropdown
+              selectedDriver={selectedDriver}
+              onDriverChange={setSelectedDriver}
+              teamMembers={teamMembers}
+              isLoading={teamLoading}
+            />
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-48"
+            />
+          </div>
         </div>
       </div>
 
       {/* Week View */}
       <div className="grid grid-cols-7 gap-2 mb-6">
-        {weekDays.map((day) => (
-          <Button
-            key={day.date}
-            variant={day.date === selectedDate ? 'default' : 'outline'}
-            className={`flex flex-col h-16 ${day.isToday ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => setSelectedDate(day.date)}
-          >
-            <span className="text-xs opacity-70">{day.dayName}</span>
-            <span className="text-lg font-bold">{day.dayNum}</span>
-          </Button>
-        ))}
+        {weekDays.map((day) => {
+          const dayRoutes = filteredRoutes.filter(r => r.route_date === day.date);
+          const dayJobs = unassignedJobs.filter(j => j.scheduled_date === day.date);
+          
+          return (
+            <Button
+              key={day.date}
+              variant={day.date === selectedDate ? 'default' : 'outline'}
+              className={`flex flex-col h-20 relative ${day.isToday ? 'ring-2 ring-primary' : ''}`}
+              onClick={() => setSelectedDate(day.date)}
+            >
+              <span className="text-xs opacity-70">{day.dayName}</span>
+              <span className="text-lg font-bold">{day.dayNum}</span>
+              <div className="flex gap-1 mt-1">
+                {dayRoutes.length > 0 && (
+                  <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                    {dayRoutes.length}r
+                  </Badge>
+                )}
+                {dayJobs.length > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-500/50 text-amber-500">
+                    {dayJobs.length}j
+                  </Badge>
+                )}
+              </div>
+            </Button>
+          );
+        })}
       </div>
 
-      {/* Routes Grid */}
-      {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-48" />
-          ))}
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Left Column: Routes & Unassigned Jobs */}
+        <div className="space-y-6">
+          {/* Unassigned Jobs Section */}
+          <UnassignedJobsList
+            jobs={transformedUnassignedJobs}
+            selectedDate={selectedDate}
+            onAddToRoute={(jobId) => addJobToRoute.mutate(jobId)}
+            isLoading={jobsLoading}
+          />
+
+          {/* Routes for Date */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Route className="h-5 w-5 text-primary" />
+              Routes for {format(new Date(selectedDate), 'EEEE, MMM d')}
+            </h3>
+
+            {isLoading ? (
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-48" />
+                ))}
+              </div>
+            ) : routesForDate.length > 0 ? (
+              <div className="space-y-4">
+                {routesForDate.map((route) => (
+                  <div 
+                    key={route.id}
+                    onClick={() => setSelectedRoute(route)}
+                    className={`cursor-pointer transition-all ${
+                      selectedRoute?.id === route.id ? 'ring-2 ring-primary rounded-lg' : ''
+                    }`}
+                  >
+                    <DriverRouteCard
+                      driverName={getDriverName(route)}
+                      driverInitials={getDriverInitials(route)}
+                      route={route}
+                      stops={selectedRoute?.id === route.id ? transformedStops : []}
+                      shopLocation={shopData?.address || 'Shop'}
+                      onStartRoute={() => updateRouteStatus.mutate({ id: route.id, status: 'in_progress' })}
+                      onOptimizeRoute={selectedRoute?.id === route.id ? handleOptimizeRoute : undefined}
+                      onStopClick={(stop) => {
+                        if (stop.job_id) {
+                          navigate(`/power-washing/jobs/${stop.job_id}`);
+                        }
+                      }}
+                      isOptimizing={routeOptimization.isPending}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Card className="border-dashed border-2 border-muted-foreground/30">
+                <CardContent className="p-8 text-center">
+                  <Navigation className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                  <h4 className="font-semibold mb-1">No Routes for This Day</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Create a route to organize your jobs
+                  </p>
+                  <Button onClick={() => createRouteMutation.mutate(selectedDate)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Route
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
-      ) : routes && routes.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {routes.map((route) => (
-            <Card 
-              key={route.id} 
-              className="border-border hover:border-primary/30 transition-colors cursor-pointer"
-              onClick={() => navigate(`/power-washing/routes/${route.id}`)}
-            >
+
+        {/* Right Column: Map View */}
+        <div className="lg:sticky lg:top-6 h-fit">
+          <RouteMapView
+            stops={transformedStops}
+            shopLocation={shopLocation}
+            mapboxToken={mapboxToken}
+            optimizedRoute={routeOptimization.data?.optimizedRoute}
+            onStopClick={(stop) => {
+              const fullStop = routeStops.find(s => s.id === stop.id);
+              if (fullStop?.job_id) {
+                navigate(`/power-washing/jobs/${fullStop.job_id}`);
+              }
+            }}
+            isOptimizing={routeOptimization.isPending}
+          />
+
+          {/* Quick Stats */}
+          {selectedRoute && transformedStops.length > 0 && (
+            <Card className="mt-4 border-border">
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{route.route_name || 'Unnamed Route'}</CardTitle>
-                  <Badge className={getStatusColor(route.status)}>
-                    {route.status.replace('_', ' ')}
-                  </Badge>
-                </div>
+                <CardTitle className="text-sm">Route Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>{format(new Date(route.route_date), 'EEEE, MMM d')}</span>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-primary">{transformedStops.length}</p>
+                    <p className="text-xs text-muted-foreground">Stops</p>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Truck className="h-4 w-4" />
-                    <span>{route.total_jobs} jobs</span>
+                  <div>
+                    <p className="text-2xl font-bold text-primary">
+                      {selectedRoute.total_distance_miles?.toFixed(1) || '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Miles</p>
                   </div>
-                  {route.estimated_duration_minutes && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>{Math.round(route.estimated_duration_minutes / 60)}h {route.estimated_duration_minutes % 60}m estimated</span>
-                    </div>
-                  )}
-                  {route.total_distance_miles && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      <span>{route.total_distance_miles.toFixed(1)} miles</span>
-                    </div>
-                  )}
-                  {route.assigned_crew && route.assigned_crew.length > 0 && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users className="h-4 w-4" />
-                      <span>{route.assigned_crew.length} crew members</span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex gap-2 mt-4">
-                  {route.status === 'planned' && (
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateRouteStatus.mutate({ id: route.id, status: 'in_progress' });
-                      }}
-                    >
-                      <Play className="h-4 w-4 mr-1" />
-                      Start
-                    </Button>
-                  )}
-                  {route.status === 'in_progress' && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-green-500/30 text-green-500"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateRouteStatus.mutate({ id: route.id, status: 'completed' });
-                      }}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Complete
-                    </Button>
-                  )}
+                  <div>
+                    <p className="text-2xl font-bold text-primary">
+                      {selectedRoute.estimated_duration_minutes 
+                        ? `${Math.floor(selectedRoute.estimated_duration_minutes / 60)}h`
+                        : '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Est. Time</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
-          
-          {/* Add Route Card */}
-          <Card 
-            className="border-dashed border-2 border-muted-foreground/30 hover:border-primary/50 transition-colors cursor-pointer flex items-center justify-center min-h-[200px]"
-            onClick={() => createRouteMutation.mutate(selectedDate)}
-          >
-            <div className="text-center text-muted-foreground">
-              <Plus className="h-8 w-8 mx-auto mb-2" />
-              <p>Create Route for {format(new Date(selectedDate), 'MMM d')}</p>
-            </div>
-          </Card>
+          )}
         </div>
-      ) : (
-        <Card className="border-border">
-          <CardContent className="p-12 text-center">
-            <Navigation className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="text-xl font-semibold mb-2">No Routes Planned</h3>
-            <p className="text-muted-foreground mb-4">
-              Create a route to organize your jobs for efficient scheduling
-            </p>
-            <Button onClick={() => createRouteMutation.mutate(selectedDate)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Route for {format(new Date(selectedDate), 'MMM d')}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      </div>
     </div>
   );
 }
