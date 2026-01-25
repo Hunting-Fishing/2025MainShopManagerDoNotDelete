@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { CalendarViewType } from '@/types/calendar';
 import { CalendarHeader } from './CalendarHeader';
 import { CalendarView } from './CalendarView';
 import { CalendarFilters } from './CalendarFilters';
+import { CalendarDayDetailDialog } from './CalendarDayDetailDialog';
 import { useModuleCalendarEvents, ModuleType } from '@/hooks/useModuleCalendarEvents';
 import { MODULE_ROUTES } from '@/config/moduleRoutes';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,7 @@ export function UnifiedModuleCalendar({
 }: UnifiedModuleCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewType>('week');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [filters, setFilters] = useState({
     technician: '',
     status: '',
@@ -136,8 +137,23 @@ export function UnifiedModuleCalendar({
           currentDate={currentDate}
           view={view}
           loading={loading}
+          onDateClick={(date) => setSelectedDate(date)}
         />
       </div>
+
+      {/* Day Detail Dialog */}
+      <CalendarDayDetailDialog
+        date={selectedDate}
+        events={filteredEvents.filter(e => {
+          if (!selectedDate) return false;
+          const eventDate = new Date(e.start);
+          return eventDate.toDateString() === selectedDate.toDateString();
+        })}
+        isOpen={!!selectedDate}
+        onClose={() => setSelectedDate(null)}
+        onEventClick={() => {}}
+        onAddTask={onAddEvent}
+      />
     </div>
   );
 }
