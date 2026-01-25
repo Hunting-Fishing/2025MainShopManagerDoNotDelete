@@ -23,7 +23,7 @@ interface RouteStop {
   job?: {
     job_number: string;
     customer?: {
-      company_name?: string | null;
+      company?: string | null;
       first_name?: string | null;
       last_name?: string | null;
     } | null;
@@ -130,7 +130,7 @@ export function RouteMapView({
       );
       el.textContent = String(stop.stop_order);
 
-      const customerName = stop.job?.customer?.company_name || 
+      const customerName = stop.job?.customer?.company || 
         `${stop.job?.customer?.first_name || ''} ${stop.job?.customer?.last_name || ''}`.trim() ||
         'Unknown';
 

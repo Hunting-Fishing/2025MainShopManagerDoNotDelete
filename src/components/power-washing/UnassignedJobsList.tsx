@@ -59,7 +59,16 @@ export function UnassignedJobsList({
   }
 
   if (jobs.length === 0) {
-    return null;
+    return (
+      <Card className="border-dashed border-2 border-green-500/30 bg-green-500/5">
+        <CardContent className="p-6 text-center">
+          <div className="flex items-center justify-center gap-2 text-green-600">
+            <AlertCircle className="h-5 w-5" />
+            <span className="font-medium">All jobs are assigned to routes!</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   const getCustomerDisplay = (job: UnassignedJob) => {
