@@ -134,11 +134,11 @@ export function CalendarDayView({
                     <div
                       key={event.id}
                       onClick={() => onEventClick(event)}
-                      className={cn(
-                        "px-3 py-2 text-sm rounded mb-2 cursor-pointer relative z-10",
-                        priorityMap[event.priority].classes.replace("text-xs font-medium", ""),
-                        isOutsideHours && "ring-1 ring-orange-400 ring-opacity-50"
-                      )}
+                    className={cn(
+                      "px-3 py-2 text-sm rounded mb-2 cursor-pointer relative z-10",
+                      (priorityMap[event.priority]?.classes || "bg-gray-100 text-gray-800 border-gray-200").replace("text-xs font-medium", ""),
+                      isOutsideHours && "ring-1 ring-orange-400 ring-opacity-50"
+                    )}
                     >
                       <div className="font-medium flex items-center gap-1">
                         {isOutsideHours && <AlertTriangle className="h-3 w-3 text-orange-500" />}
