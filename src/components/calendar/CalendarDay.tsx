@@ -154,7 +154,7 @@ export function CalendarDay({
               }}
               className={cn(
                 "px-2 py-1 text-xs rounded truncate cursor-pointer relative z-20",
-                priorityMap[event.priority].classes.replace("text-xs font-medium", ""),
+                (priorityMap[event.priority]?.classes || "bg-gray-100 text-gray-800 border-gray-200").replace("text-xs font-medium", ""),
                 isOutsideHours && "ring-1 ring-orange-400 ring-opacity-50"
               )}
             >
