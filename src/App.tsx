@@ -161,7 +161,7 @@ const BookingManagement = lazy(() => import('@/pages/BookingManagement'));
 const CustomerAnalytics = lazy(() => import('@/pages/CustomerAnalytics'));
 const CustomerExperience = lazy(() => import('@/pages/CustomerExperience'));
 const CustomerFollowUps = lazy(() => import('@/pages/CustomerFollowUps'));
-const CustomerPortalLogin = lazy(() => import('@/pages/CustomerPortalLogin'));
+const CustomerPortalLoginOld = lazy(() => import('@/pages/CustomerPortalLogin'));
 const CustomerPortalAuthLogin = lazy(() => import('@/pages/customer-portal/CustomerPortalLogin'));
 const CustomerPortalRegister = lazy(() => import('@/pages/customer-portal/CustomerPortalRegister'));
 const CustomerPortalDashboard = lazy(() => import('@/pages/customer-portal/CustomerPortalDashboard'));
@@ -328,6 +328,12 @@ const FuelDeliveryPortalOrders = lazy(() => import('@/pages/fuel-delivery-portal
 const FuelDeliveryPortalLocations = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalLocations'));
 const FuelDeliveryPortalAccount = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalAccount'));
 
+// Septic Portal
+const SepticPortalLanding = lazy(() => import('@/pages/septic-portal/SepticPortalLanding'));
+const SepticPortalLogin = lazy(() => import('@/pages/septic-portal/SepticPortalLogin'));
+const SepticPortalRegister = lazy(() => import('@/pages/septic-portal/SepticPortalRegister'));
+const SepticPortalDashboard = lazy(() => import('@/pages/septic-portal/SepticPortalDashboard'));
+
 // Water Delivery
 const WaterDeliveryDashboard = lazy(() => import('@/pages/water-delivery/WaterDeliveryDashboard'));
 const WaterDeliveryOrders = lazy(() => import('@/pages/water-delivery/WaterDeliveryOrders'));
@@ -415,7 +421,7 @@ function App() {
         <Route path="/shop-setup" element={<ShopSetup />} />
         <Route path="/affiliate-verify" element={<AffiliateVerification />} />
         <Route path="/modules/:slug" element={<ModuleLearnMore />} />
-        <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
+        <Route path="/customer-portal-login" element={<CustomerPortalLoginOld />} />
         <Route path="/customer-portal" element={<CustomerPortalLanding />} />
         <Route path="/customer-portal/login" element={<CustomerPortalAuthLogin />} />
         <Route path="/customer-portal/register" element={<CustomerPortalRegister />} />
@@ -429,6 +435,13 @@ function App() {
         <Route path="/fuel-delivery-portal/orders" element={<FuelDeliveryPortalOrders />} />
         <Route path="/fuel-delivery-portal/locations" element={<FuelDeliveryPortalLocations />} />
         <Route path="/fuel-delivery-portal/account" element={<FuelDeliveryPortalAccount />} />
+        
+        {/* Septic Customer Portal - Public routes */}
+        <Route path="/septic-portal" element={<SepticPortalLanding />} />
+        <Route path="/septic-portal/login" element={<SepticPortalLogin />} />
+        <Route path="/septic-portal/register" element={<SepticPortalRegister />} />
+        <Route path="/septic-portal/dashboard" element={<SepticPortalDashboard />} />
+        
         <Route path="/customer-portal/dashboard" element={<CustomerPortalDashboard />} />
         <Route path="/b/:slug" element={<BusinessLanding />} />
         <Route path="/staff-login" element={<StaffLogin />} />
@@ -459,7 +472,7 @@ function App() {
                   <Route path="/store" element={<Store />} />
                   <Route path="/shopping" element={<Shopping />} />
                   <Route path="/shopping/:id" element={<ProductDetail />} />
-                  <Route path="/customer-portal" element={<CustomerPortal />} />
+                  {/* CustomerPortal is accessible via /customer-portal public route */}
                   
                   {/* Work Management */}
                   <Route path="/work-orders" element={
@@ -1134,7 +1147,7 @@ function App() {
                   } />
                   
                   {/* Customer Portal Login */}
-                  <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
+                  <Route path="/customer-portal-login" element={<CustomerPortalLoginOld />} />
                   
                   {/* Customer Service History */}
                   <Route path="/customer-service-history/:customerId" element={
