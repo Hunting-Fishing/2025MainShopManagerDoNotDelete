@@ -4,12 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
  * Module slug to route mapping
  */
 const MODULE_ROUTES: Record<string, string> = {
-  'automotive': '/dashboard',
-  'water-delivery': '/water-delivery/dashboard',
-  'marine': '/marine/dashboard',
-  'gunsmith': '/gunsmith-dashboard',
-  'lash-studio': '/lash-studio/dashboard',
-  'lawn-care': '/lawn-care/dashboard',
+  'automotive': '/automotive',
+  'water-delivery': '/water-delivery',
+  'marine': '/marine-services',
+  'gunsmith': '/gunsmith',
+  'power-washing': '/power-washing',
+  'fuel-delivery': '/fuel-delivery',
   'septic': '/septic',
 };
 

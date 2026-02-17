@@ -15,7 +15,7 @@ export function ServiceManagementPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <Button variant="outline" size="sm" className="mb-4" asChild>
-          <Link to="/developer">
+          <Link to="/system-admin">
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Developer Portal
           </Link>
         </Button>

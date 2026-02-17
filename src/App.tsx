@@ -503,6 +503,7 @@ function App() {
                   {/* Marine Module */}
                   <Route path="/marine-services" element={<MarineDashboard />} />
                   <Route path="/marine-services/store" element={<MarineStore />} />
+                  <Route path="/marine-services/developer" element={<MarineDeveloper />} />
                   
                   {/* Store */}
                   <Route path="/store" element={<Store />} />
@@ -1182,8 +1183,8 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Customer Portal Login */}
-                  <Route path="/customer-portal-login" element={<CustomerPortalLoginOld />} />
+                  {/* Customer Portal Login - redirects to new portal */}
+                  <Route path="/customer-portal-login" element={<Navigate to="/customer-portal/login" replace />} />
                   
                   {/* Customer Service History */}
                   <Route path="/customer-service-history/:customerId" element={
