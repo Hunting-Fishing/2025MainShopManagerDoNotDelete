@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { Layout } from '@/components/layout/Layout';
@@ -349,36 +349,36 @@ import WaterDeliveryPartsInventory from '@/pages/water-delivery/WaterDeliveryPar
 import WaterDeliveryStore from '@/pages/water-delivery/WaterDeliveryStore';
 import { WaterDeliveryLayout } from '@/components/water-delivery';
 
-// Septic Services
-import SepticDashboard from '@/pages/septic/SepticDashboard';
-import SepticOrders from '@/pages/septic/SepticOrders';
-import SepticOrderForm from '@/pages/septic/SepticOrderForm';
-import SepticCustomers from '@/pages/septic/SepticCustomers';
-import SepticCustomerDetails from '@/pages/septic/SepticCustomerDetails';
-import SepticLocations from '@/pages/septic/SepticLocations';
-import SepticProducts from '@/pages/septic/SepticProducts';
-import SepticTrucks from '@/pages/septic/SepticTrucks';
-import SepticDrivers from '@/pages/septic/SepticDrivers';
-import SepticDriverDetail from '@/pages/septic/SepticDriverDetail';
-import SepticRoutes from '@/pages/septic/SepticRoutes';
-import SepticCompletions from '@/pages/septic/SepticCompletions';
-import SepticInventory from '@/pages/septic/SepticInventory';
-import SepticInvoices from '@/pages/septic/SepticInvoices';
-import SepticDriverApp from '@/pages/septic/SepticDriverApp';
-import SepticPricing from '@/pages/septic/SepticPricing';
-import SepticTanks from '@/pages/septic/SepticTanks';
-import SepticTidyTanks from '@/pages/septic/SepticTidyTanks';
-import SepticTankFills from '@/pages/septic/SepticTankFills';
-import SepticEquipment from '@/pages/septic/SepticEquipment';
-import SepticEquipmentFilters from '@/pages/septic/SepticEquipmentFilters';
-import SepticQuotes from '@/pages/septic/SepticQuotes';
-import SepticProfile from '@/pages/septic/SepticProfile';
-import SepticSettings from '@/pages/septic/SepticSettings';
-import SepticPurchases from '@/pages/septic/SepticPurchases';
-import SepticStaff from '@/pages/septic/SepticStaff';
-import SepticStore from '@/pages/septic/SepticStore';
-import SepticInspections from '@/pages/septic/SepticInspections';
-import SepticDeveloper from '@/pages/septic/SepticDeveloper';
+// Septic Services (lazy loaded)
+const SepticDashboard = lazy(() => import('@/pages/septic/SepticDashboard'));
+const SepticOrders = lazy(() => import('@/pages/septic/SepticOrders'));
+const SepticOrderForm = lazy(() => import('@/pages/septic/SepticOrderForm'));
+const SepticCustomers = lazy(() => import('@/pages/septic/SepticCustomers'));
+const SepticCustomerDetails = lazy(() => import('@/pages/septic/SepticCustomerDetails'));
+const SepticLocations = lazy(() => import('@/pages/septic/SepticLocations'));
+const SepticProducts = lazy(() => import('@/pages/septic/SepticProducts'));
+const SepticTrucks = lazy(() => import('@/pages/septic/SepticTrucks'));
+const SepticDrivers = lazy(() => import('@/pages/septic/SepticDrivers'));
+const SepticDriverDetail = lazy(() => import('@/pages/septic/SepticDriverDetail'));
+const SepticRoutes = lazy(() => import('@/pages/septic/SepticRoutes'));
+const SepticCompletions = lazy(() => import('@/pages/septic/SepticCompletions'));
+const SepticInventory = lazy(() => import('@/pages/septic/SepticInventory'));
+const SepticInvoices = lazy(() => import('@/pages/septic/SepticInvoices'));
+const SepticDriverApp = lazy(() => import('@/pages/septic/SepticDriverApp'));
+const SepticPricing = lazy(() => import('@/pages/septic/SepticPricing'));
+const SepticTanks = lazy(() => import('@/pages/septic/SepticTanks'));
+const SepticTidyTanks = lazy(() => import('@/pages/septic/SepticTidyTanks'));
+const SepticTankFills = lazy(() => import('@/pages/septic/SepticTankFills'));
+const SepticEquipment = lazy(() => import('@/pages/septic/SepticEquipment'));
+const SepticEquipmentFilters = lazy(() => import('@/pages/septic/SepticEquipmentFilters'));
+const SepticQuotes = lazy(() => import('@/pages/septic/SepticQuotes'));
+const SepticProfile = lazy(() => import('@/pages/septic/SepticProfile'));
+const SepticSettings = lazy(() => import('@/pages/septic/SepticSettings'));
+const SepticPurchases = lazy(() => import('@/pages/septic/SepticPurchases'));
+const SepticStaff = lazy(() => import('@/pages/septic/SepticStaff'));
+const SepticStore = lazy(() => import('@/pages/septic/SepticStore'));
+const SepticInspections = lazy(() => import('@/pages/septic/SepticInspections'));
+const SepticDeveloper = lazy(() => import('@/pages/septic/SepticDeveloper'));
 import { SepticLayout } from '@/components/septic';
 
 function App() {
@@ -1445,6 +1445,11 @@ function App() {
                   <Route path="/settings" element={<WaterDeliverySettings />} />
                   <Route path="/store" element={<WaterDeliveryStore />} />
                   <Route path="/developer" element={<WaterDeliveryDeveloper />} />
+                </Routes>
+              </WaterDeliveryLayout>
+            </AuthGate>
+          }
+        />
 
         {/* Septic Services Module */}
         <Route
@@ -1452,6 +1457,7 @@ function App() {
           element={
             <AuthGate>
               <SepticLayout>
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
                 <Routes>
                   <Route path="/" element={<SepticDashboard />} />
                   <Route path="/orders" element={<SepticOrders />} />
@@ -1483,12 +1489,8 @@ function App() {
                   <Route path="/store" element={<SepticStore />} />
                   <Route path="/developer" element={<SepticDeveloper />} />
                 </Routes>
+                </Suspense>
               </SepticLayout>
-            </AuthGate>
-          }
-        />
-      </Routes>
-              </WaterDeliveryLayout>
             </AuthGate>
           }
         />
