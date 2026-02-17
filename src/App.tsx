@@ -334,6 +334,24 @@ const SepticPortalLogin = lazy(() => import('@/pages/septic-portal/SepticPortalL
 const SepticPortalRegister = lazy(() => import('@/pages/septic-portal/SepticPortalRegister'));
 const SepticPortalDashboard = lazy(() => import('@/pages/septic-portal/SepticPortalDashboard'));
 
+// Automotive Portal
+const AutomotivePortalLanding = lazy(() => import('@/pages/automotive-portal/AutomotivePortalLanding'));
+const AutomotivePortalLogin = lazy(() => import('@/pages/automotive-portal/AutomotivePortalLogin'));
+const AutomotivePortalRegister = lazy(() => import('@/pages/automotive-portal/AutomotivePortalRegister'));
+const AutomotivePortalDashboard = lazy(() => import('@/pages/automotive-portal/AutomotivePortalDashboard'));
+
+// Water Delivery Portal
+const WaterDeliveryPortalLanding = lazy(() => import('@/pages/water-delivery-portal/WaterDeliveryPortalLanding'));
+const WaterDeliveryPortalLogin = lazy(() => import('@/pages/water-delivery-portal/WaterDeliveryPortalLogin'));
+const WaterDeliveryPortalRegister = lazy(() => import('@/pages/water-delivery-portal/WaterDeliveryPortalRegister'));
+const WaterDeliveryPortalDashboardPage = lazy(() => import('@/pages/water-delivery-portal/WaterDeliveryPortalDashboard'));
+
+// Marine Portal
+const MarinePortalLanding = lazy(() => import('@/pages/marine-portal/MarinePortalLanding'));
+const MarinePortalLogin = lazy(() => import('@/pages/marine-portal/MarinePortalLogin'));
+const MarinePortalRegister = lazy(() => import('@/pages/marine-portal/MarinePortalRegister'));
+const MarinePortalDashboard = lazy(() => import('@/pages/marine-portal/MarinePortalDashboard'));
+
 // Water Delivery
 const WaterDeliveryDashboard = lazy(() => import('@/pages/water-delivery/WaterDeliveryDashboard'));
 const WaterDeliveryOrders = lazy(() => import('@/pages/water-delivery/WaterDeliveryOrders'));
@@ -441,6 +459,24 @@ function App() {
         <Route path="/septic-portal/login" element={<SepticPortalLogin />} />
         <Route path="/septic-portal/register" element={<SepticPortalRegister />} />
         <Route path="/septic-portal/dashboard" element={<SepticPortalDashboard />} />
+        
+        {/* Automotive Customer Portal - Public routes */}
+        <Route path="/automotive-portal" element={<AutomotivePortalLanding />} />
+        <Route path="/automotive-portal/login" element={<AutomotivePortalLogin />} />
+        <Route path="/automotive-portal/register" element={<AutomotivePortalRegister />} />
+        <Route path="/automotive-portal/dashboard" element={<AutomotivePortalDashboard />} />
+        
+        {/* Water Delivery Customer Portal - Public routes */}
+        <Route path="/water-delivery-portal" element={<WaterDeliveryPortalLanding />} />
+        <Route path="/water-delivery-portal/login" element={<WaterDeliveryPortalLogin />} />
+        <Route path="/water-delivery-portal/register" element={<WaterDeliveryPortalRegister />} />
+        <Route path="/water-delivery-portal/dashboard" element={<WaterDeliveryPortalDashboardPage />} />
+        
+        {/* Marine Customer Portal - Public routes */}
+        <Route path="/marine-portal" element={<MarinePortalLanding />} />
+        <Route path="/marine-portal/login" element={<MarinePortalLogin />} />
+        <Route path="/marine-portal/register" element={<MarinePortalRegister />} />
+        <Route path="/marine-portal/dashboard" element={<MarinePortalDashboard />} />
         
         <Route path="/customer-portal/dashboard" element={<CustomerPortalDashboard />} />
         <Route path="/b/:slug" element={<BusinessLanding />} />
