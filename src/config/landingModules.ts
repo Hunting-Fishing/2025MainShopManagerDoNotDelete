@@ -21,6 +21,7 @@ import {
   CircleDot,
   Clover,
   Cog,
+  Container,
   Coffee,
   Compass,
   Cookie,
@@ -591,6 +592,26 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Quotes and invoicing',
     ],
   },
+  {
+    slug: 'septic',
+    name: 'Septic Services',
+    description: 'Pumping schedules, tank management, inspections, and compliance tracking',
+    icon: Container,
+    color: 'bg-stone-500',
+    price: 'From $9/mo',
+    available: true,
+    coreFeatures: [
+      'Tank registry and pump-out scheduling',
+      'Route optimization and driver app',
+      'EPA/county compliance inspections',
+      'Real-time service tracking',
+    ],
+    extraFeatures: [
+      'System component tracking',
+      'Quotes and invoicing',
+      'Equipment management',
+    ],
+  },
 ];
 
 export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
@@ -611,7 +632,7 @@ export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
       { name: 'Fencing', description: 'Fence installation, repair, and material estimating', icon: Home },
       { name: 'Landscaping', description: 'Lawn care, design, irrigation, and crew scheduling', icon: Trees },
       { name: 'Pest Control', description: 'Route optimization, chemical compliance, and treatment plans', icon: Bug },
-      { name: 'Septic Services', description: 'Pumping schedules, inspections, and compliance tracking', icon: Droplets },
+      
       { name: 'Window Cleaning', description: 'Commercial and residential window and gutter cleaning', icon: Sparkles },
       { name: 'Garage Door Services', description: 'Installation, repair, and opener programming', icon: Cog },
       { name: 'Chimney Services', description: 'Cleaning, inspection, and masonry repair', icon: Flame },

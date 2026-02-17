@@ -10,6 +10,7 @@ const MODULE_ROUTES: Record<string, string> = {
   'gunsmith': '/gunsmith-dashboard',
   'lash-studio': '/lash-studio/dashboard',
   'lawn-care': '/lawn-care/dashboard',
+  'septic': '/septic',
 };
 
 /**
