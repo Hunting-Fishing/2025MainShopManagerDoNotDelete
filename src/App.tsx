@@ -349,6 +349,38 @@ import WaterDeliveryPartsInventory from '@/pages/water-delivery/WaterDeliveryPar
 import WaterDeliveryStore from '@/pages/water-delivery/WaterDeliveryStore';
 import { WaterDeliveryLayout } from '@/components/water-delivery';
 
+// Septic Services
+import SepticDashboard from '@/pages/septic/SepticDashboard';
+import SepticOrders from '@/pages/septic/SepticOrders';
+import SepticOrderForm from '@/pages/septic/SepticOrderForm';
+import SepticCustomers from '@/pages/septic/SepticCustomers';
+import SepticCustomerDetails from '@/pages/septic/SepticCustomerDetails';
+import SepticLocations from '@/pages/septic/SepticLocations';
+import SepticProducts from '@/pages/septic/SepticProducts';
+import SepticTrucks from '@/pages/septic/SepticTrucks';
+import SepticDrivers from '@/pages/septic/SepticDrivers';
+import SepticDriverDetail from '@/pages/septic/SepticDriverDetail';
+import SepticRoutes from '@/pages/septic/SepticRoutes';
+import SepticCompletions from '@/pages/septic/SepticCompletions';
+import SepticInventory from '@/pages/septic/SepticInventory';
+import SepticInvoices from '@/pages/septic/SepticInvoices';
+import SepticDriverApp from '@/pages/septic/SepticDriverApp';
+import SepticPricing from '@/pages/septic/SepticPricing';
+import SepticTanks from '@/pages/septic/SepticTanks';
+import SepticTidyTanks from '@/pages/septic/SepticTidyTanks';
+import SepticTankFills from '@/pages/septic/SepticTankFills';
+import SepticEquipment from '@/pages/septic/SepticEquipment';
+import SepticEquipmentFilters from '@/pages/septic/SepticEquipmentFilters';
+import SepticQuotes from '@/pages/septic/SepticQuotes';
+import SepticProfile from '@/pages/septic/SepticProfile';
+import SepticSettings from '@/pages/septic/SepticSettings';
+import SepticPurchases from '@/pages/septic/SepticPurchases';
+import SepticStaff from '@/pages/septic/SepticStaff';
+import SepticStore from '@/pages/septic/SepticStore';
+import SepticInspections from '@/pages/septic/SepticInspections';
+import SepticDeveloper from '@/pages/septic/SepticDeveloper';
+import { SepticLayout } from '@/components/septic';
+
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1413,7 +1445,49 @@ function App() {
                   <Route path="/settings" element={<WaterDeliverySettings />} />
                   <Route path="/store" element={<WaterDeliveryStore />} />
                   <Route path="/developer" element={<WaterDeliveryDeveloper />} />
+
+        {/* Septic Services Module */}
+        <Route
+          path="/septic/*"
+          element={
+            <AuthGate>
+              <SepticLayout>
+                <Routes>
+                  <Route path="/" element={<SepticDashboard />} />
+                  <Route path="/orders" element={<SepticOrders />} />
+                  <Route path="/orders/new" element={<SepticOrderForm />} />
+                  <Route path="/customers" element={<SepticCustomers />} />
+                  <Route path="/customers/:customerId" element={<SepticCustomerDetails />} />
+                  <Route path="/locations" element={<SepticLocations />} />
+                  <Route path="/products" element={<SepticProducts />} />
+                  <Route path="/trucks" element={<SepticTrucks />} />
+                  <Route path="/drivers" element={<SepticDrivers />} />
+                  <Route path="/drivers/:id" element={<SepticDriverDetail />} />
+                  <Route path="/routes" element={<SepticRoutes />} />
+                  <Route path="/completions" element={<SepticCompletions />} />
+                  <Route path="/inventory" element={<SepticInventory />} />
+                  <Route path="/invoices" element={<SepticInvoices />} />
+                  <Route path="/driver-app" element={<SepticDriverApp />} />
+                  <Route path="/pricing" element={<SepticPricing />} />
+                  <Route path="/tanks" element={<SepticTanks />} />
+                  <Route path="/tidy-tanks" element={<SepticTidyTanks />} />
+                  <Route path="/tank-fills" element={<SepticTankFills />} />
+                  <Route path="/equipment" element={<SepticEquipment />} />
+                  <Route path="/equipment-filters" element={<SepticEquipmentFilters />} />
+                  <Route path="/quotes" element={<SepticQuotes />} />
+                  <Route path="/purchases" element={<SepticPurchases />} />
+                  <Route path="/staff" element={<SepticStaff />} />
+                  <Route path="/inspections" element={<SepticInspections />} />
+                  <Route path="/profile" element={<SepticProfile />} />
+                  <Route path="/settings" element={<SepticSettings />} />
+                  <Route path="/store" element={<SepticStore />} />
+                  <Route path="/developer" element={<SepticDeveloper />} />
                 </Routes>
+              </SepticLayout>
+            </AuthGate>
+          }
+        />
+      </Routes>
               </WaterDeliveryLayout>
             </AuthGate>
           }
