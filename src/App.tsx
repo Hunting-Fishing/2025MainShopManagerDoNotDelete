@@ -4,352 +4,362 @@ import { Toaster } from '@/components/ui/toaster';
 import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AuthGate } from '@/components/AuthGate';
-import { AuthDebugPanel } from '@/components/debug/AuthDebugPanel';
 import { authMonitor } from '@/utils/authMonitoring';
+import { GlobalUX } from '@/components/ux/GlobalUX';
 import Index from '@/pages/Index';
 
-// Pages
-import Dashboard from '@/pages/Dashboard';
-import ModuleHub from '@/pages/ModuleHub';
-import UpcomingModules from '@/pages/UpcomingModules';
-import Shopping from '@/pages/Shopping';
-import ProductDetail from '@/pages/ProductDetail';
-import CustomerPortal from '@/pages/CustomerPortal';
-import WorkOrders from '@/pages/WorkOrders';
-import Customers from '@/pages/Customers';
-import Inventory from '@/pages/Inventory';
-import InventoryAnalytics from '@/pages/InventoryAnalytics';
-import InventoryManager from '@/pages/InventoryManager';
-import InventoryAdd from '@/pages/InventoryAdd';
-import ServicePackages from '@/pages/ServicePackages';
-import AssetUsageTracking from '@/pages/AssetUsageTracking';
-import ConsumptionTracking from '@/pages/ConsumptionTracking';
-import MobileInventory from '@/pages/MobileInventory';
-import MaintenancePlanning from '@/pages/MaintenancePlanning';
-import Analytics from '@/pages/Analytics';
-import Settings from '@/pages/Settings';
-import Calendar from '@/pages/Calendar';
-import Team from '@/pages/Team';
-import CustomerComms from '@/pages/CustomerComms';
-import CallLogger from '@/pages/CallLogger';
-import Help from '@/pages/Help';
-import ServiceReminders from '@/pages/ServiceReminders';
-import Quotes from '@/pages/Quotes';
-import Invoices from '@/pages/Invoices';
-import ServiceBoard from '@/pages/ServiceBoard';
-import Payments from '@/pages/Payments';
-import CompanyProfile from '@/pages/CompanyProfile';
-import Documents from '@/pages/Documents';
-import Contacts from '@/pages/Contacts';
-import ServiceCatalog from '@/pages/ServiceCatalog';
-import RepairPlans from '@/pages/RepairPlans';
-import Login from '@/pages/Login';
-import StaffLogin from '@/pages/StaffLogin';
-import Signup from '@/pages/Signup';
-import About from '@/pages/About';
-import Pricing from '@/pages/Pricing';
-import { ArticleViewer } from '@/components/help/ArticleViewer';
-import { LearningPathDetail } from '@/components/help/LearningPathDetail';
-import { ServiceManagementPage } from '@/pages/developer/ServiceManagementPage';
-import InvoiceDetails from '@/pages/InvoiceDetails';
-import SignatureDemo from '@/pages/SignatureDemo';
-import EquipmentManagement from '@/pages/EquipmentManagement';
-import Equipment from '@/pages/Equipment';
-import EquipmentDetails from '@/pages/EquipmentDetails';
-import EquipmentDashboard from '@/pages/EquipmentDashboard';
-import FleetManagement from '@/pages/FleetManagement';
-import SafetyEquipment from '@/pages/SafetyEquipment';
-import MaintenanceRequests from '@/pages/MaintenanceRequests';
-import ShoppingCartPage from '@/pages/ShoppingCart';
-import WishlistPage from '@/pages/WishlistPage';
-import Orders from '@/pages/Orders';
-import Security from '@/pages/Security';
-import Profile from '@/pages/Profile';
-import Notifications from '@/pages/Notifications';
-import Reports from '@/pages/Reports';
-import Projects from '@/pages/Projects';
-import ProjectDetails from '@/pages/ProjectDetails';
-import Forms from '@/pages/Forms';
-import FormSubmissions from '@/pages/FormSubmissions';
-import QuoteDetails from '@/pages/QuoteDetails';
-import WorkOrderDetails from '@/pages/WorkOrderDetails';
-import RepairPlanDetails from '@/pages/RepairPlanDetails';
-import AIHub from '@/pages/AIHub';
-import Chat from '@/pages/Chat';
-import EmailCampaigns from '@/pages/EmailCampaigns';
-import EmailSequences from '@/pages/EmailSequences';
-import EmailTemplates from '@/pages/EmailTemplates';
-import Feedback from '@/pages/Feedback';
-import FeedbackFormsPage from '@/pages/feedback/FeedbackFormsPage';
-import FeedbackFormEditorPage from '@/pages/feedback/FeedbackFormEditorPage';
-import FeedbackAnalyticsPage from '@/pages/feedback/FeedbackAnalyticsPage';
-import SystemAdmin from '@/pages/SystemAdmin';
-import WaterDeliveryDeveloper from '@/pages/water-delivery/WaterDeliveryDeveloper';
-import AutomotiveDeveloper from '@/pages/automotive/AutomotiveDeveloper';
-import GunsmithDeveloper from '@/pages/gunsmith/GunsmithDeveloper';
-import MarineDeveloper from '@/pages/marine/MarineDeveloper';
-import FuelDeliveryDeveloper from '@/pages/fuel-delivery/FuelDeliveryDeveloper';
-import PowerWashingDeveloper from '@/pages/power-washing/PowerWashingDeveloper';
-import SmsManagement from '@/pages/SmsManagement';
-import SmsTemplates from '@/pages/SmsTemplates';
-import Timesheet from '@/pages/Timesheet';
-import FeatureRequests from '@/pages/FeatureRequests';
-import EquipmentTracking from '@/pages/EquipmentTracking';
-import EmployeeScheduling from '@/pages/EmployeeScheduling';
-import TrainingOverview from '@/pages/TrainingOverview';
-import DailyLogs from '@/pages/DailyLogs';
-import Insurance from '@/pages/Insurance';
-import FuelManagement from '@/pages/FuelManagement';
-import Warranties from '@/pages/Warranties';
-import DriverManagement from '@/pages/DriverManagement';
-import TireManagement from '@/pages/TireManagement';
-import AccountingIntegration from '@/pages/AccountingIntegration';
-import Safety from '@/pages/Safety';
-import SafetyIncidents from '@/pages/SafetyIncidents';
-import SafetyIncidentNew from '@/pages/SafetyIncidentNew';
-import SafetyIncidentDetails from '@/pages/SafetyIncidentDetails';
-import SafetyInspections from '@/pages/SafetyInspections';
-import SafetyInspectionNew from '@/pages/SafetyInspectionNew';
-import SafetyDVIR from '@/pages/SafetyDVIR';
-import SafetyDVIRNew from '@/pages/SafetyDVIRNew';
-import SafetyDVIRDetails from '@/pages/SafetyDVIRDetails';
-import SafetyLiftInspections from '@/pages/SafetyLiftInspections';
-import ForkliftInspection from '@/pages/ForkliftInspection';
-import VesselInspection from '@/pages/VesselInspection';
-import VesselInspectionHistoryPage from '@/pages/VesselInspectionHistoryPage';
-import InspectionAnalytics from '@/pages/InspectionAnalytics';
-import SafetyLiftInspectionNew from '@/pages/SafetyLiftInspectionNew';
-import SafetyDocuments from '@/pages/SafetyDocuments';
-import SafetyCertifications from '@/pages/SafetyCertifications';
-import SafetySchedules from '@/pages/SafetySchedules';
-import SafetyReports from '@/pages/SafetyReports';
-import SafetyCorrectiveActions from '@/pages/SafetyCorrectiveActions';
-import SafetyNearMiss from '@/pages/SafetyNearMiss';
-import SafetyTraining from '@/pages/SafetyTraining';
-import SafetyMeetings from '@/pages/SafetyMeetings';
-import SafetyJSA from '@/pages/SafetyJSA';
-import SafetyPPE from '@/pages/SafetyPPE';
-import SafetyContractors from '@/pages/SafetyContractors';
-import SafetyGamification from '@/pages/SafetyGamification';
-import TechnicianPortal from '@/pages/TechnicianPortal';
-import { GlobalUX } from '@/components/ux/GlobalUX';
-import SetupBrianAuth from '@/pages/SetupBrianAuth';
-import Onboarding from '@/pages/Onboarding';
-import ShopSetup from '@/pages/ShopSetup';
-import SecurityAudit from '@/pages/SecurityAudit';
-import ResetPassword from '@/pages/ResetPassword';
-import Planner from '@/pages/Planner';
-import Payroll from '@/pages/Payroll';
-import AdvancedAnalytics from '@/pages/AdvancedAnalytics';
-import AffiliateTool from '@/pages/AffiliateTool';
-import AffiliateVerification from '@/pages/AffiliateVerification';
-import Store from '@/pages/Store';
-import BoatInspection from '@/pages/BoatInspection';
-import Checkout from '@/pages/Checkout';
-import ClientBooking from '@/pages/ClientBooking';
-import BookingManagement from '@/pages/BookingManagement';
-import CustomerAnalytics from '@/pages/CustomerAnalytics';
-import CustomerExperience from '@/pages/CustomerExperience';
-import CustomerFollowUps from '@/pages/CustomerFollowUps';
-import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
-import CustomerPortalAuthLogin from '@/pages/customer-portal/CustomerPortalLogin';
-import CustomerPortalRegister from '@/pages/customer-portal/CustomerPortalRegister';
-import CustomerPortalDashboard from '@/pages/customer-portal/CustomerPortalDashboard';
-import CustomerPortalLanding from '@/pages/customer-portal/CustomerPortalLanding';
-import BusinessLanding from '@/pages/customer-portal/BusinessLanding';
-import CustomerServiceHistory from '@/pages/CustomerServiceHistory';
-import EmailCampaignAnalytics from '@/pages/EmailCampaignAnalytics';
-import EmailSequenceDetails from '@/pages/EmailSequenceDetails';
-import Enterprise from '@/pages/Enterprise';
-import EnterpriseAdmin from '@/pages/EnterpriseAdmin';
-import InventoryAutomation from '@/pages/InventoryAutomation';
-import InventoryCategories from '@/pages/InventoryCategories';
-import InventoryLocations from '@/pages/InventoryLocations';
-import InventoryOrders from '@/pages/InventoryOrders';
-import InventorySuppliers from '@/pages/InventorySuppliers';
-import InvoiceCreate from '@/pages/InvoiceCreate';
-import InvoiceScan from '@/pages/InvoiceScan';
-import MaintenanceDashboard from '@/pages/MaintenanceDashboard';
-import NotFound from '@/pages/NotFound';
-import OrderConfirmation from '@/pages/OrderConfirmation';
-import PartsTracking from '@/pages/PartsTracking';
-import PurchaseOrders from '@/pages/PurchaseOrders';
-import StockControl from '@/pages/StockControl';
-import TeamMemberProfile from '@/pages/TeamMemberProfile';
-import TeamRoles from '@/pages/TeamRoles';
-import Unauthorized from '@/pages/Unauthorized';
-import VehicleDetails from '@/pages/VehicleDetails';
-import VehicleInspectionForm from '@/pages/VehicleInspectionForm';
-import TermsOfService from '@/pages/legal/TermsOfService';
-import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
-import ModuleLearnMore from '@/pages/ModuleLearnMore';
+// Suspense fallback component
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+  </div>
+);
+
+// ============================================================
+// ALL page imports are lazy-loaded for code-splitting
+// ============================================================
+
+// Core Pages
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const ModuleHub = lazy(() => import('@/pages/ModuleHub'));
+const UpcomingModules = lazy(() => import('@/pages/UpcomingModules'));
+const Shopping = lazy(() => import('@/pages/Shopping'));
+const ProductDetail = lazy(() => import('@/pages/ProductDetail'));
+const CustomerPortal = lazy(() => import('@/pages/CustomerPortal'));
+const WorkOrders = lazy(() => import('@/pages/WorkOrders'));
+const Customers = lazy(() => import('@/pages/Customers'));
+const Inventory = lazy(() => import('@/pages/Inventory'));
+const InventoryAnalytics = lazy(() => import('@/pages/InventoryAnalytics'));
+const InventoryManager = lazy(() => import('@/pages/InventoryManager'));
+const InventoryAdd = lazy(() => import('@/pages/InventoryAdd'));
+const ServicePackages = lazy(() => import('@/pages/ServicePackages'));
+const AssetUsageTracking = lazy(() => import('@/pages/AssetUsageTracking'));
+const ConsumptionTracking = lazy(() => import('@/pages/ConsumptionTracking'));
+const MobileInventory = lazy(() => import('@/pages/MobileInventory'));
+const MaintenancePlanning = lazy(() => import('@/pages/MaintenancePlanning'));
+const Analytics = lazy(() => import('@/pages/Analytics'));
+const Settings = lazy(() => import('@/pages/Settings'));
+const Calendar = lazy(() => import('@/pages/Calendar'));
+const Team = lazy(() => import('@/pages/Team'));
+const CustomerComms = lazy(() => import('@/pages/CustomerComms'));
+const CallLogger = lazy(() => import('@/pages/CallLogger'));
+const Help = lazy(() => import('@/pages/Help'));
+const ServiceReminders = lazy(() => import('@/pages/ServiceReminders'));
+const Quotes = lazy(() => import('@/pages/Quotes'));
+const Invoices = lazy(() => import('@/pages/Invoices'));
+const ServiceBoard = lazy(() => import('@/pages/ServiceBoard'));
+const Payments = lazy(() => import('@/pages/Payments'));
+const CompanyProfile = lazy(() => import('@/pages/CompanyProfile'));
+const Documents = lazy(() => import('@/pages/Documents'));
+const Contacts = lazy(() => import('@/pages/Contacts'));
+const ServiceCatalog = lazy(() => import('@/pages/ServiceCatalog'));
+const RepairPlans = lazy(() => import('@/pages/RepairPlans'));
+const Login = lazy(() => import('@/pages/Login'));
+const StaffLogin = lazy(() => import('@/pages/StaffLogin'));
+const Signup = lazy(() => import('@/pages/Signup'));
+const About = lazy(() => import('@/pages/About'));
+const Pricing = lazy(() => import('@/pages/Pricing'));
+const ArticleViewer = lazy(() => import('@/components/help/ArticleViewer').then(m => ({ default: m.ArticleViewer })));
+const LearningPathDetail = lazy(() => import('@/components/help/LearningPathDetail').then(m => ({ default: m.LearningPathDetail })));
+const ServiceManagementPage = lazy(() => import('@/pages/developer/ServiceManagementPage').then(m => ({ default: m.ServiceManagementPage })));
+const InvoiceDetails = lazy(() => import('@/pages/InvoiceDetails'));
+const SignatureDemo = lazy(() => import('@/pages/SignatureDemo'));
+const EquipmentManagement = lazy(() => import('@/pages/EquipmentManagement'));
+const Equipment = lazy(() => import('@/pages/Equipment'));
+const EquipmentDetails = lazy(() => import('@/pages/EquipmentDetails'));
+const EquipmentDashboard = lazy(() => import('@/pages/EquipmentDashboard'));
+const FleetManagement = lazy(() => import('@/pages/FleetManagement'));
+const SafetyEquipment = lazy(() => import('@/pages/SafetyEquipment'));
+const MaintenanceRequests = lazy(() => import('@/pages/MaintenanceRequests'));
+const ShoppingCartPage = lazy(() => import('@/pages/ShoppingCart'));
+const WishlistPage = lazy(() => import('@/pages/WishlistPage'));
+const Orders = lazy(() => import('@/pages/Orders'));
+const Security = lazy(() => import('@/pages/Security'));
+const Profile = lazy(() => import('@/pages/Profile'));
+const Notifications = lazy(() => import('@/pages/Notifications'));
+const Reports = lazy(() => import('@/pages/Reports'));
+const Projects = lazy(() => import('@/pages/Projects'));
+const ProjectDetails = lazy(() => import('@/pages/ProjectDetails'));
+const Forms = lazy(() => import('@/pages/Forms'));
+const FormSubmissions = lazy(() => import('@/pages/FormSubmissions'));
+const QuoteDetails = lazy(() => import('@/pages/QuoteDetails'));
+const WorkOrderDetails = lazy(() => import('@/pages/WorkOrderDetails'));
+const RepairPlanDetails = lazy(() => import('@/pages/RepairPlanDetails'));
+const AIHub = lazy(() => import('@/pages/AIHub'));
+const Chat = lazy(() => import('@/pages/Chat'));
+const EmailCampaigns = lazy(() => import('@/pages/EmailCampaigns'));
+const EmailSequences = lazy(() => import('@/pages/EmailSequences'));
+const EmailTemplates = lazy(() => import('@/pages/EmailTemplates'));
+const Feedback = lazy(() => import('@/pages/Feedback'));
+const FeedbackFormsPage = lazy(() => import('@/pages/feedback/FeedbackFormsPage'));
+const FeedbackFormEditorPage = lazy(() => import('@/pages/feedback/FeedbackFormEditorPage'));
+const FeedbackAnalyticsPage = lazy(() => import('@/pages/feedback/FeedbackAnalyticsPage'));
+const SystemAdmin = lazy(() => import('@/pages/SystemAdmin'));
+const WaterDeliveryDeveloper = lazy(() => import('@/pages/water-delivery/WaterDeliveryDeveloper'));
+const AutomotiveDeveloper = lazy(() => import('@/pages/automotive/AutomotiveDeveloper'));
+const GunsmithDeveloper = lazy(() => import('@/pages/gunsmith/GunsmithDeveloper'));
+const MarineDeveloper = lazy(() => import('@/pages/marine/MarineDeveloper'));
+const FuelDeliveryDeveloper = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryDeveloper'));
+const PowerWashingDeveloper = lazy(() => import('@/pages/power-washing/PowerWashingDeveloper'));
+const SmsManagement = lazy(() => import('@/pages/SmsManagement'));
+const SmsTemplates = lazy(() => import('@/pages/SmsTemplates'));
+const Timesheet = lazy(() => import('@/pages/Timesheet'));
+const FeatureRequests = lazy(() => import('@/pages/FeatureRequests'));
+const EquipmentTracking = lazy(() => import('@/pages/EquipmentTracking'));
+const EmployeeScheduling = lazy(() => import('@/pages/EmployeeScheduling'));
+const TrainingOverview = lazy(() => import('@/pages/TrainingOverview'));
+const DailyLogs = lazy(() => import('@/pages/DailyLogs'));
+const Insurance = lazy(() => import('@/pages/Insurance'));
+const FuelManagement = lazy(() => import('@/pages/FuelManagement'));
+const Warranties = lazy(() => import('@/pages/Warranties'));
+const DriverManagement = lazy(() => import('@/pages/DriverManagement'));
+const TireManagement = lazy(() => import('@/pages/TireManagement'));
+const AccountingIntegration = lazy(() => import('@/pages/AccountingIntegration'));
+const Safety = lazy(() => import('@/pages/Safety'));
+const SafetyIncidents = lazy(() => import('@/pages/SafetyIncidents'));
+const SafetyIncidentNew = lazy(() => import('@/pages/SafetyIncidentNew'));
+const SafetyIncidentDetails = lazy(() => import('@/pages/SafetyIncidentDetails'));
+const SafetyInspections = lazy(() => import('@/pages/SafetyInspections'));
+const SafetyInspectionNew = lazy(() => import('@/pages/SafetyInspectionNew'));
+const SafetyDVIR = lazy(() => import('@/pages/SafetyDVIR'));
+const SafetyDVIRNew = lazy(() => import('@/pages/SafetyDVIRNew'));
+const SafetyDVIRDetails = lazy(() => import('@/pages/SafetyDVIRDetails'));
+const SafetyLiftInspections = lazy(() => import('@/pages/SafetyLiftInspections'));
+const ForkliftInspection = lazy(() => import('@/pages/ForkliftInspection'));
+const VesselInspection = lazy(() => import('@/pages/VesselInspection'));
+const VesselInspectionHistoryPage = lazy(() => import('@/pages/VesselInspectionHistoryPage'));
+const InspectionAnalytics = lazy(() => import('@/pages/InspectionAnalytics'));
+const SafetyLiftInspectionNew = lazy(() => import('@/pages/SafetyLiftInspectionNew'));
+const SafetyDocuments = lazy(() => import('@/pages/SafetyDocuments'));
+const SafetyCertifications = lazy(() => import('@/pages/SafetyCertifications'));
+const SafetySchedules = lazy(() => import('@/pages/SafetySchedules'));
+const SafetyReports = lazy(() => import('@/pages/SafetyReports'));
+const SafetyCorrectiveActions = lazy(() => import('@/pages/SafetyCorrectiveActions'));
+const SafetyNearMiss = lazy(() => import('@/pages/SafetyNearMiss'));
+const SafetyTraining = lazy(() => import('@/pages/SafetyTraining'));
+const SafetyMeetings = lazy(() => import('@/pages/SafetyMeetings'));
+const SafetyJSA = lazy(() => import('@/pages/SafetyJSA'));
+const SafetyPPE = lazy(() => import('@/pages/SafetyPPE'));
+const SafetyContractors = lazy(() => import('@/pages/SafetyContractors'));
+const SafetyGamification = lazy(() => import('@/pages/SafetyGamification'));
+const TechnicianPortal = lazy(() => import('@/pages/TechnicianPortal'));
+const SetupBrianAuth = lazy(() => import('@/pages/SetupBrianAuth'));
+const Onboarding = lazy(() => import('@/pages/Onboarding'));
+const ShopSetup = lazy(() => import('@/pages/ShopSetup'));
+const SecurityAudit = lazy(() => import('@/pages/SecurityAudit'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const Planner = lazy(() => import('@/pages/Planner'));
+const Payroll = lazy(() => import('@/pages/Payroll'));
+const AdvancedAnalytics = lazy(() => import('@/pages/AdvancedAnalytics'));
+const AffiliateTool = lazy(() => import('@/pages/AffiliateTool'));
+const AffiliateVerification = lazy(() => import('@/pages/AffiliateVerification'));
+const Store = lazy(() => import('@/pages/Store'));
+const BoatInspection = lazy(() => import('@/pages/BoatInspection'));
+const Checkout = lazy(() => import('@/pages/Checkout'));
+const ClientBooking = lazy(() => import('@/pages/ClientBooking'));
+const BookingManagement = lazy(() => import('@/pages/BookingManagement'));
+const CustomerAnalytics = lazy(() => import('@/pages/CustomerAnalytics'));
+const CustomerExperience = lazy(() => import('@/pages/CustomerExperience'));
+const CustomerFollowUps = lazy(() => import('@/pages/CustomerFollowUps'));
+const CustomerPortalLogin = lazy(() => import('@/pages/CustomerPortalLogin'));
+const CustomerPortalAuthLogin = lazy(() => import('@/pages/customer-portal/CustomerPortalLogin'));
+const CustomerPortalRegister = lazy(() => import('@/pages/customer-portal/CustomerPortalRegister'));
+const CustomerPortalDashboard = lazy(() => import('@/pages/customer-portal/CustomerPortalDashboard'));
+const CustomerPortalLanding = lazy(() => import('@/pages/customer-portal/CustomerPortalLanding'));
+const BusinessLanding = lazy(() => import('@/pages/customer-portal/BusinessLanding'));
+const CustomerServiceHistory = lazy(() => import('@/pages/CustomerServiceHistory'));
+const EmailCampaignAnalytics = lazy(() => import('@/pages/EmailCampaignAnalytics'));
+const EmailSequenceDetails = lazy(() => import('@/pages/EmailSequenceDetails'));
+const Enterprise = lazy(() => import('@/pages/Enterprise'));
+const EnterpriseAdmin = lazy(() => import('@/pages/EnterpriseAdmin'));
+const InventoryAutomation = lazy(() => import('@/pages/InventoryAutomation'));
+const InventoryCategories = lazy(() => import('@/pages/InventoryCategories'));
+const InventoryLocations = lazy(() => import('@/pages/InventoryLocations'));
+const InventoryOrders = lazy(() => import('@/pages/InventoryOrders'));
+const InventorySuppliers = lazy(() => import('@/pages/InventorySuppliers'));
+const InvoiceCreate = lazy(() => import('@/pages/InvoiceCreate'));
+const InvoiceScan = lazy(() => import('@/pages/InvoiceScan'));
+const MaintenanceDashboard = lazy(() => import('@/pages/MaintenanceDashboard'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
+const OrderConfirmation = lazy(() => import('@/pages/OrderConfirmation'));
+const PartsTracking = lazy(() => import('@/pages/PartsTracking'));
+const PurchaseOrders = lazy(() => import('@/pages/PurchaseOrders'));
+const StockControl = lazy(() => import('@/pages/StockControl'));
+const TeamMemberProfile = lazy(() => import('@/pages/TeamMemberProfile'));
+const TeamRoles = lazy(() => import('@/pages/TeamRoles'));
+const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
+const VehicleDetails = lazy(() => import('@/pages/VehicleDetails'));
+const VehicleInspectionForm = lazy(() => import('@/pages/VehicleInspectionForm'));
+const TermsOfService = lazy(() => import('@/pages/legal/TermsOfService'));
+const PrivacyPolicy = lazy(() => import('@/pages/legal/PrivacyPolicy'));
+const ModuleLearnMore = lazy(() => import('@/pages/ModuleLearnMore'));
 
 // Power Washing
-import PowerWashingDashboard from '@/pages/power-washing/PowerWashingDashboard';
-import PowerWashingJobsList from '@/pages/power-washing/PowerWashingJobsList';
-import PowerWashingJobCreate from '@/pages/power-washing/PowerWashingJobCreate';
-import PowerWashingJobDetails from '@/pages/power-washing/PowerWashingJobDetails';
-import PowerWashingJobEdit from '@/pages/power-washing/PowerWashingJobEdit';
-import PowerWashingEquipment from '@/pages/power-washing/PowerWashingEquipment';
-import PowerWashingEquipmentCreate from '@/pages/power-washing/PowerWashingEquipmentCreate';
-import PowerWashingEquipmentDetail from '@/pages/power-washing/PowerWashingEquipmentDetail';
-import PowerWashingChemicals from '@/pages/power-washing/PowerWashingChemicals';
-import PowerWashingChemicalCreate from '@/pages/power-washing/PowerWashingChemicalCreate';
-import PowerWashingInventory from '@/pages/power-washing/PowerWashingInventory';
-import PowerWashingQuoteForm from '@/pages/power-washing/PowerWashingQuoteForm';
-import PowerWashingQuotesList from '@/pages/power-washing/PowerWashingQuotesList';
-import PowerWashingFormulas from '@/pages/power-washing/PowerWashingFormulas';
-import BleachCalculator from '@/pages/power-washing/BleachCalculator';
-import SurfaceMixCalculator from '@/pages/power-washing/SurfaceMixCalculator';
-import PowerWashingRecurringSchedules from '@/pages/power-washing/PowerWashingRecurringSchedules';
-import PowerWashingInvoices from '@/pages/power-washing/PowerWashingInvoices';
-import PowerWashingInvoiceDetail from '@/pages/power-washing/PowerWashingInvoiceDetail';
-import PowerWashingReports from '@/pages/power-washing/PowerWashingReports';
-import PowerWashingRoutes from '@/pages/power-washing/PowerWashingRoutes';
-import PowerWashingRouteDetail from '@/pages/power-washing/PowerWashingRouteDetail';
-import PowerWashingReviews from '@/pages/power-washing/PowerWashingReviews';
-import PowerWashingNotifications from '@/pages/power-washing/PowerWashingNotifications';
-import PowerWashingFieldView from '@/pages/power-washing/PowerWashingFieldView';
-import PowerWashingPriceBook from '@/pages/power-washing/PowerWashingPriceBook';
-import PowerWashingAnalytics from '@/pages/power-washing/PowerWashingAnalytics';
-import PowerWashingWeather from '@/pages/power-washing/PowerWashingWeather';
-import PowerWashingPhotos from '@/pages/power-washing/PowerWashingPhotos';
-import PowerWashingSubscriptions from '@/pages/power-washing/PowerWashingSubscriptions';
-import PowerWashingCustomerPortal from '@/pages/power-washing/PowerWashingCustomerPortal';
-import PowerWashingPayments from '@/pages/power-washing/PowerWashingPayments';
-import PowerWashingSchedule from '@/pages/power-washing/PowerWashingSchedule';
-import PowerWashingLeads from '@/pages/power-washing/PowerWashingLeads';
-import PowerWashingFleet from '@/pages/power-washing/PowerWashingFleet';
-import PowerWashingStore from '@/pages/power-washing/PowerWashingStore';
-import PowerWashingCustomers from '@/pages/power-washing/PowerWashingCustomers';
-import PowerWashingCustomerCreate from '@/pages/power-washing/PowerWashingCustomerCreate';
-import PowerWashingCustomerDetail from '@/pages/power-washing/PowerWashingCustomerDetail';
-import PowerWashingTeam from '@/pages/power-washing/PowerWashingTeam';
-import PowerWashingRoles from '@/pages/power-washing/PowerWashingRoles';
-import PowerWashingQuoteDetail from '@/pages/power-washing/PowerWashingQuoteDetail';
-import PowerWashingSettings from '@/pages/power-washing/PowerWashingSettings';
-import PowerWashingPricingFormulas from '@/pages/power-washing/PowerWashingPricingFormulas';
+const PowerWashingDashboard = lazy(() => import('@/pages/power-washing/PowerWashingDashboard'));
+const PowerWashingJobsList = lazy(() => import('@/pages/power-washing/PowerWashingJobsList'));
+const PowerWashingJobCreate = lazy(() => import('@/pages/power-washing/PowerWashingJobCreate'));
+const PowerWashingJobDetails = lazy(() => import('@/pages/power-washing/PowerWashingJobDetails'));
+const PowerWashingJobEdit = lazy(() => import('@/pages/power-washing/PowerWashingJobEdit'));
+const PowerWashingEquipment = lazy(() => import('@/pages/power-washing/PowerWashingEquipment'));
+const PowerWashingEquipmentCreate = lazy(() => import('@/pages/power-washing/PowerWashingEquipmentCreate'));
+const PowerWashingEquipmentDetail = lazy(() => import('@/pages/power-washing/PowerWashingEquipmentDetail'));
+const PowerWashingChemicals = lazy(() => import('@/pages/power-washing/PowerWashingChemicals'));
+const PowerWashingChemicalCreate = lazy(() => import('@/pages/power-washing/PowerWashingChemicalCreate'));
+const PowerWashingInventory = lazy(() => import('@/pages/power-washing/PowerWashingInventory'));
+const PowerWashingQuoteForm = lazy(() => import('@/pages/power-washing/PowerWashingQuoteForm'));
+const PowerWashingQuotesList = lazy(() => import('@/pages/power-washing/PowerWashingQuotesList'));
+const PowerWashingFormulas = lazy(() => import('@/pages/power-washing/PowerWashingFormulas'));
+const BleachCalculator = lazy(() => import('@/pages/power-washing/BleachCalculator'));
+const SurfaceMixCalculator = lazy(() => import('@/pages/power-washing/SurfaceMixCalculator'));
+const PowerWashingRecurringSchedules = lazy(() => import('@/pages/power-washing/PowerWashingRecurringSchedules'));
+const PowerWashingInvoices = lazy(() => import('@/pages/power-washing/PowerWashingInvoices'));
+const PowerWashingInvoiceDetail = lazy(() => import('@/pages/power-washing/PowerWashingInvoiceDetail'));
+const PowerWashingReports = lazy(() => import('@/pages/power-washing/PowerWashingReports'));
+const PowerWashingRoutes = lazy(() => import('@/pages/power-washing/PowerWashingRoutes'));
+const PowerWashingRouteDetail = lazy(() => import('@/pages/power-washing/PowerWashingRouteDetail'));
+const PowerWashingReviews = lazy(() => import('@/pages/power-washing/PowerWashingReviews'));
+const PowerWashingNotifications = lazy(() => import('@/pages/power-washing/PowerWashingNotifications'));
+const PowerWashingFieldView = lazy(() => import('@/pages/power-washing/PowerWashingFieldView'));
+const PowerWashingPriceBook = lazy(() => import('@/pages/power-washing/PowerWashingPriceBook'));
+const PowerWashingAnalytics = lazy(() => import('@/pages/power-washing/PowerWashingAnalytics'));
+const PowerWashingWeather = lazy(() => import('@/pages/power-washing/PowerWashingWeather'));
+const PowerWashingPhotos = lazy(() => import('@/pages/power-washing/PowerWashingPhotos'));
+const PowerWashingSubscriptions = lazy(() => import('@/pages/power-washing/PowerWashingSubscriptions'));
+const PowerWashingCustomerPortal = lazy(() => import('@/pages/power-washing/PowerWashingCustomerPortal'));
+const PowerWashingPayments = lazy(() => import('@/pages/power-washing/PowerWashingPayments'));
+const PowerWashingSchedule = lazy(() => import('@/pages/power-washing/PowerWashingSchedule'));
+const PowerWashingLeads = lazy(() => import('@/pages/power-washing/PowerWashingLeads'));
+const PowerWashingFleet = lazy(() => import('@/pages/power-washing/PowerWashingFleet'));
+const PowerWashingStore = lazy(() => import('@/pages/power-washing/PowerWashingStore'));
+const PowerWashingCustomers = lazy(() => import('@/pages/power-washing/PowerWashingCustomers'));
+const PowerWashingCustomerCreate = lazy(() => import('@/pages/power-washing/PowerWashingCustomerCreate'));
+const PowerWashingCustomerDetail = lazy(() => import('@/pages/power-washing/PowerWashingCustomerDetail'));
+const PowerWashingTeam = lazy(() => import('@/pages/power-washing/PowerWashingTeam'));
+const PowerWashingRoles = lazy(() => import('@/pages/power-washing/PowerWashingRoles'));
+const PowerWashingQuoteDetail = lazy(() => import('@/pages/power-washing/PowerWashingQuoteDetail'));
+const PowerWashingSettings = lazy(() => import('@/pages/power-washing/PowerWashingSettings'));
+const PowerWashingPricingFormulas = lazy(() => import('@/pages/power-washing/PowerWashingPricingFormulas'));
 
 // Gunsmith
-import GunsmithDashboard from '@/pages/gunsmith/GunsmithDashboard';
-import GunsmithJobs from '@/pages/gunsmith/GunsmithJobs';
-import GunsmithCustomers from '@/pages/gunsmith/GunsmithCustomers';
-import GunsmithCustomerCreate from '@/pages/gunsmith/GunsmithCustomerCreate';
-import GunsmithCustomerDetail from '@/pages/gunsmith/GunsmithCustomerDetail';
-import GunsmithFirearms from '@/pages/gunsmith/GunsmithFirearms';
-import GunsmithParts from '@/pages/gunsmith/GunsmithParts';
-import GunsmithPartsOnOrder from '@/pages/gunsmith/GunsmithPartsOnOrder';
-import GunsmithQuotes from '@/pages/gunsmith/GunsmithQuotes';
-import GunsmithInvoices from '@/pages/gunsmith/GunsmithInvoices';
-import GunsmithPayments from '@/pages/gunsmith/GunsmithPayments';
-import GunsmithAppointments from '@/pages/gunsmith/GunsmithAppointments';
-import GunsmithCompliance from '@/pages/gunsmith/GunsmithCompliance';
-import GunsmithTransfers from '@/pages/gunsmith/GunsmithTransfers';
-import GunsmithConsignments from '@/pages/gunsmith/GunsmithConsignments';
-import GunsmithJobForm from '@/pages/gunsmith/GunsmithJobForm';
-import GunsmithQuoteForm from '@/pages/gunsmith/GunsmithQuoteForm';
-import GunsmithJobDetail from '@/pages/gunsmith/GunsmithJobDetail';
-import GunsmithQuoteDetail from '@/pages/gunsmith/GunsmithQuoteDetail';
-import GunsmithFirearmForm from '@/pages/gunsmith/GunsmithFirearmForm';
-import GunsmithPartForm from '@/pages/gunsmith/GunsmithPartForm';
-import GunsmithAppointmentForm from '@/pages/gunsmith/GunsmithAppointmentForm';
-import GunsmithInvoiceForm from '@/pages/gunsmith/GunsmithInvoiceForm';
-import GunsmithTransferForm from '@/pages/gunsmith/GunsmithTransferForm';
-import GunsmithConsignmentForm from '@/pages/gunsmith/GunsmithConsignmentForm';
-import GunsmithFirearmEdit from '@/pages/gunsmith/GunsmithFirearmEdit';
-import GunsmithPartEdit from '@/pages/gunsmith/GunsmithPartEdit';
-import GunsmithInventory from '@/pages/gunsmith/GunsmithInventory';
-import GunsmithStockAdjust from '@/pages/gunsmith/GunsmithStockAdjust';
-import GunsmithPurchaseOrderForm from '@/pages/gunsmith/GunsmithPurchaseOrderForm';
-import GunsmithSerializedForm from '@/pages/gunsmith/GunsmithSerializedForm';
-import GunsmithUsefulLinks from '@/pages/gunsmith/GunsmithUsefulLinks';
-import GunsmithChangeLog from '@/pages/gunsmith/GunsmithChangeLog';
-import GunsmithSettings from '@/pages/gunsmith/GunsmithSettings';
-import GunsmithTeam from '@/pages/gunsmith/GunsmithTeam';
-import GunsmithRoles from '@/pages/gunsmith/GunsmithRoles';
-import GunsmithStore from '@/pages/gunsmith/GunsmithStore';
+const GunsmithDashboard = lazy(() => import('@/pages/gunsmith/GunsmithDashboard'));
+const GunsmithJobs = lazy(() => import('@/pages/gunsmith/GunsmithJobs'));
+const GunsmithCustomers = lazy(() => import('@/pages/gunsmith/GunsmithCustomers'));
+const GunsmithCustomerCreate = lazy(() => import('@/pages/gunsmith/GunsmithCustomerCreate'));
+const GunsmithCustomerDetail = lazy(() => import('@/pages/gunsmith/GunsmithCustomerDetail'));
+const GunsmithFirearms = lazy(() => import('@/pages/gunsmith/GunsmithFirearms'));
+const GunsmithParts = lazy(() => import('@/pages/gunsmith/GunsmithParts'));
+const GunsmithPartsOnOrder = lazy(() => import('@/pages/gunsmith/GunsmithPartsOnOrder'));
+const GunsmithQuotes = lazy(() => import('@/pages/gunsmith/GunsmithQuotes'));
+const GunsmithInvoices = lazy(() => import('@/pages/gunsmith/GunsmithInvoices'));
+const GunsmithPayments = lazy(() => import('@/pages/gunsmith/GunsmithPayments'));
+const GunsmithAppointments = lazy(() => import('@/pages/gunsmith/GunsmithAppointments'));
+const GunsmithCompliance = lazy(() => import('@/pages/gunsmith/GunsmithCompliance'));
+const GunsmithTransfers = lazy(() => import('@/pages/gunsmith/GunsmithTransfers'));
+const GunsmithConsignments = lazy(() => import('@/pages/gunsmith/GunsmithConsignments'));
+const GunsmithJobForm = lazy(() => import('@/pages/gunsmith/GunsmithJobForm'));
+const GunsmithQuoteForm = lazy(() => import('@/pages/gunsmith/GunsmithQuoteForm'));
+const GunsmithJobDetail = lazy(() => import('@/pages/gunsmith/GunsmithJobDetail'));
+const GunsmithQuoteDetail = lazy(() => import('@/pages/gunsmith/GunsmithQuoteDetail'));
+const GunsmithFirearmForm = lazy(() => import('@/pages/gunsmith/GunsmithFirearmForm'));
+const GunsmithPartForm = lazy(() => import('@/pages/gunsmith/GunsmithPartForm'));
+const GunsmithAppointmentForm = lazy(() => import('@/pages/gunsmith/GunsmithAppointmentForm'));
+const GunsmithInvoiceForm = lazy(() => import('@/pages/gunsmith/GunsmithInvoiceForm'));
+const GunsmithTransferForm = lazy(() => import('@/pages/gunsmith/GunsmithTransferForm'));
+const GunsmithConsignmentForm = lazy(() => import('@/pages/gunsmith/GunsmithConsignmentForm'));
+const GunsmithFirearmEdit = lazy(() => import('@/pages/gunsmith/GunsmithFirearmEdit'));
+const GunsmithPartEdit = lazy(() => import('@/pages/gunsmith/GunsmithPartEdit'));
+const GunsmithInventory = lazy(() => import('@/pages/gunsmith/GunsmithInventory'));
+const GunsmithStockAdjust = lazy(() => import('@/pages/gunsmith/GunsmithStockAdjust'));
+const GunsmithPurchaseOrderForm = lazy(() => import('@/pages/gunsmith/GunsmithPurchaseOrderForm'));
+const GunsmithSerializedForm = lazy(() => import('@/pages/gunsmith/GunsmithSerializedForm'));
+const GunsmithUsefulLinks = lazy(() => import('@/pages/gunsmith/GunsmithUsefulLinks'));
+const GunsmithChangeLog = lazy(() => import('@/pages/gunsmith/GunsmithChangeLog'));
+const GunsmithSettings = lazy(() => import('@/pages/gunsmith/GunsmithSettings'));
+const GunsmithTeam = lazy(() => import('@/pages/gunsmith/GunsmithTeam'));
+const GunsmithRoles = lazy(() => import('@/pages/gunsmith/GunsmithRoles'));
+const GunsmithStore = lazy(() => import('@/pages/gunsmith/GunsmithStore'));
 
 // Automotive
-import AutomotiveDashboard from '@/pages/automotive/AutomotiveDashboard';
-import AutomotiveVehicleHistory from '@/pages/automotive/AutomotiveVehicleHistory';
-import AutomotiveDiagnostics from '@/pages/automotive/AutomotiveDiagnostics';
-import AutomotiveLaborRates from '@/pages/automotive/AutomotiveLaborRates';
-import AutomotiveRecalls from '@/pages/automotive/AutomotiveRecalls';
-import AutomotiveStore from '@/pages/automotive/AutomotiveStore';
+const AutomotiveDashboard = lazy(() => import('@/pages/automotive/AutomotiveDashboard'));
+const AutomotiveVehicleHistory = lazy(() => import('@/pages/automotive/AutomotiveVehicleHistory'));
+const AutomotiveDiagnostics = lazy(() => import('@/pages/automotive/AutomotiveDiagnostics'));
+const AutomotiveLaborRates = lazy(() => import('@/pages/automotive/AutomotiveLaborRates'));
+const AutomotiveRecalls = lazy(() => import('@/pages/automotive/AutomotiveRecalls'));
+const AutomotiveStore = lazy(() => import('@/pages/automotive/AutomotiveStore'));
 
 // Marine
-import MarineDashboard from '@/pages/marine/MarineDashboard';
-import MarineStore from '@/pages/marine/MarineStore';
+const MarineDashboard = lazy(() => import('@/pages/marine/MarineDashboard'));
+const MarineStore = lazy(() => import('@/pages/marine/MarineStore'));
 
 // Fuel Delivery
-import FuelDeliveryDashboard from '@/pages/fuel-delivery/FuelDeliveryDashboard';
-import FuelDeliveryOrders from '@/pages/fuel-delivery/FuelDeliveryOrders';
-import FuelDeliveryOrderForm from '@/pages/fuel-delivery/FuelDeliveryOrderForm';
-import FuelDeliveryCustomers from '@/pages/fuel-delivery/FuelDeliveryCustomers';
-import FuelDeliveryLocations from '@/pages/fuel-delivery/FuelDeliveryLocations';
-import FuelDeliveryProducts from '@/pages/fuel-delivery/FuelDeliveryProducts';
-import FuelDeliveryTrucks from '@/pages/fuel-delivery/FuelDeliveryTrucks';
-import FuelDeliveryDrivers from '@/pages/fuel-delivery/FuelDeliveryDrivers';
-import FuelDeliveryRoutes from '@/pages/fuel-delivery/FuelDeliveryRoutes';
-import FuelDeliveryCompletions from '@/pages/fuel-delivery/FuelDeliveryCompletions';
-import FuelDeliveryInventory from '@/pages/fuel-delivery/FuelDeliveryInventory';
-import FuelDeliveryInvoices from '@/pages/fuel-delivery/FuelDeliveryInvoices';
-import FuelDeliveryDriverApp from '@/pages/fuel-delivery/FuelDeliveryDriverApp';
-import FuelDeliveryPricing from '@/pages/fuel-delivery/FuelDeliveryPricing';
-import FuelDeliveryTanks from '@/pages/fuel-delivery/FuelDeliveryTanks';
-import FuelDeliveryTidyTanks from '@/pages/fuel-delivery/FuelDeliveryTidyTanks';
-import FuelDeliveryTankFills from '@/pages/fuel-delivery/FuelDeliveryTankFills';
-import FuelDeliveryEquipment from '@/pages/fuel-delivery/FuelDeliveryEquipment';
-import FuelDeliveryEquipmentFilters from '@/pages/fuel-delivery/FuelDeliveryEquipmentFilters';
-import FuelDeliveryQuotes from '@/pages/fuel-delivery/FuelDeliveryQuotes';
-import FuelDeliveryProfile from '@/pages/fuel-delivery/FuelDeliveryProfile';
-import FuelDeliverySettings from '@/pages/fuel-delivery/FuelDeliverySettings';
-import FuelDeliveryPurchases from '@/pages/fuel-delivery/FuelDeliveryPurchases';
-import FuelDeliveryStore from '@/pages/fuel-delivery/FuelDeliveryStore';
+const FuelDeliveryDashboard = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryDashboard'));
+const FuelDeliveryOrders = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryOrders'));
+const FuelDeliveryOrderForm = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryOrderForm'));
+const FuelDeliveryCustomers = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryCustomers'));
+const FuelDeliveryLocations = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryLocations'));
+const FuelDeliveryProducts = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryProducts'));
+const FuelDeliveryTrucks = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryTrucks'));
+const FuelDeliveryDrivers = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryDrivers'));
+const FuelDeliveryRoutes = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryRoutes'));
+const FuelDeliveryCompletions = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryCompletions'));
+const FuelDeliveryInventory = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryInventory'));
+const FuelDeliveryInvoices = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryInvoices'));
+const FuelDeliveryDriverApp = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryDriverApp'));
+const FuelDeliveryPricing = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryPricing'));
+const FuelDeliveryTanks = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryTanks'));
+const FuelDeliveryTidyTanks = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryTidyTanks'));
+const FuelDeliveryTankFills = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryTankFills'));
+const FuelDeliveryEquipment = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryEquipment'));
+const FuelDeliveryEquipmentFilters = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryEquipmentFilters'));
+const FuelDeliveryQuotes = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryQuotes'));
+const FuelDeliveryProfile = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryProfile'));
+const FuelDeliverySettings = lazy(() => import('@/pages/fuel-delivery/FuelDeliverySettings'));
+const FuelDeliveryPurchases = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryPurchases'));
+const FuelDeliveryStore = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryStore'));
 import { FuelDeliveryLayout } from '@/components/fuel-delivery';
 
-// Fuel Delivery Portal (Customer-facing)
-import FuelDeliveryPortalLanding from '@/pages/fuel-delivery-portal/FuelDeliveryPortalLanding';
-import FuelDeliveryPortalRegister from '@/pages/fuel-delivery-portal/FuelDeliveryPortalRegister';
-import FuelDeliveryPortalLogin from '@/pages/fuel-delivery-portal/FuelDeliveryPortalLogin';
-import FuelDeliveryPortalDashboard from '@/pages/fuel-delivery-portal/FuelDeliveryPortalDashboard';
-import FuelDeliveryPortalRequest from '@/pages/fuel-delivery-portal/FuelDeliveryPortalRequest';
-import FuelDeliveryPortalOrders from '@/pages/fuel-delivery-portal/FuelDeliveryPortalOrders';
-import FuelDeliveryPortalLocations from '@/pages/fuel-delivery-portal/FuelDeliveryPortalLocations';
-import FuelDeliveryPortalAccount from '@/pages/fuel-delivery-portal/FuelDeliveryPortalAccount';
+// Fuel Delivery Portal
+const FuelDeliveryPortalLanding = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalLanding'));
+const FuelDeliveryPortalRegister = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalRegister'));
+const FuelDeliveryPortalLogin = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalLogin'));
+const FuelDeliveryPortalDashboard = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalDashboard'));
+const FuelDeliveryPortalRequest = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalRequest'));
+const FuelDeliveryPortalOrders = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalOrders'));
+const FuelDeliveryPortalLocations = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalLocations'));
+const FuelDeliveryPortalAccount = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalAccount'));
 
 // Water Delivery
-import WaterDeliveryDashboard from '@/pages/water-delivery/WaterDeliveryDashboard';
-import WaterDeliveryOrders from '@/pages/water-delivery/WaterDeliveryOrders';
-import WaterDeliveryOrderForm from '@/pages/water-delivery/WaterDeliveryOrderForm';
-import WaterDeliveryCustomers from '@/pages/water-delivery/WaterDeliveryCustomers';
-import WaterDeliveryCustomerDetails from '@/pages/water-delivery/WaterDeliveryCustomerDetails';
-import WaterDeliveryLocations from '@/pages/water-delivery/WaterDeliveryLocations';
-import WaterDeliveryProducts from '@/pages/water-delivery/WaterDeliveryProducts';
-import WaterDeliveryTrucks from '@/pages/water-delivery/WaterDeliveryTrucks';
-import WaterDeliveryDrivers from '@/pages/water-delivery/WaterDeliveryDrivers';
-import WaterDeliveryDriverDetail from '@/pages/water-delivery/WaterDeliveryDriverDetail';
-import WaterDeliveryRoutes from '@/pages/water-delivery/WaterDeliveryRoutes';
-import WaterDeliveryCompletions from '@/pages/water-delivery/WaterDeliveryCompletions';
-import WaterDeliveryInventory from '@/pages/water-delivery/WaterDeliveryPartsInventory';
-import WaterDeliveryInvoices from '@/pages/water-delivery/WaterDeliveryInvoices';
-import WaterDeliveryDriverApp from '@/pages/water-delivery/WaterDeliveryDriverApp';
-import WaterDeliveryPricing from '@/pages/water-delivery/WaterDeliveryPricing';
-import WaterDeliveryTanks from '@/pages/water-delivery/WaterDeliveryTanks';
-import WaterDeliveryTidyTanks from '@/pages/water-delivery/WaterDeliveryTidyTanks';
-import WaterDeliveryTankFills from '@/pages/water-delivery/WaterDeliveryTankFills';
-import WaterDeliveryEquipment from '@/pages/water-delivery/WaterDeliveryEquipment';
-import WaterDeliveryEquipmentFilters from '@/pages/water-delivery/WaterDeliveryEquipmentFilters';
-import WaterDeliveryQuotes from '@/pages/water-delivery/WaterDeliveryQuotes';
-import WaterDeliveryProfile from '@/pages/water-delivery/WaterDeliveryProfile';
-import WaterDeliverySettings from '@/pages/water-delivery/WaterDeliverySettings';
-import WaterDeliveryPurchases from '@/pages/water-delivery/WaterDeliveryPurchases';
-import WaterDeliveryStaff from '@/pages/water-delivery/WaterDeliveryStaff';
-import WaterDeliveryPartsInventory from '@/pages/water-delivery/WaterDeliveryPartsInventory';
-import WaterDeliveryStore from '@/pages/water-delivery/WaterDeliveryStore';
+const WaterDeliveryDashboard = lazy(() => import('@/pages/water-delivery/WaterDeliveryDashboard'));
+const WaterDeliveryOrders = lazy(() => import('@/pages/water-delivery/WaterDeliveryOrders'));
+const WaterDeliveryOrderForm = lazy(() => import('@/pages/water-delivery/WaterDeliveryOrderForm'));
+const WaterDeliveryCustomers = lazy(() => import('@/pages/water-delivery/WaterDeliveryCustomers'));
+const WaterDeliveryCustomerDetails = lazy(() => import('@/pages/water-delivery/WaterDeliveryCustomerDetails'));
+const WaterDeliveryLocations = lazy(() => import('@/pages/water-delivery/WaterDeliveryLocations'));
+const WaterDeliveryProducts = lazy(() => import('@/pages/water-delivery/WaterDeliveryProducts'));
+const WaterDeliveryTrucks = lazy(() => import('@/pages/water-delivery/WaterDeliveryTrucks'));
+const WaterDeliveryDrivers = lazy(() => import('@/pages/water-delivery/WaterDeliveryDrivers'));
+const WaterDeliveryDriverDetail = lazy(() => import('@/pages/water-delivery/WaterDeliveryDriverDetail'));
+const WaterDeliveryRoutes = lazy(() => import('@/pages/water-delivery/WaterDeliveryRoutes'));
+const WaterDeliveryCompletions = lazy(() => import('@/pages/water-delivery/WaterDeliveryCompletions'));
+const WaterDeliveryInventory = lazy(() => import('@/pages/water-delivery/WaterDeliveryPartsInventory'));
+const WaterDeliveryInvoices = lazy(() => import('@/pages/water-delivery/WaterDeliveryInvoices'));
+const WaterDeliveryDriverApp = lazy(() => import('@/pages/water-delivery/WaterDeliveryDriverApp'));
+const WaterDeliveryPricing = lazy(() => import('@/pages/water-delivery/WaterDeliveryPricing'));
+const WaterDeliveryTanks = lazy(() => import('@/pages/water-delivery/WaterDeliveryTanks'));
+const WaterDeliveryTidyTanks = lazy(() => import('@/pages/water-delivery/WaterDeliveryTidyTanks'));
+const WaterDeliveryTankFills = lazy(() => import('@/pages/water-delivery/WaterDeliveryTankFills'));
+const WaterDeliveryEquipment = lazy(() => import('@/pages/water-delivery/WaterDeliveryEquipment'));
+const WaterDeliveryEquipmentFilters = lazy(() => import('@/pages/water-delivery/WaterDeliveryEquipmentFilters'));
+const WaterDeliveryQuotes = lazy(() => import('@/pages/water-delivery/WaterDeliveryQuotes'));
+const WaterDeliveryProfile = lazy(() => import('@/pages/water-delivery/WaterDeliveryProfile'));
+const WaterDeliverySettings = lazy(() => import('@/pages/water-delivery/WaterDeliverySettings'));
+const WaterDeliveryPurchases = lazy(() => import('@/pages/water-delivery/WaterDeliveryPurchases'));
+const WaterDeliveryStaff = lazy(() => import('@/pages/water-delivery/WaterDeliveryStaff'));
+const WaterDeliveryPartsInventory = lazy(() => import('@/pages/water-delivery/WaterDeliveryPartsInventory'));
+const WaterDeliveryStore = lazy(() => import('@/pages/water-delivery/WaterDeliveryStore'));
 import { WaterDeliveryLayout } from '@/components/water-delivery';
 
-// Septic Services (lazy loaded)
+// Septic Services
 const SepticDashboard = lazy(() => import('@/pages/septic/SepticDashboard'));
 const SepticOrders = lazy(() => import('@/pages/septic/SepticOrders'));
 const SepticOrderForm = lazy(() => import('@/pages/septic/SepticOrderForm'));
@@ -389,8 +399,9 @@ function App() {
 
   return (
     <>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Public routes - no auth required, loads instantly */}
+        {/* Public routes - no auth required */}
         <Route path="/" element={<Index />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
@@ -869,8 +880,8 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-          {/* Feature Requests */}
-          <Route path="/feature-requests" element={<FeatureRequests />} />
+                  {/* Feature Requests */}
+                  <Route path="/feature-requests" element={<FeatureRequests />} />
                   
                   {/* Equipment Tracking */}
                   <Route path="/equipment-tracking" element={
@@ -1457,7 +1468,6 @@ function App() {
           element={
             <AuthGate>
               <SepticLayout>
-                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
                 <Routes>
                   <Route path="/" element={<SepticDashboard />} />
                   <Route path="/orders" element={<SepticOrders />} />
@@ -1489,14 +1499,13 @@ function App() {
                   <Route path="/store" element={<SepticStore />} />
                   <Route path="/developer" element={<SepticDeveloper />} />
                 </Routes>
-                </Suspense>
               </SepticLayout>
             </AuthGate>
           }
         />
       </Routes>
+      </Suspense>
       <Toaster />
-      {/* AuthDebugPanel removed - developer only tool */}
       {/* Global UX enhancements */}
       <GlobalUX />
     </>
