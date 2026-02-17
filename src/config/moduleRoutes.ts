@@ -396,16 +396,7 @@ export const UPCOMING_MODULES: UpcomingModuleConfig[] = [
     expectedDate: 'Q2 2026',
     category: 'Home & Property Services',
   },
-  {
-    slug: 'septic',
-    name: 'Septic Services',
-    description: 'Pumping schedules, inspections, and compliance tracking',
-    icon: Container,
-    gradientFrom: 'from-stone-500',
-    gradientTo: 'to-stone-700',
-    expectedDate: 'Q2 2026',
-    category: 'Home & Property Services',
-  },
+  // septic removed - now a live module
   {
     slug: 'window-cleaning',
     name: 'Window Cleaning',
@@ -1710,6 +1701,51 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Settings', href: '/water-delivery/settings', icon: Settings, description: 'Module settings' },
       // Resources
       { title: 'Recommended Gear', href: '/water-delivery/store', icon: ShoppingBag, description: 'Shop recommended equipment', group: 'Resources' },
+      // Quick Links
+      { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
+    ],
+  },
+  septic: {
+    slug: 'septic',
+    name: 'Septic Services',
+    description: 'Septic pumping, inspections, and compliance tracking',
+    icon: Container,
+    dashboardRoute: '/septic',
+    color: 'hsl(var(--chart-4))',
+    gradientFrom: 'from-stone-500',
+    gradientTo: 'to-stone-700',
+    sections: [
+      // Core Operations
+      { title: 'Dashboard', href: '/septic', icon: Gauge, description: 'Module overview and KPIs' },
+      { title: 'Service Orders', href: '/septic/orders', icon: ClipboardList, description: 'Pumping and service orders' },
+      { title: 'Customers', href: '/septic/customers', icon: Users, description: 'Customer management' },
+      { title: 'Quotes', href: '/septic/quotes', icon: FileText, description: 'Estimates and quotes' },
+      { title: 'Invoices', href: '/septic/invoices', icon: Receipt, description: 'Billing and invoices' },
+      // Tank Management
+      { title: 'Septic Tanks', href: '/septic/tanks', icon: Container, description: 'Tank registry' },
+      { title: 'System Components', href: '/septic/tidy-tanks', icon: PackageCheck, description: 'Baffles, risers, D-boxes' },
+      { title: 'Pump-Outs', href: '/septic/tank-fills', icon: Droplet, description: 'Pump-out history' },
+      { title: 'Locations', href: '/septic/locations', icon: MapPin, description: 'Service locations' },
+      // Fleet & Delivery
+      { title: 'Routes', href: '/septic/routes', icon: Route, description: 'Route optimization' },
+      { title: 'Pump Trucks', href: '/septic/trucks', icon: Truck, description: 'Pump trucks' },
+      { title: 'Drivers', href: '/septic/drivers', icon: UserCheck, description: 'Driver management' },
+      { title: 'Equipment', href: '/septic/equipment', icon: Wrench, description: 'Equipment tracking' },
+      { title: 'Completions', href: '/septic/completions', icon: FolderOpen, description: 'Completed services' },
+      // Compliance
+      { title: 'Inspections', href: '/septic/inspections', icon: Shield, description: 'EPA/county compliance' },
+      // Products & Pricing
+      { title: 'Products', href: '/septic/products', icon: Container, description: 'Service products' },
+      { title: 'Pricing', href: '/septic/pricing', icon: CircleDollarSign, description: 'Price management' },
+      { title: 'Inventory', href: '/septic/inventory', icon: BarChart3, description: 'Parts inventory' },
+      { title: 'Purchases', href: '/septic/purchases', icon: ShoppingCart, description: 'Purchase orders' },
+      // Mobile
+      { title: 'Driver App', href: '/septic/driver-app', icon: Smartphone, description: 'Mobile driver app' },
+      // Settings
+      { title: 'Profile', href: '/septic/profile', icon: User, description: 'Module profile' },
+      { title: 'Settings', href: '/septic/settings', icon: Settings, description: 'Module settings' },
+      // Resources
+      { title: 'Recommended Gear', href: '/septic/store', icon: ShoppingBag, description: 'Shop recommended equipment', group: 'Resources' },
       // Quick Links
       { title: 'Shop on Amazon', href: 'https://amzn.to/4b7nheJ', icon: ShoppingCart, description: 'Find more equipment on Amazon', group: 'Quick Links', isExternal: true },
     ],
