@@ -48,6 +48,7 @@ export function useModulePermissions() {
         'reports',
         'safety',
         'security',
+        'septic',
         'service_catalog',
         'service_packages',
         'service_reminders',

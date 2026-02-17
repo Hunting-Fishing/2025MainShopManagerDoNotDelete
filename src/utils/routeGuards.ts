@@ -126,6 +126,9 @@ export const routePermissions: RoutePermission[] = [
   { path: '/orders', allowedRoles: [] },
   { path: '/customer-portal', allowedRoles: [] },
   { path: '/feature-requests', allowedRoles: [] },
+  
+  // Septic Services Module
+  { path: '/septic', allowedRoles: ['admin', 'manager', 'technician', 'service_advisor', 'owner'] },
 ];
 
 export function hasRoutePermission(path: string, userRoles: string[]): boolean {

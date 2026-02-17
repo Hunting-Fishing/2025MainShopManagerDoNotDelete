@@ -53,7 +53,7 @@ export function SidebarContent() {
   };
 
   // Check if we're currently in a module route (e.g., /gunsmith/*, /automotive/*)
-  const moduleRoutePatterns = ['/gunsmith', '/automotive', '/powersports', '/marine-services', '/power-washing', '/water-delivery', '/fuel-delivery'];
+  const moduleRoutePatterns = ['/gunsmith', '/automotive', '/powersports', '/marine-services', '/power-washing', '/water-delivery', '/fuel-delivery', '/septic'];
   const isInModuleRoute = moduleRoutePatterns.some(pattern => 
     location.pathname === pattern || location.pathname.startsWith(pattern + '/')
   );
@@ -191,6 +191,18 @@ export function SidebarContent() {
             >
               <Code className="mr-3 h-4 w-4" />
               Power Washing
+            </Link>
+            <Link
+              to="/septic/developer"
+              onClick={() => handleLinkClick('/septic/developer')}
+              className={cn(
+                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
+                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
+                location.pathname === '/septic/developer' && 'bg-orange-100 text-orange-700'
+              )}
+            >
+              <Code className="mr-3 h-4 w-4" />
+              Septic Services
             </Link>
           </div>
         )}

@@ -34341,6 +34341,463 @@ export type Database = {
           },
         ]
       }
+      septic_components: {
+        Row: {
+          component_name: string
+          component_type: string
+          condition: string | null
+          created_at: string
+          id: string
+          install_date: string | null
+          last_serviced: string | null
+          manufacturer: string | null
+          model: string | null
+          next_service_due: string | null
+          notes: string | null
+          serial_number: string | null
+          shop_id: string
+          tank_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          component_name: string
+          component_type: string
+          condition?: string | null
+          created_at?: string
+          id?: string
+          install_date?: string | null
+          last_serviced?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          serial_number?: string | null
+          shop_id: string
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          component_name?: string
+          component_type?: string
+          condition?: string | null
+          created_at?: string
+          id?: string
+          install_date?: string | null
+          last_serviced?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          serial_number?: string | null
+          shop_id?: string
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_components_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "septic_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_inspections: {
+        Row: {
+          baffle_condition: string | null
+          corrective_actions: string | null
+          created_at: string
+          deficiencies: string[] | null
+          distribution_box_condition: string | null
+          drain_field_condition: string | null
+          effluent_filter_condition: string | null
+          groundwater_contamination: boolean | null
+          id: string
+          inspection_date: string
+          inspection_type: string
+          inspector_id: string | null
+          inspector_name: string | null
+          metadata: Json | null
+          next_inspection_due: string | null
+          notes: string | null
+          odor_present: boolean | null
+          overall_condition: string | null
+          pass_fail: string | null
+          permit_number: string | null
+          photos: string[] | null
+          regulatory_body: string | null
+          report_url: string | null
+          riser_condition: string | null
+          service_order_id: string | null
+          shop_id: string
+          surface_ponding: boolean | null
+          tank_condition: string | null
+          tank_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          baffle_condition?: string | null
+          corrective_actions?: string | null
+          created_at?: string
+          deficiencies?: string[] | null
+          distribution_box_condition?: string | null
+          drain_field_condition?: string | null
+          effluent_filter_condition?: string | null
+          groundwater_contamination?: boolean | null
+          id?: string
+          inspection_date?: string
+          inspection_type?: string
+          inspector_id?: string | null
+          inspector_name?: string | null
+          metadata?: Json | null
+          next_inspection_due?: string | null
+          notes?: string | null
+          odor_present?: boolean | null
+          overall_condition?: string | null
+          pass_fail?: string | null
+          permit_number?: string | null
+          photos?: string[] | null
+          regulatory_body?: string | null
+          report_url?: string | null
+          riser_condition?: string | null
+          service_order_id?: string | null
+          shop_id: string
+          surface_ponding?: boolean | null
+          tank_condition?: string | null
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          baffle_condition?: string | null
+          corrective_actions?: string | null
+          created_at?: string
+          deficiencies?: string[] | null
+          distribution_box_condition?: string | null
+          drain_field_condition?: string | null
+          effluent_filter_condition?: string | null
+          groundwater_contamination?: boolean | null
+          id?: string
+          inspection_date?: string
+          inspection_type?: string
+          inspector_id?: string | null
+          inspector_name?: string | null
+          metadata?: Json | null
+          next_inspection_due?: string | null
+          notes?: string | null
+          odor_present?: boolean | null
+          overall_condition?: string | null
+          pass_fail?: string | null
+          permit_number?: string | null
+          photos?: string[] | null
+          regulatory_body?: string | null
+          report_url?: string | null
+          riser_condition?: string | null
+          service_order_id?: string | null
+          shop_id?: string
+          surface_ponding?: boolean | null
+          tank_condition?: string | null
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_inspections_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "septic_service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_inspections_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "septic_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_pump_outs: {
+        Row: {
+          condition_notes: string | null
+          created_at: string
+          disposal_manifest_number: string | null
+          disposal_site: string | null
+          driver_id: string | null
+          gallons_pumped: number | null
+          id: string
+          issues_found: string[] | null
+          liquid_level: string | null
+          photos: string[] | null
+          pump_date: string
+          pump_truck_id: string | null
+          recommendations: string | null
+          scum_depth_after: string | null
+          scum_depth_before: string | null
+          service_order_id: string | null
+          shop_id: string
+          sludge_depth_after: string | null
+          sludge_depth_before: string | null
+          tank_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          condition_notes?: string | null
+          created_at?: string
+          disposal_manifest_number?: string | null
+          disposal_site?: string | null
+          driver_id?: string | null
+          gallons_pumped?: number | null
+          id?: string
+          issues_found?: string[] | null
+          liquid_level?: string | null
+          photos?: string[] | null
+          pump_date?: string
+          pump_truck_id?: string | null
+          recommendations?: string | null
+          scum_depth_after?: string | null
+          scum_depth_before?: string | null
+          service_order_id?: string | null
+          shop_id: string
+          sludge_depth_after?: string | null
+          sludge_depth_before?: string | null
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          condition_notes?: string | null
+          created_at?: string
+          disposal_manifest_number?: string | null
+          disposal_site?: string | null
+          driver_id?: string | null
+          gallons_pumped?: number | null
+          id?: string
+          issues_found?: string[] | null
+          liquid_level?: string | null
+          photos?: string[] | null
+          pump_date?: string
+          pump_truck_id?: string | null
+          recommendations?: string | null
+          scum_depth_after?: string | null
+          scum_depth_before?: string | null
+          service_order_id?: string | null
+          shop_id?: string
+          sludge_depth_after?: string | null
+          sludge_depth_before?: string | null
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_pump_outs_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "septic_service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_pump_outs_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "septic_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_service_orders: {
+        Row: {
+          assigned_driver_id: string | null
+          assigned_truck_id: string | null
+          completed_date: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          customer_signature: string | null
+          disposal_manifest: string | null
+          disposal_site: string | null
+          gallons_pumped: number | null
+          id: string
+          internal_notes: string | null
+          location_address: string | null
+          location_lat: number | null
+          location_lng: number | null
+          metadata: Json | null
+          notes: string | null
+          order_number: string | null
+          payment_status: string | null
+          photos: string[] | null
+          priority: string | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          service_type: string
+          shop_id: string
+          status: string
+          subtotal: number | null
+          tank_id: string | null
+          tax: number | null
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_driver_id?: string | null
+          assigned_truck_id?: string | null
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_signature?: string | null
+          disposal_manifest?: string | null
+          disposal_site?: string | null
+          gallons_pumped?: number | null
+          id?: string
+          internal_notes?: string | null
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          metadata?: Json | null
+          notes?: string | null
+          order_number?: string | null
+          payment_status?: string | null
+          photos?: string[] | null
+          priority?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          service_type?: string
+          shop_id: string
+          status?: string
+          subtotal?: number | null
+          tank_id?: string | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_driver_id?: string | null
+          assigned_truck_id?: string | null
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_signature?: string | null
+          disposal_manifest?: string | null
+          disposal_site?: string | null
+          gallons_pumped?: number | null
+          id?: string
+          internal_notes?: string | null
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          metadata?: Json | null
+          notes?: string | null
+          order_number?: string | null
+          payment_status?: string | null
+          photos?: string[] | null
+          priority?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          service_type?: string
+          shop_id?: string
+          status?: string
+          subtotal?: number | null
+          tank_id?: string | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_service_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_service_orders_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "septic_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_tanks: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          drain_field_size: string | null
+          drain_field_type: string | null
+          id: string
+          installation_date: string | null
+          last_pump_date: string | null
+          location_address: string | null
+          location_lat: number | null
+          location_lng: number | null
+          metadata: Json | null
+          next_pump_due: string | null
+          notes: string | null
+          number_of_compartments: number | null
+          permit_number: string | null
+          shop_id: string
+          system_status: string | null
+          tank_size_gallons: number | null
+          tank_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          drain_field_size?: string | null
+          drain_field_type?: string | null
+          id?: string
+          installation_date?: string | null
+          last_pump_date?: string | null
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          metadata?: Json | null
+          next_pump_due?: string | null
+          notes?: string | null
+          number_of_compartments?: number | null
+          permit_number?: string | null
+          shop_id: string
+          system_status?: string | null
+          tank_size_gallons?: number | null
+          tank_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          drain_field_size?: string | null
+          drain_field_type?: string | null
+          id?: string
+          installation_date?: string | null
+          last_pump_date?: string | null
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          metadata?: Json | null
+          next_pump_due?: string | null
+          notes?: string | null
+          number_of_compartments?: number | null
+          permit_number?: string | null
+          shop_id?: string
+          system_status?: string | null
+          tank_size_gallons?: number | null
+          tank_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_tanks_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_automation_rules: {
         Row: {
           automation_config: Json
