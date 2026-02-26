@@ -1,7 +1,7 @@
 // Inspection Template Types
-export type InspectionItemType = 'gyr_status' | 'text' | 'number' | 'checkbox' | 'date' | 'hour_meter';
+export type InspectionItemType = 'gyr_status' | 'text' | 'number' | 'checkbox' | 'date' | 'hour_meter' | 'photo' | 'video' | 'notes';
 
-export type AssetType = 'vessel' | 'skiff' | 'automobile' | 'heavy_truck' | 'equipment' | 'forklift' | 'trailer';
+export type AssetType = 'vessel' | 'skiff' | 'automobile' | 'heavy_truck' | 'equipment' | 'forklift' | 'trailer' | 'septic_system';
 
 export interface InspectionFormItem {
   id: string;
@@ -114,6 +114,7 @@ export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   equipment: 'Equipment',
   forklift: 'Forklift',
   trailer: 'Trailer',
+  septic_system: 'Septic System',
 };
 
 // Item type labels
@@ -124,4 +125,7 @@ export const ITEM_TYPE_LABELS: Record<InspectionItemType, string> = {
   checkbox: 'Checkbox',
   date: 'Date Input',
   hour_meter: 'Hour Meter',
+  photo: 'Photo Upload',
+  video: 'Video Upload',
+  notes: 'Notes / Comments',
 };

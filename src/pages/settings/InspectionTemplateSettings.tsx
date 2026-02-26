@@ -53,6 +53,7 @@ const ASSET_TYPE_ICONS: Record<AssetType, React.ReactNode> = {
   equipment: <Wrench className="h-4 w-4" />,
   forklift: <Wrench className="h-4 w-4" />,
   trailer: <Truck className="h-4 w-4" />,
+  septic_system: <Wrench className="h-4 w-4" />,
 };
 
 export default function InspectionTemplateSettings() {
