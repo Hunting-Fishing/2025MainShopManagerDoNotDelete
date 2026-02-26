@@ -34341,6 +34341,290 @@ export type Database = {
           },
         ]
       }
+      septic_chemicals: {
+        Row: {
+          chemical_name: string
+          chemical_type: string | null
+          created_at: string
+          current_stock: number | null
+          expiry_date: string | null
+          id: string
+          is_active: boolean | null
+          is_hazardous: boolean | null
+          manufacturer: string | null
+          minimum_stock: number | null
+          sds_url: string | null
+          selling_price: number | null
+          shop_id: string
+          storage_requirements: string | null
+          unit_cost: number | null
+          unit_of_measure: string | null
+          updated_at: string
+        }
+        Insert: {
+          chemical_name: string
+          chemical_type?: string | null
+          created_at?: string
+          current_stock?: number | null
+          expiry_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_hazardous?: boolean | null
+          manufacturer?: string | null
+          minimum_stock?: number | null
+          sds_url?: string | null
+          selling_price?: number | null
+          shop_id: string
+          storage_requirements?: string | null
+          unit_cost?: number | null
+          unit_of_measure?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chemical_name?: string
+          chemical_type?: string | null
+          created_at?: string
+          current_stock?: number | null
+          expiry_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_hazardous?: boolean | null
+          manufacturer?: string | null
+          minimum_stock?: number | null
+          sds_url?: string | null
+          selling_price?: number | null
+          shop_id?: string
+          storage_requirements?: string | null
+          unit_cost?: number | null
+          unit_of_measure?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_chemicals_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_communications: {
+        Row: {
+          body: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json | null
+          recipient: string | null
+          sent_at: string | null
+          service_order_id: string | null
+          shop_id: string
+          status: string | null
+          subject: string | null
+          type: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          recipient?: string | null
+          sent_at?: string | null
+          service_order_id?: string | null
+          shop_id: string
+          status?: string | null
+          subject?: string | null
+          type: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          recipient?: string | null
+          sent_at?: string | null
+          service_order_id?: string | null
+          shop_id?: string
+          status?: string | null
+          subject?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_communications_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_communications_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "septic_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_communications_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "septic_service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_communications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_completions: {
+        Row: {
+          arrival_time: string | null
+          completion_date: string
+          created_at: string
+          customer_feedback: string | null
+          customer_id: string | null
+          customer_rating: number | null
+          customer_signature_url: string | null
+          departure_time: string | null
+          disposal_cost: number | null
+          disposal_manifest_number: string | null
+          disposal_site: string | null
+          driver_id: string | null
+          driver_notes: string | null
+          gallons_pumped: number | null
+          id: string
+          labor_cost: number | null
+          labor_hours: number | null
+          material_cost: number | null
+          photos: Json | null
+          service_order_id: string | null
+          shop_id: string
+          sludge_depth_after: string | null
+          sludge_depth_before: string | null
+          tank_condition_notes: string | null
+          tank_id: string | null
+          total_cost: number | null
+          truck_id: string | null
+          updated_at: string
+          waste_type: string | null
+        }
+        Insert: {
+          arrival_time?: string | null
+          completion_date?: string
+          created_at?: string
+          customer_feedback?: string | null
+          customer_id?: string | null
+          customer_rating?: number | null
+          customer_signature_url?: string | null
+          departure_time?: string | null
+          disposal_cost?: number | null
+          disposal_manifest_number?: string | null
+          disposal_site?: string | null
+          driver_id?: string | null
+          driver_notes?: string | null
+          gallons_pumped?: number | null
+          id?: string
+          labor_cost?: number | null
+          labor_hours?: number | null
+          material_cost?: number | null
+          photos?: Json | null
+          service_order_id?: string | null
+          shop_id: string
+          sludge_depth_after?: string | null
+          sludge_depth_before?: string | null
+          tank_condition_notes?: string | null
+          tank_id?: string | null
+          total_cost?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          waste_type?: string | null
+        }
+        Update: {
+          arrival_time?: string | null
+          completion_date?: string
+          created_at?: string
+          customer_feedback?: string | null
+          customer_id?: string | null
+          customer_rating?: number | null
+          customer_signature_url?: string | null
+          departure_time?: string | null
+          disposal_cost?: number | null
+          disposal_manifest_number?: string | null
+          disposal_site?: string | null
+          driver_id?: string | null
+          driver_notes?: string | null
+          gallons_pumped?: number | null
+          id?: string
+          labor_cost?: number | null
+          labor_hours?: number | null
+          material_cost?: number | null
+          photos?: Json | null
+          service_order_id?: string | null
+          shop_id?: string
+          sludge_depth_after?: string | null
+          sludge_depth_before?: string | null
+          tank_condition_notes?: string | null
+          tank_id?: string | null
+          total_cost?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          waste_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_completions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_completions_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "septic_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_completions_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "septic_service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_completions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_completions_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "septic_tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_completions_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "septic_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       septic_components: {
         Row: {
           component_name: string
@@ -34399,6 +34683,294 @@ export type Database = {
             columns: ["tank_id"]
             isOneToOne: false
             referencedRelation: "septic_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_disposal_records: {
+        Row: {
+          compliance_notes: string | null
+          created_at: string
+          disposal_date: string
+          disposal_site_address: string | null
+          disposal_site_name: string
+          disposal_site_permit: string | null
+          driver_id: string | null
+          gallons_disposed: number
+          id: string
+          manifest_number: string | null
+          ph_level: number | null
+          receipt_url: string | null
+          regulatory_body: string | null
+          shop_id: string
+          solids_percent: number | null
+          source_address: string | null
+          source_customer_id: string | null
+          truck_id: string | null
+          updated_at: string
+          waste_type: string
+        }
+        Insert: {
+          compliance_notes?: string | null
+          created_at?: string
+          disposal_date?: string
+          disposal_site_address?: string | null
+          disposal_site_name: string
+          disposal_site_permit?: string | null
+          driver_id?: string | null
+          gallons_disposed: number
+          id?: string
+          manifest_number?: string | null
+          ph_level?: number | null
+          receipt_url?: string | null
+          regulatory_body?: string | null
+          shop_id: string
+          solids_percent?: number | null
+          source_address?: string | null
+          source_customer_id?: string | null
+          truck_id?: string | null
+          updated_at?: string
+          waste_type: string
+        }
+        Update: {
+          compliance_notes?: string | null
+          created_at?: string
+          disposal_date?: string
+          disposal_site_address?: string | null
+          disposal_site_name?: string
+          disposal_site_permit?: string | null
+          driver_id?: string | null
+          gallons_disposed?: number
+          id?: string
+          manifest_number?: string | null
+          ph_level?: number | null
+          receipt_url?: string | null
+          regulatory_body?: string | null
+          shop_id?: string
+          solids_percent?: number | null
+          source_address?: string | null
+          source_customer_id?: string | null
+          truck_id?: string | null
+          updated_at?: string
+          waste_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_disposal_records_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "septic_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_disposal_records_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_disposal_records_source_customer_id_fkey"
+            columns: ["source_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_disposal_records_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "septic_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_drivers: {
+        Row: {
+          cdl_class: string | null
+          cdl_expiry: string | null
+          cdl_number: string | null
+          cdl_state: string | null
+          commission_rate: number | null
+          created_at: string
+          driver_number: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          first_name: string
+          hazmat_endorsement: boolean | null
+          hazmat_expiry: string | null
+          hire_date: string | null
+          home_address: string | null
+          home_latitude: number | null
+          home_longitude: number | null
+          hourly_rate: number | null
+          id: string
+          last_name: string
+          medical_card_expiry: string | null
+          notes: string | null
+          phone: string | null
+          profile_id: string | null
+          shop_id: string
+          status: string | null
+          tanker_endorsement: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          cdl_class?: string | null
+          cdl_expiry?: string | null
+          cdl_number?: string | null
+          cdl_state?: string | null
+          commission_rate?: number | null
+          created_at?: string
+          driver_number?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name: string
+          hazmat_endorsement?: boolean | null
+          hazmat_expiry?: string | null
+          hire_date?: string | null
+          home_address?: string | null
+          home_latitude?: number | null
+          home_longitude?: number | null
+          hourly_rate?: number | null
+          id?: string
+          last_name: string
+          medical_card_expiry?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          shop_id: string
+          status?: string | null
+          tanker_endorsement?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          cdl_class?: string | null
+          cdl_expiry?: string | null
+          cdl_number?: string | null
+          cdl_state?: string | null
+          commission_rate?: number | null
+          created_at?: string
+          driver_number?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name?: string
+          hazmat_endorsement?: boolean | null
+          hazmat_expiry?: string | null
+          hire_date?: string | null
+          home_address?: string | null
+          home_latitude?: number | null
+          home_longitude?: number | null
+          hourly_rate?: number | null
+          id?: string
+          last_name?: string
+          medical_card_expiry?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          shop_id?: string
+          status?: string | null
+          tanker_endorsement?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_drivers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_drivers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_equipment: {
+        Row: {
+          assigned_truck_id: string | null
+          created_at: string
+          created_by: string | null
+          equipment_name: string
+          equipment_type: string
+          id: string
+          location: string | null
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          serial_number: string | null
+          shop_id: string
+          specifications: Json | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_truck_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          equipment_name: string
+          equipment_type: string
+          id?: string
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id: string
+          specifications?: Json | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_truck_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          equipment_name?: string
+          equipment_type?: string
+          id?: string
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id?: string
+          specifications?: Json | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_equipment_assigned_truck_id_fkey"
+            columns: ["assigned_truck_id"]
+            isOneToOne: false
+            referencedRelation: "septic_trucks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_equipment_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_equipment_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -34517,6 +35089,431 @@ export type Database = {
           },
         ]
       }
+      septic_inventory: {
+        Row: {
+          category: string | null
+          created_at: string
+          current_quantity: number | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          item_code: string | null
+          item_name: string
+          location: string | null
+          minimum_quantity: number | null
+          reorder_quantity: number | null
+          selling_price: number | null
+          shop_id: string
+          supplier: string | null
+          supplier_part_number: string | null
+          unit_cost: number | null
+          unit_of_measure: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          current_quantity?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          item_code?: string | null
+          item_name: string
+          location?: string | null
+          minimum_quantity?: number | null
+          reorder_quantity?: number | null
+          selling_price?: number | null
+          shop_id: string
+          supplier?: string | null
+          supplier_part_number?: string | null
+          unit_cost?: number | null
+          unit_of_measure?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          current_quantity?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          item_code?: string | null
+          item_name?: string
+          location?: string | null
+          minimum_quantity?: number | null
+          reorder_quantity?: number | null
+          selling_price?: number | null
+          shop_id?: string
+          supplier?: string | null
+          supplier_part_number?: string | null
+          unit_cost?: number | null
+          unit_of_measure?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_inventory_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_invoice_lines: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          product_id: string | null
+          quantity: number | null
+          sort_order: number | null
+          subtotal: number | null
+          tax_amount: number | null
+          total: number | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          product_id?: string | null
+          quantity?: number | null
+          sort_order?: number | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total?: number | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          product_id?: string | null
+          quantity?: number | null
+          sort_order?: number | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total?: number | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "septic_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_invoice_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "septic_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_invoices: {
+        Row: {
+          amount_paid: number | null
+          balance_due: number | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          discount_amount: number | null
+          due_date: string | null
+          id: string
+          internal_notes: string | null
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          payment_terms: string | null
+          quote_id: string | null
+          service_order_id: string | null
+          shop_id: string
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          tax_rate: number | null
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          balance_due?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          invoice_date?: string
+          invoice_number: string
+          notes?: string | null
+          payment_terms?: string | null
+          quote_id?: string | null
+          service_order_id?: string | null
+          shop_id: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number | null
+          balance_due?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          payment_terms?: string | null
+          quote_id?: string | null
+          service_order_id?: string | null
+          shop_id?: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "septic_quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_invoices_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "septic_service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_invoices_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_labor_rates: {
+        Row: {
+          created_at: string
+          emergency_multiplier: number | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          overtime_multiplier: number | null
+          rate_amount: number
+          rate_name: string
+          rate_type: string | null
+          shop_id: string
+          updated_at: string
+          weekend_multiplier: number | null
+        }
+        Insert: {
+          created_at?: string
+          emergency_multiplier?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          overtime_multiplier?: number | null
+          rate_amount?: number
+          rate_name: string
+          rate_type?: string | null
+          shop_id: string
+          updated_at?: string
+          weekend_multiplier?: number | null
+        }
+        Update: {
+          created_at?: string
+          emergency_multiplier?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          overtime_multiplier?: number | null
+          rate_amount?: number
+          rate_name?: string
+          rate_type?: string | null
+          shop_id?: string
+          updated_at?: string
+          weekend_multiplier?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_labor_rates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          reference_number: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          reference_number?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          reference_number?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "septic_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_payments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_products: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          is_taxable: boolean | null
+          product_code: string | null
+          product_name: string
+          shop_id: string
+          tax_rate: number | null
+          unit_price: number | null
+          unit_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_taxable?: boolean | null
+          product_code?: string | null
+          product_name: string
+          shop_id: string
+          tax_rate?: number | null
+          unit_price?: number | null
+          unit_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_taxable?: boolean | null
+          product_code?: string | null
+          product_name?: string
+          shop_id?: string
+          tax_rate?: number | null
+          unit_price?: number | null
+          unit_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_products_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       septic_pump_outs: {
         Row: {
           condition_notes: string | null
@@ -34600,6 +35597,487 @@ export type Database = {
             columns: ["tank_id"]
             isOneToOne: false
             referencedRelation: "septic_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_purchases: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expected_delivery: string | null
+          id: string
+          notes: string | null
+          order_date: string | null
+          po_number: string | null
+          received_date: string | null
+          shipping_amount: number | null
+          shop_id: string
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          total: number | null
+          updated_at: string
+          vendor_contact: string | null
+          vendor_name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string | null
+          po_number?: string | null
+          received_date?: string | null
+          shipping_amount?: number | null
+          shop_id: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total?: number | null
+          updated_at?: string
+          vendor_contact?: string | null
+          vendor_name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string | null
+          po_number?: string | null
+          received_date?: string | null
+          shipping_amount?: number | null
+          shop_id?: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total?: number | null
+          updated_at?: string
+          vendor_contact?: string | null
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_purchases_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_purchases_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_quote_lines: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          product_id: string | null
+          quantity: number | null
+          quote_id: string
+          sort_order: number | null
+          subtotal: number | null
+          tax_amount: number | null
+          total: number | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          product_id?: string | null
+          quantity?: number | null
+          quote_id: string
+          sort_order?: number | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total?: number | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          product_id?: string | null
+          quantity?: number | null
+          quote_id?: string
+          sort_order?: number | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total?: number | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "septic_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_quote_lines_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "septic_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_quotes: {
+        Row: {
+          converted_order_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          discount_amount: number | null
+          expiry_date: string | null
+          id: string
+          internal_notes: string | null
+          issue_date: string | null
+          location_address: string | null
+          location_latitude: number | null
+          location_longitude: number | null
+          notes: string | null
+          quote_number: string | null
+          service_type: string | null
+          shop_id: string
+          status: string | null
+          subtotal: number | null
+          tank_id: string | null
+          tax_amount: number | null
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          converted_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          discount_amount?: number | null
+          expiry_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          issue_date?: string | null
+          location_address?: string | null
+          location_latitude?: number | null
+          location_longitude?: number | null
+          notes?: string | null
+          quote_number?: string | null
+          service_type?: string | null
+          shop_id: string
+          status?: string | null
+          subtotal?: number | null
+          tank_id?: string | null
+          tax_amount?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          converted_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          discount_amount?: number | null
+          expiry_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          issue_date?: string | null
+          location_address?: string | null
+          location_latitude?: number | null
+          location_longitude?: number | null
+          notes?: string | null
+          quote_number?: string | null
+          service_type?: string | null
+          shop_id?: string
+          status?: string | null
+          subtotal?: number | null
+          tank_id?: string | null
+          tax_amount?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_quotes_converted_order_id_fkey"
+            columns: ["converted_order_id"]
+            isOneToOne: false
+            referencedRelation: "septic_service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_quotes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_quotes_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "septic_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_recurring_schedules: {
+        Row: {
+          auto_create_order: boolean | null
+          created_at: string
+          customer_id: string | null
+          frequency_months: number | null
+          id: string
+          is_active: boolean | null
+          last_service_date: string | null
+          next_service_date: string | null
+          notes: string | null
+          reminder_days_before: number | null
+          reminder_sent: boolean | null
+          service_type: string | null
+          shop_id: string
+          tank_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_create_order?: boolean | null
+          created_at?: string
+          customer_id?: string | null
+          frequency_months?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_service_date?: string | null
+          next_service_date?: string | null
+          notes?: string | null
+          reminder_days_before?: number | null
+          reminder_sent?: boolean | null
+          service_type?: string | null
+          shop_id: string
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_create_order?: boolean | null
+          created_at?: string
+          customer_id?: string | null
+          frequency_months?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_service_date?: string | null
+          next_service_date?: string | null
+          notes?: string | null
+          reminder_days_before?: number | null
+          reminder_sent?: boolean | null
+          service_type?: string | null
+          shop_id?: string
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_recurring_schedules_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_recurring_schedules_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_recurring_schedules_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "septic_tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_route_stops: {
+        Row: {
+          actual_arrival: string | null
+          actual_duration_minutes: number | null
+          address: string | null
+          created_at: string
+          customer_id: string | null
+          estimated_arrival: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          route_id: string
+          service_order_id: string | null
+          shop_id: string
+          status: string | null
+          stop_order: number
+          updated_at: string
+        }
+        Insert: {
+          actual_arrival?: string | null
+          actual_duration_minutes?: number | null
+          address?: string | null
+          created_at?: string
+          customer_id?: string | null
+          estimated_arrival?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          route_id: string
+          service_order_id?: string | null
+          shop_id: string
+          status?: string | null
+          stop_order?: number
+          updated_at?: string
+        }
+        Update: {
+          actual_arrival?: string | null
+          actual_duration_minutes?: number | null
+          address?: string | null
+          created_at?: string
+          customer_id?: string | null
+          estimated_arrival?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          route_id?: string
+          service_order_id?: string | null
+          shop_id?: string
+          status?: string | null
+          stop_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_route_stops_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "septic_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_route_stops_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "septic_service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_route_stops_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_routes: {
+        Row: {
+          created_at: string
+          driver_id: string | null
+          end_time: string | null
+          id: string
+          notes: string | null
+          route_date: string
+          route_name: string
+          shop_id: string
+          start_time: string | null
+          status: string | null
+          total_distance_miles: number | null
+          total_gallons_pumped: number | null
+          truck_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id?: string | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          route_date: string
+          route_name: string
+          shop_id: string
+          start_time?: string | null
+          status?: string | null
+          total_distance_miles?: number | null
+          total_gallons_pumped?: number | null
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          route_date?: string
+          route_name?: string
+          shop_id?: string
+          start_time?: string | null
+          status?: string | null
+          total_distance_miles?: number | null
+          total_gallons_pumped?: number | null
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_routes_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "septic_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_routes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_routes_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "septic_trucks"
             referencedColumns: ["id"]
           },
         ]
@@ -34721,6 +36199,101 @@ export type Database = {
           },
         ]
       }
+      septic_settings: {
+        Row: {
+          company_license_number: string | null
+          created_at: string
+          default_payment_terms: string | null
+          default_service_duration_minutes: number | null
+          default_tax_rate: number | null
+          disposal_fee_per_gallon: number | null
+          disposal_site_address: string | null
+          disposal_site_name: string | null
+          disposal_site_permit: string | null
+          emergency_surcharge_percent: number | null
+          enable_customer_portal: boolean | null
+          enable_recurring_reminders: boolean | null
+          id: string
+          inspection_base_price: number | null
+          invoice_next_number: number | null
+          invoice_prefix: string | null
+          mileage_rate: number | null
+          order_next_number: number | null
+          order_prefix: string | null
+          price_per_gallon: number | null
+          pump_out_base_price: number | null
+          quote_next_number: number | null
+          quote_prefix: string | null
+          reminder_days_before: number | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          company_license_number?: string | null
+          created_at?: string
+          default_payment_terms?: string | null
+          default_service_duration_minutes?: number | null
+          default_tax_rate?: number | null
+          disposal_fee_per_gallon?: number | null
+          disposal_site_address?: string | null
+          disposal_site_name?: string | null
+          disposal_site_permit?: string | null
+          emergency_surcharge_percent?: number | null
+          enable_customer_portal?: boolean | null
+          enable_recurring_reminders?: boolean | null
+          id?: string
+          inspection_base_price?: number | null
+          invoice_next_number?: number | null
+          invoice_prefix?: string | null
+          mileage_rate?: number | null
+          order_next_number?: number | null
+          order_prefix?: string | null
+          price_per_gallon?: number | null
+          pump_out_base_price?: number | null
+          quote_next_number?: number | null
+          quote_prefix?: string | null
+          reminder_days_before?: number | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          company_license_number?: string | null
+          created_at?: string
+          default_payment_terms?: string | null
+          default_service_duration_minutes?: number | null
+          default_tax_rate?: number | null
+          disposal_fee_per_gallon?: number | null
+          disposal_site_address?: string | null
+          disposal_site_name?: string | null
+          disposal_site_permit?: string | null
+          emergency_surcharge_percent?: number | null
+          enable_customer_portal?: boolean | null
+          enable_recurring_reminders?: boolean | null
+          id?: string
+          inspection_base_price?: number | null
+          invoice_next_number?: number | null
+          invoice_prefix?: string | null
+          mileage_rate?: number | null
+          order_next_number?: number | null
+          order_prefix?: string | null
+          price_per_gallon?: number | null
+          pump_out_base_price?: number | null
+          quote_next_number?: number | null
+          quote_prefix?: string | null
+          reminder_days_before?: number | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       septic_tanks: {
         Row: {
           created_at: string
@@ -34794,6 +36367,155 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_truck_compartments: {
+        Row: {
+          capacity_gallons: number
+          compartment_name: string
+          created_at: string
+          current_gallons: number | null
+          id: string
+          notes: string | null
+          shop_id: string
+          status: string | null
+          truck_id: string
+          updated_at: string
+          waste_type: string | null
+        }
+        Insert: {
+          capacity_gallons: number
+          compartment_name: string
+          created_at?: string
+          current_gallons?: number | null
+          id?: string
+          notes?: string | null
+          shop_id: string
+          status?: string | null
+          truck_id: string
+          updated_at?: string
+          waste_type?: string | null
+        }
+        Update: {
+          capacity_gallons?: number
+          compartment_name?: string
+          created_at?: string
+          current_gallons?: number | null
+          id?: string
+          notes?: string | null
+          shop_id?: string
+          status?: string | null
+          truck_id?: string
+          updated_at?: string
+          waste_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_truck_compartments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_truck_compartments_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "septic_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_trucks: {
+        Row: {
+          created_at: string
+          current_load_gallons: number | null
+          dot_number: string | null
+          hose_length_ft: number | null
+          id: string
+          insurance_expiry: string | null
+          insurance_policy: string | null
+          last_inspection_date: string | null
+          license_plate: string | null
+          make: string | null
+          model: string | null
+          next_inspection_due: string | null
+          notes: string | null
+          odometer_reading: number | null
+          photo_url: string | null
+          pump_capacity_gpm: number | null
+          pump_type: string | null
+          shop_id: string
+          status: string | null
+          tank_capacity_gallons: number | null
+          truck_name: string | null
+          truck_number: string
+          updated_at: string
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          created_at?: string
+          current_load_gallons?: number | null
+          dot_number?: string | null
+          hose_length_ft?: number | null
+          id?: string
+          insurance_expiry?: string | null
+          insurance_policy?: string | null
+          last_inspection_date?: string | null
+          license_plate?: string | null
+          make?: string | null
+          model?: string | null
+          next_inspection_due?: string | null
+          notes?: string | null
+          odometer_reading?: number | null
+          photo_url?: string | null
+          pump_capacity_gpm?: number | null
+          pump_type?: string | null
+          shop_id: string
+          status?: string | null
+          tank_capacity_gallons?: number | null
+          truck_name?: string | null
+          truck_number: string
+          updated_at?: string
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          created_at?: string
+          current_load_gallons?: number | null
+          dot_number?: string | null
+          hose_length_ft?: number | null
+          id?: string
+          insurance_expiry?: string | null
+          insurance_policy?: string | null
+          last_inspection_date?: string | null
+          license_plate?: string | null
+          make?: string | null
+          model?: string | null
+          next_inspection_due?: string | null
+          notes?: string | null
+          odometer_reading?: number | null
+          photo_url?: string | null
+          pump_capacity_gpm?: number | null
+          pump_type?: string | null
+          shop_id?: string
+          status?: string | null
+          tank_capacity_gallons?: number | null
+          truck_name?: string | null
+          truck_number?: string
+          updated_at?: string
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_trucks_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
