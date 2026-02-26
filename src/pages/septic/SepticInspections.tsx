@@ -55,6 +55,10 @@ import {
   ChevronDown,
   ChevronUp,
   Settings2,
+  Layers,
+  Package,
+  Bell,
+  Link2,
 } from 'lucide-react';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -169,14 +173,14 @@ export default function SepticInspections() {
   const deleteTemplate = useDeleteInspectionTemplate();
   const duplicateTemplate = useDuplicateInspectionTemplate();
 
-  // Fetch completed inspections
+  // Fetch completed inspections from new records table
   const { data: inspections = [], isLoading: inspectionsLoading } = useQuery({
-    queryKey: ['septic-inspections', shopId],
+    queryKey: ['septic-inspection-records', shopId],
     queryFn: async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
-        .from('septic_inspections')
-        .select('*, septic_tanks(tank_name, tank_type), customers:septic_tanks(customer_id)')
+        .from('septic_inspection_records' as any)
+        .select('*')
         .eq('shop_id', shopId)
         .order('inspection_date', { ascending: false })
         .limit(50);
@@ -230,7 +234,7 @@ export default function SepticInspections() {
             <Shield className="h-7 w-7 text-emerald-500" />
             Inspections & Compliance
           </h1>
-          <p className="text-muted-foreground mt-1">Create digital inspection forms, track compliance, and document system conditions</p>
+          <p className="text-muted-foreground mt-1">Create digital inspection forms, manage system types, and track inventory alerts</p>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)} className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800">
           <Plus className="h-4 w-4 mr-2" />
@@ -239,17 +243,30 @@ export default function SepticInspections() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-grid">
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Form Templates
+            <span className="hidden sm:inline">Form Templates</span>
+            <span className="sm:hidden">Forms</span>
+          </TabsTrigger>
+          <TabsTrigger value="system-types" className="flex items-center gap-2">
+            <Layers className="h-4 w-4" />
+            <span className="hidden sm:inline">System Types</span>
+            <span className="sm:hidden">Types</span>
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">Inventory Alerts</span>
+            <span className="sm:hidden">Alerts</span>
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <ClipboardCheck className="h-4 w-4" />
-            Completed ({inspections.length})
+            <span className="hidden sm:inline">Completed</span>
+            <span className="sm:hidden">Done</span>
           </TabsTrigger>
         </TabsList>
 
+        {/* ── Form Templates Tab ── */}
         <TabsContent value="templates" className="space-y-4 mt-4">
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -319,6 +336,17 @@ export default function SepticInspections() {
           )}
         </TabsContent>
 
+        {/* ── System Types Tab ── */}
+        <TabsContent value="system-types" className="mt-4">
+          <SystemTypesManager />
+        </TabsContent>
+
+        {/* ── Inventory Alerts Tab ── */}
+        <TabsContent value="alerts" className="mt-4">
+          <InventoryAlertsManager />
+        </TabsContent>
+
+        {/* ── Completed Inspections Tab ── */}
         <TabsContent value="history" className="space-y-4 mt-4">
           {inspectionsLoading ? (
             <div className="flex items-center justify-center py-20">
@@ -339,23 +367,16 @@ export default function SepticInspections() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold capitalize">{insp.inspection_type?.replace('_', ' ')}</span>
-                          <Badge variant={insp.pass_fail === 'pass' ? 'default' : insp.pass_fail === 'fail' ? 'destructive' : 'secondary'}>
-                            {insp.pass_fail || 'Pending'}
+                          <Badge variant={insp.overall_condition === 'good' ? 'default' : insp.overall_condition === 'fair' ? 'secondary' : 'destructive'}>
+                            {insp.overall_condition || 'Pending'}
                           </Badge>
-                          <Badge variant="outline" className={
-                            insp.overall_condition === 'good' ? 'border-emerald-500/30 text-emerald-600' :
-                            insp.overall_condition === 'fair' ? 'border-amber-500/30 text-amber-600' :
-                            'border-red-500/30 text-red-600'
-                          }>
-                            {insp.overall_condition}
-                          </Badge>
+                          <Badge variant="outline">{insp.status}</Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Inspector: {insp.inspector_name || 'Unknown'} • {format(new Date(insp.inspection_date), 'MMM d, yyyy')}
+                          {format(new Date(insp.inspection_date), 'MMM d, yyyy')}
                         </p>
-                        {insp.notes && (
-                          <p className="text-xs text-muted-foreground truncate">{insp.notes}</p>
+                        {insp.comments && (
+                          <p className="text-xs text-muted-foreground truncate">{insp.comments}</p>
                         )}
                       </div>
                     </div>
@@ -398,7 +419,700 @@ export default function SepticInspections() {
   );
 }
 
-// ── Create Septic Template Dialog ──────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// ── System Types Manager ──────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+function SystemTypesManager() {
+  const { shopId } = useShopId();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingType, setEditingType] = useState<any>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Fetch system types
+  const { data: systemTypes = [], isLoading } = useQuery({
+    queryKey: ['septic-system-types', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from('septic_system_types' as any)
+        .select('*')
+        .eq('shop_id', shopId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
+
+  // Fetch templates for linking
+  const { data: allTemplates } = useInspectionTemplates();
+  const septicTemplates = allTemplates?.filter(t => t.asset_type === 'septic_system') || [];
+
+  // Fetch products for each system type
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['septic-system-type-products', shopId],
+    queryFn: async () => {
+      if (!shopId || systemTypes.length === 0) return [];
+      const typeIds = systemTypes.map((t: any) => t.id);
+      const { data, error } = await supabase
+        .from('septic_system_type_products' as any)
+        .select('*')
+        .in('system_type_id', typeIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId && systemTypes.length > 0,
+  });
+
+  // Create system type
+  const createMutation = useMutation({
+    mutationFn: async (values: { name: string; description: string; inspection_template_id: string | null }) => {
+      const { error } = await supabase
+        .from('septic_system_types' as any)
+        .insert({ ...values, shop_id: shopId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-system-types'] });
+      toast({ title: 'System type created' });
+      setCreateOpen(false);
+    },
+    onError: () => toast({ title: 'Failed to create', variant: 'destructive' }),
+  });
+
+  // Update system type
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...values }: { id: string; name: string; description: string; inspection_template_id: string | null }) => {
+      const { error } = await supabase
+        .from('septic_system_types' as any)
+        .update(values)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-system-types'] });
+      toast({ title: 'System type updated' });
+      setEditingType(null);
+    },
+    onError: () => toast({ title: 'Failed to update', variant: 'destructive' }),
+  });
+
+  // Delete system type
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('septic_system_types' as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-system-types'] });
+      toast({ title: 'System type deleted' });
+      setDeleteId(null);
+    },
+    onError: () => toast({ title: 'Failed to delete', variant: 'destructive' }),
+  });
+
+  // Add required product
+  const addProductMutation = useMutation({
+    mutationFn: async (values: { system_type_id: string; product_name: string; product_category: string; quantity_needed: number }) => {
+      const { error } = await supabase
+        .from('septic_system_type_products' as any)
+        .insert(values);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-system-type-products'] });
+      toast({ title: 'Product added' });
+    },
+    onError: () => toast({ title: 'Failed to add product', variant: 'destructive' }),
+  });
+
+  // Remove product
+  const removeProductMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('septic_system_type_products' as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-system-type-products'] });
+      toast({ title: 'Product removed' });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">System Types</h3>
+          <p className="text-sm text-muted-foreground">Define system types (e.g., Type 1 Gravity, Type 2 Pressure) with linked forms and required products</p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add System Type
+        </Button>
+      </div>
+
+      {systemTypes.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Layers className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <p className="text-lg font-medium mb-2">No system types defined</p>
+            <p className="text-muted-foreground mb-4">Create system types to auto-populate forms and required products for customer properties</p>
+            <Button variant="outline" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create System Type
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {systemTypes.map((st: any) => {
+            const typeProducts = allProducts.filter((p: any) => p.system_type_id === st.id);
+            const linkedTemplate = septicTemplates.find(t => t.id === st.inspection_template_id);
+            return (
+              <SystemTypeCard
+                key={st.id}
+                systemType={st}
+                products={typeProducts}
+                linkedTemplateName={linkedTemplate?.name}
+                templates={septicTemplates}
+                onEdit={() => setEditingType(st)}
+                onDelete={() => setDeleteId(st.id)}
+                onAddProduct={(product) => addProductMutation.mutate({ system_type_id: st.id, ...product })}
+                onRemoveProduct={(id) => removeProductMutation.mutate(id)}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Create/Edit Dialog */}
+      <SystemTypeDialog
+        open={createOpen || !!editingType}
+        onOpenChange={(open) => {
+          if (!open) { setCreateOpen(false); setEditingType(null); }
+        }}
+        systemType={editingType}
+        templates={septicTemplates}
+        onSave={(values) => {
+          if (editingType) {
+            updateMutation.mutate({ id: editingType.id, ...values });
+          } else {
+            createMutation.mutate(values);
+          }
+        }}
+        isPending={createMutation.isPending || updateMutation.isPending}
+      />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete System Type</AlertDialogTitle>
+            <AlertDialogDescription>This will remove this system type and all its linked products. Properties using this type will need to be reassigned.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function SystemTypeCard({
+  systemType,
+  products,
+  linkedTemplateName,
+  templates,
+  onEdit,
+  onDelete,
+  onAddProduct,
+  onRemoveProduct,
+}: {
+  systemType: any;
+  products: any[];
+  linkedTemplateName?: string;
+  templates: any[];
+  onEdit: () => void;
+  onDelete: () => void;
+  onAddProduct: (product: { product_name: string; product_category: string; quantity_needed: number }) => void;
+  onRemoveProduct: (id: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductCategory, setNewProductCategory] = useState('filter');
+  const [newProductQty, setNewProductQty] = useState(1);
+
+  const handleAddProduct = () => {
+    if (!newProductName.trim()) return;
+    onAddProduct({ product_name: newProductName.trim(), product_category: newProductCategory, quantity_needed: newProductQty });
+    setNewProductName('');
+    setNewProductQty(1);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base">{systemType.name}</CardTitle>
+              <Badge variant={systemType.is_active ? 'default' : 'secondary'}>
+                {systemType.is_active ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+            {systemType.description && (
+              <p className="text-sm text-muted-foreground mt-1">{systemType.description}</p>
+            )}
+            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+              {linkedTemplateName && (
+                <span className="flex items-center gap-1">
+                  <Link2 className="h-3 w-3" />
+                  Form: {linkedTemplateName}
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                <Package className="h-3 w-3" />
+                {products.length} required product{products.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-1.5">
+            <Button size="sm" variant="outline" onClick={onEdit}>
+              <Edit className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="sm" variant="outline" onClick={onDelete} className="text-destructive">
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <Collapsible open={expanded} onOpenChange={setExpanded}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full justify-between">
+              <span className="text-sm">Required Products & Chemicals</span>
+              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3 space-y-3">
+            {products.length > 0 && (
+              <div className="space-y-2">
+                {products.map((p: any) => (
+                  <div key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">{p.product_category}</Badge>
+                      <span className="text-sm">{p.product_name}</span>
+                      <span className="text-xs text-muted-foreground">×{p.quantity_needed}</span>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onRemoveProduct(p.id)}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 space-y-1">
+                <Label className="text-xs">Product Name</Label>
+                <Input
+                  placeholder="e.g., Effluent Filter 4-inch"
+                  value={newProductName}
+                  onChange={(e) => setNewProductName(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+              <div className="w-28 space-y-1">
+                <Label className="text-xs">Category</Label>
+                <Select value={newProductCategory} onValueChange={setNewProductCategory}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="filter">Filter</SelectItem>
+                    <SelectItem value="chemical">Chemical</SelectItem>
+                    <SelectItem value="part">Part</SelectItem>
+                    <SelectItem value="supply">Supply</SelectItem>
+                    <SelectItem value="general">General</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-16 space-y-1">
+                <Label className="text-xs">Qty</Label>
+                <Input type="number" min={1} value={newProductQty} onChange={(e) => setNewProductQty(Number(e.target.value))} className="h-9" />
+              </div>
+              <Button size="sm" className="h-9" onClick={handleAddProduct} disabled={!newProductName.trim()}>
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SystemTypeDialog({
+  open,
+  onOpenChange,
+  systemType,
+  templates,
+  onSave,
+  isPending,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  systemType: any | null;
+  templates: any[];
+  onSave: (values: { name: string; description: string; inspection_template_id: string | null }) => void;
+  isPending: boolean;
+}) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [templateId, setTemplateId] = useState<string>('none');
+
+  React.useEffect(() => {
+    if (systemType) {
+      setName(systemType.name || '');
+      setDescription(systemType.description || '');
+      setTemplateId(systemType.inspection_template_id || 'none');
+    } else {
+      setName('');
+      setDescription('');
+      setTemplateId('none');
+    }
+  }, [systemType, open]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({ name, description, inspection_template_id: templateId === 'none' ? null : templateId });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>{systemType ? 'Edit System Type' : 'Create System Type'}</DialogTitle>
+            <DialogDescription>
+              Define a septic system type. Link it to an inspection form template so it auto-populates when a property with this type has a service.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>System Type Name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Type 1 - Gravity Flow" required />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe this system type..." rows={2} />
+            </div>
+            <div className="space-y-2">
+              <Label>Linked Inspection Form</Label>
+              <Select value={templateId} onValueChange={setTemplateId}>
+                <SelectTrigger><SelectValue placeholder="Select form template" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No linked form</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">When a work order is created for a property with this system type, this form will auto-populate</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={!name || isPending}>
+              {isPending ? 'Saving...' : systemType ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Inventory Alerts Manager ──────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+function InventoryAlertsManager() {
+  const { shopId } = useShopId();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [createOpen, setCreateOpen] = useState(false);
+
+  // Fetch alerts
+  const { data: alerts = [], isLoading } = useQuery({
+    queryKey: ['septic-inventory-alerts', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from('septic_inventory_alerts' as any)
+        .select('*')
+        .eq('shop_id', shopId)
+        .order('product_name', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
+
+  // Fetch upcoming scheduled services (next 14 days)
+  const { data: upcomingServices = [] } = useQuery({
+    queryKey: ['septic-upcoming-services', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+      const { data, error } = await supabase
+        .from('septic_property_systems' as any)
+        .select('*, septic_system_types!inner(name, id)')
+        .eq('shop_id', shopId)
+        .eq('is_active', true)
+        .lte('next_service_date', futureDate.toISOString().split('T')[0])
+        .gte('next_service_date', new Date().toISOString().split('T')[0])
+        .order('next_service_date', { ascending: true });
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
+
+  // Create alert
+  const createMutation = useMutation({
+    mutationFn: async (values: { product_name: string; reorder_point: number; reorder_quantity: number; advance_notice_days: number }) => {
+      const { error } = await supabase
+        .from('septic_inventory_alerts' as any)
+        .insert({ ...values, shop_id: shopId, is_active: true });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-inventory-alerts'] });
+      toast({ title: 'Alert created' });
+      setCreateOpen(false);
+    },
+    onError: () => toast({ title: 'Failed to create', variant: 'destructive' }),
+  });
+
+  // Toggle alert
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from('septic_inventory_alerts' as any)
+        .update({ is_active })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['septic-inventory-alerts'] }),
+  });
+
+  // Delete alert
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('septic_inventory_alerts' as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-inventory-alerts'] });
+      toast({ title: 'Alert removed' });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Upcoming Service Alerts */}
+      {upcomingServices.length > 0 && (
+        <Card className="border-amber-500/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Upcoming Services ({upcomingServices.length})
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Properties with services due in the next 14 days — check inventory for required products</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {upcomingServices.map((svc: any) => (
+                <div key={svc.id} className="flex items-center justify-between p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                  <div>
+                    <p className="text-sm font-medium">{svc.property_address || 'Unknown Property'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      System: {(svc as any).septic_system_types?.name} • Due: {svc.next_service_date}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="border-amber-500/30 text-amber-600">
+                    {Math.ceil((new Date(svc.next_service_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Reorder Point Alerts */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Reorder Point Alerts</h3>
+          <p className="text-sm text-muted-foreground">Set low-stock thresholds for filters, chemicals, and service products</p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Alert
+        </Button>
+      </div>
+
+      {alerts.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Bell className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <p className="text-lg font-medium mb-2">No inventory alerts configured</p>
+            <p className="text-muted-foreground mb-4">Set up reorder points to get notified when stock is low before upcoming services</p>
+            <Button variant="outline" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Alert Rule
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {alerts.map((alert: any) => (
+            <Card key={alert.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{alert.product_name}</span>
+                      <Badge variant={alert.is_active ? 'default' : 'secondary'} className="text-[10px]">
+                        {alert.is_active ? 'Active' : 'Paused'}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Reorder at ≤ {alert.reorder_point} units • Order {alert.reorder_quantity} • {alert.advance_notice_days} day notice
+                    </p>
+                    {alert.last_alert_at && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Last alert: {format(new Date(alert.last_alert_at), 'MMM d, yyyy')}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Switch
+                      checked={alert.is_active}
+                      onCheckedChange={(v) => toggleMutation.mutate({ id: alert.id, is_active: v })}
+                    />
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteMutation.mutate(alert.id)}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Create Alert Dialog */}
+      <CreateAlertDialog open={createOpen} onOpenChange={setCreateOpen} onSave={(v) => createMutation.mutate(v)} isPending={createMutation.isPending} />
+    </div>
+  );
+}
+
+function CreateAlertDialog({
+  open,
+  onOpenChange,
+  onSave,
+  isPending,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (values: { product_name: string; reorder_point: number; reorder_quantity: number; advance_notice_days: number }) => void;
+  isPending: boolean;
+}) {
+  const [productName, setProductName] = useState('');
+  const [reorderPoint, setReorderPoint] = useState(5);
+  const [reorderQty, setReorderQty] = useState(10);
+  const [noticeDays, setNoticeDays] = useState(7);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({ product_name: productName, reorder_point: reorderPoint, reorder_quantity: reorderQty, advance_notice_days: noticeDays });
+    setProductName('');
+    setReorderPoint(5);
+    setReorderQty(10);
+    setNoticeDays(7);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[450px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Add Inventory Alert</DialogTitle>
+            <DialogDescription>Set a reorder point for a product. You'll be notified when stock is low or when upcoming services need this item.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Product / Item Name</Label>
+              <Input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="e.g., 4-inch Effluent Filter" required />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs">Reorder At</Label>
+                <Input type="number" min={0} value={reorderPoint} onChange={(e) => setReorderPoint(Number(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Order Qty</Label>
+                <Input type="number" min={1} value={reorderQty} onChange={(e) => setReorderQty(Number(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Notice Days</Label>
+                <Input type="number" min={1} value={noticeDays} onChange={(e) => setNoticeDays(Number(e.target.value))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={!productName || isPending}>
+              {isPending ? 'Saving...' : 'Create Alert'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Create Septic Template Dialog ─────────────────────────────
+// ══════════════════════════════════════════════════════════════
 function CreateSepticTemplateDialog({
   open,
   onOpenChange,
@@ -509,7 +1223,9 @@ function CreateSepticTemplateDialog({
   );
 }
 
-// ── Septic Template Builder with System Tabs + XD Tab ──────────
+// ══════════════════════════════════════════════════════════════
+// ── Septic Template Builder with System Tabs + XD Tab ─────────
+// ══════════════════════════════════════════════════════════════
 function SepticTemplateBuilder({ templateId, onClose }: { templateId: string; onClose: () => void }) {
   const { data: template, isLoading } = useInspectionTemplate(templateId);
   const updateTemplate = useUpdateInspectionTemplate();
@@ -591,7 +1307,6 @@ function SepticTemplateBuilder({ templateId, onClose }: { templateId: string; on
     const section = sections.find(s => s.id === sectionId);
     const displayOrder = (section?.items?.length || 0) + 1;
     
-    // Check for duplicate keys
     const existingKeys = section?.items?.map(i => i.item_key) || [];
     if (existingKeys.includes(field.key)) {
       toast({ title: 'Field already exists in this section', variant: 'destructive' });
@@ -629,7 +1344,6 @@ function SepticTemplateBuilder({ templateId, onClose }: { templateId: string; on
     });
   };
 
-  // Build tab list: system sections + XD tab
   const systemTabs = sections.map((s, i) => ({
     key: `system-${i}`,
     label: s.title,
@@ -664,12 +1378,10 @@ function SepticTemplateBuilder({ templateId, onClose }: { templateId: string; on
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="publish-toggle" className="text-sm">
-              {template.is_published ? 'Published' : 'Draft'}
-            </Label>
-            <Switch id="publish-toggle" checked={template.is_published} onCheckedChange={handleTogglePublish} />
-          </div>
+          <Label htmlFor="publish-toggle" className="text-sm">
+            {template.is_published ? 'Published' : 'Draft'}
+          </Label>
+          <Switch id="publish-toggle" checked={template.is_published} onCheckedChange={handleTogglePublish} />
         </div>
       </div>
 
@@ -687,7 +1399,6 @@ function SepticTemplateBuilder({ templateId, onClose }: { templateId: string; on
           </TabsTrigger>
         </TabsList>
 
-        {/* System Section Tabs */}
         {systemTabs.map((tab) => (
           <TabsContent key={tab.key} value={tab.key} className="mt-4 space-y-4">
             <SectionEditor
@@ -702,7 +1413,6 @@ function SepticTemplateBuilder({ templateId, onClose }: { templateId: string; on
           </TabsContent>
         ))}
 
-        {/* XD Tab - Field Picker */}
         <TabsContent value="xd" className="mt-4 space-y-6">
           <Card>
             <CardHeader>
@@ -718,14 +1428,11 @@ function SepticTemplateBuilder({ templateId, onClose }: { templateId: string; on
               {sections.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">Add a section first before adding fields</p>
               ) : (
-                <>
-                  {/* Target section selector */}
-                  <XDFieldPicker
-                    sections={sections}
-                    onAddField={handleAddXDField}
-                    isPending={addItem.isPending}
-                  />
-                </>
+                <XDFieldPicker
+                  sections={sections}
+                  onAddField={handleAddXDField}
+                  isPending={addItem.isPending}
+                />
               )}
             </CardContent>
           </Card>
@@ -737,7 +1444,6 @@ function SepticTemplateBuilder({ templateId, onClose }: { templateId: string; on
         </TabsContent>
       </Tabs>
 
-      {/* If no sections yet */}
       {sections.length === 0 && activeSystemTab !== 'xd' && (
         <Card>
           <CardContent className="p-12 text-center">
@@ -751,7 +1457,6 @@ function SepticTemplateBuilder({ templateId, onClose }: { templateId: string; on
         </Card>
       )}
 
-      {/* Delete dialogs */}
       <AlertDialog open={!!deleteSectionId} onOpenChange={() => setDeleteSectionId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

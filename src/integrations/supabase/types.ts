@@ -34975,6 +34975,125 @@ export type Database = {
           },
         ]
       }
+      septic_inspection_records: {
+        Row: {
+          comments: string | null
+          completed_at: string | null
+          created_at: string
+          customer_id: string | null
+          follow_up_notes: string | null
+          follow_up_required: boolean | null
+          id: string
+          inspection_data: Json | null
+          inspection_date: string
+          inspector_id: string | null
+          overall_condition: string | null
+          photos: string[] | null
+          property_system_id: string | null
+          shop_id: string
+          status: string
+          system_type_id: string | null
+          template_id: string | null
+          updated_at: string
+          videos: string[] | null
+          work_order_id: string | null
+        }
+        Insert: {
+          comments?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          follow_up_notes?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          inspection_data?: Json | null
+          inspection_date?: string
+          inspector_id?: string | null
+          overall_condition?: string | null
+          photos?: string[] | null
+          property_system_id?: string | null
+          shop_id: string
+          status?: string
+          system_type_id?: string | null
+          template_id?: string | null
+          updated_at?: string
+          videos?: string[] | null
+          work_order_id?: string | null
+        }
+        Update: {
+          comments?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          follow_up_notes?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          inspection_data?: Json | null
+          inspection_date?: string
+          inspector_id?: string | null
+          overall_condition?: string | null
+          photos?: string[] | null
+          property_system_id?: string | null
+          shop_id?: string
+          status?: string
+          system_type_id?: string | null
+          template_id?: string | null
+          updated_at?: string
+          videos?: string[] | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_inspection_records_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_inspection_records_inspector_id_fkey"
+            columns: ["inspector_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_inspection_records_property_system_id_fkey"
+            columns: ["property_system_id"]
+            isOneToOne: false
+            referencedRelation: "septic_property_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_inspection_records_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_inspection_records_system_type_id_fkey"
+            columns: ["system_type_id"]
+            isOneToOne: false
+            referencedRelation: "septic_system_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_inspection_records_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_inspection_records_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       septic_inspections: {
         Row: {
           baffle_condition: string | null
@@ -35153,6 +35272,63 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "septic_inventory_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_inventory_alerts: {
+        Row: {
+          advance_notice_days: number
+          created_at: string
+          id: string
+          is_active: boolean
+          last_alert_at: string | null
+          product_id: string | null
+          product_name: string
+          reorder_point: number
+          reorder_quantity: number
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          advance_notice_days?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_alert_at?: string | null
+          product_id?: string | null
+          product_name: string
+          reorder_point?: number
+          reorder_quantity?: number
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          advance_notice_days?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_alert_at?: string | null
+          product_id?: string | null
+          product_name?: string
+          reorder_point?: number
+          reorder_quantity?: number
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_inventory_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "septic_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_inventory_alerts_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -35510,6 +35686,76 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_property_systems: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          install_date: string | null
+          is_active: boolean
+          last_service_date: string | null
+          next_service_date: string | null
+          notes: string | null
+          property_address: string | null
+          shop_id: string
+          system_type_id: string
+          tank_size_gallons: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          install_date?: string | null
+          is_active?: boolean
+          last_service_date?: string | null
+          next_service_date?: string | null
+          notes?: string | null
+          property_address?: string | null
+          shop_id: string
+          system_type_id: string
+          tank_size_gallons?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          install_date?: string | null
+          is_active?: boolean
+          last_service_date?: string | null
+          next_service_date?: string | null
+          notes?: string | null
+          property_address?: string | null
+          shop_id?: string
+          system_type_id?: string
+          tank_size_gallons?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_property_systems_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_property_systems_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_property_systems_system_type_id_fkey"
+            columns: ["system_type_id"]
+            isOneToOne: false
+            referencedRelation: "septic_system_types"
             referencedColumns: ["id"]
           },
         ]
@@ -36289,6 +36535,108 @@ export type Database = {
             foreignKeyName: "septic_settings_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_system_type_products: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          notes: string | null
+          product_category: string
+          product_id: string | null
+          product_name: string
+          quantity_needed: number
+          system_type_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          notes?: string | null
+          product_category?: string
+          product_id?: string | null
+          product_name: string
+          quantity_needed?: number
+          system_type_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          notes?: string | null
+          product_category?: string
+          product_id?: string | null
+          product_name?: string
+          quantity_needed?: number
+          system_type_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_system_type_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "septic_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_system_type_products_system_type_id_fkey"
+            columns: ["system_type_id"]
+            isOneToOne: false
+            referencedRelation: "septic_system_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_system_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          inspection_template_id: string | null
+          is_active: boolean
+          name: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          inspection_template_id?: string | null
+          is_active?: boolean
+          name: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          inspection_template_id?: string | null
+          is_active?: boolean
+          name?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_system_types_inspection_template_id_fkey"
+            columns: ["inspection_template_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_system_types_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
             referencedRelation: "shops"
             referencedColumns: ["id"]
           },
