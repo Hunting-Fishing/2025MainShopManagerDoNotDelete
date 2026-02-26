@@ -36173,6 +36173,8 @@ export type Database = {
           address: string | null
           created_at: string
           customer_id: string | null
+          distance_from_previous_miles: number | null
+          drive_time_minutes: number | null
           estimated_arrival: string | null
           estimated_duration_minutes: number | null
           id: string
@@ -36192,6 +36194,8 @@ export type Database = {
           address?: string | null
           created_at?: string
           customer_id?: string | null
+          distance_from_previous_miles?: number | null
+          drive_time_minutes?: number | null
           estimated_arrival?: string | null
           estimated_duration_minutes?: number | null
           id?: string
@@ -36211,6 +36215,8 @@ export type Database = {
           address?: string | null
           created_at?: string
           customer_id?: string | null
+          distance_from_previous_miles?: number | null
+          drive_time_minutes?: number | null
           estimated_arrival?: string | null
           estimated_duration_minutes?: number | null
           id?: string
@@ -36260,6 +36266,7 @@ export type Database = {
           created_at: string
           driver_id: string | null
           end_time: string | null
+          estimated_duration_minutes: number | null
           id: string
           notes: string | null
           route_date: string
@@ -36269,6 +36276,7 @@ export type Database = {
           status: string | null
           total_distance_miles: number | null
           total_gallons_pumped: number | null
+          total_jobs: number | null
           truck_id: string | null
           updated_at: string
         }
@@ -36276,6 +36284,7 @@ export type Database = {
           created_at?: string
           driver_id?: string | null
           end_time?: string | null
+          estimated_duration_minutes?: number | null
           id?: string
           notes?: string | null
           route_date: string
@@ -36285,6 +36294,7 @@ export type Database = {
           status?: string | null
           total_distance_miles?: number | null
           total_gallons_pumped?: number | null
+          total_jobs?: number | null
           truck_id?: string | null
           updated_at?: string
         }
@@ -36292,6 +36302,7 @@ export type Database = {
           created_at?: string
           driver_id?: string | null
           end_time?: string | null
+          estimated_duration_minutes?: number | null
           id?: string
           notes?: string | null
           route_date?: string
@@ -36301,6 +36312,7 @@ export type Database = {
           status?: string | null
           total_distance_miles?: number | null
           total_gallons_pumped?: number | null
+          total_jobs?: number | null
           truck_id?: string | null
           updated_at?: string
         }
