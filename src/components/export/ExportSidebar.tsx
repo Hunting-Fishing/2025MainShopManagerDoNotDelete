@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell, RotateCcw, Landmark, CalendarDays, ShieldAlert, Anchor, Globe2, CreditCard, FileCheck, Hash, Package as PackageIcon } from 'lucide-react';
+import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell, RotateCcw, Landmark, CalendarDays, ShieldAlert, Anchor, Globe2, CreditCard, FileCheck, Hash, Package as PackageIcon, Navigation, Container, GitBranch, TrendingUp, FileStack, FileBadge, BellRing } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -48,6 +48,7 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Dashboard', href: '/export', icon: LayoutDashboard, color: 'from-emerald-500 to-teal-600' },
       { title: 'Alerts', href: '/export/notifications', icon: Bell, color: 'from-red-500 to-rose-600' },
+      { title: 'Trade Alerts', href: '/export/trade-alerts', icon: BellRing, color: 'from-orange-500 to-red-500' },
       { title: 'Reports', href: '/export/reports', icon: BarChart3, color: 'from-cyan-500 to-blue-600' },
       { title: 'Activity Log', href: '/export/activity', icon: ClipboardCheck, color: 'from-slate-500 to-zinc-600' },
     ],
@@ -86,6 +87,8 @@ const navSections: NavSection[] = [
       { title: 'Insurance', href: '/export/insurance', icon: ShieldCheck, color: 'from-cyan-500 to-blue-500' },
       { title: 'Forwarders', href: '/export/forwarders', icon: Truck, color: 'from-purple-500 to-indigo-600' },
       { title: 'Bookings', href: '/export/bookings', icon: Anchor, color: 'from-blue-500 to-indigo-600' },
+      { title: 'Ports', href: '/export/ports', icon: Navigation, color: 'from-sky-500 to-blue-600' },
+      { title: 'Intermodal', href: '/export/intermodal', icon: GitBranch, color: 'from-violet-500 to-indigo-600' },
       { title: 'Quality Control', href: '/export/quality', icon: ClipboardCheck, color: 'from-teal-500 to-cyan-600' },
     ],
   },
@@ -97,6 +100,7 @@ const navSections: NavSection[] = [
       { title: 'Warehouses', href: '/export/warehouses', icon: Warehouse, color: 'from-violet-500 to-purple-600' },
       { title: 'Packaging', href: '/export/packaging', icon: Package, color: 'from-lime-500 to-green-600' },
       { title: 'Packing & Trace', href: '/export/packing', icon: MapPin, color: 'from-teal-500 to-emerald-600' },
+      { title: 'Bonded Storage', href: '/export/bonded-warehouses', icon: Container, color: 'from-indigo-500 to-purple-600' },
       { title: 'Equipment', href: '/export/equipment', icon: Wrench, color: 'from-gray-500 to-slate-600' },
     ],
   },
@@ -104,7 +108,9 @@ const navSections: NavSection[] = [
     title: 'Documents & Compliance',
     items: [
       { title: 'Documents', href: '/export/documents', icon: FileText, color: 'from-fuchsia-500 to-pink-600' },
+      { title: 'Doc Templates', href: '/export/doc-templates', icon: FileStack, color: 'from-pink-500 to-fuchsia-600' },
       { title: 'Customs', href: '/export/customs', icon: ShieldCheck, color: 'from-purple-500 to-violet-600' },
+      { title: 'Declarations', href: '/export/declarations', icon: FileBadge, color: 'from-violet-500 to-purple-600' },
       { title: 'Certificates', href: '/export/certificates', icon: FileCheck, color: 'from-emerald-500 to-teal-600' },
       { title: 'HS Codes', href: '/export/hs-codes', icon: Hash, color: 'from-indigo-500 to-blue-600' },
       { title: 'Country Reqs', href: '/export/country-requirements', icon: Globe2, color: 'from-sky-500 to-blue-600' },
@@ -122,6 +128,8 @@ const navSections: NavSection[] = [
       { title: 'Letters of Credit', href: '/export/letters-of-credit', icon: Landmark, color: 'from-indigo-500 to-blue-600' },
       { title: 'Duty Drawbacks', href: '/export/duty-drawbacks', icon: Receipt, color: 'from-lime-500 to-emerald-600' },
       { title: 'Bank Guarantees', href: '/export/bank-guarantees', icon: Shield, color: 'from-slate-500 to-zinc-600' },
+      { title: 'Trade Finance', href: '/export/trade-finance', icon: TrendingUp, color: 'from-cyan-500 to-emerald-600' },
+      { title: 'Shipment P&L', href: '/export/shipment-pl', icon: TrendingUp, color: 'from-green-500 to-emerald-600' },
     ],
   },
   {
