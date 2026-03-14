@@ -10979,11 +10979,68 @@ export type Database = {
           },
         ]
       }
+      export_product_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_system: boolean | null
+          name: string
+          shop_id: string | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          name: string
+          shop_id?: string | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          name?: string
+          shop_id?: string | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_product_categories_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_products: {
         Row: {
+          anti_dumping_duty_pct: number | null
           avg_monthly_volume: number | null
           category: string
+          category_id: string | null
           certifications: string[] | null
+          cost_locked: boolean | null
+          cost_locked_at: string | null
+          cost_locked_by: string | null
+          cost_review_notes: string | null
+          countervailing_duty_pct: number | null
           country_of_origin: string | null
           created_at: string | null
           currency: string | null
@@ -11002,7 +11059,11 @@ export type Database = {
           insurance_cost_per_unit: number | null
           is_active: boolean | null
           landed_cost_per_unit: number | null
+          last_cost_review_at: string | null
           last_sold_at: string | null
+          markup_pct: number | null
+          max_discount_pct: number | null
+          min_margin_threshold: number | null
           minimum_order_qty: number | null
           moisture_content_pct: number | null
           name: string
@@ -11010,6 +11071,7 @@ export type Database = {
           packaging_type: string | null
           phytosanitary_required: boolean | null
           preferred_incoterms: string | null
+          price_floor: number | null
           profit_margin_pct: number | null
           purchase_cost_per_unit: number | null
           regulatory_notes: string | null
@@ -11024,6 +11086,7 @@ export type Database = {
           supplier_lead_time_days: number | null
           supplier_name: string | null
           target_markets: string[] | null
+          tariff_classification: string | null
           total_cost: number | null
           total_revenue: number | null
           total_units_sold: number | null
@@ -11033,9 +11096,16 @@ export type Database = {
           weight_per_unit: number | null
         }
         Insert: {
+          anti_dumping_duty_pct?: number | null
           avg_monthly_volume?: number | null
           category?: string
+          category_id?: string | null
           certifications?: string[] | null
+          cost_locked?: boolean | null
+          cost_locked_at?: string | null
+          cost_locked_by?: string | null
+          cost_review_notes?: string | null
+          countervailing_duty_pct?: number | null
           country_of_origin?: string | null
           created_at?: string | null
           currency?: string | null
@@ -11054,7 +11124,11 @@ export type Database = {
           insurance_cost_per_unit?: number | null
           is_active?: boolean | null
           landed_cost_per_unit?: number | null
+          last_cost_review_at?: string | null
           last_sold_at?: string | null
+          markup_pct?: number | null
+          max_discount_pct?: number | null
+          min_margin_threshold?: number | null
           minimum_order_qty?: number | null
           moisture_content_pct?: number | null
           name: string
@@ -11062,6 +11136,7 @@ export type Database = {
           packaging_type?: string | null
           phytosanitary_required?: boolean | null
           preferred_incoterms?: string | null
+          price_floor?: number | null
           profit_margin_pct?: number | null
           purchase_cost_per_unit?: number | null
           regulatory_notes?: string | null
@@ -11076,6 +11151,7 @@ export type Database = {
           supplier_lead_time_days?: number | null
           supplier_name?: string | null
           target_markets?: string[] | null
+          tariff_classification?: string | null
           total_cost?: number | null
           total_revenue?: number | null
           total_units_sold?: number | null
@@ -11085,9 +11161,16 @@ export type Database = {
           weight_per_unit?: number | null
         }
         Update: {
+          anti_dumping_duty_pct?: number | null
           avg_monthly_volume?: number | null
           category?: string
+          category_id?: string | null
           certifications?: string[] | null
+          cost_locked?: boolean | null
+          cost_locked_at?: string | null
+          cost_locked_by?: string | null
+          cost_review_notes?: string | null
+          countervailing_duty_pct?: number | null
           country_of_origin?: string | null
           created_at?: string | null
           currency?: string | null
@@ -11106,7 +11189,11 @@ export type Database = {
           insurance_cost_per_unit?: number | null
           is_active?: boolean | null
           landed_cost_per_unit?: number | null
+          last_cost_review_at?: string | null
           last_sold_at?: string | null
+          markup_pct?: number | null
+          max_discount_pct?: number | null
+          min_margin_threshold?: number | null
           minimum_order_qty?: number | null
           moisture_content_pct?: number | null
           name?: string
@@ -11114,6 +11201,7 @@ export type Database = {
           packaging_type?: string | null
           phytosanitary_required?: boolean | null
           preferred_incoterms?: string | null
+          price_floor?: number | null
           profit_margin_pct?: number | null
           purchase_cost_per_unit?: number | null
           regulatory_notes?: string | null
@@ -11128,6 +11216,7 @@ export type Database = {
           supplier_lead_time_days?: number | null
           supplier_name?: string | null
           target_markets?: string[] | null
+          tariff_classification?: string | null
           total_cost?: number | null
           total_revenue?: number | null
           total_units_sold?: number | null
@@ -11137,6 +11226,13 @@ export type Database = {
           weight_per_unit?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "export_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "export_product_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "export_products_shop_id_fkey"
             columns: ["shop_id"]
