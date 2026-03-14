@@ -444,6 +444,13 @@ const ExportRequests = lazy(() => import('@/pages/export/ExportRequests'));
 const ExportSuppliers = lazy(() => import('@/pages/export/ExportSuppliers'));
 const ExportPackingTraceability = lazy(() => import('@/pages/export/ExportPackingTraceability'));
 const ExportReservations = lazy(() => import('@/pages/export/ExportReservations'));
+const ExportPayments = lazy(() => import('@/pages/export/ExportPayments'));
+const ExportCustomsCompliance = lazy(() => import('@/pages/export/ExportCustomsCompliance'));
+const ExportReports = lazy(() => import('@/pages/export/ExportReports'));
+const ExportNotifications = lazy(() => import('@/pages/export/ExportNotifications'));
+const ImportPurchaseOrders = lazy(() => import('@/pages/export/ImportPurchaseOrders'));
+const ImportReceiving = lazy(() => import('@/pages/export/ImportReceiving'));
+const ImportCustomsClearance = lazy(() => import('@/pages/export/ImportCustomsClearance'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
