@@ -140,9 +140,10 @@ export function useCreatePackagingShipment() {
   return useMutation({
     mutationFn: async (data: Partial<PackagingShipment>) => {
       if (!shopId) throw new Error('No shop');
+      const payload = { ...data, shop_id: shopId } as any;
       const { data: result, error } = await supabase
         .from('export_packaging_shipments')
-        .insert({ ...data, shop_id: shopId })
+        .insert(payload)
         .select()
         .single();
       if (error) throw error;
