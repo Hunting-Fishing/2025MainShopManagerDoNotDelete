@@ -121,6 +121,7 @@ const navSections: NavSection[] = [
       { title: 'Currency', href: '/export/currency', icon: ArrowDownToLine, color: 'from-cyan-500 to-teal-600' },
       { title: 'Letters of Credit', href: '/export/letters-of-credit', icon: Landmark, color: 'from-indigo-500 to-blue-600' },
       { title: 'Duty Drawbacks', href: '/export/duty-drawbacks', icon: Receipt, color: 'from-lime-500 to-emerald-600' },
+      { title: 'Bank Guarantees', href: '/export/bank-guarantees', icon: Shield, color: 'from-slate-500 to-zinc-600' },
     ],
   },
   {
