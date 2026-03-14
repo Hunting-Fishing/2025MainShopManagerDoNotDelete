@@ -100,6 +100,8 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Documents', href: '/export/documents', icon: FileText, color: 'from-fuchsia-500 to-pink-600' },
       { title: 'Customs', href: '/export/customs', icon: ShieldCheck, color: 'from-purple-500 to-violet-600' },
+      { title: 'Compliance Calendar', href: '/export/compliance-calendar', icon: CalendarDays, color: 'from-orange-500 to-red-600' },
+      { title: 'Sanctions', href: '/export/sanctions', icon: ShieldAlert, color: 'from-red-500 to-rose-600' },
     ],
   },
   {
