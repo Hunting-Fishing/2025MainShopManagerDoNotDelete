@@ -87,6 +87,8 @@ const navSections: NavSection[] = [
       { title: 'Insurance', href: '/export/insurance', icon: ShieldCheck, color: 'from-cyan-500 to-blue-500' },
       { title: 'Forwarders', href: '/export/forwarders', icon: Truck, color: 'from-purple-500 to-indigo-600' },
       { title: 'Bookings', href: '/export/bookings', icon: Anchor, color: 'from-blue-500 to-indigo-600' },
+      { title: 'Ports', href: '/export/ports', icon: Navigation, color: 'from-sky-500 to-blue-600' },
+      { title: 'Intermodal', href: '/export/intermodal', icon: GitBranch, color: 'from-violet-500 to-indigo-600' },
       { title: 'Quality Control', href: '/export/quality', icon: ClipboardCheck, color: 'from-teal-500 to-cyan-600' },
     ],
   },
