@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Edit, TrendingUp, TrendingDown, DollarSign, Package, Truck, Shield, BarChart3, Globe } from 'lucide-react';
+import { ProfitProtectionCard } from './ProfitProtectionCard';
 
 interface ExportProductDetailProps {
   product: any;
@@ -29,20 +30,14 @@ export function ExportProductDetail({ product: p, onBack, onEdit }: ExportProduc
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1">
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
-        <Button size="sm" onClick={onEdit} className="gap-1">
-          <Edit className="h-4 w-4" /> Edit
-        </Button>
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1"><ArrowLeft className="h-4 w-4" /> Back</Button>
+        <Button size="sm" onClick={onEdit} className="gap-1"><Edit className="h-4 w-4" /> Edit</Button>
       </div>
 
-      {/* Product Title */}
       <div className="flex items-start gap-3">
         <div className="p-2.5 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shrink-0">
-          <Package className="h-5 w-5 text-white" />
+          <Package className="h-5 w-5 text-primary-foreground" />
         </div>
         <div className="min-w-0">
           <h2 className="text-xl font-bold text-foreground truncate">{p.name}</h2>
@@ -56,14 +51,14 @@ export function ExportProductDetail({ product: p, onBack, onEdit }: ExportProduc
         </div>
       </div>
 
-      {/* ROI Overview Card */}
+      {/* ROI Overview */}
       <Card className="border-2 border-emerald-200 dark:border-emerald-800">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-emerald-600" /> Profitability Overview
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent>
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center p-2.5 rounded-lg bg-muted/50">
               <p className="text-xs text-muted-foreground">Sell Price</p>
@@ -75,24 +70,25 @@ export function ExportProductDetail({ product: p, onBack, onEdit }: ExportProduc
               <p className="text-lg font-bold text-foreground">${landed.toFixed(2)}</p>
               <p className="text-xs text-muted-foreground">/{p.unit_of_measure}</p>
             </div>
-            <div className={`text-center p-2.5 rounded-lg ${isProfit ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-red-50 dark:bg-red-950/30'}`}>
+            <div className={`text-center p-2.5 rounded-lg ${isProfit ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-destructive/10'}`}>
               <p className="text-xs text-muted-foreground">Profit</p>
-              <p className={`text-lg font-bold flex items-center justify-center gap-1 ${isProfit ? 'text-emerald-600' : 'text-red-600'}`}>
+              <p className={`text-lg font-bold flex items-center justify-center gap-1 ${isProfit ? 'text-emerald-600' : 'text-destructive'}`}>
                 {isProfit ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                 ${Math.abs(profit).toFixed(2)}
               </p>
-              <p className={`text-xs font-medium ${isProfit ? 'text-emerald-600' : 'text-red-600'}`}>{margin}% margin</p>
+              <p className={`text-xs font-medium ${isProfit ? 'text-emerald-600' : 'text-destructive'}`}>{margin}% margin</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Profit Protection */}
+      <ProfitProtectionCard product={p} />
+
       {/* Cost Breakdown */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" /> Cost Breakdown (per {p.unit_of_measure})
-          </CardTitle>
+          <CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Cost Breakdown (per {p.unit_of_measure})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -130,11 +126,7 @@ export function ExportProductDetail({ product: p, onBack, onEdit }: ExportProduc
 
       {/* Sales Tracking */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" /> Sales & Revenue Tracking
-          </CardTitle>
-        </CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="h-4 w-4" /> Sales & Revenue</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3">
             <Stat label="Total Units Sold" value={p.total_units_sold} suffix={` ${p.unit_of_measure}`} />
@@ -142,20 +134,13 @@ export function ExportProductDetail({ product: p, onBack, onEdit }: ExportProduc
             <Stat label="Total Cost" value={p.total_cost} prefix="$" />
             <Stat label="Avg Monthly Volume" value={p.avg_monthly_volume} suffix={` ${p.unit_of_measure}`} />
           </div>
-          {p.last_sold_at && (
-            <p className="text-xs text-muted-foreground mt-2">Last sold: {new Date(p.last_sold_at).toLocaleDateString()}</p>
-          )}
         </CardContent>
       </Card>
 
-      {/* Supplier Info */}
+      {/* Supplier */}
       {p.supplier_name && (
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Truck className="h-4 w-4" /> Supplier
-            </CardTitle>
-          </CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Truck className="h-4 w-4" /> Supplier</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
               <div><p className="text-xs text-muted-foreground">Supplier</p><p className="text-sm font-medium text-foreground">{p.supplier_name}</p></div>
@@ -167,13 +152,9 @@ export function ExportProductDetail({ product: p, onBack, onEdit }: ExportProduc
         </Card>
       )}
 
-      {/* Product Specs */}
+      {/* Specs */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Package className="h-4 w-4" /> Product Specifications
-          </CardTitle>
-        </CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Package className="h-4 w-4" /> Product Specs</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3 text-sm">
             {p.grade && <div><p className="text-xs text-muted-foreground">Grade</p><p className="font-medium text-foreground">{p.grade}</p></div>}
@@ -181,37 +162,26 @@ export function ExportProductDetail({ product: p, onBack, onEdit }: ExportProduc
             {p.moisture_content_pct != null && <div><p className="text-xs text-muted-foreground">Moisture</p><p className="font-medium text-foreground">{p.moisture_content_pct}%</p></div>}
             {p.weight_per_unit && <div><p className="text-xs text-muted-foreground">Weight/Unit</p><p className="font-medium text-foreground">{p.weight_per_unit} {p.unit_of_measure}</p></div>}
             {p.shelf_life_days && <div><p className="text-xs text-muted-foreground">Shelf Life</p><p className="font-medium text-foreground">{p.shelf_life_days} days</p></div>}
-            {p.storage_temperature && <div><p className="text-xs text-muted-foreground">Storage Temp</p><p className="font-medium text-foreground">{p.storage_temperature}</p></div>}
-            {p.minimum_order_qty && <div><p className="text-xs text-muted-foreground">Min Order Qty</p><p className="font-medium text-foreground">{Number(p.minimum_order_qty).toLocaleString()} {p.unit_of_measure}</p></div>}
             {p.packaging_type && <div><p className="text-xs text-muted-foreground">Packaging</p><p className="font-medium text-foreground">{p.packaging_type}</p></div>}
           </div>
-          {p.storage_requirements && (
-            <div className="mt-3"><p className="text-xs text-muted-foreground">Storage Requirements</p><p className="text-sm text-foreground mt-0.5">{p.storage_requirements}</p></div>
-          )}
         </CardContent>
       </Card>
 
       {/* Compliance */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Shield className="h-4 w-4" /> Compliance & Trade
-          </CardTitle>
-        </CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Shield className="h-4 w-4" /> Compliance</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
             {p.hs_code && <div><p className="text-xs text-muted-foreground">HS Code</p><p className="font-medium text-foreground">{p.hs_code}</p></div>}
             {p.country_of_origin && <div><p className="text-xs text-muted-foreground">Origin</p><p className="font-medium text-foreground">{p.country_of_origin}</p></div>}
             <div><p className="text-xs text-muted-foreground">Incoterms</p><p className="font-medium text-foreground">{p.preferred_incoterms}</p></div>
-            {p.customs_duty_rate > 0 && <div><p className="text-xs text-muted-foreground">Duty Rate</p><p className="font-medium text-foreground">{p.customs_duty_rate}%</p></div>}
+            {p.tariff_classification && <div><p className="text-xs text-muted-foreground">Tariff Class</p><p className="font-medium text-foreground">{p.tariff_classification}</p></div>}
           </div>
-
           <div className="flex flex-wrap gap-1.5">
             {p.export_license_required && <Badge variant="outline" className="text-xs">Export License</Badge>}
             {p.phytosanitary_required && <Badge variant="outline" className="text-xs">Phytosanitary</Badge>}
             {p.fumigation_required && <Badge variant="outline" className="text-xs">Fumigation</Badge>}
           </div>
-
           {(p.certifications || []).length > 0 && (
             <div>
               <p className="text-xs text-muted-foreground mb-1">Certifications</p>
@@ -220,7 +190,6 @@ export function ExportProductDetail({ product: p, onBack, onEdit }: ExportProduc
               </div>
             </div>
           )}
-
           {(p.target_markets || []).length > 0 && (
             <div>
               <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Globe className="h-3 w-3" /> Target Markets</p>
@@ -228,10 +197,6 @@ export function ExportProductDetail({ product: p, onBack, onEdit }: ExportProduc
                 {p.target_markets.map((m: string) => <Badge key={m} variant="secondary" className="text-xs">{m}</Badge>)}
               </div>
             </div>
-          )}
-
-          {p.regulatory_notes && (
-            <div><p className="text-xs text-muted-foreground">Notes</p><p className="text-sm text-foreground mt-0.5">{p.regulatory_notes}</p></div>
           )}
         </CardContent>
       </Card>

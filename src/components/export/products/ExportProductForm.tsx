@@ -5,11 +5,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, Package, Truck, Shield, BarChart3 } from 'lucide-react';
+import { DollarSign, Package, Truck, Shield, BarChart3, Lock } from 'lucide-react';
+import { useExportProductCategories } from '@/hooks/export/useExportProductCategories';
 
 interface ProductFormData {
   name: string;
   category: string;
+  category_id: string;
   sku: string;
   description: string;
   unit_of_measure: string;
@@ -45,6 +47,16 @@ interface ProductFormData {
   target_markets: string;
   preferred_incoterms: string;
   currency: string;
+  // Profit protection
+  min_margin_threshold: string;
+  max_discount_pct: string;
+  cost_locked: boolean;
+  price_floor: string;
+  markup_pct: string;
+  cost_review_notes: string;
+  tariff_classification: string;
+  anti_dumping_duty_pct: string;
+  countervailing_duty_pct: string;
 }
 
 interface ExportProductFormProps {
@@ -53,7 +65,7 @@ interface ExportProductFormProps {
 }
 
 export const getEmptyForm = (): ProductFormData => ({
-  name: '', category: 'salt', sku: '', description: '', unit_of_measure: 'kg',
+  name: '', category: 'salt', category_id: '', sku: '', description: '', unit_of_measure: 'kg',
   weight_per_unit: '', hs_code: '', country_of_origin: '', unit_price: '', packaging_type: '',
   purchase_cost_per_unit: '', shipping_cost_per_unit: '', customs_duty_rate: '',
   customs_duty_per_unit: '', insurance_cost_per_unit: '', handling_fee_per_unit: '',
@@ -64,12 +76,16 @@ export const getEmptyForm = (): ProductFormData => ({
   certifications: '', export_license_required: false, phytosanitary_required: false,
   fumigation_required: false, regulatory_notes: '',
   target_markets: '', preferred_incoterms: 'FOB', currency: 'USD',
+  min_margin_threshold: '10', max_discount_pct: '15', cost_locked: false,
+  price_floor: '0', markup_pct: '0', cost_review_notes: '',
+  tariff_classification: '', anti_dumping_duty_pct: '0', countervailing_duty_pct: '0',
 });
 
 export const formToInsert = (form: ProductFormData, shopId: string) => ({
   shop_id: shopId,
   name: form.name,
   category: form.category,
+  category_id: form.category_id || null,
   sku: form.sku || null,
   description: form.description || null,
   unit_of_measure: form.unit_of_measure,
@@ -105,11 +121,22 @@ export const formToInsert = (form: ProductFormData, shopId: string) => ({
   target_markets: form.target_markets ? form.target_markets.split(',').map(s => s.trim()).filter(Boolean) : [],
   preferred_incoterms: form.preferred_incoterms,
   currency: form.currency,
+  // Profit protection
+  min_margin_threshold: Number(form.min_margin_threshold) || 10,
+  max_discount_pct: Number(form.max_discount_pct) || 15,
+  cost_locked: form.cost_locked,
+  price_floor: Number(form.price_floor) || 0,
+  markup_pct: Number(form.markup_pct) || 0,
+  cost_review_notes: form.cost_review_notes || null,
+  tariff_classification: form.tariff_classification || null,
+  anti_dumping_duty_pct: Number(form.anti_dumping_duty_pct) || 0,
+  countervailing_duty_pct: Number(form.countervailing_duty_pct) || 0,
 });
 
 export const productToForm = (p: any): ProductFormData => ({
   name: p.name || '',
   category: p.category || 'salt',
+  category_id: p.category_id || '',
   sku: p.sku || '',
   description: p.description || '',
   unit_of_measure: p.unit_of_measure || 'kg',
@@ -145,6 +172,15 @@ export const productToForm = (p: any): ProductFormData => ({
   target_markets: (p.target_markets || []).join(', '),
   preferred_incoterms: p.preferred_incoterms || 'FOB',
   currency: p.currency || 'USD',
+  min_margin_threshold: p.min_margin_threshold?.toString() || '10',
+  max_discount_pct: p.max_discount_pct?.toString() || '15',
+  cost_locked: p.cost_locked || false,
+  price_floor: p.price_floor?.toString() || '0',
+  markup_pct: p.markup_pct?.toString() || '0',
+  cost_review_notes: p.cost_review_notes || '',
+  tariff_classification: p.tariff_classification || '',
+  anti_dumping_duty_pct: p.anti_dumping_duty_pct?.toString() || '0',
+  countervailing_duty_pct: p.countervailing_duty_pct?.toString() || '0',
 });
 
 const F = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -154,27 +190,68 @@ const F = ({ label, children }: { label: string; children: React.ReactNode }) =>
   </div>
 );
 
+// Live margin preview
+function MarginPreview({ form }: { form: ProductFormData }) {
+  const sell = Number(form.unit_price) || 0;
+  const costs = [form.purchase_cost_per_unit, form.shipping_cost_per_unit, form.customs_duty_per_unit,
+    form.insurance_cost_per_unit, form.handling_fee_per_unit, form.packaging_cost_per_unit, form.inspection_cost_per_unit]
+    .reduce((s, v) => s + (Number(v) || 0), 0);
+  const profit = sell - costs;
+  const margin = sell > 0 ? ((profit / sell) * 100) : 0;
+  const minMargin = Number(form.min_margin_threshold) || 10;
+  const belowMin = margin > 0 && margin < minMargin;
+  const negative = margin < 0;
+
+  if (sell <= 0) return null;
+
+  return (
+    <div className={`p-3 rounded-lg text-sm ${negative ? 'bg-destructive/10 text-destructive' : belowMin ? 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400' : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400'}`}>
+      <div className="flex items-center justify-between">
+        <span className="font-medium">Live Margin Preview</span>
+        <span className="font-bold">{margin.toFixed(1)}%</span>
+      </div>
+      <div className="flex items-center justify-between text-xs mt-0.5 opacity-80">
+        <span>Profit: ${profit.toFixed(2)} / unit</span>
+        <span>Landed: ${costs.toFixed(2)}</span>
+      </div>
+      {negative && <p className="text-xs mt-1 font-medium">⚠ Selling below cost!</p>}
+      {belowMin && <p className="text-xs mt-1 font-medium">⚠ Below minimum margin threshold ({minMargin}%)</p>}
+    </div>
+  );
+}
+
 export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
+  const { data: categories = [] } = useExportProductCategories();
   const u = (field: keyof ProductFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(p => ({ ...p, [field]: e.target.value }));
 
+  const handleCategoryChange = (catId: string) => {
+    const cat = categories.find(c => c.id === catId);
+    if (cat) {
+      setForm(p => ({ ...p, category: cat.slug, category_id: cat.id }));
+    }
+  };
+
   return (
     <Tabs defaultValue="basic" className="w-full">
-      <TabsList className="grid w-full grid-cols-5 h-auto">
-        <TabsTrigger value="basic" className="text-xs px-2 py-1.5 flex items-center gap-1">
+      <TabsList className="grid w-full grid-cols-6 h-auto">
+        <TabsTrigger value="basic" className="text-[10px] px-1 py-1.5 flex items-center gap-0.5">
           <Package className="h-3 w-3" /> Basic
         </TabsTrigger>
-        <TabsTrigger value="costs" className="text-xs px-2 py-1.5 flex items-center gap-1">
+        <TabsTrigger value="costs" className="text-[10px] px-1 py-1.5 flex items-center gap-0.5">
           <DollarSign className="h-3 w-3" /> Costs
         </TabsTrigger>
-        <TabsTrigger value="supplier" className="text-xs px-2 py-1.5 flex items-center gap-1">
-          <Truck className="h-3 w-3" /> Supplier
+        <TabsTrigger value="protection" className="text-[10px] px-1 py-1.5 flex items-center gap-0.5">
+          <Lock className="h-3 w-3" /> Protect
         </TabsTrigger>
-        <TabsTrigger value="specs" className="text-xs px-2 py-1.5 flex items-center gap-1">
+        <TabsTrigger value="supplier" className="text-[10px] px-1 py-1.5 flex items-center gap-0.5">
+          <Truck className="h-3 w-3" /> Supply
+        </TabsTrigger>
+        <TabsTrigger value="specs" className="text-[10px] px-1 py-1.5 flex items-center gap-0.5">
           <BarChart3 className="h-3 w-3" /> Specs
         </TabsTrigger>
-        <TabsTrigger value="compliance" className="text-xs px-2 py-1.5 flex items-center gap-1">
-          <Shield className="h-3 w-3" /> Compliance
+        <TabsTrigger value="compliance" className="text-[10px] px-1 py-1.5 flex items-center gap-0.5">
+          <Shield className="h-3 w-3" /> Comply
         </TabsTrigger>
       </TabsList>
 
@@ -182,15 +259,26 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
         <F label="Product Name *"><Input value={form.name} onChange={u('name')} placeholder="e.g. Sea Salt Fine Grade" /></F>
         <div className="grid grid-cols-2 gap-3">
           <F label="Category">
-            <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="salt">Salt</SelectItem>
-                <SelectItem value="dehydrated_food">Dehydrated Food</SelectItem>
-                <SelectItem value="vehicle">Vehicle</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+            {categories.length > 0 ? (
+              <Select value={form.category_id} onValueChange={handleCategoryChange}>
+                <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectContent>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="salt">Salt</SelectItem>
+                  <SelectItem value="dehydrated_food">Dehydrated Food</SelectItem>
+                  <SelectItem value="vehicle">Vehicle</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </F>
           <F label="SKU"><Input value={form.sku} onChange={u('sku')} placeholder="SALT-FG-001" /></F>
         </div>
@@ -223,7 +311,8 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
       </TabsContent>
 
       <TabsContent value="costs" className="space-y-3 mt-3">
-        <p className="text-xs text-muted-foreground mb-2">All costs are per unit. Landed cost and margin are auto-calculated.</p>
+        <MarginPreview form={form} />
+        <p className="text-xs text-muted-foreground">All costs are per unit. Landed cost and margin are auto-calculated.</p>
         <div className="grid grid-cols-2 gap-3">
           <F label="Purchase Cost"><Input type="number" value={form.purchase_cost_per_unit} onChange={u('purchase_cost_per_unit')} placeholder="0.00" /></F>
           <F label="Shipping Cost"><Input type="number" value={form.shipping_cost_per_unit} onChange={u('shipping_cost_per_unit')} placeholder="0.00" /></F>
@@ -265,6 +354,33 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
             </Select>
           </F>
         </div>
+      </TabsContent>
+
+      <TabsContent value="protection" className="space-y-3 mt-3">
+        <p className="text-xs text-muted-foreground mb-2">Set guardrails to protect your margins and prevent underpricing.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <F label="Min Margin Threshold %"><Input type="number" value={form.min_margin_threshold} onChange={u('min_margin_threshold')} placeholder="10" /></F>
+          <F label="Max Discount Allowed %"><Input type="number" value={form.max_discount_pct} onChange={u('max_discount_pct')} placeholder="15" /></F>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <F label="Price Floor ($)"><Input type="number" value={form.price_floor} onChange={u('price_floor')} placeholder="0.00" /></F>
+          <F label="Markup %"><Input type="number" value={form.markup_pct} onChange={u('markup_pct')} placeholder="0" /></F>
+        </div>
+
+        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+          <div>
+            <p className="text-sm font-medium text-foreground">Lock Costs</p>
+            <p className="text-xs text-muted-foreground">Prevent accidental cost changes</p>
+          </div>
+          <Switch checked={form.cost_locked} onCheckedChange={v => setForm(p => ({ ...p, cost_locked: v }))} />
+        </div>
+
+        <F label="Tariff Classification"><Input value={form.tariff_classification} onChange={u('tariff_classification')} placeholder="HTS classification code" /></F>
+        <div className="grid grid-cols-2 gap-3">
+          <F label="Anti-Dumping Duty %"><Input type="number" value={form.anti_dumping_duty_pct} onChange={u('anti_dumping_duty_pct')} placeholder="0" /></F>
+          <F label="Countervailing Duty %"><Input type="number" value={form.countervailing_duty_pct} onChange={u('countervailing_duty_pct')} placeholder="0" /></F>
+        </div>
+        <F label="Cost Review Notes"><Textarea value={form.cost_review_notes} onChange={u('cost_review_notes')} rows={2} placeholder="Notes on last price review..." /></F>
       </TabsContent>
 
       <TabsContent value="supplier" className="space-y-3 mt-3">
