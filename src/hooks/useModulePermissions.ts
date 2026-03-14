@@ -58,6 +58,7 @@ export function useModulePermissions() {
         'team',
         'team_chat',
         'work_orders',
+        'export_company',
       ];
 
       const allPermissions: ModulePermissions = {};

@@ -1579,6 +1579,42 @@ function App() {
             </AuthGate>
           }
         />
+
+        {/* Export Company Module */}
+        <Route
+          path="/export/*"
+          element={
+            <AuthGate>
+              <ExportLayout>
+                <Routes>
+                  <Route path="/" element={<ExportDashboard />} />
+                  <Route path="/orders" element={<ExportOrders />} />
+                  <Route path="/customers" element={<ExportCustomers />} />
+                  <Route path="/products" element={<ExportProducts />} />
+                  <Route path="/vehicles" element={<ExportVehicles />} />
+                  <Route path="/shipments" element={<ExportShipments />} />
+                  <Route path="/warehouses" element={<ExportWarehouses />} />
+                  <Route path="/inventory" element={<ExportInventory />} />
+                  <Route path="/documents" element={<ExportDocuments />} />
+                  <Route path="/trucks" element={<ExportTrucks />} />
+                  <Route path="/drivers" element={<ExportDrivers />} />
+                  <Route path="/routes" element={<ExportRoutes />} />
+                  <Route path="/completions" element={<ExportCompletions />} />
+                  <Route path="/invoices" element={<ExportInvoices />} />
+                  <Route path="/quotes" element={<ExportQuotes />} />
+                  <Route path="/pricing" element={<ExportPricing />} />
+                  <Route path="/staff" element={<ExportStaff />} />
+                  <Route path="/equipment" element={<ExportEquipment />} />
+                  <Route path="/driver-app" element={<ExportDriverApp />} />
+                  <Route path="/profile" element={<ExportProfile />} />
+                  <Route path="/settings" element={<ExportSettings />} />
+                  <Route path="/store" element={<ExportStore />} />
+                  <Route path="/developer" element={<ExportDeveloper />} />
+                </Routes>
+              </ExportLayout>
+            </AuthGate>
+          }
+        />
       </Routes>
       </Suspense>
       <Toaster />

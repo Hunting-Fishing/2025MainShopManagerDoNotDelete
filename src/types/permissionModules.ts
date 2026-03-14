@@ -229,6 +229,14 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     name: 'Septic Services',
     description: 'Septic pumping, inspections, tank management, and compliance',
     category: 'operations'
+  },
+  
+  // Export Company
+  {
+    id: 'export_company',
+    name: 'Export Company',
+    description: 'Vehicle export operations, logistics, customs, and compliance',
+    category: 'operations'
   }
 ];
 
