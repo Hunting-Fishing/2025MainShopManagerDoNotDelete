@@ -60,6 +60,7 @@ const navSections: NavSection[] = [
       { title: 'Completions', href: '/export/completions', icon: BarChart3, color: 'from-green-500 to-emerald-600' },
       { title: 'Quotes', href: '/export/quotes', icon: FileText, color: 'from-pink-500 to-rose-500' },
       { title: 'Contracts', href: '/export/contracts', icon: FileText, color: 'from-violet-500 to-purple-600' },
+      { title: 'Returns & Claims', href: '/export/returns', icon: RotateCcw, color: 'from-rose-500 to-red-600' },
     ],
   },
   {
