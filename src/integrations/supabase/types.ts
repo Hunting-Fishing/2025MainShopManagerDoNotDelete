@@ -10724,6 +10724,107 @@ export type Database = {
           },
         ]
       }
+      export_customs_documents: {
+        Row: {
+          country_of_origin: string | null
+          created_at: string
+          customer_id: string | null
+          destination_country: string | null
+          document_number: string | null
+          document_type: string
+          expiry_date: string | null
+          file_url: string | null
+          hs_code: string | null
+          id: string
+          inspection_date: string | null
+          inspection_result: string | null
+          inspector_name: string | null
+          issue_date: string | null
+          issuing_authority: string | null
+          notes: string | null
+          order_id: string | null
+          shipment_id: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          country_of_origin?: string | null
+          created_at?: string
+          customer_id?: string | null
+          destination_country?: string | null
+          document_number?: string | null
+          document_type: string
+          expiry_date?: string | null
+          file_url?: string | null
+          hs_code?: string | null
+          id?: string
+          inspection_date?: string | null
+          inspection_result?: string | null
+          inspector_name?: string | null
+          issue_date?: string | null
+          issuing_authority?: string | null
+          notes?: string | null
+          order_id?: string | null
+          shipment_id?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          country_of_origin?: string | null
+          created_at?: string
+          customer_id?: string | null
+          destination_country?: string | null
+          document_number?: string | null
+          document_type?: string
+          expiry_date?: string | null
+          file_url?: string | null
+          hs_code?: string | null
+          id?: string
+          inspection_date?: string | null
+          inspection_result?: string | null
+          inspector_name?: string | null
+          issue_date?: string | null
+          issuing_authority?: string | null
+          notes?: string | null
+          order_id?: string | null
+          shipment_id?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_customs_documents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_customs_documents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_customs_documents_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "export_shipments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_customs_documents_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_documents: {
         Row: {
           created_at: string | null
@@ -11596,6 +11697,104 @@ export type Database = {
           },
           {
             foreignKeyName: "export_packaging_shipments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_payments: {
+        Row: {
+          amount: number
+          bank_name: string | null
+          created_at: string
+          currency: string
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          lc_expiry_date: string | null
+          lc_issuing_bank: string | null
+          lc_number: string | null
+          notes: string | null
+          order_id: string | null
+          payment_date: string
+          payment_method: string
+          payment_type: string
+          reference_number: string | null
+          shop_id: string
+          status: string
+          swift_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          lc_expiry_date?: string | null
+          lc_issuing_bank?: string | null
+          lc_number?: string | null
+          notes?: string | null
+          order_id?: string | null
+          payment_date?: string
+          payment_method?: string
+          payment_type?: string
+          reference_number?: string | null
+          shop_id: string
+          status?: string
+          swift_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          lc_expiry_date?: string | null
+          lc_issuing_bank?: string | null
+          lc_number?: string | null
+          notes?: string | null
+          order_id?: string | null
+          payment_date?: string
+          payment_method?: string
+          payment_type?: string
+          reference_number?: string | null
+          shop_id?: string
+          status?: string
+          swift_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "export_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_payments_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -20940,6 +21139,318 @@ export type Database = {
             columns: ["metric_id"]
             isOneToOne: false
             referencedRelation: "impact_metrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_customs_clearance: {
+        Row: {
+          arrival_date: string | null
+          broker_contact: string | null
+          clearance_date: string | null
+          created_at: string
+          customs_broker: string | null
+          declaration_number: string | null
+          duty_amount: number | null
+          entry_port: string | null
+          id: string
+          inspection_date: string | null
+          inspection_required: boolean | null
+          inspection_result: string | null
+          notes: string | null
+          purchase_order_id: string | null
+          release_date: string | null
+          shop_id: string
+          status: string
+          tax_amount: number | null
+          total_charges: number | null
+          updated_at: string
+        }
+        Insert: {
+          arrival_date?: string | null
+          broker_contact?: string | null
+          clearance_date?: string | null
+          created_at?: string
+          customs_broker?: string | null
+          declaration_number?: string | null
+          duty_amount?: number | null
+          entry_port?: string | null
+          id?: string
+          inspection_date?: string | null
+          inspection_required?: boolean | null
+          inspection_result?: string | null
+          notes?: string | null
+          purchase_order_id?: string | null
+          release_date?: string | null
+          shop_id: string
+          status?: string
+          tax_amount?: number | null
+          total_charges?: number | null
+          updated_at?: string
+        }
+        Update: {
+          arrival_date?: string | null
+          broker_contact?: string | null
+          clearance_date?: string | null
+          created_at?: string
+          customs_broker?: string | null
+          declaration_number?: string | null
+          duty_amount?: number | null
+          entry_port?: string | null
+          id?: string
+          inspection_date?: string | null
+          inspection_required?: boolean | null
+          inspection_result?: string | null
+          notes?: string | null
+          purchase_order_id?: string | null
+          release_date?: string | null
+          shop_id?: string
+          status?: string
+          tax_amount?: number | null
+          total_charges?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_customs_clearance_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "import_purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_customs_clearance_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_purchase_order_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          hs_code: string | null
+          id: string
+          product_id: string | null
+          purchase_order_id: string
+          quantity: number
+          received_quantity: number
+          shop_id: string
+          total_price: number | null
+          unit: string | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          hs_code?: string | null
+          id?: string
+          product_id?: string | null
+          purchase_order_id: string
+          quantity?: number
+          received_quantity?: number
+          shop_id: string
+          total_price?: number | null
+          unit?: string | null
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          hs_code?: string | null
+          id?: string
+          product_id?: string | null
+          purchase_order_id?: string
+          quantity?: number
+          received_quantity?: number
+          shop_id?: string
+          total_price?: number | null
+          unit?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "import_purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_purchase_order_items_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_purchase_orders: {
+        Row: {
+          created_at: string
+          currency: string
+          expected_delivery: string | null
+          id: string
+          incoterm: string | null
+          notes: string | null
+          order_date: string
+          origin_country: string | null
+          payment_terms: string | null
+          po_number: string
+          port_of_loading: string | null
+          shop_id: string
+          status: string
+          supplier_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          expected_delivery?: string | null
+          id?: string
+          incoterm?: string | null
+          notes?: string | null
+          order_date?: string
+          origin_country?: string | null
+          payment_terms?: string | null
+          po_number: string
+          port_of_loading?: string | null
+          shop_id: string
+          status?: string
+          supplier_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          expected_delivery?: string | null
+          id?: string
+          incoterm?: string | null
+          notes?: string | null
+          order_date?: string
+          origin_country?: string | null
+          payment_terms?: string | null
+          po_number?: string
+          port_of_loading?: string | null
+          shop_id?: string
+          status?: string
+          supplier_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_purchase_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "export_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_receiving: {
+        Row: {
+          batch_number: string | null
+          condition_on_arrival: string | null
+          created_at: string
+          expiry_date: string | null
+          id: string
+          inspection_notes: string | null
+          inspection_passed: boolean | null
+          lot_number: string | null
+          notes: string | null
+          product_id: string | null
+          purchase_order_id: string | null
+          quantity_received: number
+          received_by: string | null
+          received_date: string
+          shop_id: string
+          unit: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          batch_number?: string | null
+          condition_on_arrival?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          inspection_notes?: string | null
+          inspection_passed?: boolean | null
+          lot_number?: string | null
+          notes?: string | null
+          product_id?: string | null
+          purchase_order_id?: string | null
+          quantity_received?: number
+          received_by?: string | null
+          received_date?: string
+          shop_id: string
+          unit?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          batch_number?: string | null
+          condition_on_arrival?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          inspection_notes?: string | null
+          inspection_passed?: boolean | null
+          lot_number?: string | null
+          notes?: string | null
+          product_id?: string | null
+          purchase_order_id?: string | null
+          quantity_received?: number
+          received_by?: string | null
+          received_date?: string
+          shop_id?: string
+          unit?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_receiving_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_receiving_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "import_purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_receiving_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_receiving_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "export_warehouses"
             referencedColumns: ["id"]
           },
         ]
