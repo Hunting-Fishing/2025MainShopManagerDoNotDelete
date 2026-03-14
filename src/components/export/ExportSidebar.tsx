@@ -62,6 +62,7 @@ const navSections: NavSection[] = [
       { title: 'Quotes', href: '/export/quotes', icon: FileText, color: 'from-pink-500 to-rose-500' },
       { title: 'Contracts', href: '/export/contracts', icon: FileText, color: 'from-violet-500 to-purple-600' },
       { title: 'Returns & Claims', href: '/export/returns', icon: RotateCcw, color: 'from-rose-500 to-red-600' },
+      { title: 'Samples', href: '/export/samples', icon: PackageIcon, color: 'from-teal-500 to-cyan-600' },
     ],
   },
   {
@@ -69,8 +70,10 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Clients', href: '/export/customers', icon: Users, color: 'from-sky-500 to-blue-600' },
       { title: 'Suppliers', href: '/export/suppliers', icon: Factory, color: 'from-orange-500 to-red-500' },
+      { title: 'Agents', href: '/export/agents', icon: Users, color: 'from-violet-500 to-purple-600' },
       { title: 'Products', href: '/export/products', icon: Package, color: 'from-amber-500 to-orange-600' },
       { title: 'Vehicles', href: '/export/vehicles', icon: Car, color: 'from-red-500 to-rose-600' },
+      { title: 'Credit Mgmt', href: '/export/credit', icon: CreditCard, color: 'from-emerald-500 to-green-600' },
     ],
   },
   {
