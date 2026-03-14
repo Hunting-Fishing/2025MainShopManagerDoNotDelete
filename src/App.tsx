@@ -471,6 +471,14 @@ const ExportBankGuarantees = lazy(() => import('@/pages/export/ExportBankGuarant
 const ExportCreditManagement = lazy(() => import('@/pages/export/ExportCreditManagement'));
 const ExportCertificates = lazy(() => import('@/pages/export/ExportCertificates'));
 const ExportHsCodes = lazy(() => import('@/pages/export/ExportHsCodes'));
+const ExportPorts = lazy(() => import('@/pages/export/ExportPorts'));
+const ExportBondedWarehouses = lazy(() => import('@/pages/export/ExportBondedWarehouses'));
+const ExportIntermodal = lazy(() => import('@/pages/export/ExportIntermodal'));
+const ExportShipmentPL = lazy(() => import('@/pages/export/ExportShipmentPL'));
+const ExportTradeFinanceDashboard = lazy(() => import('@/pages/export/ExportTradeFinanceDashboard'));
+const ExportDocumentTemplates = lazy(() => import('@/pages/export/ExportDocumentTemplates'));
+const ExportCustomsDeclarations = lazy(() => import('@/pages/export/ExportCustomsDeclarations'));
+const ExportTradeAlerts = lazy(() => import('@/pages/export/ExportTradeAlerts'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
