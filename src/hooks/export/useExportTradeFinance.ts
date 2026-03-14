@@ -12,11 +12,7 @@ export function useExportTradeFinance() {
   const fetch = useCallback(async () => {
     if (!shopId) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('export_trade_finance_snapshots')
-      .select('*')
-      .eq('shop_id', shopId)
-      .order('snapshot_date', { ascending: false });
+    const { data } = await (supabase as any).from('export_trade_finance_snapshots').select('*').eq('shop_id', shopId).order('snapshot_date', { ascending: false });
     setSnapshots(data || []);
     setLoading(false);
   }, [shopId]);
@@ -25,19 +21,15 @@ export function useExportTradeFinance() {
 
   const create = async (form: Record<string, any>) => {
     if (!shopId) return false;
-    const { error } = await supabase.from('export_trade_finance_snapshots').insert({ ...form, shop_id: shopId } as any);
+    const { error } = await (supabase as any).from('export_trade_finance_snapshots').insert({ ...form, shop_id: shopId });
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
-    toast({ title: 'Snapshot saved' });
-    fetch();
-    return true;
+    toast({ title: 'Snapshot saved' }); fetch(); return true;
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from('export_trade_finance_snapshots').delete().eq('id', id);
+    const { error } = await (supabase as any).from('export_trade_finance_snapshots').delete().eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
-    toast({ title: 'Snapshot removed' });
-    fetch();
-    return true;
+    toast({ title: 'Snapshot removed' }); fetch(); return true;
   };
 
   return { snapshots, loading, fetch, create, remove };

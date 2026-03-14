@@ -13,12 +13,7 @@ export function useExportTradeAlerts() {
   const fetch = useCallback(async () => {
     if (!shopId) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('export_trade_alerts')
-      .select('*')
-      .eq('shop_id', shopId)
-      .eq('is_dismissed', false)
-      .order('triggered_at', { ascending: false });
+    const { data } = await (supabase as any).from('export_trade_alerts').select('*').eq('shop_id', shopId).eq('is_dismissed', false).order('triggered_at', { ascending: false });
     setAlerts(data || []);
     setLoading(false);
   }, [shopId]);
@@ -26,28 +21,27 @@ export function useExportTradeAlerts() {
   useEffect(() => { fetch(); }, [fetch]);
 
   const markRead = async (id: string) => {
-    await supabase.from('export_trade_alerts').update({ is_read: true }).eq('id', id);
+    await (supabase as any).from('export_trade_alerts').update({ is_read: true }).eq('id', id);
     fetch();
   };
 
   const dismiss = async (id: string) => {
-    await supabase.from('export_trade_alerts').update({ is_dismissed: true }).eq('id', id);
+    await (supabase as any).from('export_trade_alerts').update({ is_dismissed: true }).eq('id', id);
     fetch();
   };
 
   const dismissAll = async () => {
     if (!shopId) return;
-    await supabase.from('export_trade_alerts').update({ is_dismissed: true }).eq('shop_id', shopId).eq('is_dismissed', false);
+    await (supabase as any).from('export_trade_alerts').update({ is_dismissed: true }).eq('shop_id', shopId).eq('is_dismissed', false);
     toast({ title: 'All alerts dismissed' });
     fetch();
   };
 
   const create = async (form: Record<string, any>) => {
     if (!shopId) return false;
-    const { error } = await supabase.from('export_trade_alerts').insert({ ...form, shop_id: shopId } as any);
+    const { error } = await (supabase as any).from('export_trade_alerts').insert({ ...form, shop_id: shopId });
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
-    fetch();
-    return true;
+    fetch(); return true;
   };
 
   return { alerts, loading, unreadCount, fetch, create, markRead, dismiss, dismissAll };
