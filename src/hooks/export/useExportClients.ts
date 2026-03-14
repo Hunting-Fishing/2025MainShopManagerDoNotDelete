@@ -25,7 +25,7 @@ export function useExportClients() {
 
   const create = async (form: Record<string, any>) => {
     if (!shopId) return false;
-    const { error } = await supabase.from('export_customers').insert({ ...form, shop_id: shopId });
+    const { error } = await supabase.from('export_customers').insert({ ...form, shop_id: shopId } as any);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     toast({ title: 'Client added' });
     fetch();
