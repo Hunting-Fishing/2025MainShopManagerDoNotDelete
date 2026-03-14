@@ -48,7 +48,7 @@ export default function ExportReports() {
         const name = (o as any).export_customers?.company_name || 'Unknown';
         if (!clientOrderCounts[name]) clientOrderCounts[name] = { name, count: 0, revenue: 0 };
         clientOrderCounts[name].count++;
-        clientOrderCounts[name].revenue += Number(o.total_amount || 0);
+        clientOrderCounts[name].revenue += Number(o.total || 0);
       });
       const topClients = Object.values(clientOrderCounts).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
