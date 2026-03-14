@@ -67,7 +67,7 @@ export default function ExportActivityLog() {
             <div key={date}>
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{date}</h2>
               <div className="space-y-1">
-                {dateLogs.map(log => (
+                {(dateLogs as any[]).map((log: any) => (
                   <div key={log.id} className="flex items-start gap-3 py-2.5 px-3 rounded-lg hover:bg-muted/30 transition-colors">
                     <div className="p-1.5 rounded-lg bg-muted mt-0.5">
                       {entityIcons[log.entity_type] || <History className="h-4 w-4" />}
