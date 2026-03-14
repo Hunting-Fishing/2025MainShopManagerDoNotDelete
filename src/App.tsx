@@ -463,6 +463,14 @@ const ExportLettersOfCredit = lazy(() => import('@/pages/export/ExportLettersOfC
 const ExportDutyDrawbacks = lazy(() => import('@/pages/export/ExportDutyDrawbacks'));
 const ExportComplianceCalendar = lazy(() => import('@/pages/export/ExportComplianceCalendar'));
 const ExportSanctionsScreening = lazy(() => import('@/pages/export/ExportSanctionsScreening'));
+const ExportSamples = lazy(() => import('@/pages/export/ExportSamples'));
+const ExportBookings = lazy(() => import('@/pages/export/ExportBookings'));
+const ExportCountryRequirements = lazy(() => import('@/pages/export/ExportCountryRequirements'));
+const ExportAgents = lazy(() => import('@/pages/export/ExportAgents'));
+const ExportBankGuarantees = lazy(() => import('@/pages/export/ExportBankGuarantees'));
+const ExportCreditManagement = lazy(() => import('@/pages/export/ExportCreditManagement'));
+const ExportCertificates = lazy(() => import('@/pages/export/ExportCertificates'));
+const ExportHsCodes = lazy(() => import('@/pages/export/ExportHsCodes'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
@@ -1658,6 +1666,14 @@ function App() {
                   <Route path="/duty-drawbacks" element={<ExportDutyDrawbacks />} />
                   <Route path="/compliance-calendar" element={<ExportComplianceCalendar />} />
                   <Route path="/sanctions" element={<ExportSanctionsScreening />} />
+                  <Route path="/samples" element={<ExportSamples />} />
+                  <Route path="/bookings" element={<ExportBookings />} />
+                  <Route path="/country-requirements" element={<ExportCountryRequirements />} />
+                  <Route path="/agents" element={<ExportAgents />} />
+                  <Route path="/bank-guarantees" element={<ExportBankGuarantees />} />
+                  <Route path="/credit" element={<ExportCreditManagement />} />
+                  <Route path="/certificates" element={<ExportCertificates />} />
+                  <Route path="/hs-codes" element={<ExportHsCodes />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>
