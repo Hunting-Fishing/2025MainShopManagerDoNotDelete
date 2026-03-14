@@ -25,7 +25,7 @@ export function useExportRequests() {
 
   const create = async (form: Record<string, any>) => {
     if (!shopId) return null;
-    const { data, error } = await supabase.from('export_requests').insert({ ...form, shop_id: shopId }).select().single();
+    const { data, error } = await supabase.from('export_requests').insert({ ...form, shop_id: shopId } as any).select().single();
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return null; }
     toast({ title: 'Request created' });
     fetch();
