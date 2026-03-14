@@ -1617,6 +1617,9 @@ function App() {
                   <Route path="/store" element={<ExportStore />} />
                   <Route path="/developer" element={<ExportDeveloper />} />
                   <Route path="/requests" element={<ExportRequests />} />
+                  <Route path="/suppliers" element={<ExportSuppliers />} />
+                  <Route path="/packing" element={<ExportPackingTraceability />} />
+                  <Route path="/reservations" element={<ExportReservations />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>
