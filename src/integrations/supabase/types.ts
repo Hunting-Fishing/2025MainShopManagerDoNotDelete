@@ -10385,63 +10385,334 @@ export type Database = {
           },
         ]
       }
+      export_client_contacts: {
+        Row: {
+          contact_name: string
+          created_at: string | null
+          customer_id: string
+          email: string | null
+          id: string
+          is_primary: boolean | null
+          notes: string | null
+          phone: string | null
+          role: string | null
+          shop_id: string
+          updated_at: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          contact_name: string
+          created_at?: string | null
+          customer_id: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          shop_id: string
+          updated_at?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          contact_name?: string
+          created_at?: string | null
+          customer_id?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_client_contacts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_client_contacts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_container_packing: {
+        Row: {
+          barcode: string | null
+          batch_number: string | null
+          container_number: string | null
+          container_type: string | null
+          created_at: string | null
+          gross_weight_kg: number | null
+          id: string
+          inventory_id: string | null
+          lot_number: string | null
+          net_weight_kg: number | null
+          notes: string | null
+          order_id: string | null
+          packages_count: number | null
+          packed_at: string | null
+          packed_by: string | null
+          position_in_container: string | null
+          product_id: string | null
+          qr_code_data: string | null
+          quantity: number
+          seal_number: string | null
+          shipment_id: string | null
+          shop_id: string
+          unit: string | null
+          updated_at: string | null
+          variant_id: string | null
+          verified_at: string | null
+          verified_by: string | null
+          volume_cbm: number | null
+        }
+        Insert: {
+          barcode?: string | null
+          batch_number?: string | null
+          container_number?: string | null
+          container_type?: string | null
+          created_at?: string | null
+          gross_weight_kg?: number | null
+          id?: string
+          inventory_id?: string | null
+          lot_number?: string | null
+          net_weight_kg?: number | null
+          notes?: string | null
+          order_id?: string | null
+          packages_count?: number | null
+          packed_at?: string | null
+          packed_by?: string | null
+          position_in_container?: string | null
+          product_id?: string | null
+          qr_code_data?: string | null
+          quantity?: number
+          seal_number?: string | null
+          shipment_id?: string | null
+          shop_id: string
+          unit?: string | null
+          updated_at?: string | null
+          variant_id?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          volume_cbm?: number | null
+        }
+        Update: {
+          barcode?: string | null
+          batch_number?: string | null
+          container_number?: string | null
+          container_type?: string | null
+          created_at?: string | null
+          gross_weight_kg?: number | null
+          id?: string
+          inventory_id?: string | null
+          lot_number?: string | null
+          net_weight_kg?: number | null
+          notes?: string | null
+          order_id?: string | null
+          packages_count?: number | null
+          packed_at?: string | null
+          packed_by?: string | null
+          position_in_container?: string | null
+          product_id?: string | null
+          qr_code_data?: string | null
+          quantity?: number
+          seal_number?: string | null
+          shipment_id?: string | null
+          shop_id?: string
+          unit?: string | null
+          updated_at?: string | null
+          variant_id?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          volume_cbm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_container_packing_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "export_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_container_packing_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_container_packing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_container_packing_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "export_shipments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_container_packing_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_container_packing_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "export_product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_customers: {
         Row: {
           address: string | null
           city: string | null
+          client_type: string | null
           company_name: string
+          consignee_name: string | null
           contact_name: string | null
           country: string
           created_at: string | null
+          credit_limit: number | null
           currency: string | null
+          customs_broker_contact: string | null
+          customs_broker_name: string | null
+          discount_rate: number | null
+          discount_type: string | null
           email: string | null
           id: string
+          import_license_expiry: string | null
+          import_license_number: string | null
+          incoterms: string | null
           is_active: boolean | null
+          labeling_requirements: string | null
+          last_order_date: string | null
           notes: string | null
+          notify_party: string | null
+          outstanding_balance: number | null
+          payment_reliability: string | null
+          payment_terms: string | null
           phone: string | null
           port_of_destination: string | null
+          postal_code: string | null
+          preferred_container_type: string | null
+          preferred_shipping_line: string | null
+          required_certifications: string[] | null
           shop_id: string
+          state_province: string | null
+          tags: string[] | null
           tax_id: string | null
+          total_orders: number | null
+          total_revenue: number | null
           trade_terms: string | null
           updated_at: string | null
+          website: string | null
         }
         Insert: {
           address?: string | null
           city?: string | null
+          client_type?: string | null
           company_name: string
+          consignee_name?: string | null
           contact_name?: string | null
           country: string
           created_at?: string | null
+          credit_limit?: number | null
           currency?: string | null
+          customs_broker_contact?: string | null
+          customs_broker_name?: string | null
+          discount_rate?: number | null
+          discount_type?: string | null
           email?: string | null
           id?: string
+          import_license_expiry?: string | null
+          import_license_number?: string | null
+          incoterms?: string | null
           is_active?: boolean | null
+          labeling_requirements?: string | null
+          last_order_date?: string | null
           notes?: string | null
+          notify_party?: string | null
+          outstanding_balance?: number | null
+          payment_reliability?: string | null
+          payment_terms?: string | null
           phone?: string | null
           port_of_destination?: string | null
+          postal_code?: string | null
+          preferred_container_type?: string | null
+          preferred_shipping_line?: string | null
+          required_certifications?: string[] | null
           shop_id: string
+          state_province?: string | null
+          tags?: string[] | null
           tax_id?: string | null
+          total_orders?: number | null
+          total_revenue?: number | null
           trade_terms?: string | null
           updated_at?: string | null
+          website?: string | null
         }
         Update: {
           address?: string | null
           city?: string | null
+          client_type?: string | null
           company_name?: string
+          consignee_name?: string | null
           contact_name?: string | null
           country?: string
           created_at?: string | null
+          credit_limit?: number | null
           currency?: string | null
+          customs_broker_contact?: string | null
+          customs_broker_name?: string | null
+          discount_rate?: number | null
+          discount_type?: string | null
           email?: string | null
           id?: string
+          import_license_expiry?: string | null
+          import_license_number?: string | null
+          incoterms?: string | null
           is_active?: boolean | null
+          labeling_requirements?: string | null
+          last_order_date?: string | null
           notes?: string | null
+          notify_party?: string | null
+          outstanding_balance?: number | null
+          payment_reliability?: string | null
+          payment_terms?: string | null
           phone?: string | null
           port_of_destination?: string | null
+          postal_code?: string | null
+          preferred_container_type?: string | null
+          preferred_shipping_line?: string | null
+          required_certifications?: string[] | null
           shop_id?: string
+          state_province?: string | null
+          tags?: string[] | null
           tax_id?: string | null
+          total_orders?: number | null
+          total_revenue?: number | null
           trade_terms?: string | null
           updated_at?: string | null
+          website?: string | null
         }
         Relationships: [
           {
@@ -10823,6 +11094,93 @@ export type Database = {
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "export_warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_inventory_reservations: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          id: string
+          inventory_id: string
+          notes: string | null
+          order_id: string | null
+          quantity_reserved: number
+          released_at: string | null
+          request_id: string | null
+          reserved_at: string | null
+          reserved_by: string | null
+          shop_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          inventory_id: string
+          notes?: string | null
+          order_id?: string | null
+          quantity_reserved?: number
+          released_at?: string | null
+          request_id?: string | null
+          reserved_at?: string | null
+          reserved_by?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          inventory_id?: string
+          notes?: string | null
+          order_id?: string | null
+          quantity_reserved?: number
+          released_at?: string | null
+          request_id?: string | null
+          reserved_at?: string | null
+          reserved_by?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_inventory_reservations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_inventory_reservations_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "export_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_inventory_reservations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_inventory_reservations_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "export_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_inventory_reservations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -11816,6 +12174,225 @@ export type Database = {
           },
         ]
       }
+      export_request_items: {
+        Row: {
+          created_at: string | null
+          description: string
+          discount_pct: number | null
+          id: string
+          notes: string | null
+          packaging_type: string | null
+          product_id: string | null
+          quantity: number
+          request_id: string
+          shop_id: string
+          special_requirements: string | null
+          total_price: number | null
+          unit: string | null
+          unit_price: number | null
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          discount_pct?: number | null
+          id?: string
+          notes?: string | null
+          packaging_type?: string | null
+          product_id?: string | null
+          quantity?: number
+          request_id: string
+          shop_id: string
+          special_requirements?: string | null
+          total_price?: number | null
+          unit?: string | null
+          unit_price?: number | null
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          discount_pct?: number | null
+          id?: string
+          notes?: string | null
+          packaging_type?: string | null
+          product_id?: string | null
+          quantity?: number
+          request_id?: string
+          shop_id?: string
+          special_requirements?: string | null
+          total_price?: number | null
+          unit?: string | null
+          unit_price?: number | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_request_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "export_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_request_items_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_request_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "export_product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_requests: {
+        Row: {
+          approved_date: string | null
+          assigned_to: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          customer_id: string | null
+          customs_cost: number | null
+          destination_country: string | null
+          destination_port: string | null
+          discount_amount: number | null
+          id: string
+          incoterms: string | null
+          insurance_cost: number | null
+          internal_notes: string | null
+          is_recurring: boolean | null
+          notes: string | null
+          order_id: string | null
+          parent_request_id: string | null
+          priority: string | null
+          recurrence_interval: string | null
+          recurrence_next_date: string | null
+          request_number: string
+          request_type: string
+          requested_date: string | null
+          required_by_date: string | null
+          shipment_id: string | null
+          shipping_cost: number | null
+          shop_id: string
+          special_instructions: string | null
+          status: string
+          subtotal: number | null
+          tax_amount: number | null
+          total: number | null
+          updated_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          approved_date?: string | null
+          assigned_to?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          customs_cost?: number | null
+          destination_country?: string | null
+          destination_port?: string | null
+          discount_amount?: number | null
+          id?: string
+          incoterms?: string | null
+          insurance_cost?: number | null
+          internal_notes?: string | null
+          is_recurring?: boolean | null
+          notes?: string | null
+          order_id?: string | null
+          parent_request_id?: string | null
+          priority?: string | null
+          recurrence_interval?: string | null
+          recurrence_next_date?: string | null
+          request_number: string
+          request_type?: string
+          requested_date?: string | null
+          required_by_date?: string | null
+          shipment_id?: string | null
+          shipping_cost?: number | null
+          shop_id: string
+          special_instructions?: string | null
+          status?: string
+          subtotal?: number | null
+          tax_amount?: number | null
+          total?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          approved_date?: string | null
+          assigned_to?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          customs_cost?: number | null
+          destination_country?: string | null
+          destination_port?: string | null
+          discount_amount?: number | null
+          id?: string
+          incoterms?: string | null
+          insurance_cost?: number | null
+          internal_notes?: string | null
+          is_recurring?: boolean | null
+          notes?: string | null
+          order_id?: string | null
+          parent_request_id?: string | null
+          priority?: string | null
+          recurrence_interval?: string | null
+          recurrence_next_date?: string | null
+          request_number?: string
+          request_type?: string
+          requested_date?: string | null
+          required_by_date?: string | null
+          shipment_id?: string | null
+          shipping_cost?: number | null
+          shop_id?: string
+          special_instructions?: string | null
+          status?: string
+          subtotal?: number | null
+          tax_amount?: number | null
+          total?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_requests_parent_request_id_fkey"
+            columns: ["parent_request_id"]
+            isOneToOne: false
+            referencedRelation: "export_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_requests_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_route_stops: {
         Row: {
           address: string | null
@@ -12104,6 +12681,167 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_traceability_log: {
+        Row: {
+          barcode: string | null
+          batch_number: string | null
+          container_packing_id: string | null
+          created_at: string | null
+          customer_id: string | null
+          event_at: string | null
+          event_type: string
+          humidity_pct: number | null
+          id: string
+          inventory_id: string | null
+          location: string | null
+          lot_number: string | null
+          metadata: Json | null
+          notes: string | null
+          order_id: string | null
+          performed_by: string | null
+          product_id: string | null
+          qr_code_data: string | null
+          quality_status: string | null
+          quantity: number | null
+          request_id: string | null
+          shipment_id: string | null
+          shop_id: string
+          temperature_celsius: number | null
+          unit: string | null
+          variant_id: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          barcode?: string | null
+          batch_number?: string | null
+          container_packing_id?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          event_at?: string | null
+          event_type: string
+          humidity_pct?: number | null
+          id?: string
+          inventory_id?: string | null
+          location?: string | null
+          lot_number?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          order_id?: string | null
+          performed_by?: string | null
+          product_id?: string | null
+          qr_code_data?: string | null
+          quality_status?: string | null
+          quantity?: number | null
+          request_id?: string | null
+          shipment_id?: string | null
+          shop_id: string
+          temperature_celsius?: number | null
+          unit?: string | null
+          variant_id?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          barcode?: string | null
+          batch_number?: string | null
+          container_packing_id?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          event_at?: string | null
+          event_type?: string
+          humidity_pct?: number | null
+          id?: string
+          inventory_id?: string | null
+          location?: string | null
+          lot_number?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          order_id?: string | null
+          performed_by?: string | null
+          product_id?: string | null
+          qr_code_data?: string | null
+          quality_status?: string | null
+          quantity?: number | null
+          request_id?: string | null
+          shipment_id?: string | null
+          shop_id?: string
+          temperature_celsius?: number | null
+          unit?: string | null
+          variant_id?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_traceability_log_container_packing_id_fkey"
+            columns: ["container_packing_id"]
+            isOneToOne: false
+            referencedRelation: "export_container_packing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_traceability_log_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_traceability_log_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "export_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_traceability_log_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_traceability_log_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_traceability_log_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "export_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_traceability_log_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "export_shipments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_traceability_log_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_traceability_log_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "export_product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_traceability_log_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "export_warehouses"
             referencedColumns: ["id"]
           },
         ]
