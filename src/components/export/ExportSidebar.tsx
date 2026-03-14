@@ -80,7 +80,9 @@ const navSections: NavSection[] = [
     title: 'Inventory & Warehouses',
     items: [
       { title: 'Inventory', href: '/export/inventory', icon: Boxes, color: 'from-teal-500 to-cyan-600' },
+      { title: 'Reservations', href: '/export/reservations', icon: Lock, color: 'from-amber-500 to-yellow-600' },
       { title: 'Warehouses', href: '/export/warehouses', icon: Warehouse, color: 'from-violet-500 to-purple-600' },
+      { title: 'Packing & Trace', href: '/export/packing', icon: MapPin, color: 'from-teal-500 to-emerald-600' },
       { title: 'Equipment', href: '/export/equipment', icon: Wrench, color: 'from-gray-500 to-slate-600' },
     ],
   },
