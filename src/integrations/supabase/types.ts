@@ -10806,6 +10806,122 @@ export type Database = {
           },
         ]
       }
+      export_business_profiles: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          bank_account_number: string | null
+          bank_iban: string | null
+          bank_name: string | null
+          bank_swift_code: string | null
+          business_type: string | null
+          certifications: Json | null
+          city: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string | null
+          customs_broker_contact: string | null
+          customs_broker_name: string | null
+          email: string | null
+          export_license_expiry: string | null
+          export_license_number: string | null
+          id: string
+          legal_name: string | null
+          logo_url: string | null
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          registration_number: string | null
+          shop_id: string
+          state_province: string | null
+          tax_id: string | null
+          updated_at: string | null
+          vat_number: string | null
+          website: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          bank_account_number?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          bank_swift_code?: string | null
+          business_type?: string | null
+          certifications?: Json | null
+          city?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          customs_broker_contact?: string | null
+          customs_broker_name?: string | null
+          email?: string | null
+          export_license_expiry?: string | null
+          export_license_number?: string | null
+          id?: string
+          legal_name?: string | null
+          logo_url?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          registration_number?: string | null
+          shop_id: string
+          state_province?: string | null
+          tax_id?: string | null
+          updated_at?: string | null
+          vat_number?: string | null
+          website?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          bank_account_number?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          bank_swift_code?: string | null
+          business_type?: string | null
+          certifications?: Json | null
+          city?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          customs_broker_contact?: string | null
+          customs_broker_name?: string | null
+          email?: string | null
+          export_license_expiry?: string | null
+          export_license_number?: string | null
+          id?: string
+          legal_name?: string | null
+          logo_url?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          registration_number?: string | null
+          shop_id?: string
+          state_province?: string | null
+          tax_id?: string | null
+          updated_at?: string | null
+          vat_number?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_business_profiles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_certificates: {
         Row: {
           auto_renew: boolean | null
@@ -13215,6 +13331,77 @@ export type Database = {
         }
         Relationships: []
       }
+      export_module_settings: {
+        Row: {
+          auto_generate_invoice_numbers: boolean | null
+          created_at: string | null
+          default_currency: string | null
+          default_incoterm: string | null
+          default_origin_country: string | null
+          default_origin_port: string | null
+          default_payment_terms: string | null
+          dimension_unit: string | null
+          enable_low_stock_alerts: boolean | null
+          enable_trade_alerts: boolean | null
+          id: string
+          invoice_prefix: string | null
+          low_stock_threshold: number | null
+          order_prefix: string | null
+          shipment_prefix: string | null
+          shop_id: string
+          updated_at: string | null
+          weight_unit: string | null
+        }
+        Insert: {
+          auto_generate_invoice_numbers?: boolean | null
+          created_at?: string | null
+          default_currency?: string | null
+          default_incoterm?: string | null
+          default_origin_country?: string | null
+          default_origin_port?: string | null
+          default_payment_terms?: string | null
+          dimension_unit?: string | null
+          enable_low_stock_alerts?: boolean | null
+          enable_trade_alerts?: boolean | null
+          id?: string
+          invoice_prefix?: string | null
+          low_stock_threshold?: number | null
+          order_prefix?: string | null
+          shipment_prefix?: string | null
+          shop_id: string
+          updated_at?: string | null
+          weight_unit?: string | null
+        }
+        Update: {
+          auto_generate_invoice_numbers?: boolean | null
+          created_at?: string | null
+          default_currency?: string | null
+          default_incoterm?: string | null
+          default_origin_country?: string | null
+          default_origin_port?: string | null
+          default_payment_terms?: string | null
+          dimension_unit?: string | null
+          enable_low_stock_alerts?: boolean | null
+          enable_trade_alerts?: boolean | null
+          id?: string
+          invoice_prefix?: string | null
+          low_stock_threshold?: number | null
+          order_prefix?: string | null
+          shipment_prefix?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          weight_unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_module_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_order_items: {
         Row: {
           created_at: string | null
@@ -15415,6 +15602,74 @@ export type Database = {
           },
           {
             foreignKeyName: "export_staff_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_store_items: {
+        Row: {
+          affiliate_url: string | null
+          category: string
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          item_name: string
+          price: number | null
+          rating: number | null
+          review_count: number | null
+          shop_id: string
+          supplier_name: string | null
+          supplier_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          affiliate_url?: string | null
+          category?: string
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          item_name: string
+          price?: number | null
+          rating?: number | null
+          review_count?: number | null
+          shop_id: string
+          supplier_name?: string | null
+          supplier_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          affiliate_url?: string | null
+          category?: string
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          item_name?: string
+          price?: number | null
+          rating?: number | null
+          review_count?: number | null
+          shop_id?: string
+          supplier_name?: string | null
+          supplier_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_store_items_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
