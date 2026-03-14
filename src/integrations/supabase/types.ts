@@ -10981,51 +10981,156 @@ export type Database = {
       }
       export_products: {
         Row: {
+          avg_monthly_volume: number | null
           category: string
+          certifications: string[] | null
           country_of_origin: string | null
           created_at: string | null
+          currency: string | null
+          customs_duty_per_unit: number | null
+          customs_duty_rate: number | null
           description: string | null
+          export_license_required: boolean | null
+          fumigation_required: boolean | null
+          grade: string | null
+          grain_size: string | null
+          handling_fee_per_unit: number | null
           hs_code: string | null
           id: string
+          image_url: string | null
+          inspection_cost_per_unit: number | null
+          insurance_cost_per_unit: number | null
           is_active: boolean | null
+          landed_cost_per_unit: number | null
+          last_sold_at: string | null
+          minimum_order_qty: number | null
+          moisture_content_pct: number | null
           name: string
+          packaging_cost_per_unit: number | null
           packaging_type: string | null
+          phytosanitary_required: boolean | null
+          preferred_incoterms: string | null
+          profit_margin_pct: number | null
+          purchase_cost_per_unit: number | null
+          regulatory_notes: string | null
+          shelf_life_days: number | null
+          shipping_cost_per_unit: number | null
           shop_id: string
           sku: string | null
+          storage_requirements: string | null
+          storage_temperature: string | null
+          supplier_contact: string | null
+          supplier_country: string | null
+          supplier_lead_time_days: number | null
+          supplier_name: string | null
+          target_markets: string[] | null
+          total_cost: number | null
+          total_revenue: number | null
+          total_units_sold: number | null
           unit_of_measure: string | null
           unit_price: number | null
           updated_at: string | null
           weight_per_unit: number | null
         }
         Insert: {
+          avg_monthly_volume?: number | null
           category?: string
+          certifications?: string[] | null
           country_of_origin?: string | null
           created_at?: string | null
+          currency?: string | null
+          customs_duty_per_unit?: number | null
+          customs_duty_rate?: number | null
           description?: string | null
+          export_license_required?: boolean | null
+          fumigation_required?: boolean | null
+          grade?: string | null
+          grain_size?: string | null
+          handling_fee_per_unit?: number | null
           hs_code?: string | null
           id?: string
+          image_url?: string | null
+          inspection_cost_per_unit?: number | null
+          insurance_cost_per_unit?: number | null
           is_active?: boolean | null
+          landed_cost_per_unit?: number | null
+          last_sold_at?: string | null
+          minimum_order_qty?: number | null
+          moisture_content_pct?: number | null
           name: string
+          packaging_cost_per_unit?: number | null
           packaging_type?: string | null
+          phytosanitary_required?: boolean | null
+          preferred_incoterms?: string | null
+          profit_margin_pct?: number | null
+          purchase_cost_per_unit?: number | null
+          regulatory_notes?: string | null
+          shelf_life_days?: number | null
+          shipping_cost_per_unit?: number | null
           shop_id: string
           sku?: string | null
+          storage_requirements?: string | null
+          storage_temperature?: string | null
+          supplier_contact?: string | null
+          supplier_country?: string | null
+          supplier_lead_time_days?: number | null
+          supplier_name?: string | null
+          target_markets?: string[] | null
+          total_cost?: number | null
+          total_revenue?: number | null
+          total_units_sold?: number | null
           unit_of_measure?: string | null
           unit_price?: number | null
           updated_at?: string | null
           weight_per_unit?: number | null
         }
         Update: {
+          avg_monthly_volume?: number | null
           category?: string
+          certifications?: string[] | null
           country_of_origin?: string | null
           created_at?: string | null
+          currency?: string | null
+          customs_duty_per_unit?: number | null
+          customs_duty_rate?: number | null
           description?: string | null
+          export_license_required?: boolean | null
+          fumigation_required?: boolean | null
+          grade?: string | null
+          grain_size?: string | null
+          handling_fee_per_unit?: number | null
           hs_code?: string | null
           id?: string
+          image_url?: string | null
+          inspection_cost_per_unit?: number | null
+          insurance_cost_per_unit?: number | null
           is_active?: boolean | null
+          landed_cost_per_unit?: number | null
+          last_sold_at?: string | null
+          minimum_order_qty?: number | null
+          moisture_content_pct?: number | null
           name?: string
+          packaging_cost_per_unit?: number | null
           packaging_type?: string | null
+          phytosanitary_required?: boolean | null
+          preferred_incoterms?: string | null
+          profit_margin_pct?: number | null
+          purchase_cost_per_unit?: number | null
+          regulatory_notes?: string | null
+          shelf_life_days?: number | null
+          shipping_cost_per_unit?: number | null
           shop_id?: string
           sku?: string | null
+          storage_requirements?: string | null
+          storage_temperature?: string | null
+          supplier_contact?: string | null
+          supplier_country?: string | null
+          supplier_lead_time_days?: number | null
+          supplier_name?: string | null
+          target_markets?: string[] | null
+          total_cost?: number | null
+          total_revenue?: number | null
+          total_units_sold?: number | null
           unit_of_measure?: string | null
           unit_price?: number | null
           updated_at?: string | null
