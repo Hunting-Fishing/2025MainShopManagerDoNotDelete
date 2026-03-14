@@ -612,6 +612,26 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Equipment management',
     ],
   },
+  {
+    slug: 'export-company',
+    name: 'Export Company',
+    description: 'Vehicle export operations, logistics, customs documentation, and compliance',
+    icon: Ship,
+    color: 'bg-emerald-500',
+    price: 'From $9/mo',
+    available: true,
+    coreFeatures: [
+      'Order management with VIN tracking',
+      'Shipment & container tracking',
+      'Route planning and driver dispatch',
+      'Customs documentation management',
+    ],
+    extraFeatures: [
+      'Warehouse and inventory management',
+      'Quotes and invoicing',
+      'Equipment tracking',
+    ],
+  },
 ];
 
 export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
