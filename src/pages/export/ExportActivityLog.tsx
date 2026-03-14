@@ -81,9 +81,9 @@ export default function ExportActivityLog() {
                         <span className="text-muted-foreground">{log.entity_type}</span>
                         {log.entity_label && <span className="font-medium text-foreground"> "{log.entity_label}"</span>}
                       </p>
-                      {log.details && typeof log.details === 'object' && Object.keys(log.details).length > 0 && (
+                      {log.details && typeof log.details === 'object' && !Array.isArray(log.details) && Object.keys(log.details as Record<string, unknown>).length > 0 && (
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          {Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(' • ')}
+                          {Object.entries(log.details as Record<string, unknown>).map(([k, v]) => `${k}: ${v}`).join(' • ')}
                         </p>
                       )}
                     </div>
