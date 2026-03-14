@@ -1594,6 +1594,7 @@ function App() {
                   <Route path="/products" element={<ExportProducts />} />
                   <Route path="/vehicles" element={<ExportVehicles />} />
                   <Route path="/shipments" element={<ExportShipments />} />
+                  <Route path="/packaging" element={<ExportPackaging />} />
                   <Route path="/warehouses" element={<ExportWarehouses />} />
                   <Route path="/inventory" element={<ExportInventory />} />
                   <Route path="/documents" element={<ExportDocuments />} />

@@ -1766,6 +1766,7 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Products', href: '/export/products', icon: Package, description: 'Product catalog', group: 'Services' },
       { title: 'Vehicles', href: '/export/vehicles', icon: Car, description: 'Vehicle inventory & VIN tracking', group: 'Services' },
       { title: 'Quotes', href: '/export/quotes', icon: FileText, description: 'Price quotes', group: 'Services' },
+      { title: 'Packaging', href: '/export/packaging', icon: Package, description: 'Packaging options, costs & shipment tracking', group: 'Logistics' },
       { title: 'Shipments', href: '/export/shipments', icon: Ship, description: 'Shipment tracking', group: 'Logistics' },
       { title: 'Warehouses', href: '/export/warehouses', icon: Warehouse, description: 'Warehouse management', group: 'Logistics' },
       { title: 'Inventory', href: '/export/inventory', icon: PackageCheck, description: 'Stock management', group: 'Logistics' },
