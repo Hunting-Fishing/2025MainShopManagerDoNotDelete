@@ -61,7 +61,8 @@ const navSections: NavSection[] = [
   {
     title: 'Customers & Products',
     items: [
-      { title: 'Customers', href: '/export/customers', icon: Users, color: 'from-sky-500 to-blue-600' },
+      { title: 'Clients', href: '/export/customers', icon: Users, color: 'from-sky-500 to-blue-600' },
+      { title: 'Suppliers', href: '/export/suppliers', icon: Factory, color: 'from-orange-500 to-red-500' },
       { title: 'Products', href: '/export/products', icon: Package, color: 'from-amber-500 to-orange-600' },
       { title: 'Vehicles', href: '/export/vehicles', icon: Car, color: 'from-red-500 to-rose-600' },
     ],
